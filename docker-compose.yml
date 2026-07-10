@@ -28,7 +28,7 @@ services:
       - '4242:4242'
     environment:
       - ORTHANC__AUTHENTICATION_ENABLED=true
-      - ORTHANC__REGISTERED_USERS={"admin":"***REMOVIDO-SENHA-ORTHANC***"}
+      - ORTHANC__REGISTERED_USERS={"admin":"${ORTHANC_PASSWORD}"}
     volumes:
       - orthanc_data:/var/lib/orthanc/db
     networks:
@@ -36,7 +36,7 @@ services:
 
   # --- Visualizador OHIF ---
   radix-ohif:
-    image: ohif/viewer:latest
+    image: ohif/viewer@sha256:b4bfecdc7cc670101cbfd01215fcd1f77b7cc5c867c5ed1cb10142f7a806ccd9
     container_name: radix-ohif
     restart: unless-stopped
     ports:
@@ -45,6 +45,8 @@ services:
       - radix-orthanc
     networks:
       - radix-network
+    volumes:
+      - ./ohif/index.html:/usr/share/nginx/html/index.html:ro
 
   # --- Backend FastAPI ---
   radix-api:
