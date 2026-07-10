@@ -1,0 +1,8 @@
+﻿{
+  "Name": "Radix Imago",
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": true,
+  "RegisteredUsers": {
+    "admin": "***REMOVIDO-SENHA-ORTHANC***"
+  }
+}

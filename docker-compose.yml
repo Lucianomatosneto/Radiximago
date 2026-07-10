@@ -1,0 +1,97 @@
+services:
+  # --- Banco de dados PostgreSQL ---
+  radix-postgres:
+    image: postgres:16
+    container_name: radix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - radix-network
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Servidor DICOM Orthanc ---
+  radix-orthanc:
+    image: orthancteam/orthanc:latest
+    container_name: radix-orthanc
+    restart: unless-stopped
+    ports:
+      - '8042:8042'
+      - '4242:4242'
+    environment:
+      - ORTHANC__AUTHENTICATION_ENABLED=true
+      - ORTHANC__REGISTERED_USERS={"admin":"***REMOVIDO-SENHA-ORTHANC***"}
+    volumes:
+      - orthanc_data:/var/lib/orthanc/db
+    networks:
+      - radix-network
+
+  # --- Visualizador OHIF ---
+  radix-ohif:
+    image: ohif/viewer:latest
+    container_name: radix-ohif
+    restart: unless-stopped
+    ports:
+      - '3001:80'
+    depends_on:
+      - radix-orthanc
+    networks:
+      - radix-network
+
+  # --- Backend FastAPI ---
+  radix-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: radix-api
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    env_file:
+      - .env
+    depends_on:
+      radix-postgres:
+        condition: service_healthy
+      radix-orthanc:
+        condition: service_started
+    volumes:
+      - ./backend:/app
+    networks:
+      - radix-network
+
+  # --- Frontend Next.js ---
+  radix-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: radix-frontend
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - .env
+    depends_on:
+      - radix-api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - radix-network
+
+# --- Volumes persistentes ---
+volumes:
+  postgres_data:
+  orthanc_data:
+
+# --- Rede interna ---
+networks:
+  radix-network:
+    driver: bridge

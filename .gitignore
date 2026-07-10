@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Frontend / Next.js
+.next/
+out/
+node_modules/
+.turbo/
+
+# Editores
+.vscode/
+.idea/
+
+# Sistema operacional
+Thumbs.db
+.DS_Store
