@@ -1,6 +1,7 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-import os
+from app.modules.auth import router as auth_router
+from app.modules.users_router import router as users_router
 
 app = FastAPI(
     title="Radix Imago API",
@@ -16,16 +17,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth_router)
+app.include_router(users_router)
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "service": "radix-api"}
 
 @app.get("/health/database")
 async def health_database():
-    # Sera expandido na Fase 4
     return {"status": "ok", "database": "pendente configuracao"}
 
 @app.get("/health/orthanc")
 async def health_orthanc():
-    # Sera expandido na Fase 4
     return {"status": "ok", "orthanc": "pendente configuracao"}
