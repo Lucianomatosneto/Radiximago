@@ -4,6 +4,7 @@ from sqlalchemy import pool
 from alembic import context
 from app.core.database import Base
 from app.modules.users import User
+from app.modules.orthanc_references import OrthancReference
 
 config = context.config
 if config.config_file_name is not None:
