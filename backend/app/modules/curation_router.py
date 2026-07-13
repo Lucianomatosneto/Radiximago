@@ -2,11 +2,12 @@
 Roteador de Curadoria - endpoints da Fase 4.
 
 Endpoints:
-- GET  /curation/pending                  -> fila de imagens sem ficha
-- POST /curation/{orthanc_reference_id}   -> cria a ficha de curadoria
+- GET  /curation/pending                    -> fila de imagens sem ficha
+- POST /curation/{orthanc_reference_id}     -> cria a ficha de curadoria
+- POST /curation/{curation_id}/approve      -> aprova a ficha (libera)
+- POST /curation/{curation_id}/discard      -> descarta a ficha (com motivo)
 
-Acesso restrito a administrador e suporte (Bloco 4, Secao 16). O perfil
-"curador" podera ser acrescentado a lista quando for criado.
+Acesso restrito a administrador e suporte (Bloco 4, Secao 16).
 """
 
 from typing import List, Optional
@@ -19,6 +20,7 @@ from app.core.database import get_db
 from app.modules.auth import obter_usuario_atual
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
+from app.modules.audit_logs import AuditLog
 from app.modules.curations import (
     Curation,
     CurationHistory,
@@ -34,12 +36,15 @@ from app.modules.curations import (
 
 router = APIRouter(prefix="/curation", tags=["Curadoria"])
 
+# Status que ja representam uma decisao final tomada.
+STATUS_FINAIS = [
+    StatusCuradoria.APROVADA.value,
+    StatusCuradoria.DESCARTADA.value,
+]
+
 
 def _exigir_admin_ou_suporte(usuario: User) -> None:
-    """
-    Guardiao de permissao: so administrador ou suporte podem acessar a curadoria.
-    Se o perfil nao for permitido, barra com HTTP 403 (acesso negado).
-    """
+    """Guardiao de permissao: so administrador ou suporte."""
     perfis_permitidos = [UserRole.administrador, UserRole.suporte]
     if usuario.perfil not in perfis_permitidos:
         raise HTTPException(
@@ -53,9 +58,43 @@ def _valor(campo) -> Optional[str]:
     return campo.value if campo is not None else None
 
 
+def _registrar_historico(db, curation_id, usuario_id, acao, status_ant, status_novo, justificativa):
+    """Grava um registro no historico de curadoria (rastreabilidade)."""
+    db.add(CurationHistory(
+        curation_id=curation_id,
+        usuario_id=usuario_id,
+        acao=acao,
+        status_anterior=status_ant,
+        status_novo=status_novo,
+        justificativa=justificativa,
+    ))
+
+
+def _registrar_auditoria(db, usuario_id, acao, entidade_id, resultado, detalhes):
+    """Grava um registro na auditoria (Bloco 4)."""
+    db.add(AuditLog(
+        usuario_id=usuario_id,
+        acao=acao,
+        entidade="curation",
+        entidade_id=entidade_id,
+        resultado=resultado,
+        detalhes=detalhes,
+    ))
+
+
+def _buscar_ficha(db, curation_id) -> Curation:
+    """Busca a ficha ou levanta 404."""
+    ficha = db.query(Curation).filter(Curation.id == curation_id).first()
+    if not ficha:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Ficha de curadoria {curation_id} nao encontrada.",
+        )
+    return ficha
+
+
 # ---------------------------------------------------------------------
-# Formato de entrada do formulario (validado automaticamente pelo Pydantic).
-# So 'tipo_radiografia' e obrigatorio; o restante e opcional.
+# Formatos de entrada (validados pelo Pydantic).
 # ---------------------------------------------------------------------
 class CurationCreate(BaseModel):
     tipo_radiografia: TipoRadiografia
@@ -72,6 +111,18 @@ class CurationCreate(BaseModel):
     finalidade: Optional[Finalidade] = None
 
 
+class CurationApprove(BaseModel):
+    anonimizacao_validada: bool
+    observacoes: Optional[str] = None
+
+
+class CurationDiscard(BaseModel):
+    motivo: str
+
+
+# ---------------------------------------------------------------------
+# GET /curation/pending
+# ---------------------------------------------------------------------
 @router.get("/pending")
 def listar_pendentes(
     skip: int = Query(0, ge=0, description="Quantos registros pular (paginacao)"),
@@ -79,12 +130,7 @@ def listar_pendentes(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """
-    Lista as imagens pendentes de curadoria.
-
-    Pendente = imagem registrada em orthanc_references que ainda NAO tem
-    ficha correspondente em curations.
-    """
+    """Lista as imagens ainda sem ficha de curadoria."""
     _exigir_admin_ou_suporte(usuario)
 
     consulta_base = (
@@ -119,6 +165,9 @@ def listar_pendentes(
     }
 
 
+# ---------------------------------------------------------------------
+# POST /curation/{orthanc_reference_id}  -> cria a ficha
+# ---------------------------------------------------------------------
 @router.post("/{orthanc_reference_id}")
 def criar_curadoria(
     orthanc_reference_id: int,
@@ -126,19 +175,9 @@ def criar_curadoria(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """
-    Cria a ficha de curadoria de uma imagem.
-
-    Regras:
-    - A imagem precisa existir em orthanc_references.
-    - A imagem nao pode ja ter ficha (uma ficha por imagem nesta versao).
-    - Dentes, se informados, precisam ser codigos FDI validos (11-48).
-    - Idade minima nao pode ser maior que a maxima.
-    - A ficha nasce com status 'em_analise' e gera registro no historico.
-    """
+    """Cria a ficha de curadoria de uma imagem (status inicial: em_analise)."""
     _exigir_admin_ou_suporte(usuario)
 
-    # 1) A imagem existe?
     imagem = (
         db.query(OrthancReference)
         .filter(OrthancReference.id == orthanc_reference_id)
@@ -150,7 +189,6 @@ def criar_curadoria(
             detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
         )
 
-    # 2) Ja existe ficha para esta imagem?
     ja_existe = (
         db.query(Curation)
         .filter(Curation.orthanc_reference_id == orthanc_reference_id)
@@ -159,10 +197,9 @@ def criar_curadoria(
     if ja_existe:
         raise HTTPException(
             status_code=409,
-            detail=f"A imagem {orthanc_reference_id} ja possui ficha de curadoria (id {ja_existe.id}).",
+            detail=f"A imagem {orthanc_reference_id} ja possui ficha (id {ja_existe.id}).",
         )
 
-    # 3) Validacao dos dentes (codigos FDI permanentes 11-48).
     if dados.dentes:
         invalidos = [d for d in dados.dentes if d not in DENTES_PERMANENTES]
         if invalidos:
@@ -171,24 +208,16 @@ def criar_curadoria(
                 detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
             )
 
-    # 4) Validacao das idades.
     for rotulo, valor in (("idade_min", dados.idade_min), ("idade_max", dados.idade_max)):
         if valor is not None and not (0 <= valor <= 120):
-            raise HTTPException(
-                status_code=422,
-                detail=f"{rotulo} deve estar entre 0 e 120.",
-            )
+            raise HTTPException(status_code=422, detail=f"{rotulo} deve estar entre 0 e 120.")
     if (
         dados.idade_min is not None
         and dados.idade_max is not None
         and dados.idade_min > dados.idade_max
     ):
-        raise HTTPException(
-            status_code=422,
-            detail="idade_min nao pode ser maior que idade_max.",
-        )
+        raise HTTPException(status_code=422, detail="idade_min nao pode ser maior que idade_max.")
 
-    # 5) Cria a ficha (status inicial: em_analise).
     ficha = Curation(
         orthanc_reference_id=orthanc_reference_id,
         modalidade="RX",
@@ -209,18 +238,12 @@ def criar_curadoria(
         curador_id=usuario.id,
     )
     db.add(ficha)
-    db.flush()  # garante o id da ficha antes de gravar o historico
+    db.flush()
 
-    # 6) Registra no historico (rastreabilidade - Bloco 4).
-    historico = CurationHistory(
-        curation_id=ficha.id,
-        usuario_id=usuario.id,
-        acao="criacao",
-        status_anterior=None,
-        status_novo=StatusCuradoria.EM_ANALISE.value,
-        justificativa="Ficha de curadoria criada.",
+    _registrar_historico(
+        db, ficha.id, usuario.id, "criacao",
+        None, StatusCuradoria.EM_ANALISE.value, "Ficha de curadoria criada.",
     )
-    db.add(historico)
     db.commit()
     db.refresh(ficha)
 
@@ -231,4 +254,115 @@ def criar_curadoria(
         "status": ficha.status,
         "tipo_radiografia": ficha.tipo_radiografia,
         "dentes": ficha.dentes,
+    }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/approve  -> aprova (libera)
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/approve")
+def aprovar_curadoria(
+    curation_id: int,
+    dados: CurationApprove,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Aprova a ficha, liberando a imagem para uso.
+
+    Regra LGPD (Bloco 4): so libera se a anonimizacao estiver validada.
+    Nesta versao, o curador confirma a validacao no momento de aprovar.
+    """
+    _exigir_admin_ou_suporte(usuario)
+    ficha = _buscar_ficha(db, curation_id)
+
+    # Nao reprocessar decisao ja tomada.
+    if ficha.status in STATUS_FINAIS:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+
+    # Regra LGPD: bloquear liberacao sem anonimizacao validada.
+    if not dados.anonimizacao_validada:
+        _registrar_auditoria(
+            db, usuario.id, "aprovacao", curation_id, "negado",
+            "Tentativa de aprovar sem anonimizacao validada.",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=422,
+            detail="Aprovacao bloqueada: a anonimizacao precisa estar validada para liberar a imagem.",
+        )
+
+    status_anterior = ficha.status
+    ficha.status = StatusCuradoria.APROVADA.value
+    ficha.anonimizacao_validada = True
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, "aprovacao",
+        status_anterior, StatusCuradoria.APROVADA.value,
+        dados.observacoes or "Ficha aprovada.",
+    )
+    _registrar_auditoria(
+        db, usuario.id, "aprovacao", ficha.id, "sucesso",
+        f"Ficha aprovada por usuario {usuario.id}.",
+    )
+    db.commit()
+    db.refresh(ficha)
+
+    return {
+        "mensagem": "Ficha aprovada com sucesso.",
+        "curation_id": ficha.id,
+        "status": ficha.status,
+        "anonimizacao_validada": ficha.anonimizacao_validada,
+    }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/discard  -> descarta (com motivo)
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/discard")
+def descartar_curadoria(
+    curation_id: int,
+    dados: CurationDiscard,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Descarta a ficha (a imagem nao sera usada). Exige justificativa."""
+    _exigir_admin_ou_suporte(usuario)
+    ficha = _buscar_ficha(db, curation_id)
+
+    if ficha.status in STATUS_FINAIS:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+
+    motivo = (dados.motivo or "").strip()
+    if not motivo:
+        raise HTTPException(
+            status_code=422,
+            detail="O descarte exige uma justificativa (motivo).",
+        )
+
+    status_anterior = ficha.status
+    ficha.status = StatusCuradoria.DESCARTADA.value
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, "descarte",
+        status_anterior, StatusCuradoria.DESCARTADA.value, motivo,
+    )
+    _registrar_auditoria(
+        db, usuario.id, "descarte", ficha.id, "sucesso",
+        f"Ficha descartada por usuario {usuario.id}. Motivo: {motivo}",
+    )
+    db.commit()
+    db.refresh(ficha)
+
+    return {
+        "mensagem": "Ficha descartada com sucesso.",
+        "curation_id": ficha.id,
+        "status": ficha.status,
+        "motivo": motivo,
     }
