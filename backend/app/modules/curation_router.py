@@ -3,11 +3,12 @@ Roteador de Curadoria - endpoints da Fase 4.
 
 Endpoints:
 - GET  /curation/pending                       -> fila de imagens sem ficha
-- POST /curation/{orthanc_reference_id}        -> cria a ficha de curadoria
-- POST /curation/{curation_id}/approve         -> aprova a ficha (libera)
-- POST /curation/{curation_id}/discard         -> descarta a ficha (com motivo)
-- POST /curation/{curation_id}/request-review  -> solicita segunda opiniao
-- POST /curation/reviews/{review_id}/respond   -> revisor responde a segunda opiniao
+- POST /curation/{orthanc_reference_id}         -> cria a ficha de curadoria
+- POST /curation/{curation_id}/approve          -> aprova a ficha (libera)
+- POST /curation/{curation_id}/discard          -> descarta a ficha (com motivo)
+- POST /curation/{curation_id}/request-review   -> solicita segunda opiniao
+- POST /curation/reviews/{review_id}/respond    -> revisor responde
+- GET  /curation/{orthanc_reference_id}/viewer-url -> link do OHIF para abrir a imagem
 
 Acesso restrito a administrador e suporte (Bloco 4, Secao 16).
 """
@@ -19,6 +20,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.modules.auth import obter_usuario_atual
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
@@ -40,7 +42,6 @@ from app.modules.curations import (
 
 router = APIRouter(prefix="/curation", tags=["Curadoria"])
 
-# Status que ja representam uma decisao final tomada.
 STATUS_FINAIS = [
     StatusCuradoria.APROVADA.value,
     StatusCuradoria.DESCARTADA.value,
@@ -178,6 +179,59 @@ def listar_pendentes(
         "limit": limit,
         "quantidade_retornada": len(itens),
         "itens": itens,
+    }
+
+
+# ---------------------------------------------------------------------
+# GET /curation/{orthanc_reference_id}/viewer-url  -> link do OHIF
+# ---------------------------------------------------------------------
+@router.get("/{orthanc_reference_id}/viewer-url")
+def obter_link_visualizador(
+    orthanc_reference_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Devolve o link para abrir a imagem no visualizador OHIF.
+
+    Se a imagem tiver StudyInstanceUID, retorna o link pronto do OHIF.
+    Caso contrario (ex.: imagem sintetica sem metadados), informa que
+    a abertura por link direto nao e possivel para esta imagem.
+    """
+    _exigir_admin_ou_suporte(usuario)
+
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
+        )
+
+    if not imagem.study_instance_uid:
+        return {
+            "abrivel": False,
+            "motivo": "A imagem nao possui StudyInstanceUID; nao pode ser aberta por link direto no OHIF.",
+            "orthanc_reference_id": imagem.id,
+            "orthanc_id": imagem.orthanc_id,
+            "dicomweb_url": imagem.dicomweb_url,
+            "viewer_url": None,
+        }
+
+    viewer_url = (
+        f"{settings.OHIF_BASE_URL}/viewer"
+        f"?StudyInstanceUIDs={imagem.study_instance_uid}"
+    )
+
+    return {
+        "abrivel": True,
+        "orthanc_reference_id": imagem.id,
+        "orthanc_id": imagem.orthanc_id,
+        "study_instance_uid": imagem.study_instance_uid,
+        "viewer_url": viewer_url,
     }
 
 
@@ -384,10 +438,7 @@ def solicitar_segunda_opiniao(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """
-    Solicita segunda opiniao para uma ficha. Exige justificativa.
-    Muda o status da ficha para 'segunda_opiniao'.
-    """
+    """Solicita segunda opiniao para uma ficha. Exige justificativa."""
     _exigir_admin_ou_suporte(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
@@ -395,7 +446,7 @@ def solicitar_segunda_opiniao(
         raise HTTPException(
             status_code=409,
             detail=f"Nao e possivel solicitar segunda opiniao: a ficha ja esta '{ficha.status}'.",
-        )   
+        )
 
     motivo = (dados.motivo or "").strip()
     if not motivo:
@@ -404,7 +455,6 @@ def solicitar_segunda_opiniao(
             detail="A segunda opiniao exige uma justificativa (motivo).",
         )
 
-    # Nao permitir duas solicitacoes abertas ao mesmo tempo.
     aberta = (
         db.query(CurationReview)
         .filter(
@@ -463,8 +513,8 @@ def responder_segunda_opiniao(
     db: Session = Depends(get_db),
 ):
     """
-    Revisor responde a segunda opiniao (parecer + concordancia + decisao sugerida).
-    Regra de imparcialidade: quem solicitou NAO pode responder.
+    Revisor responde a segunda opiniao. Regra de imparcialidade:
+    quem solicitou NAO pode responder.
     """
     _exigir_admin_ou_suporte(usuario)
 
@@ -478,7 +528,6 @@ def responder_segunda_opiniao(
             detail=f"A solicitacao {review_id} ja foi respondida (status '{review.status}').",
         )
 
-    # Imparcialidade: quem solicitou nao pode responder.
     if review.solicitante_id == usuario.id:
         _registrar_auditoria(
             db, usuario.id, "resposta_segunda_opiniao", review.curation_id, "negado",

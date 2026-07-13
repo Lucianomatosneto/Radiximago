@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     ORTHANC_USERNAME: str = "admin"
     ORTHANC_PASSWORD: str = "mgd3172"
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
+    OHIF_BASE_URL: str = "http://localhost:3001"
     
     # Ambiente
     ENVIRONMENT: str = "development"
