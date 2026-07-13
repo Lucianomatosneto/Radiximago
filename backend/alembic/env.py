@@ -5,6 +5,8 @@ from alembic import context
 from app.core.database import Base
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
+from app.modules.curations import Curation, CurationHistory, CurationReview
+from app.modules.audit_logs import AuditLog
 
 config = context.config
 if config.config_file_name is not None:
