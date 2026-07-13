@@ -2,10 +2,12 @@
 Roteador de Curadoria - endpoints da Fase 4.
 
 Endpoints:
-- GET  /curation/pending                    -> fila de imagens sem ficha
-- POST /curation/{orthanc_reference_id}     -> cria a ficha de curadoria
-- POST /curation/{curation_id}/approve      -> aprova a ficha (libera)
-- POST /curation/{curation_id}/discard      -> descarta a ficha (com motivo)
+- GET  /curation/pending                       -> fila de imagens sem ficha
+- POST /curation/{orthanc_reference_id}        -> cria a ficha de curadoria
+- POST /curation/{curation_id}/approve         -> aprova a ficha (libera)
+- POST /curation/{curation_id}/discard         -> descarta a ficha (com motivo)
+- POST /curation/{curation_id}/request-review  -> solicita segunda opiniao
+- POST /curation/reviews/{review_id}/respond   -> revisor responde a segunda opiniao
 
 Acesso restrito a administrador e suporte (Bloco 4, Secao 16).
 """
@@ -24,6 +26,7 @@ from app.modules.audit_logs import AuditLog
 from app.modules.curations import (
     Curation,
     CurationHistory,
+    CurationReview,
     TipoRadiografia,
     Genero,
     AchadoPrincipal,
@@ -31,6 +34,7 @@ from app.modules.curations import (
     Dificuldade,
     Finalidade,
     StatusCuradoria,
+    StatusRevisao,
     DENTES_PERMANENTES,
 )
 
@@ -118,6 +122,18 @@ class CurationApprove(BaseModel):
 
 class CurationDiscard(BaseModel):
     motivo: str
+
+
+class ReviewRequest(BaseModel):
+    motivo: str
+    primeiro_parecer: Optional[str] = None
+
+
+class ReviewRespond(BaseModel):
+    parecer_revisor: str
+    concordancia: str  # "concorda" ou "discorda"
+    decisao_final: Optional[str] = None
+    observacoes: Optional[str] = None
 
 
 # ---------------------------------------------------------------------
@@ -267,23 +283,16 @@ def aprovar_curadoria(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """
-    Aprova a ficha, liberando a imagem para uso.
-
-    Regra LGPD (Bloco 4): so libera se a anonimizacao estiver validada.
-    Nesta versao, o curador confirma a validacao no momento de aprovar.
-    """
+    """Aprova a ficha. Regra LGPD: so libera com anonimizacao validada."""
     _exigir_admin_ou_suporte(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
-    # Nao reprocessar decisao ja tomada.
     if ficha.status in STATUS_FINAIS:
         raise HTTPException(
             status_code=409,
             detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
         )
 
-    # Regra LGPD: bloquear liberacao sem anonimizacao validada.
     if not dados.anonimizacao_validada:
         _registrar_auditoria(
             db, usuario.id, "aprovacao", curation_id, "negado",
@@ -341,10 +350,7 @@ def descartar_curadoria(
 
     motivo = (dados.motivo or "").strip()
     if not motivo:
-        raise HTTPException(
-            status_code=422,
-            detail="O descarte exige uma justificativa (motivo).",
-        )
+        raise HTTPException(status_code=422, detail="O descarte exige uma justificativa (motivo).")
 
     status_anterior = ficha.status
     ficha.status = StatusCuradoria.DESCARTADA.value
@@ -365,4 +371,160 @@ def descartar_curadoria(
         "curation_id": ficha.id,
         "status": ficha.status,
         "motivo": motivo,
+    }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/request-review  -> solicita segunda opiniao
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/request-review")
+def solicitar_segunda_opiniao(
+    curation_id: int,
+    dados: ReviewRequest,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Solicita segunda opiniao para uma ficha. Exige justificativa.
+    Muda o status da ficha para 'segunda_opiniao'.
+    """
+    _exigir_admin_ou_suporte(usuario)
+    ficha = _buscar_ficha(db, curation_id)
+
+    if ficha.status in STATUS_FINAIS:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Nao e possivel solicitar segunda opiniao: a ficha ja esta '{ficha.status}'.",
+        )   
+
+    motivo = (dados.motivo or "").strip()
+    if not motivo:
+        raise HTTPException(
+            status_code=422,
+            detail="A segunda opiniao exige uma justificativa (motivo).",
+        )
+
+    # Nao permitir duas solicitacoes abertas ao mesmo tempo.
+    aberta = (
+        db.query(CurationReview)
+        .filter(
+            CurationReview.curation_id == curation_id,
+            CurationReview.status == StatusRevisao.SOLICITADA.value,
+        )
+        .first()
+    )
+    if aberta:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Ja existe uma solicitacao de segunda opiniao aberta (review {aberta.id}).",
+        )
+
+    review = CurationReview(
+        curation_id=curation_id,
+        solicitante_id=usuario.id,
+        motivo=motivo,
+        primeiro_parecer=dados.primeiro_parecer,
+        status=StatusRevisao.SOLICITADA.value,
+    )
+    db.add(review)
+
+    status_anterior = ficha.status
+    ficha.status = StatusCuradoria.SEGUNDA_OPINIAO.value
+    db.flush()
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, "solicitacao_segunda_opiniao",
+        status_anterior, StatusCuradoria.SEGUNDA_OPINIAO.value, motivo,
+    )
+    _registrar_auditoria(
+        db, usuario.id, "solicitacao_segunda_opiniao", ficha.id, "sucesso",
+        f"Segunda opiniao solicitada por usuario {usuario.id}.",
+    )
+    db.commit()
+    db.refresh(review)
+
+    return {
+        "mensagem": "Segunda opiniao solicitada com sucesso.",
+        "review_id": review.id,
+        "curation_id": curation_id,
+        "status_ficha": StatusCuradoria.SEGUNDA_OPINIAO.value,
+        "status_review": review.status,
+    }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/reviews/{review_id}/respond  -> revisor responde
+# ---------------------------------------------------------------------
+@router.post("/reviews/{review_id}/respond")
+def responder_segunda_opiniao(
+    review_id: int,
+    dados: ReviewRespond,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Revisor responde a segunda opiniao (parecer + concordancia + decisao sugerida).
+    Regra de imparcialidade: quem solicitou NAO pode responder.
+    """
+    _exigir_admin_ou_suporte(usuario)
+
+    review = db.query(CurationReview).filter(CurationReview.id == review_id).first()
+    if not review:
+        raise HTTPException(status_code=404, detail=f"Solicitacao {review_id} nao encontrada.")
+
+    if review.status != StatusRevisao.SOLICITADA.value:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A solicitacao {review_id} ja foi respondida (status '{review.status}').",
+        )
+
+    # Imparcialidade: quem solicitou nao pode responder.
+    if review.solicitante_id == usuario.id:
+        _registrar_auditoria(
+            db, usuario.id, "resposta_segunda_opiniao", review.curation_id, "negado",
+            "Solicitante tentou responder a propria segunda opiniao.",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=403,
+            detail="Quem solicitou a segunda opiniao nao pode responde-la.",
+        )
+
+    parecer = (dados.parecer_revisor or "").strip()
+    if not parecer:
+        raise HTTPException(status_code=422, detail="O parecer do revisor e obrigatorio.")
+
+    concordancia = (dados.concordancia or "").strip().lower()
+    if concordancia not in ("concorda", "discorda"):
+        raise HTTPException(
+            status_code=422,
+            detail="concordancia deve ser 'concorda' ou 'discorda'.",
+        )
+
+    from sqlalchemy.sql import func as _func
+    review.revisor_id = usuario.id
+    review.parecer_revisor = parecer
+    review.concordancia = concordancia
+    review.decisao_final = dados.decisao_final
+    review.observacoes = dados.observacoes
+    review.status = StatusRevisao.RESPONDIDA.value
+    review.respondido_em = _func.now()
+
+    _registrar_historico(
+        db, review.curation_id, usuario.id, "resposta_segunda_opiniao",
+        None, None, f"Parecer: {concordancia}. {parecer}",
+    )
+    _registrar_auditoria(
+        db, usuario.id, "resposta_segunda_opiniao", review.curation_id, "sucesso",
+        f"Segunda opiniao respondida por usuario {usuario.id} ({concordancia}).",
+    )
+    db.commit()
+    db.refresh(review)
+
+    return {
+        "mensagem": "Segunda opiniao respondida com sucesso.",
+        "review_id": review.id,
+        "curation_id": review.curation_id,
+        "concordancia": review.concordancia,
+        "status_review": review.status,
     }
