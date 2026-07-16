@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.core.security import verificar_senha, criar_token_acesso, decodificar_token
+from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
 from app.modules.users import User
 from app.modules.audit_logs import AuditLog
 
@@ -68,3 +68,51 @@ def obter_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depen
 @router.get("/me")
 def meu_perfil(usuario: User = Depends(obter_usuario_atual)):
     return {"id": usuario.id, "nome": usuario.nome, "email": usuario.email, "perfil": usuario.perfil}
+
+@router.post("/logout")
+def logout(
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Logout simbolico: o JWT e stateless (sem lista de revogacao), entao o
+    token continua valido ate expirar. Este endpoint so registra a
+    auditoria; o cliente e responsavel por descartar o token localmente.
+    """
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="logout", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso",
+    ))
+    db.commit()
+    return {"mensagem": "Logout registrado com sucesso."}
+
+class TrocarSenha(BaseModel):
+    senha_atual: str
+    nova_senha: str
+
+@router.post("/change-password")
+def trocar_senha_propria(
+    dados: TrocarSenha,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Autotroca de senha: o proprio usuario logado troca a sua senha."""
+    if not verificar_senha(dados.senha_atual, usuario.senha_hash):
+        db.add(AuditLog(
+            usuario_id=usuario.id, acao="falha_troca_senha", entidade="user", entidade_id=usuario.id,
+            resultado="negado", detalhes="Senha atual incorreta.",
+        ))
+        db.commit()
+        raise HTTPException(status_code=401, detail="Senha atual incorreta.")
+
+    if len(dados.nova_senha) < 8:
+        raise HTTPException(status_code=422, detail="A nova senha deve ter ao menos 8 caracteres.")
+
+    usuario.senha_hash = gerar_hash_senha(dados.nova_senha)
+    db.commit()
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="troca_senha", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso",
+    ))
+    db.commit()
+    return {"mensagem": "Senha alterada com sucesso."}

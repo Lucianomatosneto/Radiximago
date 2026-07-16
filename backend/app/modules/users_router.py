@@ -29,6 +29,10 @@ class UsuarioResposta(BaseModel):
     class Config:
         from_attributes = True
 
+class UsuarioAtualizar(BaseModel):
+    nome: Optional[str] = None
+    instituicao: Optional[str] = None
+
 @router.get("/", response_model=list[UsuarioResposta])
 def listar_usuarios(
     db: Session = Depends(get_db),
@@ -101,3 +105,35 @@ def bloquear_usuario(
     ))
     db.commit()
     return {"mensagem": f"Usuário {estado} com sucesso"}
+
+@router.patch("/{user_id}", response_model=UsuarioResposta)
+def atualizar_usuario(
+    user_id: int,
+    dados: UsuarioAtualizar,
+    db: Session = Depends(get_db),
+    usuario_atual: User = Depends(obter_usuario_atual)
+):
+    """
+    Atualiza nome e/ou instituicao de um usuario existente.
+    NAO permite trocar o perfil por aqui - troca de perfil e sensivel demais
+    para um PATCH simples e fica de fora deliberadamente (ver AUDITORIA_BACKEND.md).
+    """
+    if usuario_atual.perfil != UserRole.administrador:
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
+    usuario = db.query(User).filter(User.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+
+    if dados.nome is not None:
+        usuario.nome = dados.nome
+    if dados.instituicao is not None:
+        usuario.instituicao = dados.instituicao
+
+    db.commit()
+    db.refresh(usuario)
+    db.add(AuditLog(
+        usuario_id=usuario_atual.id, acao="edicao_usuario", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso", detalhes=f"Dados do usuario {usuario.email} atualizados (nome/instituicao).",
+    ))
+    db.commit()
+    return usuario

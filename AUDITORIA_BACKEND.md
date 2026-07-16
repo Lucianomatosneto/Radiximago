@@ -11,6 +11,8 @@
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.3 do plano de hardening: 4 novos endpoints de consulta de item único — `GET /users/{id}`, `GET /images/{id}`, `GET /curation/{id}` e `GET /curation/{id}/reviews`. Nenhum deles grava em `audit_logs` (são leituras, mesmo padrão dos demais `GET`s do sistema). `GET /curation/{id}/reviews` lista as segundas opiniões de **uma** ficha específica — ainda não existe uma listagem de todas as reviews do sistema, nem um `GET /curation/reviews/{review_id}` para uma review isolada, e `CurationHistory` continua sem nenhum endpoint de consulta (ver seção 6, item 7).
 >
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.4 do plano de hardening: novo endpoint `POST /curation/{curation_id}/apply-review-decision`, que fecha o ciclo da segunda opinião — depois que a review mais recente de uma ficha está `respondida`, este endpoint aplica a decisão final (`aprovar`/`descartar`) reaproveitando as mesmas regras de `/approve` (anonimização validada) e `/discard` (justificativa obrigatória), extraídas para funções privadas compartilhadas (`_executar_aprovacao`/`_executar_descarte`). Marca a `CurationReview` correspondente como `finalizada` — primeiro uso real desse valor do enum `StatusRevisao`. Novo enum `DecisaoFinalRevisao` (`aprovar`/`descartar`) criado especificamente para esta rota, distinto de `DecisaoRevisao` (que inclui `manter`, usado só para registrar a opinião do revisor). Resolve a lacuna #8.
+>
+> **Atualização (2026-07-16):** aplicada a sub-fase 6.5.5 do plano de hardening: `PATCH /users/{id}` (edita `nome`/`instituicao`; **não** aceita trocar `perfil` — decisão deliberada de segurança), `POST /auth/logout` (logout simbólico, só grava auditoria — o JWT continua stateless, sem lista de revogação) e `POST /auth/change-password` (autotroca de senha, exige senha atual + nova senha ≥8 caracteres). Resolve as lacunas #4 e #5.
 
 ---
 
@@ -269,6 +271,17 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Parâmetros:** nenhum (usuário vem do token).
 - **Retorna:** `{id, nome, email, perfil}`.
 
+#### `POST /auth/logout` — adicionado em 2026-07-16 (sub-fase 6.5.5)
+- **Acesso:** qualquer usuário autenticado.
+- **O que faz:** grava `AuditLog` (`acao: "logout"`, `resultado: "sucesso"`) e retorna uma mensagem de confirmação.
+- **Importante:** isto é um **logout simbólico**. O JWT deste sistema é stateless e não existe lista de revogação — o token emitido continua tecnicamente válido até expirar (`JWT_EXPIRE_MINUTES`, padrão 60 min), mesmo depois de chamar este endpoint. Ele serve para fins de auditoria (saber quando um usuário encerrou a sessão) e como um sinal para o frontend descartar o token localmente — não revoga o acesso do lado do servidor. Uma blacklist de tokens de verdade (nova tabela + checagem em `obter_usuario_atual` a cada request) foi avaliada e descartada nesta sub-fase por ser uma mudança de escopo maior, candidata a uma sub-fase própria caso necessário no futuro.
+
+#### `POST /auth/change-password` — adicionado em 2026-07-16 (sub-fase 6.5.5)
+- **Acesso:** qualquer usuário autenticado — troca a **própria** senha (autotroca), não a de terceiros. Reset administrativo de senha de outro usuário não existe (só via script CLI `trocar_senha.py`).
+- **Corpo (`TrocarSenha`):** `senha_atual` (obrigatório), `nova_senha` (obrigatório, mesma regra de `POST /users/`: mínimo 8 caracteres).
+- **Regras:** 401 se `senha_atual` não bate (grava auditoria `acao: "falha_troca_senha"`, `resultado: "negado"`); 422 se `nova_senha` tiver menos de 8 caracteres.
+- **Efeito:** re-hasheia e substitui `senha_hash`. Grava auditoria (`acao: "troca_senha"`, `resultado: "sucesso"`).
+
 ---
 
 ### 4.2 `users_router.py` — prefixo `/users`
@@ -297,15 +310,22 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Erros:** 404 se usuário não existe.
 - **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava `AuditLog` (`acao: "bloqueio_usuario"`, `resultado: "sucesso"`, `detalhes` informa se ficou bloqueado ou desbloqueado) a cada toggle.
 
+#### `PATCH /users/{user_id}` — adicionado em 2026-07-16 (sub-fase 6.5.5)
+- **Acesso:** apenas `administrador`.
+- **Corpo (`UsuarioAtualizar`):** `nome` (opcional), `instituicao` (opcional). Ambos os campos são atualizados só se enviados (`None` = não mexe).
+- **Deliberadamente fora do escopo deste endpoint:** `email` e `perfil` **não** fazem parte do schema — trocar o perfil de um usuário é sensível demais para um PATCH simples (permitiria, por exemplo, promover alguém a `administrador` sem nenhuma fricção extra) e foi deixado de fora por decisão de segurança. Se o cliente enviar `perfil` no corpo, o Pydantic ignora silenciosamente (mesmo comportamento padrão já usado no resto do projeto — sem `extra="forbid"`).
+- **Erros:** 404 se usuário não existe.
+- **Auditoria:** grava `AuditLog` (`acao: "edicao_usuario"`, `resultado: "sucesso"`) a cada chamada bem-sucedida — inclusive se nenhum campo foi de fato alterado (corpo vazio é um PATCH válido, tratado como no-op).
+
 **CRUD de usuários:**
 | Operação | Existe? |
 |---|---|
 | Create | Sim (`POST /users/`) |
 | Read (lista) | Sim (`GET /users/`) |
 | Read (um usuário por id) | Sim (`GET /users/{id}`, desde 2026-07-16 — sub-fase 6.5.3) |
-| Update (dados como nome/e-mail/instituição/perfil) | **Não existe** — só o toggle de bloqueio |
+| Update (nome/instituição) | Sim (`PATCH /users/{id}`, desde 2026-07-16 — sub-fase 6.5.5). **Não inclui** `email` nem `perfil` (fora de escopo deliberado); toggle de bloqueio continua em endpoint próprio |
 | Delete | **Não existe** |
-| Alterar senha via API | **Não existe** (só via script CLI) |
+| Alterar senha via API | Sim, mas só **autotroca** (`POST /auth/change-password`, desde 2026-07-16 — sub-fase 6.5.5). Reset administrativo de senha de terceiros continua só via script CLI |
 
 ---
 
@@ -455,7 +475,7 @@ Todos os endpoints exigem `administrador`.
 
 | Entidade | Create | Read (lista) | Read (item único) | Update | Delete |
 |---|---|---|---|---|---|
-| **User** | ✅ `POST /users/` | ✅ `GET /users/` | ✅ `GET /users/{id}` (2026-07-16) | ⚠️ só toggle de bloqueio (`PATCH /users/{id}/block`), nada mais | ❌ não existe |
+| **User** | ✅ `POST /users/` | ✅ `GET /users/` | ✅ `GET /users/{id}` (2026-07-16) | ✅ nome/instituição via `PATCH /users/{id}` + bloqueio via `PATCH /users/{id}/block` (ambos 2026-07-16 e antes) — **exclui** `email`/`perfil` de propósito | ❌ não existe |
 | **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ou aprovadas), sem listagem geral | ✅ `GET /images/{id}` (2026-07-16) | ❌ não existe | ❌ não existe |
 | **Curation** (ficha) | ✅ `POST /curation/{orthanc_reference_id}` | ⚠️ só pendentes (`GET /curation/pending`) e aprovadas (`GET /search`) | ✅ `GET /curation/{id}` (2026-07-16) | ⚠️ só mudança de status (approve/discard/request-review), não há edição de campos | ❌ não existe |
 | **CurationHistory** | ✅ (automático, interno) | ❌ não há endpoint para consultar o histórico de uma ficha | ❌ | ❌ (é log, não deveria ter) | ❌ |
@@ -469,8 +489,8 @@ Todos os endpoints exigem `administrador`.
 1. **Perfis sem regra própria:** `curador`, `professor`, `estudante`, `pesquisador` existem no enum mas não têm nenhuma checagem de autorização específica em nenhum endpoint — precisa confirmar se isso é intencional (roadmap futuro) ou lacuna.
 2. ~~**Auditoria parcial:** `AuditLog` só é populado por ações dentro de `curation_router.py`. Login/falha de login, criação/bloqueio de usuário e importação de imagens do Orthanc não geram registro de auditoria, apesar dos comentários no código sugerirem essa intenção.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.2):** `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram `AuditLog`. **Ainda em aberto (decisão explícita de escopo, não pendência técnica):** tentativas de acesso negado por perfil incorreto (403 de `_exigir_admin`/`_exigir_admin_ou_suporte` em `users_router.py` e `images_router.py`) continuam sem log — só as ações bem-sucedidas (e, no caso do login, as falhas de credencial) foram cobertas nesta sub-fase.
 3. **Sem DELETE em nenhuma entidade** do sistema.
-4. **Sem edição de dados de usuário** (nome, e-mail, instituição, perfil) depois de criado — só o toggle de bloqueio.
-5. **Sem troca de senha ou logout via API** — só scripts CLI internos ao container.
+4. ~~**Sem edição de dados de usuário** (nome, e-mail, instituição, perfil) depois de criado — só o toggle de bloqueio.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.5):** `PATCH /users/{id}` permite editar `nome` e `instituicao`. **Continua em aberto, por decisão deliberada:** `email` e `perfil` não são editáveis por nenhum endpoint — trocar o perfil de um usuário foi julgado sensível demais para um PATCH simples.
+5. ~~**Sem troca de senha ou logout via API** — só scripts CLI internos ao container.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.5):** `POST /auth/change-password` (autotroca, exige senha atual) e `POST /auth/logout` (simbólico — ver nota na seção 4.1 sobre JWT stateless sem revogação real). **Continua em aberto:** reset administrativo de senha de outro usuário (só via script CLI `trocar_senha.py`).
 6. ~~**Sem GET de item único** para usuário, imagem (`OrthancReference`) ou ficha de curadoria (`Curation`) — só listagens filtradas.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /users/{id}`, `GET /images/{id}` e `GET /curation/{id}` adicionados.
 7. ~~**Sem consulta ao histórico de uma ficha** (`CurationHistory`) nem à lista de segundas opiniões (`CurationReview`) via nenhum endpoint.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /curation/{id}/reviews` lista as segundas opiniões de uma ficha específica. **Ainda em aberto:** `CurationHistory` continua sem nenhum endpoint de consulta, e não há listagem global de `CurationReview` (todas as fichas) nem `GET /curation/reviews/{review_id}` para uma review isolada.
 8. ~~**Fluxo de segunda opinião incompleto:** depois que o revisor responde (`status → respondida`), não existe endpoint que aplique a "decisão final" de volta à ficha (`Curation.status` permanece em `segunda_opiniao` indefinidamente). O enum `StatusRevisao.finalizada` nunca é usado.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.4):** `POST /curation/{curation_id}/apply-review-decision` aplica a decisão final (`aprovar`/`descartar`) depois que a review mais recente está `respondida`, e marca a review como `finalizada`.
@@ -490,15 +510,17 @@ Todos os endpoints exigem `administrador`.
 ### 7.1 Autenticação
 - Tela de login (e-mail + senha) chamando `POST /auth/login`; guardar token em memória/storage seguro.
 - Exibir nome e perfil do usuário logado (via `GET /auth/me`) no cabeçalho.
-- Botão "Sair" que apenas descarta o token localmente (não há endpoint de logout no backend).
-- **Bloqueado:** tela de "esqueci minha senha" ou troca de senha pelo próprio usuário — não há endpoint para isso hoje.
+- Botão "Sair" chamando `POST /auth/logout` (desde 2026-07-16) e, em seguida, descartando o token localmente — a UI deve tratar isso como logout mesmo sabendo que o backend não revoga o token (é só auditoria + sinal para o cliente).
+- Tela de "trocar minha senha" (perfil do usuário) chamando `POST /auth/change-password` — exige campo de senha atual + nova senha, com validação client-side de ≥8 caracteres.
+- **Bloqueado:** fluxo de "esqueci minha senha" (reset sem saber a senha atual) — não há endpoint para isso; a única forma de reset sem senha atual continua sendo o script CLI `trocar_senha.py`, rodado por quem tem acesso ao servidor.
 
 ### 7.2 Gestão de usuários (só visível para perfil `administrador`)
 - Tabela listando usuários (`GET /users/`): nome, e-mail, perfil, instituição, ativo/bloqueado.
 - Formulário/modal de criação de usuário (`POST /users/`): nome, e-mail, senha, perfil (select com os 6 valores), instituição. Validar no client que a senha tem ao menos 8 caracteres antes de enviar, já que o backend rejeita com 422 abaixo disso (desde 2026-07-15).
 - Botão de alternar bloqueio por linha (`PATCH /users/{id}/block`), com confirmação, já que é toggle e não uma ação unidirecional.
 - Tela de detalhe de um usuário individual, usando `GET /users/{id}` (disponível desde 2026-07-16).
-- **Bloqueado/ausente:** botão de editar dados de um usuário existente, botão de excluir usuário — nenhum dos dois tem endpoint de suporte.
+- Formulário de edição de nome/instituição usando `PATCH /users/{id}` (disponível desde 2026-07-16) — a UI deve deixar claro que e-mail e perfil não são editáveis por aqui (o backend simplesmente ignora esses campos se enviados).
+- **Bloqueado/ausente:** botão de excluir usuário (não existe endpoint); troca de e-mail ou de perfil de um usuário existente (fora de escopo deliberado, ver seção 6, item 4).
 
 ### 7.3 Fila de curadoria (perfis `administrador`/`suporte`)
 - Lista/fila das imagens pendentes (`GET /curation/pending`), com paginação (skip/limit).
