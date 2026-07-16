@@ -5,6 +5,8 @@
 > Convenção: tudo que está listado foi **encontrado no código**. Quando algo parecia incompleto, ausente ou ambíguo, isso é dito explicitamente em vez de presumido. As seções "Sugestões de frontend" são exatamente isso — sugestões baseadas no que o backend permite hoje, não requisitos novos.
 >
 > **Atualização (2026-07-15):** aplicadas as 3 correções da sub-fase 6.5.1 do plano de hardening (commit `c9a160d`): validação de senha mínima em `POST /users/`, health checks reais em `/health/database` e `/health/orthanc`, e `decisao_final` convertido para o Enum `DecisaoRevisao`. As seções afetadas foram atualizadas; os itens resolvidos na seção 6 ficam marcados como tal, sem serem removidos, para preservar o histórico da auditoria.
+>
+> **Atualização (2026-07-16):** aplicada a sub-fase 6.5.2 do plano de hardening: `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram registro em `audit_logs` (antes só ações de `curation_router.py` geravam auditoria). Escopo deliberadamente restrito a essas 5 ações — tentativas de acesso negado por perfil incorreto nesses mesmos endpoints (`_exigir_admin`/`_exigir_admin_ou_suporte`) **não** foram incluídas nesta sub-fase (decisão explícita, ver seção 6, item 2).
 
 ---
 
@@ -251,6 +253,7 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Regras:** usuário deve existir, senha deve bater (bcrypt), não pode estar bloqueado, deve estar ativo.
 - **Retorna:** `{access_token, token_type: "bearer", perfil, nome}`.
 - **Erros:** 401 (credenciais inválidas), 403 (bloqueado/inativo).
+- **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava `AuditLog` em todo caso — `acao: "login"` / `resultado: "sucesso"` quando autentica; `acao: "falha_login"` / `resultado: "negado"` nos 4 casos de rejeição (e-mail não cadastrado, senha incorreta, bloqueado, inativo). Quando o e-mail nem existe, `usuario_id` fica `null`.
 
 #### `GET /auth/me`
 - **Acesso:** qualquer usuário autenticado.
@@ -270,6 +273,7 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Corpo (JSON):** `nome` (str), `email` (EmailStr), `senha` (str), `perfil` (UserRole, default `estudante`), `instituicao` (opcional).
 - **Regras:** rejeita senha com menos de 8 caracteres (422, desde 2026-07-15 — sub-fase 6.5.1, alinhado com os scripts CLI). Rejeita e-mail duplicado (400). Senha é hasheada com bcrypt antes de salvar.
 - **Retorna:** `UsuarioResposta` do usuário criado.
+- **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava `AuditLog` (`acao: "criacao_usuario"`, `resultado: "sucesso"`, `entidade_id` = id do usuário criado, `usuario_id` = quem criou) após o commit da criação. Tentativas negadas (403 por perfil incorreto, 400 e-mail duplicado, 422 senha curta) **não** geram log — escopo restrito à ação bem-sucedida.
 
 #### `PATCH /users/{user_id}/block`
 - **Acesso:** apenas `administrador`.
@@ -277,6 +281,7 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Regra:** alterna (`toggle`) o campo `bloqueado` — não é "bloquear", é "inverter o estado atual". Não recebe corpo.
 - **Retorna:** `{mensagem: "Usuário bloqueado/desbloqueado com sucesso"}`.
 - **Erros:** 404 se usuário não existe.
+- **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava `AuditLog` (`acao: "bloqueio_usuario"`, `resultado: "sucesso"`, `detalhes` informa se ficou bloqueado ou desbloqueado) a cada toggle.
 
 **CRUD de usuários:**
 | Operação | Existe? |
@@ -352,7 +357,7 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 - **Corpo:** nenhum.
 - **O que faz:** chama o Orthanc (`orthanc_client.listar_instancias()`), para cada instância verifica se já existe em `orthanc_references`; se não existe, busca detalhes (`obter_detalhes_instancia`), extrai `SOPInstanceUID`/`ParentSeries`/`ParentStudy`, monta `dicomweb_url` e insere. Cada imagem é processada e commitada individualmente (rollback isolado por item em caso de erro).
 - **Retorna:** `{total_no_orthanc, novas_importadas, ja_existentes, erros, detalhes: [{orthanc_id, status, mensagem?}]}`.
-- **Ambiguidade/observação:** este endpoint **não grava em `audit_logs`**, apesar de ser uma ação sensível de sincronização de dados (comentário no cabeçalho do arquivo menciona "Bloco 4, Seção 13" como referência normativa, mas a auditoria não foi implementada aqui).
+- **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava **um único** `AuditLog`-resumo por chamada (não um por imagem, para não inflar a tabela): `acao: "importacao_orthanc"`, `entidade: "orthanc_reference"`, `resultado: "erro"` se `erros > 0` no lote, senão `"sucesso"`, `detalhes` com os totais (`total/novas/ja_existentes/erros`).
 - **Não existe upload direto de arquivo DICOM via API** — a única forma de imagens entrarem no sistema é já estarem no Orthanc e serem então "puxadas" por este endpoint.
 
 **CRUD de imagens (`OrthancReference`):**
@@ -388,7 +393,7 @@ Todos os endpoints exigem `administrador`.
 #### `GET /admin/audit-logs`
 - **Query params (opcionais):** `usuario_id`, `acao`, `resultado`, `data_de` (ISO datetime), `data_ate` (ISO datetime), `skip`, `limit` (máx 200).
 - **Retorna:** `{total, skip, limit, quantidade_retornada, itens: [{id, usuario_id, acao, entidade, entidade_id, resultado, detalhes, criado_em}]}`, ordenado do mais recente para o mais antigo.
-- **Importante (ver seção 6):** como só `curation_router.py` grava em `audit_logs`, esta tela só vai mostrar ações relacionadas a aprovação/descarte/segunda opinião — nada de login, criação de usuário, bloqueio ou sincronização de imagens.
+- **Cobertura de auditoria (atualizado 2026-07-16, sub-fase 6.5.2):** além das ações de curadoria (`curation_router.py`), esta tela agora também mostra `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc`. **Ainda não** ficam registradas: tentativas de acesso negado por perfil incorreto (403 dos guardiões `_exigir_admin`/`_exigir_admin_ou_suporte`), edição/exclusão de dados (que também não existem como endpoint) e qualquer ação no frontend (que ainda não existe) — ver seção 6, item 2.
 
 ---
 
@@ -423,7 +428,7 @@ Todos os endpoints exigem `administrador`.
 ## 6. Lacunas e ambiguidades a esclarecer (resumo consolidado)
 
 1. **Perfis sem regra própria:** `curador`, `professor`, `estudante`, `pesquisador` existem no enum mas não têm nenhuma checagem de autorização específica em nenhum endpoint — precisa confirmar se isso é intencional (roadmap futuro) ou lacuna.
-2. **Auditoria parcial:** `AuditLog` só é populado por ações dentro de `curation_router.py`. Login/falha de login, criação/bloqueio de usuário e importação de imagens do Orthanc não geram registro de auditoria, apesar dos comentários no código sugerirem essa intenção.
+2. ~~**Auditoria parcial:** `AuditLog` só é populado por ações dentro de `curation_router.py`. Login/falha de login, criação/bloqueio de usuário e importação de imagens do Orthanc não geram registro de auditoria, apesar dos comentários no código sugerirem essa intenção.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.2):** `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram `AuditLog`. **Ainda em aberto (decisão explícita de escopo, não pendência técnica):** tentativas de acesso negado por perfil incorreto (403 de `_exigir_admin`/`_exigir_admin_ou_suporte` em `users_router.py` e `images_router.py`) continuam sem log — só as ações bem-sucedidas (e, no caso do login, as falhas de credencial) foram cobertas nesta sub-fase.
 3. **Sem DELETE em nenhuma entidade** do sistema.
 4. **Sem edição de dados de usuário** (nome, e-mail, instituição, perfil) depois de criado — só o toggle de bloqueio.
 5. **Sem troca de senha ou logout via API** — só scripts CLI internos ao container.
@@ -486,7 +491,7 @@ Todos os endpoints exigem `administrador`.
 ### 7.8 Painel administrativo / indicadores (perfil `administrador`)
 - Dashboard com KPIs (`GET /admin/stats`): total de imagens, total de fichas, e gráficos/contagens por status, tipo de radiografia, achado principal e dificuldade.
 - Tela de auditoria (`GET /admin/audit-logs`) com filtros por usuário, ação, resultado e intervalo de datas, tabela paginada com `criado_em`, `usuario_id`, `acao`, `entidade`, `entidade_id`, `resultado`, `detalhes`.
-- **Aviso importante para quem for construir essa tela:** como hoje só ações de curadoria geram log, o painel de auditoria vai parecer "vazio" para tudo relacionado a login, gestão de usuários e sincronização de imagens — vale considerar se isso deve ser resolvido no backend antes de vender a tela como "auditoria completa do sistema".
+- **Aviso atualizado (2026-07-16):** desde a sub-fase 6.5.2, o painel também mostra `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc`, além das ações de curadoria. Ainda **não** aparecem tentativas de acesso negado por perfil incorreto (403) nem qualquer ação futura do frontend — a tela não deve ser vendida como "auditoria completa do sistema" até essas lacunas serem fechadas (ver seção 6, item 2).
 
 ### 7.9 Visualizador DICOM (OHIF)
 - Onde quer que `viewer_url` seja retornado (curadoria e busca), abrir em nova aba/iframe apontando para o OHIF (`OHIF_BASE_URL` + `StudyInstanceUIDs=...`).

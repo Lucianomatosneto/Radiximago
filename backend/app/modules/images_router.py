@@ -15,6 +15,7 @@ from app.modules.auth import obter_usuario_atual
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
+from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/images", tags=["Imagens"])
 
@@ -106,6 +107,15 @@ def importar_do_orthanc(
             detalhes_resultado.append(
                 {"orthanc_id": orthanc_id, "status": "erro", "mensagem": str(e)}
             )
+
+    db.add(AuditLog(
+        usuario_id=usuario.id,
+        acao="importacao_orthanc",
+        entidade="orthanc_reference",
+        resultado="erro" if erros > 0 else "sucesso",
+        detalhes=f"Sincronizacao com Orthanc: total={total}, novas={novas}, ja_existentes={ja_existentes}, erros={erros}.",
+    ))
+    db.commit()
 
     return {
         "total_no_orthanc": total,

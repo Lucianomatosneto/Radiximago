@@ -6,6 +6,7 @@ from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.modules.users import User, UserRole
 from app.modules.auth import obter_usuario_atual
+from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/users", tags=["Usuários"])
 
@@ -60,6 +61,11 @@ def criar_usuario(
     db.add(novo)
     db.commit()
     db.refresh(novo)
+    db.add(AuditLog(
+        usuario_id=usuario_atual.id, acao="criacao_usuario", entidade="user", entidade_id=novo.id,
+        resultado="sucesso", detalhes=f"Usuario {novo.email} criado com perfil {novo.perfil.value}.",
+    ))
+    db.commit()
     return novo
 
 @router.patch("/{user_id}/block")
@@ -74,5 +80,11 @@ def bloquear_usuario(
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     usuario.bloqueado = not usuario.bloqueado
+    estado = "bloqueado" if usuario.bloqueado else "desbloqueado"
     db.commit()
-    return {"mensagem": f"Usuário {'bloqueado' if usuario.bloqueado else 'desbloqueado'} com sucesso"}
+    db.add(AuditLog(
+        usuario_id=usuario_atual.id, acao="bloqueio_usuario", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso", detalhes=f"Usuario {usuario.email} foi {estado}.",
+    ))
+    db.commit()
+    return {"mensagem": f"Usuário {estado} com sucesso"}
