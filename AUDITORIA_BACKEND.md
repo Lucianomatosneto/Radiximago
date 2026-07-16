@@ -9,6 +9,8 @@
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.2 do plano de hardening: `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram registro em `audit_logs` (antes só ações de `curation_router.py` geravam auditoria). Escopo deliberadamente restrito a essas 5 ações — tentativas de acesso negado por perfil incorreto nesses mesmos endpoints (`_exigir_admin`/`_exigir_admin_ou_suporte`) **não** foram incluídas nesta sub-fase (decisão explícita, ver seção 6, item 2).
 >
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.3 do plano de hardening: 4 novos endpoints de consulta de item único — `GET /users/{id}`, `GET /images/{id}`, `GET /curation/{id}` e `GET /curation/{id}/reviews`. Nenhum deles grava em `audit_logs` (são leituras, mesmo padrão dos demais `GET`s do sistema). `GET /curation/{id}/reviews` lista as segundas opiniões de **uma** ficha específica — ainda não existe uma listagem de todas as reviews do sistema, nem um `GET /curation/reviews/{review_id}` para uma review isolada, e `CurationHistory` continua sem nenhum endpoint de consulta (ver seção 6, item 7).
+>
+> **Atualização (2026-07-16):** aplicada a sub-fase 6.5.4 do plano de hardening: novo endpoint `POST /curation/{curation_id}/apply-review-decision`, que fecha o ciclo da segunda opinião — depois que a review mais recente de uma ficha está `respondida`, este endpoint aplica a decisão final (`aprovar`/`descartar`) reaproveitando as mesmas regras de `/approve` (anonimização validada) e `/discard` (justificativa obrigatória), extraídas para funções privadas compartilhadas (`_executar_aprovacao`/`_executar_descarte`). Marca a `CurationReview` correspondente como `finalizada` — primeiro uso real desse valor do enum `StatusRevisao`. Novo enum `DecisaoFinalRevisao` (`aprovar`/`descartar`) criado especificamente para esta rota, distinto de `DecisaoRevisao` (que inclui `manter`, usado só para registrar a opinião do revisor). Resolve a lacuna #8.
 
 ---
 
@@ -230,7 +232,12 @@ Histórico é **append-only**: não há update nem delete de registros de histó
 ### `StatusRevisao` (`curations.py`)
 `solicitada`, `respondida`, `finalizada`
 
-> **Ambiguidade encontrada:** `finalizada` nunca é setado por nenhum endpoint. O fluxo implementado vai só até `respondida` (`responder_segunda_opiniao`). Não há endpoint para "finalizar" uma revisão.
+> ~~**Ambiguidade encontrada:** `finalizada` nunca é setado por nenhum endpoint...~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.4):** `POST /curation/{curation_id}/apply-review-decision` agora seta `finalizada` ao aplicar a decisão final da segunda opinião.
+
+### `DecisaoFinalRevisao` (`curations.py`) — adicionado em 2026-07-16 (sub-fase 6.5.4)
+`aprovar`, `descartar`
+
+Usado em `POST /curation/{curation_id}/apply-review-decision`. Distinto de `DecisaoRevisao` (que tem 3 valores, incluindo `manter`, usado só para registrar a opinião do revisor em `CurationReview.decisao_final` — "manter" não mapeia para nenhuma transição de status real, então este endpoint usa um enum próprio com só as 2 opções que de fato fecham o ciclo).
 
 ### `DecisaoRevisao` (`curations.py`) — adicionado em 2026-07-15 (sub-fase 6.5.1)
 `aprovar`, `descartar`, `manter`
@@ -355,7 +362,16 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 - **Corpo (`ReviewRespond`):** `parecer_revisor` (obrigatório, não pode ser vazio), `concordancia` (obrigatório, deve ser exatamente `"concorda"` ou `"discorda"`), `decisao_final` (opcional, enum `DecisaoRevisao`: `aprovar`/`descartar`/`manter` — validado pelo Pydantic desde 2026-07-15, sub-fase 6.5.1; antes era texto livre), `observacoes` (opcional).
 - **Regra de imparcialidade:** 403 se `usuario.id == review.solicitante_id` (quem pediu não pode responder) — e essa tentativa **é registrada em auditoria como `resultado: negado`**. 404 se review não existe. 409 se já foi respondida.
 - **Efeito:** preenche `revisor_id`, `parecer_revisor`, `concordancia`, `decisao_final`, `observacoes`, `respondido_em`; `CurationReview.status → respondida`. Grava histórico e auditoria.
-- **Ambiguidade:** este endpoint **não altera `Curation.status`** de volta (ele fica travado em `segunda_opiniao` mesmo depois de respondido) — não há nenhum endpoint que leve a ficha de `segunda_opiniao` para `aprovada`/`descartada` depois da resposta do revisor. Isso parece um elo faltante no fluxo: após a segunda opinião ser respondida, não há um passo formal de "decisão final aplicada à ficha".
+- ~~**Ambiguidade:** este endpoint não altera `Curation.status` de volta...~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.4):** ver `POST /curation/{curation_id}/apply-review-decision` abaixo, que fecha esse ciclo.
+
+#### `POST /curation/{curation_id}/apply-review-decision` — adicionado em 2026-07-16 (sub-fase 6.5.4)
+- **O que faz:** fecha o ciclo da segunda opinião, aplicando a decisão final (`aprovar` ou `descartar`) à ficha depois que a review mais recente já foi respondida.
+- **Corpo (`AplicarDecisaoRevisao`):** `decisao` (obrigatório, enum `DecisaoFinalRevisao`: `aprovar`/`descartar`), `anonimizacao_validada` (bool, obrigatório *de fato* só se `decisao == aprovar`), `motivo` (obrigatório *de fato* só se `decisao == descartar`), `observacoes` (opcional).
+- **Regras:** 409 se a ficha já está em status final; 409 se a ficha não tem nenhuma `CurationReview`; 409 se a review mais recente (por `id` decrescente) não está com `status == respondida`. Se `decisao == aprovar`, reaproveita a mesma trava de `anonimizacao_validada` do endpoint `/approve` (422 se ausente/falsa, com log `negado`). Se `decisao == descartar`, reaproveita a mesma exigência de `motivo` não vazio do `/discard` (422 caso contrário).
+- **Reaproveitamento de código:** a lógica de transição de status (aprovar/descartar) foi extraída de `aprovar_curadoria`/`descartar_curadoria` para duas funções privadas compartilhadas, `_executar_aprovacao` e `_executar_descarte` — usadas tanto pelos endpoints originais quanto por este. O comportamento externo de `/approve` e `/discard` não mudou.
+- **Efeito:** aplica `Curation.status → aprovada`/`descartada` (mesmas regras de LGPD/justificativa); marca a `CurationReview` mais recente como `status → finalizada` (primeiro uso real desse valor do enum `StatusRevisao`). Grava histórico e auditoria com `acao` distinto (`aprovacao_pos_segunda_opiniao`/`descarte_pos_segunda_opiniao`) e uma nota citando o `review_id` de origem, para diferenciar de uma aprovação/descarte direto.
+- **Trava contra reprocessamento:** automática — o status final resultante já cai em `STATUS_FINAIS`, checado por todos os endpoints de transição de status deste módulo. Nenhuma lógica adicional de bloqueio foi necessária.
+- **Não valida:** se `decisao` bate com o `decisao_final` que o revisor registrou em `respond()` — quem aplica a decisão decide explicitamente, podendo divergir do parecer do revisor.
 
 **CRUD de curadoria (`Curation`):**
 | Operação | Existe? |
@@ -443,7 +459,7 @@ Todos os endpoints exigem `administrador`.
 | **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ou aprovadas), sem listagem geral | ✅ `GET /images/{id}` (2026-07-16) | ❌ não existe | ❌ não existe |
 | **Curation** (ficha) | ✅ `POST /curation/{orthanc_reference_id}` | ⚠️ só pendentes (`GET /curation/pending`) e aprovadas (`GET /search`) | ✅ `GET /curation/{id}` (2026-07-16) | ⚠️ só mudança de status (approve/discard/request-review), não há edição de campos | ❌ não existe |
 | **CurationHistory** | ✅ (automático, interno) | ❌ não há endpoint para consultar o histórico de uma ficha | ❌ | ❌ (é log, não deveria ter) | ❌ |
-| **CurationReview** | ✅ `POST /curation/{id}/request-review` | ✅ `GET /curation/{id}/reviews` (2026-07-16 — lista por ficha, não é uma listagem global do sistema) | ❌ não há `GET /curation/reviews/{id}` isolado | ✅ `POST /curation/reviews/{id}/respond` (única transição permitida) | ❌ |
+| **CurationReview** | ✅ `POST /curation/{id}/request-review` | ✅ `GET /curation/{id}/reviews` (2026-07-16 — lista por ficha, não é uma listagem global do sistema) | ❌ não há `GET /curation/reviews/{id}` isolado | ✅ `POST /curation/reviews/{id}/respond` (solicitada→respondida) e, desde 2026-07-16, `POST /curation/{id}/apply-review-decision` (respondida→finalizada) | ❌ |
 | **AuditLog** | ✅ (automático, só em ações de curadoria) | ✅ `GET /admin/audit-logs` | ❌ não há `GET /admin/audit-logs/{id}` | ❌ (correto, log não deve ser editável) | ❌ (correto) |
 
 ---
@@ -457,7 +473,7 @@ Todos os endpoints exigem `administrador`.
 5. **Sem troca de senha ou logout via API** — só scripts CLI internos ao container.
 6. ~~**Sem GET de item único** para usuário, imagem (`OrthancReference`) ou ficha de curadoria (`Curation`) — só listagens filtradas.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /users/{id}`, `GET /images/{id}` e `GET /curation/{id}` adicionados.
 7. ~~**Sem consulta ao histórico de uma ficha** (`CurationHistory`) nem à lista de segundas opiniões (`CurationReview`) via nenhum endpoint.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /curation/{id}/reviews` lista as segundas opiniões de uma ficha específica. **Ainda em aberto:** `CurationHistory` continua sem nenhum endpoint de consulta, e não há listagem global de `CurationReview` (todas as fichas) nem `GET /curation/reviews/{review_id}` para uma review isolada.
-8. **Fluxo de segunda opinião incompleto:** depois que o revisor responde (`status → respondida`), não existe endpoint que aplique a "decisão final" de volta à ficha (`Curation.status` permanece em `segunda_opiniao` indefinidamente). O enum `StatusRevisao.finalizada` nunca é usado.
+8. ~~**Fluxo de segunda opinião incompleto:** depois que o revisor responde (`status → respondida`), não existe endpoint que aplique a "decisão final" de volta à ficha (`Curation.status` permanece em `segunda_opiniao` indefinidamente). O enum `StatusRevisao.finalizada` nunca é usado.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.4):** `POST /curation/{curation_id}/apply-review-decision` aplica a decisão final (`aprovar`/`descartar`) depois que a review mais recente está `respondida`, e marca a review como `finalizada`.
 9. **`StatusCuradoria.pendente` e `.baixa_qualidade`** nunca são produzidos por nenhum endpoint atual — parecem valores reservados para funcionalidade futura.
 10. ~~**Health checks (`/health/database`, `/health/orthanc`) retornam valores fixos**, não testam a conexão real.~~ **✅ RESOLVIDO em 2026-07-15 (sub-fase 6.5.1, commit `c9a160d`):** ambos agora fazem uma checagem real (`SELECT 1` no banco; `listar_instancias()` no Orthanc) e retornam `status: erro` com a mensagem da exceção se a checagem falhar, sem derrubar a aplicação.
 11. **Sem upload direto de arquivo DICOM** — imagens só entram via sincronização em lote assumindo que já estão no Orthanc por outro meio (não documentado no código lido).
@@ -500,7 +516,7 @@ Todos os endpoints exigem `administrador`.
 - Botão "Solicitar segunda opinião" com campo de motivo obrigatório e parecer inicial opcional (`POST /curation/{id}/request-review`).
 - Fila de solicitações pendentes de resposta — **ainda ausente no backend**: `GET /curation/{id}/reviews` (desde 2026-07-16) só lista as reviews de **uma** ficha já conhecida, não existe uma listagem global de `CurationReview` filtrável por `status` em todo o sistema; a UI precisaria ser alimentada de outra forma (ex.: derivar da lista de fichas com `status == segunda_opiniao`, se um endpoint de listagem de fichas por status existir — hoje não existe um `GET /curation?status=` genérico).
 - Tela/modal de resposta do revisor: parecer, concordância (`concorda`/`discorda` como radio/select fechado), decisão final (select fechado com os 3 valores do Enum `DecisaoRevisao`: `aprovar`/`descartar`/`manter` — validado pelo backend desde 2026-07-15), observações. A UI deve impedir que o próprio solicitante veja o botão de responder (embora o backend já bloqueie com 403, é melhor UX esconder a ação).
-- **Observação importante para a UI:** como o backend não fecha o ciclo (não há passo que aplique a decisão final de volta à ficha), a interface precisa deixar claro ao usuário que responder a segunda opinião **não muda o status da ficha automaticamente** — pode ser necessário um aviso ou um botão adicional de "aplicar decisão" apontando para os endpoints de approve/discard já existentes, como passo manual seguinte.
+- **Atualizado (2026-07-16):** depois que o revisor responde, a UI deve oferecer um botão "Aplicar decisão" chamando `POST /curation/{id}/apply-review-decision` — que exige escolher explicitamente `aprovar` ou `descartar` (select fechado com os 2 valores de `DecisaoFinalRevisao`), reaproveitando os mesmos campos/telas de confirmação já sugeridos em 7.4 (`anonimizacao_validada` para aprovar, `motivo` para descartar). Deixar claro na UI que responder a segunda opinião **não** aplica a decisão sozinho — é um passo separado e deliberado.
 
 ### 7.6 Sincronização com Orthanc / imagens
 - Botão "Sincronizar com Orthanc" (`POST /images/import-from-orthanc`), mostrando resultado resumido (total, novas, já existentes, erros) e, se houver erros, uma lista expansível com `orthanc_id` + mensagem.

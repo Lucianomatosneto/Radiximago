@@ -8,6 +8,7 @@ Endpoints:
 - POST /curation/{curation_id}/discard          -> descarta a ficha (com motivo)
 - POST /curation/{curation_id}/request-review   -> solicita segunda opiniao
 - POST /curation/reviews/{review_id}/respond    -> revisor responde
+- POST /curation/{curation_id}/apply-review-decision -> aplica a decisao final apos a segunda opiniao respondida
 - GET  /curation/{orthanc_reference_id}/viewer-url -> link do OHIF para abrir a imagem
 
 Acesso restrito a administrador e suporte (Bloco 4, Secao 16).
@@ -38,6 +39,7 @@ from app.modules.curations import (
     StatusCuradoria,
     StatusRevisao,
     DecisaoRevisao,
+    DecisaoFinalRevisao,
     DENTES_PERMANENTES,
 )
 
@@ -135,6 +137,13 @@ class ReviewRespond(BaseModel):
     parecer_revisor: str
     concordancia: str  # "concorda" ou "discorda"
     decisao_final: Optional[DecisaoRevisao] = None
+    observacoes: Optional[str] = None
+
+
+class AplicarDecisaoRevisao(BaseModel):
+    decisao: DecisaoFinalRevisao
+    anonimizacao_validada: Optional[bool] = None  # obrigatorio de fato so se decisao == aprovar
+    motivo: Optional[str] = None                   # obrigatorio de fato so se decisao == descartar
     observacoes: Optional[str] = None
 
 
@@ -410,6 +419,60 @@ def criar_curadoria(
     }
 
 
+def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, acao="aprovacao", origem=""):
+    """
+    Aplica a aprovacao a uma ficha. Regra LGPD: so libera com anonimizacao validada.
+    Compartilhado por /approve e /apply-review-decision.
+    """
+    if not anonimizacao_validada:
+        _registrar_auditoria(
+            db, usuario.id, acao, ficha.id, "negado",
+            f"Tentativa de aprovar sem anonimizacao validada.{origem}",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=422,
+            detail="Aprovacao bloqueada: a anonimizacao precisa estar validada para liberar a imagem.",
+        )
+
+    status_anterior = ficha.status
+    ficha.status = StatusCuradoria.APROVADA.value
+    ficha.anonimizacao_validada = True
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, acao,
+        status_anterior, StatusCuradoria.APROVADA.value,
+        (observacoes or "Ficha aprovada.") + origem,
+    )
+    _registrar_auditoria(
+        db, usuario.id, acao, ficha.id, "sucesso",
+        f"Ficha aprovada por usuario {usuario.id}.{origem}",
+    )
+
+
+def _executar_descarte(db, ficha, usuario, motivo, acao="descarte", origem=""):
+    """
+    Aplica o descarte a uma ficha. Exige justificativa.
+    Compartilhado por /discard e /apply-review-decision.
+    """
+    motivo_limpo = (motivo or "").strip()
+    if not motivo_limpo:
+        raise HTTPException(status_code=422, detail="O descarte exige uma justificativa (motivo).")
+
+    status_anterior = ficha.status
+    ficha.status = StatusCuradoria.DESCARTADA.value
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, acao,
+        status_anterior, StatusCuradoria.DESCARTADA.value, motivo_limpo + origem,
+    )
+    _registrar_auditoria(
+        db, usuario.id, acao, ficha.id, "sucesso",
+        f"Ficha descartada por usuario {usuario.id}. Motivo: {motivo_limpo}{origem}",
+    )
+    return motivo_limpo
+
+
 # ---------------------------------------------------------------------
 # POST /curation/{curation_id}/approve  -> aprova (libera)
 # ---------------------------------------------------------------------
@@ -430,30 +493,7 @@ def aprovar_curadoria(
             detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
         )
 
-    if not dados.anonimizacao_validada:
-        _registrar_auditoria(
-            db, usuario.id, "aprovacao", curation_id, "negado",
-            "Tentativa de aprovar sem anonimizacao validada.",
-        )
-        db.commit()
-        raise HTTPException(
-            status_code=422,
-            detail="Aprovacao bloqueada: a anonimizacao precisa estar validada para liberar a imagem.",
-        )
-
-    status_anterior = ficha.status
-    ficha.status = StatusCuradoria.APROVADA.value
-    ficha.anonimizacao_validada = True
-
-    _registrar_historico(
-        db, ficha.id, usuario.id, "aprovacao",
-        status_anterior, StatusCuradoria.APROVADA.value,
-        dados.observacoes or "Ficha aprovada.",
-    )
-    _registrar_auditoria(
-        db, usuario.id, "aprovacao", ficha.id, "sucesso",
-        f"Ficha aprovada por usuario {usuario.id}.",
-    )
+    _executar_aprovacao(db, ficha, usuario, dados.anonimizacao_validada, dados.observacoes)
     db.commit()
     db.refresh(ficha)
 
@@ -485,21 +525,7 @@ def descartar_curadoria(
             detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
         )
 
-    motivo = (dados.motivo or "").strip()
-    if not motivo:
-        raise HTTPException(status_code=422, detail="O descarte exige uma justificativa (motivo).")
-
-    status_anterior = ficha.status
-    ficha.status = StatusCuradoria.DESCARTADA.value
-
-    _registrar_historico(
-        db, ficha.id, usuario.id, "descarte",
-        status_anterior, StatusCuradoria.DESCARTADA.value, motivo,
-    )
-    _registrar_auditoria(
-        db, usuario.id, "descarte", ficha.id, "sucesso",
-        f"Ficha descartada por usuario {usuario.id}. Motivo: {motivo}",
-    )
+    motivo = _executar_descarte(db, ficha, usuario, dados.motivo)
     db.commit()
     db.refresh(ficha)
 
@@ -658,5 +684,74 @@ def responder_segunda_opiniao(
         "review_id": review.id,
         "curation_id": review.curation_id,
         "concordancia": review.concordancia,
+        "status_review": review.status,
+    }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/apply-review-decision  -> fecha o ciclo
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/apply-review-decision")
+def aplicar_decisao_revisao(
+    curation_id: int,
+    dados: AplicarDecisaoRevisao,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Fecha o ciclo da segunda opiniao: aplica a decisao final (aprovar ou
+    descartar) a ficha, depois que a review mais recente ja foi respondida.
+    """
+    _exigir_admin_ou_suporte(usuario)
+    ficha = _buscar_ficha(db, curation_id)
+
+    if ficha.status in STATUS_FINAIS:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+
+    review = (
+        db.query(CurationReview)
+        .filter(CurationReview.curation_id == curation_id)
+        .order_by(CurationReview.id.desc())
+        .first()
+    )
+    if not review:
+        raise HTTPException(
+            status_code=409,
+            detail="Esta ficha nao possui nenhuma solicitacao de segunda opiniao.",
+        )
+    if review.status != StatusRevisao.RESPONDIDA.value:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A segunda opiniao mais recente (review {review.id}) "
+                f"ainda nao foi respondida (status '{review.status}')."
+            ),
+        )
+
+    origem = f" (decisao aplicada via review {review.id})."
+
+    if dados.decisao == DecisaoFinalRevisao.APROVAR:
+        _executar_aprovacao(
+            db, ficha, usuario, dados.anonimizacao_validada, dados.observacoes,
+            acao="aprovacao_pos_segunda_opiniao", origem=origem,
+        )
+    else:
+        _executar_descarte(
+            db, ficha, usuario, dados.motivo,
+            acao="descarte_pos_segunda_opiniao", origem=origem,
+        )
+
+    review.status = StatusRevisao.FINALIZADA.value
+    db.commit()
+    db.refresh(ficha)
+
+    return {
+        "mensagem": "Decisao da segunda opiniao aplicada com sucesso.",
+        "curation_id": ficha.id,
+        "status": ficha.status,
+        "review_id": review.id,
         "status_review": review.status,
     }

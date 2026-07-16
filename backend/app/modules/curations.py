@@ -98,6 +98,11 @@ class DecisaoRevisao(str, enum.Enum):
     MANTER = "manter"
 
 
+class DecisaoFinalRevisao(str, enum.Enum):
+    APROVAR = "aprovar"
+    DESCARTAR = "descartar"
+
+
 # Dentes permanentes validos (notacao FDI), quadrantes 1 a 4.
 DENTES_PERMANENTES = (
     list(range(11, 19))    # 11-18 superior direita
