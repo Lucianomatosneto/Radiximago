@@ -164,6 +164,7 @@ def listar_pendentes(
         db.query(OrthancReference)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(Curation.id.is_(None))
+        .filter(OrthancReference.ativo.is_(True))
         .order_by(OrthancReference.id)
     )
 

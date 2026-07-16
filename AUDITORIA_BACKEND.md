@@ -13,6 +13,8 @@
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.4 do plano de hardening: novo endpoint `POST /curation/{curation_id}/apply-review-decision`, que fecha o ciclo da segunda opinião — depois que a review mais recente de uma ficha está `respondida`, este endpoint aplica a decisão final (`aprovar`/`descartar`) reaproveitando as mesmas regras de `/approve` (anonimização validada) e `/discard` (justificativa obrigatória), extraídas para funções privadas compartilhadas (`_executar_aprovacao`/`_executar_descarte`). Marca a `CurationReview` correspondente como `finalizada` — primeiro uso real desse valor do enum `StatusRevisao`. Novo enum `DecisaoFinalRevisao` (`aprovar`/`descartar`) criado especificamente para esta rota, distinto de `DecisaoRevisao` (que inclui `manter`, usado só para registrar a opinião do revisor). Resolve a lacuna #8.
 >
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.5 do plano de hardening: `PATCH /users/{id}` (edita `nome`/`instituicao`; **não** aceita trocar `perfil` — decisão deliberada de segurança), `POST /auth/logout` (logout simbólico, só grava auditoria — o JWT continua stateless, sem lista de revogação) e `POST /auth/change-password` (autotroca de senha, exige senha atual + nova senha ≥8 caracteres). Resolve as lacunas #4 e #5.
+>
+> **Atualização (2026-07-16):** aplicado o item 1 da sub-fase 6.5.6 (estratégia de exclusão/soft delete), decidido entidade por entidade: **User** — nenhuma mudança; `PATCH /users/{id}/block` já alterna `bloqueado` nos dois sentidos, então já cobre o caso de uso, sem precisar de um campo novo. **OrthancReference** — nova coluna `ativo` (migration `acf13f5ff44c`) + `PATCH /images/{id}/deactivate` e `/activate` (admin/suporte, com auditoria); `GET /curation/pending` e `GET /search` agora ignoram imagens com `ativo=false`; consultas de item único (`GET /images/{id}`, `GET /curation/{id}/viewer-url`) continuam acessíveis mesmo para imagens inativas, deliberadamente. **Curation** — nenhuma mudança; `status: "descartada"` já é o soft delete desta entidade (final, auditado, com justificativa obrigatória) e um campo separado criaria duas fontes de verdade para a mesma coisa. Os itens 2 (perfis novos) e 3 (upload direto de DICOM) da sub-fase 6.5.6 ainda não foram tratados.
 
 ---
 
@@ -126,6 +128,7 @@ Sem relacionamentos declarados (`relationship()`) — outras tabelas referenciam
 | sop_instance_uid | String(255), nullable, indexado | UID DICOM da instância |
 | resource_type | String(50), not null | sempre `"instance"` no código atual |
 | dicomweb_url | String(500), nullable | URL montada para DICOMweb |
+| ativo | Boolean, not null, default `true` | adicionado em 2026-07-16 (sub-fase 6.5.6) — soft delete; `false` = desativada, some de `/curation/pending` e `/search` |
 | criado_em | DateTime(tz), server_default now() | |
 
 Sem FK de saída, sem `relationship()`. É referenciada por `Curation.orthanc_reference_id`.
@@ -335,7 +338,7 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 
 #### `GET /curation/pending`
 - **Query params:** `skip` (default 0), `limit` (default 50, máx 200).
-- **O que faz:** lista imagens do Orthanc (`orthanc_references`) que **ainda não têm ficha de curadoria** (`LEFT JOIN` + `WHERE curation.id IS NULL`).
+- **O que faz:** lista imagens do Orthanc (`orthanc_references`) que **ainda não têm ficha de curadoria** (`LEFT JOIN` + `WHERE curation.id IS NULL`) **e** que estão `ativo=true` (filtro adicionado em 2026-07-16 — sub-fase 6.5.6; uma imagem desativada some desta fila mesmo sem ficha).
 - **Retorna:** `{total_pendentes, skip, limit, quantidade_retornada, itens: [{orthanc_reference_id, orthanc_id, study_instance_uid, series_instance_uid, sop_instance_uid, resource_type, dicomweb_url}]}`.
 
 #### `GET /curation/{orthanc_reference_id}/viewer-url`
@@ -416,8 +419,23 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 
 #### `GET /images/{orthanc_reference_id}` — adicionado em 2026-07-16 (sub-fase 6.5.3)
 - **Acesso:** `administrador` ou `suporte` (mesma regra do endpoint de sincronização).
-- **Retorna:** todos os campos de uma `orthanc_reference` (`id, orthanc_id, study_instance_uid, series_instance_uid, sop_instance_uid, resource_type, dicomweb_url, criado_em`).
+- **Retorna:** todos os campos de uma `orthanc_reference` (`id, orthanc_id, study_instance_uid, series_instance_uid, sop_instance_uid, resource_type, dicomweb_url, ativo, criado_em` — campo `ativo` adicionado em 2026-07-16, sub-fase 6.5.6).
 - **Erros:** 404 se a imagem não existe.
+- **Importante:** este endpoint funciona **independente** do valor de `ativo` — mostra a imagem normalmente mesmo se ela estiver desativada (decisão deliberada: só as listagens `/curation/pending` e `/search` filtram por `ativo`, não as consultas de item único).
+
+#### `PATCH /images/{orthanc_reference_id}/deactivate` — adicionado em 2026-07-16 (sub-fase 6.5.6)
+- **Acesso:** `administrador` ou `suporte`.
+- **O que faz:** soft delete — marca `ativo=false`. A imagem some de `/curation/pending` e `/search`, mas continua acessível via `GET /images/{id}` e `GET /curation/{id}/viewer-url`.
+- **Erros:** 404 se a imagem não existe.
+- **Auditoria:** grava `AuditLog` (`acao: "desativacao_imagem"`, `resultado: "sucesso"`).
+- **Não valida:** se já existe uma `Curation` `aprovada` para essa imagem — desativar não é bloqueado nesse caso (decisão consciente, não uma omissão; ver seção 6).
+
+#### `PATCH /images/{orthanc_reference_id}/activate` — adicionado em 2026-07-16 (sub-fase 6.5.6)
+- **Acesso:** `administrador` ou `suporte`.
+- **O que faz:** reverte o soft delete — marca `ativo=true`. A imagem volta a aparecer em `/curation/pending`/`/search` se as demais condições baterem.
+- **Erros:** 404 se a imagem não existe.
+- **Auditoria:** grava `AuditLog` (`acao: "reativacao_imagem"`, `resultado: "sucesso"`).
+- **Nota:** `POST /images/import-from-orthanc` não reativa automaticamente uma imagem desativada que reapareça numa nova sincronização — o soft delete é "pegajoso": só um `PATCH /activate` explícito reverte.
 
 **CRUD de imagens (`OrthancReference`):**
 | Operação | Existe? |
@@ -434,7 +452,7 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 
 #### `GET /search`
 - **Acesso:** qualquer usuário autenticado (nenhuma checagem de perfil).
-- **Regra de ouro:** só retorna `Curation` com `status == "aprovada"` (join com `OrthancReference`).
+- **Regra de ouro:** só retorna `Curation` com `status == "aprovada"` (join com `OrthancReference`) **e** com a imagem subjacente `ativo=true` (filtro adicionado em 2026-07-16 — sub-fase 6.5.6; desativar a imagem some com o resultado da busca mesmo que a ficha continue `aprovada`).
 - **Query params (todos opcionais):** `tipo_radiografia`, `dente` (int FDI), `arcada` (`"superior"`/`"inferior"`), `lado` (`"direito"`/`"esquerdo"`), `achado_principal`, `genero`, `qualidade_tecnica`, `dificuldade`, `finalidade`, `idade_min`, `idade_max` (0-120), `skip` (default 0), `limit` (default 50, máx 200). Filtros combinados com E lógico.
 - **Retorna:** `{total, skip, limit, quantidade_retornada, itens: [{curation_id, orthanc_reference_id, orthanc_id, modalidade, tipo_radiografia, dentes, achado_principal, qualidade_tecnica, dificuldade, finalidade, descricao_didatica, viewer_url}]}`.
 - **Nota de privacidade:** campos internos como `observacoes_internas` e `curador_id` **não** são expostos neste endpoint — só os campos "de card" listados acima.
@@ -476,7 +494,7 @@ Todos os endpoints exigem `administrador`.
 | Entidade | Create | Read (lista) | Read (item único) | Update | Delete |
 |---|---|---|---|---|---|
 | **User** | ✅ `POST /users/` | ✅ `GET /users/` | ✅ `GET /users/{id}` (2026-07-16) | ✅ nome/instituição via `PATCH /users/{id}` + bloqueio via `PATCH /users/{id}/block` (ambos 2026-07-16 e antes) — **exclui** `email`/`perfil` de propósito | ❌ não existe |
-| **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ou aprovadas), sem listagem geral | ✅ `GET /images/{id}` (2026-07-16) | ❌ não existe | ❌ não existe |
+| **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ativas ou aprovadas ativas), sem listagem geral | ✅ `GET /images/{id}` (2026-07-16), funciona mesmo se `ativo=false` | ❌ não existe | ✅ soft delete via `PATCH /images/{id}/deactivate`/`activate` (2026-07-16) |
 | **Curation** (ficha) | ✅ `POST /curation/{orthanc_reference_id}` | ⚠️ só pendentes (`GET /curation/pending`) e aprovadas (`GET /search`) | ✅ `GET /curation/{id}` (2026-07-16) | ⚠️ só mudança de status (approve/discard/request-review), não há edição de campos | ❌ não existe |
 | **CurationHistory** | ✅ (automático, interno) | ❌ não há endpoint para consultar o histórico de uma ficha | ❌ | ❌ (é log, não deveria ter) | ❌ |
 | **CurationReview** | ✅ `POST /curation/{id}/request-review` | ✅ `GET /curation/{id}/reviews` (2026-07-16 — lista por ficha, não é uma listagem global do sistema) | ❌ não há `GET /curation/reviews/{id}` isolado | ✅ `POST /curation/reviews/{id}/respond` (solicitada→respondida) e, desde 2026-07-16, `POST /curation/{id}/apply-review-decision` (respondida→finalizada) | ❌ |
@@ -488,7 +506,12 @@ Todos os endpoints exigem `administrador`.
 
 1. **Perfis sem regra própria:** `curador`, `professor`, `estudante`, `pesquisador` existem no enum mas não têm nenhuma checagem de autorização específica em nenhum endpoint — precisa confirmar se isso é intencional (roadmap futuro) ou lacuna.
 2. ~~**Auditoria parcial:** `AuditLog` só é populado por ações dentro de `curation_router.py`. Login/falha de login, criação/bloqueio de usuário e importação de imagens do Orthanc não geram registro de auditoria, apesar dos comentários no código sugerirem essa intenção.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.2):** `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram `AuditLog`. **Ainda em aberto (decisão explícita de escopo, não pendência técnica):** tentativas de acesso negado por perfil incorreto (403 de `_exigir_admin`/`_exigir_admin_ou_suporte` em `users_router.py` e `images_router.py`) continuam sem log — só as ações bem-sucedidas (e, no caso do login, as falhas de credencial) foram cobertas nesta sub-fase.
-3. **Sem DELETE em nenhuma entidade** do sistema.
+3. ~~**Sem DELETE em nenhuma entidade** do sistema.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.6, item 1 — estratégia de exclusão decidida entidade por entidade):**
+   - **OrthancReference:** soft delete real via `PATCH /images/{id}/deactivate`/`activate` + coluna `ativo`. **Decisão em aberto, não implementada:** desativar uma imagem não é bloqueado mesmo que já exista uma `Curation` `aprovada` referenciando ela — a ficha continua `aprovada` no banco, só some do resultado de `/search` porque a imagem ficou inativa.
+   - **User:** decisão deliberada de **não** criar soft delete separado — `bloqueado` (já existente, já reversível via `PATCH /users/{id}/block`) cobre o caso de uso.
+   - **Curation:** decisão deliberada de **não** criar soft delete separado — `status: "descartada"` (já existente, final, auditado, com justificativa obrigatória) já cobre o caso de uso.
+   - **CurationHistory, CurationReview e AuditLog** continuam sem qualquer mecanismo de exclusão — são logs/histórico e não deveriam ter.
+   - Itens 2 (perfis novos) e 3 (upload direto de DICOM) da sub-fase 6.5.6 ainda não foram tratados.
 4. ~~**Sem edição de dados de usuário** (nome, e-mail, instituição, perfil) depois de criado — só o toggle de bloqueio.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.5):** `PATCH /users/{id}` permite editar `nome` e `instituicao`. **Continua em aberto, por decisão deliberada:** `email` e `perfil` não são editáveis por nenhum endpoint — trocar o perfil de um usuário foi julgado sensível demais para um PATCH simples.
 5. ~~**Sem troca de senha ou logout via API** — só scripts CLI internos ao container.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.5):** `POST /auth/change-password` (autotroca, exige senha atual) e `POST /auth/logout` (simbólico — ver nota na seção 4.1 sobre JWT stateless sem revogação real). **Continua em aberto:** reset administrativo de senha de outro usuário (só via script CLI `trocar_senha.py`).
 6. ~~**Sem GET de item único** para usuário, imagem (`OrthancReference`) ou ficha de curadoria (`Curation`) — só listagens filtradas.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /users/{id}`, `GET /images/{id}` e `GET /curation/{id}` adicionados.
@@ -542,9 +565,10 @@ Todos os endpoints exigem `administrador`.
 
 ### 7.6 Sincronização com Orthanc / imagens
 - Botão "Sincronizar com Orthanc" (`POST /images/import-from-orthanc`), mostrando resultado resumido (total, novas, já existentes, erros) e, se houver erros, uma lista expansível com `orthanc_id` + mensagem.
-- Tela de detalhe de uma imagem individual usando `GET /images/{id}` (disponível desde 2026-07-16), útil por exemplo a partir de um link na fila de pendentes.
+- Tela de detalhe de uma imagem individual usando `GET /images/{id}` (disponível desde 2026-07-16), útil por exemplo a partir de um link na fila de pendentes. Mostra o campo `ativo` com um badge/indicador visual.
+- Botão "Desativar imagem" (`PATCH /images/{id}/deactivate`, desde 2026-07-16) e "Reativar imagem" (`PATCH /images/{id}/activate`) na tela de detalhe — a UI deve deixar claro que isso é reversível (soft delete, não uma exclusão definitiva) e que, se a imagem já tiver uma ficha `aprovada`, desativá-la vai tirar o resultado de `/search` sem alterar o status da ficha em si (o backend não bloqueia essa combinação — ver seção 6, item 3).
 - **Bloqueado/ausente:** tela de upload direto de arquivo DICOM pela interface — não existe endpoint para isso; qualquer upload teria que ser feito diretamente no Orthanc por fora do sistema atual.
-- **Bloqueado/ausente:** listagem geral de todas as imagens (aprovadas, descartadas, pendentes, em segunda opinião juntas) — hoje só existem visões filtradas (pendentes sem ficha, ou aprovadas via busca) mais a consulta individual por id.
+- **Bloqueado/ausente:** listagem geral de todas as imagens (aprovadas, descartadas, pendentes, em segunda opinião, ativas e inativas juntas) — hoje só existem visões filtradas (pendentes ativas sem ficha, ou aprovadas ativas via busca) mais a consulta individual por id.
 
 ### 7.7 Pesquisa pública de imagens aprovadas (todos os perfis autenticados)
 - Tela de busca com filtros: tipo de radiografia, dente (seletor FDI), arcada, lado, achado principal, gênero, qualidade técnica, dificuldade, finalidade, faixa de idade — todos opcionais e combináveis.

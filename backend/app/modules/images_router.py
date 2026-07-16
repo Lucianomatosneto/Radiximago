@@ -154,5 +154,70 @@ def obter_imagem(
         "sop_instance_uid": imagem.sop_instance_uid,
         "resource_type": imagem.resource_type,
         "dicomweb_url": imagem.dicomweb_url,
+        "ativo": imagem.ativo,
         "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
     }
+
+
+@router.patch("/{orthanc_reference_id}/deactivate")
+def desativar_imagem(
+    orthanc_reference_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Desativa (soft delete) uma imagem - some das listagens ativas (pending/search)."""
+    _exigir_admin_ou_suporte(usuario)
+
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
+        )
+
+    imagem.ativo = False
+    db.commit()
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="desativacao_imagem", entidade="orthanc_reference",
+        entidade_id=imagem.id, resultado="sucesso",
+        detalhes=f"Imagem {imagem.orthanc_id} desativada.",
+    ))
+    db.commit()
+
+    return {"mensagem": "Imagem desativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}
+
+
+@router.patch("/{orthanc_reference_id}/activate")
+def ativar_imagem(
+    orthanc_reference_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Reativa uma imagem previamente desativada."""
+    _exigir_admin_ou_suporte(usuario)
+
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
+        )
+
+    imagem.ativo = True
+    db.commit()
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="reativacao_imagem", entidade="orthanc_reference",
+        entidade_id=imagem.id, resultado="sucesso",
+        detalhes=f"Imagem {imagem.orthanc_id} reativada.",
+    ))
+    db.commit()
+
+    return {"mensagem": "Imagem reativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}

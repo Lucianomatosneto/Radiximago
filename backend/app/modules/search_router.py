@@ -67,6 +67,7 @@ def pesquisar_imagens(
         db.query(Curation, OrthancReference)
         .join(OrthancReference, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(Curation.status == StatusCuradoria.APROVADA.value)
+        .filter(OrthancReference.ativo.is_(True))
     )
 
     # Filtros diretos (so aplicam se o usuario informou).
