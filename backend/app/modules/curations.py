@@ -92,6 +92,12 @@ class StatusRevisao(str, enum.Enum):
     FINALIZADA = "finalizada"
 
 
+class DecisaoRevisao(str, enum.Enum):
+    APROVAR = "aprovar"
+    DESCARTAR = "descartar"
+    MANTER = "manter"
+
+
 # Dentes permanentes validos (notacao FDI), quadrantes 1 a 4.
 DENTES_PERMANENTES = (
     list(range(11, 19))    # 11-18 superior direita

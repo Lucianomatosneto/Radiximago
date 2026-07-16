@@ -1,5 +1,8 @@
 ﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
+from app.core.database import SessionLocal
+from app.modules import orthanc_client
 from app.modules.auth import router as auth_router
 from app.modules.search_router import router as search_router
 from app.modules.admin_router import router as admin_router
@@ -34,8 +37,20 @@ async def health():
 
 @app.get("/health/database")
 async def health_database():
-    return {"status": "ok", "database": "pendente configuracao"}
+    try:
+        db = SessionLocal()
+        try:
+            db.execute(text("SELECT 1"))
+        finally:
+            db.close()
+        return {"status": "ok", "database": "conectado"}
+    except Exception as e:
+        return {"status": "erro", "database": str(e)}
 
 @app.get("/health/orthanc")
 async def health_orthanc():
-    return {"status": "ok", "orthanc": "pendente configuracao"}
+    try:
+        orthanc_client.listar_instancias()
+        return {"status": "ok", "orthanc": "conectado"}
+    except Exception as e:
+        return {"status": "erro", "orthanc": str(e)}

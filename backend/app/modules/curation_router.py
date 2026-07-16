@@ -37,6 +37,7 @@ from app.modules.curations import (
     Finalidade,
     StatusCuradoria,
     StatusRevisao,
+    DecisaoRevisao,
     DENTES_PERMANENTES,
 )
 
@@ -133,7 +134,7 @@ class ReviewRequest(BaseModel):
 class ReviewRespond(BaseModel):
     parecer_revisor: str
     concordancia: str  # "concorda" ou "discorda"
-    decisao_final: Optional[str] = None
+    decisao_final: Optional[DecisaoRevisao] = None
     observacoes: Optional[str] = None
 
 
@@ -554,7 +555,7 @@ def responder_segunda_opiniao(
     review.revisor_id = usuario.id
     review.parecer_revisor = parecer
     review.concordancia = concordancia
-    review.decisao_final = dados.decisao_final
+    review.decisao_final = _valor(dados.decisao_final)
     review.observacoes = dados.observacoes
     review.status = StatusRevisao.RESPONDIDA.value
     review.respondido_em = _func.now()

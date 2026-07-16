@@ -45,6 +45,8 @@ def criar_usuario(
 ):
     if usuario_atual.perfil != UserRole.administrador:
         raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
+    if len(dados.senha) < 8:
+        raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
     existente = db.query(User).filter(User.email == dados.email).first()
     if existente:
         raise HTTPException(status_code=400, detail="Email já cadastrado")
