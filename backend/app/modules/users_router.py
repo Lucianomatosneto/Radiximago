@@ -38,6 +38,19 @@ def listar_usuarios(
         raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     return db.query(User).all()
 
+@router.get("/{user_id}", response_model=UsuarioResposta)
+def obter_usuario(
+    user_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: User = Depends(obter_usuario_atual)
+):
+    if usuario_atual.perfil != UserRole.administrador:
+        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
+    usuario = db.query(User).filter(User.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    return usuario
+
 @router.post("/", response_model=UsuarioResposta)
 def criar_usuario(
     dados: UsuarioCriar,

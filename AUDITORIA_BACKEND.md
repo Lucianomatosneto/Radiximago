@@ -7,6 +7,8 @@
 > **Atualização (2026-07-15):** aplicadas as 3 correções da sub-fase 6.5.1 do plano de hardening (commit `c9a160d`): validação de senha mínima em `POST /users/`, health checks reais em `/health/database` e `/health/orthanc`, e `decisao_final` convertido para o Enum `DecisaoRevisao`. As seções afetadas foram atualizadas; os itens resolvidos na seção 6 ficam marcados como tal, sem serem removidos, para preservar o histórico da auditoria.
 >
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.2 do plano de hardening: `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc` agora geram registro em `audit_logs` (antes só ações de `curation_router.py` geravam auditoria). Escopo deliberadamente restrito a essas 5 ações — tentativas de acesso negado por perfil incorreto nesses mesmos endpoints (`_exigir_admin`/`_exigir_admin_ou_suporte`) **não** foram incluídas nesta sub-fase (decisão explícita, ver seção 6, item 2).
+>
+> **Atualização (2026-07-16):** aplicada a sub-fase 6.5.3 do plano de hardening: 4 novos endpoints de consulta de item único — `GET /users/{id}`, `GET /images/{id}`, `GET /curation/{id}` e `GET /curation/{id}/reviews`. Nenhum deles grava em `audit_logs` (são leituras, mesmo padrão dos demais `GET`s do sistema). `GET /curation/{id}/reviews` lista as segundas opiniões de **uma** ficha específica — ainda não existe uma listagem de todas as reviews do sistema, nem um `GET /curation/reviews/{review_id}` para uma review isolada, e `CurationHistory` continua sem nenhum endpoint de consulta (ver seção 6, item 7).
 
 ---
 
@@ -268,6 +270,11 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 - **Acesso:** apenas `administrador`.
 - **Retorna:** lista de `UsuarioResposta` (`id, nome, email, perfil, instituicao, ativo, bloqueado`) para **todos** os usuários — sem paginação, sem filtro.
 
+#### `GET /users/{user_id}` — adicionado em 2026-07-16 (sub-fase 6.5.3)
+- **Acesso:** apenas `administrador` (mesma regra de `GET /users/`).
+- **Retorna:** `UsuarioResposta` de um único usuário.
+- **Erros:** 404 se o usuário não existe.
+
 #### `POST /users/`
 - **Acesso:** apenas `administrador`.
 - **Corpo (JSON):** `nome` (str), `email` (EmailStr), `senha` (str), `perfil` (UserRole, default `estudante`), `instituicao` (opcional).
@@ -288,7 +295,7 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 |---|---|
 | Create | Sim (`POST /users/`) |
 | Read (lista) | Sim (`GET /users/`) |
-| Read (um usuário por id) | **Não existe** — não há `GET /users/{id}` |
+| Read (um usuário por id) | Sim (`GET /users/{id}`, desde 2026-07-16 — sub-fase 6.5.3) |
 | Update (dados como nome/e-mail/instituição/perfil) | **Não existe** — só o toggle de bloqueio |
 | Delete | **Não existe** |
 | Alterar senha via API | **Não existe** (só via script CLI) |
@@ -308,6 +315,17 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 - **O que faz:** monta a URL do visualizador OHIF para uma imagem, usando `OHIF_BASE_URL` + `StudyInstanceUIDs`.
 - **Retorna:** se a imagem tem `study_instance_uid`: `{abrivel: true, orthanc_reference_id, orthanc_id, study_instance_uid, viewer_url}`. Se não tem: `{abrivel: false, motivo, ..., viewer_url: null}`.
 - **Erros:** 404 se a `orthanc_reference` não existe.
+
+#### `GET /curation/{curation_id}` — adicionado em 2026-07-16 (sub-fase 6.5.3)
+- **O que faz:** retorna todos os campos de uma ficha de curadoria específica (inclusive `observacoes_internas` e `curador_id`, que **não** aparecem em `GET /search` — aqui é apropriado porque o endpoint já é restrito a admin/suporte).
+- **Não inclui:** o histórico de alterações (`CurationHistory`) — esse continua sem nenhum endpoint de consulta (ver seção 6, item 7).
+- **Erros:** 404 se a ficha não existe.
+
+#### `GET /curation/{curation_id}/reviews` — adicionado em 2026-07-16 (sub-fase 6.5.3)
+- **O que faz:** lista todas as `CurationReview` (segundas opiniões) associadas a **uma** ficha específica, ordenadas por `id`.
+- **Retorna:** `{curation_id, quantidade, itens: [{id, solicitante_id, motivo, primeiro_parecer, revisor_id, parecer_revisor, concordancia, decisao_final, observacoes, status, criado_em, respondido_em}]}`.
+- **Erros:** 404 se a ficha não existe.
+- **Ambiguidade:** isto é uma listagem *por ficha*, não uma fila global de revisões pendentes no sistema — não substitui a lacuna descrita na seção 7.5 (não há como listar todas as `CurationReview` com `status: solicitada` de todas as fichas de uma vez).
 
 #### `POST /curation/{orthanc_reference_id}`
 - **O que faz:** cria a ficha de curadoria de uma imagem.
@@ -344,7 +362,7 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 |---|---|
 | Create | Sim (`POST /curation/{orthanc_reference_id}`) |
 | Read (lista pendente) | Sim (`GET /curation/pending`) |
-| Read (uma ficha por id) | **Não existe** — não há `GET /curation/{id}` para ver uma ficha específica com todos os campos e histórico |
+| Read (uma ficha por id) | Sim (`GET /curation/{id}`, desde 2026-07-16 — sub-fase 6.5.3; retorna todos os campos, mas não o histórico de alterações) |
 | Update (editar campos já preenchidos) | **Não existe** — só mudanças de status via approve/discard/request-review |
 | Delete | **Não existe** |
 
@@ -360,12 +378,17 @@ Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_a
 - **Auditoria (desde 2026-07-16, sub-fase 6.5.2):** grava **um único** `AuditLog`-resumo por chamada (não um por imagem, para não inflar a tabela): `acao: "importacao_orthanc"`, `entidade: "orthanc_reference"`, `resultado: "erro"` se `erros > 0` no lote, senão `"sucesso"`, `detalhes` com os totais (`total/novas/ja_existentes/erros`).
 - **Não existe upload direto de arquivo DICOM via API** — a única forma de imagens entrarem no sistema é já estarem no Orthanc e serem então "puxadas" por este endpoint.
 
+#### `GET /images/{orthanc_reference_id}` — adicionado em 2026-07-16 (sub-fase 6.5.3)
+- **Acesso:** `administrador` ou `suporte` (mesma regra do endpoint de sincronização).
+- **Retorna:** todos os campos de uma `orthanc_reference` (`id, orthanc_id, study_instance_uid, series_instance_uid, sop_instance_uid, resource_type, dicomweb_url, criado_em`).
+- **Erros:** 404 se a imagem não existe.
+
 **CRUD de imagens (`OrthancReference`):**
 | Operação | Existe? |
 |---|---|
 | Create | Sim, mas só via sincronização em lote (`POST /images/import-from-orthanc`), não upload individual |
 | Read (lista) | Indireto, via `GET /curation/pending` (só as sem ficha) e `GET /search` (só as aprovadas) — **não há um `GET /images` genérico que liste todas as `orthanc_references` sem filtro** |
-| Read (uma imagem por id) | **Não existe** endpoint dedicado (existe indiretamente dentro de `viewer-url`, que retorna alguns campos) |
+| Read (uma imagem por id) | Sim (`GET /images/{id}`, desde 2026-07-16 — sub-fase 6.5.3) |
 | Update | **Não existe** |
 | Delete | **Não existe** |
 
@@ -416,11 +439,11 @@ Todos os endpoints exigem `administrador`.
 
 | Entidade | Create | Read (lista) | Read (item único) | Update | Delete |
 |---|---|---|---|---|---|
-| **User** | ✅ `POST /users/` | ✅ `GET /users/` | ❌ não existe | ⚠️ só toggle de bloqueio (`PATCH /users/{id}/block`), nada mais | ❌ não existe |
-| **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ou aprovadas), sem listagem geral | ❌ não existe endpoint dedicado | ❌ não existe | ❌ não existe |
-| **Curation** (ficha) | ✅ `POST /curation/{orthanc_reference_id}` | ⚠️ só pendentes (`GET /curation/pending`) e aprovadas (`GET /search`) | ❌ não existe `GET /curation/{id}` | ⚠️ só mudança de status (approve/discard/request-review), não há edição de campos | ❌ não existe |
+| **User** | ✅ `POST /users/` | ✅ `GET /users/` | ✅ `GET /users/{id}` (2026-07-16) | ⚠️ só toggle de bloqueio (`PATCH /users/{id}/block`), nada mais | ❌ não existe |
+| **OrthancReference** (imagem) | ⚠️ só via sync em lote (`POST /images/import-from-orthanc`) | ⚠️ só filtrado (pendentes ou aprovadas), sem listagem geral | ✅ `GET /images/{id}` (2026-07-16) | ❌ não existe | ❌ não existe |
+| **Curation** (ficha) | ✅ `POST /curation/{orthanc_reference_id}` | ⚠️ só pendentes (`GET /curation/pending`) e aprovadas (`GET /search`) | ✅ `GET /curation/{id}` (2026-07-16) | ⚠️ só mudança de status (approve/discard/request-review), não há edição de campos | ❌ não existe |
 | **CurationHistory** | ✅ (automático, interno) | ❌ não há endpoint para consultar o histórico de uma ficha | ❌ | ❌ (é log, não deveria ter) | ❌ |
-| **CurationReview** | ✅ `POST /curation/{id}/request-review` | ❌ não há endpoint de listagem de reviews | ❌ não há `GET /curation/reviews/{id}` | ✅ `POST /curation/reviews/{id}/respond` (única transição permitida) | ❌ |
+| **CurationReview** | ✅ `POST /curation/{id}/request-review` | ✅ `GET /curation/{id}/reviews` (2026-07-16 — lista por ficha, não é uma listagem global do sistema) | ❌ não há `GET /curation/reviews/{id}` isolado | ✅ `POST /curation/reviews/{id}/respond` (única transição permitida) | ❌ |
 | **AuditLog** | ✅ (automático, só em ações de curadoria) | ✅ `GET /admin/audit-logs` | ❌ não há `GET /admin/audit-logs/{id}` | ❌ (correto, log não deve ser editável) | ❌ (correto) |
 
 ---
@@ -432,8 +455,8 @@ Todos os endpoints exigem `administrador`.
 3. **Sem DELETE em nenhuma entidade** do sistema.
 4. **Sem edição de dados de usuário** (nome, e-mail, instituição, perfil) depois de criado — só o toggle de bloqueio.
 5. **Sem troca de senha ou logout via API** — só scripts CLI internos ao container.
-6. **Sem GET de item único** para usuário, imagem (`OrthancReference`) ou ficha de curadoria (`Curation`) — só listagens filtradas.
-7. **Sem consulta ao histórico de uma ficha** (`CurationHistory`) nem à lista de segundas opiniões (`CurationReview`) via nenhum endpoint.
+6. ~~**Sem GET de item único** para usuário, imagem (`OrthancReference`) ou ficha de curadoria (`Curation`) — só listagens filtradas.~~ **✅ RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /users/{id}`, `GET /images/{id}` e `GET /curation/{id}` adicionados.
+7. ~~**Sem consulta ao histórico de uma ficha** (`CurationHistory`) nem à lista de segundas opiniões (`CurationReview`) via nenhum endpoint.~~ **✅ PARCIALMENTE RESOLVIDO em 2026-07-16 (sub-fase 6.5.3):** `GET /curation/{id}/reviews` lista as segundas opiniões de uma ficha específica. **Ainda em aberto:** `CurationHistory` continua sem nenhum endpoint de consulta, e não há listagem global de `CurationReview` (todas as fichas) nem `GET /curation/reviews/{review_id}` para uma review isolada.
 8. **Fluxo de segunda opinião incompleto:** depois que o revisor responde (`status → respondida`), não existe endpoint que aplique a "decisão final" de volta à ficha (`Curation.status` permanece em `segunda_opiniao` indefinidamente). O enum `StatusRevisao.finalizada` nunca é usado.
 9. **`StatusCuradoria.pendente` e `.baixa_qualidade`** nunca são produzidos por nenhum endpoint atual — parecem valores reservados para funcionalidade futura.
 10. ~~**Health checks (`/health/database`, `/health/orthanc`) retornam valores fixos**, não testam a conexão real.~~ **✅ RESOLVIDO em 2026-07-15 (sub-fase 6.5.1, commit `c9a160d`):** ambos agora fazem uma checagem real (`SELECT 1` no banco; `listar_instancias()` no Orthanc) e retornam `status: erro` com a mensagem da exceção se a checagem falhar, sem derrubar a aplicação.
@@ -458,13 +481,15 @@ Todos os endpoints exigem `administrador`.
 - Tabela listando usuários (`GET /users/`): nome, e-mail, perfil, instituição, ativo/bloqueado.
 - Formulário/modal de criação de usuário (`POST /users/`): nome, e-mail, senha, perfil (select com os 6 valores), instituição. Validar no client que a senha tem ao menos 8 caracteres antes de enviar, já que o backend rejeita com 422 abaixo disso (desde 2026-07-15).
 - Botão de alternar bloqueio por linha (`PATCH /users/{id}/block`), com confirmação, já que é toggle e não uma ação unidirecional.
-- **Bloqueado/ausente:** botão de editar dados de um usuário existente, botão de excluir usuário, tela de detalhe de um usuário individual — nenhum desses tem endpoint de suporte.
+- Tela de detalhe de um usuário individual, usando `GET /users/{id}` (disponível desde 2026-07-16).
+- **Bloqueado/ausente:** botão de editar dados de um usuário existente, botão de excluir usuário — nenhum dos dois tem endpoint de suporte.
 
 ### 7.3 Fila de curadoria (perfis `administrador`/`suporte`)
 - Lista/fila das imagens pendentes (`GET /curation/pending`), com paginação (skip/limit).
 - Botão "Abrir no visualizador" por item, usando `GET /curation/{id}/viewer-url` — se `abrivel: false`, desabilitar o botão e mostrar o `motivo`.
 - Formulário de criação de ficha de curadoria (`POST /curation/{orthanc_reference_id}`) com todos os campos do `CurationCreate`: tipo de radiografia (select fixo), seletor de dentes (ex.: odontograma clicável restrito a FDI 11–48), faixa de idade, gênero, achado principal, texto de achados, qualidade técnica, dificuldade, descrição didática, observações internas, finalidade.
-- **Bloqueado/ausente:** tela de "ver ficha existente" com todos os campos e o histórico de alterações — não há `GET /curation/{id}` nem endpoint de histórico. Sem isso, não dá para construir uma tela de detalhe/edição da ficha.
+- Tela de "ver ficha existente" com todos os campos, usando `GET /curation/{id}` (disponível desde 2026-07-16) — inclui uma seção com o histórico de segundas opiniões via `GET /curation/{id}/reviews`.
+- **Bloqueado/ausente:** edição dos campos de uma ficha já criada (não há endpoint de update), e uma linha do tempo com o histórico de *mudanças de status* (`CurationHistory` continua sem endpoint de consulta).
 
 ### 7.4 Aprovação / descarte
 - Botão "Aprovar" abrindo modal que exige marcar explicitamente "anonimização validada" (checkbox obrigatório) + campo de observações opcional (`POST /curation/{id}/approve`) — a UI deve deixar claro que sem esse checkbox marcado a aprovação será rejeitada pelo backend.
@@ -473,14 +498,15 @@ Todos os endpoints exigem `administrador`.
 
 ### 7.5 Segunda opinião
 - Botão "Solicitar segunda opinião" com campo de motivo obrigatório e parecer inicial opcional (`POST /curation/{id}/request-review`).
-- Fila de solicitações pendentes de resposta — **ausente no backend**: não há `GET` que liste `CurationReview` por status; a UI precisaria ser alimentada de outra forma (ex.: derivar da lista de fichas com `status == segunda_opiniao`, se um endpoint de listagem de fichas por status existir — hoje não existe um `GET /curation?status=` genérico).
+- Fila de solicitações pendentes de resposta — **ainda ausente no backend**: `GET /curation/{id}/reviews` (desde 2026-07-16) só lista as reviews de **uma** ficha já conhecida, não existe uma listagem global de `CurationReview` filtrável por `status` em todo o sistema; a UI precisaria ser alimentada de outra forma (ex.: derivar da lista de fichas com `status == segunda_opiniao`, se um endpoint de listagem de fichas por status existir — hoje não existe um `GET /curation?status=` genérico).
 - Tela/modal de resposta do revisor: parecer, concordância (`concorda`/`discorda` como radio/select fechado), decisão final (select fechado com os 3 valores do Enum `DecisaoRevisao`: `aprovar`/`descartar`/`manter` — validado pelo backend desde 2026-07-15), observações. A UI deve impedir que o próprio solicitante veja o botão de responder (embora o backend já bloqueie com 403, é melhor UX esconder a ação).
 - **Observação importante para a UI:** como o backend não fecha o ciclo (não há passo que aplique a decisão final de volta à ficha), a interface precisa deixar claro ao usuário que responder a segunda opinião **não muda o status da ficha automaticamente** — pode ser necessário um aviso ou um botão adicional de "aplicar decisão" apontando para os endpoints de approve/discard já existentes, como passo manual seguinte.
 
 ### 7.6 Sincronização com Orthanc / imagens
 - Botão "Sincronizar com Orthanc" (`POST /images/import-from-orthanc`), mostrando resultado resumido (total, novas, já existentes, erros) e, se houver erros, uma lista expansível com `orthanc_id` + mensagem.
+- Tela de detalhe de uma imagem individual usando `GET /images/{id}` (disponível desde 2026-07-16), útil por exemplo a partir de um link na fila de pendentes.
 - **Bloqueado/ausente:** tela de upload direto de arquivo DICOM pela interface — não existe endpoint para isso; qualquer upload teria que ser feito diretamente no Orthanc por fora do sistema atual.
-- **Bloqueado/ausente:** listagem geral de todas as imagens (aprovadas, descartadas, pendentes, em segunda opinião juntas) — hoje só existem visões filtradas (pendentes sem ficha, ou aprovadas via busca).
+- **Bloqueado/ausente:** listagem geral de todas as imagens (aprovadas, descartadas, pendentes, em segunda opinião juntas) — hoje só existem visões filtradas (pendentes sem ficha, ou aprovadas via busca) mais a consulta individual por id.
 
 ### 7.7 Pesquisa pública de imagens aprovadas (todos os perfis autenticados)
 - Tela de busca com filtros: tipo de radiografia, dente (seletor FDI), arcada, lado, achado principal, gênero, qualidade técnica, dificuldade, finalidade, faixa de idade — todos opcionais e combináveis.

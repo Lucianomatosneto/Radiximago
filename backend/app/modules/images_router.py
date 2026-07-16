@@ -124,3 +124,35 @@ def importar_do_orthanc(
         "erros": erros,
         "detalhes": detalhes_resultado,
     }
+
+
+@router.get("/{orthanc_reference_id}")
+def obter_imagem(
+    orthanc_reference_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Busca uma unica imagem (orthanc_reference) pelo id interno."""
+    _exigir_admin_ou_suporte(usuario)
+
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
+        )
+
+    return {
+        "id": imagem.id,
+        "orthanc_id": imagem.orthanc_id,
+        "study_instance_uid": imagem.study_instance_uid,
+        "series_instance_uid": imagem.series_instance_uid,
+        "sop_instance_uid": imagem.sop_instance_uid,
+        "resource_type": imagem.resource_type,
+        "dicomweb_url": imagem.dicomweb_url,
+        "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
+    }

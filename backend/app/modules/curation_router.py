@@ -237,6 +237,88 @@ def obter_link_visualizador(
 
 
 # ---------------------------------------------------------------------
+# GET /curation/{curation_id}  -> ficha de curadoria completa
+# ---------------------------------------------------------------------
+@router.get("/{curation_id}")
+def obter_ficha(
+    curation_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Busca uma ficha de curadoria especifica, com todos os campos."""
+    _exigir_admin_ou_suporte(usuario)
+    ficha = _buscar_ficha(db, curation_id)
+
+    return {
+        "id": ficha.id,
+        "orthanc_reference_id": ficha.orthanc_reference_id,
+        "modalidade": ficha.modalidade,
+        "tipo_radiografia": ficha.tipo_radiografia,
+        "dentes": ficha.dentes,
+        "idade_min": ficha.idade_min,
+        "idade_max": ficha.idade_max,
+        "genero": ficha.genero,
+        "achado_principal": ficha.achado_principal,
+        "achados_detalhe": ficha.achados_detalhe,
+        "qualidade_tecnica": ficha.qualidade_tecnica,
+        "dificuldade": ficha.dificuldade,
+        "descricao_didatica": ficha.descricao_didatica,
+        "observacoes_internas": ficha.observacoes_internas,
+        "finalidade": ficha.finalidade,
+        "status": ficha.status,
+        "anonimizacao_validada": ficha.anonimizacao_validada,
+        "curador_id": ficha.curador_id,
+        "criado_em": ficha.criado_em.isoformat() if ficha.criado_em else None,
+        "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,
+    }
+
+
+# ---------------------------------------------------------------------
+# GET /curation/{curation_id}/reviews  -> historico de segundas opinioes
+# ---------------------------------------------------------------------
+@router.get("/{curation_id}/reviews")
+def listar_reviews_da_ficha(
+    curation_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Lista o historico de segundas opinioes (CurationReview) de uma ficha."""
+    _exigir_admin_ou_suporte(usuario)
+    _buscar_ficha(db, curation_id)
+
+    reviews = (
+        db.query(CurationReview)
+        .filter(CurationReview.curation_id == curation_id)
+        .order_by(CurationReview.id)
+        .all()
+    )
+
+    itens = [
+        {
+            "id": r.id,
+            "solicitante_id": r.solicitante_id,
+            "motivo": r.motivo,
+            "primeiro_parecer": r.primeiro_parecer,
+            "revisor_id": r.revisor_id,
+            "parecer_revisor": r.parecer_revisor,
+            "concordancia": r.concordancia,
+            "decisao_final": r.decisao_final,
+            "observacoes": r.observacoes,
+            "status": r.status,
+            "criado_em": r.criado_em.isoformat() if r.criado_em else None,
+            "respondido_em": r.respondido_em.isoformat() if r.respondido_em else None,
+        }
+        for r in reviews
+    ]
+
+    return {
+        "curation_id": curation_id,
+        "quantidade": len(itens),
+        "itens": itens,
+    }
+
+
+# ---------------------------------------------------------------------
 # POST /curation/{orthanc_reference_id}  -> cria a ficha
 # ---------------------------------------------------------------------
 @router.post("/{orthanc_reference_id}")
