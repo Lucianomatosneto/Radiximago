@@ -11,7 +11,9 @@ Endpoints:
 - POST /curation/{curation_id}/apply-review-decision -> aplica a decisao final apos a segunda opiniao respondida
 - GET  /curation/{orthanc_reference_id}/viewer-url -> link do OHIF para abrir a imagem
 
-Acesso restrito a administrador e suporte (Bloco 4, Secao 16).
+Acesso: administrador, suporte e curador podem operar todos os endpoints
+deste modulo (criar ficha, aprovar, descartar, solicitar/responder segunda
+opiniao e aplicar a decisao final) - Bloco 4, Secao 16.
 """
 
 from typing import List, Optional
@@ -51,13 +53,14 @@ STATUS_FINAIS = [
 ]
 
 
-def _exigir_admin_ou_suporte(usuario: User) -> None:
-    """Guardiao de permissao: so administrador ou suporte."""
-    perfis_permitidos = [UserRole.administrador, UserRole.suporte]
+def _exigir_admin_suporte_ou_curador(usuario: User) -> None:
+    """Guardiao de permissao: administrador, suporte ou curador podem
+    trabalhar em qualquer endpoint deste modulo."""
+    perfis_permitidos = [UserRole.administrador, UserRole.suporte, UserRole.curador]
     if usuario.perfil not in perfis_permitidos:
         raise HTTPException(
             status_code=403,
-            detail="Acesso negado: apenas administrador ou suporte podem acessar a curadoria.",
+            detail="Acesso negado: apenas administrador, suporte ou curador podem acessar a curadoria.",
         )
 
 
@@ -158,7 +161,7 @@ def listar_pendentes(
     db: Session = Depends(get_db),
 ):
     """Lista as imagens ainda sem ficha de curadoria."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
 
     consulta_base = (
         db.query(OrthancReference)
@@ -209,7 +212,7 @@ def obter_link_visualizador(
     Caso contrario (ex.: imagem sintetica sem metadados), informa que
     a abertura por link direto nao e possivel para esta imagem.
     """
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
 
     imagem = (
         db.query(OrthancReference)
@@ -256,7 +259,7 @@ def obter_ficha(
     db: Session = Depends(get_db),
 ):
     """Busca uma ficha de curadoria especifica, com todos os campos."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
     return {
@@ -293,7 +296,7 @@ def listar_reviews_da_ficha(
     db: Session = Depends(get_db),
 ):
     """Lista o historico de segundas opinioes (CurationReview) de uma ficha."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     _buscar_ficha(db, curation_id)
 
     reviews = (
@@ -339,7 +342,7 @@ def criar_curadoria(
     db: Session = Depends(get_db),
 ):
     """Cria a ficha de curadoria de uma imagem (status inicial: em_analise)."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
 
     imagem = (
         db.query(OrthancReference)
@@ -485,7 +488,7 @@ def aprovar_curadoria(
     db: Session = Depends(get_db),
 ):
     """Aprova a ficha. Regra LGPD: so libera com anonimizacao validada."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
     if ficha.status in STATUS_FINAIS:
@@ -517,7 +520,7 @@ def descartar_curadoria(
     db: Session = Depends(get_db),
 ):
     """Descarta a ficha (a imagem nao sera usada). Exige justificativa."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
     if ficha.status in STATUS_FINAIS:
@@ -549,7 +552,7 @@ def solicitar_segunda_opiniao(
     db: Session = Depends(get_db),
 ):
     """Solicita segunda opiniao para uma ficha. Exige justificativa."""
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
     if ficha.status in STATUS_FINAIS:
@@ -626,7 +629,7 @@ def responder_segunda_opiniao(
     Revisor responde a segunda opiniao. Regra de imparcialidade:
     quem solicitou NAO pode responder.
     """
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
 
     review = db.query(CurationReview).filter(CurationReview.id == review_id).first()
     if not review:
@@ -703,7 +706,7 @@ def aplicar_decisao_revisao(
     Fecha o ciclo da segunda opiniao: aplica a decisao final (aprovar ou
     descartar) a ficha, depois que a review mais recente ja foi respondida.
     """
-    _exigir_admin_ou_suporte(usuario)
+    _exigir_admin_suporte_ou_curador(usuario)
     ficha = _buscar_ficha(db, curation_id)
 
     if ficha.status in STATUS_FINAIS:

@@ -14,7 +14,9 @@
 >
 > **Atualização (2026-07-16):** aplicada a sub-fase 6.5.5 do plano de hardening: `PATCH /users/{id}` (edita `nome`/`instituicao`; **não** aceita trocar `perfil` — decisão deliberada de segurança), `POST /auth/logout` (logout simbólico, só grava auditoria — o JWT continua stateless, sem lista de revogação) e `POST /auth/change-password` (autotroca de senha, exige senha atual + nova senha ≥8 caracteres). Resolve as lacunas #4 e #5.
 >
-> **Atualização (2026-07-16):** aplicado o item 1 da sub-fase 6.5.6 (estratégia de exclusão/soft delete), decidido entidade por entidade: **User** — nenhuma mudança; `PATCH /users/{id}/block` já alterna `bloqueado` nos dois sentidos, então já cobre o caso de uso, sem precisar de um campo novo. **OrthancReference** — nova coluna `ativo` (migration `acf13f5ff44c`) + `PATCH /images/{id}/deactivate` e `/activate` (admin/suporte, com auditoria); `GET /curation/pending` e `GET /search` agora ignoram imagens com `ativo=false`; consultas de item único (`GET /images/{id}`, `GET /curation/{id}/viewer-url`) continuam acessíveis mesmo para imagens inativas, deliberadamente. **Curation** — nenhuma mudança; `status: "descartada"` já é o soft delete desta entidade (final, auditado, com justificativa obrigatória) e um campo separado criaria duas fontes de verdade para a mesma coisa. Os itens 2 (perfis novos) e 3 (upload direto de DICOM) da sub-fase 6.5.6 ainda não foram tratados.
+> **Atualização (2026-07-16):** aplicado o item 1 da sub-fase 6.5.6 (estratégia de exclusão/soft delete), decidido entidade por entidade: **User** — nenhuma mudança; `PATCH /users/{id}/block` já alterna `bloqueado` nos dois sentidos, então já cobre o caso de uso, sem precisar de um campo novo. **OrthancReference** — nova coluna `ativo` (migration `acf13f5ff44c`) + `PATCH /images/{id}/deactivate` e `/activate` (admin/suporte, com auditoria); `GET /curation/pending` e `GET /search` agora ignoram imagens com `ativo=false`; consultas de item único (`GET /images/{id}`, `GET /curation/{id}/viewer-url`) continuam acessíveis mesmo para imagens inativas, deliberadamente. **Curation** — nenhuma mudança; `status: "descartada"` já é o soft delete desta entidade (final, auditado, com justificativa obrigatória) e um campo separado criaria duas fontes de verdade para a mesma coisa.
+>
+> **Atualização (2026-07-16):** aplicado o item 2 da sub-fase 6.5.6 (perfil `curador`). `curador` passou a ter acesso igual a `administrador`/`suporte` em **todos** os endpoints de `/curation/*`, inclusive aprovar, descartar e aplicar a decisão final da segunda opinião — decisão tomada em duas etapas: primeiro um esquema parcial (só criar ficha + segunda opinião, sem aprovar/descartar), depois revertido para acesso completo por confirmação explícita do usuário. `curador` **não** ganhou acesso a `/images/*` (sincronizar, desativar/ativar, consultar imagem) — isso continua exclusivo de `administrador`/`suporte`. `professor`, `estudante` e `pesquisador` permanecem sem nenhuma regra própria, por decisão deliberada. Guardião antigo `_exigir_admin_ou_suporte` de `curation_router.py` foi removido (ficou sem uso depois que todos os 10 endpoints passaram a usar `_exigir_admin_suporte_ou_curador`). Falta o item 3 (upload direto de DICOM) da sub-fase 6.5.6.
 
 ---
 
@@ -81,20 +83,20 @@ suporte
 Valor padrão ao criar usuário sem perfil explícito: `estudante`.
 
 ### 1.4 Onde cada perfil é de fato checado no código
-Isto é o achado mais relevante da auditoria de autorização — **dos 6 perfis, apenas 2 aparecem em alguma regra de acesso**:
+**Atualizado em 2026-07-16 (sub-fase 6.5.6, item 2):** dos 6 perfis, agora **3** aparecem em regras de acesso (`administrador`, `suporte` e, desde esta sub-fase, `curador`):
 
 | Guardião de permissão | Onde está definido | Perfis permitidos | Usado em |
 |---|---|---|---|
-| `_exigir_admin` (implícito, inline) | `users_router.py` | `administrador` apenas | `GET/POST /users/`, `PATCH /users/{id}/block` |
+| `_exigir_admin` (implícito, inline) | `users_router.py` | `administrador` apenas | `GET/POST /users/`, `GET/PATCH /users/{id}`, `PATCH /users/{id}/block` |
 | `_exigir_admin` | `admin_router.py` | `administrador` apenas | `GET /admin/stats`, `GET /admin/audit-logs` |
-| `_exigir_admin_ou_suporte` | `curation_router.py` | `administrador`, `suporte` | todos os endpoints de `/curation/*` |
-| `_exigir_admin_ou_suporte` | `images_router.py` | `administrador`, `suporte` | `POST /images/import-from-orthanc` |
+| `_exigir_admin_suporte_ou_curador` | `curation_router.py` | `administrador`, `suporte`, `curador` | **todos** os endpoints de `/curation/*` (2026-07-16: `curador` passou a ter acesso igual a `suporte` em todo o módulo, inclusive aprovar/descartar/aplicar decisão final) |
+| `_exigir_admin_ou_suporte` | `images_router.py` | `administrador`, `suporte` | `POST /images/import-from-orthanc`, `GET /images/{id}`, `PATCH /images/{id}/deactivate`\|`activate` — `curador` **não** tem acesso aqui, por decisão deliberada |
 | (nenhum — só exige login) | `search_router.py` | qualquer perfil autenticado | `GET /search` |
-| (nenhum — só exige login) | `auth.py` | qualquer perfil autenticado | `GET /auth/me` |
+| (nenhum — só exige login) | `auth.py` | qualquer perfil autenticado | `GET /auth/me`, `POST /auth/logout`, `POST /auth/change-password` |
 
-**Perfis `curador`, `professor`, `estudante` e `pesquisador` existem no vocabulário mas não têm nenhuma regra de autorização própria no código atual.** Um usuário com perfil `curador`, por exemplo, **não tem permissão especial para curar** — a curadoria (`/curation/*`) exige `administrador` ou `suporte`. Isso é uma inconsistência entre o nome do perfil e o comportamento real do sistema, e deveria ser esclarecida com quem definiu os requisitos: ou a lógica de autorização está incompleta (faltam regras para esses 4 perfis), ou os nomes dos perfis não correspondem ao desenho final de permissões.
+**Perfis `professor`, `estudante` e `pesquisador` continuam sem nenhuma regra de autorização própria** — decisão deliberada nesta sub-fase (não uma lacuna esquecida): permanecem apenas consumidores genéricos de `/search`, como qualquer usuário autenticado. Só `curador` ganhou uma regra distinta até agora.
 
-O campo `curador_id` em `Curation` é preenchido com o `id` de quem criou a ficha — que, pelas regras atuais, só pode ser admin ou suporte. Ou seja, hoje `curador_id` nunca aponta para um usuário de perfil `curador`.
+O campo `curador_id` em `Curation` (preenchido com o `id` de quem criou a ficha) agora pode, pela primeira vez, apontar de fato para um usuário de perfil `curador` — antes só podia ser admin/suporte, o que era uma inconsistência entre o nome do perfil e o comportamento real do sistema (apontada nesta auditoria antes da correção).
 
 ---
 
@@ -334,7 +336,7 @@ Notação FDI válida: `11–18`, `21–28`, `31–38`, `41–48` (32 dentes per
 
 ### 4.3 `curation_router.py` — prefixo `/curation`
 
-Todos os endpoints deste módulo exigem `administrador` ou `suporte` (`_exigir_admin_ou_suporte`).
+Todos os endpoints deste módulo exigem `administrador`, `suporte` ou `curador` (`_exigir_admin_suporte_ou_curador`, desde 2026-07-16 — sub-fase 6.5.6, item 2; antes só admin/suporte, e por um breve período dentro da mesma sub-fase `curador` teve acesso parcial sem aprovar/descartar, revertido para acesso completo por decisão explícita do usuário).
 
 #### `GET /curation/pending`
 - **Query params:** `skip` (default 0), `limit` (default 50, máx 200).
@@ -545,7 +547,7 @@ Todos os endpoints exigem `administrador`.
 - Formulário de edição de nome/instituição usando `PATCH /users/{id}` (disponível desde 2026-07-16) — a UI deve deixar claro que e-mail e perfil não são editáveis por aqui (o backend simplesmente ignora esses campos se enviados).
 - **Bloqueado/ausente:** botão de excluir usuário (não existe endpoint); troca de e-mail ou de perfil de um usuário existente (fora de escopo deliberado, ver seção 6, item 4).
 
-### 7.3 Fila de curadoria (perfis `administrador`/`suporte`)
+### 7.3 Fila de curadoria (perfis `administrador`/`suporte`/`curador`, desde 2026-07-16)
 - Lista/fila das imagens pendentes (`GET /curation/pending`), com paginação (skip/limit).
 - Botão "Abrir no visualizador" por item, usando `GET /curation/{id}/viewer-url` — se `abrivel: false`, desabilitar o botão e mostrar o `motivo`.
 - Formulário de criação de ficha de curadoria (`POST /curation/{orthanc_reference_id}`) com todos os campos do `CurationCreate`: tipo de radiografia (select fixo), seletor de dentes (ex.: odontograma clicável restrito a FDI 11–48), faixa de idade, gênero, achado principal, texto de achados, qualidade técnica, dificuldade, descrição didática, observações internas, finalidade.
