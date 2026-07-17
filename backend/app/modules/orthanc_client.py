@@ -55,3 +55,23 @@ def obter_detalhes_instancia(orthanc_id: str) -> dict:
         resposta = client.get(url)
         resposta.raise_for_status()
         return resposta.json()
+
+
+def enviar_instancia(conteudo: bytes) -> dict:
+    """
+    Envia um arquivo DICOM bruto para o Orthanc (upload).
+
+    O Orthanc aceita o binario DICOM diretamente no corpo do POST e devolve
+    o ID interno da instancia. Se o arquivo ja existia, o Orthanc responde
+    com o mesmo ID de sempre (Status "AlreadyStored"), sem duplicar nada.
+
+    Parametro:
+        conteudo: os bytes crus do arquivo DICOM.
+
+    Retorna: um dicionario com o resultado (inclui a chave "ID").
+    """
+    url = f"{settings.ORTHANC_URL}/instances"
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.post(url, content=conteudo, headers={"Content-Type": "application/dicom"})
+        resposta.raise_for_status()
+        return resposta.json()

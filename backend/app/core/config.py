@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     ORTHANC_PASSWORD: str = "mgd3172"
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
     OHIF_BASE_URL: str = "http://localhost:3001"
+    MAX_UPLOAD_SIZE_MB: int = 50
     
     # Ambiente
     ENVIRONMENT: str = "development"

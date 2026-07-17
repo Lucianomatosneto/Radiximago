@@ -1,12 +1,22 @@
 """
-Roteador de Imagens - endpoint de sincronizacao com o Orthanc.
+Roteador de Imagens.
 
-Expoe: POST /images/import-from-orthanc
-Faz a varredura do Orthanc e registra as referencias novas no PostgreSQL.
+Endpoints:
+- POST /images/import-from-orthanc              -> sincroniza em lote (varre o Orthanc)
+- POST /images/upload                            -> upload direto de um arquivo DICOM
+- GET  /images/{orthanc_reference_id}             -> consulta uma imagem
+- PATCH /images/{orthanc_reference_id}/deactivate -> desativa (soft delete)
+- PATCH /images/{orthanc_reference_id}/activate   -> reativa
+
 Acesso restrito a administrador e suporte (Bloco 4, Secao 13).
 """
 
-from fastapi import APIRouter, Depends, HTTPException
+import io
+
+import httpx
+import pydicom
+from pydicom.errors import InvalidDicomError
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -47,6 +57,37 @@ def _extrair_uids(detalhes: dict) -> dict:
     }
 
 
+def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[OrthancReference, bool]:
+    """
+    Garante que existe uma orthanc_reference para este orthanc_id.
+    Retorna (referencia, criada_agora). Compartilhado pela sincronizacao em
+    lote e pelo upload direto.
+    """
+    existente = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.orthanc_id == orthanc_id)
+        .first()
+    )
+    if existente:
+        return existente, False
+
+    detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id)
+    uids = _extrair_uids(detalhes)
+    dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id}"
+
+    nova_ref = OrthancReference(
+        orthanc_id=orthanc_id,
+        study_instance_uid=uids["study_instance_uid"],
+        series_instance_uid=uids["series_instance_uid"],
+        sop_instance_uid=uids["sop_instance_uid"],
+        resource_type="instance",
+        dicomweb_url=dicomweb_url,
+    )
+    db.add(nova_ref)
+    db.commit()
+    return nova_ref, True
+
+
 @router.post("/import-from-orthanc")
 def importar_do_orthanc(
     usuario: User = Depends(obter_usuario_atual),
@@ -69,38 +110,17 @@ def importar_do_orthanc(
 
     for orthanc_id in ids_orthanc:
         try:
-            existente = (
-                db.query(OrthancReference)
-                .filter(OrthancReference.orthanc_id == orthanc_id)
-                .first()
-            )
-            if existente:
+            ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+            if criada:
+                novas += 1
+                detalhes_resultado.append(
+                    {"orthanc_id": orthanc_id, "status": "importada"}
+                )
+            else:
                 ja_existentes += 1
                 detalhes_resultado.append(
                     {"orthanc_id": orthanc_id, "status": "ja_existente"}
                 )
-                continue
-
-            detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id)
-            uids = _extrair_uids(detalhes)
-
-            dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id}"
-
-            nova_ref = OrthancReference(
-                orthanc_id=orthanc_id,
-                study_instance_uid=uids["study_instance_uid"],
-                series_instance_uid=uids["series_instance_uid"],
-                sop_instance_uid=uids["sop_instance_uid"],
-                resource_type="instance",
-                dicomweb_url=dicomweb_url,
-            )
-            db.add(nova_ref)
-            db.commit()
-
-            novas += 1
-            detalhes_resultado.append(
-                {"orthanc_id": orthanc_id, "status": "importada"}
-            )
         except Exception as e:
             db.rollback()
             erros += 1
@@ -123,6 +143,83 @@ def importar_do_orthanc(
         "ja_existentes": ja_existentes,
         "erros": erros,
         "detalhes": detalhes_resultado,
+    }
+
+
+@router.post("/upload")
+def upload_imagem(
+    arquivo: UploadFile = File(...),
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Recebe um arquivo DICOM, envia para o Orthanc e registra a referencia.
+    Nao faz nenhuma anonimizacao - a seguranca de LGPD continua sendo a
+    checagem manual humana no fluxo de curadoria (anonimizacao_validada).
+    """
+    _exigir_admin_ou_suporte(usuario)
+
+    conteudo = arquivo.file.read()
+
+    limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+    if len(conteudo) > limite_bytes:
+        raise HTTPException(
+            status_code=413,
+            detail=f"Arquivo maior que o limite permitido ({settings.MAX_UPLOAD_SIZE_MB}MB).",
+        )
+
+    preambulo_ausente = False
+    try:
+        pydicom.dcmread(io.BytesIO(conteudo))
+    except InvalidDicomError:
+        try:
+            pydicom.dcmread(io.BytesIO(conteudo), force=True)
+        except Exception:
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+        preambulo_ausente = True
+    except Exception:
+        raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+
+    try:
+        resultado_orthanc = orthanc_client.enviar_instancia(conteudo)
+    except httpx.HTTPStatusError as e:
+        # O Orthanc e a autoridade final sobre o que e um DICOM valido: um
+        # 4xx dele significa que o proprio conteudo foi rejeitado (a validacao
+        # do pydicom com force=True e permissiva demais para pegar tudo).
+        if e.response.status_code < 500:
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido (rejeitado pelo Orthanc).")
+        raise HTTPException(status_code=502, detail=f"Falha ao enviar o arquivo para o Orthanc: {e}")
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Falha ao enviar o arquivo para o Orthanc: {e}")
+
+    orthanc_id = resultado_orthanc.get("ID")
+    if not orthanc_id:
+        raise HTTPException(status_code=502, detail="Orthanc nao retornou um ID valido para o arquivo enviado.")
+
+    ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="upload_imagem", entidade="orthanc_reference", entidade_id=ref.id,
+        resultado="sucesso",
+        detalhes=f"Upload direto: orthanc_id={orthanc_id}, {'nova imagem' if criada else 'imagem ja existente'}.",
+    ))
+    if preambulo_ausente:
+        db.add(AuditLog(
+            usuario_id=usuario.id, acao="upload_sem_preambulo_dicom", entidade="orthanc_reference",
+            entidade_id=ref.id, resultado="sucesso",
+            detalhes=(
+                f"Arquivo aceito com force=True: nao tinha o preambulo DICOM padrao "
+                f"de 128 bytes + 'DICM'. orthanc_id={orthanc_id}."
+            ),
+        ))
+    db.commit()
+
+    return {
+        "mensagem": "Imagem enviada com sucesso." if criada else "Este arquivo ja estava registrado (imagem existente).",
+        "orthanc_reference_id": ref.id,
+        "orthanc_id": ref.orthanc_id,
+        "status": "importada" if criada else "ja_existente",
+        "preambulo_dicom_ausente": preambulo_ausente,
     }
 
 
