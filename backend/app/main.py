@@ -1,8 +1,12 @@
-﻿from fastapi import FastAPI
+﻿import logging
+
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.modules import orthanc_client
+
+logger = logging.getLogger(__name__)
 from app.modules.auth import router as auth_router
 from app.modules.search_router import router as search_router
 from app.modules.admin_router import router as admin_router
@@ -45,6 +49,7 @@ async def health_database():
             db.close()
         return {"status": "ok", "database": "conectado"}
     except Exception:
+        logger.exception("Falha na checagem de saude do banco de dados.")
         return {"status": "erro", "database": "indisponivel"}
 
 @app.get("/health/orthanc")
@@ -53,4 +58,5 @@ async def health_orthanc():
         orthanc_client.listar_instancias()
         return {"status": "ok", "orthanc": "conectado"}
     except Exception:
+        logger.exception("Falha na checagem de saude do Orthanc.")
         return {"status": "erro", "orthanc": "indisponivel"}

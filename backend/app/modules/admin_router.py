@@ -16,7 +16,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis
+from app.modules.auth import exigir_perfis, PERFIS_ADMIN
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
@@ -37,7 +37,7 @@ def _contar_por(db, coluna):
 
 @router.get("/stats")
 def obter_indicadores(
-    usuario: User = Depends(exigir_perfis(UserRole.administrador)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
     db: Session = Depends(get_db),
 ):
     """
@@ -66,7 +66,7 @@ def consultar_auditoria(
     data_ate: Optional[datetime] = Query(None, description="Ate esta data/hora (ISO)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    usuario: User = Depends(exigir_perfis(UserRole.administrador)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
     db: Session = Depends(get_db),
 ):
     """

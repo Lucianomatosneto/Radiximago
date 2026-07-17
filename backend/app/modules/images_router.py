@@ -17,19 +17,18 @@ import httpx
 import pydicom
 from pydicom.errors import InvalidDicomError
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.modules.auth import exigir_perfis
-from app.modules.users import User, UserRole
+from app.modules.auth import exigir_perfis, PERFIS_IMAGENS
+from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/images", tags=["Imagens"])
-
-_PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
 
 
 def _extrair_uids(detalhes: dict) -> dict:
@@ -77,10 +76,12 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     return nova_ref, True
 
 
-def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, usuario: User, acao: str) -> OrthancReference:
+def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, usuario: User) -> OrthancReference:
     """
     Ativa ou desativa uma imagem (soft delete). Compartilhado por
-    desativar_imagem/ativar_imagem para nao duplicar a logica.
+    desativar_imagem/ativar_imagem para nao duplicar a logica. O `acao` da
+    auditoria e derivado de `ativo`, nao recebido como parametro separado,
+    para nao correr o risco de os dois ficarem dessincronizados.
     """
     imagem = (
         db.query(OrthancReference)
@@ -95,6 +96,7 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
 
     imagem.ativo = ativo
     estado = "ativada" if ativo else "desativada"
+    acao = "reativacao_imagem" if ativo else "desativacao_imagem"
     db.add(AuditLog(
         usuario_id=usuario.id, acao=acao, entidade="orthanc_reference",
         entidade_id=imagem.id, resultado="sucesso",
@@ -106,7 +108,7 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
 
 @router.post("/import-from-orthanc")
 def importar_do_orthanc(
-    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -163,7 +165,7 @@ def importar_do_orthanc(
 @router.post("/upload")
 def upload_imagem(
     arquivo: UploadFile = File(...),
-    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -186,6 +188,7 @@ def upload_imagem(
                 detail=f"Arquivo maior que o limite permitido ({settings.MAX_UPLOAD_SIZE_MB}MB).",
             )
     conteudo = bytes(partes)
+    del partes  # libera o bytearray imediatamente, nao esperar o fim da funcao
 
     preambulo_ausente = False
     try:
@@ -217,6 +220,18 @@ def upload_imagem(
 
     try:
         ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+    except IntegrityError:
+        # orthanc_id e unico no banco: se a insercao colidiu, e porque um
+        # upload concorrente do mesmo arquivo ja registrou a referencia
+        # entre a checagem e o commit. Nao e uma falha de verdade.
+        db.rollback()
+        ref = db.query(OrthancReference).filter(OrthancReference.orthanc_id == orthanc_id).first()
+        if not ref:
+            raise HTTPException(
+                status_code=502,
+                detail="Arquivo foi enviado ao Orthanc, mas falhou ao registrar a referencia no sistema. Contate o suporte.",
+            )
+        criada = False
     except Exception as e:
         db.rollback()
         db.add(AuditLog(
@@ -258,7 +273,7 @@ def upload_imagem(
 @router.get("/{orthanc_reference_id}")
 def obter_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Busca uma unica imagem (orthanc_reference) pelo id interno."""
@@ -289,20 +304,20 @@ def obter_imagem(
 @router.patch("/{orthanc_reference_id}/deactivate")
 def desativar_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Desativa (soft delete) uma imagem - some das listagens ativas (pending/search)."""
-    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, False, usuario, "desativacao_imagem")
+    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, False, usuario)
     return {"mensagem": "Imagem desativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}
 
 
 @router.patch("/{orthanc_reference_id}/activate")
 def ativar_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Reativa uma imagem previamente desativada."""
-    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, True, usuario, "reativacao_imagem")
+    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, True, usuario)
     return {"mensagem": "Imagem reativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}

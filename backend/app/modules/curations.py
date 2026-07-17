@@ -18,9 +18,11 @@ from sqlalchemy import (
     Column,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.sql import func
@@ -189,3 +191,16 @@ class CurationReview(Base):
     status = Column(String(20), nullable=False, default="solicitada")
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     respondido_em = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        # No maximo uma review "em aberto" (solicitada ou respondida, ainda
+        # nao aplicada) por ficha - impede a condicao de corrida onde duas
+        # solicitacoes concorrentes passam pela checagem da aplicacao antes
+        # de qualquer uma commitar.
+        Index(
+            "uq_curation_reviews_aberta",
+            "curation_id",
+            unique=True,
+            postgresql_where=text("status IN ('solicitada', 'respondida')"),
+        ),
+    )

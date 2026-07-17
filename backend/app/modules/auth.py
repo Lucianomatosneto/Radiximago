@@ -65,6 +65,13 @@ def obter_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depen
         raise HTTPException(status_code=401, detail="Acesso negado")
     return usuario
 
+# Registro central de quais perfis podem acessar cada area do sistema -
+# consultar aqui para saber "quem pode fazer o que" (ex.: auditoria de LGPD).
+PERFIS_ADMIN = (UserRole.administrador,)
+PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
+PERFIS_CURADORIA = (UserRole.administrador, UserRole.suporte, UserRole.curador)
+
+
 def exigir_perfis(*perfis_permitidos: UserRole):
     """
     Fabrica um guardiao de permissao reutilizavel como dependencia do FastAPI.

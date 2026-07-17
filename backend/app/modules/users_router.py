@@ -5,7 +5,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.modules.users import User, UserRole
-from app.modules.auth import exigir_perfis
+from app.modules.auth import exigir_perfis, PERFIS_ADMIN
 from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/users", tags=["Usuários"])
@@ -36,7 +36,7 @@ class UsuarioAtualizar(BaseModel):
 @router.get("/", response_model=list[UsuarioResposta])
 def listar_usuarios(
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
     return db.query(User).all()
 
@@ -44,7 +44,7 @@ def listar_usuarios(
 def obter_usuario(
     user_id: int,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
@@ -55,7 +55,7 @@ def obter_usuario(
 def criar_usuario(
     dados: UsuarioCriar,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
     if len(dados.senha) < 8:
         raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
@@ -83,7 +83,7 @@ def criar_usuario(
 def bloquear_usuario(
     user_id: int,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
@@ -102,7 +102,7 @@ def atualizar_usuario(
     user_id: int,
     dados: UsuarioAtualizar,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
     """
     Atualiza nome e/ou instituicao de um usuario existente.
