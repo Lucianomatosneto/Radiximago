@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
-from app.modules.users import User
+from app.modules.users import User, UserRole
 from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -65,6 +65,21 @@ def obter_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depen
         raise HTTPException(status_code=401, detail="Acesso negado")
     return usuario
 
+def exigir_perfis(*perfis_permitidos: UserRole):
+    """
+    Fabrica um guardiao de permissao reutilizavel como dependencia do FastAPI.
+    Uso: usuario: User = Depends(exigir_perfis(UserRole.administrador, UserRole.suporte))
+    """
+    def guardiao(usuario: User = Depends(obter_usuario_atual)) -> User:
+        if usuario.perfil not in perfis_permitidos:
+            nomes = ", ".join(p.value for p in perfis_permitidos)
+            raise HTTPException(
+                status_code=403,
+                detail=f"Acesso negado: requer um destes perfis: {nomes}.",
+            )
+        return usuario
+    return guardiao
+
 @router.get("/me")
 def meu_perfil(usuario: User = Depends(obter_usuario_atual)):
     return {"id": usuario.id, "nome": usuario.nome, "email": usuario.email, "perfil": usuario.perfil}
@@ -109,7 +124,6 @@ def trocar_senha_propria(
         raise HTTPException(status_code=422, detail="A nova senha deve ter ao menos 8 caracteres.")
 
     usuario.senha_hash = gerar_hash_senha(dados.nova_senha)
-    db.commit()
     db.add(AuditLog(
         usuario_id=usuario.id, acao="troca_senha", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",

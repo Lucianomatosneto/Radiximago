@@ -11,27 +11,18 @@ Fornece a "materia-prima" numerica para os paineis do frontend.
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import obter_usuario_atual
+from app.modules.auth import exigir_perfis
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation
 
 router = APIRouter(prefix="/admin", tags=["Administracao"])
-
-
-def _exigir_admin(usuario: User) -> None:
-    """Guardiao: apenas administrador acessa os paineis administrativos."""
-    if usuario.perfil != UserRole.administrador:
-        raise HTTPException(
-            status_code=403,
-            detail="Acesso negado: apenas administrador pode acessar os paineis administrativos.",
-        )
 
 
 def _contar_por(db, coluna):
@@ -46,15 +37,13 @@ def _contar_por(db, coluna):
 
 @router.get("/stats")
 def obter_indicadores(
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(UserRole.administrador)),
     db: Session = Depends(get_db),
 ):
     """
     Indicadores gerais para o dashboard administrativo.
     Total de imagens e de fichas, e contagens por status, tipo, achado e dificuldade.
     """
-    _exigir_admin(usuario)
-
     total_imagens = db.query(func.count(OrthancReference.id)).scalar()
     total_fichas = db.query(func.count(Curation.id)).scalar()
 
@@ -77,15 +66,13 @@ def consultar_auditoria(
     data_ate: Optional[datetime] = Query(None, description="Ate esta data/hora (ISO)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(UserRole.administrador)),
     db: Session = Depends(get_db),
 ):
     """
     Consulta os registros de auditoria com filtros opcionais.
     Base para a tela de auditoria (Bloco 4, Tela 12).
     """
-    _exigir_admin(usuario)
-
     consulta = db.query(AuditLog)
 
     if usuario_id is not None:

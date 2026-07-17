@@ -44,13 +44,13 @@ async def health_database():
         finally:
             db.close()
         return {"status": "ok", "database": "conectado"}
-    except Exception as e:
-        return {"status": "erro", "database": str(e)}
+    except Exception:
+        return {"status": "erro", "database": "indisponivel"}
 
 @app.get("/health/orthanc")
 async def health_orthanc():
     try:
         orthanc_client.listar_instancias()
         return {"status": "ok", "orthanc": "conectado"}
-    except Exception as e:
-        return {"status": "erro", "orthanc": str(e)}
+    except Exception:
+        return {"status": "erro", "orthanc": "indisponivel"}

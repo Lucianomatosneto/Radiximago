@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.modules.auth import obter_usuario_atual
+from app.modules.auth import exigir_perfis
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
@@ -29,18 +29,7 @@ from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/images", tags=["Imagens"])
 
-
-def _exigir_admin_ou_suporte(usuario: User) -> None:
-    """
-    Guardiao de permissao: so administrador ou suporte podem sincronizar.
-    Se o perfil nao for permitido, barra com HTTP 403 (acesso negado).
-    """
-    perfis_permitidos = [UserRole.administrador, UserRole.suporte]
-    if usuario.perfil not in perfis_permitidos:
-        raise HTTPException(
-            status_code=403,
-            detail="Acesso negado: apenas administrador ou suporte podem sincronizar.",
-        )
+_PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
 
 
 def _extrair_uids(detalhes: dict) -> dict:
@@ -88,9 +77,36 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     return nova_ref, True
 
 
+def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, usuario: User, acao: str) -> OrthancReference:
+    """
+    Ativa ou desativa uma imagem (soft delete). Compartilhado por
+    desativar_imagem/ativar_imagem para nao duplicar a logica.
+    """
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
+        )
+
+    imagem.ativo = ativo
+    estado = "ativada" if ativo else "desativada"
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao=acao, entidade="orthanc_reference",
+        entidade_id=imagem.id, resultado="sucesso",
+        detalhes=f"Imagem {imagem.orthanc_id} foi {estado}.",
+    ))
+    db.commit()
+    return imagem
+
+
 @router.post("/import-from-orthanc")
 def importar_do_orthanc(
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -98,8 +114,6 @@ def importar_do_orthanc(
     Varre todas as instancias do Orthanc e registra as que ainda nao existem.
     Retorna um resumo com numeros.
     """
-    _exigir_admin_ou_suporte(usuario)
-
     ids_orthanc = orthanc_client.listar_instancias()
 
     total = len(ids_orthanc)
@@ -149,7 +163,7 @@ def importar_do_orthanc(
 @router.post("/upload")
 def upload_imagem(
     arquivo: UploadFile = File(...),
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -157,16 +171,21 @@ def upload_imagem(
     Nao faz nenhuma anonimizacao - a seguranca de LGPD continua sendo a
     checagem manual humana no fluxo de curadoria (anonimizacao_validada).
     """
-    _exigir_admin_ou_suporte(usuario)
-
-    conteudo = arquivo.file.read()
-
     limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    if len(conteudo) > limite_bytes:
-        raise HTTPException(
-            status_code=413,
-            detail=f"Arquivo maior que o limite permitido ({settings.MAX_UPLOAD_SIZE_MB}MB).",
-        )
+    pedaco_bytes = 1024 * 1024  # 1MB por leitura
+
+    partes = bytearray()
+    while True:
+        pedaco = arquivo.file.read(pedaco_bytes)
+        if not pedaco:
+            break
+        partes.extend(pedaco)
+        if len(partes) > limite_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Arquivo maior que o limite permitido ({settings.MAX_UPLOAD_SIZE_MB}MB).",
+            )
+    conteudo = bytes(partes)
 
     preambulo_ausente = False
     try:
@@ -239,12 +258,10 @@ def upload_imagem(
 @router.get("/{orthanc_reference_id}")
 def obter_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Busca uma unica imagem (orthanc_reference) pelo id interno."""
-    _exigir_admin_ou_suporte(usuario)
-
     imagem = (
         db.query(OrthancReference)
         .filter(OrthancReference.id == orthanc_reference_id)
@@ -272,62 +289,20 @@ def obter_imagem(
 @router.patch("/{orthanc_reference_id}/deactivate")
 def desativar_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Desativa (soft delete) uma imagem - some das listagens ativas (pending/search)."""
-    _exigir_admin_ou_suporte(usuario)
-
-    imagem = (
-        db.query(OrthancReference)
-        .filter(OrthancReference.id == orthanc_reference_id)
-        .first()
-    )
-    if not imagem:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
-        )
-
-    imagem.ativo = False
-    db.commit()
-    db.add(AuditLog(
-        usuario_id=usuario.id, acao="desativacao_imagem", entidade="orthanc_reference",
-        entidade_id=imagem.id, resultado="sucesso",
-        detalhes=f"Imagem {imagem.orthanc_id} desativada.",
-    ))
-    db.commit()
-
+    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, False, usuario, "desativacao_imagem")
     return {"mensagem": "Imagem desativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}
 
 
 @router.patch("/{orthanc_reference_id}/activate")
 def ativar_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(obter_usuario_atual),
+    usuario: User = Depends(exigir_perfis(*_PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Reativa uma imagem previamente desativada."""
-    _exigir_admin_ou_suporte(usuario)
-
-    imagem = (
-        db.query(OrthancReference)
-        .filter(OrthancReference.id == orthanc_reference_id)
-        .first()
-    )
-    if not imagem:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Imagem {orthanc_reference_id} nao encontrada.",
-        )
-
-    imagem.ativo = True
-    db.commit()
-    db.add(AuditLog(
-        usuario_id=usuario.id, acao="reativacao_imagem", entidade="orthanc_reference",
-        entidade_id=imagem.id, resultado="sucesso",
-        detalhes=f"Imagem {imagem.orthanc_id} reativada.",
-    ))
-    db.commit()
-
+    imagem = _alterar_ativo_imagem(db, orthanc_reference_id, True, usuario, "reativacao_imagem")
     return {"mensagem": "Imagem reativada com sucesso.", "id": imagem.id, "ativo": imagem.ativo}

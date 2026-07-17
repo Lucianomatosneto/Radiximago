@@ -5,7 +5,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.modules.users import User, UserRole
-from app.modules.auth import obter_usuario_atual
+from app.modules.auth import exigir_perfis
 from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/users", tags=["Usuários"])
@@ -36,20 +36,16 @@ class UsuarioAtualizar(BaseModel):
 @router.get("/", response_model=list[UsuarioResposta])
 def listar_usuarios(
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(obter_usuario_atual)
+    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
 ):
-    if usuario_atual.perfil != UserRole.administrador:
-        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     return db.query(User).all()
 
 @router.get("/{user_id}", response_model=UsuarioResposta)
 def obter_usuario(
     user_id: int,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(obter_usuario_atual)
+    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
 ):
-    if usuario_atual.perfil != UserRole.administrador:
-        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -59,10 +55,8 @@ def obter_usuario(
 def criar_usuario(
     dados: UsuarioCriar,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(obter_usuario_atual)
+    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
 ):
-    if usuario_atual.perfil != UserRole.administrador:
-        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     if len(dados.senha) < 8:
         raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
     existente = db.query(User).filter(User.email == dados.email).first()
@@ -76,29 +70,26 @@ def criar_usuario(
         instituicao=dados.instituicao
     )
     db.add(novo)
-    db.commit()
-    db.refresh(novo)
+    db.flush()
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="criacao_usuario", entidade="user", entidade_id=novo.id,
         resultado="sucesso", detalhes=f"Usuario {novo.email} criado com perfil {novo.perfil.value}.",
     ))
     db.commit()
+    db.refresh(novo)
     return novo
 
 @router.patch("/{user_id}/block")
 def bloquear_usuario(
     user_id: int,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(obter_usuario_atual)
+    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
 ):
-    if usuario_atual.perfil != UserRole.administrador:
-        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     usuario.bloqueado = not usuario.bloqueado
     estado = "bloqueado" if usuario.bloqueado else "desbloqueado"
-    db.commit()
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="bloqueio_usuario", entidade="user", entidade_id=usuario.id,
         resultado="sucesso", detalhes=f"Usuario {usuario.email} foi {estado}.",
@@ -111,15 +102,13 @@ def atualizar_usuario(
     user_id: int,
     dados: UsuarioAtualizar,
     db: Session = Depends(get_db),
-    usuario_atual: User = Depends(obter_usuario_atual)
+    usuario_atual: User = Depends(exigir_perfis(UserRole.administrador))
 ):
     """
     Atualiza nome e/ou instituicao de um usuario existente.
     NAO permite trocar o perfil por aqui - troca de perfil e sensivel demais
     para um PATCH simples e fica de fora deliberadamente (ver AUDITORIA_BACKEND.md).
     """
-    if usuario_atual.perfil != UserRole.administrador:
-        raise HTTPException(status_code=403, detail="Acesso restrito ao administrador")
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
@@ -129,11 +118,10 @@ def atualizar_usuario(
     if dados.instituicao is not None:
         usuario.instituicao = dados.instituicao
 
-    db.commit()
-    db.refresh(usuario)
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="edicao_usuario", entidade="user", entidade_id=usuario.id,
         resultado="sucesso", detalhes=f"Dados do usuario {usuario.email} atualizados (nome/instituicao).",
     ))
     db.commit()
+    db.refresh(usuario)
     return usuario
