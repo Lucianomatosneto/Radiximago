@@ -354,6 +354,11 @@ def criar_curadoria(
             status_code=404,
             detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
         )
+    if not imagem.ativo:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Imagem {orthanc_reference_id} esta desativada e nao pode receber uma nova ficha.",
+        )
 
     ja_existe = (
         db.query(Curation)
@@ -496,6 +501,14 @@ def aprovar_curadoria(
             status_code=409,
             detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
         )
+    if ficha.status == StatusCuradoria.SEGUNDA_OPINIAO.value:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A ficha {curation_id} esta em segunda opiniao. Use "
+                f"POST /curation/{curation_id}/apply-review-decision para aplicar a decisao final."
+            ),
+        )
 
     _executar_aprovacao(db, ficha, usuario, dados.anonimizacao_validada, dados.observacoes)
     db.commit()
@@ -527,6 +540,14 @@ def descartar_curadoria(
         raise HTTPException(
             status_code=409,
             detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+    if ficha.status == StatusCuradoria.SEGUNDA_OPINIAO.value:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A ficha {curation_id} esta em segunda opiniao. Use "
+                f"POST /curation/{curation_id}/apply-review-decision para aplicar a decisao final."
+            ),
         )
 
     motivo = _executar_descarte(db, ficha, usuario, dados.motivo)
@@ -572,14 +593,20 @@ def solicitar_segunda_opiniao(
         db.query(CurationReview)
         .filter(
             CurationReview.curation_id == curation_id,
-            CurationReview.status == StatusRevisao.SOLICITADA.value,
+            CurationReview.status.in_([
+                StatusRevisao.SOLICITADA.value,
+                StatusRevisao.RESPONDIDA.value,
+            ]),
         )
         .first()
     )
     if aberta:
         raise HTTPException(
             status_code=409,
-            detail=f"Ja existe uma solicitacao de segunda opiniao aberta (review {aberta.id}).",
+            detail=(
+                f"Ja existe uma solicitacao de segunda opiniao em aberto "
+                f"(review {aberta.id}, status '{aberta.status}')."
+            ),
         )
 
     review = CurationReview(
@@ -734,6 +761,15 @@ def aplicar_decisao_revisao(
                 f"ainda nao foi respondida (status '{review.status}')."
             ),
         )
+    if review.decisao_final in (DecisaoFinalRevisao.APROVAR.value, DecisaoFinalRevisao.DESCARTAR.value):
+        if review.decisao_final != dados.decisao.value:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"A decisao enviada ('{dados.decisao.value}') diverge do parecer do "
+                    f"revisor ('{review.decisao_final}') registrado na review {review.id}."
+                ),
+            )
 
     origem = f" (decisao aplicada via review {review.id})."
 

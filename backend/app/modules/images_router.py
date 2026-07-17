@@ -196,7 +196,20 @@ def upload_imagem(
     if not orthanc_id:
         raise HTTPException(status_code=502, detail="Orthanc nao retornou um ID valido para o arquivo enviado.")
 
-    ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+    try:
+        ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+    except Exception as e:
+        db.rollback()
+        db.add(AuditLog(
+            usuario_id=usuario.id, acao="upload_imagem", entidade="orthanc_reference",
+            resultado="erro",
+            detalhes=f"Falha ao registrar referencia apos upload no Orthanc (orthanc_id={orthanc_id}): {e}",
+        ))
+        db.commit()
+        raise HTTPException(
+            status_code=502,
+            detail="Arquivo foi enviado ao Orthanc, mas falhou ao registrar a referencia no sistema. Contate o suporte.",
+        )
 
     db.add(AuditLog(
         usuario_id=usuario.id, acao="upload_imagem", entidade="orthanc_reference", entidade_id=ref.id,
