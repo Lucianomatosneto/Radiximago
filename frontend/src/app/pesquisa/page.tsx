@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 
@@ -89,6 +89,20 @@ const FILTROS_VAZIOS: Filtros = {
   idade_max: '',
 }
 
+const CHAVES_FILTRO: (keyof Filtros)[] = [
+  'tipo_radiografia',
+  'dente',
+  'arcada',
+  'lado',
+  'achado_principal',
+  'genero',
+  'qualidade_tecnica',
+  'dificuldade',
+  'finalidade',
+  'idade_min',
+  'idade_max',
+]
+
 interface ResultadoImagem {
   curation_id: number
   orthanc_reference_id: number
@@ -119,8 +133,9 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-export default function PesquisaPage() {
+function PesquisaConteudo() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [token, setToken] = useState<string | null>(null)
   const [carregandoPagina, setCarregandoPagina] = useState(true)
 
@@ -142,28 +157,50 @@ export default function PesquisaPage() {
     setCarregandoPagina(false)
   }, [router])
 
+  // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
+  // formulario com eles e ja dispara a busca automaticamente.
+  useEffect(() => {
+    if (!token) return
+
+    const filtrosDaUrl: Filtros = { ...FILTROS_VAZIOS }
+    let temFiltroNaUrl = false
+    for (const chave of CHAVES_FILTRO) {
+      const valor = searchParams.get(chave)
+      if (valor) {
+        filtrosDaUrl[chave] = valor
+        temFiltroNaUrl = true
+      }
+    }
+
+    if (temFiltroNaUrl) {
+      setFiltros(filtrosDaUrl)
+      pesquisar(filtrosDaUrl)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token])
+
   function atualizarFiltro(campo: keyof Filtros, valor: string) {
     setFiltros({ ...filtros, [campo]: valor })
   }
 
-  async function pesquisar() {
+  async function pesquisar(filtrosParaUsar: Filtros = filtros) {
     if (!token) return
     setPesquisando(true)
     setErro('')
     setJaPesquisou(true)
 
     const params = new URLSearchParams()
-    if (filtros.tipo_radiografia) params.set('tipo_radiografia', filtros.tipo_radiografia)
-    if (filtros.dente) params.set('dente', filtros.dente)
-    if (filtros.arcada) params.set('arcada', filtros.arcada)
-    if (filtros.lado) params.set('lado', filtros.lado)
-    if (filtros.achado_principal) params.set('achado_principal', filtros.achado_principal)
-    if (filtros.genero) params.set('genero', filtros.genero)
-    if (filtros.qualidade_tecnica) params.set('qualidade_tecnica', filtros.qualidade_tecnica)
-    if (filtros.dificuldade) params.set('dificuldade', filtros.dificuldade)
-    if (filtros.finalidade) params.set('finalidade', filtros.finalidade)
-    if (filtros.idade_min) params.set('idade_min', filtros.idade_min)
-    if (filtros.idade_max) params.set('idade_max', filtros.idade_max)
+    if (filtrosParaUsar.tipo_radiografia) params.set('tipo_radiografia', filtrosParaUsar.tipo_radiografia)
+    if (filtrosParaUsar.dente) params.set('dente', filtrosParaUsar.dente)
+    if (filtrosParaUsar.arcada) params.set('arcada', filtrosParaUsar.arcada)
+    if (filtrosParaUsar.lado) params.set('lado', filtrosParaUsar.lado)
+    if (filtrosParaUsar.achado_principal) params.set('achado_principal', filtrosParaUsar.achado_principal)
+    if (filtrosParaUsar.genero) params.set('genero', filtrosParaUsar.genero)
+    if (filtrosParaUsar.qualidade_tecnica) params.set('qualidade_tecnica', filtrosParaUsar.qualidade_tecnica)
+    if (filtrosParaUsar.dificuldade) params.set('dificuldade', filtrosParaUsar.dificuldade)
+    if (filtrosParaUsar.finalidade) params.set('finalidade', filtrosParaUsar.finalidade)
+    if (filtrosParaUsar.idade_min) params.set('idade_min', filtrosParaUsar.idade_min)
+    if (filtrosParaUsar.idade_max) params.set('idade_max', filtrosParaUsar.idade_max)
 
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?${params.toString()}`, {
@@ -359,7 +396,7 @@ export default function PesquisaPage() {
             <div className="mt-4 flex items-center gap-3">
               <button
                 type="button"
-                onClick={pesquisar}
+                onClick={() => pesquisar()}
                 disabled={pesquisando}
                 className="rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
               >
@@ -453,5 +490,19 @@ export default function PesquisaPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function PesquisaPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-slate-950">
+          <p className="text-slate-300">Carregando...</p>
+        </main>
+      }
+    >
+      <PesquisaConteudo />
+    </Suspense>
   )
 }

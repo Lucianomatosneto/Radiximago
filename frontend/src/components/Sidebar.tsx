@@ -16,7 +16,7 @@ const ITENS_MENU: ItemMenu[] = [
   { label: 'Curadoria', href: '/curadoria', ativo: true },
   { label: 'Segunda opinião', href: '/segunda-opiniao', ativo: true },
   { label: 'Pesquisa avançada', href: '/pesquisa', ativo: true },
-  { label: 'Banco de imagens', ativo: false },
+  { label: 'Banco de imagens', href: '/banco-imagens', ativo: true },
   { label: 'Relatórios', ativo: false },
   { label: 'Auditoria', ativo: false },
   { label: 'Integrações', ativo: false },
