@@ -46,10 +46,22 @@ def obter_indicadores(
     """
     total_imagens = db.query(func.count(OrthancReference.id)).scalar()
     total_fichas = db.query(func.count(Curation.id)).scalar()
+    usuarios_ativos = (
+        db.query(func.count(User.id))
+        .filter(User.ativo == True, User.bloqueado == False)
+        .scalar()
+    )
+    usuarios_bloqueados = (
+        db.query(func.count(User.id))
+        .filter(User.bloqueado == True)
+        .scalar()
+    )
 
     return {
         "total_imagens_orthanc": total_imagens,
         "total_fichas_curadoria": total_fichas,
+        "usuarios_ativos": usuarios_ativos,
+        "usuarios_bloqueados": usuarios_bloqueados,
         "por_status": _contar_por(db, Curation.status),
         "por_tipo_radiografia": _contar_por(db, Curation.tipo_radiografia),
         "por_achado_principal": _contar_por(db, Curation.achado_principal),
