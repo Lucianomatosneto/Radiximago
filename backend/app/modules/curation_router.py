@@ -4,6 +4,7 @@ Roteador de Curadoria - endpoints da Fase 4.
 Endpoints:
 - GET  /curation/pending                       -> fila de imagens sem ficha
 - POST /curation/{orthanc_reference_id}         -> cria a ficha de curadoria
+- PATCH /curation/{curation_id}                 -> edita os campos de classificacao (nao altera status)
 - POST /curation/{curation_id}/approve          -> aprova a ficha (libera)
 - POST /curation/{curation_id}/discard          -> descarta a ficha (com motivo)
 - POST /curation/{curation_id}/request-review   -> solicita segunda opiniao
@@ -33,6 +34,7 @@ from app.modules.curations import (
     Curation,
     CurationHistory,
     CurationReview,
+    Modalidade,
     TipoRadiografia,
     Genero,
     AchadoPrincipal,
@@ -51,6 +53,13 @@ router = APIRouter(prefix="/curation", tags=["Curadoria"])
 STATUS_FINAIS = [
     StatusCuradoria.APROVADA.value,
     StatusCuradoria.DESCARTADA.value,
+]
+
+# Só se edita uma ficha enquanto ela ainda nao passou por uma decisao
+# (aprovacao/descarte) nem esta em segunda opiniao.
+STATUS_EDITAVEIS = [
+    StatusCuradoria.PENDENTE.value,
+    StatusCuradoria.EM_ANALISE.value,
 ]
 
 
@@ -127,6 +136,28 @@ class CurationCreate(BaseModel):
     descricao_didatica: Optional[str] = None
     observacoes_internas: Optional[str] = None
     finalidade: Optional[Finalidade] = None
+
+
+class CurationUpdate(BaseModel):
+    """
+    Atualizacao parcial dos campos de classificacao de uma ficha.
+    Nao inclui `status` de proposito - a troca de status continua exclusiva
+    de approve/discard/request-review/apply-review-decision.
+    """
+    modalidade: Optional[Modalidade] = None
+    tipo_radiografia: Optional[TipoRadiografia] = None
+    dentes: Optional[List[int]] = None
+    idade_min: Optional[int] = None
+    idade_max: Optional[int] = None
+    genero: Optional[Genero] = None
+    achado_principal: Optional[AchadoPrincipal] = None
+    achados_detalhe: Optional[str] = None
+    qualidade_tecnica: Optional[QualidadeTecnica] = None
+    dificuldade: Optional[Dificuldade] = None
+    descricao_didatica: Optional[str] = None
+    observacoes_internas: Optional[str] = None
+    finalidade: Optional[Finalidade] = None
+    anonimizacao_validada: Optional[bool] = None
 
 
 class CurationApprove(BaseModel):
@@ -286,6 +317,116 @@ def obter_ficha(
         "anonimizacao_validada": ficha.anonimizacao_validada,
         "curador_id": ficha.curador_id,
         "criado_em": ficha.criado_em.isoformat() if ficha.criado_em else None,
+        "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,
+    }
+
+
+# ---------------------------------------------------------------------
+# PATCH /curation/{curation_id}  -> edita os campos de classificacao
+# ---------------------------------------------------------------------
+@router.patch("/{curation_id}")
+def editar_curadoria(
+    curation_id: int,
+    dados: CurationUpdate,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Atualiza parcialmente os campos de classificacao de uma ficha (so os
+    campos enviados). Nao altera `status` - isso continua exclusivo de
+    approve/discard/request-review/apply-review-decision. So permite editar
+    fichas ainda 'pendente' ou 'em_analise'.
+    """
+    ficha = _buscar_ficha(db, curation_id)
+
+    if ficha.status not in STATUS_EDITAVEIS:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                f"A ficha {curation_id} esta '{ficha.status}' (ja finalizada ou em "
+                f"revisao) e nao pode mais ser editada."
+            ),
+        )
+
+    if dados.dentes:
+        invalidos = [d for d in dados.dentes if d not in DENTES_PERMANENTES]
+        if invalidos:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
+            )
+
+    idade_min_final = dados.idade_min if dados.idade_min is not None else ficha.idade_min
+    idade_max_final = dados.idade_max if dados.idade_max is not None else ficha.idade_max
+    for rotulo, valor in (("idade_min", idade_min_final), ("idade_max", idade_max_final)):
+        if valor is not None and not (0 <= valor <= 120):
+            raise HTTPException(status_code=422, detail=f"{rotulo} deve estar entre 0 e 120.")
+    if (
+        idade_min_final is not None
+        and idade_max_final is not None
+        and idade_min_final > idade_max_final
+    ):
+        raise HTTPException(status_code=422, detail="idade_min nao pode ser maior que idade_max.")
+
+    if dados.modalidade is not None:
+        ficha.modalidade = dados.modalidade.value
+    if dados.tipo_radiografia is not None:
+        ficha.tipo_radiografia = dados.tipo_radiografia.value
+    if dados.dentes is not None:
+        ficha.dentes = dados.dentes
+    if dados.idade_min is not None:
+        ficha.idade_min = dados.idade_min
+    if dados.idade_max is not None:
+        ficha.idade_max = dados.idade_max
+    if dados.genero is not None:
+        ficha.genero = dados.genero.value
+    if dados.achado_principal is not None:
+        ficha.achado_principal = dados.achado_principal.value
+    if dados.achados_detalhe is not None:
+        ficha.achados_detalhe = dados.achados_detalhe
+    if dados.qualidade_tecnica is not None:
+        ficha.qualidade_tecnica = dados.qualidade_tecnica.value
+    if dados.dificuldade is not None:
+        ficha.dificuldade = dados.dificuldade.value
+    if dados.descricao_didatica is not None:
+        ficha.descricao_didatica = dados.descricao_didatica
+    if dados.observacoes_internas is not None:
+        ficha.observacoes_internas = dados.observacoes_internas
+    if dados.finalidade is not None:
+        ficha.finalidade = dados.finalidade.value
+    if dados.anonimizacao_validada is not None:
+        ficha.anonimizacao_validada = dados.anonimizacao_validada
+
+    _registrar_historico(
+        db, ficha.id, usuario.id, "edicao",
+        ficha.status, ficha.status, "Campos de classificacao da ficha editados.",
+    )
+    _registrar_auditoria(
+        db, usuario.id, "edicao_curadoria", ficha.id, "sucesso",
+        f"Ficha {ficha.id} editada por usuario {usuario.id}.",
+    )
+    db.commit()
+    db.refresh(ficha)
+
+    return {
+        "mensagem": "Ficha atualizada com sucesso.",
+        "id": ficha.id,
+        "orthanc_reference_id": ficha.orthanc_reference_id,
+        "modalidade": ficha.modalidade,
+        "tipo_radiografia": ficha.tipo_radiografia,
+        "dentes": ficha.dentes,
+        "idade_min": ficha.idade_min,
+        "idade_max": ficha.idade_max,
+        "genero": ficha.genero,
+        "achado_principal": ficha.achado_principal,
+        "achados_detalhe": ficha.achados_detalhe,
+        "qualidade_tecnica": ficha.qualidade_tecnica,
+        "dificuldade": ficha.dificuldade,
+        "descricao_didatica": ficha.descricao_didatica,
+        "observacoes_internas": ficha.observacoes_internas,
+        "finalidade": ficha.finalidade,
+        "status": ficha.status,
+        "anonimizacao_validada": ficha.anonimizacao_validada,
         "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,
     }
 
