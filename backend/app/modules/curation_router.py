@@ -3,6 +3,7 @@ Roteador de Curadoria - endpoints da Fase 4.
 
 Endpoints:
 - GET  /curation/pending                       -> fila de imagens sem ficha
+- GET  /curation/reviews/pending                -> fila de segundas opinioes aguardando resposta
 - POST /curation/{orthanc_reference_id}         -> cria a ficha de curadoria
 - PATCH /curation/{curation_id}                 -> edita os campos de classificacao (nao altera status)
 - POST /curation/{curation_id}/approve          -> aprova a ficha (libera)
@@ -229,6 +230,53 @@ def listar_pendentes(
         "skip": skip,
         "limit": limit,
         "quantidade_retornada": len(itens),
+        "itens": itens,
+    }
+
+
+# ---------------------------------------------------------------------
+# GET /curation/reviews/pending  -> fila de segundas opinioes aguardando resposta
+# ---------------------------------------------------------------------
+@router.get("/reviews/pending")
+def listar_reviews_pendentes(
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista as solicitacoes de segunda opiniao com status 'solicitada'
+    (ainda sem resposta do revisor), com o contexto da ficha e da imagem
+    vinculadas para dar visao de qual imagem e qual e o caso.
+    """
+    resultados = (
+        db.query(CurationReview, Curation, OrthancReference)
+        .join(Curation, Curation.id == CurationReview.curation_id)
+        .join(OrthancReference, OrthancReference.id == Curation.orthanc_reference_id)
+        .filter(CurationReview.status == StatusRevisao.SOLICITADA.value)
+        .order_by(CurationReview.id)
+        .all()
+    )
+
+    itens = [
+        {
+            "id": review.id,
+            "motivo": review.motivo,
+            "primeiro_parecer": review.primeiro_parecer,
+            "criado_em": review.criado_em.isoformat() if review.criado_em else None,
+            "curation": {
+                "id": curation.id,
+                "achado_principal": curation.achado_principal,
+                "tipo_radiografia": curation.tipo_radiografia,
+            },
+            "orthanc_reference": {
+                "id": imagem.id,
+                "orthanc_id": imagem.orthanc_id,
+            },
+        }
+        for review, curation, imagem in resultados
+    ]
+
+    return {
+        "quantidade": len(itens),
         "itens": itens,
     }
 
