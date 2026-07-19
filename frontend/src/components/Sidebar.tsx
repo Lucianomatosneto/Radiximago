@@ -11,7 +11,7 @@ interface ItemMenu {
 
 const ITENS_MENU: ItemMenu[] = [
   { label: 'Início', href: '/dashboard', ativo: true },
-  { label: 'Usuários', ativo: false },
+  { label: 'Usuários', href: '/usuarios', ativo: true },
   { label: 'Imagens recebidas', ativo: false },
   { label: 'Curadoria', ativo: false },
   { label: 'Segunda opinião', ativo: false },

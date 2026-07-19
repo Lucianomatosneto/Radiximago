@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -25,6 +27,7 @@ class UsuarioResposta(BaseModel):
     instituicao: Optional[str]
     ativo: bool
     bloqueado: bool
+    criado_em: Optional[datetime] = None
 
     class Config:
         from_attributes = True
