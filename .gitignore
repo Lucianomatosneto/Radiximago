@@ -149,6 +149,9 @@ activemq-data/
 
 # Environments
 .env
+.env*
+!.env.example
+!frontend/.env.example
 .envrc
 .venv
 env/
@@ -222,6 +225,7 @@ __marimo__/
 out/
 node_modules/
 .turbo/
+*.tsbuildinfo
 
 # Editores
 .vscode/
