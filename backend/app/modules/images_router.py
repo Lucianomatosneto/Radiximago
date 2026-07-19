@@ -2,6 +2,7 @@
 Roteador de Imagens.
 
 Endpoints:
+- GET  /images/                                   -> lista as imagens ativas
 - POST /images/import-from-orthanc              -> sincroniza em lote (varre o Orthanc)
 - POST /images/upload                            -> upload direto de um arquivo DICOM
 - GET  /images/{orthanc_reference_id}             -> consulta uma imagem
@@ -25,6 +26,7 @@ from app.core.config import settings
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
+from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
 
@@ -104,6 +106,54 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
     ))
     db.commit()
     return imagem
+
+
+@router.get("/")
+def listar_imagens(
+    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista as imagens ativas (orthanc_references com ativo=True), trazendo
+    o status da ficha de curadoria mais recente vinculada a cada uma
+    (None se ainda nao houver ficha).
+    """
+    imagens = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.ativo == True)
+        .order_by(OrthancReference.id)
+        .all()
+    )
+
+    ids = [imagem.id for imagem in imagens]
+    status_mais_recente_por_imagem: dict[int, str] = {}
+    if ids:
+        curadorias = (
+            db.query(Curation)
+            .filter(Curation.orthanc_reference_id.in_(ids))
+            .order_by(
+                Curation.orthanc_reference_id,
+                Curation.criado_em.desc(),
+                Curation.id.desc(),
+            )
+            .all()
+        )
+        for curadoria in curadorias:
+            status_mais_recente_por_imagem.setdefault(
+                curadoria.orthanc_reference_id, curadoria.status
+            )
+
+    return [
+        {
+            "id": imagem.id,
+            "orthanc_id": imagem.orthanc_id,
+            "resource_type": imagem.resource_type,
+            "anonimizacao_status": imagem.anonimizacao_status,
+            "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
+            "status_curadoria": status_mais_recente_por_imagem.get(imagem.id),
+        }
+        for imagem in imagens
+    ]
 
 
 @router.post("/import-from-orthanc")

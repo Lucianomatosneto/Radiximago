@@ -25,6 +25,7 @@ from sqlalchemy import (
     text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -126,6 +127,7 @@ class Curation(Base):
     orthanc_reference_id = Column(
         Integer, ForeignKey("orthanc_references.id"), nullable=False, index=True
     )
+    orthanc_reference = relationship("OrthancReference", back_populates="curations")
 
     # Classificacao (valores controlados guardados como texto)
     modalidade = Column(String(20), nullable=False, default="RX")

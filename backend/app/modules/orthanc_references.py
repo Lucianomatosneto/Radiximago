@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, text
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -14,4 +15,9 @@ class OrthancReference(Base):
     resource_type = Column(String(50), nullable=False)
     dicomweb_url = Column(String(500), nullable=True)
     ativo = Column(Boolean, nullable=False, default=True, server_default=text("true"))
+    anonimizacao_status = Column(
+        String(20), nullable=False, default="aguardando", server_default=text("'aguardando'")
+    )
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+    curations = relationship("Curation", back_populates="orthanc_reference")
