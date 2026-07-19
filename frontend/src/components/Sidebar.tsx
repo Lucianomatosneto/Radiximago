@@ -14,7 +14,7 @@ const ITENS_MENU: ItemMenu[] = [
   { label: 'Usuários', href: '/usuarios', ativo: true },
   { label: 'Imagens recebidas', href: '/imagens', ativo: true },
   { label: 'Curadoria', href: '/curadoria', ativo: true },
-  { label: 'Segunda opinião', ativo: false },
+  { label: 'Segunda opinião', href: '/segunda-opiniao', ativo: true },
   { label: 'Pesquisa avançada', ativo: false },
   { label: 'Banco de imagens', ativo: false },
   { label: 'Relatórios', ativo: false },
