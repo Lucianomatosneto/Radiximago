@@ -66,6 +66,8 @@ def obter_indicadores(
         "por_tipo_radiografia": _contar_por(db, Curation.tipo_radiografia),
         "por_achado_principal": _contar_por(db, Curation.achado_principal),
         "por_dificuldade": _contar_por(db, Curation.dificuldade),
+        "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
+        "por_curador": _contar_por(db, Curation.curador_id),
     }
 
 
