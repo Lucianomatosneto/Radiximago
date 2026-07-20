@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 
@@ -144,8 +145,6 @@ function PesquisaConteudo() {
   const [jaPesquisou, setJaPesquisou] = useState(false)
   const [pesquisando, setPesquisando] = useState(false)
   const [erro, setErro] = useState('')
-
-  const [viewerUrlModal, setViewerUrlModal] = useState<string | null>(null)
 
   useEffect(() => {
     const tokenAtual = localStorage.getItem('access_token')
@@ -450,14 +449,12 @@ function PesquisaConteudo() {
                       </div>
                     </dl>
 
-                    <button
-                      type="button"
-                      disabled={!imagem.viewer_url}
-                      onClick={() => imagem.viewer_url && setViewerUrlModal(imagem.viewer_url)}
-                      className="mt-4 rounded-md border border-slate-700 px-3 py-2 text-sm text-slate-200 hover:border-teal-500 hover:text-teal-300 disabled:cursor-not-allowed disabled:opacity-50"
+                    <Link
+                      href={`/visualizar/${imagem.curation_id}`}
+                      className="mt-4 block rounded-md border border-slate-700 px-3 py-2 text-center text-sm text-slate-200 hover:border-teal-500 hover:text-teal-300"
                     >
-                      {imagem.viewer_url ? 'Visualizar' : 'Imagem não disponível para visualização'}
-                    </button>
+                      Visualizar
+                    </Link>
                   </div>
                 ))}
               </div>
@@ -465,30 +462,6 @@ function PesquisaConteudo() {
           </div>
         </main>
       </div>
-
-      {viewerUrlModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-6">
-          <div className="flex h-full w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-              <h2 className="text-sm font-semibold text-slate-200">Visualizador</h2>
-              <button
-                type="button"
-                onClick={() => setViewerUrlModal(null)}
-                className="text-slate-400 hover:text-slate-200"
-              >
-                Fechar
-              </button>
-            </div>
-            <iframe src={viewerUrlModal} title="Visualizador OHIF" className="h-full w-full flex-1 border-0" />
-          </div>
-          <button
-            type="button"
-            aria-label="Fechar"
-            onClick={() => setViewerUrlModal(null)}
-            className="fixed inset-0 -z-10"
-          />
-        </div>
-      )}
     </div>
   )
 }
