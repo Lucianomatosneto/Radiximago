@@ -227,6 +227,10 @@ node_modules/
 .turbo/
 *.tsbuildinfo
 
+# A regra generica "lib/" do template Python (acima) tambem casaria com
+# frontend/src/lib/ - esta excecao evita ignorar o codigo-fonte do frontend.
+!frontend/src/lib/
+
 # Editores
 .vscode/
 .idea/
