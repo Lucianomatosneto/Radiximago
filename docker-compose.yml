@@ -43,12 +43,29 @@ services:
     restart: unless-stopped
     ports:
       - '3001:80'
+    environment:
+      - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
+    # app-config.js e estatico (o nginx da imagem so serve, nao processa
+    # variaveis de ambiente). O arquivo do repo e montado so como TEMPLATE
+    # (ro, caminho separado, com o placeholder __ORTHANC_PASSWORD__), nunca
+    # direto no caminho servido. No boot, geramos o app-config.js de verdade
+    # dentro da camada gravavel do container (nunca no host, senao a senha
+    # real acabaria gravada de volta no arquivo versionado) e encadeamos
+    # (exec) pro entrypoint original da imagem - que ja usa esse mesmo padrao
+    # (sed + exec "$@") pra outras credenciais (Google Healthcare API).
+    entrypoint:
+      - /bin/bash
+      - -c
+      - sed "s|__ORTHANC_PASSWORD__|$$ORTHANC_PASSWORD|g" /usr/src/app-config.template.js > /usr/share/nginx/html/app-config.js && exec /usr/src/entrypoint.sh "$$@"
+      - bash
+    command: ['nginx', '-g', 'daemon off;']
     depends_on:
       - radix-orthanc
     networks:
       - radix-network
     volumes:
       - ./ohif/index.html:/usr/share/nginx/html/index.html:ro
+      - ./ohif/app-config.template.js:/usr/src/app-config.template.js:ro
 
   # --- Backend FastAPI ---
   radix-api:

@@ -21,7 +21,7 @@
     staticWado: false,
     singlepart: 'bulkdata,video',
     requestOptions: {
-    auth: 'admin:orthanc_senha_2026'
+    auth: 'admin:__ORTHANC_PASSWORD__'
     }
     }
     }
