@@ -18,7 +18,7 @@ const ITENS_MENU: ItemMenu[] = [
   { label: 'Pesquisa avançada', href: '/pesquisa', ativo: true },
   { label: 'Banco de imagens', href: '/banco-imagens', ativo: true },
   { label: 'Relatórios', href: '/relatorios', ativo: true },
-  { label: 'Auditoria', ativo: false },
+  { label: 'Auditoria', href: '/auditoria', ativo: true },
   { label: 'Integrações', ativo: false },
   { label: 'Configurações', ativo: false },
 ]
