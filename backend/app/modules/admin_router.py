@@ -4,6 +4,7 @@ Roteador Administrativo - Fase 6 (backend).
 Endpoints (somente administrador):
 - GET /admin/stats       -> indicadores para o dashboard
 - GET /admin/audit-logs  -> consulta da auditoria (com filtros)
+- GET /admin/settings    -> configuracoes NAO sensiveis do backend
 
 Fornece a "materia-prima" numerica para os paineis do frontend.
 """
@@ -15,6 +16,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_ADMIN
 from app.modules.users import User, UserRole
@@ -124,4 +126,25 @@ def consultar_auditoria(
         "limit": limit,
         "quantidade_retornada": len(itens),
         "itens": itens,
+    }
+
+
+@router.get("/settings")
+def obter_configuracoes(
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """
+    Configuracoes NAO sensiveis do backend, para a tela de Configuracoes.
+
+    NUNCA inclui aqui: DATABASE_URL, JWT_SECRET_KEY, ORTHANC_USERNAME ou
+    ORTHANC_PASSWORD - essas continuam apenas no ambiente do servidor.
+    """
+    return {
+        "orthanc_url": settings.ORTHANC_URL,
+        "dicomweb_url": settings.DICOMWEB_URL,
+        "ohif_base_url": settings.OHIF_BASE_URL,
+        "max_upload_size_mb": settings.MAX_UPLOAD_SIZE_MB,
+        "environment": settings.ENVIRONMENT,
+        "jwt_algorithm": settings.JWT_ALGORITHM,
+        "jwt_expire_minutes": settings.JWT_EXPIRE_MINUTES,
     }

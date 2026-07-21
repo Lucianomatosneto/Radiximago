@@ -20,7 +20,7 @@ const ITENS_MENU: ItemMenu[] = [
   { label: 'Relatórios', href: '/relatorios', ativo: true },
   { label: 'Auditoria', href: '/auditoria', ativo: true },
   { label: 'Integrações', href: '/integracoes', ativo: true },
-  { label: 'Configurações', ativo: false },
+  { label: 'Configurações', href: '/configuracoes', ativo: true },
 ]
 
 export default function Sidebar() {
