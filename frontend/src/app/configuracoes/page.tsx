@@ -86,7 +86,6 @@ function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: strin
 export default function ConfiguracoesPage() {
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
-  const [acessoNegado, setAcessoNegado] = useState(false)
 
   const [config, setConfig] = useState<SettingsResponse | null>(null)
   const [erro, setErro] = useState('')
@@ -100,8 +99,7 @@ export default function ConfiguracoesPage() {
 
     const perfil = localStorage.getItem('perfil')
     if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      setAcessoNegado(true)
-      setCarregando(false)
+      router.push('/acesso-negado')
       return
     }
 
@@ -141,19 +139,6 @@ export default function ConfiguracoesPage() {
     )
   }
 
-  if (acessoNegado) {
-    return (
-      <div className="flex min-h-screen bg-slate-950">
-        <Sidebar />
-        <div className="flex flex-1 flex-col">
-          <Topbar />
-          <main className="flex flex-1 items-center justify-center">
-            <p className="text-slate-300">Acesso restrito</p>
-          </main>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="flex min-h-screen bg-slate-950">
