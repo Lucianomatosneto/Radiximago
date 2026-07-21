@@ -42,8 +42,10 @@ def obter_detalhes_instancia(orthanc_id: str) -> dict:
     """
     Busca os detalhes de UMA instancia especifica no Orthanc.
 
-    A partir desses detalhes conseguimos extrair os UIDs DICOM
-    (Study, Series e SOP Instance UID) e os IDs dos niveis pai.
+    A partir desses detalhes conseguimos o SOPInstanceUID (em MainDicomTags)
+    e o ParentSeries - que e o ID interno do Orthanc da serie-mae, NAO um UID
+    DICOM. Esse nivel tambem NAO expoe o StudyInstanceUID (o Orthanc so devolve
+    o pai imediato); para isso usar obter_tags_simplificadas_instancia.
 
     Parametro:
         orthanc_id: o identificador interno do Orthanc.
@@ -51,6 +53,25 @@ def obter_detalhes_instancia(orthanc_id: str) -> dict:
     Retorna: um dicionario com os metadados da instancia.
     """
     url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}"
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.get(url)
+        resposta.raise_for_status()
+        return resposta.json()
+
+
+def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
+    """
+    Busca as tags DICOM simplificadas (nome legivel -> valor) de uma instancia.
+
+    Diferente de obter_detalhes_instancia, aqui vem o StudyInstanceUID real,
+    direto da tag DICOM (0020,000D) - e nao um ID interno do Orthanc.
+
+    Parametro:
+        orthanc_id: o identificador interno do Orthanc.
+
+    Retorna: um dicionario {nome_da_tag: valor}.
+    """
+    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/simplified-tags"
     with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
         resposta = client.get(url)
         resposta.raise_for_status()

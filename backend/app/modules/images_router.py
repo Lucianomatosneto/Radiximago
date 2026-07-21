@@ -33,17 +33,20 @@ from app.modules.audit_logs import AuditLog
 router = APIRouter(prefix="/images", tags=["Imagens"])
 
 
-def _extrair_uids(detalhes: dict) -> dict:
+def _extrair_uids(detalhes: dict, tags_simplificadas: dict) -> dict:
     """
-    Extrai os UIDs DICOM de dentro dos detalhes de uma instancia do Orthanc.
-    Os detalhes trazem um bloco 'MainDicomTags' com as tags principais.
-    Retorna um dicionario com os tres UIDs (pode vir vazio se ausente).
+    Extrai os UIDs DICOM de uma instancia do Orthanc.
+
+    'detalhes' (GET /instances/{id}) so tem o SOPInstanceUID e o ParentSeries
+    (ID interno do Orthanc, nao UID DICOM, e nao existe ParentStudy nesse
+    nivel). O StudyInstanceUID real vem de 'tags_simplificadas'
+    (GET /instances/{id}/simplified-tags), que expoe a tag DICOM diretamente.
     """
     tags = detalhes.get("MainDicomTags", {})
     return {
         "sop_instance_uid": tags.get("SOPInstanceUID"),
         "series_instance_uid": detalhes.get("ParentSeries"),
-        "study_instance_uid": detalhes.get("ParentStudy"),
+        "study_instance_uid": tags_simplificadas.get("StudyInstanceUID"),
     }
 
 
@@ -62,7 +65,8 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
         return existente, False
 
     detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id)
-    uids = _extrair_uids(detalhes)
+    tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id)
+    uids = _extrair_uids(detalhes, tags_simplificadas)
     dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id}"
 
     nova_ref = OrthancReference(
