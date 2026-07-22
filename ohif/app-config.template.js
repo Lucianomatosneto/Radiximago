@@ -1,4 +1,4 @@
-{
+window.config = {
     routerBasename: '/',
     showStudyList: true,
     dataSources: [
