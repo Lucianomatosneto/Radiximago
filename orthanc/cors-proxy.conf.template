@@ -16,13 +16,30 @@
 # withCredentials e usado - mesmo com Allow-Origin ja apontando pra uma
 # origem especifica (nao pode ser "*" junto com credentials de qualquer
 # forma, mas so isso nao bastava).
+#
+# O Authorization e injetado AQUI (pelo proxy), nao pelo app-config.js do
+# OHIF: no ohif/app v3.9.2, o cliente QIDO/WADO (extensions/default/src/
+# DicomWebDataSource/index.js) monta os headers via
+# userAuthenticationService.getAuthorizationHeader() - o campo
+# "requestOptions.auth" do dataSources nao e lido em lugar nenhum nessa
+# versao (confirmado lendo o codigo-fonte real da tag v3.9.2 no Github).
+# Sem OIDC configurado esse servico sempre retorna vazio, entao a unica
+# forma pratica de autenticar e o proprio proxy adicionar a credencial -
+# o que tambem tem a vantagem de nunca expor a senha do Orthanc no
+# JS/config que chega ao navegador.
+
+# Allowlist de origens locais equivalentes (localhost e 127.0.0.1 apontam
+# pro mesmo host, mas o navegador trata como origens CORS diferentes).
+map $http_origin $cors_origin {
+    default '';
+    "~^http://localhost:3001$" $http_origin;
+    "~^http://127\.0\.0\.1:3001$" $http_origin;
+}
 
 server {
     listen 80;
 
     location / {
-        set $cors_origin 'http://localhost:3001';
-
         if ($request_method = OPTIONS) {
             add_header 'Access-Control-Allow-Origin' $cors_origin always;
             add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
@@ -40,9 +57,14 @@ server {
         add_header 'Access-Control-Allow-Credentials' 'true' always;
 
         proxy_pass http://radix-orthanc:8042;
-        proxy_set_header Host $host;
+        # $host remove a porta da requisicao original - o Orthanc usa esse
+        # header pra montar RetrieveURL nas respostas DICOMweb, e sem a porta
+        # elas saiam como "http://localhost/..." (porta 80 implicita, errada).
+        # $http_host preserva exatamente o que o navegador mandou (localhost:8042).
+        proxy_set_header Host $http_host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Authorization "Basic __ORTHANC_AUTH_BASIC__";
     }
 }

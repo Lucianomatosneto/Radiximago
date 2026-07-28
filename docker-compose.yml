@@ -49,16 +49,49 @@ services:
     restart: unless-stopped
     ports:
       - '8042:80'
+    environment:
+      - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
     depends_on:
       - radix-orthanc
+    # cors-proxy.conf.template e montado num caminho separado (nao direto
+    # em conf.d, e NAO em /etc/nginx/templates/ - esse diretorio e
+    # auto-processado via envsubst pelo entrypoint padrao da imagem nginx,
+    # o que geraria um /etc/nginx/conf.d/cors-proxy.conf duplicado com
+    # "listen 80" repetido por cima do default.conf que geramos abaixo)
+    # porque tem o placeholder __ORTHANC_AUTH_BASIC__ - o boot gera o de
+    # verdade dentro da camada gravavel do container (senao a senha real
+    # acabaria gravada de volta no arquivo versionado), no mesmo padrao
+    # usado no radix-ohif.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed "s|__ORTHANC_AUTH_BASIC__|$$(printf '%s' "admin:$$ORTHANC_PASSWORD" | base64)|g" /usr/src/cors-proxy.conf.template | tr -d '\r' > /etc/nginx/conf.d/default.conf
+        exec /docker-entrypoint.sh "$$@"
+      - sh
+    command: ['nginx', '-g', 'daemon off;']
     volumes:
-      - ./orthanc/cors-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./orthanc/cors-proxy.conf.template:/usr/src/cors-proxy.conf.template:ro
     networks:
       - radix-network
 
   # --- Visualizador OHIF ---
   radix-ohif:
-    image: ohif/viewer@sha256:b4bfecdc7cc670101cbfd01215fcd1f77b7cc5c867c5ed1cb10142f7a806ccd9
+    # ohif/viewer (imagem antiga, mar/2023) foi descontinuada - o pipeline
+    # oficial agora publica em ohif/app. Ja usa 100% o pipeline moderno de
+    # dataSources, sem o mecanismo legado servers/activeServer que travava
+    # com o server.dcmjs.org de demonstracao.
+    # NAO usar v3.10.0+ (testado ate v3.13.0/latest): a partir dessa faixa
+    # de versoes, a imagem publicada no Docker Hub parou de vir com os
+    # "modes" compilados (nenhum @ohif/mode-* presente nos bundles) -
+    # confirmado via grep direto nos arquivos servidos - entao o app quebra
+    # com "No modes are defined!" independente do app-config.js, mesmo
+    # espelhando exatamente o config do demo publico real (viewer.ohif.org),
+    # que roda com extensions/modes vazios mas tem os modos compilados por
+    # fora desse array. v3.9.2 e a mais recente confirmada com os modos
+    # completos (mode-longitudinal, mode-segmentation, mode-tmtv, etc.)
+    # E ja no pipeline moderno (0 ocorrencias de ADD_SERVER/activeServer).
+    image: ohif/app:v3.9.2
     container_name: radix-ohif
     restart: unless-stopped
     ports:
@@ -67,28 +100,70 @@ services:
       - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
     # app-config.js e estatico (o nginx da imagem so serve, nao processa
     # variaveis de ambiente). O arquivo do repo e montado so como TEMPLATE
-    # (ro, caminho separado, com o placeholder __ORTHANC_PASSWORD__), nunca
+    # (ro, caminho separado, com o placeholder __ORTHANC_AUTH_BASIC__), nunca
     # direto no caminho servido. No boot, geramos o app-config.js de verdade
     # dentro da camada gravavel do container (nunca no host, senao a senha
     # real acabaria gravada de volta no arquivo versionado) e encadeamos
-    # (exec) pro entrypoint original da imagem - que ja usa esse mesmo padrao
-    # (sed + exec "$@") pra outras credenciais (Google Healthcare API).
+    # (exec) pro entrypoint original da imagem: /usr/src/entrypoint.sh (nao
+    # /docker-entrypoint.sh - esse so cuida de wildcards genericos do nginx
+    # oficial; e o /usr/src/entrypoint.sh que GERA o /etc/nginx/conf.d/
+    # default.conf via envsubst nos templates da propria imagem. Pular esse
+    # script deixa o nginx de pe sem nenhum "listen" configurado - confirmado
+    # via teste real: container fica "Up" e com processos nginx rodando, mas
+    # sem nenhuma porta aberta, curl da "connection refused").
+    # Reescrito em /bin/sh (a imagem e Alpine puro, sem bash).
     # O "tr -d '\r'" remove CRLF antes de gravar: o core.autocrlf do Git no
     # Windows pode converter o template pra CRLF na copia de trabalho (o
     # commit em si e LF puro) - isso deixa o resultado imune a essa
     # divergencia, independente da terminacao de linha do arquivo montado.
+    # O formato esperado do "auth" muda entre versoes do dicomweb-client:
+    # na imagem antiga (ohif/viewer, mar/2023) o header precisava vir ja
+    # pronto como "Basic <base64>". Nesta versao (ohif/app v3.9.2) e o
+    # oposto - o getAuthorizationHeader() do proprio dicomweb-client faz
+    # `Basic ${btoa(requestOptions.auth)}` internamente, entao "auth" tem
+    # que ser a string crua "admin:senha" (mandar ja em base64 aqui causa
+    # um duplo-encode e da 401 - confirmado testando os dois formatos direto
+    # contra o proxy CORS via fetch no console do navegador).
+    # Cache do app-config.js: o navegador cacheia a tag <script
+    # src="/app-config.js"> do index.html agressivamente (a imagem nao manda
+    # Cache-Control nenhum nesse arquivo, so ETag/Last-Modified - e mesmo
+    # assim o navegador as vezes reusa o cache sem revalidar, mesmo em aba
+    # nova ou apos Ctrl+Shift+R) e ignora recriacoes do container. Tentamos
+    # colocar um "?v=timestamp" no <script src> do index.html via sed, mas
+    # esse arquivo (e o diretorio dele) pertence a root e o container roda
+    # como usuario nginx (imagem nginx-unprivileged) - sed nao tem permissao
+    # de escrever ali. /etc/nginx/conf.d/ ja e gravavel pelo usuario nginx
+    # (e onde o entrypoint original da imagem gera o default.conf), entao a
+    # solucao foi gerar o default.conf nos mesmos (mesmo envsubst que o
+    # entrypoint original usaria) e injetar Cache-Control: no-store so pra
+    # esse arquivo - deixamos de encadear (exec) pro /usr/src/entrypoint.sh
+    # original porque ele so faz esse envsubst + tratar variaveis que nao
+    # usamos (APP_CONFIG env var, credenciais do Google Healthcare API);
+    # replicar o envsubst aqui e mais simples que patchar o script deles.
     entrypoint:
-      - /bin/bash
+      - /bin/sh
       - -c
-      - sed "s|__ORTHANC_PASSWORD__|$$ORTHANC_PASSWORD|g" /usr/src/app-config.template.js | tr -d '\r' > /usr/share/nginx/html/app-config.js && exec /usr/src/entrypoint.sh "$$@"
-      - bash
+      - |
+        AUTH_BASIC="admin:$$ORTHANC_PASSWORD"
+        sed "s|__ORTHANC_AUTH_BASIC__|$$AUTH_BASIC|g" /usr/src/app-config.template.js | tr -d '\r' > /usr/share/nginx/html/app-config.js
+        envsubst '$${PORT}' < /usr/src/default.conf.template > /etc/nginx/conf.d/default.conf
+        sed -i '/^server {/a\  location = /app-config.js { root /usr/share/nginx/html; add_header Cache-Control "no-store"; }' /etc/nginx/conf.d/default.conf
+        exec nginx -g 'daemon off;'
+      - sh
     command: ['nginx', '-g', 'daemon off;']
     depends_on:
       - radix-orthanc
     networks:
       - radix-network
+    # ./ohif/index.html NAO e mais montado aqui: era so pra remover uma
+    # referencia ao polyfill.io (dominio comprometido em 2024) que a imagem
+    # antiga (mar/2023) tinha hardcoded. A ohif/app:v3.12.8 ja nao referencia
+    # polyfill.io (confirmado: grep no index.html da propria imagem, 0
+    # ocorrencias) - manter o mount so serviria pra sobrescrever o
+    # index.html real (que referencia os hashes de bundle certos desta
+    # versao) com uma copia congelada dos hashes da imagem antiga, quebrando
+    # o carregamento dos bundles.
     volumes:
-      - ./ohif/index.html:/usr/share/nginx/html/index.html:ro
       - ./ohif/app-config.template.js:/usr/src/app-config.template.js:ro
 
   # --- Backend FastAPI ---

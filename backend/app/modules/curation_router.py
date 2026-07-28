@@ -319,8 +319,13 @@ def obter_link_visualizador(
             "viewer_url": None,
         }
 
+    # O nome da data source ('dicomweb') precisa ir no PATH da rota do OHIF v3,
+    # nao so configurado no app-config.js - sem isso /viewer sozinho cai numa
+    # rota generica diferente (a de "abrir por URL direta"), que reclama
+    # "No URL was specified. Use ?url=$yourURL" mesmo com StudyInstanceUIDs
+    # presente na query string.
     viewer_url = (
-        f"{settings.OHIF_BASE_URL}/viewer"
+        f"{settings.OHIF_BASE_URL}/viewer/dicomweb"
         f"?StudyInstanceUIDs={imagem.study_instance_uid}"
     )
 

@@ -1,9 +1,11 @@
 window.config = {
     routerBasename: '/',
     showStudyList: true,
+    extensions: [],
+    modes: [],
     dataSources: [
     {
-    namespace: '@ohif/extensiondefault.dataSourcesModule.dicomweb',
+    namespace: '@ohif/extension-default.dataSourcesModule.dicomweb',
     sourceName: 'dicomweb',
     configuration: {
     friendlyName: 'Radix Imago - Orthanc',
@@ -21,7 +23,7 @@ window.config = {
     staticWado: false,
     singlepart: 'bulkdata,video',
     requestOptions: {
-    auth: 'admin:__ORTHANC_PASSWORD__'
+    auth: '__ORTHANC_AUTH_BASIC__'
     }
     }
     }
