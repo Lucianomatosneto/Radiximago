@@ -2,19 +2,19 @@ import pydicom
 
 CAMINHO = "/app/dicom_teste/DICOM/I6"
 
+# Mantida consistente com _CAMPOS_A_PRESERVAR em app/modules/orthanc_client.py.
+# Sexo, idade e data do exame (Study/Series) NAO entram aqui de proposito -
+# sao contexto pedagogico util pro fluxo de curadoria e, sozinhos, nao
+# identificam um paciente.
 CAMPOS_SENSIVEIS = [
     "PatientName",
     "PatientID",
     "PatientBirthDate",
-    "PatientSex",
-    "PatientAge",
     "InstitutionName",
     "InstitutionAddress",
     "ReferringPhysicianName",
     "PerformingPhysicianName",
     "OperatorsName",
-    "StudyDate",
-    "SeriesDate",
     "AccessionNumber",
     "DeviceSerialNumber",
 ]

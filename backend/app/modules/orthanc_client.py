@@ -78,6 +78,88 @@ def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
         return resposta.json()
 
 
+# O perfil padrao do Orthanc (DICOM PS3.15 Table E.1-1) remove/substitui os
+# dados pessoais exigidos pela LGPD, mas TAMBEM uma serie de metadados
+# tecnicos e demograficos que nao identificam ninguem sozinhos - o KEEP
+# abaixo restaura o que nao precisa sair. Lista descoberta testando
+# empiricamente o antes/depois do perfil padrao num arquivo real (nao ha
+# combinacao documentada de flags no Orthanc que va direto pro minimo sem
+# passar pelo perfil completo primeiro).
+#
+# Sexo, idade e data do exame (Study/Series) ficam de proposito - sao
+# contexto pedagogico util pro fluxo de curadoria (a propria ficha de
+# curadoria ja pede idade/genero manualmente) e, sozinhos, nao identificam
+# um paciente. O que sai continua sendo nome, ID, data de nascimento,
+# medicos, instituicao e numero de serie do aparelho (ver
+# verificar_anonimizacao.py, mantido consistente com esta lista).
+_CAMPOS_A_PRESERVAR = [
+    "AcquisitionDate",
+    "AcquisitionTime",
+    "ContentDate",
+    "ContentTime",
+    "ContributingEquipmentSequence",
+    "InstanceCreationDate",
+    "InstanceCreationTime",
+    "PatientAge",
+    "PatientSex",
+    "PerformedProcedureStepStartDate",
+    "PerformedProcedureStepStartTime",
+    "SeriesDate",
+    "SeriesTime",
+    "StudyDate",
+    "StudyTime",
+]
+
+
+def anonimizar_instancia(orthanc_id: str) -> dict:
+    """
+    Manda o Orthanc anonimizar uma instancia usando o perfil padrao do DICOM
+    (PS3.15 Basic Application Level Confidentiality Profile), mas com um
+    Keep explicito pra restaurar o que o perfil padrao remove sem ser dado
+    pessoal (ver _CAMPOS_A_PRESERVAR) - decisao deliberada: so sai o que a
+    LGPD exige de verdade (nome, ID, data de nascimento, medicos,
+    instituicao, numero de serie do aparelho, accession number); sexo,
+    idade e datas do exame ficam. Os UIDs (Study/Series/SOP) sao
+    regenerados pra impedir correlacionar de volta ao original entre
+    sistemas.
+
+    Ao contrario do endpoint equivalente em studies/series/patients (que
+    grava o resultado direto no Orthanc e devolve um JSON com o ID), no
+    nivel de instancia o Orthanc devolve o ARQUIVO DICOM ANONIMIZADO CRU
+    (Content-Type: application/dicom) no corpo da resposta - confirmado
+    testando direto (content-type e os bytes batem com um DICOM valido,
+    "DICM" no offset 128). Por isso fazemos o upload desses bytes nos
+    mesmos, via enviar_instancia, pra ter uma instancia de verdade gravada
+    com um ID.
+
+    Parametro:
+        orthanc_id: o identificador interno do Orthanc da instancia original.
+
+    Retorna: o dicionario de resposta do Orthanc pro upload (inclui "ID").
+    """
+    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/anonymize"
+    corpo = {"Synchronous": True, "Keep": _CAMPOS_A_PRESERVAR}
+    with httpx.Client(auth=_get_auth(), timeout=60.0) as client:
+        resposta = client.post(url, json=corpo)
+        resposta.raise_for_status()
+        return enviar_instancia(resposta.content)
+
+
+def excluir_instancia(orthanc_id: str) -> None:
+    """
+    Remove uma instancia do Orthanc. Usado pra apagar o arquivo original
+    identificavel depois que a versao anonimizada ja foi gravada (ou pra
+    limpar o original se a anonimizacao falhar no meio do caminho).
+
+    Parametro:
+        orthanc_id: o identificador interno do Orthanc da instancia a remover.
+    """
+    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}"
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.delete(url)
+        resposta.raise_for_status()
+
+
 def enviar_instancia(conteudo: bytes) -> dict:
     """
     Envia um arquivo DICOM bruto para o Orthanc (upload).

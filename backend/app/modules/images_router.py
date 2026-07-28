@@ -50,11 +50,54 @@ def _extrair_uids(detalhes: dict, tags_simplificadas: dict) -> dict:
     }
 
 
+def _anonimizar_e_excluir_original(orthanc_id_original: str) -> str:
+    """
+    Manda o Orthanc anonimizar a instancia (perfil padrao DICOM PS3.15) e
+    apaga o original identificavel em seguida. Devolve o orthanc_id da
+    instancia anonimizada - e essa que deve ser referenciada dai em diante,
+    nunca o original.
+
+    Se a anonimizacao falhar (ou o Orthanc nao devolver um ID valido),
+    tenta apagar o original mesmo assim (melhor esforco) antes de propagar
+    o erro, pra nao deixar um arquivo identificavel orfao - sem nenhuma
+    referencia no banco - parado no Orthanc.
+    """
+    try:
+        resultado = orthanc_client.anonimizar_instancia(orthanc_id_original)
+    except Exception:
+        try:
+            orthanc_client.excluir_instancia(orthanc_id_original)
+        except Exception:
+            pass
+        raise
+
+    orthanc_id_anonimizado = resultado.get("ID")
+    if not orthanc_id_anonimizado:
+        try:
+            orthanc_client.excluir_instancia(orthanc_id_original)
+        except Exception:
+            pass
+        raise RuntimeError(
+            f"Orthanc nao retornou um ID valido para a instancia anonimizada "
+            f"(original={orthanc_id_original})."
+        )
+
+    orthanc_client.excluir_instancia(orthanc_id_original)
+    return orthanc_id_anonimizado
+
+
 def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[OrthancReference, bool]:
     """
     Garante que existe uma orthanc_reference para este orthanc_id.
     Retorna (referencia, criada_agora). Compartilhado pela sincronizacao em
-    lote e pelo upload direto.
+    lote e pelo upload direto - e por isso o unico ponto por onde TODA
+    imagem nova passa, seja ela recebida via C-STORE direto do computador
+    radiografico (descoberta depois pela sincronizacao) ou via upload manual.
+
+    Antes de registrar, manda anonimizar a instancia original no Orthanc
+    (perfil padrao DICOM PS3.15) e apaga o original identificavel - a
+    referencia gravada no banco aponta so pra versao anonimizada, o arquivo
+    com os dados originais nunca fica persistido.
     """
     existente = (
         db.query(OrthancReference)
@@ -64,18 +107,21 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     if existente:
         return existente, False
 
-    detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id)
-    tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id)
+    orthanc_id_anonimizado = _anonimizar_e_excluir_original(orthanc_id)
+
+    detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
+    tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
     uids = _extrair_uids(detalhes, tags_simplificadas)
-    dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id}"
+    dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id_anonimizado}"
 
     nova_ref = OrthancReference(
-        orthanc_id=orthanc_id,
+        orthanc_id=orthanc_id_anonimizado,
         study_instance_uid=uids["study_instance_uid"],
         series_instance_uid=uids["series_instance_uid"],
         sop_instance_uid=uids["sop_instance_uid"],
         resource_type="instance",
         dicomweb_url=dicomweb_url,
+        anonimizacao_status="concluida",
     )
     db.add(nova_ref)
     db.commit()
@@ -223,9 +269,11 @@ def upload_imagem(
     db: Session = Depends(get_db),
 ):
     """
-    Recebe um arquivo DICOM, envia para o Orthanc e registra a referencia.
-    Nao faz nenhuma anonimizacao - a seguranca de LGPD continua sendo a
-    checagem manual humana no fluxo de curadoria (anonimizacao_validada).
+    Recebe um arquivo DICOM, envia para o Orthanc, anonimiza (perfil padrao
+    DICOM PS3.15, via _registrar_referencia_se_nova) e registra a
+    referencia apontando pra versao anonimizada. A checagem manual humana
+    no fluxo de curadoria (anonimizacao_validada) continua existindo como
+    segunda camada antes da aprovacao, mas nao e mais a unica protecao.
     """
     limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     pedaco_bytes = 1024 * 1024  # 1MB por leitura
