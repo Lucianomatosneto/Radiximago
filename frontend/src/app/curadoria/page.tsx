@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useState, KeyboardEvent } from 'react'
+import { useEffect, useRef, useState, KeyboardEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import Sidebar from '../../components/Sidebar'
+import Link from 'next/link'
 import Topbar from '../../components/Topbar'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
@@ -113,6 +113,16 @@ function truncarOrthancId(id: string): string {
   return id.length > 12 ? `${id.slice(0, 12)}...` : id
 }
 
+// A fila colapsa pra 56px (so um botao pra reabrir) quando ha uma imagem
+// aberta, pra dar o maximo de largura possivel pro visualizador. A coluna
+// da ficha (380px) so existe na grade quando ha uma ficha ativa.
+function colunaGridClasse(temFichaAtiva: boolean, filaColapsada: boolean): string {
+  if (temFichaAtiva) {
+    return filaColapsada ? 'lg:grid-cols-[56px_1fr_380px]' : 'lg:grid-cols-[320px_1fr_380px]'
+  }
+  return filaColapsada ? 'lg:grid-cols-[56px_1fr]' : 'lg:grid-cols-[320px_1fr]'
+}
+
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
     const dados = await response.json()
@@ -151,10 +161,13 @@ export default function CuradoriaPage() {
   const [carregandoFila, setCarregandoFila] = useState(false)
   const [erroFila, setErroFila] = useState('')
   const [criandoId, setCriandoId] = useState<number | null>(null)
+  const [filaColapsada, setFilaColapsada] = useState(false)
 
   const [fichaAtiva, setFichaAtiva] = useState<FichaAtiva | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
+  const visualizadorRef = useRef<HTMLElement | null>(null)
+  const [telaCheia, setTelaCheia] = useState(false)
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
   const [denteInput, setDenteInput] = useState('')
@@ -210,6 +223,27 @@ export default function CuradoriaPage() {
     } finally {
       setCarregandoFila(false)
       setCarregando(false)
+    }
+  }
+
+  useEffect(() => {
+    function aoMudarTelaCheia() {
+      setTelaCheia(document.fullscreenElement === visualizadorRef.current)
+    }
+    document.addEventListener('fullscreenchange', aoMudarTelaCheia)
+    return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
+  }, [])
+
+  async function alternarTelaCheia() {
+    if (!visualizadorRef.current) return
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await visualizadorRef.current.requestFullscreen()
+      }
+    } catch {
+      // navegador pode negar (ex.: sem interacao do usuario) - ignora
     }
   }
 
@@ -295,6 +329,7 @@ export default function CuradoriaPage() {
       const criada = await respostaCriacao.json()
       setFila((prev) => prev.filter((item) => item.orthanc_reference_id !== imagem.orthanc_reference_id))
       await carregarFichaCompleta(token, criada.curation_id, imagem.orthanc_reference_id)
+      setFilaColapsada(true)
     } catch {
       setErroFila('Não foi possível abrir esta imagem para curadoria.')
     } finally {
@@ -306,6 +341,7 @@ export default function CuradoriaPage() {
     setFichaAtiva(null)
     setViewerInfo(null)
     setForm(FORM_VAZIO)
+    setFilaColapsada(false)
     if (token) carregarFila(token)
   }
 
@@ -446,60 +482,115 @@ export default function CuradoriaPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
-      <Sidebar />
+    <div className="flex min-h-screen flex-col bg-slate-950">
+      <Topbar />
 
-      <div className="flex flex-1 flex-col">
-        <Topbar />
+      <main className="flex-1 overflow-y-auto p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:border-teal-500 hover:text-teal-300"
+          >
+            ← Início
+          </Link>
+          <h1 className="text-xl font-semibold text-slate-100">Curadoria</h1>
+        </div>
 
-        <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">Curadoria</h1>
+        <div className={`grid grid-cols-1 gap-4 ${colunaGridClasse(!!fichaAtiva, filaColapsada)}`}>
+          {/* COLUNA ESQUERDA - Fila de curadoria (colapsavel: some quando ha
+              uma imagem aberta, pra dar o maximo de espaco ao visualizador) */}
+          <section className="rounded-xl border border-slate-800 bg-slate-900">
+            {filaColapsada ? (
+              <button
+                type="button"
+                onClick={() => setFilaColapsada(false)}
+                aria-label="Expandir fila de curadoria"
+                title="Expandir fila de curadoria"
+                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-teal-300"
+              >
+                <span aria-hidden="true">»</span>
+                <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
+                  Fila{fila.length > 0 ? ` (${fila.length})` : ''}
+                </span>
+              </button>
+            ) : (
+              <>
+                <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
+                  <h2 className="text-sm font-semibold text-slate-200">Fila de curadoria</h2>
+                  <button
+                    type="button"
+                    onClick={() => setFilaColapsada(true)}
+                    aria-label="Recolher fila de curadoria"
+                    title="Recolher fila de curadoria"
+                    className="text-slate-400 hover:text-teal-300"
+                  >
+                    «
+                  </button>
+                </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[320px_1fr_380px]">
-            {/* COLUNA ESQUERDA - Fila de curadoria */}
-            <section className="rounded-xl border border-slate-800 bg-slate-900">
-              <h2 className="border-b border-slate-800 px-4 py-3 text-sm font-semibold text-slate-200">
-                Fila de curadoria
-              </h2>
-
-              {erroFila && (
-                <p className="px-4 py-2 text-xs text-red-400" role="alert">
-                  {erroFila}
-                </p>
-              )}
-
-              <div className="max-h-[70vh] overflow-y-auto">
-                {carregandoFila ? (
-                  <p className="p-4 text-sm text-slate-500">Carregando fila...</p>
-                ) : fila.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-500">Nenhuma imagem pendente.</p>
-                ) : (
-                  <ul className="divide-y divide-slate-800">
-                    {fila.map((imagem) => (
-                      <li key={imagem.orthanc_reference_id}>
-                        <button
-                          type="button"
-                          disabled={criandoId !== null}
-                          onClick={() => abrirImagem(imagem)}
-                          className="w-full px-4 py-3 text-left text-sm hover:bg-slate-800/60 disabled:opacity-50"
-                        >
-                          <p className="font-mono text-xs text-slate-300">
-                            {truncarOrthancId(imagem.orthanc_id)}
-                          </p>
-                          <p className="mt-1 text-slate-400">{imagem.resource_type}</p>
-                          <p className="mt-1 text-xs text-slate-600">
-                            {criandoId === imagem.orthanc_reference_id ? 'Abrindo...' : 'status de anonimização: — · data: —'}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
+                {erroFila && (
+                  <p className="px-4 py-2 text-xs text-red-400" role="alert">
+                    {erroFila}
+                  </p>
                 )}
-              </div>
-            </section>
+
+                <div className="max-h-[70vh] overflow-y-auto">
+                  {carregandoFila ? (
+                    <p className="p-4 text-sm text-slate-500">Carregando fila...</p>
+                  ) : fila.length === 0 ? (
+                    <p className="p-4 text-sm text-slate-500">Nenhuma imagem pendente.</p>
+                  ) : (
+                    <ul className="divide-y divide-slate-800">
+                      {fila.map((imagem) => (
+                        <li key={imagem.orthanc_reference_id}>
+                          <button
+                            type="button"
+                            disabled={criandoId !== null}
+                            onClick={() => abrirImagem(imagem)}
+                            className="w-full px-4 py-3 text-left text-sm hover:bg-slate-800/60 disabled:opacity-50"
+                          >
+                            <p className="font-mono text-xs text-slate-300">
+                              {truncarOrthancId(imagem.orthanc_id)}
+                            </p>
+                            <p className="mt-1 text-slate-400">{imagem.resource_type}</p>
+                            <p className="mt-1 text-xs text-slate-600">
+                              {criandoId === imagem.orthanc_reference_id ? 'Abrindo...' : 'status de anonimização: — · data: —'}
+                            </p>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
 
             {/* COLUNA CENTRAL - Visualizador */}
-            <section className="flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+            <section
+              ref={visualizadorRef}
+              className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
+            >
+              {fichaAtiva && viewerInfo?.abrivel && viewerInfo.viewer_url && (
+                <button
+                  type="button"
+                  onClick={alternarTelaCheia}
+                  aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                  title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                  className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/80 px-2.5 py-1.5 text-xs text-slate-300 backdrop-blur hover:border-teal-500 hover:text-teal-300"
+                >
+                  {telaCheia ? (
+                    <>
+                      <span aria-hidden="true">⤡</span> Voltar
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden="true">⛶</span> Tela cheia
+                    </>
+                  )}
+                </button>
+              )}
+
               {!fichaAtiva ? (
                 <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
                   Selecione uma imagem na fila ao lado
@@ -778,9 +869,8 @@ export default function CuradoriaPage() {
                 </div>
               </section>
             )}
-          </div>
-        </main>
-      </div>
+        </div>
+      </main>
 
       {modalMotivo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
