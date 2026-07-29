@@ -241,3 +241,6 @@ Thumbs.db
 # Backups locais
 *.bak
 *.backup
+# Fotos de perfil enviadas pelos usuarios (dados locais, nao versionar)
+backend/uploads/avatars/*
+!backend/uploads/avatars/.gitkeep

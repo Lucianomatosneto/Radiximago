@@ -7,6 +7,18 @@ import Topbar from '../../components/Topbar'
 
 const PERFIS = ['administrador', 'curador', 'professor', 'estudante', 'pesquisador', 'suporte'] as const
 
+// Perfis que o admin pode conceder ao aprovar uma solicitacao de acesso -
+// os mesmos autosolicitaveis pelo formulario publico (nao inclui
+// administrador/suporte, que exigem criacao manual via "Novo usuário").
+const PERFIS_CONCEDIVEIS = ['curador', 'professor', 'estudante', 'pesquisador'] as const
+
+// A intencao declarada pelo solicitante mapeia direto pra um dos perfis
+// concediveis - so serve de sugestao inicial, o admin sempre confirma ou
+// troca o perfil antes de aprovar.
+function perfilSugeridoParaIntencao(intencao: string): string {
+  return (PERFIS_CONCEDIVEIS as readonly string[]).includes(intencao) ? intencao : 'estudante'
+}
+
 interface Usuario {
   id: number
   nome: string
@@ -15,6 +27,28 @@ interface Usuario {
   instituicao: string | null
   ativo: boolean
   bloqueado: boolean
+  criado_em?: string
+}
+
+interface UsuarioExcluido {
+  id: number
+  nome: string
+  email: string
+  perfil: string
+  instituicao: string | null
+  excluido_em?: string
+  excluido_por?: string | null
+}
+
+interface SolicitacaoAcesso {
+  id: number
+  nome: string
+  email: string
+  instituicao: string | null
+  perfil_solicitado: string
+  motivo: string | null
+  status: string
+  motivo_rejeicao: string | null
   criado_em?: string
 }
 
@@ -90,6 +124,23 @@ export default function UsuariosPage() {
     instituicao: '',
   })
 
+  const [solicitacoes, setSolicitacoes] = useState<SolicitacaoAcesso[]>([])
+  const [carregandoSolicitacoes, setCarregandoSolicitacoes] = useState(true)
+  const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState<number | null>(null)
+  const [rejeicao, setRejeicao] = useState<{ solicitacao: SolicitacaoAcesso; motivo: string } | null>(null)
+  const [erroRejeicao, setErroRejeicao] = useState('')
+  const [aprovacao, setAprovacao] = useState<{ solicitacao: SolicitacaoAcesso; perfil: string } | null>(null)
+  const [erroAprovacao, setErroAprovacao] = useState('')
+
+  const [exclusao, setExclusao] = useState<Usuario | null>(null)
+  const [excluindo, setExcluindo] = useState(false)
+  const [erroExclusao, setErroExclusao] = useState('')
+
+  const [mostrarExcluidos, setMostrarExcluidos] = useState(false)
+  const [usuariosExcluidos, setUsuariosExcluidos] = useState<UsuarioExcluido[]>([])
+  const [carregandoExcluidos, setCarregandoExcluidos] = useState(false)
+  const [erroExcluidos, setErroExcluidos] = useState('')
+
   useEffect(() => {
     const tokenAtual = localStorage.getItem('access_token')
     if (!tokenAtual) {
@@ -115,7 +166,22 @@ export default function UsuariosPage() {
       }
     }
 
+    async function buscarSolicitacoes() {
+      try {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests?status_filtro=pendente`,
+          { headers: { Authorization: `Bearer ${tokenAtual}` } }
+        )
+        if (!response.ok) return
+        const dados: SolicitacaoAcesso[] = await response.json()
+        setSolicitacoes(dados)
+      } finally {
+        setCarregandoSolicitacoes(false)
+      }
+    }
+
     buscarUsuarios()
+    buscarSolicitacoes()
   }, [router])
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
@@ -151,6 +217,150 @@ export default function UsuariosPage() {
     setUsuarios((prev) =>
       prev.map((u) => (u.id === usuario.id ? { ...u, bloqueado: !u.bloqueado } : u))
     )
+  }
+
+  function abrirExclusao(usuario: Usuario) {
+    setErroExclusao('')
+    setExclusao(usuario)
+  }
+
+  async function confirmarExclusao() {
+    if (!exclusao || !token) return
+    setExcluindo(true)
+    setErroExclusao('')
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${exclusao.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        setErroExclusao(await extrairErro(response, 'Não foi possível excluir o usuário.'))
+        return
+      }
+
+      setUsuarios((prev) => prev.filter((u) => u.id !== exclusao.id))
+      setExclusao(null)
+    } finally {
+      setExcluindo(false)
+    }
+  }
+
+  async function alternarListaExcluidos() {
+    if (mostrarExcluidos) {
+      setMostrarExcluidos(false)
+      return
+    }
+    setMostrarExcluidos(true)
+    if (!token || usuariosExcluidos.length > 0) return
+
+    setCarregandoExcluidos(true)
+    setErroExcluidos('')
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/deleted`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        setErroExcluidos('Não foi possível carregar os usuários excluídos.')
+        return
+      }
+      const dados: UsuarioExcluido[] = await response.json()
+      setUsuariosExcluidos(dados)
+    } finally {
+      setCarregandoExcluidos(false)
+    }
+  }
+
+  function abrirAprovacao(solicitacao: SolicitacaoAcesso) {
+    setErroAprovacao('')
+    setAprovacao({ solicitacao, perfil: perfilSugeridoParaIntencao(solicitacao.perfil_solicitado) })
+  }
+
+  async function confirmarAprovacao(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!aprovacao || !token) return
+
+    setProcessandoSolicitacaoId(aprovacao.solicitacao.id)
+    setErroAprovacao('')
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests/${aprovacao.solicitacao.id}/approve`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ perfil_concedido: aprovacao.perfil }),
+        }
+      )
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        setErroAprovacao(await extrairErro(response, 'Não foi possível aprovar a solicitação.'))
+        return
+      }
+
+      const novoUsuario: Usuario = await response.json()
+      setUsuarios((prev) => [...prev, novoUsuario])
+      setSolicitacoes((prev) => prev.filter((s) => s.id !== aprovacao.solicitacao.id))
+      setAprovacao(null)
+    } finally {
+      setProcessandoSolicitacaoId(null)
+    }
+  }
+
+  function abrirRejeicao(solicitacao: SolicitacaoAcesso) {
+    setErroRejeicao('')
+    setRejeicao({ solicitacao, motivo: '' })
+  }
+
+  async function confirmarRejeicao(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!rejeicao || !token) return
+
+    if (!rejeicao.motivo.trim()) {
+      setErroRejeicao('Informe o motivo da rejeição.')
+      return
+    }
+
+    setProcessandoSolicitacaoId(rejeicao.solicitacao.id)
+    setErroRejeicao('')
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests/${rejeicao.solicitacao.id}/reject`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ motivo: rejeicao.motivo }),
+        }
+      )
+
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        setErroRejeicao(await extrairErro(response, 'Não foi possível rejeitar a solicitação.'))
+        return
+      }
+
+      setSolicitacoes((prev) => prev.filter((s) => s.id !== rejeicao.solicitacao.id))
+      setRejeicao(null)
+    } finally {
+      setProcessandoSolicitacaoId(null)
+    }
   }
 
   function abrirEdicao(usuario: Usuario) {
@@ -271,6 +481,63 @@ export default function UsuariosPage() {
         <main className="flex-1 overflow-y-auto p-8">
           <h1 className="mb-6 text-xl font-semibold text-slate-100">Usuários</h1>
 
+          {!carregandoSolicitacoes && solicitacoes.length > 0 && (
+            <div className="mb-8">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Solicitações de acesso pendentes ({solicitacoes.length})
+              </h2>
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-900 text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Nome</th>
+                      <th className="px-4 py-3 font-medium">E-mail</th>
+                      <th className="px-4 py-3 font-medium">Perfil solicitado</th>
+                      <th className="px-4 py-3 font-medium">Instituição</th>
+                      <th className="px-4 py-3 font-medium">Motivo</th>
+                      <th className="px-4 py-3 font-medium">Recebida em</th>
+                      <th className="px-4 py-3 font-medium">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 bg-slate-950">
+                    {solicitacoes.map((solicitacao) => (
+                      <tr key={solicitacao.id} className="text-slate-200">
+                        <td className="px-4 py-3">{solicitacao.nome}</td>
+                        <td className="px-4 py-3 text-slate-400">{solicitacao.email}</td>
+                        <td className="px-4 py-3">{capitalizar(solicitacao.perfil_solicitado)}</td>
+                        <td className="px-4 py-3 text-slate-400">{solicitacao.instituicao || '—'}</td>
+                        <td className="px-4 py-3 max-w-xs truncate text-slate-400" title={solicitacao.motivo || ''}>
+                          {solicitacao.motivo || '—'}
+                        </td>
+                        <td className="px-4 py-3 text-slate-400">{formatarData(solicitacao.criado_em)}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => abrirAprovacao(solicitacao)}
+                              disabled={processandoSolicitacaoId === solicitacao.id}
+                              className="rounded-md border border-emerald-700 px-3 py-1 text-xs text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-60"
+                            >
+                              Aprovar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => abrirRejeicao(solicitacao)}
+                              disabled={processandoSolicitacaoId === solicitacao.id}
+                              className="rounded-md border border-red-700 px-3 py-1 text-xs text-red-300 hover:bg-red-900/30 disabled:opacity-60"
+                            >
+                              Rejeitar
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <input
               type="text"
@@ -305,12 +572,75 @@ export default function UsuariosPage() {
 
             <button
               type="button"
+              onClick={alternarListaExcluidos}
+              className="ml-auto rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+            >
+              {mostrarExcluidos ? 'Ocultar excluídos' : 'Ver usuários excluídos'}
+            </button>
+
+            <button
+              type="button"
               onClick={abrirCriacao}
-              className="ml-auto rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
+              className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
             >
               Novo usuário
             </button>
           </div>
+
+          {mostrarExcluidos && (
+            <div className="mb-6">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
+                Usuários excluídos{usuariosExcluidos.length > 0 ? ` (${usuariosExcluidos.length})` : ''}
+              </h2>
+
+              {erroExcluidos && (
+                <p className="mb-2 text-xs text-red-400" role="alert">
+                  {erroExcluidos}
+                </p>
+              )}
+
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-900 text-slate-400">
+                    <tr>
+                      <th className="px-4 py-3 font-medium">Nome</th>
+                      <th className="px-4 py-3 font-medium">E-mail</th>
+                      <th className="px-4 py-3 font-medium">Perfil</th>
+                      <th className="px-4 py-3 font-medium">Instituição</th>
+                      <th className="px-4 py-3 font-medium">Excluído em</th>
+                      <th className="px-4 py-3 font-medium">Excluído por</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800 bg-slate-950">
+                    {carregandoExcluidos ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                          Carregando...
+                        </td>
+                      </tr>
+                    ) : usuariosExcluidos.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
+                          Nenhum usuário excluído.
+                        </td>
+                      </tr>
+                    ) : (
+                      usuariosExcluidos.map((usuario) => (
+                        <tr key={usuario.id} className="text-slate-400">
+                          <td className="px-4 py-3 text-slate-300">{usuario.nome}</td>
+                          <td className="px-4 py-3">{usuario.email}</td>
+                          <td className="px-4 py-3">{capitalizar(usuario.perfil)}</td>
+                          <td className="px-4 py-3">{usuario.instituicao || '—'}</td>
+                          <td className="px-4 py-3">{formatarData(usuario.excluido_em)}</td>
+                          <td className="px-4 py-3">{usuario.excluido_por || '—'}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto rounded-xl border border-slate-800">
             <table className="w-full text-left text-sm">
@@ -357,6 +687,13 @@ export default function UsuariosPage() {
                             className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-red-500 hover:text-red-300"
                           >
                             {usuario.bloqueado ? 'Ativar' : 'Bloquear'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => abrirExclusao(usuario)}
+                            className="rounded-md border border-red-800/60 px-3 py-1 text-xs text-red-300 hover:bg-red-950/40"
+                          >
+                            Excluir
                           </button>
                         </div>
                       </td>
@@ -508,6 +845,147 @@ export default function UsuariosPage() {
                 className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-60"
               >
                 {criando ? 'Criando...' : 'Criar usuário'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {exclusao && (
+        <Modal onFechar={() => setExclusao(null)}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">Excluir usuário</h2>
+          <p className="mb-4 text-sm text-slate-400">
+            Tem certeza que deseja excluir{' '}
+            <span className="text-slate-200">{exclusao.nome}</span> ({exclusao.email})? O usuário deixa de poder
+            entrar e sai da lista de usuários, mas o histórico é mantido e aparece em &quot;Usuários excluídos&quot;.
+            O e-mail fica livre para um novo cadastro.
+          </p>
+
+          {erroExclusao && (
+            <p className="mb-3 text-sm text-red-400" role="alert">
+              {erroExclusao}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setExclusao(null)}
+              className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={confirmarExclusao}
+              disabled={excluindo}
+              className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+            >
+              {excluindo ? 'Excluindo...' : 'Excluir usuário'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {aprovacao && (
+        <Modal onFechar={() => setAprovacao(null)}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">Aprovar solicitação</h2>
+          <p className="mb-4 text-sm text-slate-400">
+            Aprovando o pedido de <span className="text-slate-200">{aprovacao.solicitacao.nome}</span> (
+            {aprovacao.solicitacao.email}). Intenção declarada:{' '}
+            <span className="text-slate-200">{capitalizar(aprovacao.solicitacao.perfil_solicitado)}</span>.
+          </p>
+          <form onSubmit={confirmarAprovacao} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-300">
+                Perfil a conceder <span className="text-red-400">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {PERFIS_CONCEDIVEIS.map((perfil) => (
+                  <button
+                    key={perfil}
+                    type="button"
+                    onClick={() => setAprovacao({ ...aprovacao, perfil })}
+                    className={`rounded-md border px-3 py-2 text-sm transition-colors ${
+                      aprovacao.perfil === perfil
+                        ? 'border-teal-500 bg-teal-600 text-white'
+                        : 'border-slate-700 text-slate-300 hover:border-teal-500/50'
+                    }`}
+                  >
+                    {capitalizar(perfil)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-slate-500">
+                Você pode honrar a intenção do solicitante ou restringir a um perfil diferente (ex.: Estudante).
+              </p>
+            </div>
+
+            {erroAprovacao && (
+              <p className="text-sm text-red-400" role="alert">
+                {erroAprovacao}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setAprovacao(null)}
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={processandoSolicitacaoId === aprovacao.solicitacao.id}
+                className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-60"
+              >
+                {processandoSolicitacaoId === aprovacao.solicitacao.id ? 'Aprovando...' : 'Aprovar solicitação'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {rejeicao && (
+        <Modal onFechar={() => setRejeicao(null)}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">Rejeitar solicitação</h2>
+          <p className="mb-4 text-sm text-slate-400">
+            Rejeitando o pedido de <span className="text-slate-200">{rejeicao.solicitacao.nome}</span> ({rejeicao.solicitacao.email}).
+          </p>
+          <form onSubmit={confirmarRejeicao} className="space-y-4">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-slate-300">Motivo da rejeição</label>
+              <textarea
+                required
+                rows={3}
+                value={rejeicao.motivo}
+                onChange={(e) => setRejeicao({ ...rejeicao, motivo: e.target.value })}
+                className="w-full resize-none rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                placeholder="Explique por que o pedido está sendo rejeitado"
+              />
+            </div>
+
+            {erroRejeicao && (
+              <p className="text-sm text-red-400" role="alert">
+                {erroRejeicao}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejeicao(null)}
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={processandoSolicitacaoId === rejeicao.solicitacao.id}
+                className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60"
+              >
+                {processandoSolicitacaoId === rejeicao.solicitacao.id ? 'Rejeitando...' : 'Rejeitar solicitação'}
               </button>
             </div>
           </form>
