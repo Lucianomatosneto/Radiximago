@@ -33,7 +33,7 @@ def test_login_com_senha_errada(client, criar_usuario):
 def test_login_com_email_inexistente(client):
     resposta = client.post(
         "/auth/login",
-        data={"username": "ninguem-com-esse-email@teste.local", "password": "qualquer"},
+        data={"username": "ninguem-com-esse-email@teste.example", "password": "qualquer"},
     )
 
     assert resposta.status_code == 401

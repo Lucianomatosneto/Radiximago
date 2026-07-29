@@ -22,10 +22,11 @@ from app.main import app
 from app.core.database import SessionLocal
 from app.core.security import gerar_hash_senha
 from app.modules.users import User, UserRole
-from app.modules.curations import Curation, StatusCuradoria
+from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference
 from app.modules.saved_images import SavedImage
 from app.modules.audit_logs import AuditLog
+from app.modules.access_requests import AccessRequest, IntencaoPerfil
 
 SENHA_TESTE = "TesteSuite123!"
 # Hash bcrypt e caro (~200ms) - calculado uma unica vez pra suite inteira,
@@ -75,7 +76,7 @@ def criar_usuario(db):
         bloqueado: bool = False,
         excluido: bool = False,
     ) -> User:
-        email = f"suite-{uuid.uuid4().hex[:12]}@teste.local"
+        email = f"suite-{uuid.uuid4().hex[:12]}@teste.example"
         usuario = User(
             nome="Usuario de Teste (suite automatizada)",
             email=email,
@@ -96,6 +97,17 @@ def criar_usuario(db):
     for usuario_id in criados:
         db.query(SavedImage).filter(SavedImage.user_id == usuario_id).delete()
         db.query(AuditLog).filter(AuditLog.usuario_id == usuario_id).delete()
+        db.query(CurationHistory).filter(CurationHistory.usuario_id == usuario_id).delete()
+        db.query(CurationReview).filter(CurationReview.solicitante_id == usuario_id).delete()
+        db.query(CurationReview).filter(CurationReview.revisor_id == usuario_id).delete()
+        # nao apaga a ficha em si (pode ser uma fixture gerenciada por
+        # criar_ficha) - so desvincula esse usuario dela.
+        db.query(Curation).filter(Curation.curador_id == usuario_id).update(
+            {"curador_id": None}
+        )
+        db.query(AccessRequest).filter(AccessRequest.revisado_por_id == usuario_id).update(
+            {"revisado_por_id": None}
+        )
         db.query(User).filter(User.id == usuario_id).delete()
     db.commit()
 
@@ -148,8 +160,82 @@ def criar_ficha(db):
 
     for curation_id, ref_id in criadas:
         db.query(SavedImage).filter(SavedImage.curation_id == curation_id).delete()
+        db.query(CurationReview).filter(CurationReview.curation_id == curation_id).delete()
+        db.query(CurationHistory).filter(CurationHistory.curation_id == curation_id).delete()
         db.query(Curation).filter(Curation.id == curation_id).delete()
         db.query(OrthancReference).filter(OrthancReference.id == ref_id).delete()
+    db.commit()
+
+
+@pytest.fixture()
+def criar_referencia(db):
+    """
+    Fabrica de OrthancReference "solta", sem ficha de curadoria - usada
+    pra testar a criacao da ficha (POST /curation/{orthanc_reference_id}),
+    que exige uma referencia existente e ainda sem ficha.
+    """
+    criadas = []
+
+    def _criar(ativo: bool = True) -> OrthancReference:
+        marcador = uuid.uuid4().hex[:12]
+        ref = OrthancReference(
+            orthanc_id=f"suite-fake-{marcador}",
+            study_instance_uid=f"1.2.suite.{marcador}",
+            series_instance_uid=f"1.2.suite.serie.{marcador}",
+            sop_instance_uid=f"1.2.suite.sop.{marcador}",
+            resource_type="instance",
+            ativo=ativo,
+        )
+        db.add(ref)
+        db.commit()
+        db.refresh(ref)
+        criadas.append(ref.id)
+        return ref
+
+    yield _criar
+
+    for ref_id in criadas:
+        curation_ids = [
+            c.id for c in db.query(Curation).filter(Curation.orthanc_reference_id == ref_id).all()
+        ]
+        for curation_id in curation_ids:
+            db.query(SavedImage).filter(SavedImage.curation_id == curation_id).delete()
+            db.query(CurationReview).filter(CurationReview.curation_id == curation_id).delete()
+            db.query(CurationHistory).filter(CurationHistory.curation_id == curation_id).delete()
+        db.query(Curation).filter(Curation.orthanc_reference_id == ref_id).delete()
+        db.query(OrthancReference).filter(OrthancReference.id == ref_id).delete()
+    db.commit()
+
+
+@pytest.fixture()
+def criar_solicitacao_acesso(db):
+    """
+    Fabrica de solicitacoes de acesso (AccessRequest) de teste - o pedido
+    "pendente" que aparece pro admin revisar em /users/access-requests.
+    """
+    criadas = []
+
+    def _criar(
+        perfil_solicitado: IntencaoPerfil = IntencaoPerfil.ESTUDANTE,
+        email: str | None = None,
+    ) -> AccessRequest:
+        email_final = email or f"suite-solicitacao-{uuid.uuid4().hex[:12]}@teste.example"
+        solicitacao = AccessRequest(
+            nome="Solicitante de Teste (suite automatizada)",
+            email=email_final,
+            senha_hash=_HASH_SENHA_TESTE,
+            perfil_solicitado=perfil_solicitado,
+        )
+        db.add(solicitacao)
+        db.commit()
+        db.refresh(solicitacao)
+        criadas.append(solicitacao.id)
+        return solicitacao
+
+    yield _criar
+
+    for solicitacao_id in criadas:
+        db.query(AccessRequest).filter(AccessRequest.id == solicitacao_id).delete()
     db.commit()
 
 
