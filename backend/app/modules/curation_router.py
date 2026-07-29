@@ -39,6 +39,7 @@ from app.modules.curations import (
     TipoRadiografia,
     Genero,
     AchadoPrincipal,
+    AlteracaoObservada,
     QualidadeTecnica,
     Dificuldade,
     Finalidade,
@@ -132,6 +133,7 @@ class CurationCreate(BaseModel):
     genero: Optional[Genero] = None
     achado_principal: Optional[AchadoPrincipal] = None
     achados_detalhe: Optional[str] = None
+    alteracoes_observadas: Optional[List[AlteracaoObservada]] = None
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[str] = None
@@ -153,6 +155,7 @@ class CurationUpdate(BaseModel):
     genero: Optional[Genero] = None
     achado_principal: Optional[AchadoPrincipal] = None
     achados_detalhe: Optional[str] = None
+    alteracoes_observadas: Optional[List[AlteracaoObservada]] = None
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[str] = None
@@ -361,6 +364,7 @@ def obter_ficha(
         "genero": ficha.genero,
         "achado_principal": ficha.achado_principal,
         "achados_detalhe": ficha.achados_detalhe,
+        "alteracoes_observadas": ficha.alteracoes_observadas,
         "qualidade_tecnica": ficha.qualidade_tecnica,
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,
@@ -437,6 +441,8 @@ def editar_curadoria(
         ficha.achado_principal = dados.achado_principal.value
     if dados.achados_detalhe is not None:
         ficha.achados_detalhe = dados.achados_detalhe
+    if dados.alteracoes_observadas is not None:
+        ficha.alteracoes_observadas = [a.value for a in dados.alteracoes_observadas]
     if dados.qualidade_tecnica is not None:
         ficha.qualidade_tecnica = dados.qualidade_tecnica.value
     if dados.dificuldade is not None:
@@ -473,6 +479,7 @@ def editar_curadoria(
         "genero": ficha.genero,
         "achado_principal": ficha.achado_principal,
         "achados_detalhe": ficha.achados_detalhe,
+        "alteracoes_observadas": ficha.alteracoes_observadas,
         "qualidade_tecnica": ficha.qualidade_tecnica,
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,
@@ -595,6 +602,7 @@ def criar_curadoria(
         genero=_valor(dados.genero),
         achado_principal=_valor(dados.achado_principal),
         achados_detalhe=dados.achados_detalhe,
+        alteracoes_observadas=[a.value for a in dados.alteracoes_observadas] if dados.alteracoes_observadas else None,
         qualidade_tecnica=_valor(dados.qualidade_tecnica),
         dificuldade=_valor(dados.dificuldade),
         descricao_didatica=dados.descricao_didatica,

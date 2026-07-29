@@ -38,6 +38,63 @@ const OPCOES_ACHADO_PRINCIPAL = [
   { valor: 'outro', label: 'Outro' },
 ]
 
+// Valores reais do enum AlteracaoObservada no backend, agrupados por
+// categoria so pra organizar a exibicao - o backend guarda como lista
+// plana de strings.
+const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string; label: string }[] }[] = [
+  {
+    categoria: 'Cárie',
+    itens: [
+      { valor: 'carie_esmalte', label: 'Cárie em esmalte' },
+      { valor: 'carie_dentina', label: 'Cárie em dentina' },
+      { valor: 'carie_proxima_polpa', label: 'Cárie próxima à polpa' },
+      { valor: 'carie_secundaria', label: 'Cárie secundária (sob restauração)' },
+    ],
+  },
+  {
+    categoria: 'Periodontal',
+    itens: [
+      { valor: 'perda_ossea_horizontal', label: 'Perda óssea horizontal' },
+      { valor: 'perda_ossea_vertical', label: 'Perda óssea vertical' },
+      { valor: 'calculo_dentario', label: 'Cálculo dentário (tártaro)' },
+      { valor: 'alargamento_ligamento_periodontal', label: 'Alargamento do ligamento periodontal' },
+    ],
+  },
+  {
+    categoria: 'Periapical / Endodôntico',
+    itens: [
+      { valor: 'lesao_periapical', label: 'Lesão periapical' },
+      { valor: 'reabsorcao_radicular_externa', label: 'Reabsorção radicular externa' },
+      { valor: 'reabsorcao_radicular_interna', label: 'Reabsorção radicular interna' },
+      { valor: 'tratamento_endodontico_presente', label: 'Tratamento endodôntico presente' },
+      { valor: 'tratamento_endodontico_inadequado', label: 'Tratamento endodôntico inadequado' },
+      { valor: 'fratura_radicular', label: 'Fratura radicular' },
+    ],
+  },
+  {
+    categoria: 'Restaurador / Protético',
+    itens: [
+      { valor: 'restauracao_presente', label: 'Restauração presente' },
+      { valor: 'restauracao_com_infiltracao', label: 'Restauração com infiltração' },
+      { valor: 'coroa_protetica', label: 'Coroa protética' },
+      { valor: 'nucleo_pino', label: 'Núcleo/pino intrarradicular' },
+    ],
+  },
+  {
+    categoria: 'Ósseo / Anatômico',
+    itens: [
+      { valor: 'cisto', label: 'Cisto' },
+      { valor: 'lesao_radiopaca', label: 'Lesão radiopaca' },
+      { valor: 'lesao_radiolucida_inespecifica', label: 'Lesão radiolúcida inespecífica' },
+      { valor: 'dente_incluso', label: 'Dente incluso/impactado' },
+      { valor: 'dente_supranumerario', label: 'Dente supranumerário' },
+      { valor: 'agenesia_dentaria', label: 'Agenesia dentária' },
+      { valor: 'alteracao_seio_maxilar', label: 'Alteração no seio maxilar' },
+      { valor: 'corpo_estranho', label: 'Corpo estranho' },
+    ],
+  },
+]
+
 // Valores reais do enum QualidadeTecnica no backend.
 const OPCOES_QUALIDADE_TECNICA = [
   { valor: 'otima', label: 'Ótima' },
@@ -85,6 +142,7 @@ interface FormularioFicha {
   genero: string
   achado_principal: string
   achados_detalhe: string
+  alteracoes_observadas: string[]
   qualidade_tecnica: string
   dificuldade: string
   descricao_didatica: string
@@ -101,6 +159,7 @@ const FORM_VAZIO: FormularioFicha = {
   genero: '',
   achado_principal: '',
   achados_detalhe: '',
+  alteracoes_observadas: [],
   qualidade_tecnica: '',
   dificuldade: '',
   descricao_didatica: '',
@@ -138,6 +197,7 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
     tipo_radiografia: form.tipo_radiografia,
     dentes: form.dentes,
     achados_detalhe: form.achados_detalhe,
+    alteracoes_observadas: form.alteracoes_observadas,
     descricao_didatica: form.descricao_didatica,
     observacoes_internas: form.observacoes_internas,
     anonimizacao_validada: form.anonimizacao_validada,
@@ -295,6 +355,7 @@ export default function CuradoriaPage() {
       genero: ficha.genero ?? '',
       achado_principal: ficha.achado_principal ?? '',
       achados_detalhe: ficha.achados_detalhe ?? '',
+      alteracoes_observadas: ficha.alteracoes_observadas ?? [],
       qualidade_tecnica: ficha.qualidade_tecnica ?? '',
       dificuldade: ficha.dificuldade ?? '',
       descricao_didatica: ficha.descricao_didatica ?? '',
@@ -466,6 +527,15 @@ export default function CuradoriaPage() {
     setForm({ ...form, dentes: form.dentes.filter((d) => d !== numero) })
   }
 
+  function alternarAlteracao(valor: string) {
+    setForm((atual) => ({
+      ...atual,
+      alteracoes_observadas: atual.alteracoes_observadas.includes(valor)
+        ? atual.alteracoes_observadas.filter((v) => v !== valor)
+        : [...atual.alteracoes_observadas, valor],
+    }))
+  }
+
   function abrirModalMotivo(tipo: 'descartar' | 'segunda_opiniao') {
     setModalMotivo(tipo)
     setMotivoTexto('')
@@ -474,39 +544,51 @@ export default function CuradoriaPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
+  const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
+  const campoInput =
+    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500'
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-950">
+    <div className="flex min-h-screen flex-col bg-base">
       <Topbar />
 
       <main className="flex-1 overflow-y-auto p-6">
-        <div className="mb-4 flex items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="rounded-md border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:border-teal-500 hover:text-teal-300"
-          >
-            ← Início
-          </Link>
-          <h1 className="text-xl font-semibold text-slate-100">Curadoria</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <div className="mb-2 flex items-center gap-3">
+              <Link
+                href="/dashboard"
+                className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-blue-500 hover:text-blue-300"
+              >
+                ← Início
+              </Link>
+            </div>
+            <h1 className="text-2xl font-bold text-white">
+              Curadoria<span className="text-blue-400">.</span>
+            </h1>
+            <p className="mt-1 text-sm text-slate-400">
+              Analise a imagem e preencha a ficha de curadoria correspondente.
+            </p>
+          </div>
         </div>
 
         <div className={`grid grid-cols-1 gap-4 ${colunaGridClasse(!!fichaAtiva, filaColapsada)}`}>
           {/* COLUNA ESQUERDA - Fila de curadoria (colapsavel: some quando ha
               uma imagem aberta, pra dar o maximo de espaco ao visualizador) */}
-          <section className="rounded-xl border border-slate-800 bg-slate-900">
+          <section className="rounded-2xl border border-base-border bg-base-surface">
             {filaColapsada ? (
               <button
                 type="button"
                 onClick={() => setFilaColapsada(false)}
                 aria-label="Expandir fila de curadoria"
                 title="Expandir fila de curadoria"
-                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-teal-300"
+                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-blue-300"
               >
                 <span aria-hidden="true">»</span>
                 <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
@@ -515,14 +597,14 @@ export default function CuradoriaPage() {
               </button>
             ) : (
               <>
-                <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-                  <h2 className="text-sm font-semibold text-slate-200">Fila de curadoria</h2>
+                <div className="flex items-center justify-between border-b border-base-border px-4 py-3.5">
+                  <h2 className="text-sm font-semibold text-white">Fila de curadoria</h2>
                   <button
                     type="button"
                     onClick={() => setFilaColapsada(true)}
                     aria-label="Recolher fila de curadoria"
                     title="Recolher fila de curadoria"
-                    className="text-slate-400 hover:text-teal-300"
+                    className="text-slate-400 hover:text-blue-300"
                   >
                     «
                   </button>
@@ -534,20 +616,20 @@ export default function CuradoriaPage() {
                   </p>
                 )}
 
-                <div className="max-h-[70vh] overflow-y-auto">
+                <div className="max-h-[70vh] overflow-y-auto p-2">
                   {carregandoFila ? (
-                    <p className="p-4 text-sm text-slate-500">Carregando fila...</p>
+                    <p className="p-3 text-sm text-slate-500">Carregando fila...</p>
                   ) : fila.length === 0 ? (
-                    <p className="p-4 text-sm text-slate-500">Nenhuma imagem pendente.</p>
+                    <p className="p-3 text-sm text-slate-500">Nenhuma imagem pendente.</p>
                   ) : (
-                    <ul className="divide-y divide-slate-800">
+                    <ul className="space-y-1.5">
                       {fila.map((imagem) => (
                         <li key={imagem.orthanc_reference_id}>
                           <button
                             type="button"
                             disabled={criandoId !== null}
                             onClick={() => abrirImagem(imagem)}
-                            className="w-full px-4 py-3 text-left text-sm hover:bg-slate-800/60 disabled:opacity-50"
+                            className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left text-sm hover:border-blue-500/40 hover:bg-blue-500/5 disabled:opacity-50"
                           >
                             <p className="font-mono text-xs text-slate-300">
                               {truncarOrthancId(imagem.orthanc_id)}
@@ -566,324 +648,373 @@ export default function CuradoriaPage() {
             )}
           </section>
 
-            {/* COLUNA CENTRAL - Visualizador */}
-            <section
-              ref={visualizadorRef}
-              className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900"
-            >
-              {fichaAtiva && viewerInfo?.abrivel && viewerInfo.viewer_url && (
-                <button
-                  type="button"
-                  onClick={alternarTelaCheia}
-                  aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                  title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                  className="absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900/80 px-2.5 py-1.5 text-xs text-slate-300 backdrop-blur hover:border-teal-500 hover:text-teal-300"
-                >
-                  {telaCheia ? (
-                    <>
-                      <span aria-hidden="true">⤡</span> Voltar
-                    </>
-                  ) : (
-                    <>
-                      <span aria-hidden="true">⛶</span> Tela cheia
-                    </>
-                  )}
-                </button>
-              )}
-
-              {!fichaAtiva ? (
-                <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                  Selecione uma imagem na fila ao lado
-                </div>
-              ) : carregandoViewer ? (
-                <div className="flex flex-1 items-center justify-center text-slate-400">
-                  Carregando visualizador...
-                </div>
-              ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
-                <iframe
-                  src={viewerInfo.viewer_url}
-                  title="Visualizador OHIF"
-                  className="h-full min-h-[70vh] w-full flex-1 border-0"
-                />
-              ) : (
-                <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                  {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
-                </div>
-              )}
-            </section>
-
-            {/* COLUNA DIREITA - Formulario de curadoria */}
+          {/* COLUNA CENTRAL - Visualizador */}
+          <section
+            ref={visualizadorRef}
+            className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
+          >
             {fichaAtiva && (
-              <section className="max-h-[70vh] overflow-y-auto rounded-xl border border-slate-800 bg-slate-900 p-4">
-                <h2 className="mb-4 text-sm font-semibold text-slate-200">Ficha de curadoria</h2>
+              <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                  Em análise
+                </span>
+                {viewerInfo?.abrivel && viewerInfo.viewer_url && (
+                  <button
+                    type="button"
+                    onClick={alternarTelaCheia}
+                    aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                    title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                    className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-blue-300"
+                  >
+                    {telaCheia ? (
+                      <>
+                        <span aria-hidden="true">⤡</span> Voltar
+                      </>
+                    ) : (
+                      <>
+                        <span aria-hidden="true">⛶</span> Tela cheia
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            )}
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Modalidade</label>
-                    <input
-                      type="text"
-                      value="RX"
-                      disabled
-                      className="w-full rounded-md border border-slate-700 bg-slate-800/50 px-3 py-2 text-sm text-slate-400"
-                    />
+            {!fichaAtiva ? (
+              <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
+                Selecione uma imagem na fila ao lado
+              </div>
+            ) : carregandoViewer ? (
+              <div className="flex flex-1 items-center justify-center text-slate-400">
+                Carregando visualizador...
+              </div>
+            ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
+              <iframe
+                src={viewerInfo.viewer_url}
+                title="Visualizador OHIF"
+                className="h-full min-h-[70vh] w-full flex-1 border-0"
+              />
+            ) : (
+              <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
+                {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
+              </div>
+            )}
+          </section>
+
+          {/* COLUNA DIREITA - Formulario de curadoria */}
+          {fichaAtiva && (
+            <section className="max-h-[70vh] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-5">
+              <h2 className="mb-5 text-base font-bold text-white">Ficha de curadoria</h2>
+
+              <div className="space-y-6">
+                <div>
+                  <p className="mb-2.5 text-sm font-semibold text-white">1. Tipo de exame</p>
+                  <div className="flex flex-wrap gap-2">
+                    {OPCOES_TIPO_RADIOGRAFIA.map((opcao) => (
+                      <button
+                        key={opcao.valor}
+                        type="button"
+                        onClick={() => setForm({ ...form, tipo_radiografia: opcao.valor })}
+                        className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                          form.tipo_radiografia === opcao.valor
+                            ? 'border-blue-500 bg-blue-500 text-white'
+                            : 'border-base-border text-slate-300 hover:border-blue-500/50'
+                        }`}
+                      >
+                        {opcao.label}
+                      </button>
+                    ))}
                   </div>
+                </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Tipo de radiografia</label>
-                    <select
-                      value={form.tipo_radiografia}
-                      onChange={(e) => setForm({ ...form, tipo_radiografia: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      {OPCOES_TIPO_RADIOGRAFIA.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">
-                      Dentes (notação FDI)
-                    </label>
-                    <div className="flex flex-wrap gap-1.5 rounded-md border border-slate-700 bg-slate-800 p-2">
-                      {form.dentes.map((numero) => (
-                        <span
-                          key={numero}
-                          className="inline-flex items-center gap-1 rounded-full bg-teal-900/50 px-2 py-0.5 text-xs text-teal-200"
-                        >
-                          {numero}
-                          <button
-                            type="button"
-                            onClick={() => removerDente(numero)}
-                            aria-label={`Remover dente ${numero}`}
-                            className="text-teal-300 hover:text-teal-100"
+                <div>
+                  <p className="mb-2.5 text-sm font-semibold text-white">2. Dentes e paciente</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={campoLabel}>Dentes (notação FDI)</label>
+                      <div className="flex flex-wrap gap-1.5 rounded-lg border border-base-border bg-base-surface2 p-2">
+                        {form.dentes.map((numero) => (
+                          <span
+                            key={numero}
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-2 py-0.5 text-xs text-blue-300"
                           >
-                            ×
+                            {numero}
+                            <button
+                              type="button"
+                              onClick={() => removerDente(numero)}
+                              aria-label={`Remover dente ${numero}`}
+                              className="text-blue-300 hover:text-blue-100"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        ))}
+                        <input
+                          type="text"
+                          value={denteInput}
+                          onChange={(e) => setDenteInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') adicionarDente(e)
+                          }}
+                          placeholder="ex: 16"
+                          className="w-16 flex-1 bg-transparent text-sm text-slate-100 outline-none"
+                        />
+                      </div>
+                      {erroDente && <p className="mt-1 text-xs text-red-400">{erroDente}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className={campoLabel}>Idade mín.</label>
+                        <input
+                          type="number"
+                          value={form.idade_min}
+                          onChange={(e) => setForm({ ...form, idade_min: e.target.value })}
+                          className={campoInput}
+                        />
+                      </div>
+                      <div>
+                        <label className={campoLabel}>Idade máx.</label>
+                        <input
+                          type="number"
+                          value={form.idade_max}
+                          onChange={(e) => setForm({ ...form, idade_max: e.target.value })}
+                          className={campoInput}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={campoLabel}>Gênero (opcional)</label>
+                      <div className="flex flex-wrap gap-2">
+                        {[{ valor: '', label: 'Não informado' }, ...OPCOES_GENERO].map((opcao) => (
+                          <button
+                            key={opcao.valor || 'nao-informado'}
+                            type="button"
+                            onClick={() => setForm({ ...form, genero: opcao.valor })}
+                            className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+                              form.genero === opcao.valor
+                                ? 'border-blue-500 bg-blue-500 text-white'
+                                : 'border-base-border text-slate-300 hover:border-blue-500/50'
+                            }`}
+                          >
+                            {opcao.label}
                           </button>
-                        </span>
-                      ))}
-                      <input
-                        type="text"
-                        value={denteInput}
-                        onChange={(e) => setDenteInput(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') adicionarDente(e)
-                        }}
-                        placeholder="ex: 16"
-                        className="w-16 flex-1 bg-transparent text-sm text-slate-100 outline-none"
-                      />
+                        ))}
+                      </div>
                     </div>
-                    {erroDente && <p className="mt-1 text-xs text-red-400">{erroDente}</p>}
                   </div>
+                </div>
 
-                  <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <p className="mb-2.5 text-sm font-semibold text-white">3. Achados</p>
+                  <div className="space-y-3">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">Idade mín.</label>
-                      <input
-                        type="number"
-                        value={form.idade_min}
-                        onChange={(e) => setForm({ ...form, idade_min: e.target.value })}
-                        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                      />
+                      <label className={campoLabel}>Achado principal</label>
+                      <select
+                        value={form.achado_principal}
+                        onChange={(e) => setForm({ ...form, achado_principal: e.target.value })}
+                        className={campoInput}
+                      >
+                        <option value="">Selecione</option>
+                        {OPCOES_ACHADO_PRINCIPAL.map((opcao) => (
+                          <option key={opcao.valor} value={opcao.valor}>
+                            {opcao.label}
+                          </option>
+                        ))}
+                      </select>
                     </div>
+
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">Idade máx.</label>
-                      <input
-                        type="number"
-                        value={form.idade_max}
-                        onChange={(e) => setForm({ ...form, idade_max: e.target.value })}
-                        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                      <label className={campoLabel}>
+                        Alterações observadas
+                        {form.alteracoes_observadas.length > 0 && (
+                          <span className="ml-1 text-blue-400">({form.alteracoes_observadas.length})</span>
+                        )}
+                      </label>
+                      <div className="space-y-3 rounded-lg border border-base-border bg-base-surface2 p-3">
+                        {CATEGORIAS_ALTERACOES.map((grupo) => (
+                          <div key={grupo.categoria}>
+                            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                              {grupo.categoria}
+                            </p>
+                            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                              {grupo.itens.map((item) => (
+                                <label
+                                  key={item.valor}
+                                  className="flex items-start gap-2 rounded-md px-1.5 py-1 text-sm text-slate-300 hover:bg-white/5"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={form.alteracoes_observadas.includes(item.valor)}
+                                    onChange={() => alternarAlteracao(item.valor)}
+                                    className="mt-0.5 h-3.5 w-3.5 flex-none rounded border-base-border bg-base-surface2 text-blue-500"
+                                  />
+                                  {item.label}
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className={campoLabel}>Detalhes do achado</label>
+                      <textarea
+                        value={form.achados_detalhe}
+                        onChange={(e) => setForm({ ...form, achados_detalhe: e.target.value })}
+                        rows={3}
+                        className={campoInput}
                       />
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Gênero (opcional)</label>
-                    <select
-                      value={form.genero}
-                      onChange={(e) => setForm({ ...form, genero: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      <option value="">Não informado</option>
-                      {OPCOES_GENERO.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                    <div>
+                      <label className={campoLabel}>Qualidade técnica</label>
+                      <select
+                        value={form.qualidade_tecnica}
+                        onChange={(e) => setForm({ ...form, qualidade_tecnica: e.target.value })}
+                        className={campoInput}
+                      >
+                        <option value="">Selecione</option>
+                        {OPCOES_QUALIDADE_TECNICA.map((opcao) => (
+                          <option key={opcao.valor} value={opcao.valor}>
+                            {opcao.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Achado principal</label>
-                    <select
-                      value={form.achado_principal}
-                      onChange={(e) => setForm({ ...form, achado_principal: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      <option value="">Selecione</option>
-                      {OPCOES_ACHADO_PRINCIPAL.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div>
+                      <label className={campoLabel}>Dificuldade</label>
+                      <select
+                        value={form.dificuldade}
+                        onChange={(e) => setForm({ ...form, dificuldade: e.target.value })}
+                        className={campoInput}
+                      >
+                        <option value="">Selecione</option>
+                        {OPCOES_DIFICULDADE.map((opcao) => (
+                          <option key={opcao.valor} value={opcao.valor}>
+                            {opcao.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">
-                      Detalhes do achado
-                    </label>
-                    <textarea
-                      value={form.achados_detalhe}
-                      onChange={(e) => setForm({ ...form, achados_detalhe: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    />
+                <div>
+                  <p className="mb-2.5 text-sm font-semibold text-white">4. Descrição e finalidade</p>
+                  <div className="space-y-3">
+                    <div>
+                      <label className={campoLabel}>Descrição didática</label>
+                      <textarea
+                        value={form.descricao_didatica}
+                        onChange={(e) => setForm({ ...form, descricao_didatica: e.target.value })}
+                        rows={3}
+                        className={campoInput}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={campoLabel}>Observações internas</label>
+                      <textarea
+                        value={form.observacoes_internas}
+                        onChange={(e) => setForm({ ...form, observacoes_internas: e.target.value })}
+                        rows={3}
+                        className={campoInput}
+                      />
+                    </div>
+
+                    <div>
+                      <label className={campoLabel}>Finalidade</label>
+                      <select
+                        value={form.finalidade}
+                        onChange={(e) => setForm({ ...form, finalidade: e.target.value })}
+                        className={campoInput}
+                      >
+                        <option value="">Selecione</option>
+                        {OPCOES_FINALIDADE.map((opcao) => (
+                          <option key={opcao.valor} value={opcao.valor}>
+                            {opcao.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">
-                      Qualidade técnica
-                    </label>
-                    <select
-                      value={form.qualidade_tecnica}
-                      onChange={(e) => setForm({ ...form, qualidade_tecnica: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      <option value="">Selecione</option>
-                      {OPCOES_QUALIDADE_TECNICA.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Dificuldade</label>
-                    <select
-                      value={form.dificuldade}
-                      onChange={(e) => setForm({ ...form, dificuldade: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      <option value="">Selecione</option>
-                      {OPCOES_DIFICULDADE.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">
-                      Descrição didática
-                    </label>
-                    <textarea
-                      value={form.descricao_didatica}
-                      onChange={(e) => setForm({ ...form, descricao_didatica: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">
-                      Observações internas
-                    </label>
-                    <textarea
-                      value={form.observacoes_internas}
-                      onChange={(e) => setForm({ ...form, observacoes_internas: e.target.value })}
-                      rows={3}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">Finalidade</label>
-                    <select
-                      value={form.finalidade}
-                      onChange={(e) => setForm({ ...form, finalidade: e.target.value })}
-                      className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                    >
-                      <option value="">Selecione</option>
-                      {OPCOES_FINALIDADE.map((opcao) => (
-                        <option key={opcao.valor} value={opcao.valor}>
-                          {opcao.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
+                <div>
+                  <p className="mb-2.5 text-sm font-semibold text-white">5. Anonimização</p>
                   <label className="flex items-center gap-2 text-sm text-slate-300">
                     <input
                       type="checkbox"
                       checked={form.anonimizacao_validada}
                       onChange={(e) => setForm({ ...form, anonimizacao_validada: e.target.checked })}
-                      className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-teal-500"
+                      className="h-4 w-4 rounded border-base-border bg-base-surface2 text-blue-500"
                     />
                     Anonimização validada por mim
                   </label>
-
-                  {erroFormulario && (
-                    <p className="text-sm text-red-400" role="alert">
-                      {erroFormulario}
-                    </p>
-                  )}
-                  {rascunhoSalvo && <p className="text-sm text-emerald-400">Rascunho salvo.</p>}
-
-                  <div className="flex flex-col gap-2 border-t border-slate-800 pt-4">
-                    <button
-                      type="button"
-                      onClick={() => salvarRascunho()}
-                      disabled={salvandoRascunho || aprovando}
-                      className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-teal-500 hover:text-teal-300 disabled:opacity-50"
-                    >
-                      {salvandoRascunho ? 'Salvando...' : 'Salvar rascunho'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={aprovar}
-                      disabled={aprovando || salvandoRascunho}
-                      className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
-                    >
-                      {aprovando ? 'Aprovando...' : 'Aprovar'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => abrirModalMotivo('descartar')}
-                      className="rounded-md border border-red-800 px-4 py-2 text-sm text-red-300 hover:bg-red-950/40"
-                    >
-                      Descartar
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => abrirModalMotivo('segunda_opiniao')}
-                      className="rounded-md border border-purple-800 px-4 py-2 text-sm text-purple-300 hover:bg-purple-950/40"
-                    >
-                      Solicitar segunda opinião
-                    </button>
-                  </div>
                 </div>
-              </section>
-            )}
+
+                {erroFormulario && (
+                  <p className="text-sm text-red-400" role="alert">
+                    {erroFormulario}
+                  </p>
+                )}
+                {rascunhoSalvo && <p className="text-sm text-emerald-400">Rascunho salvo.</p>}
+
+                <div className="flex flex-col gap-2 border-t border-base-border pt-4">
+                  <button
+                    type="button"
+                    onClick={aprovar}
+                    disabled={aprovando || salvandoRascunho}
+                    className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+                  >
+                    {aprovando ? 'Aprovando...' : '✓ Aprovar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => salvarRascunho()}
+                    disabled={salvandoRascunho || aprovando}
+                    className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-50"
+                  >
+                    {salvandoRascunho ? 'Salvando...' : 'Salvar rascunho'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => abrirModalMotivo('descartar')}
+                    className="rounded-lg border border-red-800/60 px-4 py-2 text-sm text-red-300 hover:bg-red-950/40"
+                  >
+                    Descartar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => abrirModalMotivo('segunda_opiniao')}
+                    className="rounded-lg border border-purple-800/60 px-4 py-2 text-sm text-purple-300 hover:bg-purple-950/40"
+                  >
+                    Solicitar segunda opinião
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
         </div>
       </main>
 
       {modalMotivo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-semibold text-slate-100">
+          <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
+            <h2 className="mb-4 text-lg font-semibold text-white">
               {modalMotivo === 'descartar' ? 'Descartar ficha' : 'Solicitar segunda opinião'}
             </h2>
-            <label className="mb-1 block text-sm font-medium text-slate-300">Motivo</label>
+            <label className={campoLabel}>Motivo</label>
             <textarea
               value={motivoTexto}
               onChange={(e) => setMotivoTexto(e.target.value)}
               rows={4}
-              className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+              className={campoInput}
             />
             {erroMotivo && (
               <p className="mt-2 text-sm text-red-400" role="alert">
@@ -894,7 +1025,7 @@ export default function CuradoriaPage() {
               <button
                 type="button"
                 onClick={() => setModalMotivo(null)}
-                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+                className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
               >
                 Cancelar
               </button>
@@ -902,7 +1033,7 @@ export default function CuradoriaPage() {
                 type="button"
                 onClick={confirmarMotivo}
                 disabled={enviandoMotivo}
-                className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+                className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {enviandoMotivo ? 'Enviando...' : 'Confirmar'}
               </button>

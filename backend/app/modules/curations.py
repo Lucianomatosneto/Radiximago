@@ -61,6 +61,47 @@ class AchadoPrincipal(str, enum.Enum):
     OUTRO = "outro"
 
 
+class AlteracaoObservada(str, enum.Enum):
+    """
+    Checklist de alteracoes radiograficas comumente observadas em
+    radiografias interproximais, periapicais, oclusais e panoramicas -
+    o curador apenas marca as que se aplicam, em vez de descrever em
+    texto livre. Complementa (nao substitui) `achado_principal`, que
+    continua sendo a classificacao unica/principal da ficha.
+    """
+    # Carie
+    CARIE_ESMALTE = "carie_esmalte"
+    CARIE_DENTINA = "carie_dentina"
+    CARIE_PROXIMA_POLPA = "carie_proxima_polpa"
+    CARIE_SECUNDARIA = "carie_secundaria"
+    # Periodontal
+    PERDA_OSSEA_HORIZONTAL = "perda_ossea_horizontal"
+    PERDA_OSSEA_VERTICAL = "perda_ossea_vertical"
+    CALCULO_DENTARIO = "calculo_dentario"
+    ALARGAMENTO_LIGAMENTO_PERIODONTAL = "alargamento_ligamento_periodontal"
+    # Periapical / endodontico
+    LESAO_PERIAPICAL = "lesao_periapical"
+    REABSORCAO_RADICULAR_EXTERNA = "reabsorcao_radicular_externa"
+    REABSORCAO_RADICULAR_INTERNA = "reabsorcao_radicular_interna"
+    TRATAMENTO_ENDODONTICO_PRESENTE = "tratamento_endodontico_presente"
+    TRATAMENTO_ENDODONTICO_INADEQUADO = "tratamento_endodontico_inadequado"
+    FRATURA_RADICULAR = "fratura_radicular"
+    # Restaurador / protetico
+    RESTAURACAO_PRESENTE = "restauracao_presente"
+    RESTAURACAO_COM_INFILTRACAO = "restauracao_com_infiltracao"
+    COROA_PROTETICA = "coroa_protetica"
+    NUCLEO_PINO = "nucleo_pino"
+    # Osseo / anatomico
+    CISTO = "cisto"
+    LESAO_RADIOPACA = "lesao_radiopaca"
+    LESAO_RADIOLUCIDA_INESPECIFICA = "lesao_radiolucida_inespecifica"
+    DENTE_INCLUSO = "dente_incluso"
+    DENTE_SUPRANUMERARIO = "dente_supranumerario"
+    AGENESIA_DENTARIA = "agenesia_dentaria"
+    ALTERACAO_SEIO_MAXILAR = "alteracao_seio_maxilar"
+    CORPO_ESTRANHO = "corpo_estranho"
+
+
 class QualidadeTecnica(str, enum.Enum):
     OTIMA = "otima"
     BOA = "boa"
@@ -138,6 +179,7 @@ class Curation(Base):
     genero = Column(String(15), nullable=True)
     achado_principal = Column(String(40), nullable=True)
     achados_detalhe = Column(Text, nullable=True)
+    alteracoes_observadas = Column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
     qualidade_tecnica = Column(String(20), nullable=True)
     dificuldade = Column(String(20), nullable=True)
     descricao_didatica = Column(Text, nullable=True)
