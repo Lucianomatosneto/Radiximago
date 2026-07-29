@@ -1,8 +1,6 @@
 ﻿{
+  "_comentario": "Arquivo nao usado em tempo de execucao - o docker-compose.yml configura o Orthanc inteiramente via variaveis de ambiente (ORTHANC__*), inclusive as credenciais (ver ORTHANC_PASSWORD no .env). Mantido so como referencia da config base.",
   "Name": "Radix Imago",
   "RemoteAccessAllowed": true,
-  "AuthenticationEnabled": true,
-  "RegisteredUsers": {
-    "admin": "***REMOVIDO-SENHA-ORTHANC***"
-  }
+  "AuthenticationEnabled": true
 }

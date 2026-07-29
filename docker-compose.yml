@@ -18,6 +18,31 @@ services:
       timeout: 5s
       retries: 5
 
+  # --- Backup automatico local (Postgres + dados do Orthanc) ---
+  # Roda em loop (ver scripts/backup.sh), uma vez por dia, mantendo so os
+  # BACKUP_RETENCAO mais recentes de cada tipo. E so local (grava em
+  # ./backups no host) - nao substitui um backup off-site.
+  radix-backup:
+    image: postgres:16-alpine
+    container_name: radix-backup
+    restart: unless-stopped
+    environment:
+      PGHOST: radix-postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      BACKUP_RETENCAO: 14
+    entrypoint: ['sh', '/backup.sh']
+    volumes:
+      - ./scripts/backup.sh:/backup.sh:ro
+      - ./backups:/backups
+      - orthanc_data:/orthanc_data:ro
+    depends_on:
+      radix-postgres:
+        condition: service_healthy
+    networks:
+      - radix-network
+
   # --- Servidor DICOM Orthanc ---
   radix-orthanc:
     image: orthancteam/orthanc:latest

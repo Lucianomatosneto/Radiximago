@@ -244,3 +244,8 @@ Thumbs.db
 # Fotos de perfil enviadas pelos usuarios (dados locais, nao versionar)
 backend/uploads/avatars/*
 !backend/uploads/avatars/.gitkeep
+
+# Backups locais do banco e dos dados do Orthanc (scripts/backup.sh) -
+# dados reais, nunca versionar
+backups/*
+!backups/.gitkeep
