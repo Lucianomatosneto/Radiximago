@@ -48,6 +48,7 @@ export default function MinhasImagensPage() {
   const [removendo, setRemovendo] = useState<number | null>(null)
   const [selecionados, setSelecionados] = useState<number[]>([])
   const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
+  const [itemExpandido, setItemExpandido] = useState<ImagemSalva | null>(null)
   const [enviandoLote, setEnviandoLote] = useState(false)
   const [mensagemLote, setMensagemLote] = useState('')
   const [infoSeries, setInfoSeries] = useState<Record<number, boolean>>({})
@@ -118,6 +119,16 @@ export default function MinhasImagensPage() {
     )
   }
 
+  function expandirImagem(imagem: ImagemSalva) {
+    setIndiceVisualizador(null)
+    setItemExpandido(imagem)
+  }
+
+  function verSelecionadasEmSequencia() {
+    setItemExpandido(null)
+    setIndiceVisualizador(0)
+  }
+
   useEffect(() => {
     if (!token) return
     const faltando = selecionados.filter((id) => infoSeries[id] === undefined)
@@ -181,6 +192,18 @@ export default function MinhasImagensPage() {
       viewer_url: imagem.viewer_url,
     }))
 
+  const itensExpandido = itemExpandido
+    ? [
+        {
+          curation_id: itemExpandido.curation_id,
+          numero: itens.findIndex((i) => i.curation_id === itemExpandido.curation_id) + 1,
+          descricao_didatica: itemExpandido.descricao_didatica,
+          tipo_radiografia: itemExpandido.tipo_radiografia,
+          viewer_url: itemExpandido.viewer_url,
+        },
+      ]
+    : []
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
@@ -209,7 +232,7 @@ export default function MinhasImagensPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setIndiceVisualizador(0)}
+                  onClick={verSelecionadasEmSequencia}
                   className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                 >
                   ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
@@ -290,12 +313,19 @@ export default function MinhasImagensPage() {
                       <p className="line-clamp-2 text-xs text-slate-400">{imagem.descricao_didatica}</p>
                     )}
 
-                    <div className="mt-4 flex gap-2">
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => expandirImagem(imagem)}
+                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
+                      >
+                        ⛶ Expandir
+                      </button>
                       <Link
                         href={`/visualizar/${imagem.curation_id}`}
                         className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
                       >
-                        Visualizar
+                        Detalhes
                       </Link>
                       <button
                         type="button"
@@ -319,6 +349,14 @@ export default function MinhasImagensPage() {
           itens={itensSelecionados}
           indiceInicial={indiceVisualizador}
           onFechar={() => setIndiceVisualizador(null)}
+        />
+      )}
+
+      {itemExpandido && itensExpandido.length > 0 && (
+        <VisualizadorSequencial
+          itens={itensExpandido}
+          indiceInicial={0}
+          onFechar={() => setItemExpandido(null)}
         />
       )}
     </div>
