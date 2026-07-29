@@ -114,20 +114,30 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
         <Topbar />
 
         <main className="flex flex-1 flex-col overflow-y-auto p-6">
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="mb-4 w-fit rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
-          >
-            ← Voltar
-          </button>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">
+                Detalhes <span className="text-blue-400">da imagem</span>
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Visualize a imagem e as classificações realizadas pelo curador.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="rounded-full border border-base-border px-4 py-1.5 text-sm text-slate-300 hover:border-blue-500 hover:text-blue-300"
+            >
+              ← Voltar aos resultados
+            </button>
+          </div>
 
           {carregando ? (
             <div className="flex flex-1 items-center justify-center text-slate-400">
@@ -140,7 +150,13 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
           ) : imagem ? (
             <>
               <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
-                <section className="flex min-h-[65vh] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+                <section className="flex min-h-[65vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface">
+                  <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                      {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
+                    </span>
+                  </div>
                   {imagem.viewer_url ? (
                     <iframe
                       src={imagem.viewer_url}
@@ -154,48 +170,59 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
                   )}
                 </section>
 
-                <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
-                  <h2 className="mb-4 text-sm font-semibold text-slate-200">
-                    Contexto didático
+                <section className="rounded-2xl border border-base-border bg-base-surface p-5">
+                  <h2 className="mb-1 flex items-center gap-2 text-base font-bold text-white">
+                    <span className="text-blue-400" aria-hidden="true">✓</span> Classificações do curador
                   </h2>
-                  <dl className="space-y-3 text-sm">
+                  <p className="mb-4 text-xs text-slate-400">
+                    Informações analisadas e classificadas pelo curador especialista.
+                  </p>
+
+                  <div className="space-y-4">
                     <div>
-                      <dt className="text-xs text-slate-500">Tipo de radiografia</dt>
-                      <dd className="text-slate-200">
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        1. Tipo de exame
+                      </p>
+                      <p className="rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
                         {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
-                      </dd>
+                      </p>
                     </div>
+
                     <div>
-                      <dt className="text-xs text-slate-500">Achado principal</dt>
-                      <dd className="text-slate-200">
-                        {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
-                      </dd>
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        2. Achados
+                      </p>
+                      <div className="space-y-1.5">
+                        <p className="rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
+                          {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
+                        </p>
+                        <p className="rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
+                          Qualidade técnica: {rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}
+                        </p>
+                        <p className="rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
+                          Dificuldade: {rotular(OPCOES_DIFICULDADE, imagem.dificuldade)}
+                        </p>
+                      </div>
                     </div>
+
                     <div>
-                      <dt className="text-xs text-slate-500">Qualidade técnica</dt>
-                      <dd className="text-slate-200">
-                        {rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-500">Dificuldade</dt>
-                      <dd className="text-slate-200">
-                        {rotular(OPCOES_DIFICULDADE, imagem.dificuldade)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-500">Finalidade</dt>
-                      <dd className="text-slate-200">
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        3. Finalidade
+                      </p>
+                      <p className="rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
                         {rotular(OPCOES_FINALIDADE, imagem.finalidade)}
-                      </dd>
+                      </p>
                     </div>
+
                     <div>
-                      <dt className="text-xs text-slate-500">Descrição didática</dt>
-                      <dd className="whitespace-pre-wrap text-slate-200">
+                      <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        4. Descrição didática
+                      </p>
+                      <p className="whitespace-pre-wrap rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100">
                         {imagem.descricao_didatica || '—'}
-                      </dd>
+                      </p>
                     </div>
-                  </dl>
+                  </div>
                 </section>
               </div>
 

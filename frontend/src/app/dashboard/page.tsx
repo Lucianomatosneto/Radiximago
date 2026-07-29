@@ -27,6 +27,17 @@ export default function DashboardPage() {
       return
     }
 
+    // O dashboard com indicadores e exclusivo de administrador - os demais
+    // perfis tem o banco de imagens como tela inicial (ver login/page.tsx).
+    // Esse redirect cobre quem cai aqui por outro caminho (ex.: link
+    // "Início" da barra lateral, ou o botao "voltar ao início" de telas
+    // de erro/acesso negado).
+    const perfil = localStorage.getItem('perfil')
+    if (perfil !== 'administrador') {
+      router.push('/banco-imagens')
+      return
+    }
+
     async function buscarStats(tokenAtual: string) {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {

@@ -7,7 +7,7 @@ import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
 
-const PERFIS_PERMITIDOS = ['administrador']
+const PERFIS_PERMITIDOS = ['administrador', 'curador']
 
 const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'periapical', label: 'Periapical' },
