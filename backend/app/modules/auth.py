@@ -1,12 +1,13 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.core.config import settings
+from app.core.rate_limit import limiter
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
 from app.core.email import enviar_email_redefinicao_senha, enviar_email_solicitacao_recebida
 from app.modules.users import User, UserRole
@@ -27,7 +28,8 @@ class TokenResposta(BaseModel):
     foto_perfil_url: str | None = None
 
 @router.post("/login", response_model=TokenResposta)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Exclui usuarios excluidos (soft-delete) da busca - o e-mail pode ter
     # sido reaproveitado por uma conta nova, e essa e a que deve logar.
     usuario = db.query(User).filter(
@@ -169,7 +171,9 @@ class SolicitarRedefinicao(BaseModel):
 
 
 @router.post("/forgot-password")
+@limiter.limit("3/minute")
 def solicitar_redefinicao_senha(
+    request: Request,
     dados: SolicitarRedefinicao,
     db: Session = Depends(get_db),
 ):
@@ -205,7 +209,9 @@ class RedefinirSenha(BaseModel):
 
 
 @router.post("/reset-password")
+@limiter.limit("10/minute")
 def redefinir_senha(
+    request: Request,
     dados: RedefinirSenha,
     db: Session = Depends(get_db),
 ):

@@ -5,8 +5,10 @@ class Settings(BaseSettings):
     # Banco de dados
     DATABASE_URL: str = "postgresql://radix_user:senha@radix-postgres:5432/radix_imago"
     
-    # JWT - Token de autenticação
-    JWT_SECRET_KEY: str = "chave-secreta-trocar"
+    # JWT - Token de autenticação. Sem default: se faltar no .env, a
+    # aplicacao falha ao subir em vez de rodar silenciosamente com uma
+    # chave conhecida/previsivel (ver Settings.Config abaixo).
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
     # Orthanc - servidor DICOM

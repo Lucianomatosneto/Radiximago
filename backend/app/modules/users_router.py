@@ -24,6 +24,22 @@ TIPOS_IMAGEM_PERMITIDOS = {"image/jpeg": ".jpg", "image/png": ".png", "image/web
 TAMANHO_MAXIMO_AVATAR_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
+def _detectar_extensao_por_assinatura(conteudo: bytes) -> Optional[str]:
+    """
+    Confirma o tipo real do arquivo pelos primeiros bytes (assinatura
+    binaria), em vez de confiar so no Content-Type enviado pelo navegador
+    (facilmente falsificavel). Retorna a extensao correspondente, ou None
+    se a assinatura nao bater com nenhum formato permitido.
+    """
+    if conteudo.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if conteudo.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if conteudo[:4] == b"RIFF" and conteudo[8:12] == b"WEBP":
+        return ".webp"
+    return None
+
+
 def _remover_arquivo_avatar(foto_url: Optional[str]) -> None:
     """Apaga o arquivo antigo do disco ao trocar/remover a foto. Silencioso
     em caso de falha - nao deve quebrar o fluxo principal por causa disso."""
@@ -107,8 +123,7 @@ async def enviar_foto_perfil(
     db: Session = Depends(get_db),
     usuario_atual: User = Depends(obter_usuario_atual),
 ):
-    extensao = TIPOS_IMAGEM_PERMITIDOS.get(arquivo.content_type)
-    if not extensao:
+    if arquivo.content_type not in TIPOS_IMAGEM_PERMITIDOS:
         raise HTTPException(
             status_code=422,
             detail="Formato de imagem não suportado. Envie um arquivo JPEG, PNG ou WEBP.",
@@ -119,6 +134,17 @@ async def enviar_foto_perfil(
         raise HTTPException(status_code=422, detail="Arquivo vazio.")
     if len(conteudo) > TAMANHO_MAXIMO_AVATAR_BYTES:
         raise HTTPException(status_code=422, detail="A imagem deve ter no máximo 5 MB.")
+
+    # A extensao final vem da assinatura binaria real do arquivo, nao do
+    # Content-Type (que so serve de filtro rapido acima) - evita que um
+    # arquivo malicioso disfarcado de imagem seja salvo com extensao de
+    # imagem so por causa do header.
+    extensao = _detectar_extensao_por_assinatura(conteudo)
+    if not extensao:
+        raise HTTPException(
+            status_code=422,
+            detail="O arquivo enviado não é uma imagem JPEG, PNG ou WEBP válida.",
+        )
 
     os.makedirs(DIRETORIO_AVATARS, exist_ok=True)
     foto_antiga = usuario_atual.foto_perfil_url

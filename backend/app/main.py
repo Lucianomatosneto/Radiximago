@@ -4,8 +4,12 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from app.core.database import SessionLocal
+from app.core.rate_limit import limiter
 from app.modules import orthanc_client
 
 logger = logging.getLogger(__name__)
@@ -30,6 +34,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Protecao contra forca bruta (ver app/core/rate_limit.py) - os limites em
+# si ficam decorados em cada rota sensivel (login, redefinicao de senha).
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
 # POST /users/me/avatar). Sem autenticacao: sao imagens publicas por

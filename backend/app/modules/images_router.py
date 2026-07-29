@@ -13,6 +13,7 @@ Acesso restrito a administrador e suporte (Bloco 4, Secao 13).
 """
 
 import io
+import logging
 
 import httpx
 import pydicom
@@ -29,6 +30,8 @@ from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/images", tags=["Imagens"])
 
@@ -317,9 +320,11 @@ def upload_imagem(
         # do pydicom com force=True e permissiva demais para pegar tudo).
         if e.response.status_code < 500:
             raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido (rejeitado pelo Orthanc).")
-        raise HTTPException(status_code=502, detail=f"Falha ao enviar o arquivo para o Orthanc: {e}")
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"Falha ao enviar o arquivo para o Orthanc: {e}")
+        logger.exception("Falha ao enviar arquivo para o Orthanc.")
+        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.")
+    except httpx.HTTPError:
+        logger.exception("Falha ao enviar arquivo para o Orthanc.")
+        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.")
 
     orthanc_id = resultado_orthanc.get("ID")
     if not orthanc_id:
