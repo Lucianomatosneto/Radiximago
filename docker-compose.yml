@@ -199,6 +199,14 @@ services:
       - '3000:3000'
     env_file:
       - .env
+    # WATCHPACK_POLLING: o bind mount do Windows (Docker Desktop) as vezes
+    # nao propaga eventos de sistema de arquivos pro watcher nativo do
+    # Next.js/webpack dentro do container - editar um arquivo no host nao
+    # disparava o hot-reload (so um restart do container fazia o Next ler
+    # o conteudo novo do disco). Polling e mais pesado mas funciona sempre,
+    # independente do bind mount.
+    environment:
+      - WATCHPACK_POLLING=true
     depends_on:
       - radix-api
     volumes:
