@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_ADMIN
+from app.modules.auth import exigir_perfis, PERFIS_ADMIN, PERFIS_CURADORIA
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
@@ -39,12 +39,13 @@ def _contar_por(db, coluna):
 
 @router.get("/stats")
 def obter_indicadores(
-    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
     """
-    Indicadores gerais para o dashboard administrativo.
-    Total de imagens e de fichas, e contagens por status, tipo, achado e dificuldade.
+    Indicadores gerais para o dashboard administrativo e para a tela de
+    Relatórios. Sao contagens agregadas (sem PII individual), por isso
+    tambem liberado pra curador - nao so admin/suporte.
     """
     total_imagens = db.query(func.count(OrthancReference.id)).scalar()
     total_fichas = db.query(func.count(Curation.id)).scalar()

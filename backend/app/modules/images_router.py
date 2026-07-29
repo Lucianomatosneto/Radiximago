@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.modules.auth import exigir_perfis, PERFIS_IMAGENS
+from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation
@@ -160,13 +160,18 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
 
 @router.get("/")
 def listar_imagens(
-    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
     """
     Lista as imagens ativas (orthanc_references com ativo=True), trazendo
     o status da ficha de curadoria mais recente vinculada a cada uma
     (None se ainda nao houver ficha).
+
+    Leitura apenas (os demais endpoints deste modulo - upload, import,
+    ativar/desativar - continuam restritos a admin/suporte): o curador
+    tambem precisa ver a fila de imagens recebidas, mas nao gerencia a
+    ingestao delas.
     """
     imagens = (
         db.query(OrthancReference)
