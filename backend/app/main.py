@@ -1,7 +1,9 @@
 ﻿import logging
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from app.core.database import SessionLocal
 from app.modules import orthanc_client
@@ -13,6 +15,7 @@ from app.modules.admin_router import router as admin_router
 from app.modules.users_router import router as users_router
 from app.modules.images_router import router as images_router
 from app.modules.curation_router import router as curation_router
+from app.modules.saved_images_router import router as saved_images_router
 
 app = FastAPI(
     title="Radix Imago API",
@@ -28,12 +31,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
+# POST /users/me/avatar). Sem autenticacao: sao imagens publicas por
+# natureza (avatar), servidas diretamente por caminho/nome unico.
+_DIRETORIO_UPLOADS = os.path.join(os.path.dirname(__file__), "..", "uploads")
+os.makedirs(os.path.join(_DIRETORIO_UPLOADS, "avatars"), exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=_DIRETORIO_UPLOADS), name="uploads")
+
 app.include_router(auth_router)
 app.include_router(search_router)
 app.include_router(admin_router)
 app.include_router(users_router)
 app.include_router(images_router)
 app.include_router(curation_router)
+app.include_router(saved_images_router)
 
 @app.get("/health")
 async def health():

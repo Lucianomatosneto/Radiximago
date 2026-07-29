@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import MiniaturaImagem from '../../components/MiniaturaImagem'
+import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 
 const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'periapical', label: 'Periapical' },
@@ -142,9 +144,13 @@ function PesquisaConteudo() {
 
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS)
   const [resultados, setResultados] = useState<ResultadoImagem[]>([])
+  const [totalResultados, setTotalResultados] = useState(0)
+  const [totalDisponivel, setTotalDisponivel] = useState<number | null>(null)
   const [jaPesquisou, setJaPesquisou] = useState(false)
   const [pesquisando, setPesquisando] = useState(false)
   const [erro, setErro] = useState('')
+  const [selecionados, setSelecionados] = useState<number[]>([])
+  const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
 
   useEffect(() => {
     const tokenAtual = localStorage.getItem('access_token')
@@ -154,6 +160,17 @@ function PesquisaConteudo() {
     }
     setToken(tokenAtual)
     setCarregandoPagina(false)
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
+      headers: { Authorization: `Bearer ${tokenAtual}` },
+    })
+      .then((resposta) => (resposta.ok ? resposta.json() : null))
+      .then((dados) => {
+        if (dados) setTotalDisponivel(dados.total)
+      })
+      .catch(() => {
+        // sem o total geral, a tela continua funcionando normalmente
+      })
   }, [router])
 
   // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
@@ -215,6 +232,8 @@ function PesquisaConteudo() {
       }
       const dados = await resposta.json()
       setResultados(dados.itens ?? [])
+      setTotalResultados(dados.total ?? (dados.itens ?? []).length)
+      setSelecionados([])
     } catch {
       setErro('Não foi possível realizar a pesquisa.')
     } finally {
@@ -222,42 +241,115 @@ function PesquisaConteudo() {
     }
   }
 
+  function alternarSelecao(curationId: number) {
+    setSelecionados((atual) =>
+      atual.includes(curationId) ? atual.filter((id) => id !== curationId) : [...atual, curationId]
+    )
+  }
+
+  const itensSelecionados = resultados
+    .map((imagem, indice) => ({ imagem, numero: indice + 1 }))
+    .filter(({ imagem }) => selecionados.includes(imagem.curation_id))
+    .map(({ imagem, numero }) => ({
+      curation_id: imagem.curation_id,
+      numero,
+      descricao_didatica: imagem.descricao_didatica,
+      tipo_radiografia: imagem.tipo_radiografia,
+      viewer_url: imagem.viewer_url,
+    }))
+
   if (carregandoPagina) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
+  const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
+  const campoInput =
+    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500'
+
+  function pillClasse(ativo: boolean): string {
+    return `rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
+      ativo
+        ? 'border-blue-500 bg-blue-500 text-white'
+        : 'border-base-border text-slate-300 hover:border-blue-500/50'
+    }`
+  }
+
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">Pesquisa avançada</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Pesquisa <span className="text-blue-400">avançada</span>
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Encontre imagens radiográficas para apoiar estudos e pesquisas.
+            {totalDisponivel !== null && (
+              <>
+                {' '}
+                <span className="font-semibold text-slate-200">{totalDisponivel}</span>{' '}
+                {totalDisponivel === 1 ? 'imagem disponível no total' : 'imagens disponíveis no total'}.
+              </>
+            )}
+          </p>
 
-          <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <div className="mt-6">
+            <p className="mb-3 text-sm font-medium text-slate-300">Acesso rápido por tipo de exame</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
+                <button
+                  key={o.valor}
+                  type="button"
+                  onClick={() => {
+                    const novos = { ...filtros, tipo_radiografia: o.valor }
+                    setFiltros(novos)
+                    pesquisar(novos)
+                  }}
+                  className={`flex flex-col items-center gap-2 rounded-2xl border p-5 text-sm font-medium transition-colors ${
+                    filtros.tipo_radiografia === o.valor
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-300'
+                      : 'border-base-border bg-base-surface text-slate-300 hover:border-blue-500/40'
+                  }`}
+                >
+                  <span className="text-2xl" aria-hidden="true">
+                    🦷
+                  </span>
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5">
+            <p className="text-sm font-semibold text-white">🔎 Busca avançada</p>
+            <p className="mb-4 mt-0.5 text-xs text-slate-400">Refine sua pesquisa utilizando os filtros abaixo.</p>
+
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Tipo de radiografia</label>
-                <select
-                  value={filtros.tipo_radiografia}
-                  onChange={(e) => atualizarFiltro('tipo_radiografia', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                >
-                  <option value="">Todos</option>
-                  {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                <label className={campoLabel}>Gênero</label>
+                <div className="flex flex-wrap gap-2">
+                  {[{ valor: '', label: 'Todos' }, ...OPCOES_GENERO].map((o) => (
+                    <button
+                      key={o.valor || 'todos'}
+                      type="button"
+                      onClick={() => atualizarFiltro('genero', o.valor)}
+                      className={pillClasse(filtros.genero === o.valor)}
+                    >
+                      {o.label}
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Dente (FDI)</label>
+                <label className={campoLabel}>Dente (FDI)</label>
                 <input
                   type="number"
                   min={11}
@@ -265,16 +357,16 @@ function PesquisaConteudo() {
                   value={filtros.dente}
                   onChange={(e) => atualizarFiltro('dente', e.target.value)}
                   placeholder="ex: 16"
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Arcada</label>
+                <label className={campoLabel}>Arcada</label>
                 <select
                   value={filtros.arcada}
                   onChange={(e) => atualizarFiltro('arcada', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Todas</option>
                   {OPCOES_ARCADA.map((o) => (
@@ -284,11 +376,11 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Lado</label>
+                <label className={campoLabel}>Lado</label>
                 <select
                   value={filtros.lado}
                   onChange={(e) => atualizarFiltro('lado', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Ambos</option>
                   {OPCOES_LADO.map((o) => (
@@ -298,11 +390,25 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Achado principal</label>
+                <label className={campoLabel}>Tipo de exame</label>
+                <select
+                  value={filtros.tipo_radiografia}
+                  onChange={(e) => atualizarFiltro('tipo_radiografia', e.target.value)}
+                  className={campoInput}
+                >
+                  <option value="">Todos</option>
+                  {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
+                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className={campoLabel}>Patologia / alteração</label>
                 <select
                   value={filtros.achado_principal}
                   onChange={(e) => atualizarFiltro('achado_principal', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Todos</option>
                   {OPCOES_ACHADO_PRINCIPAL.map((o) => (
@@ -312,25 +418,11 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Gênero (opcional)</label>
-                <select
-                  value={filtros.genero}
-                  onChange={(e) => atualizarFiltro('genero', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
-                >
-                  <option value="">Não informado</option>
-                  {OPCOES_GENERO.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Qualidade técnica</label>
+                <label className={campoLabel}>Qualidade técnica</label>
                 <select
                   value={filtros.qualidade_tecnica}
                   onChange={(e) => atualizarFiltro('qualidade_tecnica', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Todas</option>
                   {OPCOES_QUALIDADE_TECNICA.map((o) => (
@@ -340,11 +432,11 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Dificuldade</label>
+                <label className={campoLabel}>Dificuldade</label>
                 <select
                   value={filtros.dificuldade}
                   onChange={(e) => atualizarFiltro('dificuldade', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Todas</option>
                   {OPCOES_DIFICULDADE.map((o) => (
@@ -354,11 +446,11 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Finalidade</label>
+                <label className={campoLabel}>Finalidade</label>
                 <select
                   value={filtros.finalidade}
                   onChange={(e) => atualizarFiltro('finalidade', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 >
                   <option value="">Todas</option>
                   {OPCOES_FINALIDADE.map((o) => (
@@ -368,38 +460,38 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Idade mín.</label>
+                <label className={campoLabel}>Idade mín.</label>
                 <input
                   type="number"
                   min={0}
                   max={120}
                   value={filtros.idade_min}
                   onChange={(e) => atualizarFiltro('idade_min', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Idade máx.</label>
+                <label className={campoLabel}>Idade máx.</label>
                 <input
                   type="number"
                   min={0}
                   max={120}
                   value={filtros.idade_max}
                   onChange={(e) => atualizarFiltro('idade_max', e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className={campoInput}
                 />
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-5 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => pesquisar()}
                 disabled={pesquisando}
-                className="rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                {pesquisando ? 'Pesquisando...' : 'Pesquisar'}
+                🔍 {pesquisando ? 'Pesquisando...' : 'Pesquisar'}
               </button>
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
@@ -416,52 +508,101 @@ function PesquisaConteudo() {
               </p>
             ) : pesquisando ? (
               <p className="py-12 text-center text-slate-500">Pesquisando...</p>
-            ) : resultados.length === 0 ? (
+            ) : totalResultados === 0 ? (
               <p className="py-12 text-center text-slate-500">
                 Nenhuma imagem encontrada com esses filtros
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {resultados.map((imagem) => (
-                  <div
-                    key={imagem.curation_id}
-                    className="flex flex-col rounded-xl border border-slate-800 bg-slate-900 p-4"
-                  >
-                    <p className="text-sm font-medium text-slate-100">
-                      {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
-                    </p>
-                    <dl className="mt-2 space-y-1 text-xs text-slate-400">
-                      <div>
-                        <dt className="inline text-slate-500">Achado: </dt>
-                        <dd className="inline">{rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline text-slate-500">Qualidade: </dt>
-                        <dd className="inline">{rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline text-slate-500">Dificuldade: </dt>
-                        <dd className="inline">{rotular(OPCOES_DIFICULDADE, imagem.dificuldade)}</dd>
-                      </div>
-                      <div>
-                        <dt className="inline text-slate-500">Finalidade: </dt>
-                        <dd className="inline">{rotular(OPCOES_FINALIDADE, imagem.finalidade)}</dd>
-                      </div>
-                    </dl>
-
-                    <Link
-                      href={`/visualizar/${imagem.curation_id}`}
-                      className="mt-4 block rounded-md border border-slate-700 px-3 py-2 text-center text-sm text-slate-200 hover:border-teal-500 hover:text-teal-300"
+              <>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-slate-400">
+                    <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-blue-300">
+                      {totalResultados} {totalResultados === 1 ? 'imagem encontrada' : 'imagens encontradas'}
+                    </span>
+                    {resultados.length < totalResultados && (
+                      <span className="ml-2 text-slate-500">(mostrando as primeiras {resultados.length})</span>
+                    )}
+                  </p>
+                  {selecionados.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setIndiceVisualizador(0)}
+                      className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                     >
-                      Visualizar
-                    </Link>
-                  </div>
-                ))}
-              </div>
+                      ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {resultados.map((imagem, indice) => (
+                    <div
+                      key={imagem.curation_id}
+                      className="flex flex-col rounded-2xl border border-base-border bg-base-surface p-4"
+                    >
+                      <div className="relative mb-3 overflow-hidden rounded-lg">
+                        <MiniaturaImagem
+                          curationId={imagem.curation_id}
+                          alt={imagem.descricao_didatica ?? `Imagem #${indice + 1}`}
+                          className="h-36 w-full bg-base-surface2 object-cover"
+                        />
+                        <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-semibold text-white">
+                          {indice + 1}
+                        </span>
+                        <label className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-black/70">
+                          <input
+                            type="checkbox"
+                            checked={selecionados.includes(imagem.curation_id)}
+                            onChange={() => alternarSelecao(imagem.curation_id)}
+                            aria-label={`Selecionar imagem #${indice + 1}`}
+                            className="h-4 w-4 accent-blue-500"
+                          />
+                        </label>
+                      </div>
+                      <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                        {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
+                      </span>
+                      <dl className="mt-1 space-y-1 text-xs text-slate-400">
+                        <div>
+                          <dt className="inline text-slate-500">Achado: </dt>
+                          <dd className="inline">{rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-slate-500">Qualidade: </dt>
+                          <dd className="inline">{rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-slate-500">Dificuldade: </dt>
+                          <dd className="inline">{rotular(OPCOES_DIFICULDADE, imagem.dificuldade)}</dd>
+                        </div>
+                        <div>
+                          <dt className="inline text-slate-500">Finalidade: </dt>
+                          <dd className="inline">{rotular(OPCOES_FINALIDADE, imagem.finalidade)}</dd>
+                        </div>
+                      </dl>
+
+                      <Link
+                        href={`/visualizar/${imagem.curation_id}`}
+                        className="mt-4 block rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
+                      >
+                        Visualizar
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </main>
       </div>
+
+      {indiceVisualizador !== null && itensSelecionados.length > 0 && (
+        <VisualizadorSequencial
+          itens={itensSelecionados}
+          indiceInicial={indiceVisualizador}
+          onFechar={() => setIndiceVisualizador(null)}
+        />
+      )}
     </div>
   )
 }
@@ -470,7 +611,7 @@ export default function PesquisaPage() {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-slate-950">
+        <main className="flex min-h-screen items-center justify-center bg-base">
           <p className="text-slate-300">Carregando...</p>
         </main>
       }

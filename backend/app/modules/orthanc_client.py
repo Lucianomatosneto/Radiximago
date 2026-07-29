@@ -38,6 +38,21 @@ def listar_instancias() -> list[str]:
         return resposta.json()
 
 
+def obter_preview_instancia(orthanc_id: str) -> bytes:
+    """
+    Pede ao Orthanc uma renderizacao PNG (com windowing automatico) de uma
+    instancia - usado pra miniatura/visualizacao/download na tela de
+    Pesquisa (nao precisa de um visualizador DICOM pra ver essa versao).
+
+    Retorna: os bytes do PNG.
+    """
+    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/preview"
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.get(url)
+        resposta.raise_for_status()
+        return resposta.content
+
+
 def obter_detalhes_instancia(orthanc_id: str) -> dict:
     """
     Busca os detalhes de UMA instancia especifica no Orthanc.
@@ -158,6 +173,71 @@ def excluir_instancia(orthanc_id: str) -> None:
     with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
         resposta = client.delete(url)
         resposta.raise_for_status()
+
+
+def obter_detalhes_serie(orthanc_series_id: str) -> dict:
+    """
+    Busca os detalhes de UMA serie especifica no Orthanc.
+
+    Diferente do nivel de instancia (que so expoe ParentSeries), aqui vem o
+    ParentStudy - o ID interno do Orthanc do estudo-mae.
+
+    Parametro:
+        orthanc_series_id: o identificador interno do Orthanc da serie.
+
+    Retorna: um dicionario com os metadados da serie (inclui "ParentStudy"
+    e "Instances").
+    """
+    url = f"{settings.ORTHANC_URL}/series/{orthanc_series_id}"
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.get(url)
+        resposta.raise_for_status()
+        return resposta.json()
+
+
+def listar_instancias_do_estudo(orthanc_study_id: str) -> list[str]:
+    """
+    Lista os IDs (Orthanc) de todas as instancias de um estudo, percorrendo
+    suas series - usado pra descobrir se uma imagem faz parte de uma serie
+    com varios cortes (ex.: tomografia) e pra montar o ZIP de download com
+    todos os cortes.
+
+    Parametro:
+        orthanc_study_id: o identificador interno do Orthanc do estudo
+        (ParentStudy de uma instancia, NAO o StudyInstanceUID DICOM).
+
+    Retorna: lista de IDs (Orthanc) de instancias.
+    """
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}")
+        resposta.raise_for_status()
+        series_ids = resposta.json().get("Series", [])
+
+        instancias: list[str] = []
+        for serie_id in series_ids:
+            resposta_serie = client.get(f"{settings.ORTHANC_URL}/series/{serie_id}")
+            resposta_serie.raise_for_status()
+            instancias.extend(resposta_serie.json().get("Instances", []))
+        return instancias
+
+
+def obter_arquivo_zip_estudo(orthanc_study_id: str) -> bytes:
+    """
+    Pede ao Orthanc o ZIP nativo (DICOM) com todos os arquivos de um estudo -
+    usado no download "DICOM" de uma imagem que e na verdade uma serie com
+    varios cortes (ex.: tomografia). Estudos grandes podem ter centenas de
+    arquivos, por isso o timeout maior que os outros metodos deste modulo.
+
+    Parametro:
+        orthanc_study_id: o identificador interno do Orthanc do estudo.
+
+    Retorna: os bytes do arquivo ZIP.
+    """
+    url = f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}/archive"
+    with httpx.Client(auth=_get_auth(), timeout=180.0) as client:
+        resposta = client.get(url)
+        resposta.raise_for_status()
+        return resposta.content
 
 
 def enviar_instancia(conteudo: bytes) -> dict:
