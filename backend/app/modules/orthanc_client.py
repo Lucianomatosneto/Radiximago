@@ -221,6 +221,51 @@ def listar_instancias_do_estudo(orthanc_study_id: str) -> list[str]:
         return instancias
 
 
+def listar_series_do_estudo(orthanc_study_id: str) -> list[dict]:
+    """
+    Lista as series de um estudo, com o SeriesInstanceUID DICOM real de
+    cada uma (vem pronto no MainDicomTags do proprio recurso de serie do
+    Orthanc - nao precisa ir instancia por instancia). Usado pra navegar
+    entre series/"pastas" de um estudo com varias (ex.: cortes axiais,
+    reconstrucao, escanograma) sem depender da coluna series_instance_uid
+    do banco, que guarda o ID interno do Orthanc, nao o UID DICOM.
+
+    Parametro:
+        orthanc_study_id: o identificador interno do Orthanc do estudo.
+
+    Retorna: lista de dicionarios, ordenada por SeriesNumber (quando
+    presente), cada uma com series_instance_uid, series_number, modality
+    e total_instancias.
+    """
+    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
+        resposta = client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}")
+        resposta.raise_for_status()
+        series_ids = resposta.json().get("Series", [])
+
+        series: list[dict] = []
+        for serie_id in series_ids:
+            resposta_serie = client.get(f"{settings.ORTHANC_URL}/series/{serie_id}")
+            resposta_serie.raise_for_status()
+            info = resposta_serie.json()
+            tags = info.get("MainDicomTags", {})
+            series.append({
+                "series_instance_uid": tags.get("SeriesInstanceUID"),
+                "series_number": tags.get("SeriesNumber"),
+                "modality": tags.get("Modality"),
+                "total_instancias": len(info.get("Instances", [])),
+            })
+
+    def _chave_ordenacao(serie: dict):
+        numero = serie.get("series_number")
+        try:
+            return (0, int(numero))
+        except (TypeError, ValueError):
+            return (1, 0)
+
+    series.sort(key=_chave_ordenacao)
+    return series
+
+
 def obter_arquivo_zip_estudo(orthanc_study_id: str) -> bytes:
     """
     Pede ao Orthanc o ZIP nativo (DICOM) com todos os arquivos de um estudo -

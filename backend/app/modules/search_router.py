@@ -279,6 +279,24 @@ def obter_info_serie(
     return {"eh_serie": len(instancias) > 1, "total_cortes": len(instancias)}
 
 
+@router.get("/{curation_id}/series")
+def obter_series_do_estudo(
+    curation_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista as series ("pastas" de imagens) do estudo dessa ficha, cada uma
+    com o SeriesInstanceUID real (do Orthanc, nao a coluna do banco) -
+    usado pelo frontend pra montar a navegacao entre series dentro do
+    mesmo estudo no visualizador em sequencia.
+    """
+    ficha = _buscar_ficha_aprovada(db, curation_id)
+    orthanc_study_id, _ = _instancias_do_estudo_da_ficha(ficha)
+    series = orthanc_client.listar_series_do_estudo(orthanc_study_id)
+    return {"series": series}
+
+
 @router.get("/{curation_id}/download/imagens.zip")
 def baixar_zip_imagens(
     curation_id: int,

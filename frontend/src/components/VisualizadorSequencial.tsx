@@ -23,6 +23,13 @@ interface InfoSerie {
   total_cortes: number
 }
 
+interface SerieEstudo {
+  series_instance_uid: string
+  series_number: string | null
+  modality: string | null
+  total_instancias: number
+}
+
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
     const dados = await response.json()
@@ -47,14 +54,31 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const [baixandoImagens, setBaixandoImagens] = useState(false)
   const [baixandoDicom, setBaixandoDicom] = useState(false)
   const [baixandoUnico, setBaixandoUnico] = useState(false)
+  const [series, setSeries] = useState<SerieEstudo[]>([])
+  // curation_id a que a lista em `series` pertence de fato - so aplicamos
+  // o SeriesInstanceUID quando esse valor bate com a imagem atual. Sem
+  // essa guarda, ao trocar de estudo (seta dupla) a serie da imagem
+  // ANTERIOR ficava aplicada por uma fração de segundo na URL do estudo
+  // NOVO (o `series`/`indiceSerie` só zeram de forma assíncrona, depois
+  // do primeiro render com o `indice` já atualizado) - o OHIF recebia um
+  // SeriesInstanceUID que não existe naquele estudo e dava erro.
+  const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
+  const [indiceSerie, setIndiceSerie] = useState(0)
 
   const atual = itens[indice]
+  const seriesValidas = seriesDoItem === atual.curation_id ? series : []
+  const serieAtual = seriesValidas[indiceSerie] ?? null
+  const urlComSerie =
+    atual.viewer_url && serieAtual
+      ? `${atual.viewer_url}&SeriesInstanceUIDs=${serieAtual.series_instance_uid}`
+      : atual.viewer_url
 
   useEffect(() => {
     setMensagem('')
     setErro('')
     setJaSalvo(false)
     setInfoSerie(null)
+    setIndiceSerie(0)
 
     const token = localStorage.getItem('access_token')
     if (!token) return
@@ -69,6 +93,24 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       .catch(() => {
         // sem essa informacao, a tela continua mostrando o download simples
       })
+
+    if (atual.viewer_url) {
+      const curationIdDaBusca = atual.curation_id
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationIdDaBusca}/series`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((resposta) => (resposta.ok ? resposta.json() : null))
+        .then((dados) => {
+          if (dados?.series && !cancelado) {
+            setSeries(dados.series)
+            setSeriesDoItem(curationIdDaBusca)
+          }
+        })
+        .catch(() => {
+          // sem essa informacao, a navegacao entre series fica indisponivel
+        })
+    }
+
     return () => {
       cancelado = true
     }
@@ -107,6 +149,14 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
 
   function irParaProxima() {
     setIndice((i) => (i < itens.length - 1 ? i + 1 : i))
+  }
+
+  function irParaSerieAnterior() {
+    setIndiceSerie((i) => (i > 0 ? i - 1 : i))
+  }
+
+  function irParaProximaSerie() {
+    setIndiceSerie((i) => (i < seriesValidas.length - 1 ? i + 1 : i))
   }
 
   async function baixarArquivo(
@@ -228,6 +278,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <span className="text-slate-500">
             ({indice + 1} de {itens.length} selecionadas)
           </span>
+          {seriesValidas.length > 1 && (
+            <span className="text-slate-500">
+              {' '}
+              · Série {indiceSerie + 1} de {seriesValidas.length}
+              {serieAtual?.total_instancias ? ` (${serieAtual.total_instancias} cortes)` : ''}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -250,20 +307,35 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       </div>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        <button
-          type="button"
-          onClick={irParaAnterior}
-          disabled={indice === 0}
-          aria-label="Imagem anterior"
-          className="absolute left-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30 sm:left-6"
-        >
-          ‹
-        </button>
+        <div className="absolute left-2 z-10 flex items-center gap-1.5 sm:left-6">
+          <button
+            type="button"
+            onClick={irParaAnterior}
+            disabled={indice === 0}
+            aria-label="Estudo anterior (imagem selecionada anterior)"
+            title="Estudo anterior"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
+          >
+            «
+          </button>
+          {seriesValidas.length > 1 && (
+            <button
+              type="button"
+              onClick={irParaSerieAnterior}
+              disabled={indiceSerie === 0}
+              aria-label="Série (pasta) anterior deste estudo"
+              title="Série anterior"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30"
+            >
+              ‹
+            </button>
+          )}
+        </div>
 
-        {atual.viewer_url ? (
+        {urlComSerie ? (
           <iframe
             key={atual.curation_id}
-            src={atual.viewer_url}
+            src={urlComSerie}
             title={`Visualizador OHIF - Imagem #${atual.numero}`}
             className="h-full w-full flex-1 border-0"
           />
@@ -275,20 +347,37 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           />
         )}
 
-        <button
-          type="button"
-          onClick={irParaProxima}
-          disabled={indice === itens.length - 1}
-          aria-label="Próxima imagem"
-          className="absolute right-2 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30 sm:right-6"
-        >
-          ›
-        </button>
+        <div className="absolute right-2 z-10 flex items-center gap-1.5 sm:right-6">
+          {seriesValidas.length > 1 && (
+            <button
+              type="button"
+              onClick={irParaProximaSerie}
+              disabled={indiceSerie === seriesValidas.length - 1}
+              aria-label="Próxima série (pasta) deste estudo"
+              title="Próxima série"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30"
+            >
+              ›
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={irParaProxima}
+            disabled={indice === itens.length - 1}
+            aria-label="Próximo estudo (próxima imagem selecionada)"
+            title="Próximo estudo"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
+          >
+            »
+          </button>
+        </div>
       </div>
 
       {atual.viewer_url && (
         <p className="border-t border-white/10 bg-black/40 px-4 py-1.5 text-center text-xs text-slate-400">
-          Use a rolagem do mouse ou Page Up / Page Down dentro do visualizador para percorrer todos os cortes desta imagem.
+          Use a rolagem do mouse ou Page Up / Page Down dentro do visualizador para percorrer todos os cortes desta
+          imagem.
+          {seriesValidas.length > 1 && ' Use a seta simples (‹ ›) para trocar de série e a seta dupla (« ») para trocar de estudo.'}
         </p>
       )}
 
