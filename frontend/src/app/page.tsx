@@ -133,13 +133,17 @@ export default function Home() {
           <div
             key={recurso.titulo}
             className={`animar-entrada group rounded-2xl border p-6 backdrop-blur-xl transition-colors ${recurso.span} ${
+              recurso.span.includes('row-span-2') ? 'flex flex-col justify-between' : ''
+            } ${
               recurso.destaque
                 ? 'border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-400/5 hover:border-blue-400/50'
                 : 'border-white/10 bg-white/5 hover:border-white/20'
             }`}
           >
             <div
-              className={`mb-4 flex h-11 w-11 items-center justify-center rounded-xl ${
+              className={`mb-4 flex items-center justify-center rounded-xl ${
+                recurso.span.includes('row-span-2') ? 'h-16 w-16' : 'h-11 w-11'
+              } ${
                 recurso.destaque
                   ? 'bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/30'
                   : 'bg-white/10 text-blue-300'
@@ -147,8 +151,10 @@ export default function Home() {
             >
               {recurso.icone}
             </div>
-            <h2 className="text-base font-semibold text-white">{recurso.titulo}</h2>
-            <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{recurso.descricao}</p>
+            <div>
+              <h2 className="text-base font-semibold text-white">{recurso.titulo}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{recurso.descricao}</p>
+            </div>
           </div>
         ))}
       </section>
