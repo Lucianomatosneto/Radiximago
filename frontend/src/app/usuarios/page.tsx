@@ -4,6 +4,7 @@ import { useEffect, useState, FormEvent, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import DashboardCard from '../../components/DashboardCard'
 
 const PERFIS = ['administrador', 'curador', 'professor', 'estudante', 'pesquisador', 'suporte'] as const
 
@@ -479,7 +480,25 @@ export default function UsuariosPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">Usuários</h1>
+          <h1 className="mb-1 text-xl font-semibold text-slate-100">Usuários</h1>
+          <p className="mb-6 text-sm text-slate-500">
+            Gerencie docentes, estudantes e administradores da plataforma.
+          </p>
+
+          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <DashboardCard label="Total de usuários" valor={usuarios.length} cor="blue" />
+            <DashboardCard
+              label="Docentes"
+              valor={usuarios.filter((u) => u.perfil === 'professor').length}
+              cor="teal"
+            />
+            <DashboardCard
+              label="Estudantes"
+              valor={usuarios.filter((u) => u.perfil === 'estudante').length}
+              cor="green"
+            />
+            <DashboardCard label="Convites pendentes" valor={solicitacoes.length} cor="amber" />
+          </div>
 
           {!carregandoSolicitacoes && solicitacoes.length > 0 && (
             <div className="mb-8">

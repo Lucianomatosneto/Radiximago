@@ -139,7 +139,12 @@ export default function IntegracoesPage() {
 
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mb-6 flex items-center justify-between">
-            <h1 className="text-xl font-semibold text-slate-100">Integrações</h1>
+            <div>
+              <h1 className="text-xl font-semibold text-slate-100">Integrações</h1>
+              <p className="mt-1 text-sm text-slate-500">
+                Conexões de infraestrutura e serviços internos da plataforma.
+              </p>
+            </div>
             <button
               type="button"
               onClick={verificarBancoEOrthanc}
@@ -150,7 +155,7 @@ export default function IntegracoesPage() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <CardServico
               nome="FastAPI"
               status="online"

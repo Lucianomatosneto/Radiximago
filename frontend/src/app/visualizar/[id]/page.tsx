@@ -124,7 +124,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                Detalhes <span className="text-blue-400">da imagem</span>
+                Detalhes <span className="text-brand-300">da imagem</span>
               </h1>
               <p className="mt-1 text-sm text-slate-400">
                 Visualize a imagem e as classificações realizadas pelo curador.
@@ -133,7 +133,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
             <button
               type="button"
               onClick={() => router.back()}
-              className="rounded-full border border-base-border px-4 py-1.5 text-sm text-slate-300 hover:border-blue-500 hover:text-blue-300"
+              className="rounded-full border border-base-border px-4 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
             >
               ← Voltar aos resultados
             </button>
@@ -152,8 +152,8 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
               <div className="grid flex-1 grid-cols-1 gap-4 lg:grid-cols-[1fr_380px]">
                 <section className="flex min-h-[65vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface">
                   <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                       {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
                     </span>
                   </div>
@@ -172,7 +172,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
 
                 <section className="rounded-2xl border border-base-border bg-base-surface p-5">
                   <h2 className="mb-1 flex items-center gap-2 text-base font-bold text-white">
-                    <span className="text-blue-400" aria-hidden="true">✓</span> Classificações do curador
+                    <span className="text-brand-300" aria-hidden="true">✓</span> Classificações do curador
                   </h2>
                   <p className="mb-4 text-xs text-slate-400">
                     Informações analisadas e classificadas pelo curador especialista.

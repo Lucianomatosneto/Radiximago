@@ -223,7 +223,7 @@ export default function MinhasImagensPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-white">
-                Minhas <span className="text-blue-400">imagens</span>
+                Minhas <span className="text-brand-300">imagens</span>
               </h1>
               <p className="mt-1 text-sm text-slate-400">Imagens que você salvou a partir da Pesquisa avançada.</p>
             </div>
@@ -233,7 +233,7 @@ export default function MinhasImagensPage() {
                 <button
                   type="button"
                   onClick={verSelecionadasEmSequencia}
-                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
+                  className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                 >
                   ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
                 </button>
@@ -242,7 +242,7 @@ export default function MinhasImagensPage() {
                     type="button"
                     onClick={enviarSelecionadasPorEmail}
                     disabled={enviandoLote}
-                    className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+                    className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
                   >
                     {enviandoLote
                       ? 'Enviando...'
@@ -272,7 +272,7 @@ export default function MinhasImagensPage() {
             {itens.length === 0 ? (
               <p className="py-12 text-center text-slate-500">
                 Você ainda não salvou nenhuma imagem. Salve imagens na tela de{' '}
-                <Link href="/pesquisa" className="text-blue-400 hover:underline">
+                <Link href="/pesquisa" className="text-brand-300 hover:underline">
                   Pesquisa avançada
                 </Link>
                 .
@@ -299,13 +299,13 @@ export default function MinhasImagensPage() {
                           checked={selecionados.includes(imagem.curation_id)}
                           onChange={() => alternarSelecao(imagem.curation_id)}
                           aria-label={`Selecionar imagem #${indice + 1}`}
-                          className="h-4 w-4 accent-blue-500"
+                          className="h-4 w-4 accent-brand"
                         />
                       </label>
                     </div>
 
-                    <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
-                      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                    <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                       {rotularTipo(imagem.tipo_radiografia)}
                     </span>
 
@@ -317,13 +317,13 @@ export default function MinhasImagensPage() {
                       <button
                         type="button"
                         onClick={() => expandirImagem(imagem)}
-                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
+                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                       >
                         ⛶ Expandir
                       </button>
                       <Link
                         href={`/visualizar/${imagem.curation_id}`}
-                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
+                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                       >
                         Detalhes
                       </Link>

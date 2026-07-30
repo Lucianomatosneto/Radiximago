@@ -393,7 +393,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 type="button"
                 onClick={baixarZipImagens}
                 disabled={baixandoImagens}
-                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
               >
                 {baixandoImagens
                   ? 'Baixando...'
@@ -403,7 +403,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 type="button"
                 onClick={baixarZipDicom}
                 disabled={baixandoDicom}
-                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
               >
                 {baixandoDicom ? 'Baixando...' : '⬇ Baixar DICOM (ZIP)'}
               </button>
@@ -413,7 +413,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               type="button"
               onClick={baixarUnico}
               disabled={baixandoUnico}
-              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
             >
               {baixandoUnico ? 'Baixando...' : '⬇ Baixar'}
             </button>
@@ -422,7 +422,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             type="button"
             onClick={salvarNoUsuario}
             disabled={salvando || jaSalvo}
-            className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+            className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
           >
             {jaSalvo ? '✓ Salva' : salvando ? 'Salvando...' : '★ Salvar no meu usuário'}
           </button>
@@ -431,7 +431,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               type="button"
               onClick={enviarPorEmail}
               disabled={enviando}
-              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-60"
+              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
             >
               {enviando ? 'Enviando...' : '✉ Enviar por e-mail'}
             </button>
