@@ -134,14 +134,14 @@ export default function PainelAdminPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -188,14 +188,14 @@ export default function PainelAdminPage() {
           )}
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <section className="lg:col-span-2 rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <section className="lg:col-span-2 rounded-xl border border-base-border bg-base-surface p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-200">Atalhos de gestão</h2>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {ATALHOS_GESTAO.map((atalho) => (
                   <Link
                     key={atalho.href}
                     href={atalho.href}
-                    className="rounded-lg border border-slate-700 bg-slate-800 px-4 py-4 text-center text-sm font-medium text-slate-200 transition-colors hover:border-teal-500 hover:text-teal-300"
+                    className="rounded-lg border border-slate-700 bg-base-surface2 px-4 py-4 text-center text-sm font-medium text-slate-200 transition-colors hover:border-brand hover:text-brand-300"
                   >
                     {atalho.label}
                   </Link>
@@ -203,10 +203,10 @@ export default function PainelAdminPage() {
               </div>
             </section>
 
-            <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+            <section className="rounded-xl border border-base-border bg-base-surface p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-200">Status dos serviços</h2>
               <div className="space-y-2">
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-2">
+                <div className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2">
                   <span className="text-sm text-slate-300">PostgreSQL</span>
                   <span
                     className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[banco.status]}`}
@@ -214,7 +214,7 @@ export default function PainelAdminPage() {
                     {LABELS_STATUS[banco.status]}
                   </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-800/50 px-3 py-2">
+                <div className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2">
                   <span className="text-sm text-slate-300">Orthanc</span>
                   <span
                     className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[orthanc.status]}`}
@@ -225,14 +225,14 @@ export default function PainelAdminPage() {
               </div>
               <Link
                 href="/integracoes"
-                className="mt-4 inline-block text-sm text-teal-400 hover:text-teal-300"
+                className="mt-4 inline-block text-sm text-brand-300 hover:text-brand-hover"
               >
                 Ver todos os serviços →
               </Link>
             </section>
           </div>
 
-          <section className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-5">
+          <section className="mt-6 rounded-xl border border-base-border bg-base-surface p-5">
             <h2 className="mb-4 text-sm font-semibold text-slate-200">Alertas de segurança</h2>
 
             {totalAlertas === 0 ? (
@@ -256,7 +256,7 @@ export default function PainelAdminPage() {
 
             <Link
               href="/auditoria"
-              className="mt-4 inline-block text-sm text-teal-400 hover:text-teal-300"
+              className="mt-4 inline-block text-sm text-brand-300 hover:text-brand-hover"
             >
               Ver auditoria completa →
             </Link>

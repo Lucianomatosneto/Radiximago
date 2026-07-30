@@ -49,7 +49,7 @@ async function extrairErro(response: Response, generica: string): Promise<string
 
 function Secao({ titulo, children }: { titulo: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <section className="rounded-xl border border-base-border bg-base-surface p-5">
       <h2 className="mb-4 text-sm font-semibold text-slate-200">{titulo}</h2>
       {children}
     </section>
@@ -73,7 +73,7 @@ function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: strin
         {valores.map((valor) => (
           <span
             key={valor}
-            className="rounded-full border border-slate-700 bg-slate-800 px-2.5 py-0.5 text-xs text-slate-300"
+            className="rounded-full border border-slate-700 bg-base-surface2 px-2.5 py-0.5 text-xs text-slate-300"
           >
             {valor}
           </span>
@@ -133,7 +133,7 @@ export default function ConfiguracoesPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
@@ -141,7 +141,7 @@ export default function ConfiguracoesPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">

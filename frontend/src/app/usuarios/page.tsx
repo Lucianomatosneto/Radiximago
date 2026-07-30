@@ -86,7 +86,7 @@ async function extrairErro(response: Response, generica: string): Promise<string
 function Modal({ children, onFechar }: { children: ReactNode; onFechar: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-800 bg-slate-900 p-6 shadow-2xl">
+      <div className="w-full max-w-md rounded-xl border border-base-border bg-base-surface p-6 shadow-2xl">
         {children}
       </div>
       <button
@@ -465,14 +465,14 @@ export default function UsuariosPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -486,9 +486,9 @@ export default function UsuariosPage() {
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
                 Solicitações de acesso pendentes ({solicitacoes.length})
               </h2>
-              <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <div className="overflow-x-auto rounded-xl border border-base-border">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-900 text-slate-400">
+                  <thead className="bg-base-surface text-slate-400">
                     <tr>
                       <th className="px-4 py-3 font-medium">Nome</th>
                       <th className="px-4 py-3 font-medium">E-mail</th>
@@ -499,7 +499,7 @@ export default function UsuariosPage() {
                       <th className="px-4 py-3 font-medium">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 bg-slate-950">
+                  <tbody className="divide-y divide-slate-800 bg-base">
                     {solicitacoes.map((solicitacao) => (
                       <tr key={solicitacao.id} className="text-slate-200">
                         <td className="px-4 py-3">{solicitacao.nome}</td>
@@ -544,13 +544,13 @@ export default function UsuariosPage() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por nome ou e-mail..."
-              className="w-64 rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="w-64 rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
 
             <select
               value={filtroPerfil}
               onChange={(e) => setFiltroPerfil(e.target.value)}
-              className="rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">Todos os perfis</option>
               {PERFIS.map((perfil) => (
@@ -563,7 +563,7 @@ export default function UsuariosPage() {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">Todos os status</option>
               <option value="ativo">Ativo</option>
@@ -581,7 +581,7 @@ export default function UsuariosPage() {
             <button
               type="button"
               onClick={abrirCriacao}
-              className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
               Novo usuário
             </button>
@@ -599,9 +599,9 @@ export default function UsuariosPage() {
                 </p>
               )}
 
-              <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <div className="overflow-x-auto rounded-xl border border-base-border">
                 <table className="w-full text-left text-sm">
-                  <thead className="bg-slate-900 text-slate-400">
+                  <thead className="bg-base-surface text-slate-400">
                     <tr>
                       <th className="px-4 py-3 font-medium">Nome</th>
                       <th className="px-4 py-3 font-medium">E-mail</th>
@@ -611,7 +611,7 @@ export default function UsuariosPage() {
                       <th className="px-4 py-3 font-medium">Excluído por</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800 bg-slate-950">
+                  <tbody className="divide-y divide-slate-800 bg-base">
                     {carregandoExcluidos ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
@@ -642,9 +642,9 @@ export default function UsuariosPage() {
             </div>
           )}
 
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <div className="overflow-x-auto rounded-xl border border-base-border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900 text-slate-400">
+              <thead className="bg-base-surface text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">Nome</th>
                   <th className="px-4 py-3 font-medium">E-mail</th>
@@ -655,7 +655,7 @@ export default function UsuariosPage() {
                   <th className="px-4 py-3 font-medium">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-950">
+              <tbody className="divide-y divide-slate-800 bg-base">
                 {usuariosFiltrados.map((usuario) => {
                   const status = statusDoUsuario(usuario)
                   return (
@@ -677,7 +677,7 @@ export default function UsuariosPage() {
                           <button
                             type="button"
                             onClick={() => abrirEdicao(usuario)}
-                            className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-teal-500 hover:text-teal-300"
+                            className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                           >
                             Editar
                           </button>
@@ -725,7 +725,7 @@ export default function UsuariosPage() {
                 required
                 value={edicao.nome}
                 onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -734,7 +734,7 @@ export default function UsuariosPage() {
                 type="text"
                 value={edicao.instituicao}
                 onChange={(e) => setEdicao({ ...edicao, instituicao: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -755,7 +755,7 @@ export default function UsuariosPage() {
               <button
                 type="submit"
                 disabled={salvandoEdicao}
-                className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-60"
+                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
               >
                 {salvandoEdicao ? 'Salvando...' : 'Salvar'}
               </button>
@@ -775,7 +775,7 @@ export default function UsuariosPage() {
                 required
                 value={formCriacao.nome}
                 onChange={(e) => setFormCriacao({ ...formCriacao, nome: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -785,7 +785,7 @@ export default function UsuariosPage() {
                 required
                 value={formCriacao.email}
                 onChange={(e) => setFormCriacao({ ...formCriacao, email: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -796,7 +796,7 @@ export default function UsuariosPage() {
                 value={formCriacao.senha}
                 onChange={(e) => setFormCriacao({ ...formCriacao, senha: e.target.value })}
                 placeholder="Mínimo 8 caracteres"
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -804,7 +804,7 @@ export default function UsuariosPage() {
               <select
                 value={formCriacao.perfil}
                 onChange={(e) => setFormCriacao({ ...formCriacao, perfil: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               >
                 {PERFIS.map((perfil) => (
                   <option key={perfil} value={perfil}>
@@ -821,7 +821,7 @@ export default function UsuariosPage() {
                 type="text"
                 value={formCriacao.instituicao}
                 onChange={(e) => setFormCriacao({ ...formCriacao, instituicao: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -842,7 +842,7 @@ export default function UsuariosPage() {
               <button
                 type="submit"
                 disabled={criando}
-                className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-60"
+                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
               >
                 {criando ? 'Criando...' : 'Criar usuário'}
               </button>
@@ -908,8 +908,8 @@ export default function UsuariosPage() {
                     onClick={() => setAprovacao({ ...aprovacao, perfil })}
                     className={`rounded-md border px-3 py-2 text-sm transition-colors ${
                       aprovacao.perfil === perfil
-                        ? 'border-teal-500 bg-teal-600 text-white'
-                        : 'border-slate-700 text-slate-300 hover:border-teal-500/50'
+                        ? 'border-brand bg-brand text-white'
+                        : 'border-slate-700 text-slate-300 hover:border-brand/50'
                     }`}
                   >
                     {capitalizar(perfil)}
@@ -961,7 +961,7 @@ export default function UsuariosPage() {
                 rows={3}
                 value={rejeicao.motivo}
                 onChange={(e) => setRejeicao({ ...rejeicao, motivo: e.target.value })}
-                className="w-full resize-none rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                className="w-full resize-none rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                 placeholder="Explique por que o pedido está sendo rejeitado"
               />
             </div>

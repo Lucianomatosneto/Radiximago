@@ -3,42 +3,97 @@ import Image from 'next/image'
 type VarianteLogo = 'navbar' | 'sidebar' | 'login' | 'hero' | 'footer'
 
 interface LogoProps {
-  /** Contexto de uso - cada um tem a altura definida na identidade visual
-   * do RÁDIX IMAGO (ver classes .logo--* em globals.css, com o tamanho
-   * mobile automático entre 40-60px embutido via media query). */
+  /** Contexto de uso - cada um tem o tamanho de icone/texto definido na
+   * identidade visual do RÁDIX IMAGO (marca "Layered Scan", 2026). */
   variante: VarianteLogo
   className?: string
 }
 
-const CLASSE_POR_VARIANTE: Record<VarianteLogo, string> = {
-  navbar: 'logo--navbar',
-  sidebar: 'logo--sidebar',
-  login: 'logo--login',
-  hero: 'logo--hero',
-  footer: 'logo--footer',
+// Icone em SVG (nao pixela em nenhum tamanho) + nome/tagline como texto
+// real - em vez de uma unica imagem "achatada" com tudo desenhado dentro.
+// Isso evita o problema classico de logo em imagem unica: numa barra
+// baixa (navbar/sidebar, ~40-54px), o texto encolhia junto com o icone
+// ate ficar ilegivel. Com o texto vivo, cada contexto usa o tamanho de
+// fonte que faz sentido pra ele, sem depender da altura do icone.
+//
+// Sem nenhuma referencia a modalidade especifica (ex.: odontologia) -
+// a marca foi pensada pra uso multi-modalidade (RX, RM, TC, entre outras).
+const CONFIG_POR_VARIANTE: Record<
+  VarianteLogo,
+  {
+    empilhado: boolean // true = icone em cima, texto embaixo (login/hero); false = lado a lado
+    iconePx: number
+    tituloClasse: string
+    tagline: boolean
+    taglineClasse?: string
+    gapClasse: string
+  }
+> = {
+  navbar: {
+    empilhado: false,
+    iconePx: 36,
+    tituloClasse: 'text-base font-bold tracking-tight text-white sm:text-lg',
+    tagline: false,
+    gapClasse: 'gap-2.5',
+  },
+  sidebar: {
+    empilhado: false,
+    iconePx: 32,
+    tituloClasse: 'text-sm font-bold tracking-tight text-white',
+    tagline: true,
+    taglineClasse: 'text-[9px] font-medium uppercase tracking-wide text-slate-400',
+    gapClasse: 'gap-2.5',
+  },
+  footer: {
+    empilhado: false,
+    iconePx: 28,
+    tituloClasse: 'text-sm font-bold tracking-tight text-white',
+    tagline: false,
+    gapClasse: 'gap-2',
+  },
+  login: {
+    empilhado: true,
+    iconePx: 72,
+    tituloClasse: 'text-2xl font-bold tracking-tight text-white sm:text-3xl',
+    tagline: true,
+    taglineClasse: 'text-[11px] font-medium uppercase tracking-wider text-slate-400 sm:text-xs',
+    gapClasse: 'gap-3',
+  },
+  hero: {
+    empilhado: true,
+    iconePx: 96,
+    tituloClasse: 'text-3xl font-bold tracking-tight text-white sm:text-4xl',
+    tagline: true,
+    taglineClasse: 'text-xs font-medium uppercase tracking-wider text-slate-400 sm:text-sm',
+    gapClasse: 'gap-4',
+  },
 }
 
-// Dimensoes reais do arquivo fonte (public/assets/logo-radix-imago.png) -
-// usadas pelo Next/Image so pra calcular a proporcao correta; o tamanho
-// exibido de fato vem da classe .logo--* (width: auto, object-fit: contain
-// - nunca distorce, nunca corta). Fundo branco original removido via
-// flood-fill (so o que estava conectado a borda), preservando os detalhes
-// internos brancos da arte (divisores da roda, letras "O" etc).
-const LARGURA_ORIGINAL = 1063
-const ALTURA_ORIGINAL = 1037
-
 export default function Logo({ variante, className = '' }: LogoProps) {
+  const cfg = CONFIG_POR_VARIANTE[variante]
+
   return (
-    <Image
-      src="/assets/logo-radix-imago.png"
-      alt="RÁDIX IMAGO"
+    <div
+      className={`animar-logo-entrada flex items-center ${cfg.empilhado ? `flex-col text-center ${cfg.gapClasse}` : `flex-row ${cfg.gapClasse}`} ${className}`}
       aria-label="RÁDIX IMAGO"
-      width={LARGURA_ORIGINAL}
-      height={ALTURA_ORIGINAL}
-      priority
-      loading="eager"
-      decoding="async"
-      className={`animar-logo-entrada w-auto object-contain ${CLASSE_POR_VARIANTE[variante]} ${className}`}
-    />
+      role="img"
+    >
+      <Image
+        src="/assets/logo-radix-imago-icone.svg"
+        alt=""
+        aria-hidden="true"
+        width={cfg.iconePx}
+        height={cfg.iconePx}
+        priority
+        loading="eager"
+        decoding="async"
+        style={{ width: cfg.iconePx, height: cfg.iconePx }}
+        className="shrink-0"
+      />
+      <div className={cfg.empilhado ? 'flex flex-col items-center' : 'flex flex-col justify-center leading-tight'}>
+        <span className={cfg.tituloClasse}>RÁDIX IMAGO</span>
+        {cfg.tagline && <span className={cfg.taglineClasse}>Ensino e pesquisa em saúde</span>}
+      </div>
+    </div>
   )
 }

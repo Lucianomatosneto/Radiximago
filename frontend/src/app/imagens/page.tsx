@@ -101,14 +101,14 @@ export default function ImagensPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -121,7 +121,7 @@ export default function ImagensPage() {
             <select
               value={filtroAnonimizacao}
               onChange={(e) => setFiltroAnonimizacao(e.target.value)}
-              className="rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">Todos os status de anonimização</option>
               {OPCOES_ANONIMIZACAO.map((opcao) => (
@@ -134,7 +134,7 @@ export default function ImagensPage() {
             <select
               value={filtroCuradoria}
               onChange={(e) => setFiltroCuradoria(e.target.value)}
-              className="rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">Todos os status de curadoria</option>
               {OPCOES_CURADORIA.map((opcao) => (
@@ -145,9 +145,9 @@ export default function ImagensPage() {
             </select>
           </div>
 
-          <div className="overflow-x-auto rounded-xl border border-slate-800">
+          <div className="overflow-x-auto rounded-xl border border-base-border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900 text-slate-400">
+              <thead className="bg-base-surface text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">ID Orthanc</th>
                   <th className="px-4 py-3 font-medium">Tipo</th>
@@ -156,7 +156,7 @@ export default function ImagensPage() {
                   <th className="px-4 py-3 font-medium">Data de entrada</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-950">
+              <tbody className="divide-y divide-slate-800 bg-base">
                 {imagensFiltradas.map((imagem) => {
                   const classeAnonimizacao =
                     CLASSES_ANONIMIZACAO[imagem.anonimizacao_status] ??
