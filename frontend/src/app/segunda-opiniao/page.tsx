@@ -206,7 +206,7 @@ export default function SegundaOpiniaoPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
@@ -214,7 +214,7 @@ export default function SegundaOpiniaoPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -225,8 +225,8 @@ export default function SegundaOpiniaoPage() {
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
             {/* LISTA - reviews pendentes */}
-            <section className="rounded-xl border border-slate-800 bg-slate-900">
-              <h2 className="border-b border-slate-800 px-4 py-3 text-sm font-semibold text-slate-200">
+            <section className="rounded-xl border border-base-border bg-base-surface">
+              <h2 className="border-b border-base-border px-4 py-3 text-sm font-semibold text-slate-200">
                 Aguardando parecer
               </h2>
 
@@ -248,8 +248,8 @@ export default function SegundaOpiniaoPage() {
                         <button
                           type="button"
                           onClick={() => selecionarReview(review)}
-                          className={`w-full px-4 py-3 text-left text-sm hover:bg-slate-800/60 ${
-                            reviewAtiva?.id === review.id ? 'bg-slate-800/60' : ''
+                          className={`w-full px-4 py-3 text-left text-sm hover:bg-base-surface2/60 ${
+                            reviewAtiva?.id === review.id ? 'bg-base-surface2/60' : ''
                           }`}
                         >
                           <p className="text-slate-200">
@@ -272,12 +272,12 @@ export default function SegundaOpiniaoPage() {
 
             {/* PAINEL - imagem + avaliacao original + formulario do revisor */}
             {!reviewAtiva ? (
-              <section className="flex min-h-[75vh] items-center justify-center rounded-xl border border-slate-800 bg-slate-900 p-8 text-center text-slate-500">
+              <section className="flex min-h-[75vh] items-center justify-center rounded-xl border border-base-border bg-base-surface p-8 text-center text-slate-500">
                 Selecione uma solicitação na lista ao lado
               </section>
             ) : (
               <div className="space-y-4">
-                <section className="flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+                <section className="flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
                   {carregandoViewer ? (
                     <div className="flex flex-1 items-center justify-center text-slate-400">
                       Carregando visualizador...
@@ -295,7 +295,7 @@ export default function SegundaOpiniaoPage() {
                   )}
                 </section>
 
-                <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                <section className="rounded-xl border border-base-border bg-base-surface p-4">
                   <h2 className="mb-3 text-sm font-semibold text-slate-200">
                     Primeira avaliação (somente leitura)
                   </h2>
@@ -325,7 +325,7 @@ export default function SegundaOpiniaoPage() {
                   </dl>
                 </section>
 
-                <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+                <section className="rounded-xl border border-base-border bg-base-surface p-4">
                   <h2 className="mb-3 text-sm font-semibold text-slate-200">Parecer do revisor</h2>
 
                   <div className="space-y-4">
@@ -337,7 +337,7 @@ export default function SegundaOpiniaoPage() {
                         value={parecerRevisor}
                         onChange={(e) => setParecerRevisor(e.target.value)}
                         rows={4}
-                        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                       />
                     </div>
 
@@ -378,7 +378,7 @@ export default function SegundaOpiniaoPage() {
                       <select
                         value={decisaoFinal}
                         onChange={(e) => setDecisaoFinal(e.target.value)}
-                        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                       >
                         <option value="">Não sugerir</option>
                         {OPCOES_DECISAO_FINAL.map((opcao) => (
@@ -397,7 +397,7 @@ export default function SegundaOpiniaoPage() {
                         value={observacoes}
                         onChange={(e) => setObservacoes(e.target.value)}
                         rows={3}
-                        className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                       />
                     </div>
 
@@ -407,7 +407,7 @@ export default function SegundaOpiniaoPage() {
                       </p>
                     )}
 
-                    <div className="flex justify-end gap-2 border-t border-slate-800 pt-4">
+                    <div className="flex justify-end gap-2 border-t border-base-border pt-4">
                       <button
                         type="button"
                         onClick={limparSelecao}
@@ -419,7 +419,7 @@ export default function SegundaOpiniaoPage() {
                         type="button"
                         onClick={enviarParecer}
                         disabled={enviando}
-                        className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+                        className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
                       >
                         {enviando ? 'Enviando...' : 'Enviar parecer'}
                       </button>

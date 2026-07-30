@@ -86,7 +86,7 @@ function TabelaProporcao({
   const total = entradas.reduce((soma, [, valor]) => soma + valor, 0)
 
   return (
-    <section className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <section className="rounded-xl border border-base-border bg-base-surface p-5">
       <h2 className="mb-4 text-sm font-semibold text-slate-200">{titulo}</h2>
       {entradas.length === 0 ? (
         <p className="text-sm text-slate-500">Sem dados.</p>
@@ -102,9 +102,9 @@ function TabelaProporcao({
                     {valor} ({porcentagem}%)
                   </span>
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-800">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-base-surface2">
                   <div
-                    className="h-full rounded-full bg-teal-500"
+                    className="h-full rounded-full bg-brand"
                     style={{ width: `${porcentagem}%` }}
                   />
                 </div>
@@ -190,7 +190,7 @@ export default function RelatoriosPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
@@ -198,7 +198,7 @@ export default function RelatoriosPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">

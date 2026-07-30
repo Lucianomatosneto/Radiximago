@@ -62,14 +62,14 @@ export default function DashboardPage() {
 
   if (carregando || !stats) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -91,7 +91,7 @@ export default function DashboardPage() {
             {Object.entries(stats.por_status).map(([status, total]) => (
               <div
                 key={status}
-                className="rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-sm"
+                className="rounded-xl border border-base-border bg-base-surface p-5 shadow-sm"
               >
                 <StatusBadge status={status} />
                 <p className="mt-3 text-3xl font-bold text-slate-100">{total}</p>
