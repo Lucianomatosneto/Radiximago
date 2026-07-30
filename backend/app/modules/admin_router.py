@@ -22,7 +22,7 @@ from app.modules.auth import exigir_perfis, PERFIS_ADMIN, PERFIS_CURADORIA
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
-from app.modules.curations import Curation
+from app.modules.curations import Curation, StatusCuradoria
 
 router = APIRouter(prefix="/admin", tags=["Administracao"])
 
@@ -59,12 +59,51 @@ def obter_indicadores(
         .filter(User.bloqueado == True)
         .scalar()
     )
+    alunos_ativos = (
+        db.query(func.count(User.id))
+        .filter(User.perfil == UserRole.estudante, User.ativo == True, User.bloqueado == False)
+        .scalar()
+    )
+    aguardando_laudo = (
+        db.query(func.count(Curation.id))
+        .filter(Curation.status.in_([StatusCuradoria.PENDENTE.value, StatusCuradoria.EM_ANALISE.value]))
+        .scalar()
+    )
+    divergencias_abertas = (
+        db.query(func.count(Curation.id))
+        .filter(Curation.status == StatusCuradoria.SEGUNDA_OPINIAO.value)
+        .scalar()
+    )
+
+    # Atividade recente: ultimas fichas movimentadas. Sem dado de paciente
+    # (removido na ingestao, conforme LGPD) - mostra o que de fato existe:
+    # tipo de exame, curador responsavel, status e data da ultima mudanca.
+    atividade_recente = (
+        db.query(Curation, User.nome)
+        .outerjoin(User, Curation.curador_id == User.id)
+        .order_by(func.coalesce(Curation.atualizado_em, Curation.criado_em).desc())
+        .limit(8)
+        .all()
+    )
 
     return {
         "total_imagens_orthanc": total_imagens,
         "total_fichas_curadoria": total_fichas,
         "usuarios_ativos": usuarios_ativos,
         "usuarios_bloqueados": usuarios_bloqueados,
+        "alunos_ativos": alunos_ativos,
+        "aguardando_laudo": aguardando_laudo,
+        "divergencias_abertas": divergencias_abertas,
+        "atividade_recente": [
+            {
+                "id": ficha.id,
+                "tipo_radiografia": ficha.tipo_radiografia,
+                "curador_nome": curador_nome,
+                "status": ficha.status,
+                "data": (ficha.atualizado_em or ficha.criado_em),
+            }
+            for ficha, curador_nome in atividade_recente
+        ],
         "por_status": _contar_por(db, Curation.status),
         "por_tipo_radiografia": _contar_por(db, Curation.tipo_radiografia),
         "por_achado_principal": _contar_por(db, Curation.achado_principal),
