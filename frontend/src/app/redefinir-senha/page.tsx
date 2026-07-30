@@ -97,7 +97,7 @@ function RedefinirSenhaForm() {
               name="nova_senha"
               type="password"
               autoFocus
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
               placeholder="••••••••"
             />
           </div>
@@ -110,7 +110,7 @@ function RedefinirSenhaForm() {
               id="confirmar_senha"
               name="confirmar_senha"
               type="password"
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
               placeholder="••••••••"
             />
           </div>
@@ -130,7 +130,7 @@ function RedefinirSenhaForm() {
           </button>
 
           <div className="text-center">
-            <Link href="/login" className="text-sm text-blue-400 transition-colors hover:text-blue-300">
+            <Link href="/login" className="text-sm text-brand-300 transition-colors hover:text-brand-300">
               Voltar para o login
             </Link>
           </div>

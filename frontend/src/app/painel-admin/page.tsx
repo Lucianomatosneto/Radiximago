@@ -148,7 +148,10 @@ export default function PainelAdminPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">Painel administrativo</h1>
+          <h1 className="mb-1 text-xl font-semibold text-slate-100">Painel administrativo</h1>
+          <p className="mb-6 text-sm text-slate-500">
+            Controle geral da plataforma RÁDIX IMAGO.
+          </p>
 
           {erro && (
             <p className="mb-4 text-sm text-red-400" role="alert">

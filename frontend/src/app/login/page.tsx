@@ -136,7 +136,7 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder="seu.email@exemplo.com"
               />
             </div>
@@ -164,7 +164,7 @@ export default function LoginPage() {
                 type={mostrarSenha ? 'text' : 'password'}
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-10 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30"
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-10 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder="••••••••"
               />
               <button
@@ -208,11 +208,11 @@ export default function LoginPage() {
           </button>
 
           <div className="flex items-center justify-center gap-1 text-center text-sm">
-            <Link href="/esqueci-senha" className="text-blue-400 transition-colors hover:text-blue-300">
+            <Link href="/esqueci-senha" className="text-brand-300 transition-colors hover:text-brand-300">
               Esqueci minha senha
             </Link>
             <span className="text-slate-600">·</span>
-            <Link href="/solicitar-acesso" className="text-blue-400 transition-colors hover:text-blue-300">
+            <Link href="/solicitar-acesso" className="text-brand-300 transition-colors hover:text-brand-300">
               Cadastrar
             </Link>
           </div>

@@ -552,7 +552,7 @@ export default function CuradoriaPage() {
 
   const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
   const campoInput =
-    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500'
+    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand'
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
@@ -564,13 +564,13 @@ export default function CuradoriaPage() {
             <div className="mb-2 flex items-center gap-3">
               <Link
                 href="/dashboard"
-                className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-blue-500 hover:text-blue-300"
+                className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
               >
                 ← Início
               </Link>
             </div>
             <h1 className="text-2xl font-bold text-white">
-              Curadoria<span className="text-blue-400">.</span>
+              Curadoria<span className="text-brand-300">.</span>
             </h1>
             <p className="mt-1 text-sm text-slate-400">
               Analise a imagem e preencha a ficha de curadoria correspondente.
@@ -588,7 +588,7 @@ export default function CuradoriaPage() {
                 onClick={() => setFilaColapsada(false)}
                 aria-label="Expandir fila de curadoria"
                 title="Expandir fila de curadoria"
-                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-blue-300"
+                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-brand-300"
               >
                 <span aria-hidden="true">»</span>
                 <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
@@ -604,7 +604,7 @@ export default function CuradoriaPage() {
                     onClick={() => setFilaColapsada(true)}
                     aria-label="Recolher fila de curadoria"
                     title="Recolher fila de curadoria"
-                    className="text-slate-400 hover:text-blue-300"
+                    className="text-slate-400 hover:text-brand-300"
                   >
                     «
                   </button>
@@ -629,7 +629,7 @@ export default function CuradoriaPage() {
                             type="button"
                             disabled={criandoId !== null}
                             onClick={() => abrirImagem(imagem)}
-                            className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left text-sm hover:border-blue-500/40 hover:bg-blue-500/5 disabled:opacity-50"
+                            className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left text-sm hover:border-brand/40 hover:bg-brand/5 disabled:opacity-50"
                           >
                             <p className="font-mono text-xs text-slate-300">
                               {truncarOrthancId(imagem.orthanc_id)}
@@ -655,8 +655,8 @@ export default function CuradoriaPage() {
           >
             {fichaAtiva && (
               <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                   Em análise
                 </span>
                 {viewerInfo?.abrivel && viewerInfo.viewer_url && (
@@ -665,7 +665,7 @@ export default function CuradoriaPage() {
                     onClick={alternarTelaCheia}
                     aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
                     title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                    className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-blue-500 hover:text-blue-300"
+                    className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                   >
                     {telaCheia ? (
                       <>
@@ -718,8 +718,8 @@ export default function CuradoriaPage() {
                         onClick={() => setForm({ ...form, tipo_radiografia: opcao.valor })}
                         className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
                           form.tipo_radiografia === opcao.valor
-                            ? 'border-blue-500 bg-blue-500 text-white'
-                            : 'border-base-border text-slate-300 hover:border-blue-500/50'
+                            ? 'border-brand bg-brand text-white'
+                            : 'border-base-border text-slate-300 hover:border-brand/50'
                         }`}
                       >
                         {opcao.label}
@@ -737,14 +737,14 @@ export default function CuradoriaPage() {
                         {form.dentes.map((numero) => (
                           <span
                             key={numero}
-                            className="inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-2 py-0.5 text-xs text-blue-300"
+                            className="inline-flex items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-xs text-brand-300"
                           >
                             {numero}
                             <button
                               type="button"
                               onClick={() => removerDente(numero)}
                               aria-label={`Remover dente ${numero}`}
-                              className="text-blue-300 hover:text-blue-100"
+                              className="text-brand-300 hover:text-brand-hover"
                             >
                               ×
                             </button>
@@ -795,8 +795,8 @@ export default function CuradoriaPage() {
                             onClick={() => setForm({ ...form, genero: opcao.valor })}
                             className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
                               form.genero === opcao.valor
-                                ? 'border-blue-500 bg-blue-500 text-white'
-                                : 'border-base-border text-slate-300 hover:border-blue-500/50'
+                                ? 'border-brand bg-brand text-white'
+                                : 'border-base-border text-slate-300 hover:border-brand/50'
                             }`}
                           >
                             {opcao.label}
@@ -830,7 +830,7 @@ export default function CuradoriaPage() {
                       <label className={campoLabel}>
                         Alterações observadas
                         {form.alteracoes_observadas.length > 0 && (
-                          <span className="ml-1 text-blue-400">({form.alteracoes_observadas.length})</span>
+                          <span className="ml-1 text-brand-300">({form.alteracoes_observadas.length})</span>
                         )}
                       </label>
                       <div className="space-y-3 rounded-lg border border-base-border bg-base-surface2 p-3">
@@ -849,7 +849,7 @@ export default function CuradoriaPage() {
                                     type="checkbox"
                                     checked={form.alteracoes_observadas.includes(item.valor)}
                                     onChange={() => alternarAlteracao(item.valor)}
-                                    className="mt-0.5 h-3.5 w-3.5 flex-none rounded border-base-border bg-base-surface2 text-blue-500"
+                                    className="mt-0.5 h-3.5 w-3.5 flex-none rounded border-base-border bg-base-surface2 text-brand"
                                   />
                                   {item.label}
                                 </label>
@@ -952,7 +952,7 @@ export default function CuradoriaPage() {
                       type="checkbox"
                       checked={form.anonimizacao_validada}
                       onChange={(e) => setForm({ ...form, anonimizacao_validada: e.target.checked })}
-                      className="h-4 w-4 rounded border-base-border bg-base-surface2 text-blue-500"
+                      className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
                     />
                     Anonimização validada por mim
                   </label>
@@ -970,7 +970,7 @@ export default function CuradoriaPage() {
                     type="button"
                     onClick={aprovar}
                     disabled={aprovando || salvandoRascunho}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+                    className="flex items-center justify-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
                     {aprovando ? 'Aprovando...' : '✓ Aprovar'}
                   </button>
@@ -978,7 +978,7 @@ export default function CuradoriaPage() {
                     type="button"
                     onClick={() => salvarRascunho()}
                     disabled={salvandoRascunho || aprovando}
-                    className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300 disabled:opacity-50"
+                    className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
                   >
                     {salvandoRascunho ? 'Salvando...' : 'Salvar rascunho'}
                   </button>
@@ -1033,7 +1033,7 @@ export default function CuradoriaPage() {
                 type="button"
                 onClick={confirmarMotivo}
                 disabled={enviandoMotivo}
-                className="rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                className="rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {enviandoMotivo ? 'Enviando...' : 'Confirmar'}
               </button>

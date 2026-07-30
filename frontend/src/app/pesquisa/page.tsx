@@ -268,13 +268,13 @@ function PesquisaConteudo() {
 
   const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
   const campoInput =
-    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-blue-500'
+    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand'
 
   function pillClasse(ativo: boolean): string {
     return `rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
       ativo
-        ? 'border-blue-500 bg-blue-500 text-white'
-        : 'border-base-border text-slate-300 hover:border-blue-500/50'
+        ? 'border-brand bg-brand text-white'
+        : 'border-base-border text-slate-300 hover:border-brand/50'
     }`
   }
 
@@ -287,7 +287,7 @@ function PesquisaConteudo() {
 
         <main className="flex-1 overflow-y-auto p-6">
           <h1 className="text-2xl font-bold text-white">
-            Pesquisa <span className="text-blue-400">avançada</span>
+            Pesquisa <span className="text-brand-300">avançada</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             Encontre imagens radiográficas para apoiar estudos e pesquisas.
@@ -314,8 +314,8 @@ function PesquisaConteudo() {
                   }}
                   className={`flex flex-col items-center gap-2 rounded-2xl border p-5 text-sm font-medium transition-colors ${
                     filtros.tipo_radiografia === o.valor
-                      ? 'border-blue-500 bg-blue-500/10 text-blue-300'
-                      : 'border-base-border bg-base-surface text-slate-300 hover:border-blue-500/40'
+                      ? 'border-brand bg-brand/10 text-brand-300'
+                      : 'border-base-border bg-base-surface text-slate-300 hover:border-brand/40'
                   }`}
                 >
                   <span className="text-2xl" aria-hidden="true">
@@ -489,7 +489,7 @@ function PesquisaConteudo() {
                 type="button"
                 onClick={() => pesquisar()}
                 disabled={pesquisando}
-                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-5 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-5 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 🔍 {pesquisando ? 'Pesquisando...' : 'Pesquisar'}
               </button>
@@ -516,7 +516,7 @@ function PesquisaConteudo() {
               <>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-slate-400">
-                    <span className="rounded-full bg-blue-500/10 px-2.5 py-1 text-blue-300">
+                    <span className="rounded-full bg-brand/10 px-2.5 py-1 text-brand-300">
                       {totalResultados} {totalResultados === 1 ? 'imagem encontrada' : 'imagens encontradas'}
                     </span>
                     {resultados.length < totalResultados && (
@@ -527,7 +527,7 @@ function PesquisaConteudo() {
                     <button
                       type="button"
                       onClick={() => setIndiceVisualizador(0)}
-                      className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
+                      className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                     >
                       ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
                     </button>
@@ -554,12 +554,12 @@ function PesquisaConteudo() {
                             checked={selecionados.includes(imagem.curation_id)}
                             onChange={() => alternarSelecao(imagem.curation_id)}
                             aria-label={`Selecionar imagem #${indice + 1}`}
-                            className="h-4 w-4 accent-blue-500"
+                            className="h-4 w-4 accent-brand"
                           />
                         </label>
                       </div>
-                      <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-500/10 px-2.5 py-1 text-xs font-medium text-blue-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-400" aria-hidden="true" />
+                      <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                         {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
                       </span>
                       <dl className="mt-1 space-y-1 text-xs text-slate-400">
@@ -583,7 +583,7 @@ function PesquisaConteudo() {
 
                       <Link
                         href={`/visualizar/${imagem.curation_id}`}
-                        className="mt-4 block rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-blue-500 hover:text-blue-300"
+                        className="mt-4 block rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                       >
                         Visualizar
                       </Link>
