@@ -228,7 +228,7 @@ export default function AuditoriaPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
@@ -236,7 +236,7 @@ export default function AuditoriaPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -245,14 +245,14 @@ export default function AuditoriaPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <h1 className="mb-6 text-xl font-semibold text-slate-100">Auditoria e segurança</h1>
 
-          <section className="rounded-xl border border-slate-800 bg-slate-900 p-4">
+          <section className="rounded-xl border border-base-border bg-base-surface p-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-400">Ação</label>
                 <select
                   value={filtroAcao}
                   onChange={(e) => setFiltroAcao(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 >
                   <option value="">Todas</option>
                   {CATEGORIAS_ACAO.map((grupo) => (
@@ -272,7 +272,7 @@ export default function AuditoriaPage() {
                 <select
                   value={filtroResultado}
                   onChange={(e) => setFiltroResultado(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 >
                   <option value="">Todos</option>
                   {OPCOES_RESULTADO.map((opcao) => (
@@ -289,7 +289,7 @@ export default function AuditoriaPage() {
                   type="date"
                   value={dataDe}
                   onChange={(e) => setDataDe(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 />
               </div>
 
@@ -299,7 +299,7 @@ export default function AuditoriaPage() {
                   type="date"
                   value={dataAte}
                   onChange={(e) => setDataAte(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-100 outline-none focus:border-teal-500"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 />
               </div>
             </div>
@@ -309,7 +309,7 @@ export default function AuditoriaPage() {
                 type="button"
                 onClick={pesquisar}
                 disabled={buscando}
-                className="rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+                className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
               >
                 {buscando ? 'Buscando...' : 'Filtrar'}
               </button>
@@ -321,9 +321,9 @@ export default function AuditoriaPage() {
             </div>
           </section>
 
-          <div className="mt-6 overflow-x-auto rounded-xl border border-slate-800">
+          <div className="mt-6 overflow-x-auto rounded-xl border border-base-border">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900 text-slate-400">
+              <thead className="bg-base-surface text-slate-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">Data/hora</th>
                   <th className="px-4 py-3 font-medium">Usuário</th>
@@ -333,7 +333,7 @@ export default function AuditoriaPage() {
                   <th className="px-4 py-3 font-medium">Detalhes</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800 bg-slate-950">
+              <tbody className="divide-y divide-slate-800 bg-base">
                 {itens.map((item) => (
                   <Fragment key={item.id}>
                     <tr className="text-slate-200">
@@ -358,14 +358,14 @@ export default function AuditoriaPage() {
                         <button
                           type="button"
                           onClick={() => alternarDetalhes(item.id)}
-                          className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-teal-500 hover:text-teal-300"
+                          className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                         >
                           {expandidos.has(item.id) ? 'Ocultar' : 'Detalhes'}
                         </button>
                       </td>
                     </tr>
                     {expandidos.has(item.id) && (
-                      <tr className="bg-slate-900/60">
+                      <tr className="bg-base-surface/60">
                         <td colSpan={6} className="px-4 py-3 text-xs text-slate-400">
                           {item.detalhes || 'Sem detalhes registrados.'}
                         </td>

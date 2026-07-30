@@ -10,7 +10,7 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
   const router = useRouter()
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-slate-950 p-6">
+    <main className="flex min-h-screen items-center justify-center bg-base p-6">
       <div className="max-w-md text-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -41,7 +41,7 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
             <button
               type="button"
               onClick={onRetry}
-              className="rounded-md border border-slate-700 px-5 py-2 text-sm text-slate-200 hover:border-teal-500 hover:text-teal-300"
+              className="rounded-md border border-slate-700 px-5 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300"
             >
               Tentar novamente
             </button>
@@ -49,7 +49,7 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
           <button
             type="button"
             onClick={() => router.push('/dashboard')}
-            className="rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
+            className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
           >
             Voltar ao início
           </button>
