@@ -32,14 +32,14 @@ const CONFIG_POR_VARIANTE: Record<
   navbar: {
     empilhado: false,
     iconePx: 36,
-    tituloClasse: 'text-base font-bold tracking-tight text-white sm:text-lg',
+    tituloClasse: 'text-base font-bold tracking-tight text-ink sm:text-lg',
     tagline: false,
     gapClasse: 'gap-2.5',
   },
   sidebar: {
     empilhado: false,
     iconePx: 32,
-    tituloClasse: 'text-sm font-bold tracking-tight text-white',
+    tituloClasse: 'text-sm font-bold tracking-tight text-ink',
     tagline: true,
     taglineClasse: 'text-[9px] font-medium uppercase tracking-wide text-slate-400',
     gapClasse: 'gap-2.5',
@@ -47,14 +47,14 @@ const CONFIG_POR_VARIANTE: Record<
   footer: {
     empilhado: false,
     iconePx: 28,
-    tituloClasse: 'text-sm font-bold tracking-tight text-white',
+    tituloClasse: 'text-sm font-bold tracking-tight text-ink',
     tagline: false,
     gapClasse: 'gap-2',
   },
   login: {
     empilhado: true,
     iconePx: 72,
-    tituloClasse: 'text-2xl font-bold tracking-tight text-white sm:text-3xl',
+    tituloClasse: 'text-2xl font-bold tracking-tight text-ink sm:text-3xl',
     tagline: true,
     taglineClasse: 'text-[11px] font-medium uppercase tracking-wider text-slate-400 sm:text-xs',
     gapClasse: 'gap-3',
@@ -62,7 +62,7 @@ const CONFIG_POR_VARIANTE: Record<
   hero: {
     empilhado: true,
     iconePx: 96,
-    tituloClasse: 'text-3xl font-bold tracking-tight text-white sm:text-4xl',
+    tituloClasse: 'text-3xl font-bold tracking-tight text-ink sm:text-4xl',
     tagline: true,
     taglineClasse: 'text-xs font-medium uppercase tracking-wider text-slate-400 sm:text-sm',
     gapClasse: 'gap-4',

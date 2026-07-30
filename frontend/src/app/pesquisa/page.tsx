@@ -286,7 +286,7 @@ function PesquisaConteudo() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="text-2xl font-bold text-ink">
             Pesquisa <span className="text-brand-300">avançada</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
@@ -328,7 +328,7 @@ function PesquisaConteudo() {
           </div>
 
           <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5">
-            <p className="text-sm font-semibold text-white">🔎 Busca avançada</p>
+            <p className="text-sm font-semibold text-ink">🔎 Busca avançada</p>
             <p className="mb-4 mt-0.5 text-xs text-slate-400">Refine sua pesquisa utilizando os filtros abaixo.</p>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">

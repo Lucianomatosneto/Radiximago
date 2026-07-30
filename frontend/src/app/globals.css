@@ -2,6 +2,59 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Tokens de tema. Modo escuro e o padrao (classe .dark na tag <html>,
+   aplicada por components/ThemeToggle.tsx antes do 1o paint pra evitar
+   flash); modo claro e a classe .light. Cobrem as cores do Design System
+   (base/brand/status, ver tailwind.config.ts) mais uma escala de texto
+   "ink" nova - o Design System usa text-slate-* cru, entao aqui tambem
+   sobrescrevemos as pontas da paleta "slate" do Tailwind (100-700) pra
+   apontar pros mesmos tokens, sem precisar trocar classe por classe em
+   cada tela (ver theme.extend.colors.slate no tailwind.config.ts).
+   Valores em "R G B" pra funcionar com o modificador de opacidade do
+   Tailwind (rgb(var(..) / <alpha-value>)). */
+:root,
+.dark {
+  --color-base: 10 12 16;
+  --color-base-surface: 20 23 28;
+  --color-base-surface2: 28 32 40;
+  --color-base-border: 38 43 53;
+  --color-brand: 37 99 235;
+  --color-brand-hover: 59 130 246;
+  --color-brand-active: 29 58 102;
+  --color-brand-50: 219 234 254;
+  --color-brand-300: 96 165 250;
+  --color-brand-700: 19 41 75;
+  --color-status-success: 34 197 94;
+  --color-status-warning: 245 158 11;
+  --color-status-danger: 239 68 68;
+  --color-status-info: 96 165 250;
+  --color-ink: 241 245 249;
+  --color-ink-2: 203 213 225;
+  --color-ink-3: 148 163 184;
+  --color-ink-4: 100 116 139;
+}
+
+.light {
+  --color-base: 245 247 251;
+  --color-base-surface: 255 255 255;
+  --color-base-surface2: 238 241 246;
+  --color-base-border: 221 226 234;
+  --color-brand: 37 99 235;
+  --color-brand-hover: 29 78 216;
+  --color-brand-active: 219 234 254;
+  --color-brand-50: 239 246 255;
+  --color-brand-300: 29 78 216;
+  --color-brand-700: 30 64 175;
+  --color-status-success: 21 128 61;
+  --color-status-warning: 180 83 9;
+  --color-status-danger: 220 38 38;
+  --color-status-info: 29 78 216;
+  --color-ink: 15 23 42;
+  --color-ink-2: 51 65 85;
+  --color-ink-3: 100 116 139;
+  --color-ink-4: 148 163 184;
+}
+
 /* Tipografia do Design System RÁDIX IMAGO (Figma "Foundations", 2026) -
    Inter, auto-hospedada em /public/fonts (sem depender de conexao externa
    com o Google Fonts). */
@@ -36,7 +89,7 @@
 
 @layer base {
   body {
-    @apply bg-base text-slate-100;
+    @apply bg-base text-ink;
     font-family:
       Inter,
       -apple-system,
@@ -44,7 +97,7 @@
       'Segoe UI',
       Roboto,
       sans-serif;
-    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(37, 99, 235, 0.08), transparent);
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgb(var(--color-brand) / 0.08), transparent);
     background-attachment: fixed;
   }
 }
