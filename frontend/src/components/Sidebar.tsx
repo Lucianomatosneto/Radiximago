@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 
 interface ItemMenu {
   label: string
@@ -34,6 +34,7 @@ const ITENS_MENU: ItemMenu[] = [
 
 export default function Sidebar() {
   const router = useRouter()
+  const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
@@ -60,24 +61,38 @@ export default function Sidebar() {
         </div>
 
         <nav className="mt-3 flex flex-col gap-1 px-3">
-          {itensVisiveis.map((item) =>
-            item.ativo ? (
+          {itensVisiveis.map((item) => {
+            if (!item.ativo) {
+              return (
+                <span
+                  key={item.label}
+                  className="cursor-not-allowed rounded-lg px-3 py-2 text-sm text-slate-500 opacity-50"
+                >
+                  {item.label}
+                </span>
+              )
+            }
+
+            // Destaque do item ativo: rota atual === href do item, ou uma
+            // sub-rota dele (ex.: /visualizar/123 mantem "Banco de imagens"
+            // aceso quando aplicavel). Apenas leitura de rota - visual.
+            const estaAtivo = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+
+            return (
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-blue-500/10 hover:text-blue-300"
+                aria-current={estaAtivo ? 'page' : undefined}
+                className={
+                  estaAtivo
+                    ? 'rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white shadow-glow transition-colors'
+                    : 'rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-brand/10 hover:text-brand-300'
+                }
               >
                 {item.label}
               </Link>
-            ) : (
-              <span
-                key={item.label}
-                className="cursor-not-allowed rounded-lg px-3 py-2 text-sm text-slate-500 opacity-50"
-              >
-                {item.label}
-              </span>
             )
-          )}
+          })}
         </nav>
       </div>
 
@@ -85,7 +100,7 @@ export default function Sidebar() {
         <button
           type="button"
           onClick={handleSair}
-          className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-red-400 transition-colors hover:bg-red-950/40"
+          className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-status-danger transition-colors hover:bg-red-950/40"
         >
           Sair
         </button>

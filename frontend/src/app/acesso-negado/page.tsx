@@ -20,14 +20,14 @@ export default function AcessoNegadoPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -62,7 +62,7 @@ export default function AcessoNegadoPage() {
             <button
               type="button"
               onClick={() => router.push('/dashboard')}
-              className="mt-6 rounded-md bg-teal-600 px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500"
+              className="mt-6 rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
               Voltar ao início
             </button>

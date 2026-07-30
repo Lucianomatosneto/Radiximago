@@ -34,7 +34,7 @@ function CardServico({
   descricao: string
 }) {
   return (
-    <div className="rounded-xl border border-slate-800 bg-slate-900 p-5">
+    <div className="rounded-xl border border-base-border bg-base-surface p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-100">{nome}</h2>
         {badgeStatus(status)}
@@ -123,7 +123,7 @@ export default function IntegracoesPage() {
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950">
+      <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">Carregando...</p>
       </main>
     )
@@ -131,7 +131,7 @@ export default function IntegracoesPage() {
 
 
   return (
-    <div className="flex min-h-screen bg-slate-950">
+    <div className="flex min-h-screen bg-base">
       <Sidebar />
 
       <div className="flex flex-1 flex-col">
@@ -144,7 +144,7 @@ export default function IntegracoesPage() {
               type="button"
               onClick={verificarBancoEOrthanc}
               disabled={atualizando}
-              className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-teal-500 disabled:opacity-50"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
             >
               {atualizando ? 'Atualizando...' : 'Atualizar status'}
             </button>
