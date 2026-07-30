@@ -152,7 +152,7 @@ export default function Home() {
               {recurso.icone}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-white">{recurso.titulo}</h2>
+              <h2 className="text-base font-semibold text-ink">{recurso.titulo}</h2>
               <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{recurso.descricao}</p>
             </div>
           </div>

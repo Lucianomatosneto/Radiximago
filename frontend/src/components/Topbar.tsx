@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from './Logo'
+import ThemeToggle from './ThemeToggle'
 
 const ICONE_PERFIL: Record<string, string> = {
   administrador: '⚙️',
@@ -175,9 +176,11 @@ export default function Topbar() {
       <Logo variante="navbar" />
 
       <div className="flex items-center gap-6">
+        <ThemeToggle />
+
         <button
           type="button"
-          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-white"
+          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-ink"
         >
           <span aria-hidden="true">❓</span> Ajuda
         </button>
@@ -198,7 +201,7 @@ export default function Topbar() {
             </span>
             <span className="text-left leading-tight">
               <span className="block text-[11px] text-slate-400">{nome || 'visitante'}</span>
-              <span className="block font-medium capitalize text-white">{perfil || '—'}</span>
+              <span className="block font-medium capitalize text-ink">{perfil || '—'}</span>
             </span>
             <span className="text-slate-500" aria-hidden="true">
               {menuAberto ? '▲' : '▼'}
@@ -229,7 +232,7 @@ export default function Topbar() {
       {modalPerfilAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-            <h2 className="mb-1 text-lg font-semibold text-white">Meu perfil</h2>
+            <h2 className="mb-1 text-lg font-semibold text-ink">Meu perfil</h2>
             <p className="mb-5 text-sm text-slate-400">Escolha uma foto para o seu perfil.</p>
 
             <div className="mb-5 flex justify-center">

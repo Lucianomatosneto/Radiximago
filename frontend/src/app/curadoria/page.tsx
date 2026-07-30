@@ -569,7 +569,7 @@ export default function CuradoriaPage() {
                 ← Início
               </Link>
             </div>
-            <h1 className="text-2xl font-bold text-white">
+            <h1 className="text-2xl font-bold text-ink">
               Curadoria<span className="text-brand-300">.</span>
             </h1>
             <p className="mt-1 text-sm text-slate-400">
@@ -598,7 +598,7 @@ export default function CuradoriaPage() {
             ) : (
               <>
                 <div className="flex items-center justify-between border-b border-base-border px-4 py-3.5">
-                  <h2 className="text-sm font-semibold text-white">Fila de curadoria</h2>
+                  <h2 className="text-sm font-semibold text-ink">Fila de curadoria</h2>
                   <button
                     type="button"
                     onClick={() => setFilaColapsada(true)}
@@ -705,11 +705,11 @@ export default function CuradoriaPage() {
           {/* COLUNA DIREITA - Formulario de curadoria */}
           {fichaAtiva && (
             <section className="max-h-[70vh] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-5">
-              <h2 className="mb-5 text-base font-bold text-white">Ficha de curadoria</h2>
+              <h2 className="mb-5 text-base font-bold text-ink">Ficha de curadoria</h2>
 
               <div className="space-y-6">
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-white">1. Tipo de exame</p>
+                  <p className="mb-2.5 text-sm font-semibold text-ink">1. Tipo de exame</p>
                   <div className="flex flex-wrap gap-2">
                     {OPCOES_TIPO_RADIOGRAFIA.map((opcao) => (
                       <button
@@ -729,7 +729,7 @@ export default function CuradoriaPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-white">2. Dentes e paciente</p>
+                  <p className="mb-2.5 text-sm font-semibold text-ink">2. Dentes e paciente</p>
                   <div className="space-y-3">
                     <div>
                       <label className={campoLabel}>Dentes (notação FDI)</label>
@@ -808,7 +808,7 @@ export default function CuradoriaPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-white">3. Achados</p>
+                  <p className="mb-2.5 text-sm font-semibold text-ink">3. Achados</p>
                   <div className="space-y-3">
                     <div>
                       <label className={campoLabel}>Achado principal</label>
@@ -905,7 +905,7 @@ export default function CuradoriaPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-white">4. Descrição e finalidade</p>
+                  <p className="mb-2.5 text-sm font-semibold text-ink">4. Descrição e finalidade</p>
                   <div className="space-y-3">
                     <div>
                       <label className={campoLabel}>Descrição didática</label>
@@ -946,7 +946,7 @@ export default function CuradoriaPage() {
                 </div>
 
                 <div>
-                  <p className="mb-2.5 text-sm font-semibold text-white">5. Anonimização</p>
+                  <p className="mb-2.5 text-sm font-semibold text-ink">5. Anonimização</p>
                   <label className="flex items-center gap-2 text-sm text-slate-300">
                     <input
                       type="checkbox"
@@ -1006,7 +1006,7 @@ export default function CuradoriaPage() {
       {modalMotivo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-semibold text-white">
+            <h2 className="mb-4 text-lg font-semibold text-ink">
               {modalMotivo === 'descartar' ? 'Descartar ficha' : 'Solicitar segunda opinião'}
             </h2>
             <label className={campoLabel}>Motivo</label>
