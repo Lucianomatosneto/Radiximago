@@ -249,3 +249,14 @@ backend/uploads/avatars/*
 # dados reais, nunca versionar
 backups/*
 !backups/.gitkeep
+
+# Dados de exemplo/teste DICOM (arquivos binarios pesados; mesmo
+# parecendo um dataset de demonstracao publico, nao versionar por
+# seguranca e para nao inflar o repositorio) - adicionado 31/07/2026
+dicom_teste/
+dicom-teste/
+backend/dicom_teste/
+
+# Pasta temporaria usada pela Claude (bridge do dispositivo nao consegue
+# apagar arquivos remotamente, so mover) - pode ser excluida com seguranca
+_to_delete/
