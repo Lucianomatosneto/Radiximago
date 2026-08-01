@@ -18,10 +18,10 @@ deste modulo (criar ficha, aprovar, descartar, solicitar/responder segunda
 opiniao e aplicar a decisao final) - Bloco 4, Secao 16.
 """
 
-from typing import List, Optional
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -31,6 +31,7 @@ from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
+from app.modules import orthanc_client
 from app.modules.curations import (
     Curation,
     CurationHistory,
@@ -125,6 +126,31 @@ def _exigir_fora_de_segunda_opiniao(ficha: Curation, curation_id: int) -> None:
 # ---------------------------------------------------------------------
 # Formatos de entrada (validados pelo Pydantic).
 # ---------------------------------------------------------------------
+class Marcacao(BaseModel):
+    """
+    Uma forma desenhada pelo curador sobre a miniatura estatica pra indicar
+    uma lesao (nao sobre o OHIF, que roda em outra origem e nao tem como
+    ser lido de volta). Coordenadas sempre relativas (0.0-1.0) a
+    largura/altura da imagem, pra funcionar em qualquer resolucao/zoom.
+
+    oval/retangulo usam x,y (canto superior esquerdo) + largura/altura.
+    seta usa x1,y1 (cauda) + x2,y2 (ponta).
+    """
+    id: str
+    tipo: Literal["oval", "retangulo", "seta"]
+    x: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    y: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    largura: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    altura: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    x1: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    y1: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    x2: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    y2: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    # Tipo de lesao indicada por essa forma - o curador escolhe logo apos
+    # desenhar, e o estudante ve o rotulo ao passar o mouse em cima dela.
+    achado: Optional[AchadoPrincipal] = None
+
+
 class CurationCreate(BaseModel):
     tipo_radiografia: TipoRadiografia
     dentes: Optional[List[int]] = None
@@ -154,6 +180,9 @@ class CurationUpdate(BaseModel):
     idade_max: Optional[int] = None
     genero: Optional[Genero] = None
     achado_principal: Optional[AchadoPrincipal] = None
+    # Lista completa das marcacoes da ficha - quando enviado, substitui a
+    # lista inteira (o frontend sempre manda o estado atual completo).
+    marcacoes: Optional[List[Marcacao]] = None
     achados_detalhe: Optional[str] = None
     alteracoes_observadas: Optional[List[AlteracaoObservada]] = None
     qualidade_tecnica: Optional[QualidadeTecnica] = None
@@ -342,6 +371,68 @@ def obter_link_visualizador(
 
 
 # ---------------------------------------------------------------------
+# GET /curation/{orthanc_reference_id}/series  -> series do estudo (fila de curadoria)
+# ---------------------------------------------------------------------
+@router.get("/{orthanc_reference_id}/series")
+def obter_series_do_estudo_pendente(
+    orthanc_reference_id: int,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista as series ("pastas" de imagens) do estudo dessa imagem - mesma
+    logica de /search/{curation_id}/series, mas sem exigir ficha aprovada
+    (usada na coluna de series da tela de Curadoria, onde a imagem ainda
+    esta sendo analisada).
+    """
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
+        )
+
+    detalhes_instancia = orthanc_client.obter_detalhes_instancia(imagem.orthanc_id)
+    detalhes_serie = orthanc_client.obter_detalhes_serie(detalhes_instancia["ParentSeries"])
+    orthanc_study_id = detalhes_serie["ParentStudy"]
+    series = orthanc_client.listar_series_do_estudo(orthanc_study_id)
+    return {"series": series}
+
+
+# ---------------------------------------------------------------------
+# GET /curation/{orthanc_reference_id}/preview  -> miniatura PNG (fila de curadoria)
+# ---------------------------------------------------------------------
+@router.get("/{orthanc_reference_id}/preview")
+def obter_preview_pendente(
+    orthanc_reference_id: int,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Renderizacao PNG (mesmo janelamento automatico do Orthanc usado em
+    /search/{curation_id}/preview) para uma imagem ainda sem ficha
+    aprovada - usada como miniatura na fila lateral da tela de Curadoria.
+    """
+    imagem = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.id == orthanc_reference_id)
+        .first()
+    )
+    if not imagem:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
+        )
+
+    conteudo = orthanc_client.obter_preview_instancia(imagem.orthanc_id)
+    return Response(content=conteudo, media_type="image/png")
+
+
+# ---------------------------------------------------------------------
 # GET /curation/{curation_id}  -> ficha de curadoria completa
 # ---------------------------------------------------------------------
 @router.get("/{curation_id}")
@@ -363,6 +454,7 @@ def obter_ficha(
         "idade_max": ficha.idade_max,
         "genero": ficha.genero,
         "achado_principal": ficha.achado_principal,
+        "marcacoes": ficha.marcacoes,
         "achados_detalhe": ficha.achados_detalhe,
         "alteracoes_observadas": ficha.alteracoes_observadas,
         "qualidade_tecnica": ficha.qualidade_tecnica,
@@ -439,6 +531,8 @@ def editar_curadoria(
         ficha.genero = dados.genero.value
     if dados.achado_principal is not None:
         ficha.achado_principal = dados.achado_principal.value
+    if dados.marcacoes is not None:
+        ficha.marcacoes = [m.model_dump(mode="json") for m in dados.marcacoes]
     if dados.achados_detalhe is not None:
         ficha.achados_detalhe = dados.achados_detalhe
     if dados.alteracoes_observadas is not None:

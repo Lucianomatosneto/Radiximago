@@ -7,6 +7,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
+import type { Marcacao } from '../../lib/marcacoes'
 
 const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'periapical', label: 'Periapical' },
@@ -114,6 +115,9 @@ interface ResultadoImagem {
   tipo_radiografia: string | null
   dentes: number[] | null
   achado_principal: string | null
+  achados_detalhe: string | null
+  alteracoes_observadas: string[] | null
+  marcacoes: Marcacao[]
   qualidade_tecnica: string | null
   dificuldade: string | null
   finalidade: string | null
@@ -256,6 +260,11 @@ function PesquisaConteudo() {
       descricao_didatica: imagem.descricao_didatica,
       tipo_radiografia: imagem.tipo_radiografia,
       viewer_url: imagem.viewer_url,
+      achados_detalhe: imagem.achados_detalhe,
+      alteracoes_observadas: imagem.alteracoes_observadas,
+      marcacoes: imagem.marcacoes,
+      qualidade_tecnica: imagem.qualidade_tecnica,
+      dentes: imagem.dentes,
     }))
 
   if (carregandoPagina) {
@@ -533,61 +542,45 @@ function PesquisaConteudo() {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
                   {resultados.map((imagem, indice) => (
-                    <div
+                    <Link
                       key={imagem.curation_id}
-                      className="flex flex-col rounded-2xl border border-base-border bg-base-surface p-4"
+                      href={`/visualizar/${imagem.curation_id}`}
+                      className="group flex flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface transition-colors hover:border-brand/50"
                     >
-                      <div className="relative mb-3 overflow-hidden rounded-lg">
+                      <div className="relative aspect-square overflow-hidden">
                         <MiniaturaImagem
                           curationId={imagem.curation_id}
                           alt={imagem.descricao_didatica ?? `Imagem #${indice + 1}`}
-                          className="h-36 w-full bg-base-surface2 object-cover"
+                          className="h-full w-full bg-base-surface2 object-cover"
                         />
-                        <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-semibold text-white">
+                        <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-semibold text-white">
                           {indice + 1}
                         </span>
-                        <label className="absolute right-2 top-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-md bg-black/70">
+                        <label
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-md bg-black/70"
+                        >
                           <input
                             type="checkbox"
                             checked={selecionados.includes(imagem.curation_id)}
                             onChange={() => alternarSelecao(imagem.curation_id)}
+                            onClick={(e) => e.stopPropagation()}
                             aria-label={`Selecionar imagem #${indice + 1}`}
-                            className="h-4 w-4 accent-brand"
+                            className="h-3.5 w-3.5 accent-brand"
                           />
                         </label>
                       </div>
-                      <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
-                        <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
-                        {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
-                      </span>
-                      <dl className="mt-1 space-y-1 text-xs text-slate-400">
-                        <div>
-                          <dt className="inline text-slate-500">Achado: </dt>
-                          <dd className="inline">{rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}</dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-slate-500">Qualidade: </dt>
-                          <dd className="inline">{rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}</dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-slate-500">Dificuldade: </dt>
-                          <dd className="inline">{rotular(OPCOES_DIFICULDADE, imagem.dificuldade)}</dd>
-                        </div>
-                        <div>
-                          <dt className="inline text-slate-500">Finalidade: </dt>
-                          <dd className="inline">{rotular(OPCOES_FINALIDADE, imagem.finalidade)}</dd>
-                        </div>
-                      </dl>
-
-                      <Link
-                        href={`/visualizar/${imagem.curation_id}`}
-                        className="mt-4 block rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
-                      >
-                        Visualizar
-                      </Link>
-                    </div>
+                      <div className="flex flex-col gap-1 p-2">
+                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300">
+                          {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
+                        </span>
+                        <span className="truncate text-xs text-slate-400" title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}>
+                          {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
+                        </span>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               </>

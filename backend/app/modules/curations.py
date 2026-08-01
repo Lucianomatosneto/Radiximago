@@ -24,7 +24,7 @@ from sqlalchemy import (
     Text,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -178,6 +178,13 @@ class Curation(Base):
     idade_max = Column(Integer, nullable=True)
     genero = Column(String(15), nullable=True)
     achado_principal = Column(String(40), nullable=True)
+    # Marcacoes desenhadas pelo curador sobre a miniatura estatica (nao o
+    # OHIF, que roda em outra origem e nao tem como ser lido de volta) pra
+    # indicar onde estao as lesoes. Lista de objetos, cada um com posicao
+    # relativa (0.0 a 1.0 da largura/altura da imagem):
+    # oval/retangulo: {id, tipo, x, y, largura, altura}
+    # seta:           {id, tipo, x1, y1, x2, y2}
+    marcacoes = Column(JSONB, nullable=False, server_default="[]")
     achados_detalhe = Column(Text, nullable=True)
     alteracoes_observadas = Column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
     qualidade_tecnica = Column(String(20), nullable=True)

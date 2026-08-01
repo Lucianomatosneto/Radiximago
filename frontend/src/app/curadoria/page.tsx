@@ -1,186 +1,24 @@
 'use client'
 
-import { useEffect, useRef, useState, KeyboardEvent } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Topbar from '../../components/Topbar'
+import FilaCuradoria, { ImagemPendente } from '../../components/curadoria/FilaCuradoria'
+import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
+import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
+import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
+import ModalMotivo from '../../components/curadoria/ModalMotivo'
+import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
+import ColunaSeries, { SerieEstudo } from '../../components/visualizador/ColunaSeries'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
-
-const DENTES_PERMANENTES = [
-  ...Array.from({ length: 8 }, (_, i) => 11 + i),
-  ...Array.from({ length: 8 }, (_, i) => 21 + i),
-  ...Array.from({ length: 8 }, (_, i) => 31 + i),
-  ...Array.from({ length: 8 }, (_, i) => 41 + i),
-]
-
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
-]
-
-const OPCOES_GENERO = [
-  { valor: 'masculino', label: 'Masculino' },
-  { valor: 'feminino', label: 'Feminino' },
-]
-
-// Valores reais do enum AchadoPrincipal no backend (nao aceita texto livre).
-const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', label: 'Normal' },
-  { valor: 'carie', label: 'Cárie' },
-  { valor: 'lesao_periapical', label: 'Lesão periapical' },
-  { valor: 'perda_ossea', label: 'Perda óssea' },
-  { valor: 'dente_incluso', label: 'Dente incluso' },
-  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
-  { valor: 'erro_tecnico', label: 'Erro técnico' },
-  { valor: 'outro', label: 'Outro' },
-]
-
-// Valores reais do enum AlteracaoObservada no backend, agrupados por
-// categoria so pra organizar a exibicao - o backend guarda como lista
-// plana de strings.
-const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string; label: string }[] }[] = [
-  {
-    categoria: 'Cárie',
-    itens: [
-      { valor: 'carie_esmalte', label: 'Cárie em esmalte' },
-      { valor: 'carie_dentina', label: 'Cárie em dentina' },
-      { valor: 'carie_proxima_polpa', label: 'Cárie próxima à polpa' },
-      { valor: 'carie_secundaria', label: 'Cárie secundária (sob restauração)' },
-    ],
-  },
-  {
-    categoria: 'Periodontal',
-    itens: [
-      { valor: 'perda_ossea_horizontal', label: 'Perda óssea horizontal' },
-      { valor: 'perda_ossea_vertical', label: 'Perda óssea vertical' },
-      { valor: 'calculo_dentario', label: 'Cálculo dentário (tártaro)' },
-      { valor: 'alargamento_ligamento_periodontal', label: 'Alargamento do ligamento periodontal' },
-    ],
-  },
-  {
-    categoria: 'Periapical / Endodôntico',
-    itens: [
-      { valor: 'lesao_periapical', label: 'Lesão periapical' },
-      { valor: 'reabsorcao_radicular_externa', label: 'Reabsorção radicular externa' },
-      { valor: 'reabsorcao_radicular_interna', label: 'Reabsorção radicular interna' },
-      { valor: 'tratamento_endodontico_presente', label: 'Tratamento endodôntico presente' },
-      { valor: 'tratamento_endodontico_inadequado', label: 'Tratamento endodôntico inadequado' },
-      { valor: 'fratura_radicular', label: 'Fratura radicular' },
-    ],
-  },
-  {
-    categoria: 'Restaurador / Protético',
-    itens: [
-      { valor: 'restauracao_presente', label: 'Restauração presente' },
-      { valor: 'restauracao_com_infiltracao', label: 'Restauração com infiltração' },
-      { valor: 'coroa_protetica', label: 'Coroa protética' },
-      { valor: 'nucleo_pino', label: 'Núcleo/pino intrarradicular' },
-    ],
-  },
-  {
-    categoria: 'Ósseo / Anatômico',
-    itens: [
-      { valor: 'cisto', label: 'Cisto' },
-      { valor: 'lesao_radiopaca', label: 'Lesão radiopaca' },
-      { valor: 'lesao_radiolucida_inespecifica', label: 'Lesão radiolúcida inespecífica' },
-      { valor: 'dente_incluso', label: 'Dente incluso/impactado' },
-      { valor: 'dente_supranumerario', label: 'Dente supranumerário' },
-      { valor: 'agenesia_dentaria', label: 'Agenesia dentária' },
-      { valor: 'alteracao_seio_maxilar', label: 'Alteração no seio maxilar' },
-      { valor: 'corpo_estranho', label: 'Corpo estranho' },
-    ],
-  },
-]
-
-// Valores reais do enum QualidadeTecnica no backend.
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
-]
-
-const OPCOES_DIFICULDADE = [
-  { valor: 'basico', label: 'Básico' },
-  { valor: 'intermediario', label: 'Intermediário' },
-  { valor: 'avancado', label: 'Avançado' },
-]
-
-// Valores reais do enum Finalidade no backend.
-const OPCOES_FINALIDADE = [
-  { valor: 'ensino', label: 'Ensino' },
-  { valor: 'pesquisa', label: 'Pesquisa' },
-  { valor: 'ambos', label: 'Ambos' },
-]
-
-interface ImagemPendente {
-  orthanc_reference_id: number
-  orthanc_id: string
-  resource_type: string
-  dicomweb_url: string | null
-}
 
 interface FichaAtiva {
   curationId: number
   orthancReferenceId: number
 }
 
-interface ViewerInfo {
-  abrivel: boolean
-  motivo?: string
-  viewer_url: string | null
-}
-
-interface FormularioFicha {
-  tipo_radiografia: string
-  dentes: number[]
-  idade_min: string
-  idade_max: string
-  genero: string
-  achado_principal: string
-  achados_detalhe: string
-  alteracoes_observadas: string[]
-  qualidade_tecnica: string
-  dificuldade: string
-  descricao_didatica: string
-  observacoes_internas: string
-  finalidade: string
-  anonimizacao_validada: boolean
-}
-
-const FORM_VAZIO: FormularioFicha = {
-  tipo_radiografia: 'periapical',
-  dentes: [],
-  idade_min: '',
-  idade_max: '',
-  genero: '',
-  achado_principal: '',
-  achados_detalhe: '',
-  alteracoes_observadas: [],
-  qualidade_tecnica: '',
-  dificuldade: '',
-  descricao_didatica: '',
-  observacoes_internas: '',
-  finalidade: '',
-  anonimizacao_validada: false,
-}
-
-function truncarOrthancId(id: string): string {
-  return id.length > 12 ? `${id.slice(0, 12)}...` : id
-}
-
-// A fila colapsa pra 56px (so um botao pra reabrir) quando ha uma imagem
-// aberta, pra dar o maximo de largura possivel pro visualizador. A coluna
-// da ficha (380px) so existe na grade quando ha uma ficha ativa.
-function colunaGridClasse(temFichaAtiva: boolean, filaColapsada: boolean): string {
-  if (temFichaAtiva) {
-    return filaColapsada ? 'lg:grid-cols-[56px_1fr_380px]' : 'lg:grid-cols-[320px_1fr_380px]'
-  }
-  return filaColapsada ? 'lg:grid-cols-[56px_1fr]' : 'lg:grid-cols-[320px_1fr]'
-}
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
@@ -205,10 +43,8 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   if (form.idade_min !== '') payload.idade_min = Number(form.idade_min)
   if (form.idade_max !== '') payload.idade_max = Number(form.idade_max)
   if (form.genero !== '') payload.genero = form.genero
-  if (form.achado_principal !== '') payload.achado_principal = form.achado_principal
+  payload.marcacoes = form.marcacoes
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
-  if (form.dificuldade !== '') payload.dificuldade = form.dificuldade
-  if (form.finalidade !== '') payload.finalidade = form.finalidade
   return payload
 }
 
@@ -218,20 +54,31 @@ export default function CuradoriaPage() {
   const [carregando, setCarregando] = useState(true)
 
   const [fila, setFila] = useState<ImagemPendente[]>([])
+  const [ordemInicial, setOrdemInicial] = useState<ImagemPendente[]>([])
+  const [totalPendentes, setTotalPendentes] = useState(0)
+  const filaRef = useRef<ImagemPendente[]>([])
+  const ordemInicialRef = useRef<ImagemPendente[]>([])
+
   const [carregandoFila, setCarregandoFila] = useState(false)
   const [erroFila, setErroFila] = useState('')
   const [criandoId, setCriandoId] = useState<number | null>(null)
   const [filaColapsada, setFilaColapsada] = useState(false)
+  const [indiceAtual, setIndiceAtual] = useState<number | null>(null)
 
   const [fichaAtiva, setFichaAtiva] = useState<FichaAtiva | null>(null)
+  const [statusFicha, setStatusFicha] = useState('em_analise')
+  const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
-  const visualizadorRef = useRef<HTMLElement | null>(null)
+  const visualizadorRef = useRef<HTMLDivElement | null>(null)
   const [telaCheia, setTelaCheia] = useState(false)
+  const [modoAjustado, setModoAjustado] = useState(false)
+  const [iframeReloadKey, setIframeReloadKey] = useState(0)
+  const [series, setSeries] = useState<SerieEstudo[]>([])
+  const [carregandoSeries, setCarregandoSeries] = useState(false)
+  const [indiceSerie, setIndiceSerie] = useState(0)
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
-  const [denteInput, setDenteInput] = useState('')
-  const [erroDente, setErroDente] = useState('')
 
   const [salvandoRascunho, setSalvandoRascunho] = useState(false)
   const [rascunhoSalvo, setRascunhoSalvo] = useState(false)
@@ -261,13 +108,25 @@ export default function CuradoriaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function carregarFila(tokenAtual: string) {
+  function aplicarFila(itens: ImagemPendente[], total: number, opcoes?: { append?: boolean }) {
+    const novaFila = opcoes?.append ? [...filaRef.current, ...itens] : itens
+    const novaOrdem = opcoes?.append ? [...ordemInicialRef.current, ...itens] : itens
+    filaRef.current = novaFila
+    ordemInicialRef.current = novaOrdem
+    setFila(novaFila)
+    setOrdemInicial(novaOrdem)
+    setTotalPendentes(total)
+  }
+
+  async function carregarFila(tokenAtual: string, opcoes?: { skip?: number; append?: boolean }) {
     setCarregandoFila(true)
     setErroFila('')
     try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/pending`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
-      })
+      const skip = opcoes?.skip ?? 0
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50`,
+        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+      )
       if (resposta.status === 401) {
         router.push('/login')
         return
@@ -277,7 +136,7 @@ export default function CuradoriaPage() {
         return
       }
       const dados = await resposta.json()
-      setFila(dados.itens ?? [])
+      aplicarFila(dados.itens ?? [], dados.total_pendentes ?? 0, { append: opcoes?.append })
     } catch {
       router.push('/login')
     } finally {
@@ -307,6 +166,13 @@ export default function CuradoriaPage() {
     }
   }
 
+  function centralizarImagem() {
+    // Sem ponte (postMessage) com o OHIF, que roda em outra origem - a
+    // forma segura de "recentralizar" sem tocar no funcionamento interno
+    // dele e recarregar o mesmo iframe, que volta ao estado inicial.
+    setIframeReloadKey((k) => k + 1)
+  }
+
   async function carregarViewerUrl(tokenAtual: string, orthancReferenceId: number) {
     setCarregandoViewer(true)
     setViewerInfo(null)
@@ -329,6 +195,44 @@ export default function CuradoriaPage() {
     }
   }
 
+  async function carregarSeries(tokenAtual: string, orthancReferenceId: number) {
+    setCarregandoSeries(true)
+    setSeries([])
+    setIndiceSerie(0)
+    try {
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/series`,
+        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+      )
+      if (!resposta.ok) return
+      const dados = await resposta.json()
+      setSeries(dados.series ?? [])
+    } catch {
+      // coluna de series so fica vazia
+    } finally {
+      setCarregandoSeries(false)
+    }
+  }
+
+  // So e usado quando a ficha em edicao esta com status "segunda_opiniao" -
+  // no fluxo atual da Curadoria isso nunca acontece de fato (itens em
+  // segunda opiniao ja saem de /curation/pending), mas o dado ja existe na
+  // API (GET /curation/{id}/reviews) e o sprint pede pra so exibi-lo se
+  // existir - fica pronto sem custo extra.
+  async function carregarReviewSegundaOpiniao(tokenAtual: string, curationId: number) {
+    try {
+      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}/reviews`, {
+        headers: { Authorization: `Bearer ${tokenAtual}` },
+      })
+      if (!resposta.ok) return
+      const dados = await resposta.json()
+      const itens: ReviewInfo[] = dados.itens ?? []
+      setSegundaOpiniaoReview(itens.length > 0 ? itens[itens.length - 1] : null)
+    } catch {
+      // banner so aparece se o dado existir
+    }
+  }
+
   async function carregarFichaCompleta(
     tokenAtual: string,
     curationId: number,
@@ -347,30 +251,39 @@ export default function CuradoriaPage() {
     }
     const ficha = await resposta.json()
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
+    setStatusFicha(ficha.status ?? 'em_analise')
+    setSegundaOpiniaoReview(null)
+    if (ficha.status === 'segunda_opiniao') {
+      carregarReviewSegundaOpiniao(tokenAtual, curationId)
+    }
     setForm({
       tipo_radiografia: ficha.tipo_radiografia ?? 'periapical',
       dentes: ficha.dentes ?? [],
       idade_min: ficha.idade_min !== null && ficha.idade_min !== undefined ? String(ficha.idade_min) : '',
       idade_max: ficha.idade_max !== null && ficha.idade_max !== undefined ? String(ficha.idade_max) : '',
       genero: ficha.genero ?? '',
-      achado_principal: ficha.achado_principal ?? '',
+      marcacoes: ficha.marcacoes ?? [],
       achados_detalhe: ficha.achados_detalhe ?? '',
       alteracoes_observadas: ficha.alteracoes_observadas ?? [],
       qualidade_tecnica: ficha.qualidade_tecnica ?? '',
-      dificuldade: ficha.dificuldade ?? '',
       descricao_didatica: ficha.descricao_didatica ?? '',
       observacoes_internas: ficha.observacoes_internas ?? '',
-      finalidade: ficha.finalidade ?? '',
       anonimizacao_validada: ficha.anonimizacao_validada ?? false,
     })
-    carregarViewerUrl(tokenAtual, orthancReferenceId)
   }
 
-  async function abrirImagem(imagem: ImagemPendente) {
+  async function abrirImagem(imagem: ImagemPendente, indiceNavegacao?: number) {
     if (!token || criandoId !== null) return
     setCriandoId(imagem.orthanc_reference_id)
     setErroFila('')
     try {
+      // Viewer-url e series so precisam do orthanc_reference_id, que ja
+      // temos aqui - disparamos em paralelo com a criacao da ficha, em vez
+      // de esperar a ficha carregar primeiro (essa espera sequencial era
+      // uma das causas da demora ao abrir uma imagem).
+      carregarViewerUrl(token, imagem.orthanc_reference_id)
+      carregarSeries(token, imagem.orthanc_reference_id)
+
       const respostaCriacao = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${imagem.orthanc_reference_id}`,
         {
@@ -388,9 +301,15 @@ export default function CuradoriaPage() {
         return
       }
       const criada = await respostaCriacao.json()
-      setFila((prev) => prev.filter((item) => item.orthanc_reference_id !== imagem.orthanc_reference_id))
+      const novaFila = filaRef.current.filter(
+        (item) => item.orthanc_reference_id !== imagem.orthanc_reference_id
+      )
+      filaRef.current = novaFila
+      setFila(novaFila)
+      const indice =
+        indiceNavegacao ?? ordemInicialRef.current.findIndex((i) => i.orthanc_reference_id === imagem.orthanc_reference_id)
+      setIndiceAtual(indice >= 0 ? indice : null)
       await carregarFichaCompleta(token, criada.curation_id, imagem.orthanc_reference_id)
-      setFilaColapsada(true)
     } catch {
       setErroFila('Não foi possível abrir esta imagem para curadoria.')
     } finally {
@@ -398,11 +317,57 @@ export default function CuradoriaPage() {
     }
   }
 
+  // Procura, a partir da posicao atual, o proximo/anterior item que ainda
+  // esteja pendente (ainda em `fila`) - itens ja abertos saem da fila
+  // assim que a ficha e criada, entao "Anterior" so alcanca algo se o
+  // usuario tiver pulado itens sem processa-los.
+  function indiceDisponivel(direcao: 1 | -1): number | null {
+    if (indiceAtual === null) return null
+    let i = indiceAtual + direcao
+    while (i >= 0 && i < ordemInicialRef.current.length) {
+      const alvo = ordemInicialRef.current[i]
+      if (filaRef.current.some((f) => f.orthanc_reference_id === alvo.orthanc_reference_id)) return i
+      i += direcao
+    }
+    return null
+  }
+
+  const podeAnterior = indiceDisponivel(-1) !== null
+  const podeProxima = indiceDisponivel(1) !== null || ordemInicial.length < totalPendentes
+
+  async function irParaAnterior() {
+    const i = indiceDisponivel(-1)
+    if (i === null) return
+    await abrirImagem(ordemInicialRef.current[i], i)
+  }
+
+  // Usada tanto pelo botao "Proxima" (so fica habilitado quando ha um
+  // proximo disponivel) quanto pelo avanco automatico apos
+  // aprovar/salvar/descartar/segunda opiniao - nesse segundo caso pode nao
+  // haver mais nada pendente, entao cai de volta pra tela de selecao.
+  async function irParaProxima() {
+    let i = indiceDisponivel(1)
+    if (i === null && ordemInicialRef.current.length < totalPendentes && token) {
+      await carregarFila(token, { skip: ordemInicialRef.current.length, append: true })
+      i = indiceDisponivel(1)
+    }
+    if (i === null) {
+      finalizarFichaAtiva()
+      return
+    }
+    await abrirImagem(ordemInicialRef.current[i], i)
+  }
+
   function finalizarFichaAtiva() {
     setFichaAtiva(null)
     setViewerInfo(null)
     setForm(FORM_VAZIO)
     setFilaColapsada(false)
+    setModoAjustado(false)
+    setIndiceAtual(null)
+    setSegundaOpiniaoReview(null)
+    setSeries([])
+    setIndiceSerie(0)
     if (token) carregarFila(token)
   }
 
@@ -440,6 +405,15 @@ export default function CuradoriaPage() {
     }
   }
 
+  // Salvar/Aprovar/Descartar/Segunda opiniao agora avancam sozinhos pro
+  // proximo estudo pendente (irParaProxima ja cai de volta pra tela de
+  // selecao quando nao ha mais nada na fila) - o curador nao precisa
+  // clicar em nada extra entre um estudo e o proximo.
+  async function aoClicarSalvar() {
+    const ok = await salvarRascunho({ silencioso: true })
+    if (ok) irParaProxima()
+  }
+
   async function aprovar() {
     if (!fichaAtiva || !token) return
     const salvou = await salvarRascunho({ silencioso: true })
@@ -464,7 +438,7 @@ export default function CuradoriaPage() {
         setErroFormulario(await extrairErro(resposta, 'Não foi possível aprovar a ficha.'))
         return
       }
-      finalizarFichaAtiva()
+      await irParaProxima()
     } catch {
       setErroFormulario('Não foi possível aprovar a ficha.')
     } finally {
@@ -502,38 +476,12 @@ export default function CuradoriaPage() {
       }
       setModalMotivo(null)
       setMotivoTexto('')
-      finalizarFichaAtiva()
+      await irParaProxima()
     } catch {
       setErroMotivo('Não foi possível concluir a ação.')
     } finally {
       setEnviandoMotivo(false)
     }
-  }
-
-  function adicionarDente(event?: KeyboardEvent<HTMLInputElement>) {
-    if (event) event.preventDefault()
-    const numero = Number(denteInput)
-    if (!DENTES_PERMANENTES.includes(numero)) {
-      setErroDente('Use um número FDI válido (11-18, 21-28, 31-38, 41-48).')
-      return
-    }
-    setErroDente('')
-    setDenteInput('')
-    if (form.dentes.includes(numero)) return
-    setForm({ ...form, dentes: [...form.dentes, numero].sort((a, b) => a - b) })
-  }
-
-  function removerDente(numero: number) {
-    setForm({ ...form, dentes: form.dentes.filter((d) => d !== numero) })
-  }
-
-  function alternarAlteracao(valor: string) {
-    setForm((atual) => ({
-      ...atual,
-      alteracoes_observadas: atual.alteracoes_observadas.includes(valor)
-        ? atual.alteracoes_observadas.filter((v) => v !== valor)
-        : [...atual.alteracoes_observadas, valor],
-    }))
   }
 
   function abrirModalMotivo(tipo: 'descartar' | 'segunda_opiniao') {
@@ -550,9 +498,15 @@ export default function CuradoriaPage() {
     )
   }
 
-  const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
-  const campoInput =
-    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand'
+  const fichaVisivel = !!fichaAtiva && !modoAjustado
+
+  // Anexa o SeriesInstanceUID da serie selecionada na coluna de series ao
+  // link do OHIF - mesmo padrao ja usado no VisualizadorSequencial.
+  const serieSelecionada = series[indiceSerie] ?? null
+  const viewerInfoComSerie: ViewerInfo | null =
+    viewerInfo?.viewer_url && serieSelecionada
+      ? { ...viewerInfo, viewer_url: `${viewerInfo.viewer_url}&SeriesInstanceUIDs=${serieSelecionada.series_instance_uid}` }
+      : viewerInfo
 
   return (
     <div className="flex min-h-screen flex-col bg-base">
@@ -578,474 +532,112 @@ export default function CuradoriaPage() {
           </div>
         </div>
 
-        <div className={`grid grid-cols-1 gap-4 ${colunaGridClasse(!!fichaAtiva, filaColapsada)}`}>
-          {/* COLUNA ESQUERDA - Fila de curadoria (colapsavel: some quando ha
-              uma imagem aberta, pra dar o maximo de espaco ao visualizador) */}
-          <section className="rounded-2xl border border-base-border bg-base-surface">
-            {filaColapsada ? (
-              <button
-                type="button"
-                onClick={() => setFilaColapsada(false)}
-                aria-label="Expandir fila de curadoria"
-                title="Expandir fila de curadoria"
-                className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-brand-300"
-              >
-                <span aria-hidden="true">»</span>
-                <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
-                  Fila{fila.length > 0 ? ` (${fila.length})` : ''}
-                </span>
-              </button>
-            ) : (
-              <>
-                <div className="flex items-center justify-between border-b border-base-border px-4 py-3.5">
-                  <h2 className="text-sm font-semibold text-ink">Fila de curadoria</h2>
-                  <button
-                    type="button"
-                    onClick={() => setFilaColapsada(true)}
-                    aria-label="Recolher fila de curadoria"
-                    title="Recolher fila de curadoria"
-                    className="text-slate-400 hover:text-brand-300"
-                  >
-                    «
-                  </button>
-                </div>
-
-                {erroFila && (
-                  <p className="px-4 py-2 text-xs text-red-400" role="alert">
-                    {erroFila}
-                  </p>
-                )}
-
-                <div className="max-h-[70vh] overflow-y-auto p-2">
-                  {carregandoFila ? (
-                    <p className="p-3 text-sm text-slate-500">Carregando fila...</p>
-                  ) : fila.length === 0 ? (
-                    <p className="p-3 text-sm text-slate-500">Nenhuma imagem pendente.</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {fila.map((imagem) => (
-                        <li key={imagem.orthanc_reference_id}>
-                          <button
-                            type="button"
-                            disabled={criandoId !== null}
-                            onClick={() => abrirImagem(imagem)}
-                            className="w-full rounded-xl border border-transparent px-3 py-2.5 text-left text-sm hover:border-brand/40 hover:bg-brand/5 disabled:opacity-50"
-                          >
-                            <p className="font-mono text-xs text-slate-300">
-                              {truncarOrthancId(imagem.orthanc_id)}
-                            </p>
-                            <p className="mt-1 text-slate-400">{imagem.resource_type}</p>
-                            <p className="mt-1 text-xs text-slate-600">
-                              {criandoId === imagem.orthanc_reference_id ? 'Abrindo...' : 'status de anonimização: — · data: —'}
-                            </p>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </>
-            )}
-          </section>
-
-          {/* COLUNA CENTRAL - Visualizador */}
+        {/* overflow-x-auto: com as duas colunas de navegacao + a ficha, o
+            visualizador precisa de uma largura minima garantida pra
+            imagem nao ficar pequena (era essa a reclamacao original) - em
+            telas mais estreitas a linha toda rola na horizontal em vez de
+            espremer o visualizador. */}
+        <div className="flex flex-col gap-4 overflow-x-auto lg:flex-row lg:items-start">
+          {/* COLUNA - Estudos (fila de curadoria) - sempre visivel, largura
+              fixa igual as caixas de imagem ja usadas nessa lista. Fica de
+              fora da tela cheia de proposito, pra dar o maximo de espaco
+              pro trabalho na imagem ativa. */}
           <section
-            ref={visualizadorRef}
-            className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
+            className={`w-full shrink-0 rounded-2xl border border-base-border bg-base-surface ${
+              filaColapsada ? 'lg:w-[56px]' : 'lg:w-[320px]'
+            }`}
           >
-            {fichaAtiva && (
-              <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
-                  <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
-                  Em análise
-                </span>
-                {viewerInfo?.abrivel && viewerInfo.viewer_url && (
-                  <button
-                    type="button"
-                    onClick={alternarTelaCheia}
-                    aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                    title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                    className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                  >
-                    {telaCheia ? (
-                      <>
-                        <span aria-hidden="true">⤡</span> Voltar
-                      </>
-                    ) : (
-                      <>
-                        <span aria-hidden="true">⛶</span> Tela cheia
-                      </>
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {!fichaAtiva ? (
-              <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                Selecione uma imagem na fila ao lado
-              </div>
-            ) : carregandoViewer ? (
-              <div className="flex flex-1 items-center justify-center text-slate-400">
-                Carregando visualizador...
-              </div>
-            ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
-              <iframe
-                src={viewerInfo.viewer_url}
-                title="Visualizador OHIF"
-                className="h-full min-h-[70vh] w-full flex-1 border-0"
-              />
-            ) : (
-              <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
-              </div>
-            )}
+            <FilaCuradoria
+              fila={fila}
+              carregando={carregandoFila}
+              erro={erroFila}
+              criandoId={criandoId}
+              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+              colapsada={filaColapsada}
+              onSelecionar={(imagem) => abrirImagem(imagem)}
+              onColapsar={() => setFilaColapsada(true)}
+              onExpandir={() => setFilaColapsada(false)}
+            />
           </section>
 
-          {/* COLUNA DIREITA - Formulario de curadoria */}
+          {/* COLUNA - Series do estudo aberto, so aparece com uma ficha
+              ativa (antes disso nao ha estudo aberto pra listar series). */}
           {fichaAtiva && (
-            <section className="max-h-[70vh] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-5">
-              <h2 className="mb-5 text-base font-bold text-ink">Ficha de curadoria</h2>
-
-              <div className="space-y-6">
-                <div>
-                  <p className="mb-2.5 text-sm font-semibold text-ink">1. Tipo de exame</p>
-                  <div className="flex flex-wrap gap-2">
-                    {OPCOES_TIPO_RADIOGRAFIA.map((opcao) => (
-                      <button
-                        key={opcao.valor}
-                        type="button"
-                        onClick={() => setForm({ ...form, tipo_radiografia: opcao.valor })}
-                        className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-                          form.tipo_radiografia === opcao.valor
-                            ? 'border-brand bg-brand text-white'
-                            : 'border-base-border text-slate-300 hover:border-brand/50'
-                        }`}
-                      >
-                        {opcao.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2.5 text-sm font-semibold text-ink">2. Dentes e paciente</p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className={campoLabel}>Dentes (notação FDI)</label>
-                      <div className="flex flex-wrap gap-1.5 rounded-lg border border-base-border bg-base-surface2 p-2">
-                        {form.dentes.map((numero) => (
-                          <span
-                            key={numero}
-                            className="inline-flex items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-xs text-brand-300"
-                          >
-                            {numero}
-                            <button
-                              type="button"
-                              onClick={() => removerDente(numero)}
-                              aria-label={`Remover dente ${numero}`}
-                              className="text-brand-300 hover:text-brand-hover"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                        <input
-                          type="text"
-                          value={denteInput}
-                          onChange={(e) => setDenteInput(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') adicionarDente(e)
-                          }}
-                          placeholder="ex: 16"
-                          className="w-16 flex-1 bg-transparent text-sm text-slate-100 outline-none"
-                        />
-                      </div>
-                      {erroDente && <p className="mt-1 text-xs text-red-400">{erroDente}</p>}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className={campoLabel}>Idade mín.</label>
-                        <input
-                          type="number"
-                          value={form.idade_min}
-                          onChange={(e) => setForm({ ...form, idade_min: e.target.value })}
-                          className={campoInput}
-                        />
-                      </div>
-                      <div>
-                        <label className={campoLabel}>Idade máx.</label>
-                        <input
-                          type="number"
-                          value={form.idade_max}
-                          onChange={(e) => setForm({ ...form, idade_max: e.target.value })}
-                          className={campoInput}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Gênero (opcional)</label>
-                      <div className="flex flex-wrap gap-2">
-                        {[{ valor: '', label: 'Não informado' }, ...OPCOES_GENERO].map((opcao) => (
-                          <button
-                            key={opcao.valor || 'nao-informado'}
-                            type="button"
-                            onClick={() => setForm({ ...form, genero: opcao.valor })}
-                            className={`rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
-                              form.genero === opcao.valor
-                                ? 'border-brand bg-brand text-white'
-                                : 'border-base-border text-slate-300 hover:border-brand/50'
-                            }`}
-                          >
-                            {opcao.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2.5 text-sm font-semibold text-ink">3. Achados</p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className={campoLabel}>Achado principal</label>
-                      <select
-                        value={form.achado_principal}
-                        onChange={(e) => setForm({ ...form, achado_principal: e.target.value })}
-                        className={campoInput}
-                      >
-                        <option value="">Selecione</option>
-                        {OPCOES_ACHADO_PRINCIPAL.map((opcao) => (
-                          <option key={opcao.valor} value={opcao.valor}>
-                            {opcao.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>
-                        Alterações observadas
-                        {form.alteracoes_observadas.length > 0 && (
-                          <span className="ml-1 text-brand-300">({form.alteracoes_observadas.length})</span>
-                        )}
-                      </label>
-                      <div className="space-y-3 rounded-lg border border-base-border bg-base-surface2 p-3">
-                        {CATEGORIAS_ALTERACOES.map((grupo) => (
-                          <div key={grupo.categoria}>
-                            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                              {grupo.categoria}
-                            </p>
-                            <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
-                              {grupo.itens.map((item) => (
-                                <label
-                                  key={item.valor}
-                                  className="flex items-start gap-2 rounded-md px-1.5 py-1 text-sm text-slate-300 hover:bg-white/5"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={form.alteracoes_observadas.includes(item.valor)}
-                                    onChange={() => alternarAlteracao(item.valor)}
-                                    className="mt-0.5 h-3.5 w-3.5 flex-none rounded border-base-border bg-base-surface2 text-brand"
-                                  />
-                                  {item.label}
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Detalhes do achado</label>
-                      <textarea
-                        value={form.achados_detalhe}
-                        onChange={(e) => setForm({ ...form, achados_detalhe: e.target.value })}
-                        rows={3}
-                        className={campoInput}
-                      />
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Qualidade técnica</label>
-                      <select
-                        value={form.qualidade_tecnica}
-                        onChange={(e) => setForm({ ...form, qualidade_tecnica: e.target.value })}
-                        className={campoInput}
-                      >
-                        <option value="">Selecione</option>
-                        {OPCOES_QUALIDADE_TECNICA.map((opcao) => (
-                          <option key={opcao.valor} value={opcao.valor}>
-                            {opcao.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Dificuldade</label>
-                      <select
-                        value={form.dificuldade}
-                        onChange={(e) => setForm({ ...form, dificuldade: e.target.value })}
-                        className={campoInput}
-                      >
-                        <option value="">Selecione</option>
-                        {OPCOES_DIFICULDADE.map((opcao) => (
-                          <option key={opcao.valor} value={opcao.valor}>
-                            {opcao.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2.5 text-sm font-semibold text-ink">4. Descrição e finalidade</p>
-                  <div className="space-y-3">
-                    <div>
-                      <label className={campoLabel}>Descrição didática</label>
-                      <textarea
-                        value={form.descricao_didatica}
-                        onChange={(e) => setForm({ ...form, descricao_didatica: e.target.value })}
-                        rows={3}
-                        className={campoInput}
-                      />
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Observações internas</label>
-                      <textarea
-                        value={form.observacoes_internas}
-                        onChange={(e) => setForm({ ...form, observacoes_internas: e.target.value })}
-                        rows={3}
-                        className={campoInput}
-                      />
-                    </div>
-
-                    <div>
-                      <label className={campoLabel}>Finalidade</label>
-                      <select
-                        value={form.finalidade}
-                        onChange={(e) => setForm({ ...form, finalidade: e.target.value })}
-                        className={campoInput}
-                      >
-                        <option value="">Selecione</option>
-                        {OPCOES_FINALIDADE.map((opcao) => (
-                          <option key={opcao.valor} value={opcao.valor}>
-                            {opcao.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <p className="mb-2.5 text-sm font-semibold text-ink">5. Anonimização</p>
-                  <label className="flex items-center gap-2 text-sm text-slate-300">
-                    <input
-                      type="checkbox"
-                      checked={form.anonimizacao_validada}
-                      onChange={(e) => setForm({ ...form, anonimizacao_validada: e.target.checked })}
-                      className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
-                    />
-                    Anonimização validada por mim
-                  </label>
-                </div>
-
-                {erroFormulario && (
-                  <p className="text-sm text-red-400" role="alert">
-                    {erroFormulario}
-                  </p>
-                )}
-                {rascunhoSalvo && <p className="text-sm text-emerald-400">Rascunho salvo.</p>}
-
-                <div className="flex flex-col gap-2 border-t border-base-border pt-4">
-                  <button
-                    type="button"
-                    onClick={aprovar}
-                    disabled={aprovando || salvandoRascunho}
-                    className="flex items-center justify-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
-                  >
-                    {aprovando ? 'Aprovando...' : '✓ Aprovar'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => salvarRascunho()}
-                    disabled={salvandoRascunho || aprovando}
-                    className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
-                  >
-                    {salvandoRascunho ? 'Salvando...' : 'Salvar rascunho'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => abrirModalMotivo('descartar')}
-                    className="rounded-lg border border-red-800/60 px-4 py-2 text-sm text-red-300 hover:bg-red-950/40"
-                  >
-                    Descartar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => abrirModalMotivo('segunda_opiniao')}
-                    className="rounded-lg border border-purple-800/60 px-4 py-2 text-sm text-purple-300 hover:bg-purple-950/40"
-                  >
-                    Solicitar segunda opinião
-                  </button>
-                </div>
-              </div>
-            </section>
+            <ColunaSeries
+              series={series}
+              indiceAtual={indiceSerie}
+              onSelecionar={setIndiceSerie}
+              carregando={carregandoSeries}
+            />
           )}
+
+          {/* AREA DE TRABALHO - barra superior + visualizador + ficha, tudo
+              dentro do mesmo elemento que vira tela cheia. Antes so o
+              visualizador entrava em tela cheia (Fullscreen API so mostra o
+              elemento que foi pedido, escondendo tudo fora dele) e a coluna
+              da ficha - e os botoes de Salvar/Aprovar/Descartar - sumiam.
+              Agora os dois ficam dentro do mesmo container, entao continuam
+              visiveis em tela cheia. */}
+          <div ref={visualizadorRef} className={`flex min-w-0 flex-1 flex-col gap-4 bg-base ${telaCheia ? 'p-4' : ''}`}>
+            {fichaAtiva && (
+              <BarraSuperiorCuradoria
+                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+                totalFila={totalPendentes}
+                podeAnterior={podeAnterior}
+                podeProxima={podeProxima}
+                onAnterior={irParaAnterior}
+                onProxima={irParaProxima}
+                onSalvar={aoClicarSalvar}
+                onAprovar={aprovar}
+                onDescartar={() => abrirModalMotivo('descartar')}
+                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+                salvando={salvandoRascunho}
+                aprovando={aprovando}
+              />
+            )}
+
+            <div className={`grid flex-1 grid-cols-1 gap-4 ${fichaVisivel ? 'lg:grid-cols-[minmax(480px,1fr)_380px]' : ''}`}>
+              <PainelVisualizador
+                fichaAtiva={!!fichaAtiva}
+                carregandoViewer={carregandoViewer}
+                viewerInfo={viewerInfoComSerie}
+                telaCheia={telaCheia}
+                onAlternarTelaCheia={alternarTelaCheia}
+                modoAjustado={modoAjustado}
+                onAlternarAjustar={() => setModoAjustado((v) => !v)}
+                onCentralizar={centralizarImagem}
+                iframeReloadKey={iframeReloadKey}
+                statusFicha={statusFicha}
+                segundaOpiniaoReview={segundaOpiniaoReview}
+              />
+
+              {/* Formulario de curadoria (escondido temporariamente no modo
+                  "ajustar a tela" - as acoes continuam na barra superior) */}
+              {fichaVisivel && fichaAtiva && (
+                <FichaCuradoriaForm
+                  form={form}
+                  onChange={setForm}
+                  statusFicha={statusFicha}
+                  erro={erroFormulario}
+                  rascunhoSalvo={rascunhoSalvo}
+                  orthancReferenceId={fichaAtiva.orthancReferenceId}
+                />
+              )}
+            </div>
+          </div>
         </div>
       </main>
 
       {modalMotivo && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-            <h2 className="mb-4 text-lg font-semibold text-ink">
-              {modalMotivo === 'descartar' ? 'Descartar ficha' : 'Solicitar segunda opinião'}
-            </h2>
-            <label className={campoLabel}>Motivo</label>
-            <textarea
-              value={motivoTexto}
-              onChange={(e) => setMotivoTexto(e.target.value)}
-              rows={4}
-              className={campoInput}
-            />
-            {erroMotivo && (
-              <p className="mt-2 text-sm text-red-400" role="alert">
-                {erroMotivo}
-              </p>
-            )}
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setModalMotivo(null)}
-                className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={confirmarMotivo}
-                disabled={enviandoMotivo}
-                className="rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-              >
-                {enviandoMotivo ? 'Enviando...' : 'Confirmar'}
-              </button>
-            </div>
-          </div>
-          <button
-            type="button"
-            aria-label="Fechar"
-            onClick={() => setModalMotivo(null)}
-            className="fixed inset-0 -z-10"
-          />
-        </div>
+        <ModalMotivo
+          tipo={modalMotivo}
+          motivoTexto={motivoTexto}
+          onMotivoChange={setMotivoTexto}
+          erro={erroMotivo}
+          enviando={enviandoMotivo}
+          onCancelar={() => setModalMotivo(null)}
+          onConfirmar={confirmarMotivo}
+        />
       )}
     </div>
   )

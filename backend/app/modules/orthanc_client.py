@@ -9,17 +9,17 @@ e devolve dados em Python para quem chamar.
 import httpx
 from app.core.config import settings
 
-
-def _get_auth() -> httpx.BasicAuth:
-    """
-    Monta a autenticacao HTTP Basic com usuario e senha do Orthanc.
-    As credenciais vem do config.py (que por sua vez le do .env).
-    Nunca escrevemos senha diretamente aqui.
-    """
-    return httpx.BasicAuth(
-        username=settings.ORTHANC_USERNAME,
-        password=settings.ORTHANC_PASSWORD,
-    )
+# Cliente HTTP unico, reaproveitado entre todas as chamadas ao Orthanc -
+# antes cada funcao abria uma conexao nova (handshake TCP completo) a cada
+# chamada; um Client persistente reaproveita conexoes ja abertas
+# (keep-alive), o que reduz bastante a latencia acumulada quando varias
+# chamadas encadeadas acontecem em sequencia (ex.: abrir uma imagem na
+# Curadoria). httpx.Client e seguro para uso concorrente entre threads - o
+# FastAPI roda endpoints sincronos numa threadpool.
+_client = httpx.Client(
+    auth=httpx.BasicAuth(username=settings.ORTHANC_USERNAME, password=settings.ORTHANC_PASSWORD),
+    timeout=30.0,
+)
 
 
 def listar_instancias() -> list[str]:
@@ -31,11 +31,9 @@ def listar_instancias() -> list[str]:
 
     Retorna: lista de strings (os IDs internos do Orthanc).
     """
-    url = f"{settings.ORTHANC_URL}/instances"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.json()
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances")
+    resposta.raise_for_status()
+    return resposta.json()
 
 
 def obter_preview_instancia(orthanc_id: str) -> bytes:
@@ -46,11 +44,9 @@ def obter_preview_instancia(orthanc_id: str) -> bytes:
 
     Retorna: os bytes do PNG.
     """
-    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/preview"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.content
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances/{orthanc_id}/preview")
+    resposta.raise_for_status()
+    return resposta.content
 
 
 def obter_detalhes_instancia(orthanc_id: str) -> dict:
@@ -67,11 +63,9 @@ def obter_detalhes_instancia(orthanc_id: str) -> dict:
 
     Retorna: um dicionario com os metadados da instancia.
     """
-    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.json()
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances/{orthanc_id}")
+    resposta.raise_for_status()
+    return resposta.json()
 
 
 def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
@@ -86,11 +80,9 @@ def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
 
     Retorna: um dicionario {nome_da_tag: valor}.
     """
-    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/simplified-tags"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.json()
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances/{orthanc_id}/simplified-tags")
+    resposta.raise_for_status()
+    return resposta.json()
 
 
 # O perfil padrao do Orthanc (DICOM PS3.15 Table E.1-1) remove/substitui os
@@ -154,10 +146,9 @@ def anonimizar_instancia(orthanc_id: str) -> dict:
     """
     url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/anonymize"
     corpo = {"Synchronous": True, "Keep": _CAMPOS_A_PRESERVAR}
-    with httpx.Client(auth=_get_auth(), timeout=60.0) as client:
-        resposta = client.post(url, json=corpo)
-        resposta.raise_for_status()
-        return enviar_instancia(resposta.content)
+    resposta = _client.post(url, json=corpo, timeout=60.0)
+    resposta.raise_for_status()
+    return enviar_instancia(resposta.content)
 
 
 def excluir_instancia(orthanc_id: str) -> None:
@@ -169,10 +160,8 @@ def excluir_instancia(orthanc_id: str) -> None:
     Parametro:
         orthanc_id: o identificador interno do Orthanc da instancia a remover.
     """
-    url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.delete(url)
-        resposta.raise_for_status()
+    resposta = _client.delete(f"{settings.ORTHANC_URL}/instances/{orthanc_id}")
+    resposta.raise_for_status()
 
 
 def obter_detalhes_serie(orthanc_series_id: str) -> dict:
@@ -188,19 +177,20 @@ def obter_detalhes_serie(orthanc_series_id: str) -> dict:
     Retorna: um dicionario com os metadados da serie (inclui "ParentStudy"
     e "Instances").
     """
-    url = f"{settings.ORTHANC_URL}/series/{orthanc_series_id}"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.json()
+    resposta = _client.get(f"{settings.ORTHANC_URL}/series/{orthanc_series_id}")
+    resposta.raise_for_status()
+    return resposta.json()
 
 
 def listar_instancias_do_estudo(orthanc_study_id: str) -> list[str]:
     """
-    Lista os IDs (Orthanc) de todas as instancias de um estudo, percorrendo
-    suas series - usado pra descobrir se uma imagem faz parte de uma serie
-    com varios cortes (ex.: tomografia) e pra montar o ZIP de download com
-    todos os cortes.
+    Lista os IDs (Orthanc) de todas as instancias de um estudo - usado pra
+    descobrir se uma imagem faz parte de uma serie com varios cortes (ex.:
+    tomografia) e pra montar o ZIP de download com todos os cortes.
+
+    Usa `?expand` pra trazer os detalhes de todas as series do estudo numa
+    unica chamada, em vez de uma chamada por serie (evita N+1 quando o
+    estudo tem varias series).
 
     Parametro:
         orthanc_study_id: o identificador interno do Orthanc do estudo
@@ -208,27 +198,26 @@ def listar_instancias_do_estudo(orthanc_study_id: str) -> list[str]:
 
     Retorna: lista de IDs (Orthanc) de instancias.
     """
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}")
-        resposta.raise_for_status()
-        series_ids = resposta.json().get("Series", [])
-
-        instancias: list[str] = []
-        for serie_id in series_ids:
-            resposta_serie = client.get(f"{settings.ORTHANC_URL}/series/{serie_id}")
-            resposta_serie.raise_for_status()
-            instancias.extend(resposta_serie.json().get("Instances", []))
-        return instancias
+    resposta = _client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}/series", params={"expand": ""})
+    resposta.raise_for_status()
+    instancias: list[str] = []
+    for serie in resposta.json():
+        instancias.extend(serie.get("Instances", []))
+    return instancias
 
 
 def listar_series_do_estudo(orthanc_study_id: str) -> list[dict]:
     """
     Lista as series de um estudo, com o SeriesInstanceUID DICOM real de
     cada uma (vem pronto no MainDicomTags do proprio recurso de serie do
-    Orthanc - nao precisa ir instancia por instancia). Usado pra navegar
-    entre series/"pastas" de um estudo com varias (ex.: cortes axiais,
-    reconstrucao, escanograma) sem depender da coluna series_instance_uid
-    do banco, que guarda o ID interno do Orthanc, nao o UID DICOM.
+    Orthanc). Usado pra navegar entre series/"pastas" de um estudo com
+    varias (ex.: cortes axiais, reconstrucao, escanograma) sem depender da
+    coluna series_instance_uid do banco, que guarda o ID interno do
+    Orthanc, nao o UID DICOM.
+
+    Usa `?expand` pra trazer os detalhes de todas as series numa unica
+    chamada ao Orthanc, em vez de uma chamada por serie (evita N+1 quando o
+    estudo tem varias series).
 
     Parametro:
         orthanc_study_id: o identificador interno do Orthanc do estudo.
@@ -237,23 +226,18 @@ def listar_series_do_estudo(orthanc_study_id: str) -> list[dict]:
     presente), cada uma com series_instance_uid, series_number, modality
     e total_instancias.
     """
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}")
-        resposta.raise_for_status()
-        series_ids = resposta.json().get("Series", [])
+    resposta = _client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}/series", params={"expand": ""})
+    resposta.raise_for_status()
 
-        series: list[dict] = []
-        for serie_id in series_ids:
-            resposta_serie = client.get(f"{settings.ORTHANC_URL}/series/{serie_id}")
-            resposta_serie.raise_for_status()
-            info = resposta_serie.json()
-            tags = info.get("MainDicomTags", {})
-            series.append({
-                "series_instance_uid": tags.get("SeriesInstanceUID"),
-                "series_number": tags.get("SeriesNumber"),
-                "modality": tags.get("Modality"),
-                "total_instancias": len(info.get("Instances", [])),
-            })
+    series: list[dict] = []
+    for info in resposta.json():
+        tags = info.get("MainDicomTags", {})
+        series.append({
+            "series_instance_uid": tags.get("SeriesInstanceUID"),
+            "series_number": tags.get("SeriesNumber"),
+            "modality": tags.get("Modality"),
+            "total_instancias": len(info.get("Instances", [])),
+        })
 
     def _chave_ordenacao(serie: dict):
         numero = serie.get("series_number")
@@ -278,11 +262,9 @@ def obter_arquivo_zip_estudo(orthanc_study_id: str) -> bytes:
 
     Retorna: os bytes do arquivo ZIP.
     """
-    url = f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}/archive"
-    with httpx.Client(auth=_get_auth(), timeout=180.0) as client:
-        resposta = client.get(url)
-        resposta.raise_for_status()
-        return resposta.content
+    resposta = _client.get(f"{settings.ORTHANC_URL}/studies/{orthanc_study_id}/archive", timeout=180.0)
+    resposta.raise_for_status()
+    return resposta.content
 
 
 def enviar_instancia(conteudo: bytes) -> dict:
@@ -299,7 +281,6 @@ def enviar_instancia(conteudo: bytes) -> dict:
     Retorna: um dicionario com o resultado (inclui a chave "ID").
     """
     url = f"{settings.ORTHANC_URL}/instances"
-    with httpx.Client(auth=_get_auth(), timeout=30.0) as client:
-        resposta = client.post(url, content=conteudo, headers={"Content-Type": "application/dicom"})
-        resposta.raise_for_status()
-        return resposta.json()
+    resposta = _client.post(url, content=conteudo, headers={"Content-Type": "application/dicom"})
+    resposta.raise_for_status()
+    return resposta.json()

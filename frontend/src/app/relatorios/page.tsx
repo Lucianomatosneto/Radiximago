@@ -124,6 +124,7 @@ export default function RelatoriosPage() {
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [mapaCuradores, setMapaCuradores] = useState<Record<number, string>>({})
   const [erro, setErro] = useState('')
+  const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -132,12 +133,13 @@ export default function RelatoriosPage() {
       return
     }
 
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
+    const perfilAtual = localStorage.getItem('perfil')
+    if (!perfilAtual || !PERFIS_PERMITIDOS.includes(perfilAtual)) {
       router.push('/acesso-negado')
       return
     }
 
+    setPerfil(perfilAtual)
     carregarDados(token)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -218,8 +220,12 @@ export default function RelatoriosPage() {
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <DashboardCard label="Total de imagens" valor={stats.total_imagens_orthanc} cor="teal" />
                 <DashboardCard label="Total de fichas" valor={stats.total_fichas_curadoria} cor="blue" />
-                <DashboardCard label="Usuários ativos" valor={stats.usuarios_ativos} cor="green" />
-                <DashboardCard label="Usuários bloqueados" valor={stats.usuarios_bloqueados} cor="red" />
+                {perfil === 'administrador' && (
+                  <>
+                    <DashboardCard label="Usuários ativos" valor={stats.usuarios_ativos} cor="green" />
+                    <DashboardCard label="Usuários bloqueados" valor={stats.usuarios_bloqueados} cor="red" />
+                  </>
+                )}
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
