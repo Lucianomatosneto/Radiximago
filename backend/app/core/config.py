@@ -14,7 +14,11 @@ class Settings(BaseSettings):
     # Orthanc - servidor DICOM
     ORTHANC_URL: str = "http://radix-orthanc:8042"
     ORTHANC_USERNAME: str = "admin"
-    ORTHANC_PASSWORD: str = "mgd3172"
+    # Sem default, mesmo motivo do JWT_SECRET_KEY acima: evita subir o
+    # sistema com uma senha fixa e conhecida. Corrigido em 31/07/2026 -
+    # o valor anterior (hardcoded) ja estava exposto no historico do Git,
+    # foi trocado no Orthanc e removido do codigo-fonte.
+    ORTHANC_PASSWORD: str
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
     OHIF_BASE_URL: str = "http://localhost:3001"
     MAX_UPLOAD_SIZE_MB: int = 50
