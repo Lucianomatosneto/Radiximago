@@ -7,14 +7,20 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
+import type { Marcacao } from '../../lib/marcacoes'
 
 interface ImagemSalva {
   curation_id: number
   tipo_radiografia: string | null
   achado_principal: string | null
+  achados_detalhe?: string | null
+  alteracoes_observadas?: string[] | null
+  marcacoes?: Marcacao[]
   descricao_didatica: string | null
   salvo_em: string | null
   viewer_url: string | null
+  qualidade_tecnica?: string | null
+  dentes?: number[] | null
 }
 
 const ROTULOS_TIPO_RADIOGRAFIA: Record<string, string> = {
@@ -190,6 +196,11 @@ export default function MinhasImagensPage() {
       descricao_didatica: imagem.descricao_didatica,
       tipo_radiografia: imagem.tipo_radiografia,
       viewer_url: imagem.viewer_url,
+      achados_detalhe: imagem.achados_detalhe,
+      alteracoes_observadas: imagem.alteracoes_observadas,
+      marcacoes: imagem.marcacoes,
+      qualidade_tecnica: imagem.qualidade_tecnica,
+      dentes: imagem.dentes,
     }))
 
   const itensExpandido = itemExpandido

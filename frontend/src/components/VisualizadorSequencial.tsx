@@ -3,13 +3,45 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import MiniaturaImagem from './MiniaturaImagem'
+import BarraClassificacao from './detalhe/BarraClassificacao'
+import MarcacaoAchado from './detalhe/MarcacaoAchado'
+import ImagemPrincipalMarcada from './detalhe/ImagemPrincipalMarcada'
+import type { Marcacao } from '../lib/marcacoes'
 
+// Os campos de classificacao sao opcionais porque nem toda tela que abre
+// este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
+// dentes, por exemplo) - quando faltar, a secao correspondente mostra "-"
+// em vez de quebrar.
 export interface ItemSequencia {
   curation_id: number
   numero: number
   descricao_didatica: string | null
   tipo_radiografia: string | null
   viewer_url: string | null
+  achados_detalhe?: string | null
+  alteracoes_observadas?: string[] | null
+  marcacoes?: Marcacao[]
+  qualidade_tecnica?: string | null
+  dentes?: number[] | null
+}
+
+const OPCOES_TIPO_RADIOGRAFIA = [
+  { valor: 'periapical', label: 'Periapical' },
+  { valor: 'panoramica', label: 'Panorâmica' },
+  { valor: 'interproximal', label: 'Interproximal' },
+  { valor: 'oclusal', label: 'Oclusal' },
+]
+
+const OPCOES_QUALIDADE_TECNICA = [
+  { valor: 'otima', label: 'Ótima' },
+  { valor: 'boa', label: 'Boa' },
+  { valor: 'regular', label: 'Regular' },
+  { valor: 'insatisfatoria', label: 'Insatisfatória' },
+]
+
+function rotular(opcoes: { valor: string; label: string }[], valor: string | null | undefined): string {
+  if (!valor) return '—'
+  return opcoes.find((o) => o.valor === valor)?.label ?? valor
 }
 
 interface Props {
@@ -64,6 +96,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   // SeriesInstanceUID que não existe naquele estudo e dava erro.
   const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
   const [indiceSerie, setIndiceSerie] = useState(0)
+  const [mostrarMarcacao, setMostrarMarcacao] = useState(false)
+  const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
 
   const atual = itens[indice]
   const seriesValidas = seriesDoItem === atual.curation_id ? series : []
@@ -72,17 +106,22 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     atual.viewer_url && serieAtual
       ? `${atual.viewer_url}&SeriesInstanceUIDs=${serieAtual.series_instance_uid}`
       : atual.viewer_url
+  const marcacoes = atual.marcacoes ?? []
+  const marcacaoDisponivel = marcacoes.length > 0
 
   useEffect(() => {
     setMensagem('')
     setErro('')
     setJaSalvo(false)
+    setMostrarMarcacao(false)
     setInfoSerie(null)
     setIndiceSerie(0)
+    setMarcacaoPreviewUrl('')
 
     const token = localStorage.getItem('access_token')
     if (!token) return
     let cancelado = false
+    let urlObjetoMarcacao = ''
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/serie-info`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -111,8 +150,30 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         })
     }
 
+    // Baixa a imagem da marcacao ANTECIPADAMENTE, assim que o estudo abre -
+    // antes, esse download (varios MB) so comecava no instante em que o
+    // usuario ligava "Mostrar marcação", o que deixava a troca visivelmente
+    // lenta. Com isso, quando o checkbox e marcado a imagem geralmente ja
+    // esta pronta.
+    if ((atual.marcacoes ?? []).length > 0) {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/preview`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((resposta) => (resposta.ok ? resposta.blob() : null))
+        .then((blob) => {
+          if (blob && !cancelado) {
+            urlObjetoMarcacao = URL.createObjectURL(blob)
+            setMarcacaoPreviewUrl(urlObjetoMarcacao)
+          }
+        })
+        .catch(() => {
+          // sem pre-carregamento, o componente busca a imagem na hora de mostrar
+        })
+    }
+
     return () => {
       cancelado = true
+      if (urlObjetoMarcacao) URL.revokeObjectURL(urlObjetoMarcacao)
     }
   }, [indice])
 
@@ -332,7 +393,17 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           )}
         </div>
 
-        {urlComSerie ? (
+        {mostrarMarcacao && marcacaoDisponivel ? (
+          // Mesma caixa (h-full w-full) que o iframe ocupa logo abaixo -
+          // a imagem nao muda de tamanho nem de posicao ao ligar/desligar
+          // a marcacao, so as formas aparecem/somem.
+          <ImagemPrincipalMarcada
+            curationId={atual.curation_id}
+            alt={atual.descricao_didatica ?? `Imagem #${atual.numero}`}
+            marcacoes={marcacoes}
+            srcPreCarregado={marcacaoPreviewUrl}
+          />
+        ) : urlComSerie ? (
           <iframe
             key={atual.curation_id}
             src={urlComSerie}
@@ -381,12 +452,27 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         </p>
       )}
 
-      <div className="border-t border-white/10 px-4 py-4 sm:px-6">
-        {atual.descricao_didatica && (
-          <p className="mb-3 text-center text-sm text-slate-300">{atual.descricao_didatica}</p>
-        )}
+      <div className="border-t border-white/10 px-4 py-3 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <BarraClassificacao
+            tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia)}
+            qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica)}
+            dentes={atual.dentes}
+            alteracoesObservadas={atual.alteracoes_observadas}
+            achadosDetalhe={atual.achados_detalhe}
+            descricaoDidatica={atual.descricao_didatica}
+          />
 
-        <div className="flex flex-wrap items-center justify-center gap-2">
+          <MarcacaoAchado
+            curationId={atual.curation_id}
+            marcacoes={marcacoes}
+            comImagem={false}
+            mostrar={mostrarMarcacao}
+            onMostrarChange={setMostrarMarcacao}
+          />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
           {infoSerie?.eh_serie ? (
             <>
               <button

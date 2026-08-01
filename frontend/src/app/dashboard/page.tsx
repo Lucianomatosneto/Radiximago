@@ -117,17 +117,22 @@ export default function DashboardPage() {
             Aqui está o resumo de hoje, {dataDeHoje}.
           </p>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <DashboardCard label="Exames aguardando laudo" valor={stats.aguardando_laudo} cor="amber" />
-            <DashboardCard label="Divergências abertas" valor={stats.divergencias_abertas} cor="red" />
-            <DashboardCard label="Alunos ativos" valor={stats.alunos_ativos} cor="green" />
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
             <DashboardCard label="Total de imagens" valor={stats.total_imagens_orthanc} cor="teal" />
+            <DashboardCard label="Aguardando curadoria" valor={stats.aguardando_laudo} cor="amber" />
+            <DashboardCard label="Aprovadas" valor={stats.por_status.aprovada ?? 0} cor="green" />
+            <DashboardCard label="Aguardando segunda opinião" valor={stats.divergencias_abertas} cor="purple" />
+            <DashboardCard label="Descartadas" valor={stats.por_status.descartada ?? 0} cor="red" />
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <DashboardCard label="Usuários ativos" valor={stats.usuarios_ativos} cor="blue" />
           </div>
 
           {stats.aguardando_laudo > 0 && (
             <div className="mt-6 rounded-xl border border-amber-600/40 bg-amber-500/10 px-5 py-3.5 text-sm text-amber-200">
               <span className="font-semibold">{stats.aguardando_laudo}</span>{' '}
-              {stats.aguardando_laudo === 1 ? 'exame está aguardando' : 'exames estão aguardando'} validação.{' '}
+              {stats.aguardando_laudo === 1 ? 'imagem está aguardando' : 'imagens estão aguardando'} curadoria.{' '}
               <a href="/curadoria" className="font-medium underline underline-offset-2 hover:text-amber-100">
                 Revisar agora
               </a>

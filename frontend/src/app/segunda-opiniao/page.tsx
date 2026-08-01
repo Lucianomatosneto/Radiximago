@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -64,6 +64,8 @@ export default function SegundaOpiniaoPage() {
   const [reviewAtiva, setReviewAtiva] = useState<ReviewPendente | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
+  const [telaCheia, setTelaCheia] = useState(false)
+  const visualizadorRef = useRef<HTMLElement | null>(null)
 
   const [parecerRevisor, setParecerRevisor] = useState('')
   const [concordancia, setConcordancia] = useState<'concorda' | 'discorda' | null>(null)
@@ -90,6 +92,27 @@ export default function SegundaOpiniaoPage() {
     carregarFila(tokenAtual)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
+
+  useEffect(() => {
+    function aoMudarTelaCheia() {
+      setTelaCheia(document.fullscreenElement === visualizadorRef.current)
+    }
+    document.addEventListener('fullscreenchange', aoMudarTelaCheia)
+    return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
+  }, [])
+
+  async function alternarTelaCheia() {
+    if (!visualizadorRef.current) return
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await visualizadorRef.current.requestFullscreen()
+      }
+    } catch {
+      // navegador pode negar (ex.: sem interacao do usuario) - ignora
+    }
+  }
 
   async function carregarFila(tokenAtual: string) {
     setCarregandoFila(true)
@@ -277,7 +300,32 @@ export default function SegundaOpiniaoPage() {
               </section>
             ) : (
               <div className="space-y-4">
-                <section className="flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
+                <section
+                  ref={visualizadorRef}
+                  className="relative flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface"
+                >
+                  {viewerInfo?.abrivel && viewerInfo.viewer_url && (
+                    <div className="flex items-center justify-end border-b border-base-border px-3 py-2">
+                      <button
+                        type="button"
+                        onClick={alternarTelaCheia}
+                        aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                        title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                        className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                      >
+                        {telaCheia ? (
+                          <>
+                            <span aria-hidden="true">⤡</span> Voltar
+                          </>
+                        ) : (
+                          <>
+                            <span aria-hidden="true">⛶</span> Tela cheia
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
                   {carregandoViewer ? (
                     <div className="flex flex-1 items-center justify-center text-slate-400">
                       Carregando visualizador...
