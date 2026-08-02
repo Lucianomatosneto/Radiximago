@@ -1,0 +1,17 @@
+# Normaliza terminacao de linha para LF em todo o repositorio,
+# independente do sistema operacional que fizer o checkout/commit.
+# Resolve o problema de diffs "fantasmas" (arquivo inteiro aparentando
+# ter mudado) quando o mesmo repositorio e acessado tanto do Windows
+# (Claude Code, CRLF por padrao) quanto de ambientes Linux (ex: esta
+# ponte com o Claude via chat/Cowork).
+* text=auto eol=lf
+
+# Binarios: nunca tentar normalizar quebra de linha
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
