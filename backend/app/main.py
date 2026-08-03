@@ -18,7 +18,7 @@ from app.modules.search_router import router as search_router
 from app.modules.admin_router import router as admin_router
 from app.modules.users_router import router as users_router
 from app.modules.images_router import router as images_router
-from app.modules.curation_router import router as curation_router
+from app.modules.curation import router as curation_router
 from app.modules.saved_images_router import router as saved_images_router
 
 app = FastAPI(
