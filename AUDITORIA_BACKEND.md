@@ -25,6 +25,8 @@
 > **Atualização (2026-07-16):** corrigidos os 5 achados restantes da rodada `/code-review` anterior. **Mudança estrutural principal:** nova dependência central `exigir_perfis(*perfis)` em `auth.py`, que substitui os 4 guardiões de permissão manuais e independentes que existiam em `users_router.py` (checagem inline repetida 5x), `admin_router.py` (`_exigir_admin`), `images_router.py` (`_exigir_admin_ou_suporte`) e `curation_router.py` (`_exigir_admin_suporte_ou_curador`) — agora é usada como `Depends(exigir_perfis(UserRole.administrador, ...))` diretamente na assinatura de cada endpoint (~20 endpoints em 4 arquivos), e as 4 funções antigas foram removidas. Demais correções: `/health/database` e `/health/orthanc` continuam públicos (decisão deliberada, para não quebrar monitoramento externo) mas pararam de devolver `str(e)` — só `"status": "erro"` genérico; `criar_usuario`, `bloquear_usuario`, `atualizar_usuario` (`users_router.py`) e `trocar_senha_propria` (`auth.py`) passaram de 2 commits para 1 (mudança de estado + log de auditoria na mesma transação — `criar_usuario` usa `db.flush()` para obter o `id` do novo usuário antes do commit único); `POST /images/upload` passou a ler o arquivo em pedaços de 1MB, abortando com 413 assim que ultrapassa `MAX_UPLOAD_SIZE_MB`, em vez de ler tudo antes de checar; `desativar_imagem`/`ativar_imagem` (`images_router.py`) foram unificados em uma função privada compartilhada, `_alterar_ativo_imagem` (que de brinde já aplica o commit único).
 >
 > **Atualização (2026-07-17):** segunda rodada de `/code-review` (mesmo processo de 8 ângulos), agora sobre o diff das duas correções anteriores. **Nenhum dos 10 achados originais voltou** — todos confirmados corretos e completos por múltiplos ângulos independentes. 7 achados novos e menores encontrados e corrigidos: (1) condição de corrida (TOCTOU) em `solicitar_segunda_opiniao` — duas requisições concorrentes podiam ambas passar pela checagem de "já existe revisão aberta" antes de qualquer uma commitar; corrigido com um **índice único parcial no Postgres** (`uq_curation_reviews_aberta`, migration `5e12b4071d59`, só permite 1 review com status `solicitada`/`respondida` por ficha) + captura de `IntegrityError` traduzida no mesmo 409 amigável; (2) upload concorrente do mesmo arquivo (mesmo `orthanc_id`) agora é reconhecido como sucesso (`ja_existente`) em vez de virar erro 502 quando a colisão de unicidade é detectada; (3) checagem de `segunda_opiniao` duplicada entre `aprovar_curadoria`/`descartar_curadoria` extraída para `_exigir_fora_de_segunda_opiniao`; (4) `_alterar_ativo_imagem` não recebe mais `acao` como parâmetro solto — deriva de `ativo`, eliminando o risco de dessincronia; (5) `upload_imagem` libera o `bytearray` (`del partes`) logo após converter para `bytes`, reduzindo o pico de memória; (6) as 4 tabelas de perfis fragmentadas por arquivo foram centralizadas em `PERFIS_ADMIN`/`PERFIS_IMAGENS`/`PERFIS_CURADORIA` (em `auth.py`, ao lado de `exigir_perfis`); (7) `/health/database` e `/health/orthanc` passaram a logar a exceção real via `logging` (`logger.exception(...)`, visível em `docker logs`) mesmo continuando a esconder o texto da resposta HTTP. **Bug introduzido e corrigido durante o próprio teste desta correção:** ao extrair `_exigir_fora_de_segunda_opiniao`, uma operação de busca-e-substituição em massa acabou reescrevendo o corpo da própria função como uma chamada recursiva a si mesma, causando `RecursionError` (500) em `/approve`/`/discard`. Detectado pelo teste funcional (não pela leitura de código) e corrigido antes do commit. Um ponto sinalizado por dois ângulos desta rodada — `apply-review-decision` não validar `decisao_final == "manter"`/`None` — **não** foi tratado como achado: é a decisão deliberada já confirmada ao corrigir o achado 2 da rodada anterior.
+>
+> **Revisão de 2026-08-03 — atualização de escopo restrito.** As seções 0 e 7 foram reescritas por releitura direta e completa do backend e do frontend atuais (nenhum arquivo foi alterado durante a releitura). Contexto do que mudou desde a última passada: (1) `curation_router.py` foi dividido no pacote `backend/app/modules/curation/` (mesmo comportamento externo — refactor puro, ver histórico de commits); (2) o backend cresceu bastante desde a versão original deste documento — novos módulos `access_requests.py` e `saved_images.py`/`saved_images_router.py`, e vários endpoints novos em `auth.py` (`/forgot-password`, `/reset-password`, `/request-access`), `users_router.py` (avatar, exclusão suave, `/access-requests/*`), `images_router.py` (`GET /images/`), `search_router.py` (`/counts`, `/send-email-lote`, `/serie-info`, `/series`, `/download/*.zip`, `/preview`, `/send-email`) e `admin_router.py` (`/settings`) — **nenhum desses endpoints novos foi documentado em detalhe nas seções 1-6**, que continuam refletindo o escopo da auditoria original; eles só entraram na árvore da seção 0 (inventário) e na comparação da seção 7 (checagem frontend×backend). Uma auditoria formal das seções 1-6 cobrindo esses módulos fica como trabalho futuro. (3) O frontend, que na versão original não existia (só o scaffold do `create-next-app`), hoje tem 22 páginas completas — a seção 7 foi inteiramente reescrita para descrever o que existe de fato, não mais uma sugestão especulativa.
 
 ---
 
@@ -34,34 +36,98 @@
 backend/
   app/
     core/
-      config.py        -> configurações (env vars)
-      database.py       -> engine, sessão, Base declarativa
-      security.py       -> hash de senha, JWT
+      config.py         -> configurações (env vars)
+      database.py        -> engine, sessão, Base declarativa
+      security.py         -> hash de senha, JWT
+      email.py             -> envio de e-mail via SMTP (redefinição de senha, solicitação de
+                              acesso recebida/aprovada/rejeitada, imagens de pesquisa avulsa/lote)
+      rate_limit.py         -> limiter (slowapi), usado em /auth/login, /forgot-password, /reset-password
     modules/
-      auth.py               -> login, /auth/me, dependência de usuário atual
-      users.py              -> modelo User + enum UserRole
-      users_router.py       -> CRUD parcial de usuários
-      curations.py          -> modelos Curation, CurationHistory, CurationReview + enums
-      curation_router.py    -> fluxo de curadoria (Fase 4)
-      orthanc_references.py -> modelo OrthancReference
-      orthanc_client.py     -> cliente HTTP para o Orthanc (sem endpoints, sem banco)
-      images_router.py      -> sincronização com Orthanc (Fase 3)
-      search_router.py      -> busca pública de imagens aprovadas (Fase 5)
-      admin_router.py       -> indicadores e auditoria (Fase 6)
-      audit_logs.py         -> modelo AuditLog
-    main.py             -> registro dos routers, CORS, health checks
-  alembic/versions/     -> 3 migrations (users, orthanc_references, curadoria+auditoria)
-  criar_admin.py         -> script CLI de bootstrap do 1º admin
-  trocar_senha.py        -> script CLI de troca de senha
-  verificar_anonimizacao.py -> script CLI de verificação de tags DICOM sensíveis
+      auth.py                -> login, /auth/me, logout (simbólico), troca/redefinição de senha,
+                                 solicitação pública de acesso, exigir_perfis (guardião central)
+      users.py                -> modelo User + enum UserRole
+      users_router.py          -> CRUD de usuários, avatar (upload/remoção), exclusão suave,
+                                   revisão de solicitações de acesso (aprovar/rejeitar)
+      access_requests.py        -> modelo AccessRequest + enums StatusSolicitacaoAcesso/IntencaoPerfil
+      curations.py                -> modelos Curation, CurationHistory, CurationReview + enums
+      curation/                    -> pacote do fluxo de curadoria (Fase 4), dividido por sub-fluxo
+                                       (refatorado em 2026-08 a partir do antigo curation_router.py,
+                                       um único arquivo de 1086 linhas - mesmo comportamento externo):
+        __init__.py                   -> router compartilhado + registro dos submódulos abaixo
+        router.py                      -> só a instância do APIRouter (prefix "/curation")
+        common.py                       -> helpers/constantes compartilhados entre sub-fluxos
+                                           (status, histórico, auditoria, aprovação/descarte internos)
+        schemas.py                       -> schemas Pydantic de entrada dos endpoints
+        consultas.py                      -> leitura: fila pendente, fila de reviews pendentes,
+                                             viewer-url, séries/preview de imagem pendente, ficha,
+                                             histórico de reviews de uma ficha
+        ficha.py                           -> criação e edição da ficha
+        aprovacao_descarte.py               -> aprovar/descartar
+        segunda_opiniao.py                   -> solicitar/responder/aplicar decisão da 2ª opinião
+      orthanc_references.py     -> modelo OrthancReference
+      orthanc_client.py          -> cliente HTTP para o Orthanc (sem endpoints, sem banco)
+      images_router.py            -> sincronização, upload direto, listagem e ativação/desativação
+                                     de imagens (Fase 3)
+      search_router.py             -> busca pública de imagens aprovadas + contagens, downloads
+                                      (ZIP de imagens/DICOM) e envio por e-mail (Fase 5)
+      admin_router.py               -> indicadores, consulta de auditoria e configurações não
+                                       sensíveis do backend (Fase 6)
+      audit_logs.py                  -> modelo AuditLog
+      saved_images.py                 -> modelo SavedImage ("Minhas imagens")
+      saved_images_router.py           -> salvar/remover/listar imagens salvas do usuário logado
+    main.py                -> registro dos routers, CORS, rate limit, estáticos (/uploads), health checks
+  alembic/versions/     -> 14 migrations: criação de users, orthanc_references, curadoria+auditoria;
+                           ativo em orthanc_references; índice único parcial contra reviews duplicadas;
+                           anonimizacao_status em orthanc_references; reset_token em users; tabela
+                           access_requests; alteracoes_observadas em curations; exclusão suave em
+                           users; foto de perfil em users; tabela saved_images; marcação (única, depois
+                           múltiplas com forma) em curations
+  criar_admin.py                    -> script CLI de bootstrap do 1º administrador
+  trocar_senha.py                    -> script CLI de troca de senha de um usuário existente
+  backfill_study_instance_uid.py      -> script CLI utilitário de backfill de dado histórico
+  verificar_anonimizacao.py            -> script CLI de verificação de tags DICOM sensíveis
 
 frontend/
-  src/app/page.tsx    -> página estática ("Ambiente Fase 1 funcionando")
-  src/app/layout.tsx  -> layout padrão do Next.js (título ainda "Next.js")
-  package.json        -> Next.js 14 + React 18, sem nenhuma dependência de UI, auth, ou fetch
+  package.json         -> Next.js 14.2 + React 18.3 + Tailwind 3.4 - sem biblioteca de auth, HTTP
+                          client ou state management (fetch nativo + localStorage direto)
+  src/
+    app/
+      layout.tsx                 -> layout raiz (script anti-flash de tema claro/escuro)
+      page.tsx                    -> landing pública (apresentação do produto, sem dados/API)
+      login/page.tsx               -> tela de login
+      solicitar-acesso/page.tsx     -> formulário público de solicitação de acesso ("Cadastrar")
+      esqueci-senha/page.tsx         -> solicitar redefinição de senha (usuário deslogado)
+      redefinir-senha/page.tsx        -> concluir a redefinição, a partir do token recebido por e-mail
+      dashboard/page.tsx                -> início do administrador (indicadores gerais)
+      banco-imagens/page.tsx             -> galeria de categorias de imagens aprovadas (todos os perfis)
+      pesquisa/page.tsx                   -> busca avançada com filtros (todos os perfis)
+      minhas-imagens/page.tsx              -> imagens salvas pelo usuário logado (autoatendimento)
+      visualizar/[id]/page.tsx              -> visualizador de uma imagem aprovada (a partir da pesquisa)
+      curadoria/page.tsx                     -> fila de curadoria: criar ficha, aprovar, descartar,
+                                                solicitar 2ª opinião
+      segunda-opiniao/page.tsx                -> fila de segundas opiniões + formulário de resposta
+      imagens/page.tsx                         -> tabela somente leitura de imagens recebidas do Orthanc
+      usuarios/page.tsx                         -> gestão de usuários + revisão de solicitações de acesso
+      relatorios/page.tsx                        -> indicadores agregados de curadoria (gráficos de barra)
+      auditoria/page.tsx                          -> consulta filtrada da trilha de auditoria
+      painel-admin/page.tsx                        -> painel operacional: atalhos, saúde dos serviços,
+                                                      alertas de login recente
+      integracoes/page.tsx                          -> saúde dos serviços externos (banco, Orthanc, OHIF)
+      configuracoes/page.tsx                         -> configurações não sensíveis do backend (leitura)
+      acesso-negado/page.tsx                          -> tela de bloqueio por perfil sem permissão
+      erro-tecnico/page.tsx, error.tsx                 -> tela genérica de erro (+ error boundary do Next.js)
+    components/           -> Sidebar, Topbar, Logo, ThemeToggle, StatusBadge, DashboardCard,
+                             MiniaturaImagem, MiniaturaFila, VisualizadorSequencial,
+                             RadiografiaIlustrativa, SecaoModalidades, GradeCategoriasImagens, ErroTecnico
+      curadoria/             -> FilaCuradoria, PainelVisualizador, BarraSuperiorCuradoria,
+                                FichaCuradoriaForm, MarcadorAchado, ModalMotivo, SegundaOpiniaoBanner
+      detalhe/                -> BarraClassificacao, MarcacaoAchado, ImagemPrincipalMarcada,
+                                 FormasMarcacoes, ColunaEstudos, NavegacaoCasos, Chip
+      visualizador/             -> ColunaSeries
+    lib/                  -> alteracoesObservadas.ts, marcacoes.ts, useHoverMarcacao.ts, healthCheck.ts
 ```
 
-**Frontend:** não há nada além do scaffold gerado pelo `create-next-app`. Não existe nenhuma tela, componente, chamada de API, roteamento de páginas, gerenciamento de estado ou autenticação no frontend. Toda seção "Sugestão de frontend" abaixo é, portanto, 100% especulativa — não há nada existente para comparar.
+**Frontend:** ao contrário da versão original desta auditoria (quando só existia o scaffold do `create-next-app`), o frontend hoje tem 22 páginas completas, cobrindo praticamente toda a superfície do backend — autenticação completa (login, cadastro, esqueci/redefinir senha), curadoria, segunda opinião, pesquisa/banco de imagens, minhas imagens, e um bloco administrativo inteiro (usuários, imagens recebidas, relatórios, auditoria, painel, integrações, configurações). A comparação detalhada, tela por tela, contra o que o backend permite está na seção 7 — que deixou de ser especulativa e agora descreve o que existe de fato, incluindo os pontos onde frontend e backend não batem exatamente.
 
 ---
 
@@ -555,64 +621,99 @@ Todos os endpoints exigem `administrador`.
 
 ---
 
-## 7. Sugestões de frontend por funcionalidade
+## 7. Frontend implementado — tela por tela, comparado com o backend
 
-> Reforçando: estas são **sugestões de interface baseadas no que o backend já permite**, não novos recursos. Onde o backend tem uma lacuna (seção 6), a sugestão de UI é marcada como **bloqueada** até a lacuna ser resolvida, ou descrita como "desabilitada"/"não aplicável".
+> Reescrita em 2026-08-03. Esta seção era 100% especulativa na versão original (o frontend não existia). Agora descreve o que **de fato está implementado**, tela por tela: rota, perfis com acesso, endpoints chamados (confirmados por leitura direta de cada `fetch(...)` no código-fonte, não por inferência) e qualquer descompasso encontrado entre frontend e backend. Convenção: **✅ implementado e alinhado**, **⚠️ implementado com ressalva** (funciona, mas há uma inconsistência), **❌ endpoint do backend sem tela correspondente**.
+>
+> Autenticação/autorização no frontend é toda client-side: o token JWT e o perfil ficam em `localStorage` (`access_token`, `perfil`, `nome`, `foto_perfil_url`); cada página faz sua própria checagem em `useEffect` (token ausente → `/login`; perfil fora da lista permitida → `/acesso-negado`) antes de buscar dados. Não há middleware/route guard central do Next.js — a proteção real e definitiva continua sendo o backend (`exigir_perfis`), como já era de se esperar de um guardião só client-side.
 
-### 7.1 Autenticação
-- Tela de login (e-mail + senha) chamando `POST /auth/login`; guardar token em memória/storage seguro.
-- Exibir nome e perfil do usuário logado (via `GET /auth/me`) no cabeçalho.
-- Botão "Sair" chamando `POST /auth/logout` (desde 2026-07-16) e, em seguida, descartando o token localmente — a UI deve tratar isso como logout mesmo sabendo que o backend não revoga o token (é só auditoria + sinal para o cliente).
-- Tela de "trocar minha senha" (perfil do usuário) chamando `POST /auth/change-password` — exige campo de senha atual + nova senha, com validação client-side de ≥8 caracteres.
-- **Bloqueado:** fluxo de "esqueci minha senha" (reset sem saber a senha atual) — não há endpoint para isso; a única forma de reset sem senha atual continua sendo o script CLI `trocar_senha.py`, rodado por quem tem acesso ao servidor.
+### 7.1 Autenticação e cadastro (`/login`, `/solicitar-acesso`, `/esqueci-senha`, `/redefinir-senha`) ✅
+- `/login`: formulário e-mail+senha chamando `POST /auth/login`; guarda `access_token`/`perfil`/`nome`/`foto_perfil_url` no `localStorage` e redireciona para `/dashboard` (administrador) ou `/banco-imagens` (demais perfis).
+- `/solicitar-acesso`: formulário público (nome, e-mail, senha, instituição, perfil pretendido, motivo) chamando `POST /auth/request-access` — cobre a lacuna que a versão original desta auditoria apontava como "bloqueada" (script CLI só).
+- `/esqueci-senha` → `POST /auth/forgot-password` e `/redefinir-senha` → `POST /auth/reset-password` (token vem por query string do e-mail) — cobre a segunda lacuna que a versão original apontava como bloqueada.
+- Troca de senha do próprio usuário (`POST /auth/change-password`) e foto de perfil (`POST`/`DELETE /users/me/avatar`) ficam no menu do `Topbar`, não numa página própria.
+- Logout (`Sidebar`, botão "Sair") é só client-side: `localStorage.removeItem(...)` das 4 chaves + redirecionamento — **não chama `POST /auth/logout`**. O endpoint de logout simbólico existe no backend (grava auditoria) mas não tem nenhum chamador no frontend hoje. ⚠️
 
-### 7.2 Gestão de usuários (só visível para perfil `administrador`)
-- Tabela listando usuários (`GET /users/`): nome, e-mail, perfil, instituição, ativo/bloqueado.
-- Formulário/modal de criação de usuário (`POST /users/`): nome, e-mail, senha, perfil (select com os 6 valores), instituição. Validar no client que a senha tem ao menos 8 caracteres antes de enviar, já que o backend rejeita com 422 abaixo disso (desde 2026-07-15).
-- Botão de alternar bloqueio por linha (`PATCH /users/{id}/block`), com confirmação, já que é toggle e não uma ação unidirecional.
-- Tela de detalhe de um usuário individual, usando `GET /users/{id}` (disponível desde 2026-07-16).
-- Formulário de edição de nome/instituição usando `PATCH /users/{id}` (disponível desde 2026-07-16) — a UI deve deixar claro que e-mail e perfil não são editáveis por aqui (o backend simplesmente ignora esses campos se enviados).
-- **Bloqueado/ausente:** botão de excluir usuário (não existe endpoint); troca de e-mail ou de perfil de um usuário existente (fora de escopo deliberado, ver seção 6, item 4).
+### 7.2 Navegação e controle de acesso por perfil (`Sidebar.tsx`) ⚠️
+- O menu lateral (`ITENS_MENU`) filtra os itens por perfil: alguns (Início, Pesquisa avançada, Banco de imagens, Minhas imagens) aparecem para qualquer perfil autenticado; os demais têm uma lista de perfis (`PERFIS_ADMIN_APENAS` ou `PERFIS_ADMIN_E_CURADOR`).
+- **Inconsistência encontrada:** `PERFIS_ADMIN_E_CURADOR = ['administrador', 'curador']` é usada para **4** itens do menu — "Imagens recebidas" (`/imagens`), "Curadoria", "Segunda opinião" e "Relatórios" — mas em todos os 4 casos o **backend permite `suporte` também** (`GET /images/` e `/curation/*` exigem `PERFIS_CURADORIA` = administrador+suporte+curador; `GET /admin/stats`, usado por Relatórios, também aceita `PERFIS_CURADORIA`). Ou seja, um usuário `suporte` tem permissão de backend para essas 4 áreas mas **não vê o link no menu** para chegar lá — só alcançaria digitando a URL diretamente. Não é uma falha de segurança (o backend continua sendo a autoridade), mas é uma lacuna de navegação/UX que provavelmente não foi intencional, já que `/integracoes` (também usado por `suporte`) está corretamente incluído no seu próprio perfil permitido.
 
-### 7.3 Fila de curadoria (perfis `administrador`/`suporte`/`curador`, desde 2026-07-16)
-- Lista/fila das imagens pendentes (`GET /curation/pending`), com paginação (skip/limit).
-- Botão "Abrir no visualizador" por item, usando `GET /curation/{id}/viewer-url` — se `abrivel: false`, desabilitar o botão e mostrar o `motivo`.
-- Formulário de criação de ficha de curadoria (`POST /curation/{orthanc_reference_id}`) com todos os campos do `CurationCreate`: tipo de radiografia (select fixo), seletor de dentes (ex.: odontograma clicável restrito a FDI 11–48), faixa de idade, gênero, achado principal, texto de achados, qualidade técnica, dificuldade, descrição didática, observações internas, finalidade.
-- Tela de "ver ficha existente" com todos os campos, usando `GET /curation/{id}` (disponível desde 2026-07-16) — inclui uma seção com o histórico de segundas opiniões via `GET /curation/{id}/reviews`.
-- **Bloqueado/ausente:** edição dos campos de uma ficha já criada (não há endpoint de update), e uma linha do tempo com o histórico de *mudanças de status* (`CurationHistory` continua sem endpoint de consulta).
+### 7.3 Banco de imagens e pesquisa avançada (`/banco-imagens`, `/pesquisa`, `/visualizar/[id]`) — todos os perfis autenticados ✅
+- `/banco-imagens`: galeria de categorias (`GradeCategoriasImagens`) usando `GET /search/counts` para mostrar quantidade por tipo de radiografia/achado/qualidade técnica.
+- `/pesquisa`: filtros completos (tipo de radiografia, dente, arcada, lado, achado principal, gênero, qualidade técnica, dificuldade, finalidade, faixa de idade) chamando `GET /search?...` com paginação (`skip`/`limit`), mais `GET /search/counts` pros contadores dos filtros.
+- `/visualizar/[id]`: abre uma imagem aprovada específica, usando `GET /search?limit=200` (para navegação entre casos) e `GET /search/{id}/series`; a exibição em si é feita pelo `VisualizadorSequencial` (ver 7.9).
+- Os filtros `arcada`/`lado` no formulário de pesquisa já usam `<select>` fechado com os 2 valores válidos de cada — a lacuna apontada na versão original desta auditoria (campos de texto livre no frontend) não existe: a UI já restringe corretamente.
 
-### 7.4 Aprovação / descarte
-- Botão "Aprovar" abrindo modal que exige marcar explicitamente "anonimização validada" (checkbox obrigatório) + campo de observações opcional (`POST /curation/{id}/approve`) — a UI deve deixar claro que sem esse checkbox marcado a aprovação será rejeitada pelo backend.
-- Botão "Descartar" abrindo modal com campo de motivo obrigatório (`POST /curation/{id}/discard`) — validar não-vazio no client, já que o backend rejeita motivo vazio.
-- Indicar visualmente que ambas as ações são **definitivas** (não há endpoint para reverter de `aprovada`/`descartada` de volta a outro status).
+### 7.4 Minhas imagens (`/minhas-imagens`) — autoatendimento, todos os perfis autenticados ✅
+- Lista as imagens salvas do usuário (`GET /saved-images/`), com seleção múltipla, navegação sequencial e tela cheia (reaproveitando `VisualizadorSequencial`).
+- Remover da lista: `DELETE /saved-images/{curation_id}`.
+- Envio em lote por e-mail: `POST /search/send-email-lote` (mais `GET /search/{id}/serie-info` por item, pra saber se é uma imagem única ou uma série com vários cortes antes de habilitar o envio).
+- Salvar uma imagem (a partir da pesquisa/visualizador) é `POST /saved-images/{curation_id}`, chamado de dentro do `VisualizadorSequencial` (não desta página).
 
-### 7.5 Segunda opinião
-- Botão "Solicitar segunda opinião" com campo de motivo obrigatório e parecer inicial opcional (`POST /curation/{id}/request-review`).
-- Fila de solicitações pendentes de resposta — **ainda ausente no backend**: `GET /curation/{id}/reviews` (desde 2026-07-16) só lista as reviews de **uma** ficha já conhecida, não existe uma listagem global de `CurationReview` filtrável por `status` em todo o sistema; a UI precisaria ser alimentada de outra forma (ex.: derivar da lista de fichas com `status == segunda_opiniao`, se um endpoint de listagem de fichas por status existir — hoje não existe um `GET /curation?status=` genérico).
-- Tela/modal de resposta do revisor: parecer, concordância (`concorda`/`discorda` como radio/select fechado), decisão final (select fechado com os 3 valores do Enum `DecisaoRevisao`: `aprovar`/`descartar`/`manter` — validado pelo backend desde 2026-07-15), observações. A UI deve impedir que o próprio solicitante veja o botão de responder (embora o backend já bloqueie com 403, é melhor UX esconder a ação).
-- **Atualizado (2026-07-16):** depois que o revisor responde, a UI deve oferecer um botão "Aplicar decisão" chamando `POST /curation/{id}/apply-review-decision` — que exige escolher explicitamente `aprovar` ou `descartar` (select fechado com os 2 valores de `DecisaoFinalRevisao`), reaproveitando os mesmos campos/telas de confirmação já sugeridos em 7.4 (`anonimizacao_validada` para aprovar, `motivo` para descartar). Deixar claro na UI que responder a segunda opinião **não** aplica a decisão sozinho — é um passo separado e deliberado.
+### 7.5 Fila de curadoria (`/curadoria`) — perfis `administrador`/`suporte`/`curador` na checagem client-side… mas ver 7.2 ✅
+- Fila de imagens pendentes: `GET /curation/pending`.
+- Abrir visualizador: `GET /curation/{orthanc_reference_id}/viewer-url`; miniatura/série via `GET /curation/{orthanc_reference_id}/series` e `GET /curation/{orthanc_reference_id}/preview`.
+- Criar ficha: `POST /curation/{orthanc_reference_id}`, com todos os campos de `CurationCreate` (tipo de radiografia, dentes via odontograma clicável, faixa de idade, gênero, achado principal, achados detalhados, alterações observadas, qualidade técnica, dificuldade, descrição didática, observações internas, finalidade) — o `FichaCuradoriaForm`/`MarcadorAchado` também cobre a ferramenta de marcação de lesões (oval/retângulo/seta) sobre a miniatura, gravada em `Curation.marcacoes` via `PATCH /curation/{id}`.
+- Ver ficha existente: `GET /curation/{id}`; histórico de segundas opiniões da ficha: `GET /curation/{id}/reviews`.
+- Editar ficha (campos de classificação, enquanto `pendente`/`em_analise`): `PATCH /curation/{id}` — cobre a lacuna que a versão original apontava como "não existe endpoint de update"; hoje existe e o frontend usa.
+- Aprovar/descartar: `POST /curation/{id}/approve` (checkbox obrigatório de anonimização validada) e `POST /curation/{id}/discard` (motivo obrigatório) — ambos por trás de um modal de confirmação (`ModalMotivo`) que decide o `caminho` (`approve`/`discard`/`request-review`) dinamicamente.
+- Solicitar segunda opinião: mesmo fluxo acima, `POST /curation/{id}/request-review`.
+- **Ainda ausente no backend**, como já apontava a versão original: não há listagem de fichas por `status` genérica (`GET /curation?status=`) — a fila de curadoria só enxerga imagens sem ficha (`/pending`), não fichas em qualquer status.
 
-### 7.6 Sincronização com Orthanc / imagens
-- Botão "Sincronizar com Orthanc" (`POST /images/import-from-orthanc`), mostrando resultado resumido (total, novas, já existentes, erros) e, se houver erros, uma lista expansível com `orthanc_id` + mensagem.
-- Tela de detalhe de uma imagem individual usando `GET /images/{id}` (disponível desde 2026-07-16), útil por exemplo a partir de um link na fila de pendentes. Mostra o campo `ativo` com um badge/indicador visual.
-- Botão "Desativar imagem" (`PATCH /images/{id}/deactivate`, desde 2026-07-16) e "Reativar imagem" (`PATCH /images/{id}/activate`) na tela de detalhe — a UI deve deixar claro que isso é reversível (soft delete, não uma exclusão definitiva) e que, se a imagem já tiver uma ficha `aprovada`, desativá-la vai tirar o resultado de `/search` sem alterar o status da ficha em si (o backend não bloqueia essa combinação — ver seção 6, item 3).
-- Tela/modal de upload direto de arquivo DICOM (`POST /images/upload`, desde 2026-07-16), com seletor de arquivo (`.dcm`), barra de progresso (arquivos DICOM podem ter alguns MB) e feedback claro para os 3 desfechos possíveis: `importada` (nova), `ja_existente` (duplicata, não é erro) e o campo `preambulo_dicom_ausente` (se `true`, pode valer um aviso discreto de "arquivo aceito, mas em formato não padrão"). Tratar 413 (arquivo grande demais) e 422 (não é DICOM válido) com mensagens específicas.
-- **Bloqueado/ausente:** listagem geral de todas as imagens (aprovadas, descartadas, pendentes, em segunda opinião, ativas e inativas juntas) — hoje só existem visões filtradas (pendentes ativas sem ficha, ou aprovadas ativas via busca) mais a consulta individual por id.
+### 7.6 Segunda opinião (`/segunda-opiniao`) — mesma checagem de perfil de 7.5 ⚠️
+- Fila de revisões pendentes: `GET /curation/reviews/pending`. Abrir visualizador: `GET /curation/{orthanc_reference_id}/viewer-url`.
+- Responder: `POST /curation/reviews/{review_id}/respond` (parecer do revisor, concordância `concorda`/`discorda`, decisão final sugerida opcional com os 3 valores de `DecisaoRevisao`, observações).
+- **Lacuna confirmada nesta revisão:** depois que o revisor responde, a review some da fila (`status → respondida`) mas **nenhuma tela chama `POST /curation/{id}/apply-review-decision`** — grep completo no frontend não encontrou nenhuma ocorrência de `apply-review-decision`. Isso significa que, na prática, o ciclo da segunda opinião **nunca é fechado pela UI**: a ficha fica presa em `status = segunda_opiniao` indefinidamente (não pode ser aprovada/descartada diretamente — o backend bloqueia isso de propósito, `_exigir_fora_de_segunda_opiniao`) até alguém aplicar a decisão manualmente por fora da interface (ex.: um script, ou uma futura tela). Este é o achado mais importante desta revisão: o backend implementa o fluxo completo (endpoint dedicado, desde a sub-fase 6.5.4), mas o frontend só cobre metade dele.
 
-### 7.7 Pesquisa pública de imagens aprovadas (todos os perfis autenticados)
-- Tela de busca com filtros: tipo de radiografia, dente (seletor FDI), arcada, lado, achado principal, gênero, qualidade técnica, dificuldade, finalidade, faixa de idade — todos opcionais e combináveis.
-- Grade/lista de cards de resultado com os campos retornados (`tipo_radiografia`, `dentes`, `achado_principal`, `qualidade_tecnica`, `dificuldade`, `finalidade`, `descricao_didatica`) + botão "Abrir no visualizador" usando o `viewer_url` já retornado (quando não for `null`).
-- Paginação usando `total`/`skip`/`limit`.
-- **Nota:** já que `arcada`/`lado` aceitam qualquer string sem validação de erro, a UI deveria restringir esses campos a um select fechado com exatamente os 2 valores válidos de cada, para não mandar valores que o backend simplesmente ignora silenciosamente.
+### 7.7 Imagens recebidas (`/imagens`) — somente leitura ❌ (grande parte do backend sem UI)
+- A única chamada desta tela é `GET /images/` (lista as imagens ativas + status de curadoria mais recente), com filtros client-side por status de anonimização e de curadoria.
+- **Sem checagem de perfil no frontend** (`PERFIS_PERMITIDOS` não existe nesta página — só verifica se há token) — na prática só é alcançável por quem tem o link no menu (administrador/curador, ver 7.2) ou sabe a URL; o backend (`PERFIS_CURADORIA`) continua sendo quem de fato barra outros perfis.
+- **Nenhuma ação de gestão de imagens tem UI hoje**, apesar de o backend suportar todas: `POST /images/import-from-orthanc` (sincronizar), `POST /images/upload` (upload direto de DICOM), `PATCH /images/{id}/deactivate`/`activate` (soft delete) e `GET /images/{id}` (detalhe de uma imagem) — nenhum desses 4 endpoints tem qualquer chamador no frontend. A tela de "Imagens recebidas" hoje é puramente uma tabela de consulta; toda a gestão do ciclo de vida de imagens (sincronização, upload manual, ativar/desativar) só é operável hoje por fora da UI (Swagger/`curl`, ou os scripts CLI do backend). Esta é a maior lacuna funcional encontrada nesta revisão.
 
-### 7.8 Painel administrativo / indicadores (perfil `administrador`)
-- Dashboard com KPIs (`GET /admin/stats`): total de imagens, total de fichas, e gráficos/contagens por status, tipo de radiografia, achado principal e dificuldade.
-- Tela de auditoria (`GET /admin/audit-logs`) com filtros por usuário, ação, resultado e intervalo de datas, tabela paginada com `criado_em`, `usuario_id`, `acao`, `entidade`, `entidade_id`, `resultado`, `detalhes`.
-- **Aviso atualizado (2026-07-16):** desde a sub-fase 6.5.2, o painel também mostra `login`, `falha_login`, `criacao_usuario`, `bloqueio_usuario` e `importacao_orthanc`, além das ações de curadoria. Ainda **não** aparecem tentativas de acesso negado por perfil incorreto (403) nem qualquer ação futura do frontend — a tela não deve ser vendida como "auditoria completa do sistema" até essas lacunas serem fechadas (ver seção 6, item 2).
+### 7.8 Gestão de usuários e solicitações de acesso (`/usuarios`) — administrador ⚠️
+- Lista usuários ativos: `GET /users/`; usuários excluídos (soft delete): `GET /users/deleted`.
+- Criar usuário: `POST /users/`. Editar nome/instituição: `PATCH /users/{id}`. Alternar bloqueio: `PATCH /users/{id}/block`. Excluir (soft delete): `DELETE /users/{id}`.
+- Solicitações de acesso pendentes: `GET /users/access-requests?status_filtro=pendente`; aprovar (`POST /users/access-requests/{id}/approve`, escolhendo o perfil concedido) e rejeitar (`POST /users/access-requests/{id}/reject`, com motivo obrigatório).
+- Cobre integralmente a "Gestão de usuários" que a versão original desta auditoria descrevia como tendo lacunas (exclusão e edição não existiam então) — hoje ambas existem e têm tela.
+- **Mesma ressalva de `/imagens`:** esta página **não tem `PERFIS_PERMITIDOS` nem redirecionamento para `/acesso-negado`** — só verifica presença de token, ao contrário de praticamente todas as outras telas administrativas (`/auditoria`, `/painel-admin`, `/configuracoes`, `/relatorios`, `/integracoes`, que todas fazem essa checagem). Dado que esta tela expõe dados de todos os usuários e permite excluir contas, é a inconsistência de UX/segurança mais visível encontrada nesta revisão — mesmo sem risco real (o backend exige `administrador` em todo endpoint chamado aqui), um usuário sem permissão que chegasse nesta URL veria a tela tentar carregar e falhar com erros 403 crus, em vez do redirecionamento limpo que as outras telas administrativas fazem.
 
-### 7.9 Visualizador DICOM (OHIF)
-- Onde quer que `viewer_url` seja retornado (curadoria e busca), abrir em nova aba/iframe apontando para o OHIF (`OHIF_BASE_URL` + `StudyInstanceUIDs=...`).
-- Tratar explicitamente o caso `abrivel: false` (imagem sem `StudyInstanceUID`) com uma mensagem — não simplesmente esconder o botão sem explicação, já que o backend já devolve o motivo pronto para exibição.
+### 7.9 Relatórios / indicadores (`/relatorios`) — perfis `administrador`/`curador` (ver 7.2 sobre `suporte`) ✅
+- `GET /admin/stats` (contagens por status, tipo de radiografia, achado principal, dificuldade, qualidade técnica e curador) + `GET /users/` (só para montar o mapa id→nome dos curadores nos gráficos de barra horizontal).
+
+### 7.10 Painel administrativo (`/painel-admin`) — administrador ✅
+- Atalhos para as 6 telas de gestão (Usuários, Imagens recebidas, Curadoria, Relatórios, Auditoria, Integrações).
+- `GET /admin/stats` (indicadores resumidos), `GET /health/database` + `GET /health/orthanc` (mesma checagem client-side de `/integracoes`, duplicada aqui) e `GET /admin/audit-logs?acao=falha_login&resultado=negado&limit=5` (alerta de tentativas de login recentes negadas).
+
+### 7.11 Auditoria (`/auditoria`) — administrador ✅
+- `GET /admin/audit-logs` com todos os filtros do backend (usuário, ação, resultado, intervalo de datas), paginado.
+- `GET /users/` só para resolver `usuario_id` → nome na tabela.
+- O catálogo de 19 valores de `acao` usados na UI (`CATEGORIAS_ACAO`, no próprio arquivo) foi conferido contra o código-fonte de `auth.py`, `users_router.py`, `images_router.py` e do pacote `curation/` — bate com o que os módulos de fato gravam. Continua valendo a ressalva já registrada na seção 6, item 2: tentativas de acesso negado por perfil incorreto (403) não geram `AuditLog`, então não aparecem aqui.
+
+### 7.12 Integrações — saúde dos serviços (`/integracoes`) — perfis `administrador`/`suporte` ✅
+- `GET /health/database` e `GET /health/orthanc` (backend). A checagem do OHIF é feita **direto do navegador** para a URL pública do OHIF (não passa pelo backend — não existe um `/health/ohif` no backend, então esta é uma verificação puramente client-side de alcançabilidade).
+
+### 7.13 Configurações (`/configuracoes`) — administrador, somente leitura ✅
+- `GET /admin/settings` — mostra URL do Orthanc, DICOMweb, OHIF, tamanho máximo de upload, ambiente, algoritmo/expiração do JWT. Corretamente **não** expõe nenhum segredo (nem o backend devolve `DATABASE_URL`/`JWT_SECRET_KEY`/credenciais do Orthanc — ver docstring de `admin_router.obter_configuracoes`). Também lista os vocabulários fechados (modalidades, status de curadoria, perfis de usuário) como referência estática, sem chamada adicional ao backend.
+
+### 7.14 Telas de suporte (`/acesso-negado`, `/erro-tecnico`, `error.tsx`) ✅
+- `/acesso-negado`: exibida quando o `perfil` do `localStorage` não está na lista permitida da página de destino.
+- `/erro-tecnico` e o `error.tsx` (error boundary do Next.js): tela genérica de erro técnico, sem chamada a API.
+
+### 7.15 Visualizador DICOM (OHIF) — componente `VisualizadorSequencial` ✅
+- Reaproveitado por `/visualizar/[id]`, `/minhas-imagens`, `/curadoria` (via `PainelVisualizador`) e `/segunda-opiniao`: abre `viewer_url` (quando `abrivel: true`) num iframe apontando pro OHIF, com navegação entre séries/estudos, tela cheia, download em ZIP (`GET /search/{id}/download/imagens.zip` e `/dicom.zip`, condicionais a existir mais de um corte) e envio individual por e-mail (`POST /search/{id}/send-email`).
+- Trata explicitamente `abrivel: false` (mostra o `motivo` devolvido pelo backend) em vez de simplesmente esconder o botão — exatamente como a versão original desta auditoria recomendava.
+
+### 7.16 Resumo — o que ficou de fora ou incoerente nesta comparação
+
+Checagem feita nos dois sentidos: (a) todo `fetch()` do frontend foi conferido contra a lista real de endpoints do backend — **nenhum frontend chama um endpoint que não existe**; (b) todo endpoint do backend foi conferido contra os `fetch()` do frontend, para achar o inverso. Achados de (b), por ordem de relevância:
+
+1. **`POST /curation/{id}/apply-review-decision` não tem chamador em lugar nenhum do frontend** (seção 7.6) — o fluxo de segunda opinião fica incompleto na prática, mesmo o backend suportando o ciclo inteiro desde a sub-fase 6.5.4.
+2. **`POST /images/import-from-orthanc`, `POST /images/upload`, `PATCH /images/{id}/deactivate`, `PATCH /images/{id}/activate` e `GET /images/{id}` não têm chamador** (seção 7.7) — a tela `/imagens` é somente leitura; toda a gestão do ciclo de vida das imagens no Orthanc não tem UI.
+3. **`POST /auth/logout` não tem chamador** (seção 7.1) — o botão "Sair" só limpa o `localStorage`, sem avisar o backend (perde-se o registro de auditoria de logout, que existe mas nunca é gravado por essa via).
+4. **`suporte` não aparece no menu para 4 áreas que o backend libera pra esse perfil** (seção 7.2) — Imagens recebidas, Curadoria, Segunda opinião e Relatórios.
+5. **`/usuarios` e `/imagens` não têm checagem de perfil client-side** (seções 7.7 e 7.8), diferente de todas as outras telas administrativas — a proteção real continua vindo do backend, mas a experiência de quem chega lá sem permissão é inconsistente com o resto do sistema.
+
+Nenhum desses 5 pontos é uma falha de segurança (o backend, via `exigir_perfis`, continua sendo a autoridade final em todos os casos) — são lacunas de cobertura de UI e de navegação, coerentes com o que a seção 6 já registra sobre o próprio backend: o sistema tende a implementar a regra de negócio corretamente no servidor primeiro, e a interface nem sempre acompanha no mesmo commit.
 
 ---
 
