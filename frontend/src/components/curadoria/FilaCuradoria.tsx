@@ -10,11 +10,13 @@ export interface ImagemPendente {
   dicomweb_url: string | null
 }
 
-function truncarOrthancId(id: string): string {
-  return id.length > 12 ? `${id.slice(0, 12)}...` : id
-}
-
-// Painel esquerdo da Curadoria: fila de imagens ainda sem ficha.
+// Faixa horizontal na parte inferior da tela de Curadoria: fila de imagens
+// ainda sem ficha. Era uma coluna lateral com lista vertical rolavel - virou
+// uma fileira horizontal de cartoes compactos pra nao obrigar rolagem
+// vertical constante durante o trabalho (a barra de rolagem vertical da
+// coluna antiga atrapalhava o fluxo de quem cura). Se a fila for grande
+// demais pra largura da tela, ganha rolagem HORIZONTAL como fallback -
+// aceitavel, ja que o problema original era especificamente o vertical.
 //
 // A fila de /curation/pending so devolve orthanc_reference_id, orthanc_id,
 // resource_type e dicomweb_url - nao ha tipo de radiografia, data de
@@ -22,13 +24,6 @@ function truncarOrthancId(id: string): string {
 // ficha (isso so existe depois que a curadoria comeca). Por isso:
 // - "status" e sempre "Pendente" aqui (garantido pela propria consulta do
 //   backend, que so lista itens sem ficha).
-// - tipo de radiografia e data de entrada aparecem como "-" ate que a API
-//   de /curation/pending passe a devolver esses campos (fora do escopo
-//   deste sprint, que nao permite alterar endpoints existentes).
-// O destaque para "aguardando segunda opiniao" so seria aplicavel se um
-// item deste tipo aparecesse nesta lista - o que hoje nao acontece, porque
-// itens em segunda_opiniao ja tem ficha e saem de /curation/pending. O
-// prop existe pronto para quando a Curadoria 2.0 unificar as filas.
 export default function FilaCuradoria({
   fila,
   carregando,
@@ -57,11 +52,11 @@ export default function FilaCuradoria({
         onClick={onExpandir}
         aria-label="Expandir fila de curadoria"
         title="Expandir fila de curadoria"
-        className="flex h-full min-h-[70vh] w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-brand-300"
+        className="flex w-full items-center justify-center gap-2 px-4 py-2 text-slate-400 hover:text-brand-300"
       >
-        <span aria-hidden="true">»</span>
-        <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
-          Fila{fila.length > 0 ? ` (${fila.length})` : ''}
+        <span aria-hidden="true">▲</span>
+        <span className="text-xs font-semibold tracking-wide">
+          Fila de curadoria{fila.length > 0 ? ` (${fila.length})` : ''}
         </span>
       </button>
     )
@@ -69,8 +64,10 @@ export default function FilaCuradoria({
 
   return (
     <>
-      <div className="flex items-center justify-between border-b border-base-border px-4 py-3.5">
-        <h2 className="text-sm font-semibold text-ink">Fila de curadoria</h2>
+      <div className="flex items-center justify-between border-b border-base-border px-4 py-2">
+        <h2 className="text-sm font-semibold text-ink">
+          Fila de curadoria{fila.length > 0 ? ` (${fila.length})` : ''}
+        </h2>
         <button
           type="button"
           onClick={onColapsar}
@@ -78,7 +75,7 @@ export default function FilaCuradoria({
           title="Recolher fila de curadoria"
           className="text-slate-400 hover:text-brand-300"
         >
-          «
+          ▼
         </button>
       </div>
 
@@ -88,51 +85,42 @@ export default function FilaCuradoria({
         </p>
       )}
 
-      <div className="max-h-[70vh] overflow-y-auto p-2">
+      <div className="flex items-stretch gap-2 overflow-x-auto p-2">
         {carregando ? (
           <p className="p-3 text-sm text-slate-500">Carregando fila...</p>
         ) : fila.length === 0 ? (
           <p className="p-3 text-sm text-slate-500">Nenhuma imagem pendente.</p>
         ) : (
-          <ul className="space-y-1.5">
-            {fila.map((imagem) => {
-              const ativo = ativoOrthancReferenceId === imagem.orthanc_reference_id
-              return (
-                <li key={imagem.orthanc_reference_id}>
-                  <button
-                    type="button"
-                    disabled={criandoId !== null}
-                    onClick={() => onSelecionar(imagem)}
-                    className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-sm transition-colors disabled:opacity-50 ${
-                      ativo
-                        ? 'border-brand/60 bg-brand/10'
-                        : 'border-transparent hover:border-brand/40 hover:bg-brand/5'
-                    }`}
-                  >
-                    <MiniaturaFila
-                      orthancReferenceId={imagem.orthanc_reference_id}
-                      alt={imagem.orthanc_id}
-                      className="h-11 w-11 shrink-0 overflow-hidden rounded-lg bg-base-surface2"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="truncate font-mono text-xs text-slate-300">
-                          #{imagem.orthanc_reference_id} · {truncarOrthancId(imagem.orthanc_id)}
-                        </p>
-                      </div>
-                      <p className="mt-1 text-slate-400">{imagem.resource_type}</p>
-                      <div className="mt-1 flex items-center justify-between gap-2">
-                        <span className="text-xs text-slate-600">
-                          {criandoId === imagem.orthanc_reference_id ? 'Abrindo...' : 'data: —'}
-                        </span>
-                        <StatusBadge status="pendente" />
-                      </div>
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+          fila.map((imagem) => {
+            const ativo = ativoOrthancReferenceId === imagem.orthanc_reference_id
+            return (
+              <button
+                key={imagem.orthanc_reference_id}
+                type="button"
+                disabled={criandoId !== null}
+                onClick={() => onSelecionar(imagem)}
+                className={`flex w-[104px] shrink-0 flex-col items-center gap-1 rounded-xl border px-1.5 py-1.5 text-center transition-colors disabled:opacity-50 ${
+                  ativo
+                    ? 'border-brand/60 bg-brand/10'
+                    : 'border-transparent hover:border-brand/40 hover:bg-brand/5'
+                }`}
+              >
+                <MiniaturaFila
+                  orthancReferenceId={imagem.orthanc_reference_id}
+                  alt={imagem.orthanc_id}
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-base-surface2"
+                />
+                <p className="w-full truncate font-mono text-[11px] text-slate-300">
+                  #{imagem.orthanc_reference_id}
+                </p>
+                {criandoId === imagem.orthanc_reference_id ? (
+                  <span className="text-[10px] text-slate-500">Abrindo...</span>
+                ) : (
+                  <StatusBadge status="pendente" />
+                )}
+              </button>
+            )
+          })
         )}
       </div>
     </>

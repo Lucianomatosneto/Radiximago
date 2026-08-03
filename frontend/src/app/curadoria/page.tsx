@@ -10,7 +10,6 @@ import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../component
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
-import ColunaSeries, { SerieEstudo } from '../../components/visualizador/ColunaSeries'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
@@ -74,9 +73,6 @@ export default function CuradoriaPage() {
   const [telaCheia, setTelaCheia] = useState(false)
   const [modoAjustado, setModoAjustado] = useState(false)
   const [iframeReloadKey, setIframeReloadKey] = useState(0)
-  const [series, setSeries] = useState<SerieEstudo[]>([])
-  const [carregandoSeries, setCarregandoSeries] = useState(false)
-  const [indiceSerie, setIndiceSerie] = useState(0)
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
 
@@ -195,25 +191,6 @@ export default function CuradoriaPage() {
     }
   }
 
-  async function carregarSeries(tokenAtual: string, orthancReferenceId: number) {
-    setCarregandoSeries(true)
-    setSeries([])
-    setIndiceSerie(0)
-    try {
-      const resposta = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/series`,
-        { headers: { Authorization: `Bearer ${tokenAtual}` } }
-      )
-      if (!resposta.ok) return
-      const dados = await resposta.json()
-      setSeries(dados.series ?? [])
-    } catch {
-      // coluna de series so fica vazia
-    } finally {
-      setCarregandoSeries(false)
-    }
-  }
-
   // So e usado quando a ficha em edicao esta com status "segunda_opiniao" -
   // no fluxo atual da Curadoria isso nunca acontece de fato (itens em
   // segunda opiniao ja saem de /curation/pending), mas o dado ja existe na
@@ -277,12 +254,11 @@ export default function CuradoriaPage() {
     setCriandoId(imagem.orthanc_reference_id)
     setErroFila('')
     try {
-      // Viewer-url e series so precisam do orthanc_reference_id, que ja
-      // temos aqui - disparamos em paralelo com a criacao da ficha, em vez
-      // de esperar a ficha carregar primeiro (essa espera sequencial era
-      // uma das causas da demora ao abrir uma imagem).
+      // Viewer-url so precisa do orthanc_reference_id, que ja temos aqui -
+      // disparamos em paralelo com a criacao da ficha, em vez de esperar a
+      // ficha carregar primeiro (essa espera sequencial era uma das causas
+      // da demora ao abrir uma imagem).
       carregarViewerUrl(token, imagem.orthanc_reference_id)
-      carregarSeries(token, imagem.orthanc_reference_id)
 
       const respostaCriacao = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${imagem.orthanc_reference_id}`,
@@ -366,8 +342,6 @@ export default function CuradoriaPage() {
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
-    setSeries([])
-    setIndiceSerie(0)
     if (token) carregarFila(token)
   }
 
@@ -500,19 +474,11 @@ export default function CuradoriaPage() {
 
   const fichaVisivel = !!fichaAtiva && !modoAjustado
 
-  // Anexa o SeriesInstanceUID da serie selecionada na coluna de series ao
-  // link do OHIF - mesmo padrao ja usado no VisualizadorSequencial.
-  const serieSelecionada = series[indiceSerie] ?? null
-  const viewerInfoComSerie: ViewerInfo | null =
-    viewerInfo?.viewer_url && serieSelecionada
-      ? { ...viewerInfo, viewer_url: `${viewerInfo.viewer_url}&SeriesInstanceUIDs=${serieSelecionada.series_instance_uid}` }
-      : viewerInfo
-
   return (
-    <div className="flex min-h-screen flex-col bg-base">
+    <div className="flex h-screen flex-col bg-base">
       <Topbar />
 
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="min-h-0 flex-1 overflow-y-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <div className="mb-2 flex items-center gap-3">
@@ -532,101 +498,81 @@ export default function CuradoriaPage() {
           </div>
         </div>
 
-        {/* overflow-x-auto: com as duas colunas de navegacao + a ficha, o
-            visualizador precisa de uma largura minima garantida pra
-            imagem nao ficar pequena (era essa a reclamacao original) - em
-            telas mais estreitas a linha toda rola na horizontal em vez de
-            espremer o visualizador. */}
-        <div className="flex flex-col gap-4 overflow-x-auto lg:flex-row lg:items-start">
-          {/* COLUNA - Estudos (fila de curadoria) - sempre visivel, largura
-              fixa igual as caixas de imagem ja usadas nessa lista. Fica de
-              fora da tela cheia de proposito, pra dar o maximo de espaco
-              pro trabalho na imagem ativa. */}
-          <section
-            className={`w-full shrink-0 rounded-2xl border border-base-border bg-base-surface ${
-              filaColapsada ? 'lg:w-[56px]' : 'lg:w-[320px]'
-            }`}
-          >
-            <FilaCuradoria
-              fila={fila}
-              carregando={carregandoFila}
-              erro={erroFila}
-              criandoId={criandoId}
-              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
-              colapsada={filaColapsada}
-              onSelecionar={(imagem) => abrirImagem(imagem)}
-              onColapsar={() => setFilaColapsada(true)}
-              onExpandir={() => setFilaColapsada(false)}
-            />
-          </section>
-
-          {/* COLUNA - Series do estudo aberto, so aparece com uma ficha
-              ativa (antes disso nao ha estudo aberto pra listar series). */}
+        {/* AREA DE TRABALHO - barra superior + visualizador + ficha, tudo
+            dentro do mesmo elemento que vira tela cheia. Antes so o
+            visualizador entrava em tela cheia (Fullscreen API so mostra o
+            elemento que foi pedido, escondendo tudo fora dele) e a coluna
+            da ficha - e os botoes de Salvar/Aprovar/Descartar - sumiam.
+            Agora os dois ficam dentro do mesmo container, entao continuam
+            visiveis em tela cheia. A fila (fora deste ref, ver abaixo) fica
+            de fora de proposito, pra dar o maximo de espaco pro trabalho
+            na imagem ativa mesmo em tela cheia. */}
+        <div ref={visualizadorRef} className={`flex min-w-0 flex-1 flex-col gap-4 bg-base ${telaCheia ? 'p-4' : ''}`}>
           {fichaAtiva && (
-            <ColunaSeries
-              series={series}
-              indiceAtual={indiceSerie}
-              onSelecionar={setIndiceSerie}
-              carregando={carregandoSeries}
+            <BarraSuperiorCuradoria
+              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+              totalFila={totalPendentes}
+              podeAnterior={podeAnterior}
+              podeProxima={podeProxima}
+              onAnterior={irParaAnterior}
+              onProxima={irParaProxima}
+              onSalvar={aoClicarSalvar}
+              onAprovar={aprovar}
+              onDescartar={() => abrirModalMotivo('descartar')}
+              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+              salvando={salvandoRascunho}
+              aprovando={aprovando}
             />
           )}
 
-          {/* AREA DE TRABALHO - barra superior + visualizador + ficha, tudo
-              dentro do mesmo elemento que vira tela cheia. Antes so o
-              visualizador entrava em tela cheia (Fullscreen API so mostra o
-              elemento que foi pedido, escondendo tudo fora dele) e a coluna
-              da ficha - e os botoes de Salvar/Aprovar/Descartar - sumiam.
-              Agora os dois ficam dentro do mesmo container, entao continuam
-              visiveis em tela cheia. */}
-          <div ref={visualizadorRef} className={`flex min-w-0 flex-1 flex-col gap-4 bg-base ${telaCheia ? 'p-4' : ''}`}>
-            {fichaAtiva && (
-              <BarraSuperiorCuradoria
-                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-                totalFila={totalPendentes}
-                podeAnterior={podeAnterior}
-                podeProxima={podeProxima}
-                onAnterior={irParaAnterior}
-                onProxima={irParaProxima}
-                onSalvar={aoClicarSalvar}
-                onAprovar={aprovar}
-                onDescartar={() => abrirModalMotivo('descartar')}
-                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-                salvando={salvandoRascunho}
-                aprovando={aprovando}
+          <div className={`grid flex-1 grid-cols-1 gap-4 ${fichaVisivel ? 'lg:grid-cols-[minmax(480px,1fr)_380px]' : ''}`}>
+            <PainelVisualizador
+              fichaAtiva={!!fichaAtiva}
+              carregandoViewer={carregandoViewer}
+              viewerInfo={viewerInfo}
+              telaCheia={telaCheia}
+              onAlternarTelaCheia={alternarTelaCheia}
+              modoAjustado={modoAjustado}
+              onAlternarAjustar={() => setModoAjustado((v) => !v)}
+              onCentralizar={centralizarImagem}
+              iframeReloadKey={iframeReloadKey}
+              statusFicha={statusFicha}
+              segundaOpiniaoReview={segundaOpiniaoReview}
+            />
+
+            {/* Formulario de curadoria (escondido temporariamente no modo
+                "ajustar a tela" - as acoes continuam na barra superior) */}
+            {fichaVisivel && fichaAtiva && (
+              <FichaCuradoriaForm
+                form={form}
+                onChange={setForm}
+                statusFicha={statusFicha}
+                erro={erroFormulario}
+                rascunhoSalvo={rascunhoSalvo}
+                orthancReferenceId={fichaAtiva.orthancReferenceId}
               />
             )}
-
-            <div className={`grid flex-1 grid-cols-1 gap-4 ${fichaVisivel ? 'lg:grid-cols-[minmax(480px,1fr)_380px]' : ''}`}>
-              <PainelVisualizador
-                fichaAtiva={!!fichaAtiva}
-                carregandoViewer={carregandoViewer}
-                viewerInfo={viewerInfoComSerie}
-                telaCheia={telaCheia}
-                onAlternarTelaCheia={alternarTelaCheia}
-                modoAjustado={modoAjustado}
-                onAlternarAjustar={() => setModoAjustado((v) => !v)}
-                onCentralizar={centralizarImagem}
-                iframeReloadKey={iframeReloadKey}
-                statusFicha={statusFicha}
-                segundaOpiniaoReview={segundaOpiniaoReview}
-              />
-
-              {/* Formulario de curadoria (escondido temporariamente no modo
-                  "ajustar a tela" - as acoes continuam na barra superior) */}
-              {fichaVisivel && fichaAtiva && (
-                <FichaCuradoriaForm
-                  form={form}
-                  onChange={setForm}
-                  statusFicha={statusFicha}
-                  erro={erroFormulario}
-                  rascunhoSalvo={rascunhoSalvo}
-                  orthancReferenceId={fichaAtiva.orthancReferenceId}
-                />
-              )}
-            </div>
           </div>
         </div>
       </main>
+
+      {/* FAIXA - fila de curadoria, fixa na parte inferior da tela (fora do
+          <main> que rola) - assim fica sempre visivel, sem precisar rolar
+          a pagina pra ver ou trocar de item. Fora do visualizadorRef de
+          proposito: some em tela cheia, igual antes. */}
+      <section className="shrink-0 border-t border-base-border bg-base-surface">
+        <FilaCuradoria
+          fila={fila}
+          carregando={carregandoFila}
+          erro={erroFila}
+          criandoId={criandoId}
+          ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+          colapsada={filaColapsada}
+          onSelecionar={(imagem) => abrirImagem(imagem)}
+          onColapsar={() => setFilaColapsada(true)}
+          onExpandir={() => setFilaColapsada(false)}
+        />
+      </section>
 
       {modalMotivo && (
         <ModalMotivo

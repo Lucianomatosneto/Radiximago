@@ -111,7 +111,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
 
       {!fichaAtiva ? (
         <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-          Selecione uma imagem na fila ao lado
+          Selecione uma imagem na fila abaixo
         </div>
       ) : carregandoViewer ? (
         <div className="flex flex-1 items-center justify-center text-slate-400">
