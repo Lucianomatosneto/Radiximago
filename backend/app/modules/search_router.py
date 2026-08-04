@@ -9,9 +9,11 @@ Acesso: qualquer usuario logado (a pesquisa so expoe o que ja foi liberado).
 """
 
 import io
+import logging
 import zipfile
 from typing import List, Optional
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -34,6 +36,8 @@ from app.modules.curations import (
     StatusCuradoria,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/search", tags=["Pesquisa"])
 
 # Faixas de dentes (FDI) por arcada e por lado, para os filtros derivados.
@@ -41,6 +45,29 @@ DENTES_SUPERIORES = list(range(11, 29))   # 11-28
 DENTES_INFERIORES = list(range(31, 49))   # 31-48
 DENTES_DIREITA = list(range(11, 19)) + list(range(41, 49))   # quadrantes 1 e 4
 DENTES_ESQUERDA = list(range(21, 29)) + list(range(31, 39))  # quadrantes 2 e 3
+
+
+def _chamar_orthanc(descricao_acao: str, funcao, *args, **kwargs):
+    """
+    Chama uma funcao do orthanc_client protegida por try/except.
+
+    Sem isso, se o Orthanc estiver fora do ar (ou a imagem tiver sido
+    removida de la depois de aprovada), o FastAPI deixa a excecao subir sem
+    tratamento - o que gera um erro 500 "cru", que o navegador do usuario
+    mostra como erro de CORS (confuso, esconde o problema real) em vez de
+    uma mensagem clara. Com este helper, todo o modulo devolve sempre um
+    erro 502 (Bad Gateway - "o servidor de fora falhou") com uma mensagem
+    legivel, e registra o detalhe tecnico no log do backend pra investigar
+    depois.
+    """
+    try:
+        return funcao(*args, **kwargs)
+    except (httpx.HTTPStatusError, httpx.HTTPError):
+        logger.exception("Falha ao comunicar com o Orthanc (%s).", descricao_acao)
+        raise HTTPException(
+            status_code=502,
+            detail=f"Não foi possível {descricao_acao} agora - tente novamente em instantes.",
+        )
 
 
 def _contar_por(db: Session, coluna) -> dict:
@@ -117,7 +144,11 @@ def enviar_por_email_lote(
                     "e não pode ser enviada por e-mail - use o download em ZIP."
                 ),
             )
-        conteudo = orthanc_client.obter_preview_instancia(ficha.orthanc_reference.orthanc_id)
+        conteudo = _chamar_orthanc(
+            "gerar a imagem para envio por e-mail",
+            orthanc_client.obter_preview_instancia,
+            ficha.orthanc_reference.orthanc_id,
+        )
         descricao = ficha.descricao_didatica or f"Imagem #{ficha.id} ({ficha.tipo_radiografia or 'radiografia'})"
         itens.append((descricao, conteudo, f"radix-imago-{ficha.id}.png"))
 
@@ -259,10 +290,22 @@ def _instancias_do_estudo_da_ficha(ficha: Curation) -> tuple[str, list[str]]:
     ficha pertence - usado pra descobrir se a imagem faz parte de uma serie
     com varios cortes (ex.: tomografia) e pra montar os downloads em lote.
     """
-    detalhes_instancia = orthanc_client.obter_detalhes_instancia(ficha.orthanc_reference.orthanc_id)
-    detalhes_serie = orthanc_client.obter_detalhes_serie(detalhes_instancia["ParentSeries"])
+    detalhes_instancia = _chamar_orthanc(
+        "consultar as informações da série no Orthanc",
+        orthanc_client.obter_detalhes_instancia,
+        ficha.orthanc_reference.orthanc_id,
+    )
+    detalhes_serie = _chamar_orthanc(
+        "consultar as informações da série no Orthanc",
+        orthanc_client.obter_detalhes_serie,
+        detalhes_instancia["ParentSeries"],
+    )
     orthanc_study_id = detalhes_serie["ParentStudy"]
-    instancias = orthanc_client.listar_instancias_do_estudo(orthanc_study_id)
+    instancias = _chamar_orthanc(
+        "listar os cortes da série no Orthanc",
+        orthanc_client.listar_instancias_do_estudo,
+        orthanc_study_id,
+    )
     return orthanc_study_id, instancias
 
 
@@ -298,7 +341,11 @@ def obter_series_do_estudo(
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
     orthanc_study_id, _ = _instancias_do_estudo_da_ficha(ficha)
-    series = orthanc_client.listar_series_do_estudo(orthanc_study_id)
+    series = _chamar_orthanc(
+        "listar as séries do estudo",
+        orthanc_client.listar_series_do_estudo,
+        orthanc_study_id,
+    )
     return {"series": series}
 
 
@@ -319,7 +366,11 @@ def baixar_zip_imagens(
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_arquivo:
         for indice, instancia_id in enumerate(instancias, start=1):
-            conteudo = orthanc_client.obter_preview_instancia(instancia_id)
+            conteudo = _chamar_orthanc(
+                "gerar uma das imagens do ZIP",
+                orthanc_client.obter_preview_instancia,
+                instancia_id,
+            )
             zip_arquivo.writestr(f"corte_{indice:03d}.png", conteudo)
 
     return Response(
@@ -342,7 +393,11 @@ def baixar_zip_dicom(
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
     orthanc_study_id, _ = _instancias_do_estudo_da_ficha(ficha)
-    conteudo = orthanc_client.obter_arquivo_zip_estudo(orthanc_study_id)
+    conteudo = _chamar_orthanc(
+        "gerar o ZIP com os arquivos DICOM",
+        orthanc_client.obter_arquivo_zip_estudo,
+        orthanc_study_id,
+    )
 
     return Response(
         content=conteudo,
@@ -364,7 +419,11 @@ def obter_preview(
     pra essa mesma rota).
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
-    conteudo = orthanc_client.obter_preview_instancia(ficha.orthanc_reference.orthanc_id)
+    conteudo = _chamar_orthanc(
+        "carregar a miniatura/imagem",
+        orthanc_client.obter_preview_instancia,
+        ficha.orthanc_reference.orthanc_id,
+    )
     return Response(content=conteudo, media_type="image/png")
 
 
@@ -379,7 +438,11 @@ def enviar_por_email(
     e-mail cadastrado na conta, sem destinatario livre.
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
-    conteudo = orthanc_client.obter_preview_instancia(ficha.orthanc_reference.orthanc_id)
+    conteudo = _chamar_orthanc(
+        "gerar a imagem para envio por e-mail",
+        orthanc_client.obter_preview_instancia,
+        ficha.orthanc_reference.orthanc_id,
+    )
     descricao = ficha.descricao_didatica or f"Imagem #{ficha.id} ({ficha.tipo_radiografia or 'radiografia'})"
     enviar_email_imagem_pesquisa(
         usuario.email, usuario.nome, descricao, conteudo, f"radix-imago-{ficha.id}.png",
