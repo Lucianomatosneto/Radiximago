@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface ItemMenu {
   chave: string
-  titulo: string
   href: string
   ativo: boolean
   /** Perfis que veem este item. Omitido = visivel pra qualquer perfil
@@ -37,22 +37,23 @@ const COR_GREEN = 'from-green-100 to-green-50 border-green-300 text-green-700 da
 const COR_LIME = 'from-lime-100 to-lime-50 border-lime-300 text-lime-700 dark:from-lime-600/30 dark:to-lime-900/10 dark:border-lime-700/40 dark:text-lime-300'
 
 const ITENS_MENU: ItemMenu[] = [
-  { chave: 'inicio', titulo: 'Início', href: '/dashboard', ativo: true, cor: COR_BLUE },
-  { chave: 'painelAdministrativo', titulo: 'Painel administrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
-  { chave: 'usuarios', titulo: 'Usuários', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
-  { chave: 'imagensRecebidas', titulo: 'Imagens recebidas', href: '/imagens', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
-  { chave: 'curadoria', titulo: 'Curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
-  { chave: 'segundaOpiniao', titulo: 'Segunda opinião', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
-  { chave: 'pesquisaAvancada', titulo: 'Pesquisa avançada', href: '/pesquisa', ativo: true, cor: COR_LIME },
-  { chave: 'bancoImagens', titulo: 'Banco de imagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
-  { chave: 'minhasImagens', titulo: 'Minhas imagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
-  { chave: 'relatorios', titulo: 'Relatórios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
-  { chave: 'auditoria', titulo: 'Auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
-  { chave: 'integracoes', titulo: 'Integrações', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
-  { chave: 'configuracoes', titulo: 'Configurações', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
+  { chave: 'inicio', href: '/dashboard', ativo: true, cor: COR_BLUE },
+  { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
+  { chave: 'usuarios', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
+  { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
+  { chave: 'curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
+  { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
+  { chave: 'pesquisaAvancada', href: '/pesquisa', ativo: true, cor: COR_LIME },
+  { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
+  { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
+  { chave: 'relatorios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
+  { chave: 'auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
+  { chave: 'integracoes', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
+  { chave: 'configuracoes', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
 ]
 
 export default function Sidebar() {
+  const t = useTranslations('Sidebar')
   const router = useRouter()
   const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
@@ -77,7 +78,7 @@ export default function Sidebar() {
     <aside className="flex h-screen w-64 flex-col justify-between border-r border-base-border bg-base">
       <div>
         <div className="border-b border-base-border px-6 py-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Navegação</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('navegacao')}</p>
         </div>
 
         <nav className="mt-3 flex flex-col gap-1 px-3">
@@ -88,7 +89,7 @@ export default function Sidebar() {
                   key={item.chave}
                   className="cursor-not-allowed rounded-lg px-3 py-2 text-sm text-slate-500 opacity-50"
                 >
-                  {item.titulo}
+                  {t(`itens.${item.chave}`)}
                 </span>
               )
             }
@@ -120,7 +121,7 @@ export default function Sidebar() {
           onClick={handleSair}
           className="w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-status-danger transition-colors hover:bg-red-950/40"
         >
-          Sair
+          {t('sair')}
         </button>
       </div>
     </aside>
