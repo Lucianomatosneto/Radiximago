@@ -1,7 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { rotularAlteracaoObservada } from '../../lib/alteracoesObservadas'
+import { useTranslations } from 'next-intl'
 import { corTextoAchado, COR_TEXTO_TIPO_RADIOGRAFIA, COR_TEXTO_QUALIDADE_TECNICA, COR_TEXTO_DENTES } from '../../lib/coresAchados'
 
 // Faixa compacta com a classificacao da imagem, sempre abaixo do
@@ -60,27 +60,37 @@ export default function BarraClassificacao({
   descricaoDidatica: string | null
   achadoPrincipal?: string | null
 }) {
-  const rotulosAlteracoes = (alteracoesObservadas ?? []).map(rotularAlteracaoObservada)
+  const t = useTranslations('Visualizador.classificacao')
+  const tAlteracoes = useTranslations('AlteracoesObservadas.itens')
+  const rotulosAlteracoes = (alteracoesObservadas ?? []).map((valor) => {
+    // Se algum valor antigo nao estiver mais no catalogo de traducao,
+    // mostra o proprio valor cru em vez de quebrar a tela.
+    try {
+      return tAlteracoes(valor)
+    } catch {
+      return valor
+    }
+  })
   const corAchado = corTextoAchado(achadoPrincipal)
 
   return (
     <div className="mt-3 flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_TIPO_RADIOGRAFIA}`}>Tipo: </span>
+          <span className={`font-medium ${COR_TEXTO_TIPO_RADIOGRAFIA}`}>{t('tipo')}</span>
           <span className="text-ink">{tipo}</span>
         </span>
         <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_QUALIDADE_TECNICA}`}>Qualidade: </span>
+          <span className={`font-medium ${COR_TEXTO_QUALIDADE_TECNICA}`}>{t('qualidade')}</span>
           <span className="text-ink">{qualidade}</span>
         </span>
         <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_DENTES}`}>Dentes: </span>
+          <span className={`font-medium ${COR_TEXTO_DENTES}`}>{t('dentes')}</span>
           <span className="text-ink">{dentes && dentes.length > 0 ? dentes.join(', ') : '—'}</span>
         </span>
       </div>
 
-      <CampoEmDestaque icone="🔎" titulo="Alterações observadas" cor={corAchado}>
+      <CampoEmDestaque icone="🔎" titulo={t('alteracoesObservadas')} cor={corAchado}>
         {rotulosAlteracoes.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {rotulosAlteracoes.map((rotulo) => (
@@ -93,16 +103,16 @@ export default function BarraClassificacao({
             ))}
           </div>
         ) : (
-          <p className="text-sm italic text-slate-500">Nenhuma alteração registrada.</p>
+          <p className="text-sm italic text-slate-500">{t('nenhumaAlteracao')}</p>
         )}
       </CampoEmDestaque>
 
       <p className="line-clamp-2 text-ink">
-        <span className={`font-medium ${corAchado}`}>Achados detalhados: </span>
+        <span className={`font-medium ${corAchado}`}>{t('achadosDetalhados')}</span>
         {achadosDetalhe || '—'}
       </p>
       <p className="line-clamp-2 text-ink">
-        <span className={`font-medium ${corAchado}`}>Descrição: </span>
+        <span className={`font-medium ${corAchado}`}>{t('descricao')}</span>
         {descricaoDidatica || '—'}
       </p>
     </div>

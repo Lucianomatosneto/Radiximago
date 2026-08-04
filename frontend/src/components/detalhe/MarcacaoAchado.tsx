@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import MiniaturaImagem from '../MiniaturaImagem'
 import FormasMarcacoes from './FormasMarcacoes'
 import type { Marcacao } from '../../lib/marcacoes'
@@ -46,6 +47,7 @@ export default function MarcacaoAchado({
   onMostrarTodasChange?: (valor: boolean) => void
   comImagem?: boolean
 }) {
+  const t = useTranslations('Visualizador.marcacao')
   const [mostrarInterno, setMostrarInterno] = useState(false)
   const [hover, setHover] = useHoverMarcacao()
   const mostrar = mostrarControlado ?? mostrarInterno
@@ -67,7 +69,7 @@ export default function MarcacaoAchado({
             disabled={estaImagemDesabilitado}
             className="h-4 w-4 rounded border-base-border"
           />
-          Mostrar marcação (esta imagem)
+          {t('mostrarEstaImagem')}
         </label>
         {onMostrarTodasChange && (
           <label className="flex items-center gap-2 text-sm text-ink">
@@ -77,16 +79,16 @@ export default function MarcacaoAchado({
               onChange={(evento) => onMostrarTodasChange(evento.target.checked)}
               className="h-4 w-4 rounded border-base-border"
             />
-            Mostrar marcação (todas as imagens)
+            {t('mostrarTodasImagens')}
           </label>
         )}
       </div>
       {!disponivel && (
-        <p className="mt-1 text-xs text-slate-500">O curador não marcou nenhuma lesão nesta imagem.</p>
+        <p className="mt-1 text-xs text-slate-500">{t('nenhumaMarcada')}</p>
       )}
       {comImagem && disponivel && (
         <div className="relative mt-3 inline-block max-w-full overflow-hidden rounded-lg border border-base-border">
-          <MiniaturaImagem curationId={curationId} alt="Imagem com marcação do curador" className="block max-h-[50vh] w-auto" />
+          <MiniaturaImagem curationId={curationId} alt={t('altImagemMarcada')} className="block max-h-[50vh] w-auto" />
           {mostrar && (
             <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
               <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`bloco-${curationId}`} onHover={setHover} />

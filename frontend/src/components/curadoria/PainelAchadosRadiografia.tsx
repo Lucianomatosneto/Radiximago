@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { CATEGORIAS_ALTERACOES } from '../../lib/alteracoesObservadas'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 
@@ -17,10 +18,12 @@ function ListaItens({
   itens,
   selecionadas,
   onAlternar,
+  traduzirItem,
 }: {
   itens: { valor: string; label: string }[]
   selecionadas: string[]
   onAlternar: (valor: string) => void
+  traduzirItem: (valor: string) => string
 }) {
   return (
     <div className="flex flex-1 flex-col">
@@ -35,7 +38,7 @@ function ListaItens({
             onChange={() => onAlternar(item.valor)}
             className="h-3.5 w-3.5 flex-none rounded border-base-border bg-base-surface2 text-brand"
           />
-          {item.label}
+          {traduzirItem(item.valor)}
         </label>
       ))}
     </div>
@@ -43,15 +46,17 @@ function ListaItens({
 }
 
 function GrupoAlteracoes({
-  categoria,
+  categoriaTraduzida,
   itens,
   selecionadas,
   onAlternar,
+  traduzirItem,
 }: {
-  categoria: string
+  categoriaTraduzida: string
   itens: { valor: string; label: string }[]
   selecionadas: string[]
   onAlternar: (valor: string) => void
+  traduzirItem: (valor: string) => string
 }) {
   const [aberto, setAberto] = useState(true)
   const marcadas = itens.filter((item) => selecionadas.includes(item.valor)).length
@@ -68,7 +73,7 @@ function GrupoAlteracoes({
         className="flex w-full items-center justify-between bg-base-surface2 px-3 py-2 text-left text-sm text-slate-300 hover:bg-white/5"
       >
         <span>
-          {categoria}
+          {categoriaTraduzida}
           {marcadas > 0 && <span className="ml-1.5 text-brand-300">({marcadas})</span>}
         </span>
         <span className="text-xs text-slate-500">{aberto ? '▲' : '▼'}</span>
@@ -76,12 +81,12 @@ function GrupoAlteracoes({
       {aberto &&
         (quebrarEm2Colunas ? (
           <div className="flex divide-x divide-base-border border-t border-base-border">
-            <ListaItens itens={primeiraMetade} selecionadas={selecionadas} onAlternar={onAlternar} />
-            <ListaItens itens={segundaMetade} selecionadas={selecionadas} onAlternar={onAlternar} />
+            <ListaItens itens={primeiraMetade} selecionadas={selecionadas} onAlternar={onAlternar} traduzirItem={traduzirItem} />
+            <ListaItens itens={segundaMetade} selecionadas={selecionadas} onAlternar={onAlternar} traduzirItem={traduzirItem} />
           </div>
         ) : (
           <div className="border-t border-base-border">
-            <ListaItens itens={itens} selecionadas={selecionadas} onAlternar={onAlternar} />
+            <ListaItens itens={itens} selecionadas={selecionadas} onAlternar={onAlternar} traduzirItem={traduzirItem} />
           </div>
         ))}
     </div>
@@ -105,6 +110,10 @@ export default function PainelAchadosRadiografia({
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
 }) {
+  const t = useTranslations('Curadoria.achados')
+  const tCategorias = useTranslations('AlteracoesObservadas.categorias')
+  const tItens = useTranslations('AlteracoesObservadas.itens')
+
   function alternarAlteracao(valor: string) {
     onChange({
       ...form,
@@ -114,11 +123,19 @@ export default function PainelAchadosRadiografia({
     })
   }
 
+  function traduzirItem(valor: string): string {
+    try {
+      return tItens(valor)
+    } catch {
+      return valor
+    }
+  }
+
   return (
     <div className="flex h-full flex-col gap-3 overflow-y-auto">
       <div>
         <label className={campoLabel}>
-          Alterações observadas
+          {t('alteracoesObservadas')}
           {form.alteracoes_observadas.length > 0 && (
             <span className="ml-1 text-brand-300">({form.alteracoes_observadas.length})</span>
           )}
@@ -127,10 +144,11 @@ export default function PainelAchadosRadiografia({
           {CATEGORIAS_ALTERACOES.map((grupo) => (
             <GrupoAlteracoes
               key={grupo.categoria}
-              categoria={grupo.categoria}
+              categoriaTraduzida={tCategorias(grupo.categoriaChave)}
               itens={grupo.itens}
               selecionadas={form.alteracoes_observadas}
               onAlternar={alternarAlteracao}
+              traduzirItem={traduzirItem}
             />
           ))}
         </div>
@@ -143,13 +161,13 @@ export default function PainelAchadosRadiografia({
           como o lugar de escrever um achado que nao esta entre as opcoes
           acima. */}
       <div>
-        <label className={campoLabel}>Outros achados (não estão na lista acima)</label>
+        <label className={campoLabel}>{t('outrosAchados')}</label>
         <textarea
           value={form.achados_detalhe}
           onChange={(e) => onChange({ ...form, achados_detalhe: e.target.value })}
           rows={4}
           className={campoInput}
-          placeholder="Descreva aqui qualquer achado que não esteja nas opções acima"
+          placeholder={t('placeholderOutros')}
         />
       </div>
     </div>
