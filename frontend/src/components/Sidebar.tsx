@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { obterSessaoAtual } from '../lib/sessao'
 
 interface ItemMenu {
   chave: string
@@ -63,19 +64,24 @@ export default function Sidebar() {
   const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
-    setPerfil(localStorage.getItem('perfil'))
+    obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
   }, [])
 
-  function handleSair() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('perfil')
-    localStorage.removeItem('nome')
-    localStorage.removeItem('foto_perfil_url')
+  async function handleSair() {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch {
+      // segue pro login mesmo se a chamada falhar - nao trava a UI
+    }
     router.push('/login')
   }
 
-  // Antes do perfil carregar do localStorage (1o render), nao mostra os
-  // itens restritos - evita um "flash" deles pra quem nao tem acesso.
+  // Antes do perfil carregar (1o render, GET /auth/me ainda em voo), nao
+  // mostra os itens restritos - evita um "flash" deles pra quem nao tem
+  // acesso.
   const itensVisiveis = ITENS_MENU.filter((item) => !item.perfis || (perfil !== null && item.perfis.includes(perfil)))
 
   return (
