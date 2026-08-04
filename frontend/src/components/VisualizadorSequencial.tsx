@@ -175,12 +175,10 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     setIndiceSerie(0)
     setMarcacaoPreviewUrl('')
 
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     let cancelado = false
     let urlObjetoMarcacao = ''
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/serie-info`, {
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     })
       .then((resposta) => (resposta.ok ? resposta.json() : null))
       .then((dados) => {
@@ -193,7 +191,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     if (atual.viewer_url) {
       const curationIdDaBusca = atual.curation_id
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationIdDaBusca}/series`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
         .then((resposta) => (resposta.ok ? resposta.json() : null))
         .then((dados) => {
@@ -214,7 +212,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     // esta pronta.
     if ((atual.marcacoes ?? []).length > 0) {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/preview`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
         .then((resposta) => (resposta.ok ? resposta.blob() : null))
         .then((blob) => {
@@ -282,13 +280,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     nomeArquivo: string,
     setCarregando: (valor: boolean) => void
   ) {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     setCarregando(true)
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (!resposta.ok) {
         setErro(t('erroBaixar'))
@@ -345,14 +341,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   }
 
   async function salvarNoUsuario() {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     setSalvando(true)
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/saved-images/${atual.curation_id}`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
@@ -372,8 +366,6 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   }
 
   async function enviarPorEmail() {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     setEnviando(true)
     setErro('')
     try {
@@ -384,7 +376,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         `${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/send-email${sufixo}`,
         {
           method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         }
       )
       if (resposta.status === 401) {
