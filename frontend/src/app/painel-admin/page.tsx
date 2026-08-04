@@ -12,6 +12,7 @@ import {
   ResultadoChecagem,
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -88,36 +89,36 @@ export default function PainelAdminPage() {
   const [alertas, setAlertas] = useState<AlertaLogin[]>([])
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
 
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
 
-    carregarDados(token)
+      carregarDados()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function carregarDados(token: string) {
+  async function carregarDados() {
     setCarregando(true)
     setErro('')
     try {
       const [respostaStats, resultadoBanco, resultadoOrthanc, respostaAlertas] =
         await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-            headers: { Authorization: `Bearer ${token}` },
+            credentials: 'include',
           }),
           checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/database`, 'database', traduzirHealthCheck),
           checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/orthanc`, 'orthanc', traduzirHealthCheck),
           fetch(
             `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs?acao=falha_login&resultado=negado&limit=5`,
-            { headers: { Authorization: `Bearer ${token}` } }
+            { credentials: 'include' }
           ),
         ])
 
