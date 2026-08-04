@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 type VarianteLogo = 'navbar' | 'sidebar' | 'login' | 'hero' | 'footer' | 'icone' | 'escuro'
 
@@ -96,6 +97,7 @@ const CONFIG_POR_VARIANTE: Record<
 
 export default function Logo({ variante, className = '' }: LogoProps) {
   const cfg = CONFIG_POR_VARIANTE[variante]
+  const t = useTranslations('Logo')
 
   return (
     <div
@@ -118,7 +120,7 @@ export default function Logo({ variante, className = '' }: LogoProps) {
       {!cfg.somenteIcone && (
         <div className={cfg.empilhado ? 'flex flex-col items-center' : 'flex flex-col justify-center leading-tight'}>
           <span className={cfg.tituloClasse}>RÁDIX IMAGO</span>
-          {cfg.tagline && <span className={cfg.taglineClasse}>Ensino e pesquisa em saúde</span>}
+          {cfg.tagline && <span className={cfg.taglineClasse}>{t('tagline')}</span>}
         </div>
       )}
     </div>

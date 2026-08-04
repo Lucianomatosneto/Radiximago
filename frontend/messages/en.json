@@ -1,0 +1,734 @@
+{
+  "Logo": {
+    "tagline": "Health education and research"
+  },
+  "SeletorIdioma": {
+    "pt": "PT",
+    "en": "EN"
+  },
+  "Inicio": {
+    "solicitarAcesso": "Request access",
+    "entrar": "Sign in",
+    "subtitulo": "Smart image platform for health education and research",
+    "rodape": "Access restricted to authorized users",
+    "recursos": {
+      "curadoria": {
+        "titulo": "Specialized curation",
+        "descricao": "Structured workflow for expert review and classification of radiographs."
+      },
+      "anonimizacao": {
+        "titulo": "Automatic anonymization",
+        "descricao": "Personal data removed as soon as it enters the system, in line with Brazil's LGPD (data protection law)."
+      },
+      "pesquisa": {
+        "titulo": "Advanced search",
+        "descricao": "Combined filters by finding, region and clinical metadata."
+      },
+      "segundaOpiniao": {
+        "titulo": "Second opinion",
+        "descricao": "Request and record collaborative opinions between professionals."
+      },
+      "banco": {
+        "titulo": "Image bank",
+        "descricao": "Organized collection for teaching and scientific research."
+      },
+      "auditoria": {
+        "titulo": "Full audit trail",
+        "descricao": "Traceability of every action performed on the platform."
+      }
+    }
+  },
+  "Login": {
+    "tituloDestaque1": "Smart image platform for",
+    "tituloDestaque2": "health education and research",
+    "bemVindo": "Welcome",
+    "email": "Email",
+    "senha": "Password",
+    "emailPlaceholder": "your.email@example.com",
+    "mostrarSenha": "Show password",
+    "ocultarSenha": "Hide password",
+    "entrando": "Signing in...",
+    "entrar": "Sign in",
+    "esqueciSenha": "Forgot my password",
+    "cadastrar": "Sign up",
+    "rodape": "Access restricted to authorized users",
+    "erroCamposVazios": "Fill in your email and password.",
+    "erroCredenciais": "Incorrect email or password",
+    "erroGenerico": "Couldn't sign in. Please try again later.",
+    "altIlustracao": "Illustration of dental anatomy in X-ray style"
+  },
+  "Modalidades": {
+    "raiosX": "X-Ray",
+    "tomografia": "CT Scan",
+    "densitometria": "Densitometry",
+    "ressonancia": "MRI",
+    "odontologia": "Dentistry",
+    "maisModalidades": "And much more"
+  },
+  "Comum": {
+    "carregando": "Loading..."
+  },
+  "Sidebar": {
+    "navegacao": "Navigation",
+    "sair": "Sign out",
+    "itens": {
+      "inicio": "Home",
+      "painelAdministrativo": "Admin panel",
+      "usuarios": "Users",
+      "imagensRecebidas": "Received images",
+      "curadoria": "Curation",
+      "segundaOpiniao": "Second opinion",
+      "pesquisaAvancada": "Advanced search",
+      "bancoImagens": "Image bank",
+      "minhasImagens": "My images",
+      "relatorios": "Reports",
+      "auditoria": "Audit log",
+      "integracoes": "Integrations",
+      "configuracoes": "Settings"
+    }
+  },
+  "Topbar": {
+    "ajuda": "Help",
+    "visitante": "Guest",
+    "meuPerfil": "My profile",
+    "sair": "Sign out",
+    "escolhaFoto": "Choose a photo for your profile.",
+    "fotoAjuda": "Photo (JPEG, PNG or WEBP, up to 5 MB)",
+    "enviando": "Uploading...",
+    "salvarFoto": "Save photo",
+    "removerFotoAtual": "Remove current photo",
+    "fechar": "Close",
+    "erroFormato": "Unsupported format. Please upload a JPEG, PNG or WEBP.",
+    "erroTamanho": "The image must be at most 5 MB.",
+    "erroEnviarFoto": "Couldn't upload the photo.",
+    "erroEnviarFotoGenerico": "Couldn't upload the photo. Please try again.",
+    "erroRemoverFoto": "Couldn't remove the photo.",
+    "erroRemoverFotoGenerico": "Couldn't remove the photo. Please try again."
+  },
+  "StatusCuradoria": {
+    "pendente": "Pending",
+    "emAnalise": "Under review",
+    "aprovada": "Approved",
+    "segundaOpiniao": "Second opinion",
+    "baixaQualidade": "Low quality",
+    "descartada": "Discarded"
+  },
+  "Dashboard": {
+    "visaoGeral": "Overview",
+    "bemVindoDeVolta": "Welcome back, {nome}. ",
+    "resumoDeHoje": "Here's today's summary, {data}.",
+    "totalImagens": "Total images",
+    "aguardandoCuradoria": "Awaiting curation",
+    "aprovadas": "Approved",
+    "aguardandoSegundaOpiniao": "Awaiting second opinion",
+    "descartadas": "Discarded",
+    "usuariosAtivos": "Active users",
+    "imagemAguardando": "image is awaiting",
+    "imagensAguardando": "images are awaiting",
+    "curadoriaSufixo": "curation.",
+    "revisarAgora": "Review now",
+    "atividadeRecente": "Recent activity",
+    "verTudo": "View all →",
+    "nenhumaAtividade": "No activity recorded yet.",
+    "exame": "Exam",
+    "curador": "Curator",
+    "data": "Date",
+    "status": "Status",
+    "fichasPorStatus": "Records by status",
+    "tiposRadiografia": {
+      "periapical": "Periapical",
+      "panoramica": "Panoramic",
+      "interproximal": "Interproximal",
+      "oclusal": "Occlusal"
+    }
+  },
+  "BancoImagens": {
+    "titulo": "Image bank",
+    "subtitulo": "Choose a category to see the corresponding approved images.",
+    "buscaAvancada": "Advanced search"
+  },
+  "GradeCategorias": {
+    "rotulos": {
+      "tipoRadiografia": "Radiograph type",
+      "achadoPrincipal": "Main finding",
+      "qualidadeTecnica": "Technical quality"
+    },
+    "categorias": {
+      "periapicais": "Periapicals",
+      "panoramicas": "Panoramics",
+      "interproximais": "Interproximals",
+      "oclusais": "Occlusals",
+      "anatomiaNormal": "Normal anatomy",
+      "carie": "Caries",
+      "lesoesPeriapicais": "Periapical lesions",
+      "perdaOssea": "Bone loss",
+      "dentesInclusos": "Impacted teeth",
+      "tratamentoEndodontico": "Endodontic treatment",
+      "errosTecnicos": "Technical errors",
+      "altaQualidade": "High teaching-quality images"
+    },
+    "totalSingular": "image available in total",
+    "totalPlural": "images available in total",
+    "carregandoTotal": "Loading total available images...",
+    "verImagens": "View images →"
+  },
+  "ImagensRecebidas": {
+    "titulo": "Received images",
+    "tentarNovamente": "Try again",
+    "enviarTitulo": "Upload DICOM image",
+    "enviarDescricao": "The file is sent to Orthanc and automatically anonymized before becoming available - no identifiable patient data is kept. The upload is recorded in the audit log.",
+    "enviando": "Uploading...",
+    "enviarBotao": "Upload image",
+    "mensagemDuplicata": "This file was already registered (existing image) - no duplicate was created.",
+    "mensagemSucesso": "Image uploaded and anonymized successfully.",
+    "erroEnvioGenerico": "Couldn't upload the file. Check whether it's a valid DICOM file.",
+    "erroEnvioConexao": "Couldn't upload the file. Please check your connection and try again.",
+    "erroListaGenerico": "Couldn't load the images (error {status}). Please try again shortly.",
+    "erroListaConexao": "Couldn't connect to the server. Please check your connection and try again.",
+    "filtroAnonimizacaoTodos": "All anonymization statuses",
+    "filtroCuradoriaTodos": "All curation statuses",
+    "colunaIdOrthanc": "Orthanc ID",
+    "colunaTipo": "Type",
+    "colunaStatusAnonimizacao": "Anonymization status",
+    "colunaStatusCuradoria": "Curation status",
+    "colunaDataEntrada": "Date received",
+    "semFicha": "No record",
+    "nenhumaImagem": "No images found.",
+    "statusAnonimizacao": {
+      "aguardando": "Pending",
+      "validada": "Validated",
+      "falha": "Failed"
+    },
+    "statusCuradoriaFiltro": {
+      "pendente": "Pending",
+      "em_analise": "Under review",
+      "aprovada": "Approved",
+      "segunda_opiniao": "Second opinion",
+      "baixa_qualidade": "Low quality",
+      "descartada": "Discarded",
+      "sem_ficha": "No record"
+    }
+  },
+  "MiniaturaImagem": {
+    "semPreview": "No preview"
+  },
+  "Pesquisa": {
+    "tituloPrefixo": "Advanced",
+    "tituloDestaque": "search",
+    "subtitulo": "Find radiographic images to support studies and research.",
+    "totalDisponivelSingular": "image available in total",
+    "totalDisponivelPlural": "images available in total",
+    "acessoRapidoTitulo": "Quick access by exam type",
+    "buscaAvancadaTitulo": "Advanced search",
+    "buscaAvancadaSubtitulo": "Refine your search using the filters below.",
+    "campoGenero": "Gender",
+    "campoTodos": "All",
+    "campoDente": "Tooth (FDI)",
+    "placeholderDente": "e.g. 16",
+    "campoArcada": "Arch",
+    "opcaoTodas": "All",
+    "campoLado": "Side",
+    "opcaoAmbos": "Both",
+    "campoTipoExame": "Exam type",
+    "campoPatologia": "Pathology / finding",
+    "campoQualidadeTecnica": "Technical quality",
+    "campoDificuldade": "Difficulty",
+    "campoOrigem": "Origin",
+    "campoIdadeMin": "Min. age",
+    "campoIdadeMax": "Max. age",
+    "botaoPesquisar": "Search",
+    "pesquisando": "Searching...",
+    "erroPesquisaGenerico": "Couldn't perform the search.",
+    "dicaUseFiltros": "Use the filters above to search for images",
+    "nenhumaImagemEncontrada": "No images found with these filters",
+    "imagemEncontradaSingular": "image found",
+    "imagensEncontradasPlural": "images found",
+    "mostrandoPrimeiras": "(showing the first {quantidade})",
+    "verSelecionadasSingular": "View {quantidade} selected in sequence",
+    "verSelecionadasPlural": "View {quantidade} selected in sequence",
+    "selecaoLabel": "Selection:",
+    "selecionarTodas": "Select all ({quantidade})",
+    "selecionarMaisBotao": "Select more",
+    "limparSelecao": "Clear selection",
+    "selecionarImagem": "Select image #{numero}",
+    "imagemNumero": "Image #{numero}",
+    "opcoes": {
+      "tipoRadiografia": {
+        "periapical": "Periapical",
+        "panoramica": "Panoramic",
+        "interproximal": "Interproximal",
+        "oclusal": "Occlusal"
+      },
+      "genero": {
+        "masculino": "Male",
+        "feminino": "Female"
+      },
+      "arcada": {
+        "superior": "Upper",
+        "inferior": "Lower"
+      },
+      "lado": {
+        "direito": "Right",
+        "esquerdo": "Left"
+      },
+      "achadoPrincipal": {
+        "normal": "Normal",
+        "carie": "Caries",
+        "lesaoPeriapical": "Periapical lesion",
+        "perdaOssea": "Bone loss",
+        "denteIncluso": "Impacted tooth",
+        "tratamentoEndodontico": "Endodontic treatment",
+        "erroTecnico": "Technical error",
+        "outro": "Other"
+      },
+      "qualidadeTecnica": {
+        "otima": "Excellent",
+        "boa": "Good",
+        "regular": "Fair",
+        "insatisfatoria": "Unsatisfactory"
+      },
+      "dificuldade": {
+        "basico": "Basic",
+        "intermediario": "Intermediate",
+        "avancado": "Advanced"
+      },
+      "origem": {
+        "ufsc": "UFSC (equipment)",
+        "externa": "External (upload)"
+      }
+    }
+  },
+  "AlteracoesObservadas": {
+    "categorias": {
+      "carie": "Caries",
+      "periodontal": "Periodontal",
+      "periapicalEndodontico": "Periapical / Endodontic",
+      "restauradorProtetico": "Restorative / Prosthetic",
+      "osseoAnatomico": "Bone / Anatomical"
+    },
+    "itens": {
+      "carie_esmalte": "Enamel caries",
+      "carie_dentina": "Dentin caries",
+      "carie_proxima_polpa": "Caries close to the pulp",
+      "carie_secundaria": "Secondary caries (under restoration)",
+      "perda_ossea_horizontal": "Horizontal bone loss",
+      "perda_ossea_vertical": "Vertical bone loss",
+      "calculo_dentario": "Dental calculus (tartar)",
+      "alargamento_ligamento_periodontal": "Widened periodontal ligament",
+      "lesao_periapical": "Periapical lesion",
+      "reabsorcao_radicular_externa": "External root resorption",
+      "reabsorcao_radicular_interna": "Internal root resorption",
+      "tratamento_endodontico_presente": "Endodontic treatment present",
+      "tratamento_endodontico_inadequado": "Inadequate endodontic treatment",
+      "fratura_radicular": "Root fracture",
+      "restauracao_presente": "Restoration present",
+      "restauracao_com_infiltracao": "Restoration with leakage",
+      "coroa_protetica": "Prosthetic crown",
+      "nucleo_pino": "Post and core",
+      "cisto": "Cyst",
+      "lesao_radiopaca": "Radiopaque lesion",
+      "lesao_radiolucida_inespecifica": "Nonspecific radiolucent lesion",
+      "dente_incluso": "Impacted tooth",
+      "dente_supranumerario": "Supernumerary tooth",
+      "agenesia_dentaria": "Tooth agenesis",
+      "alteracao_seio_maxilar": "Maxillary sinus abnormality",
+      "corpo_estranho": "Foreign body"
+    }
+  },
+  "Visualizador": {
+    "sairTelaCheia": "Exit full screen",
+    "telaCheia": "Full screen",
+    "fechar": "Close",
+    "imagemPrefixo": "Image",
+    "deSelecionadas": "({indice} of {total} selected)",
+    "serieDe": "· Series {indice} of {total}",
+    "cortes": "({total} slices)",
+    "filaTitulo": "Queue · {total}",
+    "imagemNumero": "Image #{numero}",
+    "irParaImagem": "Go to image #{numero}",
+    "estudoAnterior": "Previous study",
+    "estudoAnteriorAria": "Previous study (previous selected image)",
+    "serieAnterior": "Previous series (folder) of this study",
+    "serieAnteriorTitulo": "Previous series",
+    "proximaSerie": "Next series (folder) of this study",
+    "proximaSerieTitulo": "Next series",
+    "proximoEstudo": "Next study (next selected image)",
+    "proximoEstudoTitulo": "Next study",
+    "giraImagem": "rotates the image",
+    "inverteJanela": "inverts the window",
+    "instrucaoRolagem": "Use the mouse scroll or Page Up / Page Down inside the viewer to go through all the slices of this image.",
+    "instrucaoSeries": " Use the single arrow (‹ ›) to switch series and the double arrow (« ») to switch study.",
+    "visualizadorOhifTitulo": "OHIF Viewer - Image #{numero}",
+    "baixando": "Downloading...",
+    "baixarImagensZip": "⬇ Download images (ZIP, {total} slices)",
+    "baixarDicomZip": "⬇ Download DICOM (ZIP)",
+    "baixar": "⬇ Download",
+    "salva": "✓ Saved",
+    "salvando": "Saving...",
+    "salvarNoUsuario": "★ Save to my account",
+    "enviando": "Sending...",
+    "enviarPorEmail": "✉ Send by email",
+    "erroBaixar": "Couldn't download the file.",
+    "imagemSalva": "Image saved to \"My images\".",
+    "erroSalvar": "Couldn't save the image.",
+    "erroEnviarEmail": "Couldn't send by email.",
+    "emailEnviado": "Image sent by email.",
+    "classificacao": {
+      "tipo": "Type: ",
+      "qualidade": "Quality: ",
+      "dentes": "Teeth: ",
+      "alteracoesObservadas": "Observed changes",
+      "nenhumaAlteracao": "No changes recorded.",
+      "achadosDetalhados": "Detailed findings: ",
+      "descricao": "Description: "
+    },
+    "marcacao": {
+      "mostrarEstaImagem": "Show curator's marking for this image",
+      "mostrarTodasImagens": "Show curator's marking for all images",
+      "nenhumaMarcada": "The curator did not mark any lesion on this image.",
+      "altImagemMarcada": "Image with marked lesions",
+      "lesaoGenerica": "Lesion marked by the curator"
+    },
+    "anotacoes": {
+      "cancelar": "✕ Cancel",
+      "novaAnotacao": "+ Annotation",
+      "dicaClicarArrastar": "Click to mark a point, or click and drag to draw an arrow to the exact spot",
+      "clicarParaEditar": "Click to edit",
+      "excluirAnotacao": "Delete this annotation",
+      "soltarSeta": "Click again to drop the arrow here",
+      "pegarSeta": "Click to grab the whole arrow (box + tip together) - then just move the mouse (no need to hold). Click again to drop it",
+      "fecharSemSalvar": "Close without saving",
+      "arrasteMoverCaixa": "⠿⠿⠿ drag to move the box",
+      "arrasteTitulo": "Drag to move this box",
+      "placeholder": "Write your annotation...",
+      "negrito": "Bold",
+      "italico": "Italic",
+      "textoSempreVisivel": "📌 Always show text",
+      "removerSeta": "✕ Remove arrow",
+      "adicionarSeta": "↗ Add arrow",
+      "erroTextoVazio": "Write something before saving.",
+      "erroSalvar": "Couldn't save the annotation.",
+      "erroExcluir": "Couldn't delete the annotation.",
+      "salvar": "Save",
+      "cores": {
+        "amarelo": "Yellow",
+        "vermelho": "Red",
+        "verde": "Green",
+        "azul": "Blue",
+        "roxo": "Purple",
+        "laranja": "Orange"
+      }
+    }
+  },
+  "Curadoria": {
+    "inicio": "Home",
+    "titulo": "Curation",
+    "fila": {
+      "titulo": "Curation queue",
+      "expandir": "Expand curation queue",
+      "recolher": "Collapse curation queue",
+      "fila": "Queue",
+      "filaComContagem": "Queue ({contagem})",
+      "carregandoFila": "Loading queue...",
+      "nenhumaPendente": "No pending images.",
+      "abrindo": "Opening...",
+      "dataIndisponivel": "date: —"
+    },
+    "modalMotivo": {
+      "descartarTitulo": "Discard record",
+      "segundaOpiniaoTitulo": "Request second opinion",
+      "motivo": "Reason",
+      "cancelar": "Cancel",
+      "confirmar": "Confirm",
+      "enviando": "Sending...",
+      "fechar": "Close",
+      "erroMotivoObrigatorio": "Enter a reason.",
+      "erroConcluirAcao": "Couldn't complete the action."
+    },
+    "segundaOpiniaoBanner": {
+      "titulo": "Image awaiting second opinion",
+      "solicitadoPor": "Requested by",
+      "usuarioNumero": "user #{id}",
+      "data": "Date",
+      "observacoes": "Notes"
+    },
+    "barraSuperior": {
+      "imagemAnterior": "Previous image",
+      "proximaImagem": "Next image",
+      "imagemXdeY": "Image {atual} of {total}",
+      "salvar": "Save",
+      "salvando": "Saving...",
+      "aprovar": "✓ Approve",
+      "aprovando": "Approving...",
+      "solicitarSegundaOpiniao": "Request second opinion",
+      "descartar": "Discard"
+    },
+    "ficha": {
+      "titulo": "Curation record",
+      "descricaoDidatica": "Teaching description",
+      "observacoesInternas": "Internal notes",
+      "rascunhoSalvo": "Draft saved.",
+      "erroSalvarRascunho": "Couldn't save the draft.",
+      "erroAbrirImagem": "Couldn't open this image for curation.",
+      "erroCarregarFichaCriada": "Couldn't load the created record.",
+      "erroAprovar": "Couldn't approve the record.",
+      "erroCarregarFila": "Couldn't load the curation queue.",
+      "erroConexao": "Couldn't connect to the server. Please check your connection and try again."
+    },
+    "achados": {
+      "alteracoesObservadas": "Observed changes",
+      "outrosAchados": "Other findings (not in the list above)",
+      "placeholderOutros": "Describe any finding not covered by the options above"
+    },
+    "dadosSobrepostos": {
+      "status": "Status",
+      "anonimizacaoValidada": "Anonymization validated",
+      "tipoRadiografia": "Radiograph type",
+      "faixaEtaria": "Age range",
+      "idadeMin": "min.",
+      "idadeMax": "max.",
+      "sexo": "Sex",
+      "dentes": "Teeth (FDI notation)",
+      "removerDente": "Remove tooth {numero}",
+      "qualidadeTecnica": "Technical quality",
+      "selecione": "Select",
+      "erroDenteInvalido": "Use a valid FDI number (11-18, 21-28, 31-38, 41-48).",
+      "exemploDente": "e.g. 16"
+    },
+    "visualizador": {
+      "centralizarImagem": "Center image",
+      "centralizar": "Center",
+      "ajustarATela": "Fit to screen",
+      "restaurarLayout": "Restore default layout",
+      "sairTelaCheia": "Exit full screen",
+      "abrirTelaCheia": "Open full screen",
+      "voltar": "Back",
+      "telaCheia": "Full screen",
+      "selecioneImagem": "Select an image from the queue",
+      "carregandoVisualizador": "Loading viewer...",
+      "ohifTitulo": "OHIF Viewer",
+      "naoDisponivel": "Couldn't load the viewer for this image."
+    },
+    "marcador": {
+      "removerMarcacao": "✕ Remove marking",
+      "tipoLesao": "Lesion type for this marking:",
+      "selecione": "Select",
+      "semPreview": "No preview available",
+      "altImagemMarcacao": "Image for marking",
+      "instrucaoComMarcacoes": "{total} marking(s). Click and drag on the image to add another, or click an existing one to move/resize it.",
+      "instrucaoSemMarcacoes": "Click and drag on the image to mark a lesion (optional). Choose a shape above.",
+      "formas": {
+        "oval": "Oval",
+        "retangulo": "Rectangle",
+        "seta": "Arrow"
+      }
+    },
+    "painelLateral": {
+      "imagemParaMarcacao": "Image for marking",
+      "achadosEmRadiografia": "Radiograph findings",
+      "verAchados": "View radiograph findings",
+      "voltarParaMarcacao": "Back to marking image"
+    }
+  },
+  "SegundaOpiniaoPage": {
+    "titulo": "Second opinion",
+    "aguardandoParecer": "Awaiting review",
+    "carregandoFila": "Loading queue...",
+    "nenhumaPendente": "No pending requests.",
+    "selecioneSolicitacao": "Select a request from the list",
+    "oQueCuradorRegistrou": "What the curator recorded (read-only)",
+    "motivoSolicitacao": "Reason for the second opinion request",
+    "primeiroParecer": "Curator's initial note (when requesting)",
+    "carregandoFichaCompleta": "Loading full record...",
+    "erroCarregarFichaCompleta": "Couldn't load the full record data.",
+    "faixaEtariaValor": "{min} to {max}",
+    "sim": "Yes",
+    "nao": "No",
+    "observacoesInternasCurador": "Curator's internal notes",
+    "marcacoesFeitasPeloCurador": "Markings made by the curator on the image",
+    "suaAvaliacao": "Your evaluation",
+    "instrucaoAvaliacao": "After reviewing what the curator recorded above, do you agree or disagree with this assessment?",
+    "concordar": "Agree with the curator",
+    "discordar": "Disagree",
+    "erroEnviarAvaliacao": "Couldn't send your evaluation."
+  },
+  "MinhasImagens": {
+    "tituloPrefixo": "My",
+    "tituloDestaque": "images",
+    "subtitulo": "Images you saved from Advanced search.",
+    "desmarcarTodas": "Deselect all",
+    "enviando": "Sending...",
+    "enviarPorEmailSingular": "✉ Send {quantidade} selected by email",
+    "enviarPorEmailPlural": "✉ Send {quantidade} selected by email",
+    "avisoSerie": "One or more selected images are part of a series with multiple slices (CT) and can't be sent by email — use the download (ZIP) buttons inside the sequential viewer instead.",
+    "mensagemLotePadrao": "Images sent by email.",
+    "erroCarregar": "Couldn't load your saved images.",
+    "erroRemover": "Couldn't remove the image.",
+    "erroEnviarEmail": "Couldn't send the images by email.",
+    "semImagensPrefixo": "You haven't saved any images yet. Save images from the",
+    "linkPesquisaAvancada": "Advanced search",
+    "expandir": "⛶ Expand",
+    "remover": "Remove"
+  },
+  "VisualizarImagem": {
+    "tituloPrefixo": "Image",
+    "tituloDestaque": "details",
+    "subtitulo": "Scientific review of the data analyzed by the specialist curator.",
+    "erroCarregar": "Couldn't load this image.",
+    "erroNaoEncontrada": "Image not found among the approved images.",
+    "imagemIndisponivel": "Image not available for viewing",
+    "avisoRodape": "This image is made available exclusively for teaching and research purposes. Use for clinical diagnosis is not permitted."
+  },
+  "NavegacaoCasos": {
+    "voltarParaPesquisa": "← Back to search",
+    "casoXdeY": "Case {atual} of {total}",
+    "casoAnterior": "← Previous case",
+    "proximoCaso": "Next case →"
+  },
+  "ColunaEstudos": {
+    "titulo": "Exams found",
+    "carregando": "Loading exams...",
+    "nenhumEncontrado": "No exam found."
+  },
+  "ColunaSeries": {
+    "titulo": "Study series",
+    "carregando": "Loading series...",
+    "semInformacao": "No series information for this image.",
+    "serieNumero": "Series {numero}",
+    "corteSingular": "slice",
+    "cortePlural": "slices"
+  },
+  "Auditoria": {
+    "titulo": "Audit and security",
+    "campoAcao": "Action",
+    "campoResultado": "Result",
+    "campoDataInicial": "Start date",
+    "campoDataFinal": "End date",
+    "buscando": "Searching...",
+    "filtrar": "Filter",
+    "colData": "Date/time",
+    "colUsuario": "User",
+    "colAcao": "Action",
+    "colEntidade": "Entity",
+    "colResultado": "Result",
+    "colDetalhes": "Details",
+    "ocultar": "Hide",
+    "detalhes": "Details",
+    "semDetalhes": "No details recorded.",
+    "nenhumRegistro": "No records found.",
+    "mostrandoRegistros": "Showing {de}–{ate} of {total} records",
+    "zeroRegistros": "0 records",
+    "anterior": "Previous",
+    "proximo": "Next",
+    "erroCarregar": "Couldn't load the audit log.",
+    "usuarioNumero": "User #{id}",
+    "categorias": {
+      "acesso": "Access",
+      "usuarios": "Users",
+      "imagens": "Images",
+      "curadoria": "Curation"
+    },
+    "acoes": {
+      "login": "Login",
+      "falhaLogin": "Login failure",
+      "logout": "Logout",
+      "trocaSenha": "Password change",
+      "falhaTrocaSenha": "Password change failure",
+      "criacaoUsuario": "User creation",
+      "edicaoUsuario": "User edit",
+      "bloqueioUsuario": "User block/unblock",
+      "importacaoOrthanc": "Orthanc import",
+      "uploadImagem": "Image upload",
+      "uploadSemPreambuloDicom": "Upload without DICOM preamble",
+      "criacao": "Record creation",
+      "edicaoCuradoria": "Record edit",
+      "aprovacao": "Approval",
+      "aprovacaoPosSegundaOpiniao": "Approval after second opinion",
+      "descarte": "Discard",
+      "descartePosSegundaOpiniao": "Discard after second opinion",
+      "solicitacaoSegundaOpiniao": "Second opinion request",
+      "respostaSegundaOpiniao": "Second opinion response"
+    },
+    "resultados": {
+      "sucesso": "Success",
+      "negado": "Denied",
+      "erro": "Error"
+    }
+  },
+  "Relatorios": {
+    "titulo": "Reports and metrics",
+    "erroCarregar": "Couldn't load the metrics.",
+    "totalImagens": "Total images",
+    "totalFichas": "Total records",
+    "usuariosAtivos": "Active users",
+    "usuariosBloqueados": "Blocked users",
+    "fichasPorStatus": "Records by status",
+    "fichasPorTipoRadiografia": "Records by radiograph type",
+    "fichasPorAchadoPrincipal": "Records by primary finding",
+    "fichasPorDificuldade": "Records by difficulty",
+    "fichasPorQualidadeTecnica": "Records by technical quality",
+    "fichasPorCurador": "Records by curator",
+    "naoInformado": "Not informed",
+    "semCuradorAtribuido": "No curator assigned",
+    "usuarioNumero": "User #{id}",
+    "semDados": "No data."
+  },
+  "Integracoes": {
+    "titulo": "Integrations",
+    "subtitulo": "Infrastructure connections and internal platform services.",
+    "atualizando": "Updating...",
+    "atualizarStatus": "Refresh status",
+    "verificando": "Checking...",
+    "descricaoFastapi": "This page's own response confirms the API responded.",
+    "descricaoNextjs": "The frontend is running — you're looking at this page.",
+    "servicoArmazenamento": "Storage",
+    "semEndpointChecagem": "No health-check endpoint available.",
+    "descricaoDicomweb": "Same status as Orthanc — DICOMWeb is a plugin of it, not a separate check. {descricaoOrthanc}",
+    "variavelOhifNaoConfigurada": "NEXT_PUBLIC_OHIF_URL variable not configured.",
+    "ohifRespondeu": "Responded to the request (best-effort check, content not validated).",
+    "ohifNaoRespondeu": "Didn't respond — could be a real failure or just CORS/local network. Best-effort check.",
+    "status": {
+      "online": "Online",
+      "erro": "Error",
+      "instavel": "Unstable",
+      "offline": "Offline",
+      "aguardando": "Awaiting configuration"
+    },
+    "healthCheck": {
+      "endpointHttpStatus": "Endpoint responded with HTTP {status}.",
+      "verificadoAgora": "Checked just now.",
+      "erroBackend": "Checked just now — backend reported \"{detalhe}\".",
+      "formatoInesperado": "Unexpected response format.",
+      "falhaRede": "Network failure while checking."
+    }
+  },
+  "PainelAdmin": {
+    "titulo": "Admin panel",
+    "subtitulo": "General control of the RADIX IMAGO platform.",
+    "erroCarregar": "Couldn't load the metrics.",
+    "erroCarregarPainel": "Couldn't load the panel.",
+    "totalImagens": "Total images",
+    "aguardandoCuradoria": "Awaiting curation",
+    "emAnalise": "Under review",
+    "curadasLiberadas": "Curated and released",
+    "descartadas": "Discarded",
+    "usuariosAtivos": "Active users",
+    "atalhosGestao": "Management shortcuts",
+    "statusServicos": "Service status",
+    "verTodosServicos": "View all services →",
+    "alertasSeguranca": "Security alerts",
+    "nenhumAlerta": "No recent security alerts",
+    "loginAlertaSingular": "{total} recent failed login attempt",
+    "loginAlertaPlural": "{total} recent failed login attempts",
+    "semDetalhes": "No details.",
+    "verAuditoriaCompleta": "View full audit log →",
+    "atalhos": {
+      "usuarios": "Users",
+      "imagensRecebidas": "Received images",
+      "curadoria": "Curation",
+      "relatorios": "Reports",
+      "auditoria": "Audit",
+      "integracoes": "Integrations"
+    }
+  }
+}

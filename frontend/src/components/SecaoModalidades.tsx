@@ -8,9 +8,11 @@
 // Fonte das legendas: pilha de sistema com peso 600 (aproxima Inter
 // SemiBold sem depender de um fetch externo de fonte).
 
+import { useTranslations } from 'next-intl'
+
 interface Modalidade {
   id: string
-  rotulo: string
+  chave: string
   icone: JSX.Element
 }
 
@@ -204,15 +206,17 @@ function IconeMais() {
 }
 
 const MODALIDADES: Modalidade[] = [
-  { id: 'raios-x', rotulo: 'Raios-X', icone: <IconeRaiosX /> },
-  { id: 'tomografia', rotulo: 'Tomografia', icone: <IconeTomografia /> },
-  { id: 'densitometria', rotulo: 'Densitometria', icone: <IconeDensitometria /> },
-  { id: 'ressonancia', rotulo: 'Ressonância', icone: <IconeRessonancia /> },
-  { id: 'odontologia', rotulo: 'Odontologia', icone: <IconeOdontologia /> },
-  { id: 'mais', rotulo: 'E muito mais', icone: <IconeMais /> },
+  { id: 'raios-x', chave: 'raiosX', icone: <IconeRaiosX /> },
+  { id: 'tomografia', chave: 'tomografia', icone: <IconeTomografia /> },
+  { id: 'densitometria', chave: 'densitometria', icone: <IconeDensitometria /> },
+  { id: 'ressonancia', chave: 'ressonancia', icone: <IconeRessonancia /> },
+  { id: 'odontologia', chave: 'odontologia', icone: <IconeOdontologia /> },
+  { id: 'mais', chave: 'maisModalidades', icone: <IconeMais /> },
 ]
 
 export default function SecaoModalidades() {
+  const t = useTranslations('Modalidades')
+
   return (
     <section
       id="modalidades"
@@ -246,7 +250,7 @@ export default function SecaoModalidades() {
                   {modalidade.icone}
                 </div>
                 <span className="rotulo-modalidade whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide sm:text-xs md:text-sm">
-                  {modalidade.rotulo}
+                  {t(modalidade.chave)}
                 </span>
               </div>
             ))}

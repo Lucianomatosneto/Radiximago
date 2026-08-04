@@ -1,5 +1,7 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
+
 // Navegacao entre casos, reaproveitando a MESMA lista que a pagina ja
 // busca em /search pra localizar a imagem atual - nao dispara nenhuma
 // chamada nova. "Anterior"/"Proximo" andam pelo indice dessa lista; se
@@ -23,6 +25,7 @@ export default function NavegacaoCasos({
   onProxima: () => void
   onVoltar: () => void
 }) {
+  const t = useTranslations('NavegacaoCasos')
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <button
@@ -30,13 +33,13 @@ export default function NavegacaoCasos({
         onClick={onVoltar}
         className="rounded-full border border-base-border px-4 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
       >
-        ← Voltar para pesquisa
+        {t('voltarParaPesquisa')}
       </button>
 
       <div className="flex items-center gap-3">
         {posicaoAtual !== null && (
           <span className="text-sm text-slate-400">
-            Caso {posicaoAtual} de {total}
+            {t('casoXdeY', { atual: posicaoAtual, total })}
           </span>
         )}
         <div className="flex items-center gap-1.5">
@@ -46,7 +49,7 @@ export default function NavegacaoCasos({
             disabled={!podeAnterior}
             className="rounded-full border border-base-border px-3.5 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
           >
-            ← Caso anterior
+            {t('casoAnterior')}
           </button>
           <button
             type="button"
@@ -54,7 +57,7 @@ export default function NavegacaoCasos({
             disabled={!podeProxima}
             className="rounded-full border border-base-border px-3.5 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
           >
-            Próximo caso →
+            {t('proximoCaso')}
           </button>
         </div>
       </div>

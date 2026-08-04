@@ -1,17 +1,26 @@
 import './globals.css'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale } from 'next-intl/server'
 
 export const metadata = {
   title: 'Rádix Imago',
   description: 'Base inteligente de imagens para ensino e pesquisa em saúde',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Idioma detectado para esta visita (navegador da pessoa ou escolha
+  // manual dela - ver src/i18n/request.ts). So usado aqui pro atributo
+  // "lang" do HTML (importante pra acessibilidade e leitores de tela);
+  // o NextIntlClientProvider abaixo ja pega o idioma e as traducoes
+  // certas sozinho, sem precisar passar como propriedade.
+  const locale = await getLocale()
+
   return (
-    <html lang="pt-BR">
+    <html lang={locale === 'en' ? 'en' : 'pt-BR'}>
       <head>
         <script
           // Aplica o tema salvo antes do 1o paint, pra nao "piscar" escuro
@@ -22,7 +31,9 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+      </body>
     </html>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { forwardRef } from 'react'
+import { useTranslations } from 'next-intl'
 import SegundaOpiniaoBanner, { ReviewInfo } from './SegundaOpiniaoBanner'
 import StatusBadge from '../StatusBadge'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
@@ -56,6 +57,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   },
   ref
 ) {
+  const t = useTranslations('Curadoria.visualizador')
   const viewerPronto = !!(viewerInfo?.abrivel && viewerInfo.viewer_url)
 
   return (
@@ -82,39 +84,39 @@ const PainelVisualizador = forwardRef<HTMLElement, {
                 <button
                   type="button"
                   onClick={onCentralizar}
-                  aria-label="Centralizar imagem"
-                  title="Centralizar imagem"
+                  aria-label={t('centralizarImagem')}
+                  title={t('centralizarImagem')}
                   className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                 >
-                  <span aria-hidden="true">⊙</span> Centralizar
+                  <span aria-hidden="true">⊙</span> {t('centralizar')}
                 </button>
                 <button
                   type="button"
                   onClick={onAlternarAjustar}
-                  aria-label={modoAjustado ? 'Restaurar layout padrão' : 'Ajustar à tela'}
-                  title={modoAjustado ? 'Restaurar layout padrão' : 'Ajustar à tela'}
+                  aria-label={modoAjustado ? t('restaurarLayout') : t('ajustarATela')}
+                  title={modoAjustado ? t('restaurarLayout') : t('ajustarATela')}
                   className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-colors ${
                     modoAjustado
                       ? 'border-brand bg-brand/10 text-brand-300'
                       : 'border-base-border bg-base-surface2 text-slate-300 hover:border-brand hover:text-brand-300'
                   }`}
                 >
-                  <span aria-hidden="true">⤢</span> Ajustar à tela
+                  <span aria-hidden="true">⤢</span> {t('ajustarATela')}
                 </button>
                 <button
                   type="button"
                   onClick={onAlternarTelaCheia}
-                  aria-label={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
-                  title={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+                  aria-label={telaCheia ? t('sairTelaCheia') : t('abrirTelaCheia')}
+                  title={telaCheia ? t('sairTelaCheia') : t('abrirTelaCheia')}
                   className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                 >
                   {telaCheia ? (
                     <>
-                      <span aria-hidden="true">⤡</span> Voltar
+                      <span aria-hidden="true">⤡</span> {t('voltar')}
                     </>
                   ) : (
                     <>
-                      <span aria-hidden="true">⛶</span> Tela cheia
+                      <span aria-hidden="true">⛶</span> {t('telaCheia')}
                     </>
                   )}
                 </button>
@@ -127,22 +129,22 @@ const PainelVisualizador = forwardRef<HTMLElement, {
       <div className="relative min-h-0 flex-1">
         {!fichaAtiva ? (
           <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
-            Selecione uma imagem na fila abaixo
+            {t('selecioneImagem')}
           </div>
         ) : carregandoViewer ? (
           <div className="flex h-full items-center justify-center text-slate-400">
-            Carregando visualizador...
+            {t('carregandoVisualizador')}
           </div>
         ) : viewerPronto ? (
           <iframe
             key={iframeReloadKey}
             src={viewerInfo!.viewer_url!}
-            title="Visualizador OHIF"
+            title={t('ohifTitulo')}
             className="h-full w-full border-0"
           />
         ) : (
           <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
-            {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
+            {viewerInfo?.motivo ?? t('naoDisponivel')}
           </div>
         )}
 

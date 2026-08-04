@@ -1,0 +1,734 @@
+{
+  "Logo": {
+    "tagline": "Ensino e pesquisa em saúde"
+  },
+  "SeletorIdioma": {
+    "pt": "PT",
+    "en": "EN"
+  },
+  "Inicio": {
+    "solicitarAcesso": "Solicitar acesso",
+    "entrar": "Entrar",
+    "subtitulo": "Base inteligente de imagens para ensino e pesquisa em saúde",
+    "rodape": "Acesso restrito a usuários autorizados",
+    "recursos": {
+      "curadoria": {
+        "titulo": "Curadoria especializada",
+        "descricao": "Fluxo estruturado para revisão e classificação de radiografias por especialistas."
+      },
+      "anonimizacao": {
+        "titulo": "Anonimização automática",
+        "descricao": "Dados pessoais removidos ao ingressar no sistema, conforme a LGPD."
+      },
+      "pesquisa": {
+        "titulo": "Pesquisa avançada",
+        "descricao": "Filtros combinados por achado, região e metadados clínicos."
+      },
+      "segundaOpiniao": {
+        "titulo": "Segunda opinião",
+        "descricao": "Solicite e registre pareceres colaborativos entre profissionais."
+      },
+      "banco": {
+        "titulo": "Banco de imagens",
+        "descricao": "Acervo organizado para uso em ensino e pesquisa científica."
+      },
+      "auditoria": {
+        "titulo": "Auditoria completa",
+        "descricao": "Rastreabilidade de cada ação realizada na plataforma."
+      }
+    }
+  },
+  "Login": {
+    "tituloDestaque1": "Base inteligente de imagens para",
+    "tituloDestaque2": "ensino e pesquisa em saúde",
+    "bemVindo": "Bem-vindo",
+    "email": "E-mail",
+    "senha": "Senha",
+    "emailPlaceholder": "seu.email@exemplo.com",
+    "mostrarSenha": "Mostrar senha",
+    "ocultarSenha": "Ocultar senha",
+    "entrando": "Entrando...",
+    "entrar": "Entrar",
+    "esqueciSenha": "Esqueci minha senha",
+    "cadastrar": "Cadastrar",
+    "rodape": "Acesso restrito a usuários autorizados",
+    "erroCamposVazios": "Preencha e-mail e senha.",
+    "erroCredenciais": "E-mail ou senha incorretos",
+    "erroGenerico": "Não foi possível entrar. Tente novamente mais tarde.",
+    "altIlustracao": "Ilustração de anatomia dentária em raio-X"
+  },
+  "Modalidades": {
+    "raiosX": "Raios-X",
+    "tomografia": "Tomografia",
+    "densitometria": "Densitometria",
+    "ressonancia": "Ressonância",
+    "odontologia": "Odontologia",
+    "maisModalidades": "E muito mais"
+  },
+  "Comum": {
+    "carregando": "Carregando..."
+  },
+  "Sidebar": {
+    "navegacao": "Navegação",
+    "sair": "Sair",
+    "itens": {
+      "inicio": "Início",
+      "painelAdministrativo": "Painel administrativo",
+      "usuarios": "Usuários",
+      "imagensRecebidas": "Imagens recebidas",
+      "curadoria": "Curadoria",
+      "segundaOpiniao": "Segunda opinião",
+      "pesquisaAvancada": "Pesquisa avançada",
+      "bancoImagens": "Banco de imagens",
+      "minhasImagens": "Minhas imagens",
+      "relatorios": "Relatórios",
+      "auditoria": "Auditoria",
+      "integracoes": "Integrações",
+      "configuracoes": "Configurações"
+    }
+  },
+  "Topbar": {
+    "ajuda": "Ajuda",
+    "visitante": "Visitante",
+    "meuPerfil": "Meu perfil",
+    "sair": "Sair",
+    "escolhaFoto": "Escolha uma foto para o seu perfil.",
+    "fotoAjuda": "Foto (JPEG, PNG ou WEBP, até 5 MB)",
+    "enviando": "Enviando...",
+    "salvarFoto": "Salvar foto",
+    "removerFotoAtual": "Remover foto atual",
+    "fechar": "Fechar",
+    "erroFormato": "Formato não suportado. Envie um JPEG, PNG ou WEBP.",
+    "erroTamanho": "A imagem deve ter no máximo 5 MB.",
+    "erroEnviarFoto": "Não foi possível enviar a foto.",
+    "erroEnviarFotoGenerico": "Não foi possível enviar a foto. Tente novamente.",
+    "erroRemoverFoto": "Não foi possível remover a foto.",
+    "erroRemoverFotoGenerico": "Não foi possível remover a foto. Tente novamente."
+  },
+  "StatusCuradoria": {
+    "pendente": "Pendente",
+    "emAnalise": "Em análise",
+    "aprovada": "Aprovada",
+    "segundaOpiniao": "Segunda opinião",
+    "baixaQualidade": "Baixa qualidade",
+    "descartada": "Descartada"
+  },
+  "Dashboard": {
+    "visaoGeral": "Visão geral",
+    "bemVindoDeVolta": "Bem-vindo de volta, {nome}. ",
+    "resumoDeHoje": "Aqui está o resumo de hoje, {data}.",
+    "totalImagens": "Total de imagens",
+    "aguardandoCuradoria": "Aguardando curadoria",
+    "aprovadas": "Aprovadas",
+    "aguardandoSegundaOpiniao": "Aguardando segunda opinião",
+    "descartadas": "Descartadas",
+    "usuariosAtivos": "Usuários ativos",
+    "imagemAguardando": "imagem está aguardando",
+    "imagensAguardando": "imagens estão aguardando",
+    "curadoriaSufixo": "curadoria.",
+    "revisarAgora": "Revisar agora",
+    "atividadeRecente": "Atividade recente",
+    "verTudo": "Ver tudo →",
+    "nenhumaAtividade": "Nenhuma atividade registrada ainda.",
+    "exame": "Exame",
+    "curador": "Curador",
+    "data": "Data",
+    "status": "Status",
+    "fichasPorStatus": "Fichas por status",
+    "tiposRadiografia": {
+      "periapical": "Periapical",
+      "panoramica": "Panorâmica",
+      "interproximal": "Interproximal",
+      "oclusal": "Oclusal"
+    }
+  },
+  "BancoImagens": {
+    "titulo": "Banco de imagens",
+    "subtitulo": "Escolha uma categoria para ver as imagens aprovadas correspondentes.",
+    "buscaAvancada": "Busca avançada"
+  },
+  "GradeCategorias": {
+    "rotulos": {
+      "tipoRadiografia": "Tipo de radiografia",
+      "achadoPrincipal": "Achado principal",
+      "qualidadeTecnica": "Qualidade técnica"
+    },
+    "categorias": {
+      "periapicais": "Periapicais",
+      "panoramicas": "Panorâmicas",
+      "interproximais": "Interproximais",
+      "oclusais": "Oclusais",
+      "anatomiaNormal": "Anatomia normal",
+      "carie": "Cárie",
+      "lesoesPeriapicais": "Lesões periapicais",
+      "perdaOssea": "Perda óssea",
+      "dentesInclusos": "Dentes inclusos",
+      "tratamentoEndodontico": "Tratamento endodôntico",
+      "errosTecnicos": "Erros técnicos",
+      "altaQualidade": "Imagens de alta qualidade didática"
+    },
+    "totalSingular": "imagem disponível no total",
+    "totalPlural": "imagens disponíveis no total",
+    "carregandoTotal": "Carregando total de imagens disponíveis...",
+    "verImagens": "Ver imagens →"
+  },
+  "ImagensRecebidas": {
+    "titulo": "Imagens recebidas",
+    "tentarNovamente": "Tentar novamente",
+    "enviarTitulo": "Enviar imagem DICOM",
+    "enviarDescricao": "O arquivo é enviado ao Orthanc e anonimizado automaticamente antes de ficar disponível - nenhum dado identificável do paciente é mantido. O envio fica registrado na auditoria.",
+    "enviando": "Enviando...",
+    "enviarBotao": "Enviar imagem",
+    "mensagemDuplicata": "Este arquivo já estava registrado (imagem existente) - nenhuma duplicata foi criada.",
+    "mensagemSucesso": "Imagem enviada e anonimizada com sucesso.",
+    "erroEnvioGenerico": "Não foi possível enviar o arquivo. Verifique se é um DICOM válido.",
+    "erroEnvioConexao": "Não foi possível enviar o arquivo. Verifique sua conexão e tente novamente.",
+    "erroListaGenerico": "Não foi possível carregar as imagens (erro {status}). Tente novamente em instantes.",
+    "erroListaConexao": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+    "filtroAnonimizacaoTodos": "Todos os status de anonimização",
+    "filtroCuradoriaTodos": "Todos os status de curadoria",
+    "colunaIdOrthanc": "ID Orthanc",
+    "colunaTipo": "Tipo",
+    "colunaStatusAnonimizacao": "Status de anonimização",
+    "colunaStatusCuradoria": "Status de curadoria",
+    "colunaDataEntrada": "Data de entrada",
+    "semFicha": "Sem ficha",
+    "nenhumaImagem": "Nenhuma imagem encontrada.",
+    "statusAnonimizacao": {
+      "aguardando": "Aguardando",
+      "validada": "Validada",
+      "falha": "Falha"
+    },
+    "statusCuradoriaFiltro": {
+      "pendente": "Pendente",
+      "em_analise": "Em análise",
+      "aprovada": "Aprovada",
+      "segunda_opiniao": "Segunda opinião",
+      "baixa_qualidade": "Baixa qualidade",
+      "descartada": "Descartada",
+      "sem_ficha": "Sem ficha"
+    }
+  },
+  "MiniaturaImagem": {
+    "semPreview": "Sem preview"
+  },
+  "Pesquisa": {
+    "tituloPrefixo": "Pesquisa",
+    "tituloDestaque": "avançada",
+    "subtitulo": "Encontre imagens radiográficas para apoiar estudos e pesquisas.",
+    "totalDisponivelSingular": "imagem disponível no total",
+    "totalDisponivelPlural": "imagens disponíveis no total",
+    "acessoRapidoTitulo": "Acesso rápido por tipo de exame",
+    "buscaAvancadaTitulo": "Busca avançada",
+    "buscaAvancadaSubtitulo": "Refine sua pesquisa utilizando os filtros abaixo.",
+    "campoGenero": "Gênero",
+    "campoTodos": "Todos",
+    "campoDente": "Dente (FDI)",
+    "placeholderDente": "ex: 16",
+    "campoArcada": "Arcada",
+    "opcaoTodas": "Todas",
+    "campoLado": "Lado",
+    "opcaoAmbos": "Ambos",
+    "campoTipoExame": "Tipo de exame",
+    "campoPatologia": "Patologia / alteração",
+    "campoQualidadeTecnica": "Qualidade técnica",
+    "campoDificuldade": "Dificuldade",
+    "campoOrigem": "Origem",
+    "campoIdadeMin": "Idade mín.",
+    "campoIdadeMax": "Idade máx.",
+    "botaoPesquisar": "Pesquisar",
+    "pesquisando": "Pesquisando...",
+    "erroPesquisaGenerico": "Não foi possível realizar a pesquisa.",
+    "dicaUseFiltros": "Use os filtros acima para buscar imagens",
+    "nenhumaImagemEncontrada": "Nenhuma imagem encontrada com esses filtros",
+    "imagemEncontradaSingular": "imagem encontrada",
+    "imagensEncontradasPlural": "imagens encontradas",
+    "mostrandoPrimeiras": "(mostrando as primeiras {quantidade})",
+    "verSelecionadasSingular": "Ver {quantidade} selecionada em sequência",
+    "verSelecionadasPlural": "Ver {quantidade} selecionadas em sequência",
+    "selecaoLabel": "Seleção:",
+    "selecionarTodas": "Selecionar todas ({quantidade})",
+    "selecionarMaisBotao": "Selecionar mais",
+    "limparSelecao": "Limpar seleção",
+    "selecionarImagem": "Selecionar imagem #{numero}",
+    "imagemNumero": "Imagem #{numero}",
+    "opcoes": {
+      "tipoRadiografia": {
+        "periapical": "Periapical",
+        "panoramica": "Panorâmica",
+        "interproximal": "Interproximal",
+        "oclusal": "Oclusal"
+      },
+      "genero": {
+        "masculino": "Masculino",
+        "feminino": "Feminino"
+      },
+      "arcada": {
+        "superior": "Superior",
+        "inferior": "Inferior"
+      },
+      "lado": {
+        "direito": "Direito",
+        "esquerdo": "Esquerdo"
+      },
+      "achadoPrincipal": {
+        "normal": "Normal",
+        "carie": "Cárie",
+        "lesaoPeriapical": "Lesão periapical",
+        "perdaOssea": "Perda óssea",
+        "denteIncluso": "Dente incluso",
+        "tratamentoEndodontico": "Tratamento endodôntico",
+        "erroTecnico": "Erro técnico",
+        "outro": "Outro"
+      },
+      "qualidadeTecnica": {
+        "otima": "Ótima",
+        "boa": "Boa",
+        "regular": "Regular",
+        "insatisfatoria": "Insatisfatória"
+      },
+      "dificuldade": {
+        "basico": "Básico",
+        "intermediario": "Intermediário",
+        "avancado": "Avançado"
+      },
+      "origem": {
+        "ufsc": "UFSC (equipamento)",
+        "externa": "Externa (upload)"
+      }
+    }
+  },
+  "AlteracoesObservadas": {
+    "categorias": {
+      "carie": "Cárie",
+      "periodontal": "Periodontal",
+      "periapicalEndodontico": "Periapical / Endodôntico",
+      "restauradorProtetico": "Restaurador / Protético",
+      "osseoAnatomico": "Ósseo / Anatômico"
+    },
+    "itens": {
+      "carie_esmalte": "Cárie em esmalte",
+      "carie_dentina": "Cárie em dentina",
+      "carie_proxima_polpa": "Cárie próxima à polpa",
+      "carie_secundaria": "Cárie secundária (sob restauração)",
+      "perda_ossea_horizontal": "Perda óssea horizontal",
+      "perda_ossea_vertical": "Perda óssea vertical",
+      "calculo_dentario": "Cálculo dentário (tártaro)",
+      "alargamento_ligamento_periodontal": "Alargamento do ligamento periodontal",
+      "lesao_periapical": "Lesão periapical",
+      "reabsorcao_radicular_externa": "Reabsorção radicular externa",
+      "reabsorcao_radicular_interna": "Reabsorção radicular interna",
+      "tratamento_endodontico_presente": "Tratamento endodôntico presente",
+      "tratamento_endodontico_inadequado": "Tratamento endodôntico inadequado",
+      "fratura_radicular": "Fratura radicular",
+      "restauracao_presente": "Restauração presente",
+      "restauracao_com_infiltracao": "Restauração com infiltração",
+      "coroa_protetica": "Coroa protética",
+      "nucleo_pino": "Núcleo/pino intrarradicular",
+      "cisto": "Cisto",
+      "lesao_radiopaca": "Lesão radiopaca",
+      "lesao_radiolucida_inespecifica": "Lesão radiolúcida inespecífica",
+      "dente_incluso": "Dente incluso/impactado",
+      "dente_supranumerario": "Dente supranumerário",
+      "agenesia_dentaria": "Agenesia dentária",
+      "alteracao_seio_maxilar": "Alteração no seio maxilar",
+      "corpo_estranho": "Corpo estranho"
+    }
+  },
+  "Visualizador": {
+    "sairTelaCheia": "Sair da tela cheia",
+    "telaCheia": "Tela cheia",
+    "fechar": "Fechar",
+    "imagemPrefixo": "Imagem",
+    "deSelecionadas": "({indice} de {total} selecionadas)",
+    "serieDe": "· Série {indice} de {total}",
+    "cortes": "({total} cortes)",
+    "filaTitulo": "Fila · {total}",
+    "imagemNumero": "Imagem #{numero}",
+    "irParaImagem": "Ir para imagem #{numero}",
+    "estudoAnterior": "Estudo anterior",
+    "estudoAnteriorAria": "Estudo anterior (imagem selecionada anterior)",
+    "serieAnterior": "Série (pasta) anterior deste estudo",
+    "serieAnteriorTitulo": "Série anterior",
+    "proximaSerie": "Próxima série (pasta) deste estudo",
+    "proximaSerieTitulo": "Próxima série",
+    "proximoEstudo": "Próximo estudo (próxima imagem selecionada)",
+    "proximoEstudoTitulo": "Próximo estudo",
+    "giraImagem": "gira a imagem",
+    "inverteJanela": "inverte a janela",
+    "instrucaoRolagem": "Use a rolagem do mouse ou Page Up / Page Down dentro do visualizador para percorrer todos os cortes desta imagem.",
+    "instrucaoSeries": " Use a seta simples (‹ ›) para trocar de série e a seta dupla (« ») para trocar de estudo.",
+    "visualizadorOhifTitulo": "Visualizador OHIF - Imagem #{numero}",
+    "baixando": "Baixando...",
+    "baixarImagensZip": "⬇ Baixar imagens (ZIP, {total} cortes)",
+    "baixarDicomZip": "⬇ Baixar DICOM (ZIP)",
+    "baixar": "⬇ Baixar",
+    "salva": "✓ Salva",
+    "salvando": "Salvando...",
+    "salvarNoUsuario": "★ Salvar no meu usuário",
+    "enviando": "Enviando...",
+    "enviarPorEmail": "✉ Enviar por e-mail",
+    "erroBaixar": "Não foi possível baixar o arquivo.",
+    "imagemSalva": "Imagem salva em \"Minhas imagens\".",
+    "erroSalvar": "Não foi possível salvar a imagem.",
+    "erroEnviarEmail": "Não foi possível enviar por e-mail.",
+    "emailEnviado": "Imagem enviada por e-mail.",
+    "classificacao": {
+      "tipo": "Tipo: ",
+      "qualidade": "Qualidade: ",
+      "dentes": "Dentes: ",
+      "alteracoesObservadas": "Alterações observadas",
+      "nenhumaAlteracao": "Nenhuma alteração registrada.",
+      "achadosDetalhados": "Achados detalhados: ",
+      "descricao": "Descrição: "
+    },
+    "marcacao": {
+      "mostrarEstaImagem": "Mostrar marcação do curador para esta imagem",
+      "mostrarTodasImagens": "Mostrar marcação do curador para todas as imagens",
+      "nenhumaMarcada": "O curador não marcou nenhuma lesão nesta imagem.",
+      "altImagemMarcada": "Imagem das lesões marcadas",
+      "lesaoGenerica": "Lesão marcada pelo curador"
+    },
+    "anotacoes": {
+      "cancelar": "✕ Cancelar",
+      "novaAnotacao": "+ Anotação",
+      "dicaClicarArrastar": "Clique para marcar um ponto, ou clique e arraste para desenhar uma seta até o local exato",
+      "clicarParaEditar": "Clique para editar",
+      "excluirAnotacao": "Excluir esta anotação",
+      "soltarSeta": "Clique novamente para soltar a seta aqui",
+      "pegarSeta": "Clique para pegar a seta inteira (caixa + ponta juntas) - depois é só mover o mouse (sem precisar segurar). Clique de novo para soltar",
+      "fecharSemSalvar": "Fechar sem salvar",
+      "arrasteMoverCaixa": "⠿⠿⠿ arraste para mover a caixa",
+      "arrasteTitulo": "Arraste para mover esta caixa",
+      "placeholder": "Escreva sua anotação...",
+      "negrito": "Negrito",
+      "italico": "Itálico",
+      "textoSempreVisivel": "📌 Texto sempre visível",
+      "removerSeta": "✕ Remover seta",
+      "adicionarSeta": "↗ Adicionar seta",
+      "erroTextoVazio": "Escreva algo antes de salvar.",
+      "erroSalvar": "Não foi possível salvar a anotação.",
+      "erroExcluir": "Não foi possível excluir a anotação.",
+      "salvar": "Salvar",
+      "cores": {
+        "amarelo": "Amarelo",
+        "vermelho": "Vermelho",
+        "verde": "Verde",
+        "azul": "Azul",
+        "roxo": "Roxo",
+        "laranja": "Laranja"
+      }
+    }
+  },
+  "Curadoria": {
+    "inicio": "Início",
+    "titulo": "Curadoria",
+    "fila": {
+      "titulo": "Fila de curadoria",
+      "expandir": "Expandir fila de curadoria",
+      "recolher": "Recolher fila de curadoria",
+      "fila": "Fila",
+      "filaComContagem": "Fila ({contagem})",
+      "carregandoFila": "Carregando fila...",
+      "nenhumaPendente": "Nenhuma imagem pendente.",
+      "abrindo": "Abrindo...",
+      "dataIndisponivel": "data: —"
+    },
+    "modalMotivo": {
+      "descartarTitulo": "Descartar ficha",
+      "segundaOpiniaoTitulo": "Solicitar segunda opinião",
+      "motivo": "Motivo",
+      "cancelar": "Cancelar",
+      "confirmar": "Confirmar",
+      "enviando": "Enviando...",
+      "fechar": "Fechar",
+      "erroMotivoObrigatorio": "Informe um motivo.",
+      "erroConcluirAcao": "Não foi possível concluir a ação."
+    },
+    "segundaOpiniaoBanner": {
+      "titulo": "Imagem aguardando segunda opinião",
+      "solicitadoPor": "Solicitado por",
+      "usuarioNumero": "usuário #{id}",
+      "data": "Data",
+      "observacoes": "Observações"
+    },
+    "barraSuperior": {
+      "imagemAnterior": "Imagem anterior",
+      "proximaImagem": "Próxima imagem",
+      "imagemXdeY": "Imagem {atual} de {total}",
+      "salvar": "Salvar",
+      "salvando": "Salvando...",
+      "aprovar": "✓ Aprovar",
+      "aprovando": "Aprovando...",
+      "solicitarSegundaOpiniao": "Solicitar segunda opinião",
+      "descartar": "Descartar"
+    },
+    "ficha": {
+      "titulo": "Ficha de curadoria",
+      "descricaoDidatica": "Descrição didática",
+      "observacoesInternas": "Observações internas",
+      "rascunhoSalvo": "Rascunho salvo.",
+      "erroSalvarRascunho": "Não foi possível salvar o rascunho.",
+      "erroAbrirImagem": "Não foi possível abrir esta imagem para curadoria.",
+      "erroCarregarFichaCriada": "Não foi possível carregar a ficha criada.",
+      "erroAprovar": "Não foi possível aprovar a ficha.",
+      "erroCarregarFila": "Não foi possível carregar a fila de curadoria.",
+      "erroConexao": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+    },
+    "achados": {
+      "alteracoesObservadas": "Alterações observadas",
+      "outrosAchados": "Outros achados (não estão na lista acima)",
+      "placeholderOutros": "Descreva aqui qualquer achado que não esteja nas opções acima"
+    },
+    "dadosSobrepostos": {
+      "status": "Status",
+      "anonimizacaoValidada": "Anonimização validada",
+      "tipoRadiografia": "Tipo de radiografia",
+      "faixaEtaria": "Faixa etária",
+      "idadeMin": "mín.",
+      "idadeMax": "máx.",
+      "sexo": "Sexo",
+      "dentes": "Dentes (notação FDI)",
+      "removerDente": "Remover dente {numero}",
+      "qualidadeTecnica": "Qualidade técnica",
+      "selecione": "Selecione",
+      "erroDenteInvalido": "Use um número FDI válido (11-18, 21-28, 31-38, 41-48).",
+      "exemploDente": "ex: 16"
+    },
+    "visualizador": {
+      "centralizarImagem": "Centralizar imagem",
+      "centralizar": "Centralizar",
+      "ajustarATela": "Ajustar à tela",
+      "restaurarLayout": "Restaurar layout padrão",
+      "sairTelaCheia": "Sair da tela cheia",
+      "abrirTelaCheia": "Abrir em tela cheia",
+      "voltar": "Voltar",
+      "telaCheia": "Tela cheia",
+      "selecioneImagem": "Selecione uma imagem na fila ao lado",
+      "carregandoVisualizador": "Carregando visualizador...",
+      "ohifTitulo": "Visualizador OHIF",
+      "naoDisponivel": "Não foi possível carregar o visualizador para esta imagem."
+    },
+    "marcador": {
+      "removerMarcacao": "✕ Remover marcação",
+      "tipoLesao": "Tipo de lesão desta marcação:",
+      "selecione": "Selecione",
+      "semPreview": "Sem preview disponível",
+      "altImagemMarcacao": "Imagem para marcação",
+      "instrucaoComMarcacoes": "{total} marcação(ões). Clique e arraste na imagem para adicionar outra, ou clique numa existente para mover/redimensionar.",
+      "instrucaoSemMarcacoes": "Clique e arraste na imagem para marcar uma lesão (opcional). Escolha a forma acima.",
+      "formas": {
+        "oval": "Oval",
+        "retangulo": "Retângulo",
+        "seta": "Seta"
+      }
+    },
+    "painelLateral": {
+      "imagemParaMarcacao": "Imagem para marcação",
+      "achadosEmRadiografia": "Achados em radiografia",
+      "verAchados": "Ver achados em radiografia",
+      "voltarParaMarcacao": "Voltar para imagem de marcação"
+    }
+  },
+  "SegundaOpiniaoPage": {
+    "titulo": "Segunda opinião",
+    "aguardandoParecer": "Aguardando parecer",
+    "carregandoFila": "Carregando fila...",
+    "nenhumaPendente": "Nenhuma solicitação pendente.",
+    "selecioneSolicitacao": "Selecione uma solicitação na lista ao lado",
+    "oQueCuradorRegistrou": "O que o curador registrou (somente leitura)",
+    "motivoSolicitacao": "Motivo da solicitação de segunda opinião",
+    "primeiroParecer": "Primeiro parecer do curador (ao solicitar)",
+    "carregandoFichaCompleta": "Carregando ficha completa...",
+    "erroCarregarFichaCompleta": "Não foi possível carregar os dados completos da ficha.",
+    "faixaEtariaValor": "{min} a {max}",
+    "sim": "Sim",
+    "nao": "Não",
+    "observacoesInternasCurador": "Observações internas do curador",
+    "marcacoesFeitasPeloCurador": "Marcações feitas pelo curador na imagem",
+    "suaAvaliacao": "Sua avaliação",
+    "instrucaoAvaliacao": "Depois de analisar o que o curador registrou acima, você concorda com essa avaliação ou discorda dela?",
+    "concordar": "Concordar com o curador",
+    "discordar": "Discordar",
+    "erroEnviarAvaliacao": "Não foi possível enviar sua avaliação."
+  },
+  "MinhasImagens": {
+    "tituloPrefixo": "Minhas",
+    "tituloDestaque": "imagens",
+    "subtitulo": "Imagens que você salvou a partir da Pesquisa avançada.",
+    "desmarcarTodas": "Desmarcar todas",
+    "enviando": "Enviando...",
+    "enviarPorEmailSingular": "✉ Enviar {quantidade} selecionada por e-mail",
+    "enviarPorEmailPlural": "✉ Enviar {quantidade} selecionadas por e-mail",
+    "avisoSerie": "Uma ou mais imagens selecionadas fazem parte de uma série com vários cortes (tomografia) e não podem ser enviadas por e-mail — use os botões de download (ZIP) dentro do visualizador em sequência.",
+    "mensagemLotePadrao": "Imagens enviadas por e-mail.",
+    "erroCarregar": "Não foi possível carregar suas imagens salvas.",
+    "erroRemover": "Não foi possível remover a imagem.",
+    "erroEnviarEmail": "Não foi possível enviar as imagens por e-mail.",
+    "semImagensPrefixo": "Você ainda não salvou nenhuma imagem. Salve imagens na tela de",
+    "linkPesquisaAvancada": "Pesquisa avançada",
+    "expandir": "⛶ Expandir",
+    "remover": "Remover"
+  },
+  "VisualizarImagem": {
+    "tituloPrefixo": "Detalhes",
+    "tituloDestaque": "da imagem",
+    "subtitulo": "Consulta científica dos dados analisados pelo curador especialista.",
+    "erroCarregar": "Não foi possível carregar esta imagem.",
+    "erroNaoEncontrada": "Imagem não encontrada entre as imagens aprovadas.",
+    "imagemIndisponivel": "Imagem não disponível para visualização",
+    "avisoRodape": "Imagem disponibilizada exclusivamente para fins de ensino e pesquisa. Uso para diagnóstico clínico não é permitido."
+  },
+  "NavegacaoCasos": {
+    "voltarParaPesquisa": "← Voltar para pesquisa",
+    "casoXdeY": "Caso {atual} de {total}",
+    "casoAnterior": "← Caso anterior",
+    "proximoCaso": "Próximo caso →"
+  },
+  "ColunaEstudos": {
+    "titulo": "Exames encontrados",
+    "carregando": "Carregando exames...",
+    "nenhumEncontrado": "Nenhum exame encontrado."
+  },
+  "ColunaSeries": {
+    "titulo": "Séries do estudo",
+    "carregando": "Carregando séries...",
+    "semInformacao": "Sem informação de série para esta imagem.",
+    "serieNumero": "Série {numero}",
+    "corteSingular": "corte",
+    "cortePlural": "cortes"
+  },
+  "Auditoria": {
+    "titulo": "Auditoria e segurança",
+    "campoAcao": "Ação",
+    "campoResultado": "Resultado",
+    "campoDataInicial": "Data inicial",
+    "campoDataFinal": "Data final",
+    "buscando": "Buscando...",
+    "filtrar": "Filtrar",
+    "colData": "Data/hora",
+    "colUsuario": "Usuário",
+    "colAcao": "Ação",
+    "colEntidade": "Entidade",
+    "colResultado": "Resultado",
+    "colDetalhes": "Detalhes",
+    "ocultar": "Ocultar",
+    "detalhes": "Detalhes",
+    "semDetalhes": "Sem detalhes registrados.",
+    "nenhumRegistro": "Nenhum registro encontrado.",
+    "mostrandoRegistros": "Mostrando {de}–{ate} de {total} registros",
+    "zeroRegistros": "0 registros",
+    "anterior": "Anterior",
+    "proximo": "Próximo",
+    "erroCarregar": "Não foi possível carregar a auditoria.",
+    "usuarioNumero": "Usuário #{id}",
+    "categorias": {
+      "acesso": "Acesso",
+      "usuarios": "Usuários",
+      "imagens": "Imagens",
+      "curadoria": "Curadoria"
+    },
+    "acoes": {
+      "login": "Login",
+      "falhaLogin": "Falha no login",
+      "logout": "Logout",
+      "trocaSenha": "Troca de senha",
+      "falhaTrocaSenha": "Falha na troca de senha",
+      "criacaoUsuario": "Criação de usuário",
+      "edicaoUsuario": "Edição de usuário",
+      "bloqueioUsuario": "Bloqueio/desbloqueio de usuário",
+      "importacaoOrthanc": "Importação do Orthanc",
+      "uploadImagem": "Upload de imagem",
+      "uploadSemPreambuloDicom": "Upload sem preâmbulo DICOM",
+      "criacao": "Criação de ficha",
+      "edicaoCuradoria": "Edição de ficha",
+      "aprovacao": "Aprovação",
+      "aprovacaoPosSegundaOpiniao": "Aprovação pós segunda opinião",
+      "descarte": "Descarte",
+      "descartePosSegundaOpiniao": "Descarte pós segunda opinião",
+      "solicitacaoSegundaOpiniao": "Solicitação de segunda opinião",
+      "respostaSegundaOpiniao": "Resposta de segunda opinião"
+    },
+    "resultados": {
+      "sucesso": "Sucesso",
+      "negado": "Negado",
+      "erro": "Erro"
+    }
+  },
+  "Relatorios": {
+    "titulo": "Relatórios e indicadores",
+    "erroCarregar": "Não foi possível carregar os indicadores.",
+    "totalImagens": "Total de imagens",
+    "totalFichas": "Total de fichas",
+    "usuariosAtivos": "Usuários ativos",
+    "usuariosBloqueados": "Usuários bloqueados",
+    "fichasPorStatus": "Fichas por status",
+    "fichasPorTipoRadiografia": "Fichas por tipo de radiografia",
+    "fichasPorAchadoPrincipal": "Fichas por achado principal",
+    "fichasPorDificuldade": "Fichas por dificuldade",
+    "fichasPorQualidadeTecnica": "Fichas por qualidade técnica",
+    "fichasPorCurador": "Fichas por curador",
+    "naoInformado": "Não informado",
+    "semCuradorAtribuido": "Sem curador atribuído",
+    "usuarioNumero": "Usuário #{id}",
+    "semDados": "Sem dados."
+  },
+  "Integracoes": {
+    "titulo": "Integrações",
+    "subtitulo": "Conexões de infraestrutura e serviços internos da plataforma.",
+    "atualizando": "Atualizando...",
+    "atualizarStatus": "Atualizar status",
+    "verificando": "Verificando...",
+    "descricaoFastapi": "A própria resposta desta página confirma que a API respondeu.",
+    "descricaoNextjs": "O frontend está rodando — você está vendo esta página.",
+    "servicoArmazenamento": "Armazenamento",
+    "semEndpointChecagem": "Sem endpoint de checagem disponível.",
+    "descricaoDicomweb": "Mesmo status do Orthanc — DICOMWeb é um plugin dele, não uma checagem separada. {descricaoOrthanc}",
+    "variavelOhifNaoConfigurada": "Variável NEXT_PUBLIC_OHIF_URL não configurada.",
+    "ohifRespondeu": "Respondeu à requisição (checagem best-effort, sem validar o conteúdo).",
+    "ohifNaoRespondeu": "Não respondeu — pode ser falha real ou apenas CORS/rede local. Checagem best-effort.",
+    "status": {
+      "online": "Online",
+      "erro": "Erro",
+      "instavel": "Instável",
+      "offline": "Offline",
+      "aguardando": "Aguardando configuração"
+    },
+    "healthCheck": {
+      "endpointHttpStatus": "Endpoint respondeu com HTTP {status}.",
+      "verificadoAgora": "Verificado agora.",
+      "erroBackend": "Verificado agora — backend reportou \"{detalhe}\".",
+      "formatoInesperado": "Resposta em formato inesperado.",
+      "falhaRede": "Falha de rede ao verificar."
+    }
+  },
+  "PainelAdmin": {
+    "titulo": "Painel administrativo",
+    "subtitulo": "Controle geral da plataforma RÁDIX IMAGO.",
+    "erroCarregar": "Não foi possível carregar os indicadores.",
+    "erroCarregarPainel": "Não foi possível carregar o painel.",
+    "totalImagens": "Total de imagens",
+    "aguardandoCuradoria": "Aguardando curadoria",
+    "emAnalise": "Em análise",
+    "curadasLiberadas": "Curadas e liberadas",
+    "descartadas": "Descartadas",
+    "usuariosAtivos": "Usuários ativos",
+    "atalhosGestao": "Atalhos de gestão",
+    "statusServicos": "Status dos serviços",
+    "verTodosServicos": "Ver todos os serviços →",
+    "alertasSeguranca": "Alertas de segurança",
+    "nenhumAlerta": "Nenhum alerta de segurança recente",
+    "loginAlertaSingular": "{total} tentativa de login falha recente",
+    "loginAlertaPlural": "{total} tentativas de login falhas recentes",
+    "semDetalhes": "Sem detalhes.",
+    "verAuditoriaCompleta": "Ver auditoria completa →",
+    "atalhos": {
+      "usuarios": "Usuários",
+      "imagensRecebidas": "Imagens recebidas",
+      "curadoria": "Curadoria",
+      "relatorios": "Relatórios",
+      "auditoria": "Auditoria",
+      "integracoes": "Integrações"
+    }
+  }
+}

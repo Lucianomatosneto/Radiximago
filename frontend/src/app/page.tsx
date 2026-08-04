@@ -1,9 +1,10 @@
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import Logo from '../components/Logo'
+import SeletorIdioma from '../components/SeletorIdioma'
 
 interface Recurso {
-  titulo: string
-  descricao: string
+  chave: string
   icone: JSX.Element
   span: string
   destaque?: boolean
@@ -65,58 +66,55 @@ function IconeAuditoria() {
 
 const RECURSOS: Recurso[] = [
   {
-    titulo: 'Curadoria especializada',
-    descricao: 'Fluxo estruturado para revisão e classificação de radiografias por especialistas.',
+    chave: 'curadoria',
     icone: <IconeCuradoria />,
     span: 'md:col-span-4 md:row-span-2',
   },
   {
-    titulo: 'Anonimização automática',
-    descricao: 'Dados pessoais removidos ao ingressar no sistema, conforme a LGPD.',
+    chave: 'anonimizacao',
     icone: <IconeAnonimizacao />,
     span: 'md:col-span-2',
     destaque: true,
   },
   {
-    titulo: 'Pesquisa avançada',
-    descricao: 'Filtros combinados por achado, região e metadados clínicos.',
+    chave: 'pesquisa',
     icone: <IconePesquisa />,
     span: 'md:col-span-2',
   },
   {
-    titulo: 'Segunda opinião',
-    descricao: 'Solicite e registre pareceres colaborativos entre profissionais.',
+    chave: 'segundaOpiniao',
     icone: <IconeSegundaOpiniao />,
     span: 'md:col-span-3',
   },
   {
-    titulo: 'Banco de imagens',
-    descricao: 'Acervo organizado para uso em ensino e pesquisa científica.',
+    chave: 'banco',
     icone: <IconeBanco />,
     span: 'md:col-span-3',
   },
   {
-    titulo: 'Auditoria completa',
-    descricao: 'Rastreabilidade de cada ação realizada na plataforma.',
+    chave: 'auditoria',
     icone: <IconeAuditoria />,
     span: 'md:col-span-6',
   },
 ]
 
 export default function Home() {
+  const t = useTranslations('Inicio')
+
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-5xl flex-col px-6 py-8">
       <header className="flex items-center justify-between">
         <Logo variante="navbar" />
         <div className="flex items-center gap-3 text-sm">
+          <SeletorIdioma />
           <Link href="/solicitar-acesso" className="text-slate-400 transition-colors hover:text-slate-200">
-            Solicitar acesso
+            {t('solicitarAcesso')}
           </Link>
           <Link
             href="/login"
             className="rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 px-4 py-2 font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110"
           >
-            Entrar
+            {t('entrar')}
           </Link>
         </div>
       </header>
@@ -124,14 +122,14 @@ export default function Home() {
       <section className="animar-entrada flex flex-1 flex-col items-center justify-center py-16 text-center">
         <Logo variante="hero" />
         <p className="mt-4 max-w-lg text-balance text-base leading-relaxed text-slate-400">
-          Base inteligente de imagens para ensino e pesquisa em saúde
+          {t('subtitulo')}
         </p>
       </section>
 
       <section className="grid grid-cols-1 gap-4 pb-16 md:grid-cols-6">
         {RECURSOS.map((recurso) => (
           <div
-            key={recurso.titulo}
+            key={recurso.chave}
             className={`animar-entrada group rounded-2xl border p-6 backdrop-blur-xl transition-colors ${recurso.span} ${
               recurso.span.includes('row-span-2') ? 'flex flex-col justify-between' : ''
             } ${
@@ -152,8 +150,10 @@ export default function Home() {
               {recurso.icone}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-ink">{recurso.titulo}</h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{recurso.descricao}</p>
+              <h2 className="text-base font-semibold text-ink">{t(`recursos.${recurso.chave}.titulo`)}</h2>
+              <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
+                {t(`recursos.${recurso.chave}.descricao`)}
+              </p>
             </div>
           </div>
         ))}
@@ -161,7 +161,7 @@ export default function Home() {
 
       <footer className="flex flex-col items-center gap-3 border-t border-white/10 py-6 text-center text-xs text-slate-500">
         <Logo variante="footer" />
-        Acesso restrito a usuários autorizados
+        {t('rodape')}
       </footer>
     </main>
   )
