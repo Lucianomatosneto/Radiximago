@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { CORES_ACHADO_PRINCIPAL } from '../lib/coresAchados'
 
 interface Categoria {
   titulo: string
@@ -48,49 +49,49 @@ const CATEGORIAS: Categoria[] = [
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'normal',
-    cor: 'from-emerald-100 to-emerald-50 border-emerald-300 text-emerald-700 dark:from-emerald-600/30 dark:to-emerald-900/10 dark:border-emerald-700/40 dark:text-emerald-300',
+    cor: CORES_ACHADO_PRINCIPAL.normal.cartao,
   },
   {
     titulo: 'Cárie',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'carie',
-    cor: 'from-red-100 to-red-50 border-red-300 text-red-700 dark:from-red-600/30 dark:to-red-900/10 dark:border-red-700/40 dark:text-red-300',
+    cor: CORES_ACHADO_PRINCIPAL.carie.cartao,
   },
   {
     titulo: 'Lesões periapicais',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'lesao_periapical',
-    cor: 'from-orange-100 to-orange-50 border-orange-300 text-orange-700 dark:from-orange-600/30 dark:to-orange-900/10 dark:border-orange-700/40 dark:text-orange-300',
+    cor: CORES_ACHADO_PRINCIPAL.lesao_periapical.cartao,
   },
   {
     titulo: 'Perda óssea',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'perda_ossea',
-    cor: 'from-amber-100 to-amber-50 border-amber-300 text-amber-700 dark:from-amber-600/30 dark:to-amber-900/10 dark:border-amber-700/40 dark:text-amber-300',
+    cor: CORES_ACHADO_PRINCIPAL.perda_ossea.cartao,
   },
   {
     titulo: 'Dentes inclusos',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'dente_incluso',
-    cor: 'from-purple-100 to-purple-50 border-purple-300 text-purple-700 dark:from-purple-600/30 dark:to-purple-900/10 dark:border-purple-700/40 dark:text-purple-300',
+    cor: CORES_ACHADO_PRINCIPAL.dente_incluso.cartao,
   },
   {
     titulo: 'Tratamento endodôntico',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'tratamento_endodontico',
-    cor: 'from-blue-100 to-blue-50 border-blue-300 text-blue-700 dark:from-blue-600/30 dark:to-blue-900/10 dark:border-blue-700/40 dark:text-blue-300',
+    cor: CORES_ACHADO_PRINCIPAL.tratamento_endodontico.cartao,
   },
   {
     titulo: 'Erros técnicos',
     rotuloParametro: 'Achado principal',
     parametro: 'achado_principal',
     valor: 'erro_tecnico',
-    cor: 'from-slate-100 to-slate-50 border-slate-300 text-ink-2 dark:from-slate-600/30 dark:to-slate-900/10 dark:border-slate-700/40 dark:text-slate-300',
+    cor: CORES_ACHADO_PRINCIPAL.erro_tecnico.cartao,
   },
   {
     titulo: 'Imagens de alta qualidade didática',

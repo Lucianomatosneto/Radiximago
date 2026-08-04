@@ -12,24 +12,38 @@ import { useHoverMarcacao } from '../../lib/useHoverMarcacao'
 // overlays. Passar o mouse em cima de uma marcacao mostra o tipo de lesao
 // que o curador indicou ali.
 //
-// `comImagem=false` (usado pelo VisualizadorSequencial) renderiza so o
-// checkbox - quem chama ja mostra uma imagem grande centralizada (o
+// `comImagem=false` (usado pelo VisualizadorSequencial) renderiza so os
+// checkboxes - quem chama ja mostra uma imagem grande centralizada (o
 // visualizador principal) e precisa desenhar as marcacoes exatamente ali
 // em cima, no MESMO lugar/tamanho, em vez de duplicar a imagem num bloco
 // separado. Nesse modo o estado do checkbox tambem fica com quem chama
 // (`mostrar`/`onMostrarChange`), pra poder decidir o que desenhar no
 // visualizador principal.
+//
+// `mostrarTodas`/`onMostrarTodasChange` sao opcionais e so fazem sentido
+// quando existe uma SEQUENCIA de imagens navegavel (VisualizadorSequencial) -
+// pedido explicito pra ter as duas opcoes separadas: "para esta imagem"
+// (liga so a atual, reseta ao trocar de imagem - comportamento de sempre)
+// e "para todas as imagens" (liga uma vez e continua mostrando a marcacao
+// de cada imagem automaticamente, sem precisar marcar o checkbox de novo a
+// cada troca). Quem chama decide o efeito real (ver comentario em
+// VisualizadorSequencial.tsx) - aqui so exibimos o segundo checkbox
+// quando `onMostrarTodasChange` e passado.
 export default function MarcacaoAchado({
   curationId,
   marcacoes,
   mostrar: mostrarControlado,
   onMostrarChange,
+  mostrarTodas,
+  onMostrarTodasChange,
   comImagem = true,
 }: {
   curationId: number
   marcacoes: Marcacao[]
   mostrar?: boolean
   onMostrarChange?: (valor: boolean) => void
+  mostrarTodas?: boolean
+  onMostrarTodasChange?: (valor: boolean) => void
   comImagem?: boolean
 }) {
   const [mostrarInterno, setMostrarInterno] = useState(false)
@@ -37,25 +51,42 @@ export default function MarcacaoAchado({
   const mostrar = mostrarControlado ?? mostrarInterno
   const definirMostrar = onMostrarChange ?? setMostrarInterno
   const disponivel = marcacoes.length > 0
+  // Enquanto "todas as imagens" esta ligado, o checkbox "esta imagem"
+  // fica desabilitado (redundante - a marcacao ja aparece de qualquer
+  // jeito) em vez de deixar os dois brigando pelo mesmo resultado.
+  const estaImagemDesabilitado = !disponivel || !!mostrarTodas
 
   return (
-    <div className={comImagem ? 'mt-3 rounded-xl border border-base-border bg-base-surface p-3' : ''}>
-      <label className="flex items-center gap-2 text-sm text-ink">
-        <input
-          type="checkbox"
-          checked={mostrar}
-          onChange={(evento) => definirMostrar(evento.target.checked)}
-          disabled={!disponivel}
-          className="h-4 w-4 rounded border-base-border"
-        />
-        Mostrar marcação do curador
-      </label>
+    <div className={comImagem ? 'mt-3 rounded-xl border border-base-border bg-base-surface p-3' : 'mt-3'}>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-1.5">
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={mostrar}
+            onChange={(evento) => definirMostrar(evento.target.checked)}
+            disabled={estaImagemDesabilitado}
+            className="h-4 w-4 rounded border-base-border"
+          />
+          Mostrar marcação (esta imagem)
+        </label>
+        {onMostrarTodasChange && (
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={!!mostrarTodas}
+              onChange={(evento) => onMostrarTodasChange(evento.target.checked)}
+              className="h-4 w-4 rounded border-base-border"
+            />
+            Mostrar marcação (todas as imagens)
+          </label>
+        )}
+      </div>
       {!disponivel && (
         <p className="mt-1 text-xs text-slate-500">O curador não marcou nenhuma lesão nesta imagem.</p>
       )}
       {comImagem && disponivel && (
         <div className="relative mt-3 inline-block max-w-full overflow-hidden rounded-lg border border-base-border">
-          <MiniaturaImagem curationId={curationId} alt="Imagem das lesões marcadas" className="block max-h-[50vh] w-auto" />
+          <MiniaturaImagem curationId={curationId} alt="Imagem com marcação do curador" className="block max-h-[50vh] w-auto" />
           {mostrar && (
             <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
               <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`bloco-${curationId}`} onHover={setHover} />
