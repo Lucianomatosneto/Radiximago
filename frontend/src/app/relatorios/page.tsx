@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -10,36 +11,26 @@ import { corBarraAchado, corTextoAchado } from '../../lib/coresAchados'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
 
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
-]
+// Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
+// usado em Pesquisa avançada, Curadoria e demais telas) - so os valores
+// crus (mesmos salvos pelo backend) ficam fixos aqui.
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+const OPCOES_DIFICULDADE = ['basico', 'intermediario', 'avancado']
+const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
-const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', label: 'Normal' },
-  { valor: 'carie', label: 'Cárie' },
-  { valor: 'lesao_periapical', label: 'Lesão periapical' },
-  { valor: 'perda_ossea', label: 'Perda óssea' },
-  { valor: 'dente_incluso', label: 'Dente incluso' },
-  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
-  { valor: 'erro_tecnico', label: 'Erro técnico' },
-  { valor: 'outro', label: 'Outro' },
-]
-
-const OPCOES_DIFICULDADE = [
-  { valor: 'basico', label: 'Básico' },
-  { valor: 'intermediario', label: 'Intermediário' },
-  { valor: 'avancado', label: 'Avançado' },
-]
-
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
-]
+// achadoPrincipal precisa do mapa abaixo porque as chaves de traducao nao
+// batem 1:1 com o valor cru salvo pelo curador (mesmo mapa ja usado em
+// outras telas, ex. segunda-opiniao/page.tsx).
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
+}
 
 interface StatsResponse {
   total_imagens_orthanc: number
@@ -57,11 +48,6 @@ interface StatsResponse {
 interface Usuario {
   id: number
   nome: string
-}
-
-function rotular(opcoes: { valor: string; label: string }[], chave: string): string {
-  if (chave === 'nao_informado') return 'Não informado'
-  return opcoes.find((o) => o.valor === chave)?.label ?? chave
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -90,6 +76,7 @@ function TabelaProporcao({
   // curador) continuam com a cor neutra/marca de sempre.
   corPorChave?: (chave: string) => { texto: string; barra: string }
 }) {
+  const t = useTranslations('Relatorios')
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1])
   const total = entradas.reduce((soma, [, valor]) => soma + valor, 0)
 
@@ -97,7 +84,7 @@ function TabelaProporcao({
     <section className="rounded-xl border border-base-border bg-base-surface p-5">
       <h2 className="mb-4 text-sm font-semibold text-slate-200">{titulo}</h2>
       {entradas.length === 0 ? (
-        <p className="text-sm text-slate-500">Sem dados.</p>
+        <p className="text-sm text-slate-500">{t('semDados')}</p>
       ) : (
         <div className="space-y-3">
           {entradas.map(([chave, valor]) => {
@@ -128,6 +115,23 @@ function TabelaProporcao({
 
 export default function RelatoriosPage() {
   const router = useRouter()
+  const t = useTranslations('Relatorios')
+  const tComum = useTranslations('Comum')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+
+  function rotular(opcoes: string[], namespace: 'tipoRadiografia' | 'dificuldade' | 'qualidadeTecnica', chave: string): string {
+    if (chave === 'nao_informado') return t('naoInformado')
+    if (!opcoes.includes(chave)) return chave
+    return tOpcoes(`${namespace}.${chave}`)
+  }
+
+  function rotularAchado(chave: string): string {
+    if (chave === 'nao_informado') return t('naoInformado')
+    const chaveTraducao = CHAVE_ACHADO[chave]
+    if (!chaveTraducao) return chave
+    return tOpcoes(`achadoPrincipal.${chaveTraducao}`)
+  }
+
   const [carregando, setCarregando] = useState(true)
 
   const [stats, setStats] = useState<StatsResponse | null>(null)
@@ -172,7 +176,7 @@ export default function RelatoriosPage() {
       }
 
       if (!respostaStats.ok) {
-        setErro(await extrairErro(respostaStats, 'Não foi possível carregar os indicadores.'))
+        setErro(await extrairErro(respostaStats, t('erroCarregar')))
         return
       }
       const dadosStats: StatsResponse = await respostaStats.json()
@@ -187,22 +191,22 @@ export default function RelatoriosPage() {
       // Se /users/ falhar por qualquer motivo, os relatorios continuam de pe -
       // so o nome do curador cai no fallback "Usuario #<id>" abaixo.
     } catch {
-      setErro('Não foi possível carregar os indicadores.')
+      setErro(t('erroCarregar'))
     } finally {
       setCarregando(false)
     }
   }
 
   function rotularCurador(chave: string): string {
-    if (chave === 'nao_informado') return 'Sem curador atribuído'
+    if (chave === 'nao_informado') return t('semCuradorAtribuido')
     const id = Number(chave)
-    return mapaCuradores[id] ?? `Usuário #${chave}`
+    return mapaCuradores[id] ?? t('usuarioNumero', { id: chave })
   }
 
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -216,7 +220,7 @@ export default function RelatoriosPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">Relatórios e indicadores</h1>
+          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
 
           {erro && (
             <p className="mb-4 text-sm text-red-400" role="alert">
@@ -227,45 +231,45 @@ export default function RelatoriosPage() {
           {stats && (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <DashboardCard label="Total de imagens" valor={stats.total_imagens_orthanc} cor="teal" />
-                <DashboardCard label="Total de fichas" valor={stats.total_fichas_curadoria} cor="blue" />
+                <DashboardCard label={t('totalImagens')} valor={stats.total_imagens_orthanc} cor="teal" />
+                <DashboardCard label={t('totalFichas')} valor={stats.total_fichas_curadoria} cor="blue" />
                 {perfil === 'administrador' && (
                   <>
-                    <DashboardCard label="Usuários ativos" valor={stats.usuarios_ativos} cor="green" />
-                    <DashboardCard label="Usuários bloqueados" valor={stats.usuarios_bloqueados} cor="red" />
+                    <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="green" />
+                    <DashboardCard label={t('usuariosBloqueados')} valor={stats.usuarios_bloqueados} cor="red" />
                   </>
                 )}
               </div>
 
               <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 <TabelaProporcao
-                  titulo="Fichas por status"
+                  titulo={t('fichasPorStatus')}
                   dados={stats.por_status}
                   renderRotulo={(chave) => <StatusBadge status={chave} />}
                 />
                 <TabelaProporcao
-                  titulo="Fichas por tipo de radiografia"
+                  titulo={t('fichasPorTipoRadiografia')}
                   dados={stats.por_tipo_radiografia}
-                  renderRotulo={(chave) => rotular(OPCOES_TIPO_RADIOGRAFIA, chave)}
+                  renderRotulo={(chave) => rotular(OPCOES_TIPO_RADIOGRAFIA, 'tipoRadiografia', chave)}
                 />
                 <TabelaProporcao
-                  titulo="Fichas por achado principal"
+                  titulo={t('fichasPorAchadoPrincipal')}
                   dados={stats.por_achado_principal}
-                  renderRotulo={(chave) => rotular(OPCOES_ACHADO_PRINCIPAL, chave)}
+                  renderRotulo={(chave) => rotularAchado(chave)}
                   corPorChave={(chave) => ({ texto: corTextoAchado(chave), barra: corBarraAchado(chave) })}
                 />
                 <TabelaProporcao
-                  titulo="Fichas por dificuldade"
+                  titulo={t('fichasPorDificuldade')}
                   dados={stats.por_dificuldade}
-                  renderRotulo={(chave) => rotular(OPCOES_DIFICULDADE, chave)}
+                  renderRotulo={(chave) => rotular(OPCOES_DIFICULDADE, 'dificuldade', chave)}
                 />
                 <TabelaProporcao
-                  titulo="Fichas por qualidade técnica"
+                  titulo={t('fichasPorQualidadeTecnica')}
                   dados={stats.por_qualidade_tecnica}
-                  renderRotulo={(chave) => rotular(OPCOES_QUALIDADE_TECNICA, chave)}
+                  renderRotulo={(chave) => rotular(OPCOES_QUALIDADE_TECNICA, 'qualidadeTecnica', chave)}
                 />
                 <TabelaProporcao
-                  titulo="Fichas por curador"
+                  titulo={t('fichasPorCurador')}
                   dados={stats.por_curador}
                   renderRotulo={rotularCurador}
                 />
