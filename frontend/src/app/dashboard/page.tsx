@@ -7,6 +7,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 interface AtividadeRecente {
   id: number
@@ -61,29 +62,10 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
-    // O dashboard com indicadores e exclusivo de administrador - os demais
-    // perfis tem o banco de imagens como tela inicial (ver login/page.tsx).
-    // Esse redirect cobre quem cai aqui por outro caminho (ex.: link
-    // "Início" da barra lateral, ou o botao "voltar ao início" de telas
-    // de erro/acesso negado).
-    const perfil = localStorage.getItem('perfil')
-    if (perfil !== 'administrador') {
-      router.push('/banco-imagens')
-      return
-    }
-
-    setNome(localStorage.getItem('nome') ?? '')
-
-    async function buscarStats(tokenAtual: string) {
+    async function buscarStats() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-          headers: { Authorization: `Bearer ${tokenAtual}` },
+          credentials: 'include',
         })
 
         if (!response.ok) {
@@ -99,7 +81,25 @@ export default function DashboardPage() {
       }
     }
 
-    buscarStats(token)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+
+      // O dashboard com indicadores e exclusivo de administrador - os demais
+      // perfis tem o banco de imagens como tela inicial (ver login/page.tsx).
+      // Esse redirect cobre quem cai aqui por outro caminho (ex.: link
+      // "Início" da barra lateral, ou o botao "voltar ao início" de telas
+      // de erro/acesso negado).
+      if (sessao.perfil !== 'administrador') {
+        router.push('/banco-imagens')
+        return
+      }
+
+      setNome(sessao.nome)
+      buscarStats()
+    })
   }, [router])
 
   if (carregando || !stats) {
