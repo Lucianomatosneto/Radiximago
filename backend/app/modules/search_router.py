@@ -26,6 +26,7 @@ from app.modules.auth import obter_usuario_atual
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules import orthanc_client
+from app.modules.marcacoes_imagem import desenhar_marcacoes_na_imagem
 from app.modules.curations import (
     Curation,
     TipoRadiografia,
@@ -409,6 +410,17 @@ def baixar_zip_dicom(
 @router.get("/{curation_id}/preview")
 def obter_preview(
     curation_id: int,
+    com_marcacao: bool = Query(
+        False,
+        description=(
+            "Se true, desenha as marcacoes do curador (se houver) por cima "
+            "da imagem antes de devolver - usado quando o botao 'Baixar' e "
+            "clicado com 'Mostrar marcação' ligado na tela. Sem esse "
+            "parametro (ou com false), devolve a imagem crua, igual sempre "
+            "foi - miniaturas e o visualizador continuam pedindo assim, sem "
+            "mudanca nenhuma."
+        ),
+    ),
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
@@ -424,12 +436,18 @@ def obter_preview(
         orthanc_client.obter_preview_instancia,
         ficha.orthanc_reference.orthanc_id,
     )
+    if com_marcacao:
+        conteudo = desenhar_marcacoes_na_imagem(conteudo, ficha.marcacoes)
     return Response(content=conteudo, media_type="image/png")
 
 
 @router.post("/{curation_id}/send-email")
 def enviar_por_email(
     curation_id: int,
+    com_marcacao: bool = Query(
+        False,
+        description="Se true, envia a imagem com as marcacoes do curador desenhadas por cima (mesma regra do /preview).",
+    ),
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
@@ -443,6 +461,8 @@ def enviar_por_email(
         orthanc_client.obter_preview_instancia,
         ficha.orthanc_reference.orthanc_id,
     )
+    if com_marcacao:
+        conteudo = desenhar_marcacoes_na_imagem(conteudo, ficha.marcacoes)
     descricao = ficha.descricao_didatica or f"Imagem #{ficha.id} ({ficha.tipo_radiografia or 'radiografia'})"
     enviar_email_imagem_pesquisa(
         usuario.email, usuario.nome, descricao, conteudo, f"radix-imago-{ficha.id}.png",
