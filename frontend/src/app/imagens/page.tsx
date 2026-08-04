@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import StatusBadge from '../../components/StatusBadge'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 // Quem pode ver esta pagina e enviar imagens novas - tem que bater com
 // PERFIS_ENVIO_IMAGENS do backend (auth.py) e com o item de menu
@@ -59,7 +60,7 @@ export default function ImagensPage() {
   const tComum = useTranslations('Comum')
   const locale = useLocale()
   const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [imagens, setImagens] = useState<Imagem[]>([])
   const [carregando, setCarregando] = useState(true)
   const [filtroAnonimizacao, setFiltroAnonimizacao] = useState('')
@@ -83,11 +84,11 @@ export default function ImagensPage() {
   }
 
   const buscarImagens = useCallback(
-    async (tokenAtual: string) => {
+    async () => {
       setErroLista('')
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/`, {
-          headers: { Authorization: `Bearer ${tokenAtual}` },
+          credentials: 'include',
         })
 
         if (!response.ok) {
@@ -124,27 +125,27 @@ export default function ImagensPage() {
   )
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
 
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
 
-    setToken(tokenAtual)
-    buscarImagens(tokenAtual)
+      setAutenticado(true)
+      buscarImagens()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, buscarImagens])
 
   async function enviarImagem(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
     const arquivo = inputArquivoRef.current?.files?.[0]
-    if (!token || !arquivo) return
+    if (!autenticado || !arquivo) return
 
     setEnviando(true)
     setMensagemEnvio('')
@@ -156,7 +157,7 @@ export default function ImagensPage() {
 
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/images/upload`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
         body: corpo,
       })
 
@@ -171,7 +172,7 @@ export default function ImagensPage() {
 
       setMensagemEnvio(dados?.status === 'ja_existente' ? t('mensagemDuplicata') : t('mensagemSucesso'))
       if (inputArquivoRef.current) inputArquivoRef.current.value = ''
-      buscarImagens(token) // atualiza a lista na hora, sem precisar recarregar a pagina
+      buscarImagens() // atualiza a lista na hora, sem precisar recarregar a pagina
     } catch {
       setErroEnvio(t('erroEnvioConexao'))
     } finally {
@@ -215,7 +216,7 @@ export default function ImagensPage() {
               <p className="text-sm text-red-300">{erroLista}</p>
               <button
                 type="button"
-                onClick={() => token && buscarImagens(token)}
+                onClick={() => autenticado && buscarImagens()}
                 className="rounded-md border border-red-700/50 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-900/40"
               >
                 {t('tentarNovamente')}
