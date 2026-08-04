@@ -6,7 +6,11 @@ import MiniaturaImagem from './MiniaturaImagem'
 import BarraClassificacao from './detalhe/BarraClassificacao'
 import MarcacaoAchado from './detalhe/MarcacaoAchado'
 import ImagemPrincipalMarcada from './detalhe/ImagemPrincipalMarcada'
+import AnotacoesImagem from './detalhe/AnotacoesImagem'
+import Logo from './Logo'
+import ThemeToggle from './ThemeToggle'
 import type { Marcacao } from '../lib/marcacoes'
+import { corTextoAchado } from '../lib/coresAchados'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
 // este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
@@ -23,6 +27,7 @@ export interface ItemSequencia {
   marcacoes?: Marcacao[]
   qualidade_tecnica?: string | null
   dentes?: number[] | null
+  achado_principal?: string | null
 }
 
 const OPCOES_TIPO_RADIOGRAFIA = [
@@ -39,9 +44,36 @@ const OPCOES_QUALIDADE_TECNICA = [
   { valor: 'insatisfatoria', label: 'Insatisfatória' },
 ]
 
+// Usado na fila de imagens selecionadas (coluna do modo tela cheia) pra
+// mostrar o achado principal de cada imagem com o rotulo correto.
+const OPCOES_ACHADO_PRINCIPAL = [
+  { valor: 'normal', label: 'Normal' },
+  { valor: 'carie', label: 'Cárie' },
+  { valor: 'lesao_periapical', label: 'Lesão periapical' },
+  { valor: 'perda_ossea', label: 'Perda óssea' },
+  { valor: 'dente_incluso', label: 'Dente incluso' },
+  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
+  { valor: 'erro_tecnico', label: 'Erro técnico' },
+  { valor: 'outro', label: 'Outro' },
+]
+
 function rotular(opcoes: { valor: string; label: string }[], valor: string | null | undefined): string {
   if (!valor) return '—'
   return opcoes.find((o) => o.valor === valor)?.label ?? valor
+}
+
+// Ponto fixo (origem) da ampliacao de cada miniatura da fila, ao passar o
+// mouse. Sempre presa na borda ESQUERDA (a miniatura so cresce pra direita,
+// nunca some pela lateral esquerda da tela). Na vertical, muda conforme a
+// posicao na fila: a primeira (extremidade de cima) fica presa em cima e
+// cresce pra baixo; a ultima (extremidade de baixo) fica presa embaixo e
+// cresce pra cima; as do meio crescem pros dois lados igualmente (centro) -
+// assim nenhuma miniatura "estoura" pra fora da coluna, pra cima ou pra
+// baixo, perto das pontas da lista.
+function origemAmpliacaoFila(indice: number, total: number): string {
+  if (indice === 0) return 'origin-top-left'
+  if (indice === total - 1) return 'origin-bottom-left'
+  return 'origin-left'
 }
 
 interface Props {
@@ -97,6 +129,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
   const [indiceSerie, setIndiceSerie] = useState(0)
   const [mostrarMarcacao, setMostrarMarcacao] = useState(false)
+  // "para todas as imagens": ao contrario de mostrarMarcacao, NAO e
+  // resetado no efeito abaixo (que roda a cada troca de [indice]) - o
+  // pedido explicito foi ligar uma vez e continuar mostrando a marcacao
+  // de cada imagem da sequencia automaticamente, sem marcar o checkbox de
+  // novo a cada troca.
+  const [mostrarMarcacaoTodas, setMostrarMarcacaoTodas] = useState(false)
   const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
 
   const atual = itens[indice]
@@ -108,6 +146,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       : atual.viewer_url
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
+  // Junta os dois toggles num unico flag de exibicao: mostra se "esta
+  // imagem" estiver ligado (o de sempre, reseta a cada troca) OU se
+  // "todas as imagens" estiver ligado (persiste) - sempre condicionado a
+  // ter marcacao disponivel na imagem atual.
+  const mostrarMarcacaoEfetivo = (mostrarMarcacao || mostrarMarcacaoTodas) && marcacaoDisponivel
 
   useEffect(() => {
     setMensagem('')
@@ -254,14 +297,24 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   }
 
   function baixarUnico() {
+    // Se "Mostrar marcação" (esta imagem ou todas) estiver ligado e a
+    // imagem atual tiver marcacao, o arquivo baixado ja vem com a
+    // marcacao do curador desenhada nele (com_marcacao=true) - assim o
+    // arquivo salvo no computador mostra a mesma coisa que estava na tela,
+    // em vez da imagem crua.
+    const sufixo = mostrarMarcacaoEfetivo ? '?com_marcacao=true' : ''
     baixarArquivo(
-      `/search/${atual.curation_id}/preview`,
+      `/search/${atual.curation_id}/preview${sufixo}`,
       `radix-imago-${atual.curation_id}.png`,
       setBaixandoUnico
     )
   }
 
   function baixarZipImagens() {
+    // Sem com_marcacao aqui de proposito: a marcacao do curador e um
+    // desenho relativo a UMA imagem representativa do caso, nao a cada
+    // corte da serie - aplicar a mesma marcacao em todos os cortes do ZIP
+    // ficaria no lugar errado na maioria deles.
     baixarArquivo(
       `/search/${atual.curation_id}/download/imagens.zip`,
       `radix-imago-${atual.curation_id}-imagens.zip`,
@@ -310,10 +363,16 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     setEnviando(true)
     setErro('')
     try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/send-email`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      // Mesma regra do download: se a marcacao estiver sendo mostrada na
+      // tela, o e-mail sai com a marcacao ja desenhada na imagem.
+      const sufixo = mostrarMarcacaoEfetivo ? '?com_marcacao=true' : ''
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/search/${atual.curation_id}/send-email${sufixo}`,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
       if (resposta.status === 401) {
         router.push('/login')
         return
@@ -332,27 +391,37 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   }
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-black/90">
-      <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 sm:px-6">
-        <div className="text-sm text-slate-300">
-          Imagem <span className="font-semibold text-white">#{atual.numero}</span>{' '}
-          <span className="text-slate-500">
-            ({indice + 1} de {itens.length} selecionadas)
-          </span>
-          {seriesValidas.length > 1 && (
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-base">
+      <div className="flex items-center justify-between border-b border-base-border px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-4">
+          {/* Este visualizador cobre a tela inteira (fixed inset-0), inclusive
+              a Topbar (onde a logo normalmente aparece) - por isso ela e
+              repetida aqui, na variante "escuro". Esta tela acompanha o
+              alternador de tema claro/escuro (botao <ThemeToggle> abaixo),
+              igual as outras telas do sistema - por isso o fundo (bg-base) e
+              os textos usam as variaveis de tema, em vez de cores fixas. */}
+          <Logo variante="escuro" />
+          <div className="text-sm text-slate-300">
+            Imagem <span className="font-semibold text-ink">#{atual.numero}</span>{' '}
             <span className="text-slate-500">
-              {' '}
-              · Série {indiceSerie + 1} de {seriesValidas.length}
-              {serieAtual?.total_instancias ? ` (${serieAtual.total_instancias} cortes)` : ''}
+              ({indice + 1} de {itens.length} selecionadas)
             </span>
-          )}
+            {seriesValidas.length > 1 && (
+              <span className="text-slate-500">
+                {' '}
+                · Série {indiceSerie + 1} de {seriesValidas.length}
+                {serieAtual?.total_instancias ? ` (${serieAtual.total_instancias} cortes)` : ''}
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <button
             type="button"
             onClick={alternarTelaCheia}
             aria-label={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
-            className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:border-white/30 hover:text-white"
+            className="rounded-full border border-base-border px-3 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
           >
             {telaCheia ? '⛶ Sair da tela cheia' : '⛶ Tela cheia'}
           </button>
@@ -360,7 +429,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             type="button"
             onClick={onFechar}
             aria-label="Fechar"
-            className="rounded-full border border-white/10 px-3 py-1.5 text-sm text-slate-300 hover:border-white/30 hover:text-white"
+            className="rounded-full border border-base-border px-3 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
           >
             ✕ Fechar
           </button>
@@ -368,7 +437,86 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       </div>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        <div className="absolute left-2 z-10 flex items-center gap-1.5 sm:left-6">
+        {/* Fila das imagens selecionadas, so aparece no modo tela cheia -
+            coluna reta (nao mais na diagonal, ajuste pedido), encostada na
+            borda esquerda da imagem principal. Fica por cima do que o
+            proprio visualizador OHIF mostra naquele canto (a coluna
+            "Studies" dele), escondendo so aquilo - a seta de voltar (« logo
+            abaixo) continua visivel por cima da fila porque tem um z-index
+            (camada) maior. Clicar numa miniatura pula direto pra ela. */}
+        {telaCheia && itens.length > 1 && (
+          <div className="pointer-events-none absolute left-0 top-0 z-20 flex h-full">
+            {/* Coluna com o DOBRO da largura anterior (144px/176px ->
+                288px/352px), por pedido. Com mais espaço sobrando, cada
+                linha agora mostra a miniatura E, ao lado dela, o tipo de
+                radiografia e o achado principal daquela imagem (por pedido -
+                a "descrição" pedida aqui e essa, nao o texto livre da
+                descrição didática). */}
+            <div className="pointer-events-auto flex w-[288px] flex-col gap-2 overflow-hidden border-r border-base-border bg-base-surface p-3 shadow-xl sm:w-[352px]">
+              <span className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+                Fila · {itens.length}
+              </span>
+              <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
+                {itens.map((item, i) => (
+                  <button
+                    key={item.curation_id}
+                    type="button"
+                    onClick={() => setIndice(i)}
+                    aria-label={`Ir para imagem #${item.numero}`}
+                    title={`Imagem #${item.numero}`}
+                    className={`group relative flex w-full shrink-0 items-center gap-2 rounded-lg border-2 p-1.5 text-left transition hover:z-10 ${
+                      i === indice
+                        ? 'border-brand bg-brand/10 ring-2 ring-brand ring-offset-1 ring-offset-base'
+                        : 'border-base-border opacity-80 hover:border-brand/50 hover:opacity-100'
+                    }`}
+                  >
+                    {/* Amplia 2,25x (1,5x + mais 50% em cima, por pedido)
+                        ao passar o mouse - o "transform" (escala) nao
+                        empurra o resto da fila, so desenha a miniatura
+                        maior por cima do que estiver do lado, por isso o
+                        hover:z-10 no botao acima, pra ela ficar por cima
+                        das vizinhas. A origem (origemAmpliacaoFila) prende
+                        a ampliacao na borda esquerda sempre, e em cima/
+                        embaixo so nas pontas da lista - e o translate-x
+                        empurra um pouco mais pra direita, por pedido, pra
+                        dar mais espaco e nao ficar colada na coluna. */}
+                    <span
+                      className={`relative block h-[84px] w-[84px] shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:translate-x-3 group-hover:scale-[2.25] ${origemAmpliacaoFila(i, itens.length)}`}
+                    >
+                      <MiniaturaImagem
+                        curationId={item.curation_id}
+                        alt={`Imagem #${item.numero}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold text-ink">{`Imagem #${item.numero}`}</span>
+                      <span className="mt-0.5 block text-[11px] text-slate-400">
+                        {rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia)}
+                      </span>
+                      <span className={`mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug ${corTextoAchado(item.achado_principal)}`}>
+                        {rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal)}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quando a fila (coluna da esquerda) esta visivel, essa seta e
+            empurrada pra depois dela (largura da coluna + uma margem) -
+            assim ela fica encostada na borda da imagem principal, igual a
+            seta de avançar do lado direito, em vez de ficar em cima da
+            coluna da fila. Sem a fila (fora do modo tela cheia, ou com uma
+            imagem so), volta pra posicao de sempre, colada na borda da
+            tela. */}
+        <div
+          className={`absolute z-30 flex items-center gap-1.5 ${
+            telaCheia && itens.length > 1 ? 'left-[300px] sm:left-[364px]' : 'left-2 sm:left-6'
+          }`}
+        >
           <button
             type="button"
             onClick={irParaAnterior}
@@ -393,7 +541,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           )}
         </div>
 
-        {mostrarMarcacao && marcacaoDisponivel ? (
+        {mostrarMarcacaoEfetivo ? (
           // Mesma caixa (h-full w-full) que o iframe ocupa logo abaixo -
           // a imagem nao muda de tamanho nem de posicao ao ligar/desligar
           // a marcacao, so as formas aparecem/somem.
@@ -416,6 +564,39 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             alt={atual.descricao_didatica ?? `Imagem #${atual.numero}`}
             className="max-h-full max-w-full rounded-lg object-contain"
           />
+        )}
+
+        {/* Lembrete dos atalhos de teclado do proprio visualizador OHIF
+            (nao e algo que a gente controla - sao atalhos que ja existem
+            dentro dele) - so aparece quando o OHIF esta de fato na tela
+            (nao faz sentido com a imagem com marcacao ou sem estudo). "R"
+            gira a imagem 90 graus e "I" inverte a janela (troca claro por
+            escuro, como um negativo de raio-x) - cada atalho numa linha,
+            com a letra dentro de um "selo" solido colorido (como uma tecla
+            de teclado) em vez de so texto colorido - mais facil de ver, e
+            resolve a letra "R" não aparecendo direito antes. Do lado
+            esquerdo da imagem - quando a fila estiver visivel, empurrado
+            pra depois dela (mesma logica da seta « de voltar), senao fica
+            colado na borda. */}
+        {urlComSerie && !mostrarMarcacaoEfetivo && (
+          <div
+            className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur ${
+              telaCheia && itens.length > 1 ? 'left-[300px] sm:left-[364px]' : 'left-3 sm:left-6'
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-amber-400 text-sm font-bold text-black">
+                R
+              </span>
+              gira a imagem
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-cyan-400 text-sm font-bold text-black">
+                I
+              </span>
+              inverte a janela
+            </span>
+          </div>
         )}
 
         <div className="absolute right-2 z-10 flex items-center gap-1.5 sm:right-6">
@@ -442,17 +623,28 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             »
           </button>
         </div>
+
+        {/* Anotacoes pessoais de estudo - qualquer usuario pode clicar em
+            "+ Anotação" e marcar um ponto na imagem com uma nota colorida.
+            Fica por cima de tudo (inclusive do visualizador OHIF, que roda
+            num iframe) sem atrapalhar a navegacao normal - ver comentario
+            dentro do proprio componente pra entender por que precisa desse
+            botao em vez de so botao direito do mouse. */}
+        <AnotacoesImagem
+          curationId={atual.curation_id}
+          filaVisivel={telaCheia && itens.length > 1}
+        />
       </div>
 
       {atual.viewer_url && (
-        <p className="border-t border-white/10 bg-black/40 px-4 py-1.5 text-center text-xs text-slate-400">
+        <p className="border-t border-base-border bg-base-surface2/60 px-4 py-1.5 text-center text-xs text-slate-400">
           Use a rolagem do mouse ou Page Up / Page Down dentro do visualizador para percorrer todos os cortes desta
           imagem.
           {seriesValidas.length > 1 && ' Use a seta simples (‹ ›) para trocar de série e a seta dupla (« ») para trocar de estudo.'}
         </p>
       )}
 
-      <div className="border-t border-white/10 px-4 py-3 sm:px-6">
+      <div className="border-t border-base-border px-4 py-3 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <BarraClassificacao
             tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia)}
@@ -461,6 +653,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             alteracoesObservadas={atual.alteracoes_observadas}
             achadosDetalhe={atual.achados_detalhe}
             descricaoDidatica={atual.descricao_didatica}
+            achadoPrincipal={atual.achado_principal}
           />
 
           <MarcacaoAchado
@@ -469,6 +662,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             comImagem={false}
             mostrar={mostrarMarcacao}
             onMostrarChange={setMostrarMarcacao}
+            mostrarTodas={mostrarMarcacaoTodas}
+            onMostrarTodasChange={setMostrarMarcacaoTodas}
           />
         </div>
 
