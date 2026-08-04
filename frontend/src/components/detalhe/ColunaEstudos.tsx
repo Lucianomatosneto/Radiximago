@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import MiniaturaImagem from '../MiniaturaImagem'
 
 export interface ItemEstudo {
@@ -23,16 +24,18 @@ export default function ColunaEstudos({
   onSelecionar: (indice: number) => void
   carregando: boolean
 }) {
+  const t = useTranslations('ColunaEstudos')
+  const tVisualizador = useTranslations('Visualizador')
   return (
     <section className="flex w-full flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface lg:w-[220px] lg:shrink-0">
       <div className="border-b border-base-border px-3 py-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink">Exames encontrados</h2>
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-ink">{t('titulo')}</h2>
       </div>
       <div className="max-h-[75vh] overflow-y-auto p-2">
         {carregando ? (
-          <p className="p-2 text-xs text-slate-500">Carregando exames...</p>
+          <p className="p-2 text-xs text-slate-500">{t('carregando')}</p>
         ) : itens.length === 0 ? (
-          <p className="p-2 text-xs text-slate-500">Nenhum exame encontrado.</p>
+          <p className="p-2 text-xs text-slate-500">{t('nenhumEncontrado')}</p>
         ) : (
           <ul className="space-y-1.5">
             {itens.map((item, indice) => (
@@ -48,7 +51,7 @@ export default function ColunaEstudos({
                 >
                   <MiniaturaImagem
                     curationId={item.curation_id}
-                    alt={item.descricao_didatica ?? `Imagem #${indice + 1}`}
+                    alt={item.descricao_didatica ?? tVisualizador('imagemNumero', { numero: indice + 1 })}
                     className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-base-surface2"
                   />
                   <div className="min-w-0">

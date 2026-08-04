@@ -2,10 +2,15 @@
 // categoria so pra organizar a exibicao - o backend guarda como lista
 // plana de strings. Compartilhado entre o formulario de curadoria (onde o
 // curador marca) e a faixa de classificacao (onde o estudante ve os
-// rotulos legiveis do que foi marcado).
-export const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string; label: string }[] }[] = [
+// rotulos legiveis do que foi marcado). `categoriaChave` referencia o
+// namespace AlteracoesObservadas.categorias das mensagens de traducao -
+// usado por telas ja traduzidas (ex.: PainelAchadosRadiografia.tsx); telas
+// ainda nao traduzidas continuam usando `categoria` (texto fixo em
+// portugues) normalmente.
+export const CATEGORIAS_ALTERACOES: { categoria: string; categoriaChave: string; itens: { valor: string; label: string }[] }[] = [
   {
     categoria: 'Cárie',
+    categoriaChave: 'carie',
     itens: [
       { valor: 'carie_esmalte', label: 'Cárie em esmalte' },
       { valor: 'carie_dentina', label: 'Cárie em dentina' },
@@ -15,6 +20,7 @@ export const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string;
   },
   {
     categoria: 'Periodontal',
+    categoriaChave: 'periodontal',
     itens: [
       { valor: 'perda_ossea_horizontal', label: 'Perda óssea horizontal' },
       { valor: 'perda_ossea_vertical', label: 'Perda óssea vertical' },
@@ -24,6 +30,7 @@ export const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string;
   },
   {
     categoria: 'Periapical / Endodôntico',
+    categoriaChave: 'periapicalEndodontico',
     itens: [
       { valor: 'lesao_periapical', label: 'Lesão periapical' },
       { valor: 'reabsorcao_radicular_externa', label: 'Reabsorção radicular externa' },
@@ -35,6 +42,7 @@ export const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string;
   },
   {
     categoria: 'Restaurador / Protético',
+    categoriaChave: 'restauradorProtetico',
     itens: [
       { valor: 'restauracao_presente', label: 'Restauração presente' },
       { valor: 'restauracao_com_infiltracao', label: 'Restauração com infiltração' },
@@ -44,6 +52,7 @@ export const CATEGORIAS_ALTERACOES: { categoria: string; itens: { valor: string;
   },
   {
     categoria: 'Ósseo / Anatômico',
+    categoriaChave: 'osseoAnatomico',
     itens: [
       { valor: 'cisto', label: 'Cisto' },
       { valor: 'lesao_radiopaca', label: 'Lesão radiopaca' },

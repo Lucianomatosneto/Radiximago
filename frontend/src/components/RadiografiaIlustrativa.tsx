@@ -1,14 +1,17 @@
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 
 // Ilustracao (imagem fornecida pelo usuario, gerada via v0 como referencia
 // de design) de anatomia dental em estilo raio-X. Usada na tela de login.
 
 export default function RadiografiaIlustrativa() {
+  const t = useTranslations('Login')
+
   return (
     <div className="absolute inset-0 overflow-hidden bg-base">
       <Image
         src="/assets/radiografia-panoramica.png"
-        alt="Ilustração de anatomia dentária em raio-X"
+        alt={t('altIlustracao')}
         fill
         priority
         className="object-cover object-center"
