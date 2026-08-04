@@ -13,6 +13,7 @@ import BarraClassificacao from '../../../components/detalhe/BarraClassificacao'
 import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
+import { obterSessaoAtual } from '../../../lib/sessao'
 
 // Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
 // usado em Pesquisa avançada, Curadoria e Segunda opinião) - so os valores
@@ -90,23 +91,24 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
   }
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-    buscarImagem(token)
-    buscarSeries(token)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      buscarImagem()
+      buscarSeries()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, curationId])
 
-  async function buscarSeries(token: string) {
+  async function buscarSeries() {
     setCarregandoSeries(true)
     setSeries([])
     setIndiceSerie(0)
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/series`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (!resposta.ok) return
       const dados = await resposta.json()
@@ -118,7 +120,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
     }
   }
 
-  async function buscarImagem(token: string) {
+  async function buscarImagem() {
     setCarregando(true)
     setErro('')
     try {
@@ -127,7 +129,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
       // localizamos o item pelo curation_id na resposta. A mesma lista
       // tambem alimenta a navegacao "Caso anterior / Proximo caso".
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?limit=200`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
