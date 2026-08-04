@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import MiniaturaFila from '../MiniaturaFila'
 import StatusBadge from '../StatusBadge'
 
@@ -47,18 +48,20 @@ export default function FilaCuradoria({
   onColapsar: () => void
   onExpandir: () => void
 }) {
+  const t = useTranslations('Curadoria.fila')
+
   if (colapsada) {
     return (
       <button
         type="button"
         onClick={onExpandir}
-        aria-label="Expandir fila de curadoria"
-        title="Expandir fila de curadoria"
+        aria-label={t('expandir')}
+        title={t('expandir')}
         className="flex h-full w-full flex-col items-center gap-3 py-4 text-slate-400 hover:text-brand-300"
       >
         <span aria-hidden="true">»</span>
         <span className="text-xs font-semibold tracking-wide [writing-mode:vertical-rl]">
-          Fila de curadoria{fila.length > 0 ? ` (${fila.length})` : ''}
+          {fila.length > 0 ? t('filaComContagem', { contagem: fila.length }) : t('fila')}
         </span>
       </button>
     )
@@ -67,14 +70,12 @@ export default function FilaCuradoria({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-base-border px-4 py-3.5">
-        <h2 className="text-sm font-semibold text-ink">
-          Fila de curadoria{fila.length > 0 ? ` (${fila.length})` : ''}
-        </h2>
+        <h2 className="text-sm font-semibold text-ink">{t('titulo')}</h2>
         <button
           type="button"
           onClick={onColapsar}
-          aria-label="Recolher fila de curadoria"
-          title="Recolher fila de curadoria"
+          aria-label={t('recolher')}
+          title={t('recolher')}
           className="text-slate-400 hover:text-brand-300"
         >
           «
@@ -89,9 +90,9 @@ export default function FilaCuradoria({
 
       <div className="flex-1 overflow-y-auto p-2">
         {carregando ? (
-          <p className="p-3 text-sm text-slate-500">Carregando fila...</p>
+          <p className="p-3 text-sm text-slate-500">{t('carregandoFila')}</p>
         ) : fila.length === 0 ? (
-          <p className="p-3 text-sm text-slate-500">Nenhuma imagem pendente.</p>
+          <p className="p-3 text-sm text-slate-500">{t('nenhumaPendente')}</p>
         ) : (
           <ul className="space-y-1.5">
             {fila.map((imagem) => {
@@ -122,7 +123,7 @@ export default function FilaCuradoria({
                       <p className="mt-1 text-slate-400">{imagem.resource_type}</p>
                       <div className="mt-1 flex items-center justify-between gap-2">
                         <span className="text-xs text-slate-600">
-                          {criandoId === imagem.orthanc_reference_id ? 'Abrindo...' : 'data: —'}
+                          {criandoId === imagem.orthanc_reference_id ? t('abrindo') : t('dataIndisponivel')}
                         </span>
                         <StatusBadge status="pendente" />
                       </div>

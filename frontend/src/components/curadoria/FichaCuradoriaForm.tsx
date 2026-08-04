@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import type { Marcacao } from '../../lib/marcacoes'
 
 // Tipo de radiografia, faixa etária, sexo, dentes (notação FDI) e
@@ -68,9 +69,10 @@ export default function FichaCuradoriaForm({
   erro: string
   rascunhoSalvo: boolean
 }) {
+  const t = useTranslations('Curadoria.ficha')
   return (
     <section className="flex h-full w-full flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
-      <h2 className="mb-2 shrink-0 text-sm font-bold text-ink">Ficha de curadoria</h2>
+      <h2 className="mb-2 shrink-0 text-sm font-bold text-ink">{t('titulo')}</h2>
 
       {/* Status atual, Anonimização validada, Tipo de radiografia, Faixa
           etária, Sexo e Dentes saíram daqui: agora ficam na caixa
@@ -85,7 +87,7 @@ export default function FichaCuradoriaForm({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={campoLabel}>Descrição didática</label>
+            <label className={campoLabel}>{t('descricaoDidatica')}</label>
             <textarea
               value={form.descricao_didatica}
               onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
@@ -95,7 +97,7 @@ export default function FichaCuradoriaForm({
           </div>
 
           <div>
-            <label className={campoLabel}>Observações internas</label>
+            <label className={campoLabel}>{t('observacoesInternas')}</label>
             <textarea
               value={form.observacoes_internas}
               onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
@@ -111,7 +113,7 @@ export default function FichaCuradoriaForm({
           {erro}
         </p>
       )}
-      {rascunhoSalvo && <p className="mt-3 shrink-0 text-sm text-emerald-400">Rascunho salvo.</p>}
+      {rascunhoSalvo && <p className="mt-3 shrink-0 text-sm text-emerald-400">{t('rascunhoSalvo')}</p>}
     </section>
   )
 }

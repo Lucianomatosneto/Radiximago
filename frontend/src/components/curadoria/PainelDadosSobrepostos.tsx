@@ -1,6 +1,7 @@
 'use client'
 
 import { KeyboardEvent, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import StatusBadge from '../StatusBadge'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 
@@ -8,18 +9,13 @@ import type { FormularioFicha } from './FichaCuradoriaForm'
 // serem movidas pra ca - ver comentario em PainelVisualizador.tsx sobre o
 // motivo da mudanca (ocupar visualmente o espaco onde o OHIF mostra o
 // painel "Studies", que o Radix nao consegue remover de dentro por ser
-// iframe cross-origin).
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'oclusal', label: 'Oclusal' },
-  { valor: 'interproximal', label: 'Interproximal' },
-]
+// iframe cross-origin). Os rotulos vem do namespace compartilhado
+// Pesquisa.opcoes (mesmo texto usado na tela de Pesquisa avançada), so pra
+// nao duplicar a mesma traducao em dois lugares - so o `valor` (chave real
+// do backend) fica fixo aqui.
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'oclusal', 'interproximal']
 
-const OPCOES_GENERO = [
-  { valor: 'masculino', label: 'Masculino' },
-  { valor: 'feminino', label: 'Feminino' },
-]
+const OPCOES_GENERO = ['masculino', 'feminino']
 
 // Dentes (notacao FDI): veio de FichaCuradoriaForm.tsx junto com o input e
 // a validacao - pedido explicito pra aparecer aqui, logo abaixo de Sexo.
@@ -33,12 +29,7 @@ const DENTES_PERMANENTES = [
 // Qualidade tecnica: veio de FichaCuradoriaForm.tsx - pedido explicito pra
 // aparecer logo abaixo de Dentes. Valores reais do enum QualidadeTecnica
 // no backend.
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
-]
+const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
 // Tamanho de texto/controles alinhado ao pedido: todos os campos aqui do
 // mesmo tamanho da palavra "Curadoria" / "Ficha de curadoria" (text-sm,
@@ -70,6 +61,8 @@ export default function PainelDadosSobrepostos({
   onChange: (form: FormularioFicha) => void
   statusFicha: string
 }) {
+  const t = useTranslations('Curadoria.dadosSobrepostos')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
   const [denteInput, setDenteInput] = useState('')
   const [erroDente, setErroDente] = useState('')
 
@@ -77,7 +70,7 @@ export default function PainelDadosSobrepostos({
     if (event) event.preventDefault()
     const numero = Number(denteInput)
     if (!DENTES_PERMANENTES.includes(numero)) {
-      setErroDente('Use um número FDI válido (11-18, 21-28, 31-38, 41-48).')
+      setErroDente(t('erroDenteInvalido'))
       return
     }
     setErroDente('')
@@ -94,7 +87,7 @@ export default function PainelDadosSobrepostos({
     <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 shadow-lg backdrop-blur-sm">
       <div>
         <div className="mb-1.5 flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-400">Status</span>
+          <span className="text-xs font-medium text-slate-400">{t('status')}</span>
           <StatusBadge status={statusFicha} />
         </div>
         {/* Anonimização validada: checkbox e texto maiores (h-5 w-5 e
@@ -106,47 +99,47 @@ export default function PainelDadosSobrepostos({
             onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
             className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
           />
-          Anonimização validada <span className="text-status-danger">*</span>
+          {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
         </label>
       </div>
 
       <div className="border-t border-base-border pt-2.5">
         <label className={campoLabel}>
-          Tipo de radiografia <span className="text-status-danger">*</span>
+          {t('tipoRadiografia')} <span className="text-status-danger">*</span>
         </label>
         <div className="grid grid-cols-2 gap-1.5">
-          {OPCOES_TIPO_RADIOGRAFIA.map((opcao) => (
+          {OPCOES_TIPO_RADIOGRAFIA.map((valor) => (
             <button
-              key={opcao.valor}
+              key={valor}
               type="button"
-              onClick={() => onChange({ ...form, tipo_radiografia: opcao.valor })}
+              onClick={() => onChange({ ...form, tipo_radiografia: valor })}
               className={`${botaoOpcao} ${
-                form.tipo_radiografia === opcao.valor
+                form.tipo_radiografia === valor
                   ? 'border-brand bg-brand text-white'
                   : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
-              {opcao.label}
+              {tOpcoes(`tipoRadiografia.${valor}`)}
             </button>
           ))}
         </div>
       </div>
 
       <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>Faixa etária</label>
+        <label className={campoLabel}>{t('faixaEtaria')}</label>
         <div className="grid grid-cols-2 gap-1.5">
           <input
             type="number"
             value={form.idade_min}
             onChange={(e) => onChange({ ...form, idade_min: e.target.value })}
-            placeholder="mín."
+            placeholder={t('idadeMin')}
             className={campoInput}
           />
           <input
             type="number"
             value={form.idade_max}
             onChange={(e) => onChange({ ...form, idade_max: e.target.value })}
-            placeholder="máx."
+            placeholder={t('idadeMax')}
             className={campoInput}
           />
         </div>
@@ -154,21 +147,21 @@ export default function PainelDadosSobrepostos({
 
       <div className="border-t border-base-border pt-2.5">
         <label className={campoLabel}>
-          Sexo <span className="text-status-danger">*</span>
+          {t('sexo')} <span className="text-status-danger">*</span>
         </label>
         <div className="flex flex-wrap gap-1.5">
-          {OPCOES_GENERO.map((opcao) => (
+          {OPCOES_GENERO.map((valor) => (
             <button
-              key={opcao.valor}
+              key={valor}
               type="button"
-              onClick={() => onChange({ ...form, genero: opcao.valor })}
+              onClick={() => onChange({ ...form, genero: valor })}
               className={`${botaoOpcao} ${
-                form.genero === opcao.valor
+                form.genero === valor
                   ? 'border-brand bg-brand text-white'
                   : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
-              {opcao.label}
+              {tOpcoes(`genero.${valor}`)}
             </button>
           ))}
         </div>
@@ -180,7 +173,7 @@ export default function PainelDadosSobrepostos({
           dois lugares, seguindo o mesmo padrão já usado pros outros campos
           que vieram pra esta caixa). */}
       <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>Dentes (notação FDI)</label>
+        <label className={campoLabel}>{t('dentes')}</label>
         <div className="flex flex-wrap gap-1.5 rounded-lg border border-base-border bg-base-surface2 p-2">
           {form.dentes.map((numero) => (
             <span
@@ -191,7 +184,7 @@ export default function PainelDadosSobrepostos({
               <button
                 type="button"
                 onClick={() => removerDente(numero)}
-                aria-label={`Remover dente ${numero}`}
+                aria-label={t('removerDente', { numero })}
                 className="text-brand-300 hover:text-brand-hover"
               >
                 ×
@@ -205,7 +198,7 @@ export default function PainelDadosSobrepostos({
             onKeyDown={(e) => {
               if (e.key === 'Enter') adicionarDente(e)
             }}
-            placeholder="ex: 16"
+            placeholder={t('exemploDente')}
             className="w-16 flex-1 bg-transparent text-sm text-slate-100 outline-none"
           />
         </div>
@@ -217,16 +210,16 @@ export default function PainelDadosSobrepostos({
           anatômica" - saiu de lá pra não duplicar o mesmo campo em dois
           lugares). */}
       <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>Qualidade técnica</label>
+        <label className={campoLabel}>{t('qualidadeTecnica')}</label>
         <select
           value={form.qualidade_tecnica}
           onChange={(e) => onChange({ ...form, qualidade_tecnica: e.target.value })}
           className={campoInput}
         >
-          <option value="">Selecione</option>
-          {OPCOES_QUALIDADE_TECNICA.map((opcao) => (
-            <option key={opcao.valor} value={opcao.valor}>
-              {opcao.label}
+          <option value="">{t('selecione')}</option>
+          {OPCOES_QUALIDADE_TECNICA.map((valor) => (
+            <option key={valor} value={valor}>
+              {tOpcoes(`qualidadeTecnica.${valor}`)}
             </option>
           ))}
         </select>

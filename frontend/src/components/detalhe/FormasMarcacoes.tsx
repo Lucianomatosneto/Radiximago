@@ -1,4 +1,20 @@
-import { rotularAchadoMarcacao, type Marcacao } from '../../lib/marcacoes'
+import { useTranslations } from 'next-intl'
+import type { Marcacao } from '../../lib/marcacoes'
+
+// Mapeia o valor cru salvo pela curadoria (mesmos valores do enum
+// AchadoPrincipal no backend) pra chave de traducao usada no namespace
+// Pesquisa.opcoes.achadoPrincipal (ja existente, reaproveitado aqui em vez
+// de duplicar os mesmos 8 rotulos numa segunda lista).
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
+}
 
 export interface HoverMarcacao {
   texto: string
@@ -50,13 +66,21 @@ export default function FormasMarcacoes({
   idPrefixo: string
   onHover?: (info: HoverMarcacao | null) => void
 }) {
+  const tAchado = useTranslations('Pesquisa.opcoes.achadoPrincipal')
+  const tMarcacao = useTranslations('Visualizador.marcacao')
+
+  function rotularAchado(achado: string | null | undefined): string {
+    const chave = achado ? CHAVE_ACHADO[achado] : undefined
+    return chave ? tAchado(chave) : ''
+  }
+
   function eventosHover(m: Marcacao) {
     if (!onHover) return {}
     // Mesmo sem tipo de lesao definido pelo curador, o hover mostra algo -
     // sem isso, passar o mouse numa marcacao antiga (de antes desse campo
     // existir, ou que o curador simplesmente nao preencheu) nao dava
     // nenhum retorno visual, parecendo que o hover nao funcionava.
-    const texto = rotularAchadoMarcacao(m.achado) || 'Lesão marcada pelo curador'
+    const texto = rotularAchado(m.achado) || tMarcacao('lesaoGenerica')
     return {
       onMouseMove: (evento: React.MouseEvent) => onHover({ texto, x: evento.clientX, y: evento.clientY }),
       onMouseLeave: () => onHover(null),
@@ -70,7 +94,7 @@ export default function FormasMarcacoes({
   // (0-1) da marcacao, pra funcionar em qualquer zoom/tamanho de imagem.
   function eventosHoverSeta(m: Marcacao) {
     if (!onHover) return {}
-    const texto = rotularAchadoMarcacao(m.achado) || 'Lesão marcada pelo curador'
+    const texto = rotularAchado(m.achado) || tMarcacao('lesaoGenerica')
     return {
       onMouseMove: (evento: React.MouseEvent<SVGRectElement>) => {
         const svg = evento.currentTarget.ownerSVGElement
