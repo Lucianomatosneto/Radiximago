@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import MiniaturaImagem from './MiniaturaImagem'
 import BarraClassificacao from './detalhe/BarraClassificacao'
 import MarcacaoAchado from './detalhe/MarcacaoAchado'
@@ -30,36 +31,44 @@ export interface ItemSequencia {
   achado_principal?: string | null
 }
 
+// `chave` referencia o namespace Pesquisa.opcoes (ja usado na tela de
+// Pesquisa avancada) - reaproveitado aqui pra nao duplicar os mesmos
+// rotulos numa segunda lista.
 const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
+  { valor: 'periapical', chave: 'periapical' },
+  { valor: 'panoramica', chave: 'panoramica' },
+  { valor: 'interproximal', chave: 'interproximal' },
+  { valor: 'oclusal', chave: 'oclusal' },
 ]
 
 const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
+  { valor: 'otima', chave: 'otima' },
+  { valor: 'boa', chave: 'boa' },
+  { valor: 'regular', chave: 'regular' },
+  { valor: 'insatisfatoria', chave: 'insatisfatoria' },
 ]
 
 // Usado na fila de imagens selecionadas (coluna do modo tela cheia) pra
 // mostrar o achado principal de cada imagem com o rotulo correto.
 const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', label: 'Normal' },
-  { valor: 'carie', label: 'Cárie' },
-  { valor: 'lesao_periapical', label: 'Lesão periapical' },
-  { valor: 'perda_ossea', label: 'Perda óssea' },
-  { valor: 'dente_incluso', label: 'Dente incluso' },
-  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
-  { valor: 'erro_tecnico', label: 'Erro técnico' },
-  { valor: 'outro', label: 'Outro' },
+  { valor: 'normal', chave: 'normal' },
+  { valor: 'carie', chave: 'carie' },
+  { valor: 'lesao_periapical', chave: 'lesaoPeriapical' },
+  { valor: 'perda_ossea', chave: 'perdaOssea' },
+  { valor: 'dente_incluso', chave: 'denteIncluso' },
+  { valor: 'tratamento_endodontico', chave: 'tratamentoEndodontico' },
+  { valor: 'erro_tecnico', chave: 'erroTecnico' },
+  { valor: 'outro', chave: 'outro' },
 ]
 
-function rotular(opcoes: { valor: string; label: string }[], valor: string | null | undefined): string {
+function rotular(
+  opcoes: { valor: string; chave: string }[],
+  valor: string | null | undefined,
+  traduzir: (chave: string) => string
+): string {
   if (!valor) return '—'
-  return opcoes.find((o) => o.valor === valor)?.label ?? valor
+  const opcao = opcoes.find((o) => o.valor === valor)
+  return opcao ? traduzir(opcao.chave) : valor
 }
 
 // Ponto fixo (origem) da ampliacao de cada miniatura da fila, ao passar o
@@ -106,6 +115,11 @@ async function extrairErro(response: Response, generica: string): Promise<string
 
 export default function VisualizadorSequencial({ itens, indiceInicial, onFechar }: Props) {
   const router = useRouter()
+  const t = useTranslations('Visualizador')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const traduzirTipoRadiografia = (chave: string) => tOpcoes(`tipoRadiografia.${chave}`)
+  const traduzirQualidadeTecnica = (chave: string) => tOpcoes(`qualidadeTecnica.${chave}`)
+  const traduzirAchadoPrincipal = (chave: string) => tOpcoes(`achadoPrincipal.${chave}`)
   const containerRef = useRef<HTMLDivElement>(null)
   const [indice, setIndice] = useState(indiceInicial)
   const [enviando, setEnviando] = useState(false)
@@ -277,7 +291,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!resposta.ok) {
-        setErro('Não foi possível baixar o arquivo.')
+        setErro(t('erroBaixar'))
         return
       }
       const blob = await resposta.blob()
@@ -290,7 +304,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       link.remove()
       URL.revokeObjectURL(url)
     } catch {
-      setErro('Não foi possível baixar o arquivo.')
+      setErro(t('erroBaixar'))
     } finally {
       setCarregando(false)
     }
@@ -345,13 +359,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível salvar a imagem.'))
+        setErro(await extrairErro(resposta, t('erroSalvar')))
         return
       }
       setJaSalvo(true)
-      setMensagem('Imagem salva em "Minhas imagens".')
+      setMensagem(t('imagemSalva'))
     } catch {
-      setErro('Não foi possível salvar a imagem.')
+      setErro(t('erroSalvar'))
     } finally {
       setSalvando(false)
     }
@@ -378,13 +392,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível enviar por e-mail.'))
+        setErro(await extrairErro(resposta, t('erroEnviarEmail')))
         return
       }
       const dados = await resposta.json()
-      setMensagem(dados.mensagem ?? 'Imagem enviada por e-mail.')
+      setMensagem(dados.mensagem ?? t('emailEnviado'))
     } catch {
-      setErro('Não foi possível enviar por e-mail.')
+      setErro(t('erroEnviarEmail'))
     } finally {
       setEnviando(false)
     }
@@ -402,15 +416,15 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               os textos usam as variaveis de tema, em vez de cores fixas. */}
           <Logo variante="escuro" />
           <div className="text-sm text-slate-300">
-            Imagem <span className="font-semibold text-ink">#{atual.numero}</span>{' '}
+            {t('imagemPrefixo')} <span className="font-semibold text-ink">#{atual.numero}</span>{' '}
             <span className="text-slate-500">
-              ({indice + 1} de {itens.length} selecionadas)
+              {t('deSelecionadas', { indice: indice + 1, total: itens.length })}
             </span>
             {seriesValidas.length > 1 && (
               <span className="text-slate-500">
                 {' '}
-                · Série {indiceSerie + 1} de {seriesValidas.length}
-                {serieAtual?.total_instancias ? ` (${serieAtual.total_instancias} cortes)` : ''}
+                {t('serieDe', { indice: indiceSerie + 1, total: seriesValidas.length })}
+                {serieAtual?.total_instancias ? ` ${t('cortes', { total: serieAtual.total_instancias })}` : ''}
               </span>
             )}
           </div>
@@ -420,18 +434,18 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <button
             type="button"
             onClick={alternarTelaCheia}
-            aria-label={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+            aria-label={telaCheia ? t('sairTelaCheia') : t('telaCheia')}
             className="rounded-full border border-base-border px-3 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
           >
-            {telaCheia ? '⛶ Sair da tela cheia' : '⛶ Tela cheia'}
+            {telaCheia ? `⛶ ${t('sairTelaCheia')}` : `⛶ ${t('telaCheia')}`}
           </button>
           <button
             type="button"
             onClick={onFechar}
-            aria-label="Fechar"
+            aria-label={t('fechar')}
             className="rounded-full border border-base-border px-3 py-1.5 text-sm text-slate-300 hover:border-brand hover:text-brand-300"
           >
-            ✕ Fechar
+            ✕ {t('fechar')}
           </button>
         </div>
       </div>
@@ -454,7 +468,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 descrição didática). */}
             <div className="pointer-events-auto flex w-[288px] flex-col gap-2 overflow-hidden border-r border-base-border bg-base-surface p-3 shadow-xl sm:w-[352px]">
               <span className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Fila · {itens.length}
+                {t('filaTitulo', { total: itens.length })}
               </span>
               <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
                 {itens.map((item, i) => (
@@ -462,8 +476,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     key={item.curation_id}
                     type="button"
                     onClick={() => setIndice(i)}
-                    aria-label={`Ir para imagem #${item.numero}`}
-                    title={`Imagem #${item.numero}`}
+                    aria-label={t('irParaImagem', { numero: item.numero })}
+                    title={t('imagemNumero', { numero: item.numero })}
                     className={`group relative flex w-full shrink-0 items-center gap-2 rounded-lg border-2 p-1.5 text-left transition hover:z-10 ${
                       i === indice
                         ? 'border-brand bg-brand/10 ring-2 ring-brand ring-offset-1 ring-offset-base'
@@ -485,17 +499,17 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     >
                       <MiniaturaImagem
                         curationId={item.curation_id}
-                        alt={`Imagem #${item.numero}`}
+                        alt={t('imagemNumero', { numero: item.numero })}
                         className="h-full w-full object-cover"
                       />
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-semibold text-ink">{`Imagem #${item.numero}`}</span>
+                      <span className="block text-xs font-semibold text-ink">{t('imagemNumero', { numero: item.numero })}</span>
                       <span className="mt-0.5 block text-[11px] text-slate-400">
-                        {rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia)}
+                        {rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia, traduzirTipoRadiografia)}
                       </span>
                       <span className={`mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug ${corTextoAchado(item.achado_principal)}`}>
-                        {rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal)}
+                        {rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal, traduzirAchadoPrincipal)}
                       </span>
                     </span>
                   </button>
@@ -521,8 +535,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             type="button"
             onClick={irParaAnterior}
             disabled={indice === 0}
-            aria-label="Estudo anterior (imagem selecionada anterior)"
-            title="Estudo anterior"
+            aria-label={t('estudoAnteriorAria')}
+            title={t('estudoAnterior')}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
           >
             «
@@ -532,8 +546,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               type="button"
               onClick={irParaSerieAnterior}
               disabled={indiceSerie === 0}
-              aria-label="Série (pasta) anterior deste estudo"
-              title="Série anterior"
+              aria-label={t('serieAnterior')}
+              title={t('serieAnteriorTitulo')}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30"
             >
               ‹
@@ -547,7 +561,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           // a marcacao, so as formas aparecem/somem.
           <ImagemPrincipalMarcada
             curationId={atual.curation_id}
-            alt={atual.descricao_didatica ?? `Imagem #${atual.numero}`}
+            alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
             marcacoes={marcacoes}
             srcPreCarregado={marcacaoPreviewUrl}
           />
@@ -555,13 +569,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <iframe
             key={atual.curation_id}
             src={urlComSerie}
-            title={`Visualizador OHIF - Imagem #${atual.numero}`}
+            title={t('visualizadorOhifTitulo', { numero: atual.numero })}
             className="h-full w-full flex-1 border-0"
           />
         ) : (
           <MiniaturaImagem
             curationId={atual.curation_id}
-            alt={atual.descricao_didatica ?? `Imagem #${atual.numero}`}
+            alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
             className="max-h-full max-w-full rounded-lg object-contain"
           />
         )}
@@ -588,13 +602,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-amber-400 text-sm font-bold text-black">
                 R
               </span>
-              gira a imagem
+              {t('giraImagem')}
             </span>
             <span className="flex items-center gap-2">
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-cyan-400 text-sm font-bold text-black">
                 I
               </span>
-              inverte a janela
+              {t('inverteJanela')}
             </span>
           </div>
         )}
@@ -605,8 +619,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               type="button"
               onClick={irParaProximaSerie}
               disabled={indiceSerie === seriesValidas.length - 1}
-              aria-label="Próxima série (pasta) deste estudo"
-              title="Próxima série"
+              aria-label={t('proximaSerie')}
+              title={t('proximaSerieTitulo')}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl text-white hover:bg-white/20 disabled:opacity-30"
             >
               ›
@@ -616,8 +630,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             type="button"
             onClick={irParaProxima}
             disabled={indice === itens.length - 1}
-            aria-label="Próximo estudo (próxima imagem selecionada)"
-            title="Próximo estudo"
+            aria-label={t('proximoEstudo')}
+            title={t('proximoEstudoTitulo')}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
           >
             »
@@ -638,17 +652,16 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
 
       {atual.viewer_url && (
         <p className="border-t border-base-border bg-base-surface2/60 px-4 py-1.5 text-center text-xs text-slate-400">
-          Use a rolagem do mouse ou Page Up / Page Down dentro do visualizador para percorrer todos os cortes desta
-          imagem.
-          {seriesValidas.length > 1 && ' Use a seta simples (‹ ›) para trocar de série e a seta dupla (« ») para trocar de estudo.'}
+          {t('instrucaoRolagem')}
+          {seriesValidas.length > 1 && t('instrucaoSeries')}
         </p>
       )}
 
       <div className="border-t border-base-border px-4 py-3 sm:px-6">
         <div className="mx-auto max-w-4xl">
           <BarraClassificacao
-            tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia)}
-            qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica)}
+            tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia, traduzirTipoRadiografia)}
+            qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica, traduzirQualidadeTecnica)}
             dentes={atual.dentes}
             alteracoesObservadas={atual.alteracoes_observadas}
             achadosDetalhe={atual.achados_detalhe}
@@ -677,8 +690,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
               >
                 {baixandoImagens
-                  ? 'Baixando...'
-                  : `⬇ Baixar imagens (ZIP, ${infoSerie.total_cortes} cortes)`}
+                  ? t('baixando')
+                  : t('baixarImagensZip', { total: infoSerie.total_cortes })}
               </button>
               <button
                 type="button"
@@ -686,7 +699,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 disabled={baixandoDicom}
                 className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
               >
-                {baixandoDicom ? 'Baixando...' : '⬇ Baixar DICOM (ZIP)'}
+                {baixandoDicom ? t('baixando') : t('baixarDicomZip')}
               </button>
             </>
           ) : (
@@ -696,7 +709,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               disabled={baixandoUnico}
               className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
             >
-              {baixandoUnico ? 'Baixando...' : '⬇ Baixar'}
+              {baixandoUnico ? t('baixando') : t('baixar')}
             </button>
           )}
           <button
@@ -705,7 +718,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             disabled={salvando || jaSalvo}
             className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
           >
-            {jaSalvo ? '✓ Salva' : salvando ? 'Salvando...' : '★ Salvar no meu usuário'}
+            {jaSalvo ? t('salva') : salvando ? t('salvando') : t('salvarNoUsuario')}
           </button>
           {!infoSerie?.eh_serie && (
             <button
@@ -714,7 +727,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               disabled={enviando}
               className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
             >
-              {enviando ? 'Enviando...' : '✉ Enviar por e-mail'}
+              {enviando ? t('enviando') : t('enviarPorEmail')}
             </button>
           )}
         </div>
