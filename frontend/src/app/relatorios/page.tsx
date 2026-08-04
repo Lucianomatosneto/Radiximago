@@ -6,6 +6,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
+import { corBarraAchado, corTextoAchado } from '../../lib/coresAchados'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
 
@@ -77,10 +78,17 @@ function TabelaProporcao({
   titulo,
   dados,
   renderRotulo,
+  corPorChave,
 }: {
   titulo: string
   dados: Record<string, number>
   renderRotulo: (chave: string) => ReactNode
+  // Opcional: quando informado, colore o rotulo e a barra de cada linha
+  // com a MESMA cor usada no Banco de imagens pra aquele achado
+  // (../../lib/coresAchados) - so faz sentido pra tabela "Fichas por
+  // achado principal"; as demais (status, tipo, dificuldade, qualidade,
+  // curador) continuam com a cor neutra/marca de sempre.
+  corPorChave?: (chave: string) => { texto: string; barra: string }
 }) {
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1])
   const total = entradas.reduce((soma, [, valor]) => soma + valor, 0)
@@ -94,17 +102,18 @@ function TabelaProporcao({
         <div className="space-y-3">
           {entradas.map(([chave, valor]) => {
             const porcentagem = total > 0 ? Math.round((valor / total) * 100) : 0
+            const cor = corPorChave?.(chave)
             return (
               <div key={chave}>
-                <div className="mb-1 flex items-center justify-between text-xs text-slate-400">
-                  <span>{renderRotulo(chave)}</span>
-                  <span>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className={cor ? `font-medium ${cor.texto}` : 'text-slate-400'}>{renderRotulo(chave)}</span>
+                  <span className="text-slate-400">
                     {valor} ({porcentagem}%)
                   </span>
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-base-surface2">
                   <div
-                    className="h-full rounded-full bg-brand"
+                    className={`h-full rounded-full ${cor ? cor.barra : 'bg-brand'}`}
                     style={{ width: `${porcentagem}%` }}
                   />
                 </div>
@@ -243,6 +252,7 @@ export default function RelatoriosPage() {
                   titulo="Fichas por achado principal"
                   dados={stats.por_achado_principal}
                   renderRotulo={(chave) => rotular(OPCOES_ACHADO_PRINCIPAL, chave)}
+                  corPorChave={(chave) => ({ texto: corTextoAchado(chave), barra: corBarraAchado(chave) })}
                 />
                 <TabelaProporcao
                   titulo="Fichas por dificuldade"
