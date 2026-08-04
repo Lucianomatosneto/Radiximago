@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -123,7 +124,7 @@ export default function AuditoriaPage() {
     return t(`resultados.${valor}`)
   }
 
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   const [filtroAcao, setFiltroAcao] = useState('')
@@ -141,28 +142,26 @@ export default function AuditoriaPage() {
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set())
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
-
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
-
-    setToken(tokenAtual)
-    carregarUsuarios(tokenAtual)
-    buscarLogs(tokenAtual, 0)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
+      setAutenticado(true)
+      carregarUsuarios()
+      buscarLogs(0)
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function carregarUsuarios(tokenAtual: string) {
+  async function carregarUsuarios() {
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
+        credentials: 'include',
       })
       if (!resposta.ok) return
       const usuarios: Usuario[] = await resposta.json()
@@ -174,7 +173,7 @@ export default function AuditoriaPage() {
     }
   }
 
-  async function buscarLogs(tokenAtual: string, skipAtual: number) {
+  async function buscarLogs(skipAtual: number) {
     setBuscando(true)
     setErro('')
 
@@ -189,7 +188,7 @@ export default function AuditoriaPage() {
     try {
       const resposta = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+        { credentials: 'include' }
       )
       if (resposta.status === 401) {
         router.push('/login')
@@ -213,15 +212,15 @@ export default function AuditoriaPage() {
   }
 
   function pesquisar() {
-    if (token) buscarLogs(token, 0)
+    if (autenticado) buscarLogs(0)
   }
 
   function paginaAnterior() {
-    if (token && skip > 0) buscarLogs(token, Math.max(0, skip - LIMIT))
+    if (autenticado && skip > 0) buscarLogs(Math.max(0, skip - LIMIT))
   }
 
   function proximaPagina() {
-    if (token && skip + LIMIT < total) buscarLogs(token, skip + LIMIT)
+    if (autenticado && skip + LIMIT < total) buscarLogs(skip + LIMIT)
   }
 
   function alternarDetalhes(id: number) {
