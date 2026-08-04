@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface Anotacao {
   id: number
@@ -33,15 +34,6 @@ const CORES_DISPONIVEIS = [
   { valor: '#c084fc', chave: 'roxo' },
   { valor: '#fb923c', chave: 'laranja' },
 ]
-
-const NOMES_CORES: Record<string, string> = {
-  amarelo: 'Amarelo',
-  vermelho: 'Vermelho',
-  verde: 'Verde',
-  azul: 'Azul',
-  roxo: 'Roxo',
-  laranja: 'Laranja',
-}
 
 const TAMANHOS_DISPONIVEIS = [12, 14, 16, 20, 24, 32]
 
@@ -95,6 +87,7 @@ function idCorParaMarcador(cor: string) {
 // OHIF) so ate o proximo clique (ou arrastar) - depois volta ao normal, sem
 // atrapalhar a rolagem/zoom do visualizador o resto do tempo.
 export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
+  const t = useTranslations('Visualizador.anotacoes')
   const [anotacoes, setAnotacoes] = useState<Anotacao[]>([])
   const [modoAdicionar, setModoAdicionar] = useState(false)
   const [editando, setEditando] = useState<EstadoEdicao | null>(null)
@@ -323,7 +316,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
     if (!token || !editando) return
     const conteudo = texto.trim()
     if (!conteudo) {
-      setErro('Escreva algo antes de salvar.')
+      setErro(t('erroTextoVazio'))
       return
     }
     setSalvando(true)
@@ -350,7 +343,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
         body: JSON.stringify(corpo),
       })
       if (!resposta.ok) {
-        setErro('Não foi possível salvar a anotação.')
+        setErro(t('erroSalvar'))
         return
       }
       const salva: Anotacao = await resposta.json()
@@ -363,7 +356,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
       })
       setEditando(null)
     } catch {
-      setErro('Não foi possível salvar a anotação.')
+      setErro(t('erroSalvar'))
     } finally {
       setSalvando(false)
     }
@@ -380,12 +373,12 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!resposta.ok) {
-        setErro('Não foi possível excluir a anotação.')
+        setErro(t('erroExcluir'))
         return
       }
       setAnotacoes((atual) => atual.filter((a) => a.id !== id))
     } catch {
-      setErro('Não foi possível excluir a anotação.')
+      setErro(t('erroExcluir'))
     } finally {
       setSalvando(false)
     }
@@ -407,7 +400,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
             : 'border-base-border bg-black/60 text-white/90 hover:border-brand hover:text-brand-300'
         }`}
       >
-        {modoAdicionar ? '✕ Cancelar' : '+ Anotação'}
+        {modoAdicionar ? t('cancelar') : t('novaAnotacao')}
       </button>
 
       {modoAdicionar && (
@@ -416,7 +409,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           onMouseUp={finalizarArrasto}
           onContextMenu={(evento) => evento.preventDefault()}
           className="pointer-events-auto absolute inset-0 z-40 cursor-crosshair bg-black/10"
-          title="Clique para marcar um ponto, ou clique e arraste para desenhar uma seta até o local exato"
+          title={t('dicaClicarArrastar')}
         />
       )}
 
@@ -553,7 +546,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               <button
                 type="button"
                 onClick={() => abrirEdicao(anotacao)}
-                title="Clique para editar"
+                title={t('clicarParaEditar')}
                 style={{
                   color: anotacao.cor,
                   fontSize: `${anotacao.tamanho_fonte}px`,
@@ -570,7 +563,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                   evento.stopPropagation()
                   removerAnotacao(anotacao.id)
                 }}
-                title="Excluir esta anotação"
+                title={t('excluirAnotacao')}
                 className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white group-hover:flex"
               >
                 ×
@@ -600,7 +593,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 evento.stopPropagation()
                 removerAnotacao(anotacao.id)
               }}
-              title="Excluir esta anotação"
+              title={t('excluirAnotacao')}
               className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white group-hover:flex"
             >
               ×
@@ -621,7 +614,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
         <button
           type="button"
           onClick={alternarArrastoSetaInteiraNoBotao}
-          title={arrastandoSeta ? 'Clique novamente para soltar a seta aqui' : 'Clique para pegar a seta inteira (caixa + ponta juntas) - depois é só mover o mouse (sem precisar segurar). Clique de novo para soltar'}
+          title={arrastandoSeta ? t('soltarSeta') : t('pegarSeta')}
           style={{
             left: `${((editando.posX + editando.alvoX) / 2) * 100}%`,
             top: `${((editando.posY + editando.alvoY) / 2) * 100}%`,
@@ -652,7 +645,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           <button
             type="button"
             onClick={() => setEditando(null)}
-            title="Fechar sem salvar"
+            title={t('fecharSemSalvar')}
             className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-white/40 bg-black/70 text-xs font-bold leading-none text-white shadow-lg hover:border-red-400 hover:text-red-400"
           >
             ×
@@ -666,10 +659,10 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               evento.preventDefault()
               setArrastandoCaixa(true)
             }}
-            title="Arraste para mover esta caixa"
+            title={t('arrasteTitulo')}
             className="-mx-3 -mt-3 mb-2 flex cursor-move items-center justify-center gap-1 rounded-t-xl border-b border-base-border bg-base-surface2 py-1 text-[10px] text-ink-2"
           >
-            {'⠿⠿⠿ arraste para mover a caixa'}
+            {t('arrasteMoverCaixa')}
           </div>
 
           <textarea
@@ -677,7 +670,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
             onChange={(e) => setTexto(e.target.value)}
             autoFocus
             rows={3}
-            placeholder="Escreva sua anotação..."
+            placeholder={t('placeholder')}
             style={{
               color: cor,
               fontSize: `${tamanhoFonte}px`,
@@ -693,8 +686,8 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 key={c.valor}
                 type="button"
                 onClick={() => setCor(c.valor)}
-                aria-label={NOMES_CORES[c.chave]}
-                title={NOMES_CORES[c.chave]}
+                aria-label={t(`cores.${c.chave}`)}
+                title={t(`cores.${c.chave}`)}
                 style={{ backgroundColor: c.valor }}
                 className={`h-5 w-5 rounded-full border-2 transition ${
                   cor === c.valor ? 'border-ink' : 'border-transparent'
@@ -719,7 +712,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               type="button"
               onClick={() => setNegrito((v) => !v)}
               aria-pressed={negrito}
-              title="Negrito"
+              title={t('negrito')}
               className={`h-7 w-7 rounded-lg border text-sm font-bold ${
                 negrito ? 'border-brand bg-brand/10 text-brand-300' : 'border-base-border text-ink-2'
               }`}
@@ -730,7 +723,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               type="button"
               onClick={() => setItalico((v) => !v)}
               aria-pressed={italico}
-              title="Itálico"
+              title={t('italico')}
               className={`h-7 w-7 rounded-lg border text-sm italic ${
                 italico ? 'border-brand bg-brand/10 text-brand-300' : 'border-base-border text-ink-2'
               }`}
@@ -747,7 +740,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 onChange={(e) => setFixada(e.target.checked)}
                 className="h-3.5 w-3.5"
               />
-              {'📌 Texto sempre visível'}
+              {t('textoSempreVisivel')}
             </label>
             {editando.alvoX !== null && editando.alvoY !== null ? (
               <button
@@ -755,7 +748,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 onClick={removerSeta}
                 className="rounded-lg border border-base-border px-2 py-1 text-[11px] text-ink-2 hover:border-red-400 hover:text-red-400"
               >
-                {'✕ Remover seta'}
+                {t('removerSeta')}
               </button>
             ) : (
               <button
@@ -763,7 +756,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 onClick={adicionarSeta}
                 className="rounded-lg border border-base-border px-2 py-1 text-[11px] text-ink-2 hover:border-brand hover:text-brand-300"
               >
-                {'↗ Adicionar seta'}
+                {t('adicionarSeta')}
               </button>
             )}
           </div>
@@ -776,7 +769,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               disabled={salvando}
               className="rounded-lg bg-brand px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-hover disabled:opacity-60"
             >
-              {salvando ? 'Salvando...' : 'Salvar'}
+              {salvando ? t('salvando') : t('salvar')}
             </button>
           </div>
         </div>

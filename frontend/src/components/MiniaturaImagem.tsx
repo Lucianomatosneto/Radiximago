@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 // <img src> nao manda o header Authorization, e o preview e uma rota
 // protegida - por isso buscamos via fetch (com o token) e convertemos pra
@@ -24,6 +25,7 @@ export default function MiniaturaImagem({
   alt: string
   className?: string
 }) {
+  const t = useTranslations('MiniaturaImagem')
   const [src, setSrc] = useState('')
   const [erro, setErro] = useState(false)
   const [visivel, setVisivel] = useState(false)
@@ -91,7 +93,7 @@ export default function MiniaturaImagem({
   if (erro) {
     return (
       <div className={`flex items-center justify-center bg-base-surface2 text-slate-600 ${className}`}>
-        <span className="text-xs">Sem preview</span>
+        <span className="text-xs">{t('semPreview')}</span>
       </div>
     )
   }
