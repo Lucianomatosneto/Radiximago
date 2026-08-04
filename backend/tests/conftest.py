@@ -242,6 +242,14 @@ def criar_solicitacao_acesso(db):
 def obter_token(client: TestClient, email: str, senha: str = SENHA_TESTE) -> str:
     resposta = client.post("/auth/login", data={"username": email, "password": senha})
     assert resposta.status_code == 200, resposta.text
+    # /auth/login tambem seta um cookie httpOnly (ver auth.py) - o TestClient
+    # persiste cookies entre chamadas como um navegador de verdade, e
+    # obter_usuario_atual le o cookie ANTES do header Authorization. Sem
+    # limpar aqui, testes que logam como usuarios diferentes no mesmo
+    # `client` (pra simular contas distintas) fariam a chamada seguinte
+    # authenticar com o cookie do login anterior, ignorando o header
+    # explicito que o teste passou de proposito.
+    client.cookies.clear()
     return resposta.json()["access_token"]
 
 

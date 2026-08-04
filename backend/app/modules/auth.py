@@ -1,7 +1,7 @@
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -18,7 +18,31 @@ router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 RESET_TOKEN_VALIDADE_MINUTOS = 60
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+# Nome e atributos do cookie httpOnly que carrega o JWT (migracao de
+# localStorage para cookie - 2026-08). httponly=True: inacessivel via JS no
+# navegador (mitiga roubo de token por XSS, o que localStorage nunca
+# protegia). secure=True fora de development: exige HTTPS pra o navegador
+# aceitar/enviar o cookie (em dev, sobre http://localhost, teria que ficar
+# False). samesite="lax": cobre o caso de uso daqui (frontend e backend em
+# portas diferentes do mesmo host/"site" registravel) sem abrir mao da
+# protecao contra CSRF que "none" removeria.
+NOME_COOKIE_TOKEN = "access_token"
+COOKIE_SECURE = settings.ENVIRONMENT == "production"
+
+
+def _definir_cookie_token(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=NOME_COOKIE_TOKEN,
+        value=token,
+        httponly=True,
+        secure=COOKIE_SECURE,
+        samesite="lax",
+        max_age=settings.JWT_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 class TokenResposta(BaseModel):
     access_token: str
@@ -29,7 +53,12 @@ class TokenResposta(BaseModel):
 
 @router.post("/login", response_model=TokenResposta)
 @limiter.limit("5/minute")
-def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    response: Response,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     # Exclui usuarios excluidos (soft-delete) da busca - o e-mail pode ter
     # sido reaproveitado por uma conta nova, e essa e a que deve logar.
     usuario = db.query(User).filter(
@@ -69,6 +98,11 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
         resultado="sucesso",
     ))
     db.commit()
+    # Cookie httpOnly (migracao de localStorage) - a resposta JSON abaixo
+    # continua identica, por compatibilidade (algum consumidor externo da
+    # API pode depender do access_token no corpo; o frontend deste projeto
+    # passou a ignorar esse campo e usar so o cookie).
+    _definir_cookie_token(response, token)
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -77,7 +111,16 @@ def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db
         "foto_perfil_url": usuario.foto_perfil_url,
     }
 
-def obter_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+def obter_token(request: Request, token_header: str | None = Depends(oauth2_scheme)) -> str | None:
+    """Le o token do cookie httpOnly primeiro; cai pro header Authorization
+    (Bearer) se o cookie nao existir - mantem clientes antigos/externos que
+    ainda mandam o header funcionando durante a migracao."""
+    return request.cookies.get(NOME_COOKIE_TOKEN) or token_header
+
+
+def obter_usuario_atual(token: str | None = Depends(obter_token), db: Session = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Não autenticado")
     payload = decodificar_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
@@ -128,14 +171,17 @@ def meu_perfil(usuario: User = Depends(obter_usuario_atual)):
 
 @router.post("/logout")
 def logout(
+    response: Response,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
     """
-    Logout simbolico: o JWT e stateless (sem lista de revogacao), entao o
-    token continua valido ate expirar. Este endpoint so registra a
-    auditoria; o cliente e responsavel por descartar o token localmente.
+    Logout: apaga o cookie httpOnly do token (fim da migracao de
+    localStorage - antes disso era so simbolico). O JWT em si continua
+    stateless (sem lista de revogacao) - se alguem tiver guardado o valor
+    do token por fora do cookie, ele so perde validade quando expirar.
     """
+    response.delete_cookie(key=NOME_COOKIE_TOKEN, path="/", samesite="lax", secure=COOKIE_SECURE)
     db.add(AuditLog(
         usuario_id=usuario.id, acao="logout", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",
