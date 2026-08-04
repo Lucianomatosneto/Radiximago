@@ -6,6 +6,8 @@ import Link from 'next/link'
 import Topbar from '../../components/Topbar'
 import FilaCuradoria, { ImagemPendente } from '../../components/curadoria/FilaCuradoria'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
+import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
+import PainelAchadosRadiografia from '../../components/curadoria/PainelAchadosRadiografia'
 import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
@@ -63,6 +65,10 @@ export default function CuradoriaPage() {
   const [criandoId, setCriandoId] = useState<number | null>(null)
   const [filaColapsada, setFilaColapsada] = useState(false)
   const [indiceAtual, setIndiceAtual] = useState<number | null>(null)
+  // So dispara uma vez, na entrada na tela - depois disso, trocar de item
+  // pendente ja e coberto por irParaProxima (avanco automatico apos
+  // salvar/aprovar/descartar) e pelos cliques manuais na fila.
+  const autoAbriuPrimeiraRef = useRef(false)
 
   const [fichaAtiva, setFichaAtiva] = useState<FichaAtiva | null>(null)
   const [statusFicha, setStatusFicha] = useState('em_analise')
@@ -73,6 +79,14 @@ export default function CuradoriaPage() {
   const [telaCheia, setTelaCheia] = useState(false)
   const [modoAjustado, setModoAjustado] = useState(false)
   const [iframeReloadKey, setIframeReloadKey] = useState(0)
+  // Painel ao lado do OHIF alterna entre a imagem de marcacao e os achados
+  // em radiografia (setas no proprio painel) - o curador marca a lesao
+  // primeiro (imagem), depois vira pra achados, que ganham a mesma altura
+  // grande do visualizador em vez de ficarem espremidos na faixa baixa da
+  // ficha la embaixo. Reseta pra "marcacao" sempre que uma imagem nova
+  // abre (ver carregarFichaCompleta/finalizarFichaAtiva) - cada imagem
+  // comeca do zero, sem herdar o "achados" da imagem anterior.
+  const [painelLateral, setPainelLateral] = useState<'marcacao' | 'achados'>('marcacao')
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
 
@@ -104,6 +118,20 @@ export default function CuradoriaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
+  // Abre a primeira imagem pendente automaticamente assim que a fila
+  // carrega, pra quem cura ja cair direto trabalhando (visualizador grande
+  // + ficha logo abaixo), em vez de ver a tela vazia "Selecione uma imagem
+  // na fila ao lado" e precisar clicar no primeiro item manualmente.
+  useEffect(() => {
+    if (autoAbriuPrimeiraRef.current) return
+    if (carregando || carregandoFila) return
+    if (fichaAtiva || criandoId !== null) return
+    if (!token || fila.length === 0) return
+    autoAbriuPrimeiraRef.current = true
+    abrirImagem(fila[0], 0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, token])
+
   function aplicarFila(itens: ImagemPendente[], total: number, opcoes?: { append?: boolean }) {
     const novaFila = opcoes?.append ? [...filaRef.current, ...itens] : itens
     const novaOrdem = opcoes?.append ? [...ordemInicialRef.current, ...itens] : itens
@@ -128,13 +156,17 @@ export default function CuradoriaPage() {
         return
       }
       if (!resposta.ok) {
-        router.push('/login')
+        // So 401 e problema de sessao de verdade - qualquer outro erro
+        // (permissao, erro no servidor, etc.) e mostrado na fila em vez de
+        // mandar pro login, que antes fazia parecer que a conta tinha
+        // "perdido o acesso" mesmo com a sessao certa.
+        setErroFila(await extrairErro(resposta, 'Não foi possível carregar a fila de curadoria.'))
         return
       }
       const dados = await resposta.json()
       aplicarFila(dados.itens ?? [], dados.total_pendentes ?? 0, { append: opcoes?.append })
     } catch {
-      router.push('/login')
+      setErroFila('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.')
     } finally {
       setCarregandoFila(false)
       setCarregando(false)
@@ -230,6 +262,7 @@ export default function CuradoriaPage() {
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
+    setPainelLateral('marcacao')
     if (ficha.status === 'segunda_opiniao') {
       carregarReviewSegundaOpiniao(tokenAtual, curationId)
     }
@@ -342,6 +375,7 @@ export default function CuradoriaPage() {
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
+    setPainelLateral('marcacao')
     if (token) carregarFila(token)
   }
 
@@ -478,101 +512,189 @@ export default function CuradoriaPage() {
     <div className="flex h-screen flex-col bg-base">
       <Topbar />
 
-      <main className="min-h-0 flex-1 overflow-y-auto p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <div className="mb-2 flex items-center gap-3">
-              <Link
-                href="/dashboard"
-                className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-              >
-                ← Início
-              </Link>
-            </div>
-            <h1 className="text-2xl font-bold text-ink">
-              Curadoria<span className="text-brand-300">.</span>
-            </h1>
-            <p className="mt-1 text-sm text-slate-400">
-              Analise a imagem e preencha a ficha de curadoria correspondente.
-            </p>
-          </div>
+      {/* Sem overflow-y-auto aqui de proposito: a linha de trabalho ocupa
+          100% da altura disponivel - nunca sobra conteudo pra "vazar" e
+          forcar rolagem da pagina inteira. */}
+      <main className="flex h-full min-h-0 flex-1 flex-col gap-3 p-4">
+        {/* Cabecalho compacto, uma linha so - o espaco vertical aqui e
+            precioso (a imagem e a ficha e que importam pro curador no dia
+            a dia, nao o titulo da tela). */}
+        <div className="flex shrink-0 items-center gap-3">
+          <Link
+            href="/dashboard"
+            className="rounded-full border border-base-border px-2.5 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+          >
+            ← Início
+          </Link>
+          <h1 className="text-sm font-semibold text-ink">
+            Curadoria<span className="text-brand-300">.</span>
+          </h1>
         </div>
 
-        {/* AREA DE TRABALHO - barra superior + visualizador + ficha, tudo
-            dentro do mesmo elemento que vira tela cheia. Antes so o
-            visualizador entrava em tela cheia (Fullscreen API so mostra o
-            elemento que foi pedido, escondendo tudo fora dele) e a coluna
-            da ficha - e os botoes de Salvar/Aprovar/Descartar - sumiam.
-            Agora os dois ficam dentro do mesmo container, entao continuam
-            visiveis em tela cheia. A fila (fora deste ref, ver abaixo) fica
-            de fora de proposito, pra dar o maximo de espaco pro trabalho
-            na imagem ativa mesmo em tela cheia. */}
-        <div ref={visualizadorRef} className={`flex min-w-0 flex-1 flex-col gap-4 bg-base ${telaCheia ? 'p-4' : ''}`}>
-          {fichaAtiva && (
-            <BarraSuperiorCuradoria
-              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-              totalFila={totalPendentes}
-              podeAnterior={podeAnterior}
-              podeProxima={podeProxima}
-              onAnterior={irParaAnterior}
-              onProxima={irParaProxima}
-              onSalvar={aoClicarSalvar}
-              onAprovar={aprovar}
-              onDescartar={() => abrirModalMotivo('descartar')}
-              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-              salvando={salvandoRascunho}
-              aprovando={aprovando}
+        {/* LINHA DE TRABALHO - fila (esquerda, coluna vertical estreita) +
+            area de trabalho (barra superior + visualizador + ficha, essa
+            ultima dentro do MESMO elemento que vira tela cheia). */}
+        <div className="flex min-h-0 flex-1 gap-3">
+          {/* COLUNA - fila de curadoria, sempre visivel, largura fixa e
+              estreita (so a miniatura + id + status cabem). Fica de fora
+              da tela cheia de proposito - o curador nao precisa trocar de
+              imagem no meio da curadoria de uma imagem so, e assim a
+              area de trabalho ganha o maximo de espaco possivel. */}
+          <section
+            className={`h-full shrink-0 overflow-hidden rounded-2xl border border-base-border bg-base-surface ${
+              filaColapsada ? 'w-[56px]' : 'w-[192px]'
+            }`}
+          >
+            <FilaCuradoria
+              fila={fila}
+              carregando={carregandoFila}
+              erro={erroFila}
+              criandoId={criandoId}
+              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+              colapsada={filaColapsada}
+              onSelecionar={(imagem) => abrirImagem(imagem)}
+              onColapsar={() => setFilaColapsada(true)}
+              onExpandir={() => setFilaColapsada(false)}
             />
-          )}
+          </section>
 
-          <div className={`grid flex-1 grid-cols-1 gap-4 ${fichaVisivel ? 'lg:grid-cols-[minmax(480px,1fr)_380px]' : ''}`}>
-            <PainelVisualizador
-              fichaAtiva={!!fichaAtiva}
-              carregandoViewer={carregandoViewer}
-              viewerInfo={viewerInfo}
-              telaCheia={telaCheia}
-              onAlternarTelaCheia={alternarTelaCheia}
-              modoAjustado={modoAjustado}
-              onAlternarAjustar={() => setModoAjustado((v) => !v)}
-              onCentralizar={centralizarImagem}
-              iframeReloadKey={iframeReloadKey}
-              statusFicha={statusFicha}
-              segundaOpiniaoReview={segundaOpiniaoReview}
-            />
+          {/* AREA DE TRABALHO - barra superior + visualizador + ficha,
+              todos dentro do elemento que vira tela cheia (Fullscreen API
+              so mostra o elemento pedido, escondendo tudo fora dele) -
+              assim o curador consegue curar (ver a imagem grande E
+              preencher a ficha) sem sair do modo tela cheia. So a fila
+              fica de fora. */}
+          <div
+            ref={visualizadorRef}
+            className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}
+          >
+            {fichaAtiva && (
+              <BarraSuperiorCuradoria
+                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+                totalFila={totalPendentes}
+                podeAnterior={podeAnterior}
+                podeProxima={podeProxima}
+                onAnterior={irParaAnterior}
+                onProxima={irParaProxima}
+                onSalvar={aoClicarSalvar}
+                onAprovar={aprovar}
+                onDescartar={() => abrirModalMotivo('descartar')}
+                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+                salvando={salvandoRascunho}
+                aprovando={aprovando}
+              />
+            )}
 
-            {/* Formulario de curadoria (escondido temporariamente no modo
-                "ajustar a tela" - as acoes continuam na barra superior) */}
-            {fichaVisivel && fichaAtiva && (
-              <FichaCuradoriaForm
+            {/* LINHA DE IMAGENS - visualizador principal (OHIF, imagem
+                atual do estudo) + painel lateral, lado a lado. O
+                visualizador usa flex-[2] (definido dentro do proprio
+                PainelVisualizador) contra o flex-1 do painel lateral: a
+                marcacao/achados fica exatamente na metade do tamanho do
+                visualizador, mas com a MESMA ALTURA (bem maior que a faixa
+                baixa da ficha). O painel lateral some junto com a ficha no
+                modo "ajustar a tela", devolvendo toda a largura ao
+                visualizador.
+
+                Esse painel lateral alterna entre 2 conteudos, com uma
+                seta (estilo carrossel, igual a ficha): "Imagem para
+                marcacao" (MarcadorAchado, onde o curador desenha
+                oval/retangulo/seta pra indicar a lesao) e "Achados em
+                radiografia" (checklist completo). A ideia e que o curador
+                marca a lesao primeiro, depois vira pra achados - que
+                assim ganham a altura toda do visualizador em vez de
+                ficarem espremidos na faixa baixa da ficha (por isso
+                achados saiu da ficha de baixo, que agora tem so 1 pagina -
+                ver FichaCuradoriaForm.tsx e PainelAchadosRadiografia.tsx). */}
+            <div className="flex min-h-0 flex-[4] gap-3">
+              <PainelVisualizador
+                fichaAtiva={!!fichaAtiva}
+                carregandoViewer={carregandoViewer}
+                viewerInfo={viewerInfo}
+                telaCheia={telaCheia}
+                onAlternarTelaCheia={alternarTelaCheia}
+                modoAjustado={modoAjustado}
+                onAlternarAjustar={() => setModoAjustado((v) => !v)}
+                onCentralizar={centralizarImagem}
+                iframeReloadKey={iframeReloadKey}
+                statusFicha={statusFicha}
+                segundaOpiniaoReview={segundaOpiniaoReview}
                 form={form}
                 onChange={setForm}
-                statusFicha={statusFicha}
-                erro={erroFormulario}
-                rascunhoSalvo={rascunhoSalvo}
-                orthancReferenceId={fichaAtiva.orthancReferenceId}
               />
+
+              {fichaVisivel && fichaAtiva && (
+                <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
+                  <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">
+                    {painelLateral === 'marcacao' ? 'Imagem para marcação' : 'Achados em radiografia'}
+                  </h2>
+                  <div className="min-h-0 flex-1 px-6">
+                    {painelLateral === 'marcacao' ? (
+                      <MarcadorAchado
+                        orthancReferenceId={fichaAtiva.orthancReferenceId}
+                        marcacoes={form.marcacoes}
+                        onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
+                      />
+                    ) : (
+                      <PainelAchadosRadiografia form={form} onChange={setForm} />
+                    )}
+                  </div>
+
+                  {/* Setas do carrossel: so a de avancar (achados) aparece
+                      em cima da marcacao, so a de voltar aparece em cima
+                      dos achados - mesmo padrao visual da ficha de baixo. */}
+                  {painelLateral === 'marcacao' && (
+                    <button
+                      type="button"
+                      onClick={() => setPainelLateral('achados')}
+                      aria-label="Ver achados em radiografia"
+                      title="Ver achados em radiografia"
+                      className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                    >
+                      ›
+                    </button>
+                  )}
+                  {painelLateral === 'achados' && (
+                    <button
+                      type="button"
+                      onClick={() => setPainelLateral('marcacao')}
+                      aria-label="Voltar para imagem de marcação"
+                      title="Voltar para imagem de marcação"
+                      className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                    >
+                      ‹
+                    </button>
+                  )}
+                </section>
+              )}
+            </div>
+
+            {/* Ficha de curadoria - escondida temporariamente no modo
+                "ajustar a tela" (as acoes continuam na barra superior).
+                Proporcao 4:1 (80% da altura pro visualizador, 20% pra
+                ficha) - so foi possivel encolher tanto a ficha porque
+                "Achados em radiografia" (a secao mais alta, com a lista
+                inteira de checkboxes) saiu daqui de vez: agora mora no
+                painel lateral, ao lado do OHIF (ver comentario acima e
+                PainelAchadosRadiografia.tsx). O que resta aqui embaixo
+                (so "Regiao anatomica", sem mais paginacao - ver
+                FichaCuradoriaForm.tsx) e bem mais curto. As duas linhas
+                sempre somam exatamente a altura disponivel dentro da area
+                de trabalho - e, por estar aqui dentro, continua acessivel
+                em tela cheia. */}
+            {fichaVisivel && fichaAtiva && (
+              <div className="min-h-0 flex-1">
+                <FichaCuradoriaForm
+                  form={form}
+                  onChange={setForm}
+                  statusFicha={statusFicha}
+                  erro={erroFormulario}
+                  rascunhoSalvo={rascunhoSalvo}
+                />
+              </div>
             )}
           </div>
         </div>
       </main>
-
-      {/* FAIXA - fila de curadoria, fixa na parte inferior da tela (fora do
-          <main> que rola) - assim fica sempre visivel, sem precisar rolar
-          a pagina pra ver ou trocar de item. Fora do visualizadorRef de
-          proposito: some em tela cheia, igual antes. */}
-      <section className="shrink-0 border-t border-base-border bg-base-surface">
-        <FilaCuradoria
-          fila={fila}
-          carregando={carregandoFila}
-          erro={erroFila}
-          criandoId={criandoId}
-          ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
-          colapsada={filaColapsada}
-          onSelecionar={(imagem) => abrirImagem(imagem)}
-          onColapsar={() => setFilaColapsada(true)}
-          onExpandir={() => setFilaColapsada(false)}
-        />
-      </section>
 
       {modalMotivo && (
         <ModalMotivo
