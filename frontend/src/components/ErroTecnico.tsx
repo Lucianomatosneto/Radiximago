@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Logo from './Logo'
 
 interface ErroTecnicoProps {
   onRetry?: () => void
@@ -10,7 +11,12 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
   const router = useRouter()
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-base p-6">
+    <main className="flex min-h-screen flex-col items-center justify-center bg-base p-6">
+      {/* Esta tela nao usa Sidebar/Topbar (e uma pagina de erro isolada,
+          sem o menu normal do site) - por isso a logo e mostrada aqui em
+          cima, so o icone, pra manter a identidade visual mesmo numa tela
+          de erro. */}
+      <Logo variante="icone" className="mb-6" />
       <div className="max-w-md text-center">
         <svg
           xmlns="http://www.w3.org/2000/svg"

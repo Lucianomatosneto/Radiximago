@@ -2,10 +2,18 @@ import type { Config } from 'tailwindcss'
 
 const config: Config = {
   darkMode: 'class',
-  content: [
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  // Antes so cobria src/app e src/components - o Tailwind precisa "ver" o
+  // texto literal de cada classe (ex.: "text-emerald-700") em algum
+  // arquivo varrido por esses caminhos, senao ele nem gera aquele CSS.
+  // src/lib/coresAchados.ts guarda essas classes como strings (pra ser
+  // reaproveitado em varios componentes, sem repetir a cor em cada tela) -
+  // como src/lib nao estava coberto, o Tailwind nunca via essas classes e
+  // simplesmente nao gerava o CSS delas (cards do Banco de imagens sem
+  // cor, titulos sem cor etc.). Ampliado pra cobrir todo o src/, assim
+  // qualquer arquivo novo dentro dele (lib, types, ou outro que apareça no
+  // futuro) e varrido automaticamente, sem precisar lembrar de atualizar
+  // esta lista de novo.
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
       colors: {
