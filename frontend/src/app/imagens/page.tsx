@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import StatusBadge from '../../components/StatusBadge'
@@ -14,20 +15,18 @@ import StatusBadge from '../../components/StatusBadge'
 // direto pra pagina de acesso negado, como as demais telas restritas.
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador', 'professor']
 
-const OPCOES_ANONIMIZACAO = [
-  { valor: 'aguardando', label: 'Aguardando' },
-  { valor: 'validada', label: 'Validada' },
-  { valor: 'falha', label: 'Falha' },
-]
+// Chaves usadas nos selects de filtro - os rotulos (label) vem da traducao
+// (namespace ImagensRecebidas.statusAnonimizacao / .statusCuradoriaFiltro).
+const OPCOES_ANONIMIZACAO = ['aguardando', 'validada', 'falha']
 
 const OPCOES_CURADORIA = [
-  { valor: 'pendente', label: 'Pendente' },
-  { valor: 'em_analise', label: 'Em análise' },
-  { valor: 'aprovada', label: 'Aprovada' },
-  { valor: 'segunda_opiniao', label: 'Segunda opinião' },
-  { valor: 'baixa_qualidade', label: 'Baixa qualidade' },
-  { valor: 'descartada', label: 'Descartada' },
-  { valor: 'sem_ficha', label: 'Sem ficha' },
+  'pendente',
+  'em_analise',
+  'aprovada',
+  'segunda_opiniao',
+  'baixa_qualidade',
+  'descartada',
+  'sem_ficha',
 ]
 
 const CLASSES_ANONIMIZACAO: Record<string, string> = {
@@ -38,6 +37,13 @@ const CLASSES_ANONIMIZACAO: Record<string, string> = {
 
 const CLASSE_SEM_FICHA = 'bg-slate-500/15 text-slate-300 border-slate-600/40'
 
+// next-intl usa 'pt'/'en' - toLocaleDateString espera uma tag de idioma
+// completa (ex.: 'pt-BR', 'en-US') pra formatar a data corretamente.
+const TAG_LOCALE: Record<string, string> = {
+  pt: 'pt-BR',
+  en: 'en-US',
+}
+
 interface Imagem {
   id: number
   orthanc_id: string
@@ -47,15 +53,12 @@ interface Imagem {
   status_curadoria: string | null
 }
 
-function formatarData(valor: string | undefined): string {
-  if (!valor) return '—'
-  const data = new Date(valor)
-  if (Number.isNaN(data.getTime())) return '—'
-  return data.toLocaleDateString('pt-BR')
-}
-
 export default function ImagensPage() {
   const router = useRouter()
+  const t = useTranslations('ImagensRecebidas')
+  const tComum = useTranslations('Comum')
+  const locale = useLocale()
+  const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
   const [token, setToken] = useState<string | null>(null)
   const [imagens, setImagens] = useState<Imagem[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -71,6 +74,13 @@ export default function ImagensPage() {
   // de upload). So existe pra mostrar mensagem na tela - nunca desloga o
   // usuario, ver comentario abaixo sobre o motivo dessa mudanca.
   const [erroLista, setErroLista] = useState('')
+
+  function formatarData(valor: string | undefined): string {
+    if (!valor) return '—'
+    const data = new Date(valor)
+    if (Number.isNaN(data.getTime())) return '—'
+    return data.toLocaleDateString(tagLocale)
+  }
 
   const buscarImagens = useCallback(
     async (tokenAtual: string) => {
@@ -95,7 +105,7 @@ export default function ImagensPage() {
           const dadosErro = await response.json().catch(() => null)
           setErroLista(
             (typeof dadosErro?.detail === 'string' && dadosErro.detail) ||
-              `Não foi possível carregar as imagens (erro ${response.status}). Tente novamente em instantes.`
+              t('erroListaGenerico', { status: response.status })
           )
           setCarregando(false)
           return
@@ -106,11 +116,11 @@ export default function ImagensPage() {
         setCarregando(false)
       } catch {
         // Falha de rede/conexao - tambem nao e problema de sessao.
-        setErroLista('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.')
+        setErroLista(t('erroListaConexao'))
         setCarregando(false)
       }
     },
-    [router]
+    [router, t]
   )
 
   useEffect(() => {
@@ -154,21 +164,16 @@ export default function ImagensPage() {
 
       if (!resposta.ok) {
         setErroEnvio(
-          (typeof dados?.detail === 'string' && dados.detail) ||
-            'Não foi possível enviar o arquivo. Verifique se é um DICOM válido.'
+          (typeof dados?.detail === 'string' && dados.detail) || t('erroEnvioGenerico')
         )
         return
       }
 
-      setMensagemEnvio(
-        dados?.status === 'ja_existente'
-          ? 'Este arquivo já estava registrado (imagem existente) - nenhuma duplicata foi criada.'
-          : 'Imagem enviada e anonimizada com sucesso.'
-      )
+      setMensagemEnvio(dados?.status === 'ja_existente' ? t('mensagemDuplicata') : t('mensagemSucesso'))
       if (inputArquivoRef.current) inputArquivoRef.current.value = ''
       buscarImagens(token) // atualiza a lista na hora, sem precisar recarregar a pagina
     } catch {
-      setErroEnvio('Não foi possível enviar o arquivo. Verifique sua conexão e tente novamente.')
+      setErroEnvio(t('erroEnvioConexao'))
     } finally {
       setEnviando(false)
     }
@@ -190,7 +195,7 @@ export default function ImagensPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -203,7 +208,7 @@ export default function ImagensPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">Imagens recebidas</h1>
+          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
 
           {erroLista && (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-700/40 bg-red-950/30 p-4">
@@ -213,7 +218,7 @@ export default function ImagensPage() {
                 onClick={() => token && buscarImagens(token)}
                 className="rounded-md border border-red-700/50 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-900/40"
               >
-                Tentar novamente
+                {t('tentarNovamente')}
               </button>
             </div>
           )}
@@ -231,10 +236,9 @@ export default function ImagensPage() {
               Sidebar.tsx (blue -> sky -> cyan -> teal -> emerald), so que
               em ordem invertida da esquerda pra direita. */}
           <section className="mb-6 rounded-xl border border-teal-700/40 bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-blue-950/50 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-teal-300">Enviar imagem DICOM</h2>
+            <h2 className="mb-1 text-sm font-semibold text-teal-300">{t('enviarTitulo')}</h2>
             <p className="mb-3 text-xs text-slate-500">
-              O arquivo é enviado ao Orthanc e anonimizado automaticamente antes de ficar disponível
-              - nenhum dado identificável do paciente é mantido. O envio fica registrado na auditoria.
+              {t('enviarDescricao')}
             </p>
             <form onSubmit={enviarImagem} className="flex flex-wrap items-center gap-3">
               <input
@@ -249,7 +253,7 @@ export default function ImagensPage() {
                 disabled={enviando}
                 className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
               >
-                {enviando ? 'Enviando...' : 'Enviar imagem'}
+                {enviando ? t('enviando') : t('enviarBotao')}
               </button>
             </form>
             {mensagemEnvio && <p className="mt-3 text-sm text-emerald-400">{mensagemEnvio}</p>}
@@ -266,10 +270,10 @@ export default function ImagensPage() {
               onChange={(e) => setFiltroAnonimizacao(e.target.value)}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
-              <option value="">Todos os status de anonimização</option>
-              {OPCOES_ANONIMIZACAO.map((opcao) => (
-                <option key={opcao.valor} value={opcao.valor}>
-                  {opcao.label}
+              <option value="">{t('filtroAnonimizacaoTodos')}</option>
+              {OPCOES_ANONIMIZACAO.map((valor) => (
+                <option key={valor} value={valor}>
+                  {t(`statusAnonimizacao.${valor}`)}
                 </option>
               ))}
             </select>
@@ -279,10 +283,10 @@ export default function ImagensPage() {
               onChange={(e) => setFiltroCuradoria(e.target.value)}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
-              <option value="">Todos os status de curadoria</option>
-              {OPCOES_CURADORIA.map((opcao) => (
-                <option key={opcao.valor} value={opcao.valor}>
-                  {opcao.label}
+              <option value="">{t('filtroCuradoriaTodos')}</option>
+              {OPCOES_CURADORIA.map((valor) => (
+                <option key={valor} value={valor}>
+                  {t(`statusCuradoriaFiltro.${valor}`)}
                 </option>
               ))}
             </select>
@@ -292,11 +296,11 @@ export default function ImagensPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-base-surface text-slate-400">
                 <tr>
-                  <th className="px-4 py-3 font-medium">ID Orthanc</th>
-                  <th className="px-4 py-3 font-medium">Tipo</th>
-                  <th className="px-4 py-3 font-medium">Status de anonimização</th>
-                  <th className="px-4 py-3 font-medium">Status de curadoria</th>
-                  <th className="px-4 py-3 font-medium">Data de entrada</th>
+                  <th className="px-4 py-3 font-medium">{t('colunaIdOrthanc')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colunaTipo')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colunaStatusAnonimizacao')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colunaStatusCuradoria')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colunaDataEntrada')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-base">
@@ -315,7 +319,9 @@ export default function ImagensPage() {
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${classeAnonimizacao}`}
                         >
-                          {imagem.anonimizacao_status}
+                          {imagem.anonimizacao_status in CLASSES_ANONIMIZACAO
+                            ? t(`statusAnonimizacao.${imagem.anonimizacao_status}`)
+                            : imagem.anonimizacao_status}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -325,7 +331,7 @@ export default function ImagensPage() {
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CLASSE_SEM_FICHA}`}
                           >
-                            Sem ficha
+                            {t('semFicha')}
                           </span>
                         )}
                       </td>
@@ -337,7 +343,7 @@ export default function ImagensPage() {
                 {imagensFiltradas.length === 0 && (
                   <tr>
                     <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
-                      Nenhuma imagem encontrada.
+                      {t('nenhumaImagem')}
                     </td>
                   </tr>
                 )}
