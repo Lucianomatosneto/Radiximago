@@ -2,14 +2,17 @@
 Roteador de Imagens.
 
 Endpoints:
-- GET  /images/                                   -> lista as imagens ativas
-- POST /images/import-from-orthanc              -> sincroniza em lote (varre o Orthanc)
-- POST /images/upload                            -> upload direto de um arquivo DICOM
-- GET  /images/{orthanc_reference_id}             -> consulta uma imagem
-- PATCH /images/{orthanc_reference_id}/deactivate -> desativa (soft delete)
-- PATCH /images/{orthanc_reference_id}/activate   -> reativa
+- GET  /images/                                   -> lista as imagens ativas (PERFIS_ENVIO_IMAGENS)
+- POST /images/import-from-orthanc              -> sincroniza em lote (varre o Orthanc) (PERFIS_IMAGENS)
+- POST /images/upload                            -> upload direto de um arquivo DICOM (PERFIS_ENVIO_IMAGENS)
+- GET  /images/{orthanc_reference_id}             -> consulta uma imagem (PERFIS_ENVIO_IMAGENS)
+- PATCH /images/{orthanc_reference_id}/deactivate -> desativa (soft delete) (PERFIS_IMAGENS)
+- PATCH /images/{orthanc_reference_id}/activate   -> reativa (PERFIS_IMAGENS)
 
-Acesso restrito a administrador e suporte (Bloco 4, Secao 13).
+PERFIS_IMAGENS = administrador, suporte (import em lote e ativar/desativar -
+acoes administrativas sobre imagens de terceiros).
+PERFIS_ENVIO_IMAGENS = administrador, suporte, curador, professor (listar,
+consultar e enviar imagens novas - ver auth.py para o raciocinio completo).
 """
 
 import io
@@ -24,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules.curations import Curation
@@ -190,7 +193,7 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
 
 @router.get("/")
 def listar_imagens(
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ENVIO_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -198,10 +201,11 @@ def listar_imagens(
     o status da ficha de curadoria mais recente vinculada a cada uma
     (None se ainda nao houver ficha).
 
-    Leitura apenas (os demais endpoints deste modulo - upload, import,
-    ativar/desativar - continuam restritos a admin/suporte): o curador
-    tambem precisa ver a fila de imagens recebidas, mas nao gerencia a
-    ingestao delas.
+    Leitura apenas (import em lote e ativar/desativar continuam restritos a
+    PERFIS_IMAGENS, so admin/suporte): curador e professor tambem precisam
+    ver a fila de imagens recebidas - inclusive pra conferir o que eles
+    mesmos acabaram de enviar - mas nao gerenciam a ingestao/remocao de
+    imagens de terceiros.
     """
     imagens = (
         db.query(OrthancReference)
@@ -301,7 +305,7 @@ def importar_do_orthanc(
 @router.post("/upload")
 def upload_imagem(
     arquivo: UploadFile = File(...),
-    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ENVIO_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """
@@ -310,6 +314,11 @@ def upload_imagem(
     referencia apontando pra versao anonimizada. A checagem manual humana
     no fluxo de curadoria (anonimizacao_validada) continua existindo como
     segunda camada antes da aprovacao, mas nao e mais a unica protecao.
+
+    Liberado tambem para curador e professor (PERFIS_ENVIO_IMAGENS), nao so
+    admin/suporte: cada upload fica registrado na auditoria com o usuario
+    (usuario.id) e a imagem (ref.id/orthanc_id), permitindo saber sempre
+    quem incluiu qual imagem.
     """
     limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     pedaco_bytes = 1024 * 1024  # 1MB por leitura
@@ -413,7 +422,7 @@ def upload_imagem(
 @router.get("/{orthanc_reference_id}")
 def obter_imagem(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ENVIO_IMAGENS)),
     db: Session = Depends(get_db),
 ):
     """Busca uma unica imagem (orthanc_reference) pelo id interno."""
