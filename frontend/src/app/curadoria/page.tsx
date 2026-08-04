@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Topbar from '../../components/Topbar'
@@ -51,6 +52,8 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
 
 export default function CuradoriaPage() {
   const router = useRouter()
+  const t = useTranslations('Curadoria')
+  const tComum = useTranslations('Comum')
   const [token, setToken] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
 
@@ -160,13 +163,13 @@ export default function CuradoriaPage() {
         // (permissao, erro no servidor, etc.) e mostrado na fila em vez de
         // mandar pro login, que antes fazia parecer que a conta tinha
         // "perdido o acesso" mesmo com a sessao certa.
-        setErroFila(await extrairErro(resposta, 'Não foi possível carregar a fila de curadoria.'))
+        setErroFila(await extrairErro(resposta, t('ficha.erroCarregarFila')))
         return
       }
       const dados = await resposta.json()
       aplicarFila(dados.itens ?? [], dados.total_pendentes ?? 0, { append: opcoes?.append })
     } catch {
-      setErroFila('Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.')
+      setErroFila(t('ficha.erroConexao'))
     } finally {
       setCarregandoFila(false)
       setCarregando(false)
@@ -255,7 +258,7 @@ export default function CuradoriaPage() {
       return
     }
     if (!resposta.ok) {
-      setErroFila('Não foi possível carregar a ficha criada.')
+      setErroFila(t('ficha.erroCarregarFichaCriada'))
       return
     }
     const ficha = await resposta.json()
@@ -306,7 +309,7 @@ export default function CuradoriaPage() {
         return
       }
       if (!respostaCriacao.ok) {
-        setErroFila(await extrairErro(respostaCriacao, 'Não foi possível abrir esta imagem para curadoria.'))
+        setErroFila(await extrairErro(respostaCriacao, t('ficha.erroAbrirImagem')))
         return
       }
       const criada = await respostaCriacao.json()
@@ -320,7 +323,7 @@ export default function CuradoriaPage() {
       setIndiceAtual(indice >= 0 ? indice : null)
       await carregarFichaCompleta(token, criada.curation_id, imagem.orthanc_reference_id)
     } catch {
-      setErroFila('Não foi possível abrir esta imagem para curadoria.')
+      setErroFila(t('ficha.erroAbrirImagem'))
     } finally {
       setCriandoId(null)
     }
@@ -397,7 +400,7 @@ export default function CuradoriaPage() {
         return false
       }
       if (!resposta.ok) {
-        setErroFormulario(await extrairErro(resposta, 'Não foi possível salvar o rascunho.'))
+        setErroFormulario(await extrairErro(resposta, t('ficha.erroSalvarRascunho')))
         return false
       }
       if (!opcoes?.silencioso) {
@@ -406,7 +409,7 @@ export default function CuradoriaPage() {
       }
       return true
     } catch {
-      setErroFormulario('Não foi possível salvar o rascunho.')
+      setErroFormulario(t('ficha.erroSalvarRascunho'))
       return false
     } finally {
       setSalvandoRascunho(false)
@@ -443,12 +446,12 @@ export default function CuradoriaPage() {
         return
       }
       if (!resposta.ok) {
-        setErroFormulario(await extrairErro(resposta, 'Não foi possível aprovar a ficha.'))
+        setErroFormulario(await extrairErro(resposta, t('ficha.erroAprovar')))
         return
       }
       await irParaProxima()
     } catch {
-      setErroFormulario('Não foi possível aprovar a ficha.')
+      setErroFormulario(t('ficha.erroAprovar'))
     } finally {
       setAprovando(false)
     }
@@ -458,7 +461,7 @@ export default function CuradoriaPage() {
     if (!fichaAtiva || !token || !modalMotivo) return
     const motivo = motivoTexto.trim()
     if (!motivo) {
-      setErroMotivo('Informe um motivo.')
+      setErroMotivo(t('modalMotivo.erroMotivoObrigatorio'))
       return
     }
 
@@ -479,14 +482,14 @@ export default function CuradoriaPage() {
         return
       }
       if (!resposta.ok) {
-        setErroMotivo(await extrairErro(resposta, 'Não foi possível concluir a ação.'))
+        setErroMotivo(await extrairErro(resposta, t('modalMotivo.erroConcluirAcao')))
         return
       }
       setModalMotivo(null)
       setMotivoTexto('')
       await irParaProxima()
     } catch {
-      setErroMotivo('Não foi possível concluir a ação.')
+      setErroMotivo(t('modalMotivo.erroConcluirAcao'))
     } finally {
       setEnviandoMotivo(false)
     }
@@ -501,7 +504,7 @@ export default function CuradoriaPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -524,10 +527,10 @@ export default function CuradoriaPage() {
             href="/dashboard"
             className="rounded-full border border-base-border px-2.5 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
           >
-            ← Início
+            ← {t('inicio')}
           </Link>
           <h1 className="text-sm font-semibold text-ink">
-            Curadoria<span className="text-brand-300">.</span>
+            {t('titulo')}<span className="text-brand-300">.</span>
           </h1>
         </div>
 
@@ -625,7 +628,7 @@ export default function CuradoriaPage() {
               {fichaVisivel && fichaAtiva && (
                 <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
                   <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">
-                    {painelLateral === 'marcacao' ? 'Imagem para marcação' : 'Achados em radiografia'}
+                    {painelLateral === 'marcacao' ? t('painelLateral.imagemParaMarcacao') : t('painelLateral.achadosEmRadiografia')}
                   </h2>
                   <div className="min-h-0 flex-1 px-6">
                     {painelLateral === 'marcacao' ? (
@@ -646,8 +649,8 @@ export default function CuradoriaPage() {
                     <button
                       type="button"
                       onClick={() => setPainelLateral('achados')}
-                      aria-label="Ver achados em radiografia"
-                      title="Ver achados em radiografia"
+                      aria-label={t('painelLateral.verAchados')}
+                      title={t('painelLateral.verAchados')}
                       className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
                     >
                       ›
@@ -657,8 +660,8 @@ export default function CuradoriaPage() {
                     <button
                       type="button"
                       onClick={() => setPainelLateral('marcacao')}
-                      aria-label="Voltar para imagem de marcação"
-                      title="Voltar para imagem de marcação"
+                      aria-label={t('painelLateral.voltarParaMarcacao')}
+                      title={t('painelLateral.voltarParaMarcacao')}
                       className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
                     >
                       ‹
