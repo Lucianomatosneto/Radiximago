@@ -4,18 +4,20 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 export default function AcessoNegadoPage() {
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-    setCarregando(false)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      setCarregando(false)
+    })
   }, [router])
 
   if (carregando) {
