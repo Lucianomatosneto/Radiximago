@@ -8,6 +8,7 @@ import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
+import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 
 interface ImagemSalva {
   curation_id: number
@@ -30,9 +31,39 @@ const ROTULOS_TIPO_RADIOGRAFIA: Record<string, string> = {
   oclusal: 'Oclusal',
 }
 
+const ROTULOS_ACHADO_PRINCIPAL: Record<string, string> = {
+  normal: 'Normal',
+  carie: 'Cárie',
+  lesao_periapical: 'Lesão periapical',
+  perda_ossea: 'Perda óssea',
+  dente_incluso: 'Dente incluso',
+  tratamento_endodontico: 'Tratamento endodôntico',
+  erro_tecnico: 'Erro técnico',
+  outro: 'Outro',
+}
+
 function rotularTipo(valor: string | null): string {
   if (!valor) return '—'
   return ROTULOS_TIPO_RADIOGRAFIA[valor] ?? valor
+}
+
+function rotularAchado(valor: string | null): string {
+  if (!valor) return '—'
+  return ROTULOS_ACHADO_PRINCIPAL[valor] ?? valor
+}
+
+// Quanto mais imagens salvas o usuario tiver, mais colunas a grade ganha -
+// assim cada caixa vai ficando menor conforme a quantidade cresce, em vez
+// de manter sempre o mesmo tamanho e a pagina ficar cada vez mais comprida
+// de rolar. As classes precisam estar escritas por extenso aqui (nao
+// montadas por concatenacao) porque o Tailwind so gera o CSS de classes que
+// consegue "ler" direto no codigo-fonte.
+function colunasGrade(quantidade: number): string {
+  if (quantidade <= 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+  if (quantidade <= 8) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+  if (quantidade <= 16) return 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
+  if (quantidade <= 24) return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7'
+  return 'grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8'
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -187,6 +218,15 @@ export default function MinhasImagensPage() {
   const permiteEnviarLote =
     selecionados.length > 0 && selecionados.every((id) => infoSeries[id] === false)
 
+  // "Selecionar todas": marca (ou desmarca, se ja estiverem todas marcadas)
+  // a caixinha de selecao de cada imagem da tela de uma vez so, sem precisar
+  // clicar imagem por imagem.
+  const todasSelecionadas = itens.length > 0 && selecionados.length === itens.length
+
+  function alternarSelecionarTodas() {
+    setSelecionados(todasSelecionadas ? [] : itens.map((imagem) => imagem.curation_id))
+  }
+
   const itensSelecionados = itens
     .map((imagem, indice) => ({ imagem, numero: indice + 1 }))
     .filter(({ imagem }) => selecionados.includes(imagem.curation_id))
@@ -201,6 +241,7 @@ export default function MinhasImagensPage() {
       marcacoes: imagem.marcacoes,
       qualidade_tecnica: imagem.qualidade_tecnica,
       dentes: imagem.dentes,
+      achado_principal: imagem.achado_principal,
     }))
 
   const itensExpandido = itemExpandido
@@ -239,26 +280,46 @@ export default function MinhasImagensPage() {
               <p className="mt-1 text-sm text-slate-400">Imagens que você salvou a partir da Pesquisa avançada.</p>
             </div>
 
-            {selecionados.length > 0 && (
+            {itens.length > 0 && (
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={verSelecionadasEmSequencia}
-                  className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
+                  onClick={alternarSelecionarTodas}
+                  className="flex items-center gap-2 rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                 >
-                  ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
+                  <input
+                    type="checkbox"
+                    checked={todasSelecionadas}
+                    readOnly
+                    aria-hidden="true"
+                    tabIndex={-1}
+                    className="h-4 w-4 accent-brand"
+                  />
+                  {todasSelecionadas ? 'Desmarcar todas' : `Selecionar todas (${itens.length})`}
                 </button>
-                {permiteEnviarLote && (
-                  <button
-                    type="button"
-                    onClick={enviarSelecionadasPorEmail}
-                    disabled={enviandoLote}
-                    className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-                  >
-                    {enviandoLote
-                      ? 'Enviando...'
-                      : `✉ Enviar ${selecionados.length} selecionada${selecionados.length > 1 ? 's' : ''} por e-mail`}
-                  </button>
+
+                {selecionados.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={verSelecionadasEmSequencia}
+                      className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
+                    >
+                      ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
+                    </button>
+                    {permiteEnviarLote && (
+                      <button
+                        type="button"
+                        onClick={enviarSelecionadasPorEmail}
+                        disabled={enviandoLote}
+                        className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
+                      >
+                        {enviandoLote
+                          ? 'Enviando...'
+                          : `✉ Enviar ${selecionados.length} selecionada${selecionados.length > 1 ? 's' : ''} por e-mail`}
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
             )}
@@ -289,11 +350,11 @@ export default function MinhasImagensPage() {
                 .
               </p>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              <div className={`grid gap-4 ${colunasGrade(itens.length)}`}>
                 {itens.map((imagem, indice) => (
                   <div
                     key={imagem.curation_id}
-                    className="flex flex-col rounded-2xl border border-base-border bg-base-surface p-4"
+                    className={`flex flex-col rounded-2xl border bg-gradient-to-br p-4 ${corCartaoTipoRadiografia(imagem.tipo_radiografia)}`}
                   >
                     <div className="relative mb-3 overflow-hidden rounded-lg">
                       <MiniaturaImagem
@@ -315,9 +376,16 @@ export default function MinhasImagensPage() {
                       </label>
                     </div>
 
-                    <span className="mb-2 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                    <span className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
                       <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                       {rotularTipo(imagem.tipo_radiografia)}
+                    </span>
+
+                    {/* Achado principal com a MESMA cor usada no card correspondente
+                        do Banco de imagens (../../lib/coresAchados) - mesmo tratamento
+                        ja aplicado nos resultados da Pesquisa avançada. */}
+                    <span className={`mb-2 truncate text-xs font-medium ${corTextoAchado(imagem.achado_principal)}`}>
+                      {rotularAchado(imagem.achado_principal)}
                     </span>
 
                     {imagem.descricao_didatica && (
@@ -332,12 +400,6 @@ export default function MinhasImagensPage() {
                       >
                         ⛶ Expandir
                       </button>
-                      <Link
-                        href={`/visualizar/${imagem.curation_id}`}
-                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
-                      >
-                        Detalhes
-                      </Link>
                       <button
                         type="button"
                         onClick={() => remover(imagem.curation_id)}
