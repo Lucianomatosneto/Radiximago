@@ -1,8 +1,34 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import FormasMarcacoes from '../detalhe/FormasMarcacoes'
 import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, gerarIdMarcacao, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
+
+// Mapeia o valor cru do enum AchadoPrincipal (mesmos valores de
+// lib/marcacoes.ts, usados aqui pra rotular o achado de CADA marcacao
+// individual) pra chave de traducao do namespace Pesquisa.opcoes.achadoPrincipal
+// - mesmo mapa ja usado em detalhe/FormasMarcacoes.tsx, reaproveitado aqui
+// em vez de duplicar os 8 rotulos numa terceira lista.
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
+}
+
+// Chaves de traducao pras 3 formas (oval/retangulo/seta) - mesmos `tipo`
+// usados em lib/marcacoes.ts (FORMAS_MARCACAO), que continua fornecendo o
+// icone (nao traduzivel) de cada botao.
+const CHAVE_FORMA: Record<string, string> = {
+  oval: 'oval',
+  retangulo: 'retangulo',
+  seta: 'seta',
+}
 
 // Deixa o curador desenhar formas (oval, retangulo ou seta) sobre a
 // miniatura estatica da imagem (a mesma usada na fila, via
@@ -38,6 +64,8 @@ export default function MarcadorAchado({
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
 }) {
+  const t = useTranslations('Curadoria.marcador')
+  const tAchado = useTranslations('Pesquisa.opcoes.achadoPrincipal')
   const [src, setSrc] = useState('')
   const [erro, setErro] = useState(false)
   const [ferramenta, setFerramenta] = useState<TipoMarcacao>('oval')
@@ -257,6 +285,16 @@ export default function MarcadorAchado({
     onMarcar(marcacoes.map((m) => (m.id === selecionadoId ? { ...m, achado: achado || null } : m)))
   }
 
+  function traduzirAchado(valor: string): string {
+    const chave = CHAVE_ACHADO[valor]
+    if (!chave) return valor
+    try {
+      return tAchado(chave)
+    } catch {
+      return valor
+    }
+  }
+
   const selecionada = marcacoes.find((m) => m.id === selecionadoId) ?? null
   const formasParaExibir = desenhoAtual ? [...marcacoes, desenhoAtual] : marcacoes
 
@@ -275,7 +313,7 @@ export default function MarcadorAchado({
             }`}
           >
             <span className="mr-1">{forma.icone}</span>
-            {forma.rotulo}
+            {t(`formas.${CHAVE_FORMA[forma.tipo] ?? forma.tipo}`)}
           </button>
         ))}
         {selecionada && (
@@ -284,7 +322,7 @@ export default function MarcadorAchado({
             onClick={() => remover(selecionada.id)}
             className="ml-auto rounded-lg border border-red-500/40 px-2.5 py-1 text-sm text-red-400 hover:bg-red-500/10"
           >
-            ✕ Remover marcação
+            {t('removerMarcacao')}
           </button>
         )}
       </div>
@@ -292,7 +330,7 @@ export default function MarcadorAchado({
       {selecionada && (
         <div className="mb-2 flex shrink-0 items-center gap-2">
           <label className="text-xs text-slate-400" htmlFor="achado-marcacao">
-            Tipo de lesão desta marcação:
+            {t('tipoLesao')}
           </label>
           <select
             id="achado-marcacao"
@@ -300,10 +338,10 @@ export default function MarcadorAchado({
             onChange={(e) => definirAchadoDaSelecionada(e.target.value)}
             className="rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-slate-100 outline-none focus:border-brand"
           >
-            <option value="">Selecione</option>
+            <option value="">{t('selecione')}</option>
             {OPCOES_ACHADO_MARCACAO.map((opcao) => (
               <option key={opcao.valor} value={opcao.valor}>
-                {opcao.label}
+                {traduzirAchado(opcao.valor)}
               </option>
             ))}
           </select>
@@ -324,7 +362,7 @@ export default function MarcadorAchado({
       <div ref={containerRef} className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-base-border bg-black/10">
         {erro ? (
           <div className="flex h-40 w-full items-center justify-center text-xs text-slate-500">
-            Sem preview disponível
+            {t('semPreview')}
           </div>
         ) : !src || !tamanhoRenderizado ? (
           <div className="h-40 w-full animate-pulse" />
@@ -335,7 +373,7 @@ export default function MarcadorAchado({
             style={{ width: `${tamanhoRenderizado.largura}px`, height: `${tamanhoRenderizado.altura}px` }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt="Imagem para marcação" className="block h-full w-full select-none" draggable={false} />
+            <img src={src} alt={t('altImagemMarcacao')} className="block h-full w-full select-none" draggable={false} />
             <svg
               viewBox="0 0 1 1"
               preserveAspectRatio="none"
@@ -418,8 +456,8 @@ export default function MarcadorAchado({
       </div>
       <p className="mt-1.5 shrink-0 text-xs text-slate-500">
         {marcacoes.length > 0
-          ? `${marcacoes.length} marcação(ões). Clique e arraste na imagem para adicionar outra, ou clique numa existente para mover/redimensionar.`
-          : 'Clique e arraste na imagem para marcar uma lesão (opcional). Escolha a forma acima.'}
+          ? t('instrucaoComMarcacoes', { total: marcacoes.length })
+          : t('instrucaoSemMarcacoes')}
       </p>
     </div>
   )
