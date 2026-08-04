@@ -115,12 +115,6 @@ class Dificuldade(str, enum.Enum):
     AVANCADO = "avancado"
 
 
-class Finalidade(str, enum.Enum):
-    ENSINO = "ensino"
-    PESQUISA = "pesquisa"
-    AMBOS = "ambos"
-
-
 class StatusCuradoria(str, enum.Enum):
     PENDENTE = "pendente"
     EM_ANALISE = "em_analise"
@@ -191,7 +185,6 @@ class Curation(Base):
     dificuldade = Column(String(20), nullable=True)
     descricao_didatica = Column(Text, nullable=True)
     observacoes_internas = Column(Text, nullable=True)
-    finalidade = Column(String(15), nullable=True)
 
     # Fluxo
     status = Column(String(25), nullable=False, default="pendente", index=True)

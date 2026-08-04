@@ -112,7 +112,6 @@ def listar_imagens_salvas(
             "marcacoes": ficha.marcacoes,
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
-            "finalidade": ficha.finalidade,
             "descricao_didatica": ficha.descricao_didatica,
             "viewer_url": viewer_url,
             "salvo_em": salva.criado_em.isoformat() if salva.criado_em else None,

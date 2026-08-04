@@ -86,7 +86,6 @@ def criar_curadoria(
         dificuldade=_valor(dados.dificuldade),
         descricao_didatica=dados.descricao_didatica,
         observacoes_internas=dados.observacoes_internas,
-        finalidade=_valor(dados.finalidade),
         status=StatusCuradoria.EM_ANALISE.value,
         anonimizacao_validada=False,
         curador_id=usuario.id,
@@ -186,8 +185,6 @@ def editar_curadoria(
         ficha.descricao_didatica = dados.descricao_didatica
     if dados.observacoes_internas is not None:
         ficha.observacoes_internas = dados.observacoes_internas
-    if dados.finalidade is not None:
-        ficha.finalidade = dados.finalidade.value
     if dados.anonimizacao_validada is not None:
         ficha.anonimizacao_validada = dados.anonimizacao_validada
 
@@ -219,7 +216,6 @@ def editar_curadoria(
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,
         "observacoes_internas": ficha.observacoes_internas,
-        "finalidade": ficha.finalidade,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
         "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,

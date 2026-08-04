@@ -260,7 +260,6 @@ def obter_ficha(
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,
         "observacoes_internas": ficha.observacoes_internas,
-        "finalidade": ficha.finalidade,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
         "curador_id": ficha.curador_id,

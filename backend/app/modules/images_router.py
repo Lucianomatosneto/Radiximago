@@ -26,7 +26,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA
 from app.modules.users import User
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
@@ -89,6 +89,31 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str) -> str:
     return orthanc_id_anonimizado
 
 
+def _determinar_origem(orthanc_id_original: str) -> str:
+    """
+    Descobre se a instancia original chegou ao Orthanc por envio direto do
+    equipamento de raio-X (protocolo DICOM/C-STORE, porta 4242 - o
+    computador radiografico da UFSC usa esse caminho) ou por upload manual
+    (API REST, tela "Imagens recebidas").
+
+    CRITICO: isso precisa ser checado ANTES da anonimizacao. A versao
+    anonimizada e uma instancia NOVA, criada pelo proprio Orthanc via chamada
+    de API - a Origin dela seria sempre "RestApi"/interna, nunca refletindo
+    de onde a imagem ORIGINAL de fato veio. Por isso esta funcao recebe o id
+    original, e e chamada antes de _anonimizar_e_excluir_original.
+
+    Se a checagem falhar por qualquer motivo (Orthanc fora do ar, etc.),
+    assume "externa" por seguranca - mais conservador do que afirmar uma
+    origem "ufsc" sem ter certeza.
+    """
+    try:
+        origin = orthanc_client.obter_metadado_instancia(orthanc_id_original, "Origin")
+    except Exception:
+        logger.exception("Falha ao consultar a origem da instancia %s no Orthanc.", orthanc_id_original)
+        return OrigemImagem.EXTERNA.value
+    return OrigemImagem.UFSC.value if origin == "DicomProtocol" else OrigemImagem.EXTERNA.value
+
+
 def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[OrthancReference, bool]:
     """
     Garante que existe uma orthanc_reference para este orthanc_id.
@@ -110,6 +135,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     if existente:
         return existente, False
 
+    origem = _determinar_origem(orthanc_id)
     orthanc_id_anonimizado = _anonimizar_e_excluir_original(orthanc_id)
 
     detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
@@ -125,6 +151,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
         resource_type="instance",
         dicomweb_url=dicomweb_url,
         anonimizacao_status="concluida",
+        origem=origem,
     )
     db.add(nova_ref)
     db.commit()
@@ -207,6 +234,7 @@ def listar_imagens(
             "orthanc_id": imagem.orthanc_id,
             "resource_type": imagem.resource_type,
             "anonimizacao_status": imagem.anonimizacao_status,
+            "origem": imagem.origem,
             "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
             "status_curadoria": status_mais_recente_por_imagem.get(imagem.id),
         }
@@ -409,6 +437,7 @@ def obter_imagem(
         "resource_type": imagem.resource_type,
         "dicomweb_url": imagem.dicomweb_url,
         "ativo": imagem.ativo,
+        "origem": imagem.origem,
         "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
     }
 
