@@ -91,6 +91,14 @@ def obter_usuario_atual(token: str = Depends(oauth2_scheme), db: Session = Depen
 PERFIS_ADMIN = (UserRole.administrador,)
 PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
 PERFIS_CURADORIA = (UserRole.administrador, UserRole.suporte, UserRole.curador)
+# Quem pode ENVIAR (POST /images/upload) e VER a fila de imagens recebidas -
+# mais amplo que PERFIS_IMAGENS de proposito: professor e curador podem
+# incluir imagens novas e conferir o que ja enviaram, mas continuam SEM
+# poder ativar/desativar imagens de terceiros nem disparar a sincronizacao
+# em lote com o Orthanc (isso exige PERFIS_IMAGENS, so administrador/
+# suporte) - privilegio minimo: dar so o acesso necessario para a tarefa
+# pedida, nao todo o modulo de imagens.
+PERFIS_ENVIO_IMAGENS = (UserRole.administrador, UserRole.suporte, UserRole.curador, UserRole.professor)
 
 
 def exigir_perfis(*perfis_permitidos: UserRole):
