@@ -11,6 +11,7 @@ import {
   StatusServico,
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte']
 
@@ -72,21 +73,19 @@ export default function IntegracoesPage() {
   })
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
-
-    verificarBancoEOrthanc()
-    verificarOhif()
-    setCarregando(false)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
+      verificarBancoEOrthanc()
+      verificarOhif()
+      setCarregando(false)
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
