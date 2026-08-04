@@ -22,6 +22,10 @@ interface ItemMenu {
 
 const PERFIS_ADMIN_APENAS = ['administrador']
 const PERFIS_ADMIN_E_CURADOR = ['administrador', 'curador']
+// Quem pode enviar imagens novas (POST /images/upload no backend) - alem de
+// administrador/curador, agora tambem professor. Ver PERFIS_ENVIO_IMAGENS
+// em auth.py (backend) para o raciocinio completo.
+const PERFIS_ENVIO_IMAGENS = ['administrador', 'curador', 'professor']
 
 // So tons ENTRE azul e verde no circulo cromatico (por pedido) - nessa
 // ordem, do lado mais azul pro lado mais verde: blue -> sky -> cyan -> teal
@@ -40,7 +44,7 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'inicio', href: '/dashboard', ativo: true, cor: COR_BLUE },
   { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
   { chave: 'usuarios', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
-  { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
+  { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
   { chave: 'curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
   { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
   { chave: 'pesquisaAvancada', href: '/pesquisa', ativo: true, cor: COR_LIME },
