@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -91,28 +92,26 @@ export default function ConfiguracoesPage() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
-
-    buscarConfiguracoes(token)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
+      buscarConfiguracoes()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function buscarConfiguracoes(token: string) {
+  async function buscarConfiguracoes() {
     setCarregando(true)
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/settings`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
