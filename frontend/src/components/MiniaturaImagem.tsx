@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-// <img src> nao manda o header Authorization, e o preview e uma rota
-// protegida - por isso buscamos via fetch (com o token) e convertemos pra
-// blob URL. Usado tanto nos cards de resultado quanto no visualizador em
+// <img src> nao manda o cookie de sessao em todos os navegadores/contextos
+// do mesmo jeito que fetch com credentials:'include', e o preview e uma
+// rota protegida - por isso buscamos via fetch e convertemos pra blob URL.
+// Usado tanto nos cards de resultado quanto no visualizador em
 // sequencia - cada lugar passa um `className` diferente (ex.: object-cover
 // vs. object-contain), entao o componente aplica esse className direto no
 // elemento final, igual antes, em vez de embrulhar tudo numa div fixa.
@@ -65,11 +66,9 @@ export default function MiniaturaImagem({
     let cancelado = false
 
     async function carregar() {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
       try {
         const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/preview`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
         if (!resposta.ok) {
           if (!cancelado) setErro(true)

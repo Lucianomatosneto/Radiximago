@@ -49,11 +49,9 @@ export default function ImagemPrincipalMarcada({
     let cancelado = false
 
     async function carregar() {
-      const token = localStorage.getItem('access_token')
-      if (!token) return
       try {
         const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/preview`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         })
         if (!resposta.ok) return
         const blob = await resposta.blob()
