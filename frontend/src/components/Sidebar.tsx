@@ -5,31 +5,51 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
 interface ItemMenu {
-  label: string
+  chave: string
+  titulo: string
   href: string
   ativo: boolean
   /** Perfis que veem este item. Omitido = visivel pra qualquer perfil
    * autenticado (ex.: Início, Pesquisa avançada, Banco de imagens). */
   perfis?: string[]
+  /** Cor da "caixinha" deste item (fundo em gradiente + borda + texto) -
+   * mesmo esquema usado nas caixas de tipo de radiografia da Pesquisa
+   * avançada (Periapical/Panorâmica/Interproximal/Oclusal), so que aqui
+   * cada item do menu tem a SUA PROPRIA cor (por pedido), pra ficar facil
+   * de diferenciar um item do outro so pela cor. */
+  cor: string
 }
 
 const PERFIS_ADMIN_APENAS = ['administrador']
 const PERFIS_ADMIN_E_CURADOR = ['administrador', 'curador']
 
+// So tons ENTRE azul e verde no circulo cromatico (por pedido) - nessa
+// ordem, do lado mais azul pro lado mais verde: blue -> sky -> cyan -> teal
+// -> emerald -> green -> lime. Com 13 itens de menu e so 7 tons nessa
+// faixa, os tons se repetem uma vez (o 8o item volta pro blue) - ainda
+// assim nao ha repeticao entre itens vizinhos.
+const COR_BLUE = 'from-blue-100 to-blue-50 border-blue-300 text-blue-700 dark:from-blue-600/30 dark:to-blue-900/10 dark:border-blue-700/40 dark:text-blue-300'
+const COR_SKY = 'from-sky-100 to-sky-50 border-sky-300 text-sky-700 dark:from-sky-600/30 dark:to-sky-900/10 dark:border-sky-700/40 dark:text-sky-300'
+const COR_CYAN = 'from-cyan-100 to-cyan-50 border-cyan-300 text-cyan-700 dark:from-cyan-600/30 dark:to-cyan-900/10 dark:border-cyan-700/40 dark:text-cyan-300'
+const COR_TEAL = 'from-teal-100 to-teal-50 border-teal-300 text-teal-700 dark:from-teal-600/30 dark:to-teal-900/10 dark:border-teal-700/40 dark:text-teal-300'
+const COR_EMERALD = 'from-emerald-100 to-emerald-50 border-emerald-300 text-emerald-700 dark:from-emerald-600/30 dark:to-emerald-900/10 dark:border-emerald-700/40 dark:text-emerald-300'
+const COR_GREEN = 'from-green-100 to-green-50 border-green-300 text-green-700 dark:from-green-600/30 dark:to-green-900/10 dark:border-green-700/40 dark:text-green-300'
+const COR_LIME = 'from-lime-100 to-lime-50 border-lime-300 text-lime-700 dark:from-lime-600/30 dark:to-lime-900/10 dark:border-lime-700/40 dark:text-lime-300'
+
 const ITENS_MENU: ItemMenu[] = [
-  { label: 'Início', href: '/dashboard', ativo: true },
-  { label: 'Painel administrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS },
-  { label: 'Usuários', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS },
-  { label: 'Imagens recebidas', href: '/imagens', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR },
-  { label: 'Curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR },
-  { label: 'Segunda opinião', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR },
-  { label: 'Pesquisa avançada', href: '/pesquisa', ativo: true },
-  { label: 'Banco de imagens', href: '/banco-imagens', ativo: true },
-  { label: 'Minhas imagens', href: '/minhas-imagens', ativo: true },
-  { label: 'Relatórios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR },
-  { label: 'Auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS },
-  { label: 'Integrações', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS },
-  { label: 'Configurações', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS },
+  { chave: 'inicio', titulo: 'Início', href: '/dashboard', ativo: true, cor: COR_BLUE },
+  { chave: 'painelAdministrativo', titulo: 'Painel administrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
+  { chave: 'usuarios', titulo: 'Usuários', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
+  { chave: 'imagensRecebidas', titulo: 'Imagens recebidas', href: '/imagens', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
+  { chave: 'curadoria', titulo: 'Curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
+  { chave: 'segundaOpiniao', titulo: 'Segunda opinião', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
+  { chave: 'pesquisaAvancada', titulo: 'Pesquisa avançada', href: '/pesquisa', ativo: true, cor: COR_LIME },
+  { chave: 'bancoImagens', titulo: 'Banco de imagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
+  { chave: 'minhasImagens', titulo: 'Minhas imagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
+  { chave: 'relatorios', titulo: 'Relatórios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
+  { chave: 'auditoria', titulo: 'Auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
+  { chave: 'integracoes', titulo: 'Integrações', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
+  { chave: 'configuracoes', titulo: 'Configurações', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
 ]
 
 export default function Sidebar() {
@@ -65,10 +85,10 @@ export default function Sidebar() {
             if (!item.ativo) {
               return (
                 <span
-                  key={item.label}
+                  key={item.chave}
                   className="cursor-not-allowed rounded-lg px-3 py-2 text-sm text-slate-500 opacity-50"
                 >
-                  {item.label}
+                  {item.titulo}
                 </span>
               )
             }
@@ -80,16 +100,14 @@ export default function Sidebar() {
 
             return (
               <Link
-                key={item.label}
+                key={item.chave}
                 href={item.href}
                 aria-current={estaAtivo ? 'page' : undefined}
-                className={
-                  estaAtivo
-                    ? 'rounded-lg bg-brand px-3 py-2 text-sm font-medium text-white shadow-glow transition-colors'
-                    : 'rounded-lg px-3 py-2 text-sm font-medium text-slate-300 transition-colors hover:bg-brand/10 hover:text-brand-300'
-                }
+                className={`rounded-lg border bg-gradient-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${item.cor} ${
+                  estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
+                }`}
               >
-                {item.label}
+                {item.titulo}
               </Link>
             )
           })}
