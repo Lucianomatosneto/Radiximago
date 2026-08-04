@@ -1,6 +1,7 @@
 'use client'
 
 import { Fragment, useEffect, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -9,59 +10,60 @@ const PERFIS_PERMITIDOS = ['administrador']
 
 const LIMIT = 50
 
+const TAG_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US' }
+
 // Os 19 valores de "acao" que de fato existem na tabela audit_logs, agrupados
 // por categoria (confirmado em auth.py, users_router.py, images_router.py e
 // curation_router.py). "edicao" foi excluida de proposito: so existe em
-// curation_history, nunca em audit_logs.
-const CATEGORIAS_ACAO: { categoria: string; itens: { valor: string; label: string }[] }[] = [
+// curation_history, nunca em audit_logs. `categoriaChave`/`chave` referenciam
+// o namespace de traducao Auditoria.categorias/Auditoria.acoes - os valores
+// crus (`categoria`/`valor`) continuam existindo so pra bater com o que a
+// API salva/filtra.
+const CATEGORIAS_ACAO: { categoriaChave: string; itens: { valor: string; chave: string }[] }[] = [
   {
-    categoria: 'Acesso',
+    categoriaChave: 'acesso',
     itens: [
-      { valor: 'login', label: 'Login' },
-      { valor: 'falha_login', label: 'Falha no login' },
-      { valor: 'logout', label: 'Logout' },
-      { valor: 'troca_senha', label: 'Troca de senha' },
-      { valor: 'falha_troca_senha', label: 'Falha na troca de senha' },
+      { valor: 'login', chave: 'login' },
+      { valor: 'falha_login', chave: 'falhaLogin' },
+      { valor: 'logout', chave: 'logout' },
+      { valor: 'troca_senha', chave: 'trocaSenha' },
+      { valor: 'falha_troca_senha', chave: 'falhaTrocaSenha' },
     ],
   },
   {
-    categoria: 'Usuários',
+    categoriaChave: 'usuarios',
     itens: [
-      { valor: 'criacao_usuario', label: 'Criação de usuário' },
-      { valor: 'edicao_usuario', label: 'Edição de usuário' },
-      { valor: 'bloqueio_usuario', label: 'Bloqueio/desbloqueio de usuário' },
+      { valor: 'criacao_usuario', chave: 'criacaoUsuario' },
+      { valor: 'edicao_usuario', chave: 'edicaoUsuario' },
+      { valor: 'bloqueio_usuario', chave: 'bloqueioUsuario' },
     ],
   },
   {
-    categoria: 'Imagens',
+    categoriaChave: 'imagens',
     itens: [
-      { valor: 'importacao_orthanc', label: 'Importação do Orthanc' },
-      { valor: 'upload_imagem', label: 'Upload de imagem' },
-      { valor: 'upload_sem_preambulo_dicom', label: 'Upload sem preâmbulo DICOM' },
+      { valor: 'importacao_orthanc', chave: 'importacaoOrthanc' },
+      { valor: 'upload_imagem', chave: 'uploadImagem' },
+      { valor: 'upload_sem_preambulo_dicom', chave: 'uploadSemPreambuloDicom' },
     ],
   },
   {
-    categoria: 'Curadoria',
+    categoriaChave: 'curadoria',
     itens: [
-      { valor: 'criacao', label: 'Criação de ficha' },
-      { valor: 'edicao_curadoria', label: 'Edição de ficha' },
-      { valor: 'aprovacao', label: 'Aprovação' },
-      { valor: 'aprovacao_pos_segunda_opiniao', label: 'Aprovação pós segunda opinião' },
-      { valor: 'descarte', label: 'Descarte' },
-      { valor: 'descarte_pos_segunda_opiniao', label: 'Descarte pós segunda opinião' },
-      { valor: 'solicitacao_segunda_opiniao', label: 'Solicitação de segunda opinião' },
-      { valor: 'resposta_segunda_opiniao', label: 'Resposta de segunda opinião' },
+      { valor: 'criacao', chave: 'criacao' },
+      { valor: 'edicao_curadoria', chave: 'edicaoCuradoria' },
+      { valor: 'aprovacao', chave: 'aprovacao' },
+      { valor: 'aprovacao_pos_segunda_opiniao', chave: 'aprovacaoPosSegundaOpiniao' },
+      { valor: 'descarte', chave: 'descarte' },
+      { valor: 'descarte_pos_segunda_opiniao', chave: 'descartePosSegundaOpiniao' },
+      { valor: 'solicitacao_segunda_opiniao', chave: 'solicitacaoSegundaOpiniao' },
+      { valor: 'resposta_segunda_opiniao', chave: 'respostaSegundaOpiniao' },
     ],
   },
 ]
 
 const TODAS_ACOES = CATEGORIAS_ACAO.flatMap((c) => c.itens)
 
-const OPCOES_RESULTADO = [
-  { valor: 'sucesso', label: 'Sucesso' },
-  { valor: 'negado', label: 'Negado' },
-  { valor: 'erro', label: 'Erro' },
-]
+const OPCOES_RESULTADO = ['sucesso', 'negado', 'erro']
 
 const CORES_RESULTADO: Record<string, string> = {
   sucesso: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40',
@@ -85,15 +87,11 @@ interface Usuario {
   nome: string
 }
 
-function rotularAcao(valor: string): string {
-  return TODAS_ACOES.find((a) => a.valor === valor)?.label ?? valor
-}
-
-function formatarData(valor: string | null): string {
+function formatarData(valor: string | null, tagLocale: string): string {
   if (!valor) return '—'
   const data = new Date(valor)
   if (Number.isNaN(data.getTime())) return '—'
-  return data.toLocaleString('pt-BR')
+  return data.toLocaleString(tagLocale)
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -108,6 +106,23 @@ async function extrairErro(response: Response, generica: string): Promise<string
 
 export default function AuditoriaPage() {
   const router = useRouter()
+  const t = useTranslations('Auditoria')
+  const tComum = useTranslations('Comum')
+  const tPesquisa = useTranslations('Pesquisa')
+  const locale = useLocale()
+  const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
+
+  function rotularAcao(valor: string): string {
+    const item = TODAS_ACOES.find((a) => a.valor === valor)
+    if (!item) return valor
+    return t(`acoes.${item.chave}`)
+  }
+
+  function rotularResultado(valor: string): string {
+    if (!OPCOES_RESULTADO.includes(valor)) return valor
+    return t(`resultados.${valor}`)
+  }
+
   const [token, setToken] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
 
@@ -181,7 +196,7 @@ export default function AuditoriaPage() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível carregar a auditoria.'))
+        setErro(await extrairErro(resposta, t('erroCarregar')))
         return
       }
       const dados = await resposta.json()
@@ -190,7 +205,7 @@ export default function AuditoriaPage() {
       setSkip(skipAtual)
       setExpandidos(new Set())
     } catch {
-      setErro('Não foi possível carregar a auditoria.')
+      setErro(t('erroCarregar'))
     } finally {
       setBuscando(false)
       setCarregando(false)
@@ -223,13 +238,13 @@ export default function AuditoriaPage() {
 
   function nomeUsuario(usuarioId: number | null): string {
     if (usuarioId === null) return '—'
-    return mapaUsuarios[usuarioId] ?? `Usuário #${usuarioId}`
+    return mapaUsuarios[usuarioId] ?? t('usuarioNumero', { id: usuarioId })
   }
 
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -243,23 +258,23 @@ export default function AuditoriaPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">Auditoria e segurança</h1>
+          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
 
           <section className="rounded-xl border border-base-border bg-base-surface p-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Ação</label>
+                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoAcao')}</label>
                 <select
                   value={filtroAcao}
                   onChange={(e) => setFiltroAcao(e.target.value)}
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 >
-                  <option value="">Todas</option>
+                  <option value="">{tPesquisa('opcaoTodas')}</option>
                   {CATEGORIAS_ACAO.map((grupo) => (
-                    <optgroup key={grupo.categoria} label={grupo.categoria}>
+                    <optgroup key={grupo.categoriaChave} label={t(`categorias.${grupo.categoriaChave}`)}>
                       {grupo.itens.map((item) => (
                         <option key={item.valor} value={item.valor}>
-                          {item.label}
+                          {t(`acoes.${item.chave}`)}
                         </option>
                       ))}
                     </optgroup>
@@ -268,23 +283,23 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Resultado</label>
+                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoResultado')}</label>
                 <select
                   value={filtroResultado}
                   onChange={(e) => setFiltroResultado(e.target.value)}
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
                 >
-                  <option value="">Todos</option>
-                  {OPCOES_RESULTADO.map((opcao) => (
-                    <option key={opcao.valor} value={opcao.valor}>
-                      {opcao.label}
+                  <option value="">{tPesquisa('campoTodos')}</option>
+                  {OPCOES_RESULTADO.map((valor) => (
+                    <option key={valor} value={valor}>
+                      {t(`resultados.${valor}`)}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Data inicial</label>
+                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataInicial')}</label>
                 <input
                   type="date"
                   value={dataDe}
@@ -294,7 +309,7 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">Data final</label>
+                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataFinal')}</label>
                 <input
                   type="date"
                   value={dataAte}
@@ -311,7 +326,7 @@ export default function AuditoriaPage() {
                 disabled={buscando}
                 className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
               >
-                {buscando ? 'Buscando...' : 'Filtrar'}
+                {buscando ? t('buscando') : t('filtrar')}
               </button>
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
@@ -325,19 +340,19 @@ export default function AuditoriaPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-base-surface text-slate-400">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Data/hora</th>
-                  <th className="px-4 py-3 font-medium">Usuário</th>
-                  <th className="px-4 py-3 font-medium">Ação</th>
-                  <th className="px-4 py-3 font-medium">Entidade</th>
-                  <th className="px-4 py-3 font-medium">Resultado</th>
-                  <th className="px-4 py-3 font-medium">Detalhes</th>
+                  <th className="px-4 py-3 font-medium">{t('colData')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colUsuario')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colAcao')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colEntidade')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colResultado')}</th>
+                  <th className="px-4 py-3 font-medium">{t('colDetalhes')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-base">
                 {itens.map((item) => (
                   <Fragment key={item.id}>
                     <tr className="text-slate-200">
-                      <td className="px-4 py-3 text-slate-400">{formatarData(item.criado_em)}</td>
+                      <td className="px-4 py-3 text-slate-400">{formatarData(item.criado_em, tagLocale)}</td>
                       <td className="px-4 py-3">{nomeUsuario(item.usuario_id)}</td>
                       <td className="px-4 py-3">{rotularAcao(item.acao)}</td>
                       <td className="px-4 py-3 text-slate-400">
@@ -351,7 +366,7 @@ export default function AuditoriaPage() {
                             'bg-slate-500/15 text-slate-300 border-slate-600/40'
                           }`}
                         >
-                          {item.resultado}
+                          {rotularResultado(item.resultado)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -360,14 +375,14 @@ export default function AuditoriaPage() {
                           onClick={() => alternarDetalhes(item.id)}
                           className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                         >
-                          {expandidos.has(item.id) ? 'Ocultar' : 'Detalhes'}
+                          {expandidos.has(item.id) ? t('ocultar') : t('detalhes')}
                         </button>
                       </td>
                     </tr>
                     {expandidos.has(item.id) && (
                       <tr className="bg-base-surface/60">
                         <td colSpan={6} className="px-4 py-3 text-xs text-slate-400">
-                          {item.detalhes || 'Sem detalhes registrados.'}
+                          {item.detalhes || t('semDetalhes')}
                         </td>
                       </tr>
                     )}
@@ -377,7 +392,7 @@ export default function AuditoriaPage() {
                 {itens.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                      Nenhum registro encontrado.
+                      {t('nenhumRegistro')}
                     </td>
                   </tr>
                 )}
@@ -388,8 +403,8 @@ export default function AuditoriaPage() {
           <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
             <span>
               {total > 0
-                ? `Mostrando ${skip + 1}–${Math.min(skip + LIMIT, total)} de ${total} registros`
-                : '0 registros'}
+                ? t('mostrandoRegistros', { de: skip + 1, ate: Math.min(skip + LIMIT, total), total })
+                : t('zeroRegistros')}
             </span>
             <div className="flex gap-2">
               <button
@@ -398,7 +413,7 @@ export default function AuditoriaPage() {
                 disabled={skip === 0 || buscando}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Anterior
+                {t('anterior')}
               </button>
               <button
                 type="button"
@@ -406,7 +421,7 @@ export default function AuditoriaPage() {
                 disabled={skip + LIMIT >= total || buscando}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Próximo
+                {t('proximo')}
               </button>
             </div>
           </div>
