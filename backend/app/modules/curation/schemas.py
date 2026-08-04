@@ -97,7 +97,11 @@ class ReviewRequest(BaseModel):
 
 
 class ReviewRespond(BaseModel):
-    parecer_revisor: str
+    # Opcional por pedido: a tela de segunda opiniao passou a ter so os
+    # botoes "Concordar com o curador" / "Discordar" - sem campo de texto
+    # livre obrigatorio. Continua aceitando um parecer escrito se um dia a
+    # tela voltar a coletar um (nao remove a capacidade da API).
+    parecer_revisor: Optional[str] = None
     concordancia: str  # "concorda" ou "discorda"
     decisao_final: Optional[DecisaoRevisao] = None
     observacoes: Optional[str] = None
