@@ -231,11 +231,9 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
   }
 
   async function carregar() {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/annotations/${curationId}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.ok) {
         const dados = await resposta.json()
@@ -312,8 +310,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
   }
 
   async function salvar() {
-    const token = localStorage.getItem('access_token')
-    if (!token || !editando) return
+    if (!editando) return
     const conteudo = texto.trim()
     if (!conteudo) {
       setErro(t('erroTextoVazio'))
@@ -339,7 +336,8 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
         : `${process.env.NEXT_PUBLIC_API_URL}/annotations/${curationId}`
       const resposta = await fetch(url, {
         method: editando.id ? 'PUT' : 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(corpo),
       })
       if (!resposta.ok) {
@@ -363,14 +361,12 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
   }
 
   async function removerAnotacao(id: number) {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
     setSalvando(true)
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/annotations/${id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (!resposta.ok) {
         setErro(t('erroExcluir'))
