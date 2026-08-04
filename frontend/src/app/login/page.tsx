@@ -2,12 +2,15 @@
 
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
 import RadiografiaIlustrativa from '../../components/RadiografiaIlustrativa'
 import SecaoModalidades from '../../components/SecaoModalidades'
+import SeletorIdioma from '../../components/SeletorIdioma'
 
 export default function LoginPage() {
+  const t = useTranslations('Login')
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -24,7 +27,7 @@ export default function LoginPage() {
     const senhaPreenchida = String(formData.get('senha') ?? '').trim()
 
     if (!emailPreenchido || !senhaPreenchida) {
-      setErro('Preencha e-mail e senha.')
+      setErro(t('erroCamposVazios'))
       return
     }
 
@@ -39,12 +42,12 @@ export default function LoginPage() {
       })
 
       if (response.status === 401 || response.status === 403) {
-        setErro('E-mail ou senha incorretos')
+        setErro(t('erroCredenciais'))
         return
       }
 
       if (!response.ok) {
-        setErro('Não foi possível entrar. Tente novamente mais tarde.')
+        setErro(t('erroGenerico'))
         return
       }
 
@@ -62,7 +65,7 @@ export default function LoginPage() {
       // inicial deles.
       router.push(dados.perfil === 'administrador' ? '/dashboard' : '/banco-imagens')
     } catch {
-      setErro('Não foi possível entrar. Tente novamente mais tarde.')
+      setErro(t('erroGenerico'))
     } finally {
       setCarregando(false)
     }
@@ -99,24 +102,28 @@ export default function LoginPage() {
         <Logo variante="login" />
       </div>
 
+      <div className="fixed right-6 top-6 z-10">
+        <SeletorIdioma />
+      </div>
+
       <div className="animar-entrada relative z-10 max-w-xl text-center">
         <h1 className="text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl">
-          Base inteligente de imagens para{' '}
+          {t('tituloDestaque1')}{' '}
           <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-            ensino e pesquisa em saúde
+            {t('tituloDestaque2')}
           </span>
         </h1>
       </div>
 
       <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-white/[0.03] p-7 shadow-2xl backdrop-blur-md">
         <div className="mb-6 text-center">
-          <h2 className="text-xl font-bold tracking-tight text-white">Bem-vindo</h2>
+          <h2 className="text-xl font-bold tracking-tight text-white">{t('bemVindo')}</h2>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           <div>
             <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-300">
-              E-mail
+              {t('email')}
             </label>
             <div className="relative">
               <svg
@@ -137,14 +144,14 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
-                placeholder="seu.email@exemplo.com"
+                placeholder={t('emailPlaceholder')}
               />
             </div>
           </div>
 
           <div>
             <label htmlFor="senha" className="mb-1.5 block text-sm font-medium text-slate-300">
-              Senha
+              {t('senha')}
             </label>
             <div className="relative">
               <svg
@@ -171,7 +178,7 @@ export default function LoginPage() {
                 type="button"
                 onClick={() => setMostrarSenha((v) => !v)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 transition-colors hover:text-slate-300"
-                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                aria-label={mostrarSenha ? t('ocultarSenha') : t('mostrarSenha')}
               >
                 {mostrarSenha ? (
                   <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
@@ -204,22 +211,22 @@ export default function LoginPage() {
             disabled={carregando}
             className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
           >
-            {carregando ? 'Entrando...' : 'Entrar'}
+            {carregando ? t('entrando') : t('entrar')}
           </button>
 
           <div className="flex items-center justify-center gap-1 text-center text-sm">
             <Link href="/esqueci-senha" className="text-brand-300 transition-colors hover:text-brand-300">
-              Esqueci minha senha
+              {t('esqueciSenha')}
             </Link>
             <span className="text-slate-600">·</span>
             <Link href="/solicitar-acesso" className="text-brand-300 transition-colors hover:text-brand-300">
-              Cadastrar
+              {t('cadastrar')}
             </Link>
           </div>
         </form>
 
         <p className="mt-6 text-center text-xs text-slate-500">
-          Acesso restrito a usuários autorizados
+          {t('rodape')}
         </p>
       </div>
 
