@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
+import { obterSessaoAtual } from '../lib/sessao'
 
 const ICONE_PERFIL: Record<string, string> = {
   administrador: '⚙️',
@@ -48,9 +49,12 @@ export default function Topbar() {
   const [erroFoto, setErroFoto] = useState('')
 
   useEffect(() => {
-    setNome(localStorage.getItem('nome') ?? '')
-    setPerfil(localStorage.getItem('perfil') ?? '')
-    setFotoPerfilUrl(localStorage.getItem('foto_perfil_url') ?? '')
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) return
+      setNome(sessao.nome)
+      setPerfil(sessao.perfil)
+      setFotoPerfilUrl(sessao.foto_perfil_url ?? '')
+    })
   }, [])
 
   useEffect(() => {
@@ -63,11 +67,16 @@ export default function Topbar() {
     return () => document.removeEventListener('mousedown', aoClicarFora)
   }, [])
 
-  function handleSair() {
-    localStorage.removeItem('access_token')
-    localStorage.removeItem('perfil')
-    localStorage.removeItem('nome')
-    localStorage.removeItem('foto_perfil_url')
+  async function handleSair() {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+    } catch {
+      // mesmo se a chamada falhar (rede fora, etc.), ainda manda pro login -
+      // o cookie so continua valido ate expirar, mas a UI nao deve travar
+    }
     router.push('/login')
   }
 
@@ -104,8 +113,7 @@ export default function Topbar() {
 
   async function enviarFoto(event: FormEvent) {
     event.preventDefault()
-    const token = localStorage.getItem('access_token')
-    if (!arquivoSelecionado || !token) return
+    if (!arquivoSelecionado) return
 
     setEnviando(true)
     setErroFoto('')
@@ -116,7 +124,7 @@ export default function Topbar() {
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/avatar`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
         body: formData,
       })
 
@@ -130,7 +138,6 @@ export default function Topbar() {
       }
 
       const dados = await response.json()
-      localStorage.setItem('foto_perfil_url', dados.foto_perfil_url)
       setFotoPerfilUrl(dados.foto_perfil_url)
       setModalPerfilAberto(false)
     } catch {
@@ -141,16 +148,13 @@ export default function Topbar() {
   }
 
   async function removerFoto() {
-    const token = localStorage.getItem('access_token')
-    if (!token) return
-
     setEnviando(true)
     setErroFoto('')
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/me/avatar`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
 
       if (response.status === 401) {
@@ -162,7 +166,6 @@ export default function Topbar() {
         return
       }
 
-      localStorage.removeItem('foto_perfil_url')
       setFotoPerfilUrl('')
       setArquivoSelecionado(null)
       setPreview('')
