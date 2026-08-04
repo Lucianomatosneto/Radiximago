@@ -149,9 +149,9 @@ def responder_segunda_opiniao(
             detail="Quem solicitou a segunda opiniao nao pode responde-la.",
         )
 
-    parecer = (dados.parecer_revisor or "").strip()
-    if not parecer:
-        raise HTTPException(status_code=422, detail="O parecer do revisor e obrigatorio.")
+    # Parecer escrito e opcional (a tela hoje so manda "concorda"/"discorda"
+    # pelos botoes) - guarda None em vez de string vazia quando ausente.
+    parecer = (dados.parecer_revisor or "").strip() or None
 
     concordancia = (dados.concordancia or "").strip().lower()
     if concordancia not in ("concorda", "discorda"):
@@ -170,7 +170,8 @@ def responder_segunda_opiniao(
 
     _registrar_historico(
         db, review.curation_id, usuario.id, "resposta_segunda_opiniao",
-        None, None, f"Parecer: {concordancia}. {parecer}",
+        None, None,
+        f"Parecer: {concordancia}." + (f" {parecer}" if parecer else ""),
     )
     _registrar_auditoria(
         db, usuario.id, "resposta_segunda_opiniao", review.curation_id, "sucesso",
