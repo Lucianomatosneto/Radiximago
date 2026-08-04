@@ -10,6 +10,7 @@ import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 interface ImagemSalva {
   curation_id: number
@@ -88,7 +89,7 @@ export default function MinhasImagensPage() {
     return tOpcoes(`achadoPrincipal.${chave}`)
   }
 
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [carregando, setCarregando] = useState(true)
   const [itens, setItens] = useState<ImagemSalva[]>([])
   const [erro, setErro] = useState('')
@@ -101,22 +102,23 @@ export default function MinhasImagensPage() {
   const [infoSeries, setInfoSeries] = useState<Record<number, boolean>>({})
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
-    setToken(tokenAtual)
-    carregar(tokenAtual)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      setAutenticado(true)
+      carregar()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function carregar(tokenAtual: string) {
+  async function carregar() {
     setCarregando(true)
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/saved-images/`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
@@ -136,12 +138,12 @@ export default function MinhasImagensPage() {
   }
 
   async function remover(curationId: number) {
-    if (!token) return
+    if (!autenticado) return
     setRemovendo(curationId)
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/saved-images/${curationId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
@@ -177,13 +179,13 @@ export default function MinhasImagensPage() {
   }
 
   useEffect(() => {
-    if (!token) return
+    if (!autenticado) return
     const faltando = selecionados.filter((id) => infoSeries[id] === undefined)
     if (faltando.length === 0) return
 
     faltando.forEach((curationId) => {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/serie-info`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
         .then((resposta) => (resposta.ok ? resposta.json() : null))
         .then((dados) => {
@@ -194,17 +196,18 @@ export default function MinhasImagensPage() {
         })
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selecionados, token])
+  }, [selecionados, autenticado])
 
   async function enviarSelecionadasPorEmail() {
-    if (!token || selecionados.length === 0) return
+    if (!autenticado || selecionados.length === 0) return
     setEnviandoLote(true)
     setMensagemLote('')
     setErro('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/send-email-lote`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ curation_ids: selecionados }),
       })
       if (resposta.status === 401) {
