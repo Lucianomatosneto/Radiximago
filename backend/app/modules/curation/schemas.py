@@ -12,7 +12,6 @@ from app.modules.curations import (
     AlteracaoObservada,
     QualidadeTecnica,
     Dificuldade,
-    Finalidade,
     DecisaoRevisao,
     DecisaoFinalRevisao,
 )
@@ -56,7 +55,6 @@ class CurationCreate(BaseModel):
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[str] = None
     observacoes_internas: Optional[str] = None
-    finalidade: Optional[Finalidade] = None
 
 
 class CurationUpdate(BaseModel):
@@ -81,7 +79,6 @@ class CurationUpdate(BaseModel):
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[str] = None
     observacoes_internas: Optional[str] = None
-    finalidade: Optional[Finalidade] = None
     anonimizacao_validada: Optional[bool] = None
 
 

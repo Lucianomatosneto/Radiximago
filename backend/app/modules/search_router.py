@@ -22,7 +22,7 @@ from app.core.config import settings
 from app.core.email import enviar_email_imagem_pesquisa, enviar_email_imagens_pesquisa_lote
 from app.modules.auth import obter_usuario_atual
 from app.modules.users import User
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules import orthanc_client
 from app.modules.curations import (
     Curation,
@@ -31,7 +31,6 @@ from app.modules.curations import (
     AchadoPrincipal,
     QualidadeTecnica,
     Dificuldade,
-    Finalidade,
     StatusCuradoria,
 )
 
@@ -81,6 +80,7 @@ def contagens_disponiveis(
         "por_tipo_radiografia": _contar_por(db, Curation.tipo_radiografia),
         "por_achado_principal": _contar_por(db, Curation.achado_principal),
         "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
+        "por_origem": _contar_por(db, OrthancReference.origem),
     }
 
 
@@ -135,9 +135,11 @@ def pesquisar_imagens(
     genero: Optional[Genero] = Query(None),
     qualidade_tecnica: Optional[QualidadeTecnica] = Query(None),
     dificuldade: Optional[Dificuldade] = Query(None),
-    finalidade: Optional[Finalidade] = Query(None),
     idade_min: Optional[int] = Query(None, ge=0, le=120),
     idade_max: Optional[int] = Query(None, ge=0, le=120),
+    origem: Optional[OrigemImagem] = Query(
+        None, description="'ufsc' (recebida direto do equipamento) ou 'externa' (upload manual)"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     usuario: User = Depends(obter_usuario_atual),
@@ -168,8 +170,8 @@ def pesquisar_imagens(
         consulta = consulta.filter(Curation.qualidade_tecnica == qualidade_tecnica.value)
     if dificuldade is not None:
         consulta = consulta.filter(Curation.dificuldade == dificuldade.value)
-    if finalidade is not None:
-        consulta = consulta.filter(Curation.finalidade == finalidade.value)
+    if origem is not None:
+        consulta = consulta.filter(OrthancReference.origem == origem.value)
 
     # Filtro por dente especifico (o array de dentes contem aquele numero).
     if dente is not None:
@@ -218,8 +220,8 @@ def pesquisar_imagens(
             "marcacoes": ficha.marcacoes,
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
-            "finalidade": ficha.finalidade,
             "descricao_didatica": ficha.descricao_didatica,
+            "origem": ref.origem,
             "viewer_url": viewer_url,
         })
 

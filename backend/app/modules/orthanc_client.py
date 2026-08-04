@@ -68,6 +68,30 @@ def obter_detalhes_instancia(orthanc_id: str) -> dict:
     return resposta.json()
 
 
+def obter_metadado_instancia(orthanc_id: str, chave: str) -> str | None:
+    """
+    Busca UM valor de metadata interna do Orthanc para uma instancia -
+    "metadata" aqui e diferente das tags DICOM (MainDicomTags): sao
+    informacoes que o proprio Orthanc guarda sobre COMO recebeu o arquivo,
+    nao sobre o conteudo medico dele.
+
+    Usado principalmente pra chave "Origin", que diz como a imagem chegou:
+    "DicomProtocol" = enviada diretamente por um equipamento via C-STORE
+    (protocolo DICOM, porta 4242) - e como o computador radiografico da
+    UFSC envia. "RestApi" = enviada por upload manual (tela "Imagens
+    recebidas" do Radix, e tambem usado internamente durante a
+    anonimizacao). Ver uso em _determinar_origem, em images_router.py.
+
+    Retorna None se a instancia nao tiver esse metadado (o Orthanc responde
+    404 nesse caso - normal pra metadados opcionais, nao e erro).
+    """
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances/{orthanc_id}/metadata/{chave}")
+    if resposta.status_code == 404:
+        return None
+    resposta.raise_for_status()
+    return resposta.text.strip()
+
+
 def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
     """
     Busca as tags DICOM simplificadas (nome legivel -> valor) de uma instancia.
