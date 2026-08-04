@@ -1,12 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import {
   CORES_STATUS,
-  LABELS_STATUS,
   ResultadoChecagem,
   StatusServico,
   checarHealthEndpoint,
@@ -14,12 +14,13 @@ import {
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte']
 
-function badgeStatus(status: StatusServico) {
+function BadgeStatus({ status }: { status: StatusServico }) {
+  const t = useTranslations('Integracoes.status')
   return (
     <span
       className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[status]}`}
     >
-      {LABELS_STATUS[status]}
+      {t(status)}
     </span>
   )
 }
@@ -37,7 +38,7 @@ function CardServico({
     <div className="rounded-xl border border-base-border bg-base-surface p-5">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-100">{nome}</h2>
-        {badgeStatus(status)}
+        <BadgeStatus status={status} />
       </div>
       <p className="mt-2 text-xs text-slate-500">{descricao}</p>
     </div>
@@ -46,20 +47,28 @@ function CardServico({
 
 export default function IntegracoesPage() {
   const router = useRouter()
+  const t = useTranslations('Integracoes')
+  const tComum = useTranslations('Comum')
+  const tHealthCheck = useTranslations('Integracoes.healthCheck')
+
+  function traduzirHealthCheck(chave: string, params?: Record<string, string | number | Date>): string {
+    return tHealthCheck(chave, params)
+  }
+
   const [carregando, setCarregando] = useState(true)
   const [atualizando, setAtualizando] = useState(false)
 
   const [banco, setBanco] = useState<ResultadoChecagem>({
     status: 'offline',
-    descricao: 'Verificando...',
+    descricao: t('verificando'),
   })
   const [orthanc, setOrthanc] = useState<ResultadoChecagem>({
     status: 'offline',
-    descricao: 'Verificando...',
+    descricao: t('verificando'),
   })
   const [ohif, setOhif] = useState<ResultadoChecagem>({
     status: 'aguardando',
-    descricao: 'Verificando...',
+    descricao: t('verificando'),
   })
 
   useEffect(() => {
@@ -84,8 +93,8 @@ export default function IntegracoesPage() {
   async function verificarBancoEOrthanc() {
     setAtualizando(true)
     const [resultadoBanco, resultadoOrthanc] = await Promise.all([
-      checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/database`, 'database'),
-      checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/orthanc`, 'orthanc'),
+      checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/database`, 'database', traduzirHealthCheck),
+      checarHealthEndpoint(`${process.env.NEXT_PUBLIC_API_URL}/health/orthanc`, 'orthanc', traduzirHealthCheck),
     ])
     setBanco(resultadoBanco)
     setOrthanc(resultadoOrthanc)
@@ -97,7 +106,7 @@ export default function IntegracoesPage() {
     if (!ohifUrl) {
       setOhif({
         status: 'aguardando',
-        descricao: 'Variável NEXT_PUBLIC_OHIF_URL não configurada.',
+        descricao: t('variavelOhifNaoConfigurada'),
       })
       return
     }
@@ -110,13 +119,12 @@ export default function IntegracoesPage() {
       await fetch(ohifUrl, { mode: 'no-cors', cache: 'no-store' })
       setOhif({
         status: 'online',
-        descricao: 'Respondeu à requisição (checagem best-effort, sem validar o conteúdo).',
+        descricao: t('ohifRespondeu'),
       })
     } catch {
       setOhif({
         status: 'instavel',
-        descricao:
-          'Não respondeu — pode ser falha real ou apenas CORS/rede local. Checagem best-effort.',
+        descricao: t('ohifNaoRespondeu'),
       })
     }
   }
@@ -124,7 +132,7 @@ export default function IntegracoesPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -140,9 +148,9 @@ export default function IntegracoesPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-slate-100">Integrações</h1>
+              <h1 className="text-xl font-semibold text-slate-100">{t('titulo')}</h1>
               <p className="mt-1 text-sm text-slate-500">
-                Conexões de infraestrutura e serviços internos da plataforma.
+                {t('subtitulo')}
               </p>
             </div>
             <button
@@ -151,7 +159,7 @@ export default function IntegracoesPage() {
               disabled={atualizando}
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
             >
-              {atualizando ? 'Atualizando...' : 'Atualizar status'}
+              {atualizando ? t('atualizando') : t('atualizarStatus')}
             </button>
           </div>
 
@@ -159,30 +167,30 @@ export default function IntegracoesPage() {
             <CardServico
               nome="FastAPI"
               status="online"
-              descricao="A própria resposta desta página confirma que a API respondeu."
+              descricao={t('descricaoFastapi')}
             />
             <CardServico nome="PostgreSQL" status={banco.status} descricao={banco.descricao} />
             <CardServico nome="Orthanc" status={orthanc.status} descricao={orthanc.descricao} />
             <CardServico
               nome="Next.js"
               status="online"
-              descricao="O frontend está rodando — você está vendo esta página."
+              descricao={t('descricaoNextjs')}
             />
             <CardServico nome="OHIF" status={ohif.status} descricao={ohif.descricao} />
             <CardServico
               nome="DICOMWeb (via Orthanc)"
               status={orthanc.status}
-              descricao={`Mesmo status do Orthanc — DICOMWeb é um plugin dele, não uma checagem separada. ${orthanc.descricao}`}
+              descricao={t('descricaoDicomweb', { descricaoOrthanc: orthanc.descricao })}
             />
             <CardServico
               nome="Docker"
               status="aguardando"
-              descricao="Sem endpoint de checagem disponível."
+              descricao={t('semEndpointChecagem')}
             />
             <CardServico
-              nome="Armazenamento"
+              nome={t('servicoArmazenamento')}
               status="aguardando"
-              descricao="Sem endpoint de checagem disponível."
+              descricao={t('semEndpointChecagem')}
             />
           </div>
         </main>
