@@ -39,6 +39,11 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ username: emailPreenchido, password: senhaPreenchida }),
+        // O backend seta um cookie httpOnly com o token na resposta deste
+        // login (ver auth.py) - credentials: 'include' e o que faz o
+        // navegador aceitar/guardar esse cookie. A sessao inteira passa a
+        // viver so nele; nada de token/perfil/nome fica em localStorage.
+        credentials: 'include',
       })
 
       if (response.status === 401 || response.status === 403) {
@@ -52,14 +57,6 @@ export default function LoginPage() {
       }
 
       const dados = await response.json()
-      localStorage.setItem('access_token', dados.access_token)
-      localStorage.setItem('perfil', dados.perfil)
-      localStorage.setItem('nome', dados.nome)
-      if (dados.foto_perfil_url) {
-        localStorage.setItem('foto_perfil_url', dados.foto_perfil_url)
-      } else {
-        localStorage.removeItem('foto_perfil_url')
-      }
       // Admin continua indo pro dashboard com os indicadores; os demais
       // perfis vao direto pro banco de imagens, que passou a ser a tela
       // inicial deles.
