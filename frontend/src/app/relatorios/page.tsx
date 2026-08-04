@@ -8,6 +8,7 @@ import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
 import { corBarraAchado, corTextoAchado } from '../../lib/coresAchados'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
 
@@ -140,33 +141,33 @@ export default function RelatoriosPage() {
   const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
 
-    const perfilAtual = localStorage.getItem('perfil')
-    if (!perfilAtual || !PERFIS_PERMITIDOS.includes(perfilAtual)) {
-      router.push('/acesso-negado')
-      return
-    }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
 
-    setPerfil(perfilAtual)
-    carregarDados(token)
+      setPerfil(sessao.perfil)
+      carregarDados()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
-  async function carregarDados(token: string) {
+  async function carregarDados() {
     setCarregando(true)
     setErro('')
     try {
       const [respostaStats, respostaUsuarios] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
-          headers: { Authorization: `Bearer ${token}` },
+          credentials: 'include',
         }),
       ])
 
