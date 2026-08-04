@@ -3,8 +3,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Banco de dados
-    DATABASE_URL: str = "postgresql://radix_user:senha@radix-postgres:5432/radix_imago"
-    
+    DATABASE_URL: str    
     # JWT - Token de autenticação. Sem default: se faltar no .env, a
     # aplicacao falha ao subir em vez de rodar silenciosamente com uma
     # chave conhecida/previsivel (ver Settings.Config abaixo).
