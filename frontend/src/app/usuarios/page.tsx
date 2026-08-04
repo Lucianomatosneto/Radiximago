@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS = ['administrador', 'curador', 'professor', 'estudante', 'pesquisador', 'suporte'] as const
 
@@ -102,7 +103,7 @@ function Modal({ children, onFechar }: { children: ReactNode; onFechar: () => vo
 
 export default function UsuariosPage() {
   const router = useRouter()
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [carregando, setCarregando] = useState(true)
 
@@ -143,17 +144,10 @@ export default function UsuariosPage() {
   const [erroExcluidos, setErroExcluidos] = useState('')
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
-    setToken(tokenAtual)
-
     async function buscarUsuarios() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
-          headers: { Authorization: `Bearer ${tokenAtual}` },
+          credentials: 'include',
         })
         if (!response.ok) {
           router.push('/login')
@@ -171,7 +165,7 @@ export default function UsuariosPage() {
       try {
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests?status_filtro=pendente`,
-          { headers: { Authorization: `Bearer ${tokenAtual}` } }
+          { credentials: 'include' }
         )
         if (!response.ok) return
         const dados: SolicitacaoAcesso[] = await response.json()
@@ -181,8 +175,15 @@ export default function UsuariosPage() {
       }
     }
 
-    buscarUsuarios()
-    buscarSolicitacoes()
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      setAutenticado(true)
+      buscarUsuarios()
+      buscarSolicitacoes()
+    })
   }, [router])
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
@@ -203,10 +204,10 @@ export default function UsuariosPage() {
   })
 
   async function alternarBloqueio(usuario: Usuario) {
-    if (!token) return
+    if (!autenticado) return
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include',
     })
 
     if (response.status === 401) {
@@ -226,14 +227,14 @@ export default function UsuariosPage() {
   }
 
   async function confirmarExclusao() {
-    if (!exclusao || !token) return
+    if (!exclusao || !autenticado) return
     setExcluindo(true)
     setErroExclusao('')
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${exclusao.id}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
 
       if (response.status === 401) {
@@ -258,13 +259,13 @@ export default function UsuariosPage() {
       return
     }
     setMostrarExcluidos(true)
-    if (!token || usuariosExcluidos.length > 0) return
+    if (!autenticado || usuariosExcluidos.length > 0) return
 
     setCarregandoExcluidos(true)
     setErroExcluidos('')
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/deleted`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (response.status === 401) {
         router.push('/login')
@@ -288,7 +289,7 @@ export default function UsuariosPage() {
 
   async function confirmarAprovacao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!aprovacao || !token) return
+    if (!aprovacao || !autenticado) return
 
     setProcessandoSolicitacaoId(aprovacao.solicitacao.id)
     setErroAprovacao('')
@@ -298,7 +299,8 @@ export default function UsuariosPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests/${aprovacao.solicitacao.id}/approve`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ perfil_concedido: aprovacao.perfil }),
         }
       )
@@ -328,7 +330,7 @@ export default function UsuariosPage() {
 
   async function confirmarRejeicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!rejeicao || !token) return
+    if (!rejeicao || !autenticado) return
 
     if (!rejeicao.motivo.trim()) {
       setErroRejeicao('Informe o motivo da rejeição.')
@@ -343,7 +345,8 @@ export default function UsuariosPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests/${rejeicao.solicitacao.id}/reject`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ motivo: rejeicao.motivo }),
         }
       )
@@ -371,7 +374,7 @@ export default function UsuariosPage() {
 
   async function salvarEdicao(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!edicao || !token) return
+    if (!edicao || !autenticado) return
 
     setSalvandoEdicao(true)
     setErroEdicao('')
@@ -381,9 +384,9 @@ export default function UsuariosPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/users/${edicao.usuario.id}`,
         {
           method: 'PATCH',
+          credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             nome: edicao.nome,
@@ -419,7 +422,7 @@ export default function UsuariosPage() {
 
   async function criarUsuario(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!token) return
+    if (!autenticado) return
 
     if (formCriacao.senha.length < 8) {
       setErroCriacao('A senha deve ter ao menos 8 caracteres.')
@@ -432,9 +435,9 @@ export default function UsuariosPage() {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           nome: formCriacao.nome,
