@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
@@ -24,32 +25,20 @@ interface ImagemSalva {
   dentes?: number[] | null
 }
 
-const ROTULOS_TIPO_RADIOGRAFIA: Record<string, string> = {
-  periapical: 'Periapical',
-  panoramica: 'Panorâmica',
-  interproximal: 'Interproximal',
-  oclusal: 'Oclusal',
-}
-
-const ROTULOS_ACHADO_PRINCIPAL: Record<string, string> = {
-  normal: 'Normal',
-  carie: 'Cárie',
-  lesao_periapical: 'Lesão periapical',
-  perda_ossea: 'Perda óssea',
-  dente_incluso: 'Dente incluso',
-  tratamento_endodontico: 'Tratamento endodôntico',
-  erro_tecnico: 'Erro técnico',
-  outro: 'Outro',
-}
-
-function rotularTipo(valor: string | null): string {
-  if (!valor) return '—'
-  return ROTULOS_TIPO_RADIOGRAFIA[valor] ?? valor
-}
-
-function rotularAchado(valor: string | null): string {
-  if (!valor) return '—'
-  return ROTULOS_ACHADO_PRINCIPAL[valor] ?? valor
+// Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
+// usado em Pesquisa avançada, Curadoria e Segunda opinião), pra nao
+// duplicar a mesma traducao mais uma vez. tipoRadiografia usa o proprio
+// valor cru como chave; achadoPrincipal precisa do mapa abaixo porque as
+// chaves de traducao nao batem 1:1 com o valor cru salvo pelo curador.
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
 }
 
 // Quanto mais imagens salvas o usuario tiver, mais colunas a grade ganha -
@@ -78,6 +67,27 @@ async function extrairErro(response: Response, generica: string): Promise<string
 
 export default function MinhasImagensPage() {
   const router = useRouter()
+  const t = useTranslations('MinhasImagens')
+  const tComum = useTranslations('Comum')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tPesquisa = useTranslations('Pesquisa')
+  const tVisualizador = useTranslations('Visualizador')
+
+  const CHAVES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+
+  function rotularTipo(valor: string | null): string {
+    if (!valor) return '—'
+    if (!CHAVES_TIPO_RADIOGRAFIA.includes(valor)) return valor
+    return tOpcoes(`tipoRadiografia.${valor}`)
+  }
+
+  function rotularAchado(valor: string | null): string {
+    if (!valor) return '—'
+    const chave = CHAVE_ACHADO[valor]
+    if (!chave) return valor
+    return tOpcoes(`achadoPrincipal.${chave}`)
+  }
+
   const [token, setToken] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [itens, setItens] = useState<ImagemSalva[]>([])
@@ -113,13 +123,13 @@ export default function MinhasImagensPage() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível carregar suas imagens salvas.'))
+        setErro(await extrairErro(resposta, t('erroCarregar')))
         return
       }
       const dados = await resposta.json()
       setItens(dados.itens ?? [])
     } catch {
-      setErro('Não foi possível carregar suas imagens salvas.')
+      setErro(t('erroCarregar'))
     } finally {
       setCarregando(false)
     }
@@ -138,13 +148,13 @@ export default function MinhasImagensPage() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível remover a imagem.'))
+        setErro(await extrairErro(resposta, t('erroRemover')))
         return
       }
       setItens((atual) => atual.filter((item) => item.curation_id !== curationId))
       setSelecionados((atual) => atual.filter((id) => id !== curationId))
     } catch {
-      setErro('Não foi possível remover a imagem.')
+      setErro(t('erroRemover'))
     } finally {
       setRemovendo(null)
     }
@@ -202,13 +212,13 @@ export default function MinhasImagensPage() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível enviar as imagens por e-mail.'))
+        setErro(await extrairErro(resposta, t('erroEnviarEmail')))
         return
       }
       const dados = await resposta.json()
-      setMensagemLote(dados.mensagem ?? 'Imagens enviadas por e-mail.')
+      setMensagemLote(dados.mensagem ?? t('mensagemLotePadrao'))
     } catch {
-      setErro('Não foi possível enviar as imagens por e-mail.')
+      setErro(t('erroEnviarEmail'))
     } finally {
       setEnviandoLote(false)
     }
@@ -259,7 +269,7 @@ export default function MinhasImagensPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -275,9 +285,9 @@ export default function MinhasImagensPage() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl font-bold text-ink">
-                Minhas <span className="text-brand-300">imagens</span>
+                {t('tituloPrefixo')} <span className="text-brand-300">{t('tituloDestaque')}</span>
               </h1>
-              <p className="mt-1 text-sm text-slate-400">Imagens que você salvou a partir da Pesquisa avançada.</p>
+              <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
             </div>
 
             {itens.length > 0 && (
@@ -295,7 +305,7 @@ export default function MinhasImagensPage() {
                     tabIndex={-1}
                     className="h-4 w-4 accent-brand"
                   />
-                  {todasSelecionadas ? 'Desmarcar todas' : `Selecionar todas (${itens.length})`}
+                  {todasSelecionadas ? t('desmarcarTodas') : tPesquisa('selecionarTodas', { quantidade: itens.length })}
                 </button>
 
                 {selecionados.length > 0 && (
@@ -305,7 +315,10 @@ export default function MinhasImagensPage() {
                       onClick={verSelecionadasEmSequencia}
                       className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                     >
-                      ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
+                      ▶{' '}
+                      {selecionados.length > 1
+                        ? tPesquisa('verSelecionadasPlural', { quantidade: selecionados.length })
+                        : tPesquisa('verSelecionadasSingular', { quantidade: selecionados.length })}
                     </button>
                     {permiteEnviarLote && (
                       <button
@@ -315,8 +328,10 @@ export default function MinhasImagensPage() {
                         className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
                       >
                         {enviandoLote
-                          ? 'Enviando...'
-                          : `✉ Enviar ${selecionados.length} selecionada${selecionados.length > 1 ? 's' : ''} por e-mail`}
+                          ? t('enviando')
+                          : selecionados.length > 1
+                            ? t('enviarPorEmailPlural', { quantidade: selecionados.length })
+                            : t('enviarPorEmailSingular', { quantidade: selecionados.length })}
                       </button>
                     )}
                   </>
@@ -327,9 +342,7 @@ export default function MinhasImagensPage() {
 
           {algumaSelecionadaEhSerie && (
             <p className="mt-3 text-xs text-slate-500">
-              Uma ou mais imagens selecionadas fazem parte de uma série com vários cortes (tomografia) e não
-              podem ser enviadas por e-mail — use os botões de download (ZIP) dentro do visualizador em
-              sequência.
+              {t('avisoSerie')}
             </p>
           )}
 
@@ -343,9 +356,9 @@ export default function MinhasImagensPage() {
           <div className="mt-6">
             {itens.length === 0 ? (
               <p className="py-12 text-center text-slate-500">
-                Você ainda não salvou nenhuma imagem. Salve imagens na tela de{' '}
+                {t('semImagensPrefixo')}{' '}
                 <Link href="/pesquisa" className="text-brand-300 hover:underline">
-                  Pesquisa avançada
+                  {t('linkPesquisaAvancada')}
                 </Link>
                 .
               </p>
@@ -359,7 +372,7 @@ export default function MinhasImagensPage() {
                     <div className="relative mb-3 overflow-hidden rounded-lg">
                       <MiniaturaImagem
                         curationId={imagem.curation_id}
-                        alt={imagem.descricao_didatica ?? `Imagem #${indice + 1}`}
+                        alt={imagem.descricao_didatica ?? tVisualizador('imagemNumero', { numero: indice + 1 })}
                         className="h-36 w-full bg-base-surface2 object-cover"
                       />
                       <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-semibold text-white">
@@ -370,7 +383,7 @@ export default function MinhasImagensPage() {
                           type="checkbox"
                           checked={selecionados.includes(imagem.curation_id)}
                           onChange={() => alternarSelecao(imagem.curation_id)}
-                          aria-label={`Selecionar imagem #${indice + 1}`}
+                          aria-label={tPesquisa('selecionarImagem', { numero: indice + 1 })}
                           className="h-4 w-4 accent-brand"
                         />
                       </label>
@@ -398,7 +411,7 @@ export default function MinhasImagensPage() {
                         onClick={() => expandirImagem(imagem)}
                         className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                       >
-                        ⛶ Expandir
+                        {t('expandir')}
                       </button>
                       <button
                         type="button"
@@ -406,7 +419,7 @@ export default function MinhasImagensPage() {
                         disabled={removendo === imagem.curation_id}
                         className="rounded-lg border border-base-border px-3 py-2 text-sm text-red-400 hover:border-red-500 disabled:opacity-50"
                       >
-                        {removendo === imagem.curation_id ? '...' : 'Remover'}
+                        {removendo === imagem.curation_id ? '...' : t('remover')}
                       </button>
                     </div>
                   </div>
