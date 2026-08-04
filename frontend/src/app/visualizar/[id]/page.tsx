@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../../components/Sidebar'
 import Topbar from '../../../components/Topbar'
@@ -13,19 +14,11 @@ import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
 
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
-]
-
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
-]
+// Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
+// usado em Pesquisa avançada, Curadoria e Segunda opinião) - so os valores
+// crus ficam fixos aqui.
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
 // Somente os campos que /search realmente devolve. genero, idade_min/max,
 // curador e data da curadoria NAO fazem parte dessa resposta hoje (esse
@@ -46,14 +39,18 @@ interface ImagemDidatica {
   viewer_url: string | null
 }
 
-function rotular(opcoes: { valor: string; label: string }[], valor: string | null): string {
-  if (!valor) return '—'
-  return opcoes.find((o) => o.valor === valor)?.label ?? valor
-}
-
 export default function VisualizarImagemPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const curationId = Number(params.id)
+  const t = useTranslations('VisualizarImagem')
+  const tComum = useTranslations('Comum')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tVisualizador = useTranslations('Curadoria.visualizador')
+
+  function rotular(opcoes: string[], valor: string | null, namespace: 'tipoRadiografia' | 'qualidadeTecnica'): string {
+    if (!valor || !opcoes.includes(valor)) return valor ?? '—'
+    return tOpcoes(`${namespace}.${valor}`)
+  }
 
   const [lista, setLista] = useState<ImagemDidatica[]>([])
   const [imagem, setImagem] = useState<ImagemDidatica | null>(null)
@@ -137,7 +134,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
         return
       }
       if (!resposta.ok) {
-        setErro('Não foi possível carregar esta imagem.')
+        setErro(t('erroCarregar'))
         return
       }
       const dados = await resposta.json()
@@ -145,12 +142,12 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
       setLista(itens)
       const encontrada = itens.find((item) => item.curation_id === curationId)
       if (!encontrada) {
-        setErro('Imagem não encontrada entre as imagens aprovadas.')
+        setErro(t('erroNaoEncontrada'))
         return
       }
       setImagem(encontrada)
     } catch {
-      setErro('Não foi possível carregar esta imagem.')
+      setErro(t('erroCarregar'))
     } finally {
       setCarregando(false)
     }
@@ -185,10 +182,10 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
         <main className="flex flex-1 flex-col overflow-y-auto p-6">
           <div className="mb-4">
             <h1 className="text-2xl font-bold text-ink">
-              Detalhes <span className="text-brand-300">da imagem</span>
+              {t('tituloPrefixo')} <span className="text-brand-300">{t('tituloDestaque')}</span>
             </h1>
             <p className="mt-1 text-sm text-slate-400">
-              Consulta científica dos dados analisados pelo curador especialista.
+              {t('subtitulo')}
             </p>
           </div>
 
@@ -206,7 +203,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
 
           {carregando ? (
             <div className="flex flex-1 items-center justify-center text-slate-400">
-              Carregando...
+              {tComum('carregando')}
             </div>
           ) : erro ? (
             <div className="flex flex-1 items-center justify-center text-center text-slate-500">
@@ -256,22 +253,22 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
                             por isso ela e repetida aqui, so o icone, pra nao brigar
                             de espaco com o chip de tipo de radiografia. */}
                         <Logo variante="icone" />
-                        <ChipList itens={[rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)]} tom="marca" />
+                        <ChipList itens={[rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia, 'tipoRadiografia')]} tom="marca" />
                       </div>
                       <button
                         type="button"
                         onClick={alternarTelaCheia}
-                        aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                        title={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+                        aria-label={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
+                        title={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
                         className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                       >
                         {telaCheia ? (
                           <>
-                            <span aria-hidden="true">⤡</span> Sair da tela cheia
+                            <span aria-hidden="true">⤡</span> {tVisualizador('sairTelaCheia')}
                           </>
                         ) : (
                           <>
-                            <span aria-hidden="true">⛶</span> Tela cheia
+                            <span aria-hidden="true">⛶</span> {tVisualizador('telaCheia')}
                           </>
                         )}
                       </button>
@@ -280,19 +277,19 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
                       <iframe
                         key={imagem.curation_id}
                         src={viewerUrlComSerie}
-                        title="Visualizador OHIF"
+                        title={tVisualizador('ohifTitulo')}
                         className="h-full min-h-[78vh] w-full flex-1 border-0"
                       />
                     ) : (
                       <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                        Imagem não disponível para visualização
+                        {t('imagemIndisponivel')}
                       </div>
                     )}
                   </section>
 
                   <BarraClassificacao
-                    tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
-                    qualidade={rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica)}
+                    tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia, 'tipoRadiografia')}
+                    qualidade={rotular(OPCOES_QUALIDADE_TECNICA, imagem.qualidade_tecnica, 'qualidadeTecnica')}
                     dentes={imagem.dentes}
                     alteracoesObservadas={imagem.alteracoes_observadas}
                     achadosDetalhe={imagem.achados_detalhe}
@@ -308,8 +305,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
               </div>
 
               <footer className="mt-4 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 py-3 text-center text-xs text-amber-300">
-                Imagem disponibilizada exclusivamente para fins de ensino e pesquisa. Uso
-                para diagnóstico clínico não é permitido.
+                {t('avisoRodape')}
               </footer>
             </>
           ) : null}
