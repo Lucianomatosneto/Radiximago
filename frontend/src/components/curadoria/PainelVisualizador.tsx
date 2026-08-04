@@ -3,6 +3,9 @@
 import { forwardRef } from 'react'
 import SegundaOpiniaoBanner, { ReviewInfo } from './SegundaOpiniaoBanner'
 import StatusBadge from '../StatusBadge'
+import PainelDadosSobrepostos from './PainelDadosSobrepostos'
+import Logo from '../Logo'
+import type { FormularioFicha } from './FichaCuradoriaForm'
 
 export interface ViewerInfo {
   abrivel: boolean
@@ -33,6 +36,8 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   iframeReloadKey: number
   statusFicha: string
   segundaOpiniaoReview: ReviewInfo | null
+  form: FormularioFicha
+  onChange: (form: FormularioFicha) => void
 }>(function PainelVisualizador(
   {
     fichaAtiva,
@@ -46,6 +51,8 @@ const PainelVisualizador = forwardRef<HTMLElement, {
     iframeReloadKey,
     statusFicha,
     segundaOpiniaoReview,
+    form,
+    onChange,
   },
   ref
 ) {
@@ -54,13 +61,21 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-[70vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
+      className="relative flex h-full min-h-[160px] flex-[2] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
     >
       {fichaAtiva && (
         <>
           <SegundaOpiniaoBanner review={segundaOpiniaoReview} />
           <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
-            <StatusBadge status={statusFicha} />
+            <div className="flex items-center gap-3">
+              {/* Este painel vira tela cheia via Fullscreen API (so o proprio
+                  <section> e seus filhos ficam visiveis nesse modo - a Topbar
+                  da pagina, que normalmente mostra a logo, some). Por isso a
+                  logo (so o icone, pra nao brigar de espaco com o StatusBadge
+                  e os botoes) e repetida aqui. */}
+              <Logo variante="icone" />
+              <StatusBadge status={statusFicha} />
+            </div>
 
             {viewerPronto && (
               <div className="flex items-center gap-2">
@@ -89,8 +104,8 @@ const PainelVisualizador = forwardRef<HTMLElement, {
                 <button
                   type="button"
                   onClick={onAlternarTelaCheia}
-                  aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                  title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                  aria-label={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+                  title={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
                   className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                 >
                   {telaCheia ? (
@@ -109,26 +124,46 @@ const PainelVisualizador = forwardRef<HTMLElement, {
         </>
       )}
 
-      {!fichaAtiva ? (
-        <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-          Selecione uma imagem na fila abaixo
-        </div>
-      ) : carregandoViewer ? (
-        <div className="flex flex-1 items-center justify-center text-slate-400">
-          Carregando visualizador...
-        </div>
-      ) : viewerPronto ? (
-        <iframe
-          key={iframeReloadKey}
-          src={viewerInfo!.viewer_url!}
-          title="Visualizador OHIF"
-          className="h-full min-h-[70vh] w-full flex-1 border-0"
-        />
-      ) : (
-        <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-          {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
-        </div>
-      )}
+      <div className="relative min-h-0 flex-1">
+        {!fichaAtiva ? (
+          <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
+            Selecione uma imagem na fila abaixo
+          </div>
+        ) : carregandoViewer ? (
+          <div className="flex h-full items-center justify-center text-slate-400">
+            Carregando visualizador...
+          </div>
+        ) : viewerPronto ? (
+          <iframe
+            key={iframeReloadKey}
+            src={viewerInfo!.viewer_url!}
+            title="Visualizador OHIF"
+            className="h-full w-full border-0"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
+            {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
+          </div>
+        )}
+
+        {/* Caixa sobreposta por cima do canto superior esquerdo do iframe do
+            OHIF: ocupa visualmente a area onde o OHIF normalmente mostra o
+            painel "Studies" (lista de estudos). Nao da pra remover esse
+            painel de dentro do OHIF sem tocar na configuracao dele (o
+            iframe e cross-origin - o Radix nao enxerga nem altera o que
+            esta la dentro), entao a solucao fica inteiramente do lado de
+            fora: uma caixa da propria pagina do Radix, com fundo solido e
+            z-index acima do iframe, cobrindo aquele canto. A largura
+            (300px, no maximo 46% da largura do painel) subiu de 260px/42%
+            porque o conteudo cresceu (textos maiores + campo de Dentes) -
+            ajustar aqui se, na pratica, sobrar ou faltar espaco pra cobrir
+            o painel real do OHIF, ou se a caixa ficar apertada demais. */}
+        {fichaAtiva && (
+          <div className="absolute bottom-2 left-2 top-2 z-10 w-[300px] max-w-[46%]">
+            <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} />
+          </div>
+        )}
+      </div>
     </section>
   )
 })

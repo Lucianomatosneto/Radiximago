@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-type VarianteLogo = 'navbar' | 'sidebar' | 'login' | 'hero' | 'footer'
+type VarianteLogo = 'navbar' | 'sidebar' | 'login' | 'hero' | 'footer' | 'icone' | 'escuro'
 
 interface LogoProps {
   /** Contexto de uso - cada um tem o tamanho de icone/texto definido na
@@ -27,6 +27,11 @@ const CONFIG_POR_VARIANTE: Record<
     tagline: boolean
     taglineClasse?: string
     gapClasse: string
+    // true = mostra so o icone (sem "RÁDIX IMAGO" escrito ao lado) - usado
+    // em cantos apertados onde so cabe um simbolo pequeno (ex.: cabecalho
+    // do visualizador em tela cheia, onde a Topbar com o nome completo
+    // fica escondida).
+    somenteIcone?: boolean
   }
 > = {
   navbar: {
@@ -67,6 +72,26 @@ const CONFIG_POR_VARIANTE: Record<
     taglineClasse: 'text-xs font-medium uppercase tracking-wider text-slate-400 sm:text-sm',
     gapClasse: 'gap-4',
   },
+  icone: {
+    empilhado: false,
+    iconePx: 24,
+    tituloClasse: '',
+    tagline: false,
+    gapClasse: 'gap-0',
+    somenteIcone: true,
+  },
+  // Usada em cabecalhos "flutuantes" por cima de tudo (ex.: o do
+  // visualizador em sequencia), que nao ficam dentro da Topbar normal.
+  // Antes tinha texto branco fixo (ignorava o tema); agora usa text-ink
+  // (a mesma variavel de tema das outras variantes) porque essas telas
+  // passaram a acompanhar o alternador claro/escuro tambem.
+  escuro: {
+    empilhado: false,
+    iconePx: 28,
+    tituloClasse: 'text-sm font-bold tracking-tight text-ink',
+    tagline: false,
+    gapClasse: 'gap-2',
+  },
 }
 
 export default function Logo({ variante, className = '' }: LogoProps) {
@@ -90,10 +115,12 @@ export default function Logo({ variante, className = '' }: LogoProps) {
         style={{ width: cfg.iconePx, height: cfg.iconePx }}
         className="shrink-0"
       />
-      <div className={cfg.empilhado ? 'flex flex-col items-center' : 'flex flex-col justify-center leading-tight'}>
-        <span className={cfg.tituloClasse}>RÁDIX IMAGO</span>
-        {cfg.tagline && <span className={cfg.taglineClasse}>Ensino e pesquisa em saúde</span>}
-      </div>
+      {!cfg.somenteIcone && (
+        <div className={cfg.empilhado ? 'flex flex-col items-center' : 'flex flex-col justify-center leading-tight'}>
+          <span className={cfg.tituloClasse}>RÁDIX IMAGO</span>
+          {cfg.tagline && <span className={cfg.taglineClasse}>Ensino e pesquisa em saúde</span>}
+        </div>
+      )}
     </div>
   )
 }
