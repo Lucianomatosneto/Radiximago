@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import GradeCategoriasImagens from '../../components/GradeCategoriasImagens'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 export default function BancoImagensPage() {
   const router = useRouter()
@@ -15,12 +16,13 @@ export default function BancoImagensPage() {
   const [carregando, setCarregando] = useState(true)
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token')
-    if (!token) {
-      router.push('/login')
-      return
-    }
-    setCarregando(false)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      setCarregando(false)
+    })
   }, [router])
 
   if (carregando) {
