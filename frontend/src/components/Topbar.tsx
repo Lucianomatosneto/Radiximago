@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
 
@@ -32,6 +33,7 @@ async function extrairErro(response: Response, generica: string): Promise<string
 }
 
 export default function Topbar() {
+  const t = useTranslations('Topbar')
   const router = useRouter()
   const [nome, setNome] = useState('')
   const [perfil, setPerfil] = useState('')
@@ -87,11 +89,11 @@ export default function Topbar() {
     if (!arquivo) return
 
     if (!TIPOS_ACEITOS.includes(arquivo.type)) {
-      setErroFoto('Formato não suportado. Envie um JPEG, PNG ou WEBP.')
+      setErroFoto(t('erroFormato'))
       return
     }
     if (arquivo.size > TAMANHO_MAXIMO_BYTES) {
-      setErroFoto('A imagem deve ter no máximo 5 MB.')
+      setErroFoto(t('erroTamanho'))
       return
     }
 
@@ -123,7 +125,7 @@ export default function Topbar() {
         return
       }
       if (!response.ok) {
-        setErroFoto(await extrairErro(response, 'Não foi possível enviar a foto.'))
+        setErroFoto(await extrairErro(response, t('erroEnviarFoto')))
         return
       }
 
@@ -132,7 +134,7 @@ export default function Topbar() {
       setFotoPerfilUrl(dados.foto_perfil_url)
       setModalPerfilAberto(false)
     } catch {
-      setErroFoto('Não foi possível enviar a foto. Tente novamente.')
+      setErroFoto(t('erroEnviarFotoGenerico'))
     } finally {
       setEnviando(false)
     }
@@ -156,7 +158,7 @@ export default function Topbar() {
         return
       }
       if (!response.ok) {
-        setErroFoto(await extrairErro(response, 'Não foi possível remover a foto.'))
+        setErroFoto(await extrairErro(response, t('erroRemoverFoto')))
         return
       }
 
@@ -165,7 +167,7 @@ export default function Topbar() {
       setArquivoSelecionado(null)
       setPreview('')
     } catch {
-      setErroFoto('Não foi possível remover a foto. Tente novamente.')
+      setErroFoto(t('erroRemoverFotoGenerico'))
     } finally {
       setEnviando(false)
     }
@@ -182,7 +184,7 @@ export default function Topbar() {
           type="button"
           className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-ink"
         >
-          <span aria-hidden="true">❓</span> Ajuda
+          <span aria-hidden="true">❓</span> {t('ajuda')}
         </button>
 
         <div className="relative" ref={menuRef}>
@@ -200,7 +202,7 @@ export default function Topbar() {
               )}
             </span>
             <span className="text-left leading-tight">
-              <span className="block text-[11px] text-slate-400">{nome || 'visitante'}</span>
+              <span className="block text-[11px] text-slate-400">{nome || t('visitante')}</span>
               <span className="block font-medium capitalize text-ink">{perfil || '—'}</span>
             </span>
             <span className="text-slate-500" aria-hidden="true">
@@ -215,14 +217,14 @@ export default function Topbar() {
                 onClick={abrirModalPerfil}
                 className="w-full px-4 py-3 text-left text-sm text-slate-200 hover:bg-brand/10 hover:text-brand-300"
               >
-                Meu perfil
+                {t('meuPerfil')}
               </button>
               <button
                 type="button"
                 onClick={handleSair}
                 className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-950/40"
               >
-                Sair
+                {t('sair')}
               </button>
             </div>
           )}
@@ -232,8 +234,8 @@ export default function Topbar() {
       {modalPerfilAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
           <div className="w-full max-w-sm rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-            <h2 className="mb-1 text-lg font-semibold text-ink">Meu perfil</h2>
-            <p className="mb-5 text-sm text-slate-400">Escolha uma foto para o seu perfil.</p>
+            <h2 className="mb-1 text-lg font-semibold text-ink">{t('meuPerfil')}</h2>
+            <p className="mb-5 text-sm text-slate-400">{t('escolhaFoto')}</p>
 
             <div className="mb-5 flex justify-center">
               <span className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-base-border bg-base-surface2 text-3xl">
@@ -252,7 +254,7 @@ export default function Topbar() {
             <form onSubmit={enviarFoto} className="space-y-4">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium text-slate-400">
-                  Foto (JPEG, PNG ou WEBP, até 5 MB)
+                  {t('fotoAjuda')}
                 </span>
                 <input
                   type="file"
@@ -274,7 +276,7 @@ export default function Topbar() {
                   disabled={!arquivoSelecionado || enviando}
                   className="rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
                 >
-                  {enviando ? 'Enviando...' : 'Salvar foto'}
+                  {enviando ? t('enviando') : t('salvarFoto')}
                 </button>
                 {fotoPerfilUrl && (
                   <button
@@ -283,7 +285,7 @@ export default function Topbar() {
                     disabled={enviando}
                     className="rounded-lg border border-red-800/60 px-4 py-2 text-sm text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                   >
-                    Remover foto atual
+                    {t('removerFotoAtual')}
                   </button>
                 )}
                 <button
@@ -292,14 +294,14 @@ export default function Topbar() {
                   disabled={enviando}
                   className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
                 >
-                  Fechar
+                  {t('fechar')}
                 </button>
               </div>
             </form>
           </div>
           <button
             type="button"
-            aria-label="Fechar"
+            aria-label={t('fechar')}
             onClick={fecharModalPerfil}
             className="fixed inset-0 -z-10"
           />
