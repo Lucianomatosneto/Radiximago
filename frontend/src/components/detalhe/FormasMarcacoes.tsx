@@ -104,7 +104,7 @@ export default function FormasMarcacoes({
           markerHeight="5"
           orient="auto-start-reverse"
         >
-          <path d="M0,0 L10,5 L0,10 z" fill="#ef4444" />
+          <path d="M0,0 L10,5 L0,10 z" fill="#ffffff" />
         </marker>
       </defs>
       {marcacoes.map((m) => {
@@ -130,7 +130,7 @@ export default function FormasMarcacoes({
                 y1={y1}
                 x2={x2}
                 y2={y2}
-                stroke="#ef4444"
+                stroke="#ffffff"
                 strokeWidth={2}
                 vectorEffect="non-scaling-stroke"
                 markerEnd={`url(#seta-ponta-${idPrefixo})`}
@@ -160,11 +160,11 @@ export default function FormasMarcacoes({
               cy={y + altura / 2}
               rx={largura / 2}
               ry={altura / 2}
-              stroke="#ef4444"
+              stroke="#ffffff"
               strokeWidth={1}
-              strokeOpacity={0.6}
+              strokeOpacity={0.9}
               vectorEffect="non-scaling-stroke"
-              fill="rgba(239,68,68,0.5)"
+              fill="rgba(255,255,255,0.3)"
               style={{ mixBlendMode: 'overlay' }}
               {...eventosHover(m)}
             />
@@ -177,11 +177,11 @@ export default function FormasMarcacoes({
             y={y}
             width={largura}
             height={altura}
-            stroke="#ef4444"
+            stroke="#ffffff"
             strokeWidth={1}
-            strokeOpacity={0.6}
+            strokeOpacity={0.9}
             vectorEffect="non-scaling-stroke"
-            fill="rgba(239,68,68,0.5)"
+            fill="rgba(255,255,255,0.3)"
             style={{ mixBlendMode: 'overlay' }}
             {...eventosHover(m)}
           />

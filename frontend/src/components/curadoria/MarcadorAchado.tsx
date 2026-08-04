@@ -44,6 +44,15 @@ export default function MarcadorAchado({
   const [selecionadoId, setSelecionadoId] = useState<string | null>(null)
   const [desenhoAtual, setDesenhoAtualState] = useState<Marcacao | null>(null)
   const wrapperRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  // Tamanho NATURAL (em pixels reais) do preview PNG, descoberto assim que
+  // a imagem termina de carregar - precisamos dele pra calcular o maior
+  // tamanho possivel que caiba no painel preservando a proporcao (o
+  // problema que fazia a imagem aparecer "muito ampliada" era o CSS
+  // max-height:100% nao funcionar num elemento cujo pai tem altura
+  // automatica - com isso a altura ficava sem limite nenhum).
+  const tamanhoNaturalRef = useRef<{ largura: number; altura: number } | null>(null)
+  const [tamanhoRenderizado, setTamanhoRenderizado] = useState<{ largura: number; altura: number } | null>(null)
   const marcacoesRef = useRef(marcacoes)
   const desenhoRef = useRef<Marcacao | null>(null)
   const arrastoRef = useRef<Arrasto | null>(null)
@@ -53,6 +62,35 @@ export default function MarcadorAchado({
     desenhoRef.current = valor
     setDesenhoAtualState(valor)
   }
+
+  // Recalcula o maior tamanho (em pixels) que a imagem pode ter dentro do
+  // painel disponivel, mantendo a proporcao original (mesma conta de um
+  // "object-fit: contain", só que feita manualmente e aplicada como
+  // largura/altura explícitas no wrapper - isso evita o bug do
+  // max-height:100% e garante que o SVG por cima (que usa h-full/w-full
+  // do wrapper) sempre bata exatamente com a área visível da imagem.
+  function recalcularTamanho() {
+    const container = containerRef.current
+    const natural = tamanhoNaturalRef.current
+    if (!container || !natural) return
+    const larguraDisponivel = container.clientWidth
+    const alturaDisponivel = container.clientHeight
+    if (!larguraDisponivel || !alturaDisponivel) return
+    const escala = Math.min(larguraDisponivel / natural.largura, alturaDisponivel / natural.altura)
+    setTamanhoRenderizado({ largura: natural.largura * escala, altura: natural.altura * escala })
+  }
+
+  // Recalcula sempre que o painel muda de tamanho (janela redimensionada,
+  // troca de tela cheia/"ajustar à tela" etc.) - sem isso, o tamanho ficava
+  // "congelado" no valor calculado na primeira vez que a imagem carregou.
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    const observer = new ResizeObserver(() => recalcularTamanho())
+    observer.observe(container)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     let urlObjeto = ''
@@ -72,7 +110,18 @@ export default function MarcadorAchado({
         }
         const blob = await resposta.blob()
         urlObjeto = URL.createObjectURL(blob)
-        if (!cancelado) setSrc(urlObjeto)
+        // So mostra a imagem depois de saber o tamanho natural dela - assim
+        // o tamanho certo ja e calculado de cara, sem um "pulo" visual.
+        const imagemTeste = new Image()
+        imagemTeste.onload = () => {
+          if (cancelado) return
+          tamanhoNaturalRef.current = { largura: imagemTeste.naturalWidth, altura: imagemTeste.naturalHeight }
+          setSrc(urlObjeto)
+        }
+        imagemTeste.onerror = () => {
+          if (!cancelado) setErro(true)
+        }
+        imagemTeste.src = urlObjeto
       } catch {
         if (!cancelado) setErro(true)
       }
@@ -84,6 +133,11 @@ export default function MarcadorAchado({
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
   }, [orthancReferenceId])
+
+  useEffect(() => {
+    if (src) recalcularTamanho()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src])
 
   useEffect(() => {
     function aoMover(evento: MouseEvent) {
@@ -207,8 +261,8 @@ export default function MarcadorAchado({
   const formasParaExibir = desenhoAtual ? [...marcacoes, desenhoAtual] : marcacoes
 
   return (
-    <div>
-      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+    <div className="flex h-full flex-col">
+      <div className="mb-2 flex shrink-0 flex-wrap items-center gap-1.5">
         {FORMAS_MARCACAO.map((forma) => (
           <button
             key={forma.tipo}
@@ -236,7 +290,7 @@ export default function MarcadorAchado({
       </div>
 
       {selecionada && (
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2 flex shrink-0 items-center gap-2">
           <label className="text-xs text-slate-400" htmlFor="achado-marcacao">
             Tipo de lesão desta marcação:
           </label>
@@ -256,29 +310,39 @@ export default function MarcadorAchado({
         </div>
       )}
 
-      <div
-        ref={wrapperRef}
-        className="relative inline-block max-w-full overflow-hidden rounded-lg border border-base-border"
-      >
+      {/* Container externo: ocupa todo o espaco disponivel (agora que a
+          imagem vive num painel proprio ao lado do visualizador principal,
+          nao mais espremida dentro da ficha) e centraliza a imagem dentro
+          dele. O wrapper interno (ref=wrapperRef) recebe largura/altura
+          EXPLICITAS em pixels (calculadas em recalcularTamanho, acima) -
+          antes ele tentava se ajustar sozinho via CSS (max-height:100%),
+          mas isso nao funciona quando o elemento pai tem altura automatica
+          (bug conhecido do CSS), e foi o que fazia a imagem aparecer
+          "muito ampliada" (sem limite real de altura). Com o tamanho
+          calculado manualmente, o SVG por cima (absolute inset-0) sempre
+          bate pixel a pixel com a imagem. */}
+      <div ref={containerRef} className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-base-border bg-black/10">
         {erro ? (
           <div className="flex h-40 w-full items-center justify-center text-xs text-slate-500">
             Sem preview disponível
           </div>
-        ) : !src ? (
+        ) : !src || !tamanhoRenderizado ? (
           <div className="h-40 w-full animate-pulse" />
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={src} alt="Imagem para marcação" className="block max-h-[50vh] w-auto select-none" draggable={false} />
-        )}
-
-        {src && !erro && (
-          <svg
-            viewBox="0 0 1 1"
-            preserveAspectRatio="none"
-            className="absolute inset-0 h-full w-full"
-            style={{ cursor: 'crosshair' }}
-            onMouseDown={aoPressionarFundo}
+          <div
+            ref={wrapperRef}
+            className="relative"
+            style={{ width: `${tamanhoRenderizado.largura}px`, height: `${tamanhoRenderizado.altura}px` }}
           >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} alt="Imagem para marcação" className="block h-full w-full select-none" draggable={false} />
+            <svg
+              viewBox="0 0 1 1"
+              preserveAspectRatio="none"
+              className="absolute inset-0 h-full w-full"
+              style={{ cursor: 'crosshair' }}
+              onMouseDown={aoPressionarFundo}
+            >
             <FormasMarcacoes marcacoes={formasParaExibir} idPrefixo={`editor-${orthancReferenceId}`} />
 
             {marcacoes.map((m) => (
@@ -349,9 +413,10 @@ export default function MarcadorAchado({
               </g>
             ))}
           </svg>
+          </div>
         )}
       </div>
-      <p className="mt-1.5 text-xs text-slate-500">
+      <p className="mt-1.5 shrink-0 text-xs text-slate-500">
         {marcacoes.length > 0
           ? `${marcacoes.length} marcação(ões). Clique e arraste na imagem para adicionar outra, ou clique numa existente para mover/redimensionar.`
           : 'Clique e arraste na imagem para marcar uma lesão (opcional). Escolha a forma acima.'}

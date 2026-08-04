@@ -1,13 +1,48 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { rotularAlteracaoObservada } from '../../lib/alteracoesObservadas'
+import { corTextoAchado, COR_TEXTO_TIPO_RADIOGRAFIA, COR_TEXTO_QUALIDADE_TECNICA, COR_TEXTO_DENTES } from '../../lib/coresAchados'
 
 // Faixa compacta com a classificacao da imagem, sempre abaixo do
 // visualizador - propositalmente enxuta pra deixar o maximo de espaco
-// possivel pra imagem em si. Tipo/qualidade/dentes numa linha; alterações
-// observadas, achados detalhados e descrição didática cada um na sua
-// própria linha, com espaço pra pelo menos duas linhas de texto
-// (line-clamp-2) em vez de cortar tudo numa linha só.
+// possivel pra imagem em si. Tipo/qualidade/dentes numa linha compacta;
+// alterações observadas tem cartao proprio (ver `CampoEmDestaque` abaixo -
+// e a lista concreta do que o curador marcou, por isso o destaque); achados
+// detalhados e descrição didática ficam no formato simples de sempre
+// (titulo ao lado do valor, cortando em 2 linhas - line-clamp-2).
+//
+// Os titulos da linha compacta (Tipo:, Qualidade:, Dentes:) tem cada um sua
+// cor fixa (../../lib/coresAchados): "Tipo:" fica azul-petroleo (igual aos
+// cards de Periapicais/Panoramicas/Interproximais/Oclusais no Banco de
+// imagens), "Qualidade:" fica amarelo (igual ao card de Imagens de alta
+// qualidade didatica) e "Dentes:" fica azul (cor fixa, por pedido - nao tem
+// card equivalente no Banco de imagens). Ja "Alterações observadas:",
+// "Achados detalhados:" e "Descrição:" usam a cor do achado principal
+// (`achadoPrincipal`, opcional; sem ela ou com achado nao mapeado, ficam na
+// cor neutra de sempre).
+function CampoEmDestaque({
+  icone,
+  titulo,
+  cor,
+  children,
+}: {
+  icone: string
+  titulo: string
+  cor: string
+  children: ReactNode
+}) {
+  return (
+    <div className="rounded-xl border border-base-border bg-base-surface2/70 p-4">
+      <div className={`mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide ${cor}`}>
+        <span aria-hidden="true">{icone}</span>
+        {titulo}
+      </div>
+      {children}
+    </div>
+  )
+}
+
 export default function BarraClassificacao({
   tipo,
   qualidade,
@@ -15,42 +50,59 @@ export default function BarraClassificacao({
   alteracoesObservadas,
   achadosDetalhe,
   descricaoDidatica,
+  achadoPrincipal,
 }: {
   tipo: string
   qualidade: string
-  dentes: number[] | null | undefined
+  dentes: number[] | null
   alteracoesObservadas: string[] | null | undefined
   achadosDetalhe: string | null
   descricaoDidatica: string | null
+  achadoPrincipal?: string | null
 }) {
   const rotulosAlteracoes = (alteracoesObservadas ?? []).map(rotularAlteracaoObservada)
+  const corAchado = corTextoAchado(achadoPrincipal)
 
   return (
-    <div className="mt-3 flex flex-col gap-1.5 text-sm">
+    <div className="mt-3 flex flex-col gap-2 text-sm">
       <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
         <span className="whitespace-nowrap">
-          <span className="text-slate-500">Tipo: </span>
+          <span className={`font-medium ${COR_TEXTO_TIPO_RADIOGRAFIA}`}>Tipo: </span>
           <span className="text-ink">{tipo}</span>
         </span>
         <span className="whitespace-nowrap">
-          <span className="text-slate-500">Qualidade: </span>
+          <span className={`font-medium ${COR_TEXTO_QUALIDADE_TECNICA}`}>Qualidade: </span>
           <span className="text-ink">{qualidade}</span>
         </span>
         <span className="whitespace-nowrap">
-          <span className="text-slate-500">Dentes: </span>
+          <span className={`font-medium ${COR_TEXTO_DENTES}`}>Dentes: </span>
           <span className="text-ink">{dentes && dentes.length > 0 ? dentes.join(', ') : '—'}</span>
         </span>
       </div>
+
+      <CampoEmDestaque icone="🔎" titulo="Alterações observadas" cor={corAchado}>
+        {rotulosAlteracoes.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {rotulosAlteracoes.map((rotulo) => (
+              <span
+                key={rotulo}
+                className="rounded-full border border-base-border bg-base-surface px-2.5 py-1 text-xs font-medium text-ink"
+              >
+                {rotulo}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm italic text-slate-500">Nenhuma alteração registrada.</p>
+        )}
+      </CampoEmDestaque>
+
       <p className="line-clamp-2 text-ink">
-        <span className="text-slate-500">Alterações observadas: </span>
-        {rotulosAlteracoes.length > 0 ? rotulosAlteracoes.join(', ') : '—'}
-      </p>
-      <p className="line-clamp-2 text-ink">
-        <span className="text-slate-500">Achados detalhados: </span>
+        <span className={`font-medium ${corAchado}`}>Achados detalhados: </span>
         {achadosDetalhe || '—'}
       </p>
       <p className="line-clamp-2 text-ink">
-        <span className="text-slate-500">Descrição: </span>
+        <span className={`font-medium ${corAchado}`}>Descrição: </span>
         {descricaoDidatica || '—'}
       </p>
     </div>
