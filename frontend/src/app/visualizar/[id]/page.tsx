@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../../components/Sidebar'
 import Topbar from '../../../components/Topbar'
@@ -10,6 +10,7 @@ import ColunaEstudos from '../../../components/detalhe/ColunaEstudos'
 import ColunaSeries, { SerieEstudo } from '../../../components/visualizador/ColunaSeries'
 import BarraClassificacao from '../../../components/detalhe/BarraClassificacao'
 import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
+import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
 
 const OPCOES_TIPO_RADIOGRAFIA = [
@@ -35,6 +36,7 @@ const OPCOES_QUALIDADE_TECNICA = [
 interface ImagemDidatica {
   curation_id: number
   tipo_radiografia: string | null
+  achado_principal: string | null
   dentes: number[] | null
   achados_detalhe: string | null
   alteracoes_observadas: string[] | null
@@ -60,6 +62,35 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
   const [series, setSeries] = useState<SerieEstudo[]>([])
   const [carregandoSeries, setCarregandoSeries] = useState(false)
   const [indiceSerie, setIndiceSerie] = useState(0)
+  // Tela cheia: esta pagina nao tinha essa opcao (diferente do
+  // VisualizadorSequencial, que ja tinha) - pedido explicito pra criar.
+  // Aplica na COLUNA PRINCIPAL inteira (visualizador + classificacao +
+  // marcacao), nao so no iframe, seguindo o mesmo principio ja usado na
+  // Curadoria: em tela cheia continua dando pra ver as informacoes da
+  // imagem, nao so o OHIF sozinho.
+  const colunaPrincipalRef = useRef<HTMLDivElement>(null)
+  const [telaCheia, setTelaCheia] = useState(false)
+
+  useEffect(() => {
+    function aoMudarTelaCheia() {
+      setTelaCheia(document.fullscreenElement === colunaPrincipalRef.current)
+    }
+    document.addEventListener('fullscreenchange', aoMudarTelaCheia)
+    return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
+  }, [])
+
+  async function alternarTelaCheia() {
+    if (!colunaPrincipalRef.current) return
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen()
+      } else {
+        await colunaPrincipalRef.current.requestFullscreen()
+      }
+    } catch {
+      // navegador pode negar (ex.: sem interacao do usuario) - ignora
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('access_token')
@@ -208,11 +239,42 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
 
                 {/* COLUNA PRINCIPAL - visualizador ocupando o maximo de
                     espaco possivel, com uma faixa compacta (no maximo 3
-                    linhas) de classificacao logo abaixo. */}
-                <div className="flex w-full min-w-[480px] flex-1 flex-col">
+                    linhas) de classificacao logo abaixo. Tambem e o
+                    elemento que vira tela cheia (Fullscreen API so mostra
+                    o elemento pedido, escondendo tudo fora dele) - assim
+                    da pra ver a imagem grande E a classificacao/marcacao
+                    sem sair do modo tela cheia. */}
+                <div
+                  ref={colunaPrincipalRef}
+                  className={`flex w-full min-w-[480px] flex-1 flex-col bg-base ${telaCheia ? 'p-4' : ''}`}
+                >
                   <section className="flex min-h-[78vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface">
                     <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
-                      <ChipList itens={[rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)]} tom="marca" />
+                      <div className="flex items-center gap-3">
+                        {/* Em tela cheia, so esta coluna fica visivel (Fullscreen
+                            API esconde a Topbar, onde a logo normalmente aparece) -
+                            por isso ela e repetida aqui, so o icone, pra nao brigar
+                            de espaco com o chip de tipo de radiografia. */}
+                        <Logo variante="icone" />
+                        <ChipList itens={[rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)]} tom="marca" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={alternarTelaCheia}
+                        aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                        title={telaCheia ? 'Sair da tela cheia' : 'Tela cheia'}
+                        className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                      >
+                        {telaCheia ? (
+                          <>
+                            <span aria-hidden="true">⤡</span> Sair da tela cheia
+                          </>
+                        ) : (
+                          <>
+                            <span aria-hidden="true">⛶</span> Tela cheia
+                          </>
+                        )}
+                      </button>
                     </div>
                     {viewerUrlComSerie ? (
                       <iframe
@@ -235,6 +297,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
                     alteracoesObservadas={imagem.alteracoes_observadas}
                     achadosDetalhe={imagem.achados_detalhe}
                     descricaoDidatica={imagem.descricao_didatica}
+                    achadoPrincipal={imagem.achado_principal}
                   />
 
                   <MarcacaoAchado
