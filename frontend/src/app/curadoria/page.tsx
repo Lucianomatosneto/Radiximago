@@ -129,24 +129,15 @@ export default function CuradoriaPage() {
   const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
+  // Nao e mais o alvo da Fullscreen API (ver alternarTelaCheia/comentario
+  // grande mais abaixo, no efeito que arma o clique da Curadoria no
+  // Sidebar) - continua existindo so pra aplicar o padding condicional
+  // (`${telaCheia ? 'p-4' : ''}`) no proprio elemento, no JSX.
   const visualizadorRef = useRef<HTMLDivElement | null>(null)
   const [telaCheia, setTelaCheia] = useState(false)
-  // So dispara uma vez, na entrada na tela - mesmo padrao ja usado em
-  // segunda-opiniao/page.tsx (autoTelaCheiaRef). Depois desse primeiro
-  // disparo, trocar de imagem (proxima/anterior/clique na fila) nao forca
-  // tela cheia de novo, entao um curador que saiu do modo tela cheia
-  // continua fora dele ao avancar pra proxima imagem.
-  const autoTelaCheiaRef = useRef(false)
   // Trava contra 2 chamadas de alternarTelaCheia quase simultaneas pro
   // mesmo clique - ver comentario dentro de alternarTelaCheia.
   const telaCheiaEmAndamentoRef = useRef(false)
-  // Espelham fichaAtiva/viewerInfo em refs (mantidos por 2 useEffect logo
-  // abaixo) - servem so pro listener de fallback de tela cheia ler o
-  // estado mais atual sem precisar que o PROPRIO efeito que arma o
-  // listener dependa de fichaAtiva/viewerInfo. Ver o comentario grande no
-  // useEffect do fallback (mais abaixo) pro motivo disso.
-  const fichaAtivaRef = useRef<FichaAtiva | null>(null)
-  const viewerInfoRef = useRef<ViewerInfo | null>(null)
   const [modoAjustado, setModoAjustado] = useState(false)
   const [iframeReloadKey, setIframeReloadKey] = useState(0)
   // Painel ao lado do OHIF alterna entre a imagem de marcacao e os achados
@@ -226,92 +217,22 @@ export default function CuradoriaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
 
-  // Mantem fichaAtivaRef/viewerInfoRef sincronizados com o estado real -
-  // usados pelo listener de fallback abaixo pra ler o valor mais recente
-  // sem precisar que o efeito que arma o listener dependa deles.
+  // Sai da tela cheia quando o curador DEIXA a Curadoria (navega pra
+  // outra tela) - necessario porque o alvo da Fullscreen API agora e
+  // document.documentElement (o <html> inteiro, ver comentario grande no
+  // Sidebar.tsx e em alternarTelaCheia abaixo), que NUNCA e desmontado
+  // por uma navegacao client-side do Next.js (diferente do antigo alvo,
+  // visualizadorRef, que era destruido ao sair da pagina e por isso saia
+  // de tela cheia sozinho, de graca). Sem isso, a tela cheia "vazaria"
+  // pra qualquer outra tela que o curador abrisse em seguida. So dispara
+  // no unmount (dependencia vazia) - trocar de imagem dentro da propria
+  // Curadoria (Proxima/Anterior/clique na fila) nao desmonta este
+  // componente, entao nao aciona isso.
   useEffect(() => {
-    fichaAtivaRef.current = fichaAtiva
-  }, [fichaAtiva])
-  useEffect(() => {
-    viewerInfoRef.current = viewerInfo
-  }, [viewerInfo])
-
-  // Entra em tela cheia automaticamente assim que a PRIMEIRA imagem fica
-  // pronta (so uma vez) - reaproveita a mesma alternarTelaCheia usada pelo
-  // botao manual. Mesmo padrao ja usado em segunda-opiniao/page.tsx, com
-  // uma diferenca importante: aqui exige tambem `fichaAtiva`, nao so
-  // `viewerInfo`. Na Segunda Opiniao a review ja existe, entao
-  // `reviewAtiva` e setado de forma sincrona antes dos fetches; aqui,
-  // abrir uma imagem PRIMEIRO cria a ficha no backend (await) pra so
-  // depois setar fichaAtiva - e carregarViewerUrl roda em paralelo com
-  // essa criacao, entao viewerInfo costuma ficar pronto ANTES de
-  // fichaAtiva. Disparar so com viewerInfo (sem fichaAtiva) entrava em
-  // tela cheia ainda no estado vazio "Selecione uma imagem na fila ao
-  // lado" (PainelVisualizador so mostra o iframe quando fichaAtiva E
-  // viewerInfo estao prontos - ver viewerPronto em PainelVisualizador.tsx).
-  useEffect(() => {
-    if (autoTelaCheiaRef.current) return
-    if (!fichaAtiva) return
-    if (!viewerInfo?.abrivel || !viewerInfo.viewer_url) return
-    autoTelaCheiaRef.current = true
-    alternarTelaCheia()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fichaAtiva, viewerInfo])
-
-  // Fallback pra quando a tentativa direta acima e negada pelo navegador:
-  // navegadores so aceitam a Fullscreen API dentro de uma janela curta
-  // depois de uma interacao real do usuario ("ativacao" do clique), e
-  // essa janela e mais apertada aqui do que na Segunda Opiniao - abrir a
-  // primeira imagem exige 2 idas ao backend em sequencia (criar a ficha,
-  // so depois buscar a ficha completa) antes de fichaAtiva ficar pronto,
-  // entao a ativacao do clique que trouxe o curador ate aqui (no menu)
-  // pode ja ter expirado quando o efeito acima dispara - o pedido e
-  // negado em silencio (alternarTelaCheia so ignora o erro).
-  //
-  // ESSENCIAL: este efeito roda com dependencia VAZIA (arma o listener
-  // uma unica vez, na montagem da pagina) - NAO com [fichaAtiva,
-  // viewerInfo] como estava antes. Antes, o listener vivia dentro do
-  // MESMO efeito que a tentativa direta: toda vez que fichaAtiva ou
-  // viewerInfo mudavam de referencia (ex.: ao trocar de imagem pela fila,
-  // mesmo que o curador ainda nao tivesse clicado em lugar nenhum), o
-  // cleanup do efeito removia os listeners de pointerdown/keydown - mas
-  // como autoTelaCheiaRef.current ja estava true (setado na 1a vez que o
-  // efeito rodou de verdade), o efeito nunca os recriava, deixando a
-  // pagina sem NENHUM listener de fallback pelo resto da sessao (o botao
-  // manual continuava funcionando normalmente, por ter handler proprio,
-  // direto, sem depender desse listener). Com dependencia vazia, o
-  // listener e armado uma vez so e sobrevive ate realmente disparar -
-  // le o estado mais atual via fichaAtivaRef/viewerInfoRef (nao via
-  // closure), entao funciona independente de quantas imagens ja tenham
-  // trocado antes da primeira interacao real do curador.
-  useEffect(() => {
-    let consumido = false
-
-    function aoInteragir() {
-      if (consumido) return
-      if (document.fullscreenElement) {
-        // A tentativa direta (efeito acima) ja funcionou - nada a fazer
-        // aqui, so para de escutar (chamar alternarTelaCheia de novo
-        // SAIRIA da tela cheia, por ser um alternador).
-        consumido = true
-        document.removeEventListener('pointerdown', aoInteragir)
-        document.removeEventListener('keydown', aoInteragir)
-        return
-      }
-      const ficha = fichaAtivaRef.current
-      const viewer = viewerInfoRef.current
-      if (!ficha || !viewer?.abrivel || !viewer.viewer_url) return // continua escutando a proxima interacao
-      consumido = true
-      document.removeEventListener('pointerdown', aoInteragir)
-      document.removeEventListener('keydown', aoInteragir)
-      alternarTelaCheia()
-    }
-
-    document.addEventListener('pointerdown', aoInteragir)
-    document.addEventListener('keydown', aoInteragir)
     return () => {
-      document.removeEventListener('pointerdown', aoInteragir)
-      document.removeEventListener('keydown', aoInteragir)
+      if (document.fullscreenElement === document.documentElement) {
+        document.exitFullscreen().catch(() => {})
+      }
     }
   }, [])
 
@@ -358,19 +279,31 @@ export default function CuradoriaPage() {
 
   useEffect(() => {
     function aoMudarTelaCheia() {
-      setTelaCheia(document.fullscreenElement === visualizadorRef.current)
+      setTelaCheia(document.fullscreenElement === document.documentElement)
     }
     document.addEventListener('fullscreenchange', aoMudarTelaCheia)
     return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
   }, [])
 
+  // Alvo e document.documentElement (o <html> inteiro), NAO mais
+  // visualizadorRef - motivo detalhado no comentario grande em
+  // Sidebar.tsx (aoClicarCuradoria), que e quem consegue pedir tela
+  // cheia de forma confiavel (dentro do proprio clique no menu, antes da
+  // navegacao/carregamento). Como document.documentElement e o mesmo
+  // elemento em QUALQUER pagina (nunca e desmontado numa navegacao
+  // client-side do Next.js), o botao manual "Tela cheia" aqui dentro da
+  // Curadoria PRECISA mirar o mesmo alvo - senao os dois brigariam pelo
+  // "elemento de tela cheia atual" (so um pode estar em tela cheia por
+  // vez; pedir fullscreen num elemento diferente troca o alvo, nao
+  // "empilha"). Como fullscreenar o <html> nao esconde mais nada
+  // sozinho (o comportamento nativo de "so mostra o alvo e descendentes"
+  // so existe quando o alvo e um elemento especifico, nao a pagina
+  // inteira), Topbar e o cabecalho da Curadoria agora sao escondidos
+  // explicitamente via `telaCheia` no JSX (ver return abaixo) - antes
+  // isso acontecia de graca, so por visualizadorRef ser o alvo.
   async function alternarTelaCheia() {
-    if (!visualizadorRef.current) return
-    // Trava contra chamadas concorrentes pro MESMO clique: o listener de
-    // fallback (useEffect logo acima) e o proprio botao "Tela cheia" podem
-    // disparar quase juntos quando a primeira interacao do curador cai
-    // bem em cima do botao (pointerdown aciona o fallback, o click do
-    // botao aciona de novo alguns ms depois). Sem essa trava, a 2a chamada
+    // Trava contra chamadas concorrentes pro MESMO clique (ex.: usuario
+    // clica duas vezes rapido no botao manual) - sem isso, a 2a chamada
     // via de regra ainda pega document.fullscreenElement vazio (a
     // transicao do navegador nao terminou) e entra em tela cheia de novo
     // - ou, se ja tiver terminado, LE fullscreenElement preenchido e SAI
@@ -383,7 +316,7 @@ export default function CuradoriaPage() {
       if (document.fullscreenElement) {
         await document.exitFullscreen()
       } else {
-        await visualizadorRef.current.requestFullscreen()
+        await document.documentElement.requestFullscreen()
       }
     } catch {
       // navegador pode negar (ex.: sem interacao do usuario) - ignora
@@ -927,43 +860,47 @@ export default function CuradoriaPage() {
 
   return (
     <div className="flex h-screen flex-col bg-base">
-      <Topbar />
+      {/* Topbar e o cabecalho abaixo somem em tela cheia - o alvo da
+          Fullscreen API agora e document.documentElement (o <html>
+          inteiro, ver alternarTelaCheia acima), entao a pagina inteira
+          fica visivel automaticamente; antes, quando o alvo era
+          visualizadorRef, a propria API ja escondia tudo fora dele "de
+          graca". Agora precisa ser explicito. */}
+      {!telaCheia && <Topbar />}
 
       {/* Sem overflow-y-auto aqui de proposito: a linha de trabalho ocupa
           100% da altura disponivel - nunca sobra conteudo pra "vazar" e
           forcar rolagem da pagina inteira. */}
       <main className="flex h-full min-h-0 flex-1 flex-col gap-3 p-4">
-        {/* Cabecalho compacto, uma linha so - o espaco vertical aqui e
-            precioso (a imagem e a ficha e que importam pro curador no dia
-            a dia, nao o titulo da tela). */}
-        <div className="flex shrink-0 items-center gap-3">
-          <Link
-            href="/dashboard"
-            className="rounded-full border border-base-border px-2.5 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-          >
-            ← {t('inicio')}
-          </Link>
-          <h1 className="text-sm font-semibold text-ink">
-            {t('titulo')}<span className="text-brand-300">.</span>
-          </h1>
+        {!telaCheia && (
+          /* Cabecalho compacto, uma linha so - o espaco vertical aqui e
+             precioso (a imagem e a ficha e que importam pro curador no
+             dia a dia, nao o titulo da tela). */
+          <div className="flex shrink-0 items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="rounded-full border border-base-border px-2.5 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+            >
+              ← {t('inicio')}
+            </Link>
+            <h1 className="text-sm font-semibold text-ink">
+              {t('titulo')}<span className="text-brand-300">.</span>
+            </h1>
 
-          {erroReviewsRespondidas && (
-            <p className="text-xs text-red-400" role="alert">
-              {erroReviewsRespondidas}
-            </p>
-          )}
-        </div>
+            {erroReviewsRespondidas && (
+              <p className="text-xs text-red-400" role="alert">
+                {erroReviewsRespondidas}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* AREA DE TRABALHO - barra superior + fila horizontal + visualizador
-            + ficha, tudo dentro do MESMO elemento que vira tela cheia
-            (Fullscreen API so mostra o elemento pedido, escondendo tudo
-            fora dele) - assim o curador consegue curar (ver a imagem
-            grande, trocar de imagem na fila E preencher a ficha) sem sair
-            do modo tela cheia. Antes a fila (coluna lateral vertical)
-            ficava deliberadamente FORA da tela cheia; agora, como faixa
-            horizontal compacta no topo, ela entrou pra dentro - por
-            pedido explicito, pra dar pra trocar de imagem sem sair da
-            tela cheia. */}
+            + ficha. Nao e mais o elemento que vira tela cheia (ver
+            alternarTelaCheia acima) - o padding condicional
+            (${telaCheia ? 'p-4' : ''}) continua aqui, pra dar uma
+            respiro ao redor do conteudo quando o cabecalho/Topbar somem
+            e a pagina inteira fica em tela cheia. */}
         <div
           ref={visualizadorRef}
           className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}

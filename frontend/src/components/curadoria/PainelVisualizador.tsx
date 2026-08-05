@@ -70,11 +70,11 @@ const PainelVisualizador = forwardRef<HTMLElement, {
           <SegundaOpiniaoBanner review={segundaOpiniaoReview} />
           <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
             <div className="flex items-center gap-3">
-              {/* Este painel vira tela cheia via Fullscreen API (so o proprio
-                  <section> e seus filhos ficam visiveis nesse modo - a Topbar
-                  da pagina, que normalmente mostra a logo, some). Por isso a
-                  logo (so o icone, pra nao brigar de espaco com o StatusBadge
-                  e os botoes) e repetida aqui. */}
+              {/* A Curadoria esconde a Topbar da pagina (que normalmente
+                  mostra a logo) quando telaCheia e true - ver
+                  curadoria/page.tsx. Por isso a logo (so o icone, pra nao
+                  brigar de espaco com o StatusBadge e os botoes) e
+                  repetida aqui. */}
               <Logo variante="icone" />
               <StatusBadge status={statusFicha} />
             </div>
