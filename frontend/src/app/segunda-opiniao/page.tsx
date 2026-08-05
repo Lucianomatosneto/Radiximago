@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import BarraClassificacao from '../../components/detalhe/BarraClassificacao'
-import MarcacaoAchado from '../../components/detalhe/MarcacaoAchado'
 import type { Marcacao } from '../../lib/marcacoes'
 import { obterSessaoAtual } from '../../lib/sessao'
 
@@ -136,6 +135,11 @@ export default function SegundaOpiniaoPage() {
   const [carregandoViewer, setCarregandoViewer] = useState(false)
   const [telaCheia, setTelaCheia] = useState(false)
   const visualizadorRef = useRef<HTMLDivElement | null>(null)
+  // So disparam uma vez, na entrada na tela - depois disso, trocar de
+  // solicitacao (clique manual na lista) nao re-aciona nem o auto-select
+  // nem a tela cheia automatica.
+  const autoAbriuPrimeiraRef = useRef(false)
+  const autoTelaCheiaRef = useRef(false)
 
   const [fichaCompleta, setFichaCompleta] = useState<FichaCompleta | null>(null)
   const [carregandoFicha, setCarregandoFicha] = useState(false)
@@ -160,6 +164,36 @@ export default function SegundaOpiniaoPage() {
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
+
+  // Abre a primeira solicitacao pendente automaticamente assim que a fila
+  // carrega, pro revisor ja cair direto analisando (mesmo padrao ja usado
+  // na Curadoria - ver curadoria/page.tsx), em vez de ver a lista vazia
+  // "Selecione uma solicitacao" e precisar clicar na primeira manualmente.
+  useEffect(() => {
+    if (autoAbriuPrimeiraRef.current) return
+    if (carregando || carregandoFila) return
+    if (reviewAtiva) return
+    if (!autenticado || reviews.length === 0) return
+    autoAbriuPrimeiraRef.current = true
+    selecionarReview(reviews[0])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carregando, carregandoFila, reviews, reviewAtiva, autenticado])
+
+  // Entra em tela cheia automaticamente assim que o visualizador da
+  // primeira solicitacao fica pronto (so uma vez) - reaproveita a mesma
+  // alternarTelaCheia usada pelo botao manual. Navegadores exigem uma
+  // interacao real do usuario pra aceitar a Fullscreen API; como a tela
+  // normalmente e aberta a partir de um clique no menu, essa interacao
+  // costuma ainda valer nesse primeiro carregamento. Se o navegador negar
+  // mesmo assim, alternarTelaCheia ja trata o erro em silencio e o botao
+  // manual continua disponivel.
+  useEffect(() => {
+    if (autoTelaCheiaRef.current) return
+    if (!viewerInfo?.abrivel || !viewerInfo.viewer_url) return
+    autoTelaCheiaRef.current = true
+    alternarTelaCheia()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerInfo])
 
   useEffect(() => {
     function aoMudarTelaCheia() {
@@ -393,43 +427,99 @@ export default function SegundaOpiniaoPage() {
                 className={`flex flex-col gap-4 overflow-y-auto bg-base ${telaCheia ? 'p-4' : ''}`}
               >
                 <section className="relative flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
-                  {viewerInfo?.abrivel && viewerInfo.viewer_url && (
-                    <div className="flex items-center justify-end border-b border-base-border px-3 py-2">
-                      <button
-                        type="button"
-                        onClick={alternarTelaCheia}
-                        aria-label={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
-                        title={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
-                        className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                      >
-                        {telaCheia ? (
-                          <>
-                            <span aria-hidden="true">⤡</span> {tVisualizador('voltar')}
-                          </>
-                        ) : (
-                          <>
-                            <span aria-hidden="true">⛶</span> {tVisualizador('telaCheia')}
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
+                  {/* Cabecalho com o botao de tela cheia - sempre visivel
+                      (igual visualizar/[id]/page.tsx), nao so quando a
+                      imagem carrega no OHIF. Antes, o botao ficava dentro
+                      do mesmo `if` que so aparece com viewerInfo.abrivel
+                      true, entao sem uma imagem visualizavel o revisor nao
+                      tinha NENHUMA forma de entrar em tela cheia. */}
+                  <div className="flex items-center justify-end border-b border-base-border px-3 py-2">
+                    <button
+                      type="button"
+                      onClick={alternarTelaCheia}
+                      aria-label={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
+                      title={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
+                      className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                    >
+                      {telaCheia ? (
+                        <>
+                          <span aria-hidden="true">⤡</span> {tVisualizador('voltar')}
+                        </>
+                      ) : (
+                        <>
+                          <span aria-hidden="true">⛶</span> {tVisualizador('telaCheia')}
+                        </>
+                      )}
+                    </button>
+                  </div>
 
-                  {carregandoViewer ? (
-                    <div className="flex flex-1 items-center justify-center text-slate-400">
-                      {tVisualizador('carregandoVisualizador')}
-                    </div>
-                  ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
-                    <iframe
-                      src={viewerInfo.viewer_url}
-                      title={tVisualizador('ohifTitulo')}
-                      className="h-full min-h-[45vh] w-full flex-1 border-0"
-                    />
-                  ) : (
-                    <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                      {viewerInfo?.motivo ?? tVisualizador('naoDisponivel')}
-                    </div>
-                  )}
+                  <div className="relative min-h-[45vh] flex-1">
+                    {carregandoViewer ? (
+                      <div className="flex h-full items-center justify-center text-slate-400">
+                        {tVisualizador('carregandoVisualizador')}
+                      </div>
+                    ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
+                      <iframe
+                        src={viewerInfo.viewer_url}
+                        title={tVisualizador('ohifTitulo')}
+                        className="h-full w-full border-0"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
+                        {viewerInfo?.motivo ?? tVisualizador('naoDisponivel')}
+                      </div>
+                    )}
+
+                    {/* Coluna sobreposta no canto esquerdo do OHIF, escondendo
+                        o painel "Studies" dele (mesma tecnica ja usada na
+                        Curadoria - ver PainelDadosSobrepostos.tsx - o iframe
+                        e cross-origin, entao a unica forma de cobrir aquele
+                        painel e por fora, com uma caixa opaca por cima).
+                        Tipo, qualidade, dentes, faixa etaria e sexo, todos
+                        empilhados verticalmente, somente leitura (o revisor
+                        nao edita a ficha). Anonimizacao validada nao aparece
+                        mais aqui (pedido explicito pra remove-la da tela).
+                        Usa os mesmos tokens de tema (bg-base-surface,
+                        border-base-border, text-slate-300/400) do resto do
+                        app, entao acompanha automaticamente o modo claro e o
+                        modo noturno. */}
+                    {fichaCompleta && (
+                      <div className="absolute bottom-2 left-2 top-2 z-10 w-[220px] max-w-[46%]">
+                        <dl className="flex h-full w-full flex-col gap-2.5 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 text-sm shadow-lg backdrop-blur-sm">
+                          <div>
+                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('tipoRadiografia')}</dt>
+                            <dd className="text-slate-100">
+                              {rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia, 'tipoRadiografia')}
+                            </dd>
+                          </div>
+                          <div className="border-t border-base-border pt-2.5">
+                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('qualidadeTecnica')}</dt>
+                            <dd className="text-slate-100">
+                              {rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica, 'qualidadeTecnica')}
+                            </dd>
+                          </div>
+                          <div className="border-t border-base-border pt-2.5">
+                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('dentes')}</dt>
+                            <dd className="text-slate-100">
+                              {fichaCompleta.dentes && fichaCompleta.dentes.length > 0 ? fichaCompleta.dentes.join(', ') : '—'}
+                            </dd>
+                          </div>
+                          <div className="border-t border-base-border pt-2.5">
+                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('faixaEtaria')}</dt>
+                            <dd className="text-slate-100">
+                              {fichaCompleta.idade_min || fichaCompleta.idade_max
+                                ? t('faixaEtariaValor', { min: fichaCompleta.idade_min ?? '?', max: fichaCompleta.idade_max ?? '?' })
+                                : '—'}
+                            </dd>
+                          </div>
+                          <div className="border-t border-base-border pt-2.5">
+                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('sexo')}</dt>
+                            <dd className="text-slate-100">{rotular(OPCOES_GENERO, fichaCompleta.genero, 'genero')}</dd>
+                          </div>
+                        </dl>
+                      </div>
+                    )}
+                  </div>
                 </section>
 
                 {/* Tudo que o curador registrou - MESMOS campos e MESMO
@@ -466,28 +556,8 @@ export default function SegundaOpiniaoPage() {
                         achadosDetalhe={fichaCompleta.achados_detalhe}
                         descricaoDidatica={fichaCompleta.descricao_didatica}
                         achadoPrincipal={fichaCompleta.achado_principal}
+                        ocultarClassificacao
                       />
-
-                      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-base-border pt-4 text-sm sm:grid-cols-4">
-                        <div>
-                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('faixaEtaria')}</dt>
-                          <dd className="text-slate-300">
-                            {fichaCompleta.idade_min || fichaCompleta.idade_max
-                              ? t('faixaEtariaValor', { min: fichaCompleta.idade_min ?? '?', max: fichaCompleta.idade_max ?? '?' })
-                              : '—'}
-                          </dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('sexo')}</dt>
-                          <dd className="text-slate-300">{rotular(OPCOES_GENERO, fichaCompleta.genero, 'genero')}</dd>
-                        </div>
-                        <div>
-                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('anonimizacaoValidada')}</dt>
-                          <dd className={fichaCompleta.anonimizacao_validada ? 'text-emerald-400' : 'text-red-400'}>
-                            {fichaCompleta.anonimizacao_validada ? t('sim') : t('nao')}
-                          </dd>
-                        </div>
-                      </dl>
 
                       {fichaCompleta.observacoes_internas && (
                         <div className="mt-3 rounded-lg border border-base-border bg-base-surface2/70 p-3">
@@ -497,13 +567,6 @@ export default function SegundaOpiniaoPage() {
                           <p className="text-sm text-slate-300">{fichaCompleta.observacoes_internas}</p>
                         </div>
                       )}
-
-                      <div className="mt-4 border-t border-base-border pt-4">
-                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          {t('marcacoesFeitasPeloCurador')}
-                        </p>
-                        <MarcacaoAchado curationId={fichaCompleta.id} marcacoes={fichaCompleta.marcacoes} />
-                      </div>
                     </>
                   )}
                 </section>
