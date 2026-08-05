@@ -67,6 +67,47 @@ export default function Sidebar() {
     obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
   }, [])
 
+  // A Curadoria abre a primeira imagem em tela cheia automaticamente, sem
+  // exigir clique extra do usuario - mas requestFullscreen() so e aceito
+  // pelo navegador DENTRO (ou bem perto) de uma interacao real do
+  // usuario. Tentar pedir tela cheia DEPOIS que os dados da Curadoria
+  // terminam de carregar (fetches assincronos: criar ficha, buscar
+  // viewer-url, buscar ficha completa) quase sempre estoura essa janela
+  // - e exatamente por isso que a abordagem antiga (useEffect + listener
+  // de fallback em pointerdown/keydown, tentando reagir DEPOIS que os
+  // dados chegam) nunca foi confiavel.
+  //
+  // A correcao: pedir tela cheia AQUI, no PROPRIO clique no item
+  // "Curadoria" do menu - o momento mais cedo e mais confiavel possivel
+  // pra uma interacao do usuario, antes mesmo da navegacao/carregamento
+  // comecar. O alvo e document.documentElement (o <html> inteiro, nao um
+  // elemento especifico da pagina de Curadoria) de proposito: como essa
+  // navegacao e client-side (Next.js App Router), document.documentElement
+  // e o MESMO objeto DOM antes e depois da troca de rota (o root layout -
+  // <html>/<body> - nunca e desmontado numa navegacao interna, so o
+  // conteudo da pagina dentro dele troca) - entao a tela cheia pedida
+  // aqui sobrevive a transicao pra /curadoria sem interrupcao. Pedir
+  // fullscreen num elemento ESPECIFICO da Curadoria (como se fazia antes,
+  // com visualizadorRef) e inviavel a partir daqui: esse elemento so
+  // existe depois que o React da pagina de destino renderiza, o que so
+  // acontece DEPOIS da navegacao - ja tarde demais pra ativacao do clique
+  // valer.
+  //
+  // A Curadoria (curadoria/page.tsx) fica responsavel por: 1) esconder
+  // Topbar/cabecalho quando detectar tela cheia (a Fullscreen API nao
+  // esconde nada sozinha quando o alvo e a pagina inteira, diferente de
+  // quando o alvo e um elemento especifico); 2) sair da tela cheia
+  // quando o curador navega pra outra tela (senao "vazaria" pra
+  // qualquer pagina seguinte, ja que document.documentElement persiste).
+  function aoClicarCuradoria() {
+    document.documentElement.requestFullscreen().catch(() => {
+      // Navegador pode negar (raro, considerando que isso roda dentro do
+      // proprio evento de clique) - a Curadoria continua funcionando
+      // normalmente, so sem a tela cheia automatica; o botao manual "Tela
+      // cheia" la dentro continua disponivel.
+    })
+  }
+
   async function handleSair() {
     try {
       await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/logout`, {
@@ -114,6 +155,7 @@ export default function Sidebar() {
                 key={item.chave}
                 href={item.href}
                 aria-current={estaAtivo ? 'page' : undefined}
+                onClick={item.chave === 'curadoria' ? aoClicarCuradoria : undefined}
                 className={`rounded-lg border bg-gradient-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${item.cor} ${
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
