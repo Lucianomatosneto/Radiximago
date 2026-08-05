@@ -13,6 +13,7 @@ import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../component
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
@@ -54,7 +55,7 @@ export default function CuradoriaPage() {
   const router = useRouter()
   const t = useTranslations('Curadoria')
   const tComum = useTranslations('Comum')
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   const [fila, setFila] = useState<ImagemPendente[]>([])
@@ -104,20 +105,18 @@ export default function CuradoriaPage() {
   const [erroMotivo, setErroMotivo] = useState('')
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
-
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
-
-    setToken(tokenAtual)
-    carregarFila(tokenAtual)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
+      setAutenticado(true)
+      carregarFila()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
@@ -129,11 +128,11 @@ export default function CuradoriaPage() {
     if (autoAbriuPrimeiraRef.current) return
     if (carregando || carregandoFila) return
     if (fichaAtiva || criandoId !== null) return
-    if (!token || fila.length === 0) return
+    if (!autenticado || fila.length === 0) return
     autoAbriuPrimeiraRef.current = true
     abrirImagem(fila[0], 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, token])
+  }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
 
   function aplicarFila(itens: ImagemPendente[], total: number, opcoes?: { append?: boolean }) {
     const novaFila = opcoes?.append ? [...filaRef.current, ...itens] : itens
@@ -145,14 +144,14 @@ export default function CuradoriaPage() {
     setTotalPendentes(total)
   }
 
-  async function carregarFila(tokenAtual: string, opcoes?: { skip?: number; append?: boolean }) {
+  async function carregarFila(opcoes?: { skip?: number; append?: boolean }) {
     setCarregandoFila(true)
     setErroFila('')
     try {
       const skip = opcoes?.skip ?? 0
       const resposta = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50`,
-        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+        { credentials: 'include' }
       )
       if (resposta.status === 401) {
         router.push('/login')
@@ -204,13 +203,13 @@ export default function CuradoriaPage() {
     setIframeReloadKey((k) => k + 1)
   }
 
-  async function carregarViewerUrl(tokenAtual: string, orthancReferenceId: number) {
+  async function carregarViewerUrl(orthancReferenceId: number) {
     setCarregandoViewer(true)
     setViewerInfo(null)
     try {
       const resposta = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/viewer-url`,
-        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+        { credentials: 'include' }
       )
       if (resposta.status === 401) {
         router.push('/login')
@@ -231,10 +230,10 @@ export default function CuradoriaPage() {
   // segunda opiniao ja saem de /curation/pending), mas o dado ja existe na
   // API (GET /curation/{id}/reviews) e o sprint pede pra so exibi-lo se
   // existir - fica pronto sem custo extra.
-  async function carregarReviewSegundaOpiniao(tokenAtual: string, curationId: number) {
+  async function carregarReviewSegundaOpiniao(curationId: number) {
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}/reviews`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
+        credentials: 'include',
       })
       if (!resposta.ok) return
       const dados = await resposta.json()
@@ -246,12 +245,11 @@ export default function CuradoriaPage() {
   }
 
   async function carregarFichaCompleta(
-    tokenAtual: string,
     curationId: number,
     orthancReferenceId: number
   ) {
     const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
-      headers: { Authorization: `Bearer ${tokenAtual}` },
+      credentials: 'include',
     })
     if (resposta.status === 401) {
       router.push('/login')
@@ -267,7 +265,7 @@ export default function CuradoriaPage() {
     setSegundaOpiniaoReview(null)
     setPainelLateral('marcacao')
     if (ficha.status === 'segunda_opiniao') {
-      carregarReviewSegundaOpiniao(tokenAtual, curationId)
+      carregarReviewSegundaOpiniao(curationId)
     }
     setForm({
       tipo_radiografia: ficha.tipo_radiografia ?? 'periapical',
@@ -286,7 +284,7 @@ export default function CuradoriaPage() {
   }
 
   async function abrirImagem(imagem: ImagemPendente, indiceNavegacao?: number) {
-    if (!token || criandoId !== null) return
+    if (!autenticado || criandoId !== null) return
     setCriandoId(imagem.orthanc_reference_id)
     setErroFila('')
     try {
@@ -294,13 +292,14 @@ export default function CuradoriaPage() {
       // disparamos em paralelo com a criacao da ficha, em vez de esperar a
       // ficha carregar primeiro (essa espera sequencial era uma das causas
       // da demora ao abrir uma imagem).
-      carregarViewerUrl(token, imagem.orthanc_reference_id)
+      carregarViewerUrl(imagem.orthanc_reference_id)
 
       const respostaCriacao = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${imagem.orthanc_reference_id}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ tipo_radiografia: 'periapical' }),
         }
       )
@@ -321,7 +320,7 @@ export default function CuradoriaPage() {
       const indice =
         indiceNavegacao ?? ordemInicialRef.current.findIndex((i) => i.orthanc_reference_id === imagem.orthanc_reference_id)
       setIndiceAtual(indice >= 0 ? indice : null)
-      await carregarFichaCompleta(token, criada.curation_id, imagem.orthanc_reference_id)
+      await carregarFichaCompleta(criada.curation_id, imagem.orthanc_reference_id)
     } catch {
       setErroFila(t('ficha.erroAbrirImagem'))
     } finally {
@@ -359,8 +358,8 @@ export default function CuradoriaPage() {
   // haver mais nada pendente, entao cai de volta pra tela de selecao.
   async function irParaProxima() {
     let i = indiceDisponivel(1)
-    if (i === null && ordemInicialRef.current.length < totalPendentes && token) {
-      await carregarFila(token, { skip: ordemInicialRef.current.length, append: true })
+    if (i === null && ordemInicialRef.current.length < totalPendentes && autenticado) {
+      await carregarFila({ skip: ordemInicialRef.current.length, append: true })
       i = indiceDisponivel(1)
     }
     if (i === null) {
@@ -379,11 +378,11 @@ export default function CuradoriaPage() {
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
     setPainelLateral('marcacao')
-    if (token) carregarFila(token)
+    if (autenticado) carregarFila()
   }
 
   async function salvarRascunho(opcoes?: { silencioso?: boolean }): Promise<boolean> {
-    if (!fichaAtiva || !token) return false
+    if (!fichaAtiva || !autenticado) return false
     setSalvandoRascunho(true)
     setErroFormulario('')
     try {
@@ -391,7 +390,8 @@ export default function CuradoriaPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${fichaAtiva.curationId}`,
         {
           method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(construirPayloadEdicao(form)),
         }
       )
@@ -426,7 +426,7 @@ export default function CuradoriaPage() {
   }
 
   async function aprovar() {
-    if (!fichaAtiva || !token) return
+    if (!fichaAtiva || !autenticado) return
     const salvou = await salvarRascunho({ silencioso: true })
     if (!salvou) return
 
@@ -437,7 +437,8 @@ export default function CuradoriaPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${fichaAtiva.curationId}/approve`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ anonimizacao_validada: form.anonimizacao_validada }),
         }
       )
@@ -458,7 +459,7 @@ export default function CuradoriaPage() {
   }
 
   async function confirmarMotivo() {
-    if (!fichaAtiva || !token || !modalMotivo) return
+    if (!fichaAtiva || !autenticado || !modalMotivo) return
     const motivo = motivoTexto.trim()
     if (!motivo) {
       setErroMotivo(t('modalMotivo.erroMotivoObrigatorio'))
@@ -473,7 +474,8 @@ export default function CuradoriaPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${fichaAtiva.curationId}/${caminho}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({ motivo }),
         }
       )
