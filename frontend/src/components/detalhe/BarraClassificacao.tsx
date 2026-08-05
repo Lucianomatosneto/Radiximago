@@ -51,6 +51,7 @@ export default function BarraClassificacao({
   achadosDetalhe,
   descricaoDidatica,
   achadoPrincipal,
+  ocultarClassificacao,
 }: {
   tipo: string
   qualidade: string
@@ -59,6 +60,11 @@ export default function BarraClassificacao({
   achadosDetalhe: string | null
   descricaoDidatica: string | null
   achadoPrincipal?: string | null
+  /** Esconde a linha Tipo/Qualidade/Dentes (default: mostra, como sempre) -
+   * usado na Segunda Opiniao, onde esses 3 campos passaram a aparecer numa
+   * coluna sobreposta ao visualizador (ver segunda-opiniao/page.tsx), pra
+   * nao duplicar a mesma informacao duas vezes na tela. */
+  ocultarClassificacao?: boolean
 }) {
   const t = useTranslations('Visualizador.classificacao')
   const tAlteracoes = useTranslations('AlteracoesObservadas.itens')
@@ -75,20 +81,22 @@ export default function BarraClassificacao({
 
   return (
     <div className="mt-3 flex flex-col gap-2 text-sm">
-      <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
-        <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_TIPO_RADIOGRAFIA}`}>{t('tipo')}</span>
-          <span className="text-ink">{tipo}</span>
-        </span>
-        <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_QUALIDADE_TECNICA}`}>{t('qualidade')}</span>
-          <span className="text-ink">{qualidade}</span>
-        </span>
-        <span className="whitespace-nowrap">
-          <span className={`font-medium ${COR_TEXTO_DENTES}`}>{t('dentes')}</span>
-          <span className="text-ink">{dentes && dentes.length > 0 ? dentes.join(', ') : '—'}</span>
-        </span>
-      </div>
+      {!ocultarClassificacao && (
+        <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+          <span className="whitespace-nowrap">
+            <span className={`font-medium ${COR_TEXTO_TIPO_RADIOGRAFIA}`}>{t('tipo')}</span>
+            <span className="text-ink">{tipo}</span>
+          </span>
+          <span className="whitespace-nowrap">
+            <span className={`font-medium ${COR_TEXTO_QUALIDADE_TECNICA}`}>{t('qualidade')}</span>
+            <span className="text-ink">{qualidade}</span>
+          </span>
+          <span className="whitespace-nowrap">
+            <span className={`font-medium ${COR_TEXTO_DENTES}`}>{t('dentes')}</span>
+            <span className="text-ink">{dentes && dentes.length > 0 ? dentes.join(', ') : '—'}</span>
+          </span>
+        </div>
+      )}
 
       <CampoEmDestaque icone="🔎" titulo={t('alteracoesObservadas')} cor={corAchado}>
         {rotulosAlteracoes.length > 0 ? (
