@@ -8,6 +8,7 @@ import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
+import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 
 const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'periapical', label: 'Periapical' },
@@ -58,12 +59,41 @@ const OPCOES_DIFICULDADE = [
   { valor: 'avancado', label: 'Avançado' },
 ]
 
-// Valores reais do enum Finalidade (as mesmas 3 ja usadas na tela de Curadoria).
-const OPCOES_FINALIDADE = [
-  { valor: 'ensino', label: 'Ensino' },
-  { valor: 'pesquisa', label: 'Pesquisa' },
-  { valor: 'ambos', label: 'Ambos' },
+// Valores reais do enum OrigemImagem (backend/app/modules/orthanc_references.py).
+// "ufsc" = veio direto do aparelho de raio-x da UFSC (protocolo DICOM/C-STORE),
+// detectado automaticamente pelo Orthanc - ninguem escolhe isso na mao.
+// "externa" = chegou por upload manual (tela "Imagens recebidas").
+const OPCOES_ORIGEM = [
+  { valor: 'ufsc', label: 'UFSC (equipamento)' },
+  { valor: 'externa', label: 'Externa (upload)' },
 ]
+
+// Cor suave da caixa de texto/selecao de cada filtro na Busca avancada - um
+// degrade indo do azul (primeiro campo) ao verde (ultimo campo), calculado
+// por interpolacao linear entre azul (#3b82f6) e verde (#22c55e). Indice =
+// posicao do campo na grade (Genero=0 - sem caixa de texto, entao sem cor -,
+// Dente=1, ... Idade max=10).
+const CORES_CAIXA_FILTRO: [number, number, number][] = [
+  [59, 130, 246],
+  [57, 137, 231],
+  [54, 143, 216],
+  [52, 150, 200],
+  [49, 157, 185],
+  [47, 164, 170],
+  [44, 170, 155],
+  [42, 177, 140],
+  [39, 184, 124],
+  [37, 190, 109],
+  [34, 197, 94],
+]
+
+function estiloCaixaFiltro(indice: number): { backgroundColor: string; borderColor: string } {
+  const [r, g, b] = CORES_CAIXA_FILTRO[indice % CORES_CAIXA_FILTRO.length]
+  return {
+    backgroundColor: `rgba(${r}, ${g}, ${b}, 0.16)`,
+    borderColor: `rgba(${r}, ${g}, ${b}, 0.55)`,
+  }
+}
 
 interface Filtros {
   tipo_radiografia: string
@@ -74,7 +104,7 @@ interface Filtros {
   genero: string
   qualidade_tecnica: string
   dificuldade: string
-  finalidade: string
+  origem: string
   idade_min: string
   idade_max: string
 }
@@ -88,7 +118,7 @@ const FILTROS_VAZIOS: Filtros = {
   genero: '',
   qualidade_tecnica: '',
   dificuldade: '',
-  finalidade: '',
+  origem: '',
   idade_min: '',
   idade_max: '',
 }
@@ -102,7 +132,7 @@ const CHAVES_FILTRO: (keyof Filtros)[] = [
   'genero',
   'qualidade_tecnica',
   'dificuldade',
-  'finalidade',
+  'origem',
   'idade_min',
   'idade_max',
 ]
@@ -120,7 +150,7 @@ interface ResultadoImagem {
   marcacoes: Marcacao[]
   qualidade_tecnica: string | null
   dificuldade: string | null
-  finalidade: string | null
+  origem: string | null
   descricao_didatica: string | null
   viewer_url: string | null
 }
@@ -155,6 +185,13 @@ function PesquisaConteudo() {
   const [erro, setErro] = useState('')
   const [selecionados, setSelecionados] = useState<number[]>([])
   const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
+  // Selecao em lote: numero ajustavel (nao so 10/15/20 fixos - o curador
+  // pode digitar qualquer quantidade) usado tanto pelos atalhos rapidos
+  // quanto pelo botao "Selecionar mais". Cada clique adiciona as proximas
+  // N imagens AINDA NAO selecionadas (nao substitui a selecao atual) -
+  // assim da pra ir selecionando "de 10 em 10", "de 15 em 15" etc,
+  // acumulando aos poucos em vez de precisar clicar imagem por imagem.
+  const [quantidadeLote, setQuantidadeLote] = useState(10)
 
   useEffect(() => {
     const tokenAtual = localStorage.getItem('access_token')
@@ -218,9 +255,14 @@ function PesquisaConteudo() {
     if (filtrosParaUsar.genero) params.set('genero', filtrosParaUsar.genero)
     if (filtrosParaUsar.qualidade_tecnica) params.set('qualidade_tecnica', filtrosParaUsar.qualidade_tecnica)
     if (filtrosParaUsar.dificuldade) params.set('dificuldade', filtrosParaUsar.dificuldade)
-    if (filtrosParaUsar.finalidade) params.set('finalidade', filtrosParaUsar.finalidade)
+    if (filtrosParaUsar.origem) params.set('origem', filtrosParaUsar.origem)
     if (filtrosParaUsar.idade_min) params.set('idade_min', filtrosParaUsar.idade_min)
     if (filtrosParaUsar.idade_max) params.set('idade_max', filtrosParaUsar.idade_max)
+    // Antes nao mandava "limit" nenhum, entao o backend usava o padrao
+    // (50) - "Selecionar todas" e a selecao em lote so fazem sentido
+    // sobre as imagens que de fato carregaram aqui, entao subimos pro
+    // maximo que a API aceita (200) pra cobrir bem mais resultados.
+    params.set('limit', '200')
 
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?${params.toString()}`, {
@@ -251,6 +293,29 @@ function PesquisaConteudo() {
     )
   }
 
+  function selecionarTodas() {
+    setSelecionados(resultados.map((imagem) => imagem.curation_id))
+  }
+
+  function limparSelecao() {
+    setSelecionados([])
+  }
+
+  // Seleciona as proximas "quantidade" imagens que ainda NAO estao
+  // selecionadas, na ordem em que aparecem nos resultados, e ACRESCENTA
+  // a selecao atual (nao substitui) - permite ir selecionando aos poucos
+  // ("de 10 em 10", "de 15 em 15" etc, ou qualquer numero digitado em
+  // quantidadeLote).
+  function selecionarMais(quantidade: number) {
+    if (quantidade < 1) return
+    const naoSelecionados = resultados
+      .map((imagem) => imagem.curation_id)
+      .filter((id) => !selecionados.includes(id))
+    const proximos = naoSelecionados.slice(0, quantidade)
+    if (proximos.length === 0) return
+    setSelecionados((atual) => [...atual, ...proximos])
+  }
+
   const itensSelecionados = resultados
     .map((imagem, indice) => ({ imagem, numero: indice + 1 }))
     .filter(({ imagem }) => selecionados.includes(imagem.curation_id))
@@ -265,6 +330,7 @@ function PesquisaConteudo() {
       marcacoes: imagem.marcacoes,
       qualidade_tecnica: imagem.qualidade_tecnica,
       dentes: imagem.dentes,
+      achado_principal: imagem.achado_principal,
     }))
 
   if (carregandoPagina) {
@@ -312,6 +378,10 @@ function PesquisaConteudo() {
           <div className="mt-6">
             <p className="mb-3 text-sm font-medium text-slate-300">Acesso rápido por tipo de exame</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {/* Cada caixa com sua PROPRIA cor (../../lib/coresAchados) - Periapical
+                  em teal, Panoramica em ciano, Interproximal em azul-claro e
+                  Oclusal em indigo, pra ficarem facilmente distinguiveis entre si.
+                  O anel azul (ring-brand) continua marcando qual esta selecionada. */}
               {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
                 <button
                   key={o.valor}
@@ -321,10 +391,8 @@ function PesquisaConteudo() {
                     setFiltros(novos)
                     pesquisar(novos)
                   }}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border p-5 text-sm font-medium transition-colors ${
-                    filtros.tipo_radiografia === o.valor
-                      ? 'border-brand bg-brand/10 text-brand-300'
-                      : 'border-base-border bg-base-surface text-slate-300 hover:border-brand/40'
+                  className={`flex flex-col items-center gap-2 rounded-2xl border bg-gradient-to-br p-5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
+                    filtros.tipo_radiografia === o.valor ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                   }`}
                 >
                   <span className="text-2xl" aria-hidden="true">
@@ -367,6 +435,7 @@ function PesquisaConteudo() {
                   onChange={(e) => atualizarFiltro('dente', e.target.value)}
                   placeholder="ex: 16"
                   className={campoInput}
+                  style={estiloCaixaFiltro(1)}
                 />
               </div>
 
@@ -376,10 +445,11 @@ function PesquisaConteudo() {
                   value={filtros.arcada}
                   onChange={(e) => atualizarFiltro('arcada', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(2)}
                 >
-                  <option value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">Todas</option>
                   {OPCOES_ARCADA.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -390,10 +460,11 @@ function PesquisaConteudo() {
                   value={filtros.lado}
                   onChange={(e) => atualizarFiltro('lado', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(3)}
                 >
-                  <option value="">Ambos</option>
+                  <option className="bg-white text-slate-900" value="">Ambos</option>
                   {OPCOES_LADO.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -404,10 +475,11 @@ function PesquisaConteudo() {
                   value={filtros.tipo_radiografia}
                   onChange={(e) => atualizarFiltro('tipo_radiografia', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(4)}
                 >
-                  <option value="">Todos</option>
+                  <option className="bg-white text-slate-900" value="">Todos</option>
                   {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -418,10 +490,11 @@ function PesquisaConteudo() {
                   value={filtros.achado_principal}
                   onChange={(e) => atualizarFiltro('achado_principal', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(5)}
                 >
-                  <option value="">Todos</option>
+                  <option className="bg-white text-slate-900" value="">Todos</option>
                   {OPCOES_ACHADO_PRINCIPAL.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -432,10 +505,11 @@ function PesquisaConteudo() {
                   value={filtros.qualidade_tecnica}
                   onChange={(e) => atualizarFiltro('qualidade_tecnica', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(6)}
                 >
-                  <option value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">Todas</option>
                   {OPCOES_QUALIDADE_TECNICA.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -446,24 +520,26 @@ function PesquisaConteudo() {
                   value={filtros.dificuldade}
                   onChange={(e) => atualizarFiltro('dificuldade', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(7)}
                 >
-                  <option value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">Todas</option>
                   {OPCOES_DIFICULDADE.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Finalidade</label>
+                <label className={campoLabel}>Origem</label>
                 <select
-                  value={filtros.finalidade}
-                  onChange={(e) => atualizarFiltro('finalidade', e.target.value)}
+                  value={filtros.origem}
+                  onChange={(e) => atualizarFiltro('origem', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(8)}
                 >
-                  <option value="">Todas</option>
-                  {OPCOES_FINALIDADE.map((o) => (
-                    <option key={o.valor} value={o.valor}>{o.label}</option>
+                  <option className="bg-white text-slate-900" value="">Todas</option>
+                  {OPCOES_ORIGEM.map((o) => (
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
                   ))}
                 </select>
               </div>
@@ -477,6 +553,7 @@ function PesquisaConteudo() {
                   value={filtros.idade_min}
                   onChange={(e) => atualizarFiltro('idade_min', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(9)}
                 />
               </div>
 
@@ -489,6 +566,7 @@ function PesquisaConteudo() {
                   value={filtros.idade_max}
                   onChange={(e) => atualizarFiltro('idade_max', e.target.value)}
                   className={campoInput}
+                  style={estiloCaixaFiltro(10)}
                 />
               </div>
             </div>
@@ -542,6 +620,59 @@ function PesquisaConteudo() {
                     </button>
                   )}
                 </div>
+
+                {/* Selecao em lote: "Selecionar todas", atalhos rapidos de
+                    10/15/20/25 (somam a selecao atual, nao substituem) e um
+                    campo ajustavel pra digitar qualquer quantidade -
+                    pedido explicito pra nao ficar preso so a esses 4
+                    numeros fixos. */}
+                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface p-3">
+                  <span className="text-xs font-medium text-slate-400">Seleção:</span>
+                  <button
+                    type="button"
+                    onClick={selecionarTodas}
+                    className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                  >
+                    Selecionar todas ({resultados.length})
+                  </button>
+                  {[10, 15, 20, 25].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => selecionarMais(n)}
+                      className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                    >
+                      +{n}
+                    </button>
+                  ))}
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="number"
+                      min={1}
+                      max={resultados.length}
+                      value={quantidadeLote}
+                      onChange={(e) => setQuantidadeLote(Number(e.target.value))}
+                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => selecionarMais(quantidadeLote)}
+                      className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                    >
+                      Selecionar mais
+                    </button>
+                  </div>
+                  {selecionados.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={limparSelecao}
+                      className="ml-auto rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-400 hover:border-status-danger hover:text-status-danger"
+                    >
+                      Limpar seleção
+                    </button>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
                   {resultados.map((imagem, indice) => (
                     <Link
@@ -573,10 +704,32 @@ function PesquisaConteudo() {
                         </label>
                       </div>
                       <div className="flex flex-col gap-1 p-2">
-                        <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300">
-                          {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
-                        </span>
-                        <span className="truncate text-xs text-slate-400" title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}>
+                        <div className="flex flex-wrap items-center gap-1">
+                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300">
+                            {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
+                          </span>
+                          {/* Badge de origem: "ufsc" = veio direto do aparelho de raio-x
+                              (deteccao automatica no Orthanc), "externa" = upload manual. */}
+                          {imagem.origem && (
+                            <span
+                              className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                imagem.origem === 'ufsc'
+                                  ? 'bg-emerald-500/10 text-emerald-300'
+                                  : 'bg-slate-500/10 text-slate-300'
+                              }`}
+                            >
+                              {rotular(OPCOES_ORIGEM, imagem.origem)}
+                            </span>
+                          )}
+                        </div>
+                        {/* Titulo do resultado (achado principal) com a MESMA cor usada
+                            no card correspondente do Banco de imagens (../../lib/coresAchados) -
+                            assim o estudante ja reconhece visualmente o tipo de achado antes
+                            mesmo de abrir a imagem, igual acontece la. */}
+                        <span
+                          className={`truncate text-xs font-medium ${corTextoAchado(imagem.achado_principal)}`}
+                          title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
+                        >
                           {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
                         </span>
                       </div>
