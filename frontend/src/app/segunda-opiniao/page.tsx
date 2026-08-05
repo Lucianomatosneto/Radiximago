@@ -8,6 +8,7 @@ import Topbar from '../../components/Topbar'
 import BarraClassificacao from '../../components/detalhe/BarraClassificacao'
 import MarcacaoAchado from '../../components/detalhe/MarcacaoAchado'
 import type { Marcacao } from '../../lib/marcacoes'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
@@ -123,7 +124,7 @@ export default function SegundaOpiniaoPage() {
     return tOpcoes(`achadoPrincipal.${chave}`)
   }
 
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
   const [reviews, setReviews] = useState<ReviewPendente[]>([])
@@ -143,20 +144,20 @@ export default function SegundaOpiniaoPage() {
   const [erroFormulario, setErroFormulario] = useState('')
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
 
-    const perfil = localStorage.getItem('perfil')
-    if (!perfil || !PERFIS_PERMITIDOS.includes(perfil)) {
-      router.push('/acesso-negado')
-      return
-    }
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+        router.push('/acesso-negado')
+        return
+      }
 
-    setToken(tokenAtual)
-    carregarFila(tokenAtual)
+      setAutenticado(true)
+      carregarFila()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
@@ -181,12 +182,12 @@ export default function SegundaOpiniaoPage() {
     }
   }
 
-  async function carregarFila(tokenAtual: string) {
+  async function carregarFila() {
     setCarregandoFila(true)
     setErroFila('')
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/reviews/pending`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
@@ -206,13 +207,13 @@ export default function SegundaOpiniaoPage() {
     }
   }
 
-  async function carregarViewerUrl(tokenAtual: string, orthancReferenceId: number) {
+  async function carregarViewerUrl(orthancReferenceId: number) {
     setCarregandoViewer(true)
     setViewerInfo(null)
     try {
       const resposta = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/viewer-url`,
-        { headers: { Authorization: `Bearer ${tokenAtual}` } }
+        { credentials: 'include' }
       )
       if (resposta.status === 401) {
         router.push('/login')
@@ -232,12 +233,12 @@ export default function SegundaOpiniaoPage() {
   // reabrir uma ficha em edicao) - e o que da ao revisor acesso a TUDO que
   // o curador preencheu (nao so achado principal e tipo de radiografia,
   // que era tudo que a fila resumida ja trazia).
-  async function carregarFichaCompleta(tokenAtual: string, curationId: number) {
+  async function carregarFichaCompleta(curationId: number) {
     setCarregandoFicha(true)
     setFichaCompleta(null)
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
-        headers: { Authorization: `Bearer ${tokenAtual}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
@@ -256,9 +257,9 @@ export default function SegundaOpiniaoPage() {
   function selecionarReview(review: ReviewPendente) {
     setReviewAtiva(review)
     setErroFormulario('')
-    if (token) {
-      carregarViewerUrl(token, review.orthanc_reference.id)
-      carregarFichaCompleta(token, review.curation.id)
+    if (autenticado) {
+      carregarViewerUrl(review.orthanc_reference.id)
+      carregarFichaCompleta(review.curation.id)
     }
   }
 
@@ -275,7 +276,7 @@ export default function SegundaOpiniaoPage() {
   // que volte a coletar um comentario, mas hoje esta tela nao envia nada
   // alem da concordancia.
   async function responderReview(concordancia: 'concorda' | 'discorda') {
-    if (!reviewAtiva || !token) return
+    if (!reviewAtiva || !autenticado) return
 
     setEnviando(true)
     setErroFormulario('')
@@ -285,7 +286,8 @@ export default function SegundaOpiniaoPage() {
         `${process.env.NEXT_PUBLIC_API_URL}/curation/reviews/${reviewAtiva.id}/respond`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ concordancia }),
         }
       )
@@ -300,7 +302,7 @@ export default function SegundaOpiniaoPage() {
 
       setReviews((prev) => prev.filter((r) => r.id !== reviewAtiva.id))
       limparSelecao()
-      carregarFila(token)
+      carregarFila()
     } catch {
       setErroFormulario(t('erroEnviarAvaliacao'))
     } finally {
