@@ -17,9 +17,46 @@ import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
+// Usados so pra rotular tipo_radiografia/achado_principal nos cards de
+// "Aguardando sua decisao" (mesmos rotulos usados em toda a Curadoria e em
+// Pesquisa avancada) - mesmo padrao ja usado em segunda-opiniao/page.tsx.
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
+}
+
 interface FichaAtiva {
   curationId: number
   orthancReferenceId: number
+}
+
+// Item de /curation/reviews/answered (mesmo formato de /reviews/pending)
+// + o parecer do revisor, que vem de uma segunda chamada a
+// GET /curation/{id}/reviews (ver carregarReviewsRespondidas).
+interface ReviewRespondidaItem {
+  id: number
+  motivo: string
+  primeiro_parecer: string | null
+  criado_em: string | null
+  curation: {
+    id: number
+    achado_principal: string | null
+    tipo_radiografia: string | null
+  }
+  orthanc_reference: {
+    id: number
+    orthanc_id: string
+  }
+  concordancia: string | null
+  parecer_revisor: string | null
+  decisao_final: string | null
 }
 
 
@@ -55,6 +92,20 @@ export default function CuradoriaPage() {
   const router = useRouter()
   const t = useTranslations('Curadoria')
   const tComum = useTranslations('Comum')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+
+  function rotularTipoRadiografia(valor: string | null): string {
+    if (!valor || !OPCOES_TIPO_RADIOGRAFIA.includes(valor)) return valor ?? '—'
+    return tOpcoes(`tipoRadiografia.${valor}`)
+  }
+
+  function traduzirAchado(valor: string | null): string {
+    if (!valor) return '—'
+    const chave = CHAVE_ACHADO[valor]
+    if (!chave) return valor
+    return tOpcoes(`achadoPrincipal.${chave}`)
+  }
+
   const [autenticado, setAutenticado] = useState(false)
   const [carregando, setCarregando] = useState(true)
 
@@ -104,6 +155,31 @@ export default function CuradoriaPage() {
   const [enviandoMotivo, setEnviandoMotivo] = useState(false)
   const [erroMotivo, setErroMotivo] = useState('')
 
+  // "Aguardando sua decisao": segundas opinioes que ESTE curador solicitou
+  // e que ja foram respondidas pelo revisor - falta so aplicar a decisao
+  // final (aprovar/descartar) via POST /apply-review-decision. Fica num
+  // badge/dropdown separado da fila principal porque a ficha em si nao
+  // volta pra /curation/pending nesse estado (ver comentario em
+  // carregarReviewSegundaOpiniao acima).
+  const [reviewsRespondidas, setReviewsRespondidas] = useState<ReviewRespondidaItem[]>([])
+  const [erroReviewsRespondidas, setErroReviewsRespondidas] = useState('')
+  const [painelReviewsAberto, setPainelReviewsAberto] = useState(false)
+
+  // Aprovar exige reconfirmar a anonimizacao (mesma regra de /approve) -
+  // um checkbox por review, guardado por id porque varias podem estar
+  // visiveis ao mesmo tempo no dropdown.
+  const [anonimizacaoConfirmada, setAnonimizacaoConfirmada] = useState<Record<number, boolean>>({})
+  const [aplicandoDecisaoId, setAplicandoDecisaoId] = useState<number | null>(null)
+  const [errosDecisaoFinal, setErrosDecisaoFinal] = useState<Record<number, string>>({})
+
+  // Descartar via decisao final reaproveita o ModalMotivo (mesmo padrao de
+  // justificativa obrigatoria de /discard), mas com seu proprio estado -
+  // opera numa ficha diferente da fichaAtiva em edicao.
+  const [descarteFinalAlvo, setDescarteFinalAlvo] = useState<{ curationId: number; reviewId: number } | null>(null)
+  const [motivoDescarteFinal, setMotivoDescarteFinal] = useState('')
+  const [enviandoDescarteFinal, setEnviandoDescarteFinal] = useState(false)
+  const [erroDescarteFinal, setErroDescarteFinal] = useState('')
+
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
       if (!sessao) {
@@ -116,6 +192,7 @@ export default function CuradoriaPage() {
       }
       setAutenticado(true)
       carregarFila()
+      carregarReviewsRespondidas()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -241,6 +318,139 @@ export default function CuradoriaPage() {
       setSegundaOpiniaoReview(itens.length > 0 ? itens[itens.length - 1] : null)
     } catch {
       // banner so aparece se o dado existir
+    }
+  }
+
+  // Fila de "Aguardando sua decisao" (badge no cabecalho) - reviews que
+  // ESTE curador solicitou e que ja foram respondidas. GET
+  // /curation/reviews/answered devolve o mesmo formato enxuto de
+  // /reviews/pending (sem o parecer do revisor); por isso, pra cada item,
+  // busca o parecer completo (concordancia/parecer_revisor/decisao_final)
+  // em GET /curation/{id}/reviews - o mesmo endpoint que
+  // carregarReviewSegundaOpiniao ja usa acima.
+  async function carregarReviewsRespondidas() {
+    setErroReviewsRespondidas('')
+    try {
+      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/reviews/answered`, {
+        credentials: 'include',
+      })
+      if (resposta.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!resposta.ok) {
+        setErroReviewsRespondidas(await extrairErro(resposta, t('reviewsRespondidas.erroCarregar')))
+        return
+      }
+      const dados = await resposta.json()
+      const base: Array<Omit<ReviewRespondidaItem, 'concordancia' | 'parecer_revisor' | 'decisao_final'>> =
+        dados.itens ?? []
+
+      const completos = await Promise.all(
+        base.map(async (item): Promise<ReviewRespondidaItem> => {
+          try {
+            const respReviews = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL}/curation/${item.curation.id}/reviews`,
+              { credentials: 'include' }
+            )
+            if (!respReviews.ok) return { ...item, concordancia: null, parecer_revisor: null, decisao_final: null }
+            const dadosReviews = await respReviews.json()
+            const itensReviews: Array<{
+              id: number
+              concordancia: string | null
+              parecer_revisor: string | null
+              decisao_final: string | null
+            }> = dadosReviews.itens ?? []
+            const desta = itensReviews.find((r) => r.id === item.id)
+            return {
+              ...item,
+              concordancia: desta?.concordancia ?? null,
+              parecer_revisor: desta?.parecer_revisor ?? null,
+              decisao_final: desta?.decisao_final ?? null,
+            }
+          } catch {
+            return { ...item, concordancia: null, parecer_revisor: null, decisao_final: null }
+          }
+        })
+      )
+      setReviewsRespondidas(completos)
+    } catch {
+      setErroReviewsRespondidas(t('reviewsRespondidas.erroCarregar'))
+    }
+  }
+
+  async function aprovarDecisaoFinal(item: ReviewRespondidaItem) {
+    if (!autenticado || !anonimizacaoConfirmada[item.id]) return
+    setAplicandoDecisaoId(item.id)
+    setErrosDecisaoFinal((prev) => ({ ...prev, [item.id]: '' }))
+    try {
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/curation/${item.curation.id}/apply-review-decision`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ decisao: 'aprovar', anonimizacao_validada: true }),
+        }
+      )
+      if (resposta.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!resposta.ok) {
+        const mensagem = await extrairErro(resposta, t('reviewsRespondidas.erroAprovar'))
+        setErrosDecisaoFinal((prev) => ({ ...prev, [item.id]: mensagem }))
+        return
+      }
+      setReviewsRespondidas((prev) => prev.filter((r) => r.id !== item.id))
+    } catch {
+      setErrosDecisaoFinal((prev) => ({ ...prev, [item.id]: t('reviewsRespondidas.erroAprovar') }))
+    } finally {
+      setAplicandoDecisaoId(null)
+    }
+  }
+
+  function abrirDescarteFinal(item: ReviewRespondidaItem) {
+    setDescarteFinalAlvo({ curationId: item.curation.id, reviewId: item.id })
+    setMotivoDescarteFinal('')
+    setErroDescarteFinal('')
+  }
+
+  async function confirmarDescarteFinal() {
+    if (!descarteFinalAlvo || !autenticado) return
+    const motivo = motivoDescarteFinal.trim()
+    if (!motivo) {
+      setErroDescarteFinal(t('modalMotivo.erroMotivoObrigatorio'))
+      return
+    }
+
+    setEnviandoDescarteFinal(true)
+    setErroDescarteFinal('')
+    try {
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/curation/${descarteFinalAlvo.curationId}/apply-review-decision`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ decisao: 'descartar', motivo }),
+        }
+      )
+      if (resposta.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!resposta.ok) {
+        setErroDescarteFinal(await extrairErro(resposta, t('modalMotivo.erroConcluirAcao')))
+        return
+      }
+      setReviewsRespondidas((prev) => prev.filter((r) => r.id !== descarteFinalAlvo.reviewId))
+      setDescarteFinalAlvo(null)
+      setMotivoDescarteFinal('')
+    } catch {
+      setErroDescarteFinal(t('modalMotivo.erroConcluirAcao'))
+    } finally {
+      setEnviandoDescarteFinal(false)
     }
   }
 
@@ -534,6 +744,95 @@ export default function CuradoriaPage() {
           <h1 className="text-sm font-semibold text-ink">
             {t('titulo')}<span className="text-brand-300">.</span>
           </h1>
+
+          {erroReviewsRespondidas && (
+            <p className="text-xs text-red-400" role="alert">
+              {erroReviewsRespondidas}
+            </p>
+          )}
+
+          {/* Badge + dropdown "Aguardando sua decisao" - so aparece quando
+              ha algo pra decidir, e fica sobreposto (absolute) em vez de
+              empurrar o layout, porque o espaco vertical aqui e precioso
+              (ver comentario acima da LINHA DE TRABALHO). */}
+          {reviewsRespondidas.length > 0 && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setPainelReviewsAberto((v) => !v)}
+                className="flex items-center gap-1.5 rounded-full border border-purple-700/50 bg-purple-950/30 px-3 py-1 text-xs font-medium text-purple-300 hover:border-purple-500"
+              >
+                <span aria-hidden="true">🔔</span>
+                {t('reviewsRespondidas.botaoComContagem', { contagem: reviewsRespondidas.length })}
+              </button>
+
+              {painelReviewsAberto && (
+                <div className="absolute left-0 top-full z-30 mt-2 max-h-[70vh] w-[380px] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-3 shadow-2xl">
+                  <h2 className="mb-2 text-sm font-semibold text-ink">{t('reviewsRespondidas.titulo')}</h2>
+                  {reviewsRespondidas.map((item) => (
+                    <div
+                      key={item.id}
+                      className="mb-2 rounded-xl border border-base-border bg-base-surface2/70 p-3 text-sm last:mb-0"
+                    >
+                      <p className="text-xs text-slate-400">
+                        {rotularTipoRadiografia(item.curation.tipo_radiografia)} · {traduzirAchado(item.curation.achado_principal)}
+                      </p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        <span className="font-medium text-slate-400">{t('reviewsRespondidas.motivoOriginal')}: </span>
+                        {item.motivo}
+                      </p>
+
+                      <div className="mt-2 rounded-lg border border-purple-800/40 bg-purple-950/30 p-2 text-xs text-purple-200/80">
+                        <p className="font-semibold text-purple-300">
+                          {t(item.concordancia === 'concorda' ? 'reviewsRespondidas.concorda' : 'reviewsRespondidas.discorda')}
+                        </p>
+                        <p className="mt-1">{item.parecer_revisor || t('reviewsRespondidas.semParecerEscrito')}</p>
+                      </div>
+
+                      <label className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={!!anonimizacaoConfirmada[item.id]}
+                          onChange={(e) =>
+                            setAnonimizacaoConfirmada((prev) => ({ ...prev, [item.id]: e.target.checked }))
+                          }
+                          className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
+                        />
+                        {t('reviewsRespondidas.confirmarAnonimizacao')}
+                      </label>
+
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => aprovarDecisaoFinal(item)}
+                          disabled={!anonimizacaoConfirmada[item.id] || aplicandoDecisaoId === item.id}
+                          className="flex-1 rounded-lg border-2 border-emerald-600/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+                        >
+                          {aplicandoDecisaoId === item.id
+                            ? t('reviewsRespondidas.aprovando')
+                            : t('reviewsRespondidas.aprovar')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => abrirDescarteFinal(item)}
+                          disabled={aplicandoDecisaoId === item.id}
+                          className="flex-1 rounded-lg border-2 border-red-600/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:border-red-500 hover:bg-red-500/20 disabled:opacity-50"
+                        >
+                          {t('reviewsRespondidas.descartar')}
+                        </button>
+                      </div>
+
+                      {errosDecisaoFinal[item.id] && (
+                        <p className="mt-2 text-xs text-red-400" role="alert">
+                          {errosDecisaoFinal[item.id]}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* LINHA DE TRABALHO - fila (esquerda, coluna vertical estreita) +
@@ -710,6 +1009,22 @@ export default function CuradoriaPage() {
           enviando={enviandoMotivo}
           onCancelar={() => setModalMotivo(null)}
           onConfirmar={confirmarMotivo}
+        />
+      )}
+
+      {/* Descarte da decisao final (segunda opiniao) - mesmo ModalMotivo,
+          tipo "descartar" (mesma justificativa obrigatoria de /discard),
+          so que confirma chamando apply-review-decision numa ficha que
+          pode nao ser a fichaAtiva em edicao. */}
+      {descarteFinalAlvo && (
+        <ModalMotivo
+          tipo="descartar"
+          motivoTexto={motivoDescarteFinal}
+          onMotivoChange={setMotivoDescarteFinal}
+          erro={erroDescarteFinal}
+          enviando={enviandoDescarteFinal}
+          onCancelar={() => setDescarteFinalAlvo(null)}
+          onConfirmar={confirmarDescarteFinal}
         />
       )}
     </div>

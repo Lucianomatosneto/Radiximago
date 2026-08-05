@@ -528,6 +528,25 @@
       "achadosEmRadiografia": "Achados em radiografia",
       "verAchados": "Ver achados em radiografia",
       "voltarParaMarcacao": "Voltar para imagem de marcação"
+    },
+    "reviewsRespondidas": {
+      "botao": "Aguardando sua decisão",
+      "botaoComContagem": "Aguardando sua decisão ({contagem})",
+      "titulo": "Segundas opiniões respondidas",
+      "carregando": "Carregando...",
+      "vazio": "Nenhuma segunda opinião aguardando decisão.",
+      "erroCarregar": "Não foi possível carregar as segundas opiniões respondidas.",
+      "motivoOriginal": "Motivo da solicitação",
+      "parecerDoRevisor": "Parecer do revisor",
+      "concorda": "Concordou com o curador",
+      "discorda": "Discordou do curador",
+      "semParecerEscrito": "Sem parecer escrito.",
+      "confirmarAnonimizacao": "Confirmo que a anonimização foi validada",
+      "aprovar": "Aprovar",
+      "aprovando": "Aprovando...",
+      "descartar": "Descartar",
+      "erroAprovar": "Não foi possível aprovar esta ficha.",
+      "erroDescartar": "Não foi possível descartar esta ficha."
     }
   },
   "SegundaOpiniaoPage": {

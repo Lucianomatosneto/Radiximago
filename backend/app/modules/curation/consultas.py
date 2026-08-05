@@ -113,6 +113,61 @@ def listar_reviews_pendentes(
 
 
 # ---------------------------------------------------------------------
+# GET /curation/reviews/answered  -> fila de segundas opinioes ja
+# respondidas, aguardando a decisao final de quem solicitou
+# ---------------------------------------------------------------------
+@router.get("/reviews/answered")
+def listar_reviews_respondidas(
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Lista as solicitacoes de segunda opiniao com status 'respondida' (o
+    revisor ja deu o parecer, falta aplicar a decisao final via
+    POST /{curation_id}/apply-review-decision) - somente as que o usuario
+    autenticado solicitou, pra cada curador so ver o que ele mesmo pediu.
+    Mesmo formato de contexto (ficha + imagem) de GET /reviews/pending; o
+    parecer do revisor (concordancia/parecer_revisor/decisao_final) fica
+    fora daqui de proposito - ja existe em GET /{curation_id}/reviews.
+    """
+    resultados = (
+        db.query(CurationReview, Curation, OrthancReference)
+        .join(Curation, Curation.id == CurationReview.curation_id)
+        .join(OrthancReference, OrthancReference.id == Curation.orthanc_reference_id)
+        .filter(
+            CurationReview.status == StatusRevisao.RESPONDIDA.value,
+            CurationReview.solicitante_id == usuario.id,
+        )
+        .order_by(CurationReview.id)
+        .all()
+    )
+
+    itens = [
+        {
+            "id": review.id,
+            "motivo": review.motivo,
+            "primeiro_parecer": review.primeiro_parecer,
+            "criado_em": review.criado_em.isoformat() if review.criado_em else None,
+            "curation": {
+                "id": curation.id,
+                "achado_principal": curation.achado_principal,
+                "tipo_radiografia": curation.tipo_radiografia,
+            },
+            "orthanc_reference": {
+                "id": imagem.id,
+                "orthanc_id": imagem.orthanc_id,
+            },
+        }
+        for review, curation, imagem in resultados
+    ]
+
+    return {
+        "quantidade": len(itens),
+        "itens": itens,
+    }
+
+
+# ---------------------------------------------------------------------
 # GET /curation/{orthanc_reference_id}/viewer-url  -> link do OHIF
 # ---------------------------------------------------------------------
 @router.get("/{orthanc_reference_id}/viewer-url")

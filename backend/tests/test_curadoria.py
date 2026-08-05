@@ -150,3 +150,84 @@ def test_aprovar_ficha_inexistente_da_404(client, criar_usuario):
     )
 
     assert resposta.status_code == 404
+
+
+def test_reviews_answered_so_lista_do_proprio_solicitante(client, criar_usuario, criar_ficha):
+    solicitante = criar_usuario(perfil=UserRole.curador)
+    revisor = criar_usuario(perfil=UserRole.curador)
+    outro_curador = criar_usuario(perfil=UserRole.curador)
+    token_solicitante = obter_token(client, solicitante.email)
+    token_revisor = obter_token(client, revisor.email)
+    token_outro = obter_token(client, outro_curador.email)
+
+    ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+
+    resposta = client.post(
+        f"/curation/{ficha.id}/request-review",
+        headers=cabecalho_auth(token_solicitante),
+        json={"motivo": "Duvida sobre o achado principal."},
+    )
+    assert resposta.status_code == 200
+    review_id = resposta.json()["review_id"]
+
+    # Ainda 'solicitada' (sem resposta) - nao aparece em /answered pra ninguem.
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_solicitante))
+    assert resposta.status_code == 200
+    assert resposta.json()["itens"] == []
+
+    resposta = client.post(
+        f"/curation/reviews/{review_id}/respond",
+        headers=cabecalho_auth(token_revisor),
+        json={"concordancia": "discorda", "parecer_revisor": "Parece lesao periapical, nao carie."},
+    )
+    assert resposta.status_code == 200
+
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_solicitante))
+    assert resposta.status_code == 200
+    itens = resposta.json()["itens"]
+    assert len(itens) == 1
+    assert itens[0]["id"] == review_id
+    assert itens[0]["curation"]["id"] == ficha.id
+
+    # Nem o revisor nem um curador nao envolvido veem a review de outro
+    # solicitante - cada um so ve o que ele mesmo pediu.
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_revisor))
+    assert resposta.json()["itens"] == []
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_outro))
+    assert resposta.json()["itens"] == []
+
+
+def test_reviews_answered_some_da_lista_apos_decisao_final(client, criar_usuario, criar_ficha):
+    solicitante = criar_usuario(perfil=UserRole.curador)
+    revisor = criar_usuario(perfil=UserRole.curador)
+    token_solicitante = obter_token(client, solicitante.email)
+    token_revisor = obter_token(client, revisor.email)
+
+    ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+
+    resposta = client.post(
+        f"/curation/{ficha.id}/request-review",
+        headers=cabecalho_auth(token_solicitante),
+        json={"motivo": "Duvida sobre o achado principal."},
+    )
+    review_id = resposta.json()["review_id"]
+
+    client.post(
+        f"/curation/reviews/{review_id}/respond",
+        headers=cabecalho_auth(token_revisor),
+        json={"concordancia": "concorda"},
+    )
+
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_solicitante))
+    assert len(resposta.json()["itens"]) == 1
+
+    resposta = client.post(
+        f"/curation/{ficha.id}/apply-review-decision",
+        headers=cabecalho_auth(token_solicitante),
+        json={"decisao": "aprovar", "anonimizacao_validada": True},
+    )
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == StatusCuradoria.APROVADA.value
+
+    resposta = client.get("/curation/reviews/answered", headers=cabecalho_auth(token_solicitante))
+    assert resposta.json()["itens"] == []
