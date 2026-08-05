@@ -118,7 +118,7 @@ export default function Sidebar() {
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
               >
-                {item.titulo}
+                {t(`itens.${item.chave}`)}
               </Link>
             )
           })}
