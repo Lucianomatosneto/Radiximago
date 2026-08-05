@@ -528,6 +528,25 @@
       "achadosEmRadiografia": "Radiograph findings",
       "verAchados": "View radiograph findings",
       "voltarParaMarcacao": "Back to marking image"
+    },
+    "reviewsRespondidas": {
+      "botao": "Awaiting your decision",
+      "botaoComContagem": "Awaiting your decision ({contagem})",
+      "titulo": "Answered second opinions",
+      "carregando": "Loading...",
+      "vazio": "No second opinion awaiting a decision.",
+      "erroCarregar": "Couldn't load the answered second opinions.",
+      "motivoOriginal": "Request reason",
+      "parecerDoRevisor": "Reviewer's opinion",
+      "concorda": "Agreed with the curator",
+      "discorda": "Disagreed with the curator",
+      "semParecerEscrito": "No written opinion.",
+      "confirmarAnonimizacao": "I confirm anonymization was validated",
+      "aprovar": "Approve",
+      "aprovando": "Approving...",
+      "descartar": "Discard",
+      "erroAprovar": "Couldn't approve this record.",
+      "erroDescartar": "Couldn't discard this record."
     }
   },
   "SegundaOpiniaoPage": {
