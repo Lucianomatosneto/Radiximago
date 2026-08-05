@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -10,42 +11,31 @@ import type { Marcacao } from '../../lib/marcacoes'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
+const TAG_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US' }
+
 // Mesmos valores (mesmos usados na tela de Curadoria e no restante do
 // sistema) - o pedido foi pra segunda opiniao mostrar "as mesmas opcoes da
-// tela do curador", entao os rotulos precisam bater exatamente.
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
-]
+// tela do curador", entao os rotulos precisam bater exatamente. Os rotulos
+// em si vem do namespace compartilhado Pesquisa.opcoes (mesmo texto usado
+// em Pesquisa avançada e em Curadoria), pra nao duplicar a mesma traducao
+// pela quarta vez.
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+const OPCOES_GENERO = ['masculino', 'feminino']
+const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
-const OPCOES_GENERO = [
-  { valor: 'masculino', label: 'Masculino' },
-  { valor: 'feminino', label: 'Feminino' },
-]
-
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
-]
-
-const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', label: 'Normal' },
-  { valor: 'carie', label: 'Cárie' },
-  { valor: 'lesao_periapical', label: 'Lesão periapical' },
-  { valor: 'perda_ossea', label: 'Perda óssea' },
-  { valor: 'dente_incluso', label: 'Dente incluso' },
-  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
-  { valor: 'erro_tecnico', label: 'Erro técnico' },
-  { valor: 'outro', label: 'Outro' },
-]
-
-function rotular(opcoes: { valor: string; label: string }[], valor: string | null): string {
-  if (!valor) return '—'
-  return opcoes.find((o) => o.valor === valor)?.label ?? valor
+// Mapeia o valor cru do achado principal pra chave de traducao do namespace
+// Pesquisa.opcoes.achadoPrincipal (a unica lista cuja chave nao bate 1:1
+// com o valor cru - as outras 3 usam o mesmo texto como valor e como
+// chave).
+const CHAVE_ACHADO: Record<string, string> = {
+  normal: 'normal',
+  carie: 'carie',
+  lesao_periapical: 'lesaoPeriapical',
+  perda_ossea: 'perdaOssea',
+  dente_incluso: 'denteIncluso',
+  tratamento_endodontico: 'tratamentoEndodontico',
+  erro_tecnico: 'erroTecnico',
+  outro: 'outro',
 }
 
 interface ReviewPendente {
@@ -93,11 +83,11 @@ interface FichaCompleta {
   anonimizacao_validada: boolean
 }
 
-function formatarData(valor: string | null): string {
+function formatarData(valor: string | null, tagLocale: string): string {
   if (!valor) return '—'
   const data = new Date(valor)
   if (Number.isNaN(data.getTime())) return '—'
-  return data.toLocaleString('pt-BR')
+  return data.toLocaleString(tagLocale)
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -112,6 +102,27 @@ async function extrairErro(response: Response, generica: string): Promise<string
 
 export default function SegundaOpiniaoPage() {
   const router = useRouter()
+  const t = useTranslations('SegundaOpiniaoPage')
+  const tComum = useTranslations('Comum')
+  const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tVisualizador = useTranslations('Curadoria.visualizador')
+  const tCancelar = useTranslations('Curadoria.modalMotivo')
+  const tDadosSobrepostos = useTranslations('Curadoria.dadosSobrepostos')
+  const locale = useLocale()
+  const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
+
+  function rotular(opcoes: string[], valor: string | null, namespace: 'tipoRadiografia' | 'genero' | 'qualidadeTecnica'): string {
+    if (!valor || !opcoes.includes(valor)) return valor ?? '—'
+    return tOpcoes(`${namespace}.${valor}`)
+  }
+
+  function traduzirAchado(valor: string | null): string {
+    if (!valor) return '—'
+    const chave = CHAVE_ACHADO[valor]
+    if (!chave) return valor
+    return tOpcoes(`achadoPrincipal.${chave}`)
+  }
+
   const [token, setToken] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
 
@@ -283,7 +294,7 @@ export default function SegundaOpiniaoPage() {
         return
       }
       if (!resposta.ok) {
-        setErroFormulario(await extrairErro(resposta, 'Não foi possível enviar sua avaliação.'))
+        setErroFormulario(await extrairErro(resposta, t('erroEnviarAvaliacao')))
         return
       }
 
@@ -291,7 +302,7 @@ export default function SegundaOpiniaoPage() {
       limparSelecao()
       carregarFila(token)
     } catch {
-      setErroFormulario('Não foi possível enviar sua avaliação.')
+      setErroFormulario(t('erroEnviarAvaliacao'))
     } finally {
       setEnviando(false)
     }
@@ -300,7 +311,7 @@ export default function SegundaOpiniaoPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -313,13 +324,13 @@ export default function SegundaOpiniaoPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">Segunda opinião</h1>
+          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
             {/* LISTA - reviews pendentes */}
             <section className="rounded-xl border border-base-border bg-base-surface">
               <h2 className="border-b border-base-border px-4 py-3 text-sm font-semibold text-slate-200">
-                Aguardando parecer
+                {t('aguardandoParecer')}
               </h2>
 
               {erroFila && (
@@ -330,9 +341,9 @@ export default function SegundaOpiniaoPage() {
 
               <div className="max-h-[75vh] overflow-y-auto">
                 {carregandoFila ? (
-                  <p className="p-4 text-sm text-slate-500">Carregando fila...</p>
+                  <p className="p-4 text-sm text-slate-500">{t('carregandoFila')}</p>
                 ) : reviews.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-500">Nenhuma solicitação pendente.</p>
+                  <p className="p-4 text-sm text-slate-500">{t('nenhumaPendente')}</p>
                 ) : (
                   <ul className="divide-y divide-slate-800">
                     {reviews.map((review) => (
@@ -345,14 +356,14 @@ export default function SegundaOpiniaoPage() {
                           }`}
                         >
                           <p className="text-slate-200">
-                            {rotular(OPCOES_ACHADO_PRINCIPAL, review.curation.achado_principal)}
+                            {traduzirAchado(review.curation.achado_principal)}
                           </p>
                           <p className="mt-1 text-slate-400">
-                            {rotular(OPCOES_TIPO_RADIOGRAFIA, review.curation.tipo_radiografia)}
+                            {rotular(OPCOES_TIPO_RADIOGRAFIA, review.curation.tipo_radiografia, 'tipoRadiografia')}
                           </p>
                           <p className="mt-1 text-xs text-slate-500 line-clamp-2">{review.motivo}</p>
                           <p className="mt-1 text-xs text-slate-600">
-                            {formatarData(review.criado_em)}
+                            {formatarData(review.criado_em, tagLocale)}
                           </p>
                         </button>
                       </li>
@@ -365,7 +376,7 @@ export default function SegundaOpiniaoPage() {
             {/* PAINEL - imagem + ficha completa do curador + decisao do revisor */}
             {!reviewAtiva ? (
               <section className="flex min-h-[75vh] items-center justify-center rounded-xl border border-base-border bg-base-surface p-8 text-center text-slate-500">
-                Selecione uma solicitação na lista ao lado
+                {t('selecioneSolicitacao')}
               </section>
             ) : (
               // Igual a tela de Curadoria: TUDO (imagem, o que o curador
@@ -385,17 +396,17 @@ export default function SegundaOpiniaoPage() {
                       <button
                         type="button"
                         onClick={alternarTelaCheia}
-                        aria-label={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
-                        title={telaCheia ? 'Sair da tela cheia' : 'Abrir em tela cheia'}
+                        aria-label={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
+                        title={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
                         className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                       >
                         {telaCheia ? (
                           <>
-                            <span aria-hidden="true">⤡</span> Voltar
+                            <span aria-hidden="true">⤡</span> {tVisualizador('voltar')}
                           </>
                         ) : (
                           <>
-                            <span aria-hidden="true">⛶</span> Tela cheia
+                            <span aria-hidden="true">⛶</span> {tVisualizador('telaCheia')}
                           </>
                         )}
                       </button>
@@ -404,17 +415,17 @@ export default function SegundaOpiniaoPage() {
 
                   {carregandoViewer ? (
                     <div className="flex flex-1 items-center justify-center text-slate-400">
-                      Carregando visualizador...
+                      {tVisualizador('carregandoVisualizador')}
                     </div>
                   ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
                     <iframe
                       src={viewerInfo.viewer_url}
-                      title="Visualizador OHIF"
+                      title={tVisualizador('ohifTitulo')}
                       className="h-full min-h-[45vh] w-full flex-1 border-0"
                     />
                   ) : (
                     <div className="flex flex-1 items-center justify-center p-8 text-center text-slate-500">
-                      {viewerInfo?.motivo ?? 'Não foi possível carregar o visualizador para esta imagem.'}
+                      {viewerInfo?.motivo ?? tVisualizador('naoDisponivel')}
                     </div>
                   )}
                 </section>
@@ -425,29 +436,29 @@ export default function SegundaOpiniaoPage() {
                     informacao completa (nao so achado principal e tipo). */}
                 <section className="rounded-xl border border-base-border bg-base-surface p-4">
                   <h2 className="mb-3 text-sm font-semibold text-slate-200">
-                    O que o curador registrou (somente leitura)
+                    {t('oQueCuradorRegistrou')}
                   </h2>
 
                   <dl className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-slate-500">Motivo da solicitação de segunda opinião</dt>
+                      <dt className="text-xs text-slate-500">{t('motivoSolicitacao')}</dt>
                       <dd className="text-slate-300">{reviewAtiva.motivo}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-500">Primeiro parecer do curador (ao solicitar)</dt>
+                      <dt className="text-xs text-slate-500">{t('primeiroParecer')}</dt>
                       <dd className="text-slate-300">{reviewAtiva.primeiro_parecer || '—'}</dd>
                     </div>
                   </dl>
 
                   {carregandoFicha ? (
-                    <p className="text-sm text-slate-500">Carregando ficha completa...</p>
+                    <p className="text-sm text-slate-500">{t('carregandoFichaCompleta')}</p>
                   ) : !fichaCompleta ? (
-                    <p className="text-sm text-slate-500">Não foi possível carregar os dados completos da ficha.</p>
+                    <p className="text-sm text-slate-500">{t('erroCarregarFichaCompleta')}</p>
                   ) : (
                     <>
                       <BarraClassificacao
-                        tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia)}
-                        qualidade={rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica)}
+                        tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia, 'tipoRadiografia')}
+                        qualidade={rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica, 'qualidadeTecnica')}
                         dentes={fichaCompleta.dentes}
                         alteracoesObservadas={fichaCompleta.alteracoes_observadas}
                         achadosDetalhe={fichaCompleta.achados_detalhe}
@@ -457,21 +468,21 @@ export default function SegundaOpiniaoPage() {
 
                       <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-base-border pt-4 text-sm sm:grid-cols-4">
                         <div>
-                          <dt className="text-xs text-slate-500">Faixa etária</dt>
+                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('faixaEtaria')}</dt>
                           <dd className="text-slate-300">
                             {fichaCompleta.idade_min || fichaCompleta.idade_max
-                              ? `${fichaCompleta.idade_min ?? '?'} a ${fichaCompleta.idade_max ?? '?'}`
+                              ? t('faixaEtariaValor', { min: fichaCompleta.idade_min ?? '?', max: fichaCompleta.idade_max ?? '?' })
                               : '—'}
                           </dd>
                         </div>
                         <div>
-                          <dt className="text-xs text-slate-500">Sexo</dt>
-                          <dd className="text-slate-300">{rotular(OPCOES_GENERO, fichaCompleta.genero)}</dd>
+                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('sexo')}</dt>
+                          <dd className="text-slate-300">{rotular(OPCOES_GENERO, fichaCompleta.genero, 'genero')}</dd>
                         </div>
                         <div>
-                          <dt className="text-xs text-slate-500">Anonimização validada</dt>
+                          <dt className="text-xs text-slate-500">{tDadosSobrepostos('anonimizacaoValidada')}</dt>
                           <dd className={fichaCompleta.anonimizacao_validada ? 'text-emerald-400' : 'text-red-400'}>
-                            {fichaCompleta.anonimizacao_validada ? 'Sim' : 'Não'}
+                            {fichaCompleta.anonimizacao_validada ? t('sim') : t('nao')}
                           </dd>
                         </div>
                       </dl>
@@ -479,7 +490,7 @@ export default function SegundaOpiniaoPage() {
                       {fichaCompleta.observacoes_internas && (
                         <div className="mt-3 rounded-lg border border-base-border bg-base-surface2/70 p-3">
                           <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            Observações internas do curador
+                            {t('observacoesInternasCurador')}
                           </p>
                           <p className="text-sm text-slate-300">{fichaCompleta.observacoes_internas}</p>
                         </div>
@@ -487,7 +498,7 @@ export default function SegundaOpiniaoPage() {
 
                       <div className="mt-4 border-t border-base-border pt-4">
                         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                          Marcações feitas pelo curador na imagem
+                          {t('marcacoesFeitasPeloCurador')}
                         </p>
                         <MarcacaoAchado curationId={fichaCompleta.id} marcacoes={fichaCompleta.marcacoes} />
                       </div>
@@ -500,9 +511,9 @@ export default function SegundaOpiniaoPage() {
                     sem observacoes. Clicar em um dos dois JA envia a
                     resposta. */}
                 <section className="rounded-xl border border-base-border bg-base-surface p-4">
-                  <h2 className="mb-1 text-sm font-semibold text-slate-200">Sua avaliação</h2>
+                  <h2 className="mb-1 text-sm font-semibold text-slate-200">{t('suaAvaliacao')}</h2>
                   <p className="mb-4 text-xs text-slate-500">
-                    Depois de analisar o que o curador registrou acima, você concorda com essa avaliação ou discorda dela?
+                    {t('instrucaoAvaliacao')}
                   </p>
 
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -515,7 +526,7 @@ export default function SegundaOpiniaoPage() {
                       <span className="text-3xl" aria-hidden="true">
                         ✓
                       </span>
-                      <span className="text-base font-semibold">Concordar com o curador</span>
+                      <span className="text-base font-semibold">{t('concordar')}</span>
                     </button>
                     <button
                       type="button"
@@ -526,7 +537,7 @@ export default function SegundaOpiniaoPage() {
                       <span className="text-3xl" aria-hidden="true">
                         ✕
                       </span>
-                      <span className="text-base font-semibold">Discordar</span>
+                      <span className="text-base font-semibold">{t('discordar')}</span>
                     </button>
                   </div>
 
@@ -543,7 +554,7 @@ export default function SegundaOpiniaoPage() {
                       disabled={enviando}
                       className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
                     >
-                      Cancelar
+                      {tCancelar('cancelar')}
                     </button>
                   </div>
                 </section>
