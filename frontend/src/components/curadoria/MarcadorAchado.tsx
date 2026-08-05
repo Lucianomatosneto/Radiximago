@@ -357,7 +357,19 @@ export default function MarcadorAchado({
           "muito ampliada" (sem limite real de altura). Com o tamanho
           calculado manualmente, o SVG por cima (absolute inset-0) sempre
           bate pixel a pixel com a imagem. */}
-      <div ref={containerRef} className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-base-border bg-black/10">
+      {/* bg-black (nao mais bg-black/10): o "contain fit" abaixo preserva a
+          proporcao da imagem sem distorcer, entao quando a proporcao dela
+          nao bate exatamente com a do painel (ex.: imagem panoramica, bem
+          larga, num painel proporcionalmente mais alto), sobra uma faixa
+          vazia em cima/embaixo por design - a alternativa seria cortar as
+          bordas esquerda/direita da imagem pra preencher tudo, que em
+          panoramicas pode cortar a regiao de sisos/ramo mandibular
+          (conteudo clinicamente relevante). Fundo preto SOLIDO (em vez do
+          quase-transparente de antes) faz essa faixa ficar visualmente
+          indistinguivel do fundo preto da propria radiografia - a imagem
+          "parece" encostar nas bordas pro olho humano, sem cortar nada de
+          verdade. */}
+      <div ref={containerRef} className="flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border border-base-border bg-black">
         {erro ? (
           <div className="flex h-40 w-full items-center justify-center text-xs text-slate-500">
             {t('semPreview')}
