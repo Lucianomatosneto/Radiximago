@@ -13,14 +13,29 @@ import { useEffect, useRef, useState } from 'react'
 // navegador e atrasa outras chamadas (ex.: abrir uma imagem). Por isso o
 // fetch so dispara quando a miniatura entra na area visivel (lazy load via
 // IntersectionObserver), igual ao lazy-loading nativo de <img loading="lazy">.
+//
+// `habilitado` (default true, entao nenhum outro uso deste componente e
+// afetado) e um segundo portao, alem da visibilidade: na Curadoria, a
+// fileira horizontal de miniaturas passa `habilitado={false}` ate a
+// imagem principal + painel de marcacao da primeira ficha estarem
+// prontos - sem isso, dezenas de miniaturas entram visiveis de uma vez
+// (a fileira inteira cabe na tela) e disparam seus fetches (cada um de
+// varios MB) exatamente na janela em que as chamadas CRITICAS (criar a
+// ficha, buscar viewer-url, buscar a ficha completa) tambem estao
+// disputando as mesmas poucas conexoes simultaneas do navegador, atrasando
+// a imagem principal. `priority: 'low'` no fetch (linha abaixo) reforça
+// isso pro navegador que suporta a Fetch Priority API (Chrome/Edge) -
+// nos que nao suportam, o gate por `habilitado` sozinho ja resolve.
 export default function MiniaturaFila({
   orthancReferenceId,
   alt,
   className,
+  habilitado = true,
 }: {
   orthancReferenceId: number
   alt: string
   className?: string
+  habilitado?: boolean
 }) {
   const [src, setSrc] = useState('')
   const [erro, setErro] = useState(false)
@@ -55,7 +70,7 @@ export default function MiniaturaFila({
   }, [])
 
   useEffect(() => {
-    if (!visivel) return
+    if (!visivel || !habilitado) return
 
     let urlObjeto = ''
     let cancelado = false
@@ -64,7 +79,9 @@ export default function MiniaturaFila({
       try {
         const resposta = await fetch(
           `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`,
-          { credentials: 'include' }
+          // "priority" (Fetch Priority API) e ignorado silenciosamente em
+          // navegadores sem suporte - nao precisa de feature-detection.
+          { credentials: 'include', priority: 'low' } as RequestInit
         )
         if (!resposta.ok) {
           if (!cancelado) setErro(true)
@@ -83,7 +100,7 @@ export default function MiniaturaFila({
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
-  }, [visivel, orthancReferenceId])
+  }, [visivel, habilitado, orthancReferenceId])
 
   return (
     <div ref={containerRef} className={className}>
