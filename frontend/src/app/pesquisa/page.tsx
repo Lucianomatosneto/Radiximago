@@ -10,6 +10,7 @@ import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 // `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
 // (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
@@ -193,7 +194,7 @@ function PesquisaConteudo() {
   const traduzirDificuldade = (chave: string) => t(`opcoes.dificuldade.${chave}`)
   const traduzirOrigem = (chave: string) => t(`opcoes.origem.${chave}`)
 
-  const [token, setToken] = useState<string | null>(null)
+  const [autenticado, setAutenticado] = useState(false)
   const [carregandoPagina, setCarregandoPagina] = useState(true)
 
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS)
@@ -214,30 +215,32 @@ function PesquisaConteudo() {
   const [quantidadeLote, setQuantidadeLote] = useState(10)
 
   useEffect(() => {
-    const tokenAtual = localStorage.getItem('access_token')
-    if (!tokenAtual) {
-      router.push('/login')
-      return
-    }
-    setToken(tokenAtual)
-    setCarregandoPagina(false)
+    obterSessaoAtual().then((sessao) => {
+      if (!sessao) {
+        router.push('/login')
+        return
+      }
+      setAutenticado(true)
+      setCarregandoPagina(false)
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
-      headers: { Authorization: `Bearer ${tokenAtual}` },
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
+        credentials: 'include',
+      })
+        .then((resposta) => (resposta.ok ? resposta.json() : null))
+        .then((dados) => {
+          if (dados) setTotalDisponivel(dados.total)
+        })
+        .catch(() => {
+          // sem o total geral, a tela continua funcionando normalmente
+        })
     })
-      .then((resposta) => (resposta.ok ? resposta.json() : null))
-      .then((dados) => {
-        if (dados) setTotalDisponivel(dados.total)
-      })
-      .catch(() => {
-        // sem o total geral, a tela continua funcionando normalmente
-      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
   // formulario com eles e ja dispara a busca automaticamente.
   useEffect(() => {
-    if (!token) return
+    if (!autenticado) return
 
     const filtrosDaUrl: Filtros = { ...FILTROS_VAZIOS }
     let temFiltroNaUrl = false
@@ -254,14 +257,14 @@ function PesquisaConteudo() {
       pesquisar(filtrosDaUrl)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token])
+  }, [autenticado])
 
   function atualizarFiltro(campo: keyof Filtros, valor: string) {
     setFiltros({ ...filtros, [campo]: valor })
   }
 
   async function pesquisar(filtrosParaUsar: Filtros = filtros) {
-    if (!token) return
+    if (!autenticado) return
     setPesquisando(true)
     setErro('')
     setJaPesquisou(true)
@@ -286,7 +289,7 @@ function PesquisaConteudo() {
 
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?${params.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       })
       if (resposta.status === 401) {
         router.push('/login')
