@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Topbar from '../../components/Topbar'
-import FilaCuradoria, { ImagemPendente } from '../../components/curadoria/FilaCuradoria'
+import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
 import PainelAchadosRadiografia from '../../components/curadoria/PainelAchadosRadiografia'
@@ -118,7 +118,6 @@ export default function CuradoriaPage() {
   const [carregandoFila, setCarregandoFila] = useState(false)
   const [erroFila, setErroFila] = useState('')
   const [criandoId, setCriandoId] = useState<number | null>(null)
-  const [filaColapsada, setFilaColapsada] = useState(false)
   const [indiceAtual, setIndiceAtual] = useState<number | null>(null)
   // So dispara uma vez, na entrada na tela - depois disso, trocar de item
   // pendente ja e coberto por irParaProxima (avanco automatico apos
@@ -132,6 +131,22 @@ export default function CuradoriaPage() {
   const [carregandoViewer, setCarregandoViewer] = useState(false)
   const visualizadorRef = useRef<HTMLDivElement | null>(null)
   const [telaCheia, setTelaCheia] = useState(false)
+  // So dispara uma vez, na entrada na tela - mesmo padrao ja usado em
+  // segunda-opiniao/page.tsx (autoTelaCheiaRef). Depois desse primeiro
+  // disparo, trocar de imagem (proxima/anterior/clique na fila) nao forca
+  // tela cheia de novo, entao um curador que saiu do modo tela cheia
+  // continua fora dele ao avancar pra proxima imagem.
+  const autoTelaCheiaRef = useRef(false)
+  // Trava contra 2 chamadas de alternarTelaCheia quase simultaneas pro
+  // mesmo clique - ver comentario dentro de alternarTelaCheia.
+  const telaCheiaEmAndamentoRef = useRef(false)
+  // Espelham fichaAtiva/viewerInfo em refs (mantidos por 2 useEffect logo
+  // abaixo) - servem so pro listener de fallback de tela cheia ler o
+  // estado mais atual sem precisar que o PROPRIO efeito que arma o
+  // listener dependa de fichaAtiva/viewerInfo. Ver o comentario grande no
+  // useEffect do fallback (mais abaixo) pro motivo disso.
+  const fichaAtivaRef = useRef<FichaAtiva | null>(null)
+  const viewerInfoRef = useRef<ViewerInfo | null>(null)
   const [modoAjustado, setModoAjustado] = useState(false)
   const [iframeReloadKey, setIframeReloadKey] = useState(0)
   // Painel ao lado do OHIF alterna entre a imagem de marcacao e os achados
@@ -211,6 +226,95 @@ export default function CuradoriaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
 
+  // Mantem fichaAtivaRef/viewerInfoRef sincronizados com o estado real -
+  // usados pelo listener de fallback abaixo pra ler o valor mais recente
+  // sem precisar que o efeito que arma o listener dependa deles.
+  useEffect(() => {
+    fichaAtivaRef.current = fichaAtiva
+  }, [fichaAtiva])
+  useEffect(() => {
+    viewerInfoRef.current = viewerInfo
+  }, [viewerInfo])
+
+  // Entra em tela cheia automaticamente assim que a PRIMEIRA imagem fica
+  // pronta (so uma vez) - reaproveita a mesma alternarTelaCheia usada pelo
+  // botao manual. Mesmo padrao ja usado em segunda-opiniao/page.tsx, com
+  // uma diferenca importante: aqui exige tambem `fichaAtiva`, nao so
+  // `viewerInfo`. Na Segunda Opiniao a review ja existe, entao
+  // `reviewAtiva` e setado de forma sincrona antes dos fetches; aqui,
+  // abrir uma imagem PRIMEIRO cria a ficha no backend (await) pra so
+  // depois setar fichaAtiva - e carregarViewerUrl roda em paralelo com
+  // essa criacao, entao viewerInfo costuma ficar pronto ANTES de
+  // fichaAtiva. Disparar so com viewerInfo (sem fichaAtiva) entrava em
+  // tela cheia ainda no estado vazio "Selecione uma imagem na fila ao
+  // lado" (PainelVisualizador so mostra o iframe quando fichaAtiva E
+  // viewerInfo estao prontos - ver viewerPronto em PainelVisualizador.tsx).
+  useEffect(() => {
+    if (autoTelaCheiaRef.current) return
+    if (!fichaAtiva) return
+    if (!viewerInfo?.abrivel || !viewerInfo.viewer_url) return
+    autoTelaCheiaRef.current = true
+    alternarTelaCheia()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fichaAtiva, viewerInfo])
+
+  // Fallback pra quando a tentativa direta acima e negada pelo navegador:
+  // navegadores so aceitam a Fullscreen API dentro de uma janela curta
+  // depois de uma interacao real do usuario ("ativacao" do clique), e
+  // essa janela e mais apertada aqui do que na Segunda Opiniao - abrir a
+  // primeira imagem exige 2 idas ao backend em sequencia (criar a ficha,
+  // so depois buscar a ficha completa) antes de fichaAtiva ficar pronto,
+  // entao a ativacao do clique que trouxe o curador ate aqui (no menu)
+  // pode ja ter expirado quando o efeito acima dispara - o pedido e
+  // negado em silencio (alternarTelaCheia so ignora o erro).
+  //
+  // ESSENCIAL: este efeito roda com dependencia VAZIA (arma o listener
+  // uma unica vez, na montagem da pagina) - NAO com [fichaAtiva,
+  // viewerInfo] como estava antes. Antes, o listener vivia dentro do
+  // MESMO efeito que a tentativa direta: toda vez que fichaAtiva ou
+  // viewerInfo mudavam de referencia (ex.: ao trocar de imagem pela fila,
+  // mesmo que o curador ainda nao tivesse clicado em lugar nenhum), o
+  // cleanup do efeito removia os listeners de pointerdown/keydown - mas
+  // como autoTelaCheiaRef.current ja estava true (setado na 1a vez que o
+  // efeito rodou de verdade), o efeito nunca os recriava, deixando a
+  // pagina sem NENHUM listener de fallback pelo resto da sessao (o botao
+  // manual continuava funcionando normalmente, por ter handler proprio,
+  // direto, sem depender desse listener). Com dependencia vazia, o
+  // listener e armado uma vez so e sobrevive ate realmente disparar -
+  // le o estado mais atual via fichaAtivaRef/viewerInfoRef (nao via
+  // closure), entao funciona independente de quantas imagens ja tenham
+  // trocado antes da primeira interacao real do curador.
+  useEffect(() => {
+    let consumido = false
+
+    function aoInteragir() {
+      if (consumido) return
+      if (document.fullscreenElement) {
+        // A tentativa direta (efeito acima) ja funcionou - nada a fazer
+        // aqui, so para de escutar (chamar alternarTelaCheia de novo
+        // SAIRIA da tela cheia, por ser um alternador).
+        consumido = true
+        document.removeEventListener('pointerdown', aoInteragir)
+        document.removeEventListener('keydown', aoInteragir)
+        return
+      }
+      const ficha = fichaAtivaRef.current
+      const viewer = viewerInfoRef.current
+      if (!ficha || !viewer?.abrivel || !viewer.viewer_url) return // continua escutando a proxima interacao
+      consumido = true
+      document.removeEventListener('pointerdown', aoInteragir)
+      document.removeEventListener('keydown', aoInteragir)
+      alternarTelaCheia()
+    }
+
+    document.addEventListener('pointerdown', aoInteragir)
+    document.addEventListener('keydown', aoInteragir)
+    return () => {
+      document.removeEventListener('pointerdown', aoInteragir)
+      document.removeEventListener('keydown', aoInteragir)
+    }
+  }, [])
+
   function aplicarFila(itens: ImagemPendente[], total: number, opcoes?: { append?: boolean }) {
     const novaFila = opcoes?.append ? [...filaRef.current, ...itens] : itens
     const novaOrdem = opcoes?.append ? [...ordemInicialRef.current, ...itens] : itens
@@ -262,6 +366,19 @@ export default function CuradoriaPage() {
 
   async function alternarTelaCheia() {
     if (!visualizadorRef.current) return
+    // Trava contra chamadas concorrentes pro MESMO clique: o listener de
+    // fallback (useEffect logo acima) e o proprio botao "Tela cheia" podem
+    // disparar quase juntos quando a primeira interacao do curador cai
+    // bem em cima do botao (pointerdown aciona o fallback, o click do
+    // botao aciona de novo alguns ms depois). Sem essa trava, a 2a chamada
+    // via de regra ainda pega document.fullscreenElement vazio (a
+    // transicao do navegador nao terminou) e entra em tela cheia de novo
+    // - ou, se ja tiver terminado, LE fullscreenElement preenchido e SAI
+    // dela, cancelando a 1a chamada (resultado: parece que nada
+    // aconteceu). Enquanto uma chamada esta em andamento, as demais sao
+    // ignoradas.
+    if (telaCheiaEmAndamentoRef.current) return
+    telaCheiaEmAndamentoRef.current = true
     try {
       if (document.fullscreenElement) {
         await document.exitFullscreen()
@@ -270,6 +387,8 @@ export default function CuradoriaPage() {
       }
     } catch {
       // navegador pode negar (ex.: sem interacao do usuario) - ignora
+    } finally {
+      telaCheiaEmAndamentoRef.current = false
     }
   }
 
@@ -583,7 +702,6 @@ export default function CuradoriaPage() {
     setFichaAtiva(null)
     setViewerInfo(null)
     setForm(FORM_VAZIO)
-    setFilaColapsada(false)
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
@@ -723,6 +841,90 @@ export default function CuradoriaPage() {
 
   const fichaVisivel = !!fichaAtiva && !modoAjustado
 
+  // Badge + dropdown "Aguardando sua decisao" - ao lado dos botoes de acao
+  // (Salvar/Aprovar/Solicitar segunda opiniao/Descartar) na barra superior,
+  // por pedido - antes ficava no cabecalho da pagina. So aparece quando ha
+  // algo pra decidir. O dropdown fica sobreposto (absolute) em vez de
+  // empurrar o layout.
+  const badgeReviewsRespondidas = reviewsRespondidas.length === 0 ? null : (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setPainelReviewsAberto((v) => !v)}
+        className="flex items-center gap-1.5 rounded-full border border-purple-700/50 bg-purple-950/30 px-3 py-1 text-xs font-medium text-purple-300 hover:border-purple-500"
+      >
+        <span aria-hidden="true">🔔</span>
+        {t('reviewsRespondidas.botaoComContagem', { contagem: reviewsRespondidas.length })}
+      </button>
+
+      {painelReviewsAberto && (
+        <div className="absolute right-0 top-full z-30 mt-2 max-h-[70vh] w-[380px] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-3 shadow-2xl">
+          <h2 className="mb-2 text-sm font-semibold text-ink">{t('reviewsRespondidas.titulo')}</h2>
+          {reviewsRespondidas.map((item) => (
+            <div
+              key={item.id}
+              className="mb-2 rounded-xl border border-base-border bg-base-surface2/70 p-3 text-sm last:mb-0"
+            >
+              <p className="text-xs text-slate-400">
+                {rotularTipoRadiografia(item.curation.tipo_radiografia)} · {traduzirAchado(item.curation.achado_principal)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                <span className="font-medium text-slate-400">{t('reviewsRespondidas.motivoOriginal')}: </span>
+                {item.motivo}
+              </p>
+
+              <div className="mt-2 rounded-lg border border-purple-800/40 bg-purple-950/30 p-2 text-xs text-purple-200/80">
+                <p className="font-semibold text-purple-300">
+                  {t(item.concordancia === 'concorda' ? 'reviewsRespondidas.concorda' : 'reviewsRespondidas.discorda')}
+                </p>
+                <p className="mt-1">{item.parecer_revisor || t('reviewsRespondidas.semParecerEscrito')}</p>
+              </div>
+
+              <label className="mt-3 flex items-center gap-2 text-xs text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={!!anonimizacaoConfirmada[item.id]}
+                  onChange={(e) =>
+                    setAnonimizacaoConfirmada((prev) => ({ ...prev, [item.id]: e.target.checked }))
+                  }
+                  className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
+                />
+                {t('reviewsRespondidas.confirmarAnonimizacao')}
+              </label>
+
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => aprovarDecisaoFinal(item)}
+                  disabled={!anonimizacaoConfirmada[item.id] || aplicandoDecisaoId === item.id}
+                  className="flex-1 rounded-lg border-2 border-emerald-600/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+                >
+                  {aplicandoDecisaoId === item.id
+                    ? t('reviewsRespondidas.aprovando')
+                    : t('reviewsRespondidas.aprovar')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => abrirDescarteFinal(item)}
+                  disabled={aplicandoDecisaoId === item.id}
+                  className="flex-1 rounded-lg border-2 border-red-600/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:border-red-500 hover:bg-red-500/20 disabled:opacity-50"
+                >
+                  {t('reviewsRespondidas.descartar')}
+                </button>
+              </div>
+
+              {errosDecisaoFinal[item.id] && (
+                <p className="mt-2 text-xs text-red-400" role="alert">
+                  {errosDecisaoFinal[item.id]}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <div className="flex h-screen flex-col bg-base">
       <Topbar />
@@ -750,253 +952,170 @@ export default function CuradoriaPage() {
               {erroReviewsRespondidas}
             </p>
           )}
-
-          {/* Badge + dropdown "Aguardando sua decisao" - so aparece quando
-              ha algo pra decidir, e fica sobreposto (absolute) em vez de
-              empurrar o layout, porque o espaco vertical aqui e precioso
-              (ver comentario acima da LINHA DE TRABALHO). */}
-          {reviewsRespondidas.length > 0 && (
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setPainelReviewsAberto((v) => !v)}
-                className="flex items-center gap-1.5 rounded-full border border-purple-700/50 bg-purple-950/30 px-3 py-1 text-xs font-medium text-purple-300 hover:border-purple-500"
-              >
-                <span aria-hidden="true">🔔</span>
-                {t('reviewsRespondidas.botaoComContagem', { contagem: reviewsRespondidas.length })}
-              </button>
-
-              {painelReviewsAberto && (
-                <div className="absolute left-0 top-full z-30 mt-2 max-h-[70vh] w-[380px] overflow-y-auto rounded-2xl border border-base-border bg-base-surface p-3 shadow-2xl">
-                  <h2 className="mb-2 text-sm font-semibold text-ink">{t('reviewsRespondidas.titulo')}</h2>
-                  {reviewsRespondidas.map((item) => (
-                    <div
-                      key={item.id}
-                      className="mb-2 rounded-xl border border-base-border bg-base-surface2/70 p-3 text-sm last:mb-0"
-                    >
-                      <p className="text-xs text-slate-400">
-                        {rotularTipoRadiografia(item.curation.tipo_radiografia)} · {traduzirAchado(item.curation.achado_principal)}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        <span className="font-medium text-slate-400">{t('reviewsRespondidas.motivoOriginal')}: </span>
-                        {item.motivo}
-                      </p>
-
-                      <div className="mt-2 rounded-lg border border-purple-800/40 bg-purple-950/30 p-2 text-xs text-purple-200/80">
-                        <p className="font-semibold text-purple-300">
-                          {t(item.concordancia === 'concorda' ? 'reviewsRespondidas.concorda' : 'reviewsRespondidas.discorda')}
-                        </p>
-                        <p className="mt-1">{item.parecer_revisor || t('reviewsRespondidas.semParecerEscrito')}</p>
-                      </div>
-
-                      <label className="mt-3 flex items-center gap-2 text-xs text-slate-300">
-                        <input
-                          type="checkbox"
-                          checked={!!anonimizacaoConfirmada[item.id]}
-                          onChange={(e) =>
-                            setAnonimizacaoConfirmada((prev) => ({ ...prev, [item.id]: e.target.checked }))
-                          }
-                          className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
-                        />
-                        {t('reviewsRespondidas.confirmarAnonimizacao')}
-                      </label>
-
-                      <div className="mt-2 flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => aprovarDecisaoFinal(item)}
-                          disabled={!anonimizacaoConfirmada[item.id] || aplicandoDecisaoId === item.id}
-                          className="flex-1 rounded-lg border-2 border-emerald-600/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
-                        >
-                          {aplicandoDecisaoId === item.id
-                            ? t('reviewsRespondidas.aprovando')
-                            : t('reviewsRespondidas.aprovar')}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => abrirDescarteFinal(item)}
-                          disabled={aplicandoDecisaoId === item.id}
-                          className="flex-1 rounded-lg border-2 border-red-600/40 bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-300 hover:border-red-500 hover:bg-red-500/20 disabled:opacity-50"
-                        >
-                          {t('reviewsRespondidas.descartar')}
-                        </button>
-                      </div>
-
-                      {errosDecisaoFinal[item.id] && (
-                        <p className="mt-2 text-xs text-red-400" role="alert">
-                          {errosDecisaoFinal[item.id]}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* LINHA DE TRABALHO - fila (esquerda, coluna vertical estreita) +
-            area de trabalho (barra superior + visualizador + ficha, essa
-            ultima dentro do MESMO elemento que vira tela cheia). */}
-        <div className="flex min-h-0 flex-1 gap-3">
-          {/* COLUNA - fila de curadoria, sempre visivel, largura fixa e
-              estreita (so a miniatura + id + status cabem). Fica de fora
-              da tela cheia de proposito - o curador nao precisa trocar de
-              imagem no meio da curadoria de uma imagem so, e assim a
-              area de trabalho ganha o maximo de espaco possivel. */}
-          <section
-            className={`h-full shrink-0 overflow-hidden rounded-2xl border border-base-border bg-base-surface ${
-              filaColapsada ? 'w-[56px]' : 'w-[192px]'
-            }`}
-          >
-            <FilaCuradoria
-              fila={fila}
-              carregando={carregandoFila}
-              erro={erroFila}
-              criandoId={criandoId}
-              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
-              colapsada={filaColapsada}
-              onSelecionar={(imagem) => abrirImagem(imagem)}
-              onColapsar={() => setFilaColapsada(true)}
-              onExpandir={() => setFilaColapsada(false)}
+        {/* AREA DE TRABALHO - barra superior + fila horizontal + visualizador
+            + ficha, tudo dentro do MESMO elemento que vira tela cheia
+            (Fullscreen API so mostra o elemento pedido, escondendo tudo
+            fora dele) - assim o curador consegue curar (ver a imagem
+            grande, trocar de imagem na fila E preencher a ficha) sem sair
+            do modo tela cheia. Antes a fila (coluna lateral vertical)
+            ficava deliberadamente FORA da tela cheia; agora, como faixa
+            horizontal compacta no topo, ela entrou pra dentro - por
+            pedido explicito, pra dar pra trocar de imagem sem sair da
+            tela cheia. */}
+        <div
+          ref={visualizadorRef}
+          className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}
+        >
+          {fichaAtiva && (
+            <BarraSuperiorCuradoria
+              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+              totalFila={totalPendentes}
+              podeAnterior={podeAnterior}
+              podeProxima={podeProxima}
+              onAnterior={irParaAnterior}
+              onProxima={irParaProxima}
+              onSalvar={aoClicarSalvar}
+              onAprovar={aprovar}
+              onDescartar={() => abrirModalMotivo('descartar')}
+              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+              salvando={salvandoRascunho}
+              aprovando={aprovando}
+              extra={badgeReviewsRespondidas}
             />
-          </section>
+          )}
 
-          {/* AREA DE TRABALHO - barra superior + visualizador + ficha,
-              todos dentro do elemento que vira tela cheia (Fullscreen API
-              so mostra o elemento pedido, escondendo tudo fora dele) -
-              assim o curador consegue curar (ver a imagem grande E
-              preencher a ficha) sem sair do modo tela cheia. So a fila
-              fica de fora. */}
-          <div
-            ref={visualizadorRef}
-            className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}
-          >
-            {fichaAtiva && (
-              <BarraSuperiorCuradoria
-                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-                totalFila={totalPendentes}
-                podeAnterior={podeAnterior}
-                podeProxima={podeProxima}
-                onAnterior={irParaAnterior}
-                onProxima={irParaProxima}
-                onSalvar={aoClicarSalvar}
-                onAprovar={aprovar}
-                onDescartar={() => abrirModalMotivo('descartar')}
-                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-                salvando={salvandoRascunho}
-                aprovando={aprovando}
-              />
-            )}
+          {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
+              e o visualizador, por pedido explicito. Sempre visivel (nao
+              so quando fichaAtiva existe) - e o mecanismo de selecionar a
+              primeira imagem em primeiro lugar (a LISTA em si e leve, so
+              texto - o que e pesado sao os fetches de preview de cada
+              miniatura, represados por permitirCarregarMiniaturas). */}
+          <FilaCuradoriaHorizontal
+            fila={fila}
+            carregando={carregandoFila}
+            erro={erroFila}
+            criandoId={criandoId}
+            ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+            // So libera os fetches de preview das miniaturas depois que a
+            // ficha ativa (imagem principal + painel de marcacao)
+            // terminou de carregar - antes disso, dezenas de miniaturas
+            // ficando visiveis de uma vez disputariam as mesmas conexoes
+            // das chamadas criticas (criar ficha, buscar viewer-url,
+            // buscar ficha completa), atrasando a imagem principal (ver
+            // comentario em MiniaturaFila.tsx).
+            permitirCarregarMiniaturas={!!fichaAtiva}
+            onSelecionar={(imagem) => abrirImagem(imagem)}
+          />
 
-            {/* LINHA DE IMAGENS - visualizador principal (OHIF, imagem
-                atual do estudo) + painel lateral, lado a lado. O
-                visualizador usa flex-[2] (definido dentro do proprio
-                PainelVisualizador) contra o flex-1 do painel lateral: a
-                marcacao/achados fica exatamente na metade do tamanho do
-                visualizador, mas com a MESMA ALTURA (bem maior que a faixa
-                baixa da ficha). O painel lateral some junto com a ficha no
-                modo "ajustar a tela", devolvendo toda a largura ao
-                visualizador.
+          {/* LINHA DE IMAGENS - visualizador principal (OHIF, imagem
+              atual do estudo) + painel lateral, lado a lado. O
+              visualizador usa flex-[2] (definido dentro do proprio
+              PainelVisualizador) contra o flex-1 do painel lateral: a
+              marcacao/achados fica exatamente na metade do tamanho do
+              visualizador, mas com a MESMA ALTURA (bem maior que a faixa
+              baixa da ficha). O painel lateral some junto com a ficha no
+              modo "ajustar a tela", devolvendo toda a largura ao
+              visualizador.
 
-                Esse painel lateral alterna entre 2 conteudos, com uma
-                seta (estilo carrossel, igual a ficha): "Imagem para
-                marcacao" (MarcadorAchado, onde o curador desenha
-                oval/retangulo/seta pra indicar a lesao) e "Achados em
-                radiografia" (checklist completo). A ideia e que o curador
-                marca a lesao primeiro, depois vira pra achados - que
-                assim ganham a altura toda do visualizador em vez de
-                ficarem espremidos na faixa baixa da ficha (por isso
-                achados saiu da ficha de baixo, que agora tem so 1 pagina -
-                ver FichaCuradoriaForm.tsx e PainelAchadosRadiografia.tsx). */}
-            <div className="flex min-h-0 flex-[4] gap-3">
-              <PainelVisualizador
-                fichaAtiva={!!fichaAtiva}
-                carregandoViewer={carregandoViewer}
-                viewerInfo={viewerInfo}
-                telaCheia={telaCheia}
-                onAlternarTelaCheia={alternarTelaCheia}
-                modoAjustado={modoAjustado}
-                onAlternarAjustar={() => setModoAjustado((v) => !v)}
-                onCentralizar={centralizarImagem}
-                iframeReloadKey={iframeReloadKey}
-                statusFicha={statusFicha}
-                segundaOpiniaoReview={segundaOpiniaoReview}
-                form={form}
-                onChange={setForm}
-              />
+              Esse painel lateral alterna entre 2 conteudos, com uma
+              seta (estilo carrossel, igual a ficha): "Imagem para
+              marcacao" (MarcadorAchado, onde o curador desenha
+              oval/retangulo/seta pra indicar a lesao) e "Achados em
+              radiografia" (checklist completo). A ideia e que o curador
+              marca a lesao primeiro, depois vira pra achados - que
+              assim ganham a altura toda do visualizador em vez de
+              ficarem espremidos na faixa baixa da ficha (por isso
+              achados saiu da ficha de baixo, que agora tem so 1 pagina -
+              ver FichaCuradoriaForm.tsx e PainelAchadosRadiografia.tsx). */}
+          <div className="flex min-h-0 flex-[4] gap-3">
+            <PainelVisualizador
+              fichaAtiva={!!fichaAtiva}
+              carregandoViewer={carregandoViewer}
+              viewerInfo={viewerInfo}
+              telaCheia={telaCheia}
+              onAlternarTelaCheia={alternarTelaCheia}
+              modoAjustado={modoAjustado}
+              onAlternarAjustar={() => setModoAjustado((v) => !v)}
+              onCentralizar={centralizarImagem}
+              iframeReloadKey={iframeReloadKey}
+              statusFicha={statusFicha}
+              segundaOpiniaoReview={segundaOpiniaoReview}
+              form={form}
+              onChange={setForm}
+            />
 
-              {fichaVisivel && fichaAtiva && (
-                <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
-                  <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">
-                    {painelLateral === 'marcacao' ? t('painelLateral.imagemParaMarcacao') : t('painelLateral.achadosEmRadiografia')}
-                  </h2>
-                  <div className="min-h-0 flex-1 px-6">
-                    {painelLateral === 'marcacao' ? (
-                      <MarcadorAchado
-                        orthancReferenceId={fichaAtiva.orthancReferenceId}
-                        marcacoes={form.marcacoes}
-                        onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
-                      />
-                    ) : (
-                      <PainelAchadosRadiografia form={form} onChange={setForm} />
-                    )}
-                  </div>
-
-                  {/* Setas do carrossel: so a de avancar (achados) aparece
-                      em cima da marcacao, so a de voltar aparece em cima
-                      dos achados - mesmo padrao visual da ficha de baixo. */}
-                  {painelLateral === 'marcacao' && (
-                    <button
-                      type="button"
-                      onClick={() => setPainelLateral('achados')}
-                      aria-label={t('painelLateral.verAchados')}
-                      title={t('painelLateral.verAchados')}
-                      className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                    >
-                      ›
-                    </button>
-                  )}
-                  {painelLateral === 'achados' && (
-                    <button
-                      type="button"
-                      onClick={() => setPainelLateral('marcacao')}
-                      aria-label={t('painelLateral.voltarParaMarcacao')}
-                      title={t('painelLateral.voltarParaMarcacao')}
-                      className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                    >
-                      ‹
-                    </button>
-                  )}
-                </section>
-              )}
-            </div>
-
-            {/* Ficha de curadoria - escondida temporariamente no modo
-                "ajustar a tela" (as acoes continuam na barra superior).
-                Proporcao 4:1 (80% da altura pro visualizador, 20% pra
-                ficha) - so foi possivel encolher tanto a ficha porque
-                "Achados em radiografia" (a secao mais alta, com a lista
-                inteira de checkboxes) saiu daqui de vez: agora mora no
-                painel lateral, ao lado do OHIF (ver comentario acima e
-                PainelAchadosRadiografia.tsx). O que resta aqui embaixo
-                (so "Regiao anatomica", sem mais paginacao - ver
-                FichaCuradoriaForm.tsx) e bem mais curto. As duas linhas
-                sempre somam exatamente a altura disponivel dentro da area
-                de trabalho - e, por estar aqui dentro, continua acessivel
-                em tela cheia. */}
             {fichaVisivel && fichaAtiva && (
-              <div className="min-h-0 flex-1">
-                <FichaCuradoriaForm
-                  form={form}
-                  onChange={setForm}
-                  statusFicha={statusFicha}
-                  erro={erroFormulario}
-                  rascunhoSalvo={rascunhoSalvo}
-                />
-              </div>
+              <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
+                <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">
+                  {painelLateral === 'marcacao' ? t('painelLateral.imagemParaMarcacao') : t('painelLateral.achadosEmRadiografia')}
+                </h2>
+                <div className="min-h-0 flex-1 px-6">
+                  {painelLateral === 'marcacao' ? (
+                    <MarcadorAchado
+                      orthancReferenceId={fichaAtiva.orthancReferenceId}
+                      marcacoes={form.marcacoes}
+                      onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
+                    />
+                  ) : (
+                    <PainelAchadosRadiografia form={form} onChange={setForm} />
+                  )}
+                </div>
+
+                {/* Setas do carrossel: so a de avancar (achados) aparece
+                    em cima da marcacao, so a de voltar aparece em cima
+                    dos achados - mesmo padrao visual da ficha de baixo. */}
+                {painelLateral === 'marcacao' && (
+                  <button
+                    type="button"
+                    onClick={() => setPainelLateral('achados')}
+                    aria-label={t('painelLateral.verAchados')}
+                    title={t('painelLateral.verAchados')}
+                    className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                  >
+                    ›
+                  </button>
+                )}
+                {painelLateral === 'achados' && (
+                  <button
+                    type="button"
+                    onClick={() => setPainelLateral('marcacao')}
+                    aria-label={t('painelLateral.voltarParaMarcacao')}
+                    title={t('painelLateral.voltarParaMarcacao')}
+                    className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                  >
+                    ‹
+                  </button>
+                )}
+              </section>
             )}
           </div>
+
+          {/* Ficha de curadoria - escondida temporariamente no modo
+              "ajustar a tela" (as acoes continuam na barra superior).
+              Proporcao 4:1 (80% da altura pro visualizador, 20% pra
+              ficha) - so foi possivel encolher tanto a ficha porque
+              "Achados em radiografia" (a secao mais alta, com a lista
+              inteira de checkboxes) saiu daqui de vez: agora mora no
+              painel lateral, ao lado do OHIF (ver comentario acima e
+              PainelAchadosRadiografia.tsx). O que resta aqui embaixo
+              (so "Regiao anatomica", sem mais paginacao - ver
+              FichaCuradoriaForm.tsx) e bem mais curto. As duas linhas
+              sempre somam exatamente a altura disponivel dentro da area
+              de trabalho - e, por estar aqui dentro, continua acessivel
+              em tela cheia. */}
+          {fichaVisivel && fichaAtiva && (
+            <div className="min-h-0 flex-1">
+              <FichaCuradoriaForm
+                form={form}
+                onChange={setForm}
+                statusFicha={statusFicha}
+                erro={erroFormulario}
+                rascunhoSalvo={rascunhoSalvo}
+              />
+            </div>
+          )}
         </div>
       </main>
 
