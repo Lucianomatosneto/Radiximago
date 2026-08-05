@@ -4,14 +4,49 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import BarraClassificacao from '../../components/detalhe/BarraClassificacao'
+import MarcacaoAchado from '../../components/detalhe/MarcacaoAchado'
+import type { Marcacao } from '../../lib/marcacoes'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
 
-const OPCOES_DECISAO_FINAL = [
-  { valor: 'aprovar', label: 'Aprovar' },
-  { valor: 'descartar', label: 'Descartar' },
-  { valor: 'manter', label: 'Manter em análise' },
+// Mesmos valores (mesmos usados na tela de Curadoria e no restante do
+// sistema) - o pedido foi pra segunda opiniao mostrar "as mesmas opcoes da
+// tela do curador", entao os rotulos precisam bater exatamente.
+const OPCOES_TIPO_RADIOGRAFIA = [
+  { valor: 'periapical', label: 'Periapical' },
+  { valor: 'panoramica', label: 'Panorâmica' },
+  { valor: 'interproximal', label: 'Interproximal' },
+  { valor: 'oclusal', label: 'Oclusal' },
 ]
+
+const OPCOES_GENERO = [
+  { valor: 'masculino', label: 'Masculino' },
+  { valor: 'feminino', label: 'Feminino' },
+]
+
+const OPCOES_QUALIDADE_TECNICA = [
+  { valor: 'otima', label: 'Ótima' },
+  { valor: 'boa', label: 'Boa' },
+  { valor: 'regular', label: 'Regular' },
+  { valor: 'insatisfatoria', label: 'Insatisfatória' },
+]
+
+const OPCOES_ACHADO_PRINCIPAL = [
+  { valor: 'normal', label: 'Normal' },
+  { valor: 'carie', label: 'Cárie' },
+  { valor: 'lesao_periapical', label: 'Lesão periapical' },
+  { valor: 'perda_ossea', label: 'Perda óssea' },
+  { valor: 'dente_incluso', label: 'Dente incluso' },
+  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
+  { valor: 'erro_tecnico', label: 'Erro técnico' },
+  { valor: 'outro', label: 'Outro' },
+]
+
+function rotular(opcoes: { valor: string; label: string }[], valor: string | null): string {
+  if (!valor) return '—'
+  return opcoes.find((o) => o.valor === valor)?.label ?? valor
+}
 
 interface ReviewPendente {
   id: number
@@ -33,6 +68,29 @@ interface ViewerInfo {
   abrivel: boolean
   motivo?: string
   viewer_url: string | null
+}
+
+// Ficha completa (GET /curation/{id}) - os MESMOS campos que a tela de
+// Curadoria usa pra montar a ficha (ver FichaCuradoriaForm.tsx,
+// PainelDadosSobrepostos.tsx e PainelAchadosRadiografia.tsx), pra dar ao
+// revisor exatamente a mesma informação que o curador registrou.
+interface FichaCompleta {
+  id: number
+  tipo_radiografia: string | null
+  dentes: number[] | null
+  idade_min: number | null
+  idade_max: number | null
+  genero: string | null
+  achado_principal: string | null
+  marcacoes: Marcacao[]
+  achados_detalhe: string | null
+  alteracoes_observadas: string[] | null
+  qualidade_tecnica: string | null
+  dificuldade: string | null
+  descricao_didatica: string | null
+  observacoes_internas: string | null
+  status: string
+  anonimizacao_validada: boolean
 }
 
 function formatarData(valor: string | null): string {
@@ -65,12 +123,10 @@ export default function SegundaOpiniaoPage() {
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
   const [telaCheia, setTelaCheia] = useState(false)
-  const visualizadorRef = useRef<HTMLElement | null>(null)
+  const visualizadorRef = useRef<HTMLDivElement | null>(null)
 
-  const [parecerRevisor, setParecerRevisor] = useState('')
-  const [concordancia, setConcordancia] = useState<'concorda' | 'discorda' | null>(null)
-  const [decisaoFinal, setDecisaoFinal] = useState('')
-  const [observacoes, setObservacoes] = useState('')
+  const [fichaCompleta, setFichaCompleta] = useState<FichaCompleta | null>(null)
+  const [carregandoFicha, setCarregandoFicha] = useState(false)
 
   const [enviando, setEnviando] = useState(false)
   const [erroFormulario, setErroFormulario] = useState('')
@@ -161,43 +217,57 @@ export default function SegundaOpiniaoPage() {
     }
   }
 
+  // Busca a ficha COMPLETA (mesmo endpoint que a Curadoria usa pra
+  // reabrir uma ficha em edicao) - e o que da ao revisor acesso a TUDO que
+  // o curador preencheu (nao so achado principal e tipo de radiografia,
+  // que era tudo que a fila resumida ja trazia).
+  async function carregarFichaCompleta(tokenAtual: string, curationId: number) {
+    setCarregandoFicha(true)
+    setFichaCompleta(null)
+    try {
+      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
+        headers: { Authorization: `Bearer ${tokenAtual}` },
+      })
+      if (resposta.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!resposta.ok) return
+      const dados: FichaCompleta = await resposta.json()
+      setFichaCompleta(dados)
+    } catch {
+      // secao so mostra o aviso de que nao deu pra carregar
+    } finally {
+      setCarregandoFicha(false)
+    }
+  }
+
   function selecionarReview(review: ReviewPendente) {
     setReviewAtiva(review)
-    setParecerRevisor('')
-    setConcordancia(null)
-    setDecisaoFinal('')
-    setObservacoes('')
     setErroFormulario('')
-    if (token) carregarViewerUrl(token, review.orthanc_reference.id)
+    if (token) {
+      carregarViewerUrl(token, review.orthanc_reference.id)
+      carregarFichaCompleta(token, review.curation.id)
+    }
   }
 
   function limparSelecao() {
     setReviewAtiva(null)
     setViewerInfo(null)
+    setFichaCompleta(null)
   }
 
-  async function enviarParecer() {
+  // Um clique = a decisao inteira. Sem parecer escrito nem campos extras -
+  // pedido explicito pra tela ter APENAS os dois botoes (Concordar /
+  // Discordar). O parecer escrito continua existindo na API (agora
+  // opcional; ver schemas.py) pra nao fechar a porta pra uma versao futura
+  // que volte a coletar um comentario, mas hoje esta tela nao envia nada
+  // alem da concordancia.
+  async function responderReview(concordancia: 'concorda' | 'discorda') {
     if (!reviewAtiva || !token) return
-
-    const parecer = parecerRevisor.trim()
-    if (!parecer) {
-      setErroFormulario('O parecer do revisor é obrigatório.')
-      return
-    }
-    if (!concordancia) {
-      setErroFormulario('Selecione "Concordo" ou "Discordo".')
-      return
-    }
 
     setEnviando(true)
     setErroFormulario('')
-
-    const payload: Record<string, unknown> = {
-      parecer_revisor: parecer,
-      concordancia,
-    }
-    if (decisaoFinal !== '') payload.decisao_final = decisaoFinal
-    if (observacoes.trim() !== '') payload.observacoes = observacoes.trim()
 
     try {
       const resposta = await fetch(
@@ -205,7 +275,7 @@ export default function SegundaOpiniaoPage() {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ concordancia }),
         }
       )
       if (resposta.status === 401) {
@@ -213,7 +283,7 @@ export default function SegundaOpiniaoPage() {
         return
       }
       if (!resposta.ok) {
-        setErroFormulario(await extrairErro(resposta, 'Não foi possível enviar o parecer.'))
+        setErroFormulario(await extrairErro(resposta, 'Não foi possível enviar sua avaliação.'))
         return
       }
 
@@ -221,7 +291,7 @@ export default function SegundaOpiniaoPage() {
       limparSelecao()
       carregarFila(token)
     } catch {
-      setErroFormulario('Não foi possível enviar o parecer.')
+      setErroFormulario('Não foi possível enviar sua avaliação.')
     } finally {
       setEnviando(false)
     }
@@ -234,7 +304,6 @@ export default function SegundaOpiniaoPage() {
       </main>
     )
   }
-
 
   return (
     <div className="flex min-h-screen bg-base">
@@ -276,10 +345,10 @@ export default function SegundaOpiniaoPage() {
                           }`}
                         >
                           <p className="text-slate-200">
-                            {review.curation.achado_principal ?? 'Achado não informado'}
+                            {rotular(OPCOES_ACHADO_PRINCIPAL, review.curation.achado_principal)}
                           </p>
                           <p className="mt-1 text-slate-400">
-                            {review.curation.tipo_radiografia ?? '—'}
+                            {rotular(OPCOES_TIPO_RADIOGRAFIA, review.curation.tipo_radiografia)}
                           </p>
                           <p className="mt-1 text-xs text-slate-500 line-clamp-2">{review.motivo}</p>
                           <p className="mt-1 text-xs text-slate-600">
@@ -293,17 +362,24 @@ export default function SegundaOpiniaoPage() {
               </div>
             </section>
 
-            {/* PAINEL - imagem + avaliacao original + formulario do revisor */}
+            {/* PAINEL - imagem + ficha completa do curador + decisao do revisor */}
             {!reviewAtiva ? (
               <section className="flex min-h-[75vh] items-center justify-center rounded-xl border border-base-border bg-base-surface p-8 text-center text-slate-500">
                 Selecione uma solicitação na lista ao lado
               </section>
             ) : (
-              <div className="space-y-4">
-                <section
-                  ref={visualizadorRef}
-                  className="relative flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface"
-                >
+              // Igual a tela de Curadoria: TUDO (imagem, o que o curador
+              // registrou e os botoes de Concordar/Discordar) fica dentro do
+              // elemento que vira tela cheia (Fullscreen API so mostra o
+              // elemento pedido, escondendo tudo fora dele) - assim o revisor
+              // consegue ver a imagem grande E analisar/decidir sem sair do
+              // modo tela cheia. So a lista da fila (coluna da esquerda) fica
+              // de fora, igual la.
+              <div
+                ref={visualizadorRef}
+                className={`flex flex-col gap-4 overflow-y-auto bg-base ${telaCheia ? 'p-4' : ''}`}
+              >
+                <section className="relative flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
                   {viewerInfo?.abrivel && viewerInfo.viewer_url && (
                     <div className="flex items-center justify-end border-b border-base-border px-3 py-2">
                       <button
@@ -343,135 +419,132 @@ export default function SegundaOpiniaoPage() {
                   )}
                 </section>
 
+                {/* Tudo que o curador registrou - MESMOS campos e MESMO
+                    componente de classificacao (BarraClassificacao) usado nas
+                    telas de visualizacao de imagem, pra dar ao revisor a
+                    informacao completa (nao so achado principal e tipo). */}
                 <section className="rounded-xl border border-base-border bg-base-surface p-4">
                   <h2 className="mb-3 text-sm font-semibold text-slate-200">
-                    Primeira avaliação (somente leitura)
+                    O que o curador registrou (somente leitura)
                   </h2>
-                  <dl className="grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+
+                  <dl className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
                     <div>
-                      <dt className="text-xs text-slate-500">Motivo da solicitação</dt>
+                      <dt className="text-xs text-slate-500">Motivo da solicitação de segunda opinião</dt>
                       <dd className="text-slate-300">{reviewAtiva.motivo}</dd>
                     </div>
                     <div>
-                      <dt className="text-xs text-slate-500">Primeiro parecer</dt>
-                      <dd className="text-slate-300">
-                        {reviewAtiva.primeiro_parecer || '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-500">Achado principal</dt>
-                      <dd className="text-slate-300">
-                        {reviewAtiva.curation.achado_principal ?? '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-500">Tipo de radiografia</dt>
-                      <dd className="text-slate-300">
-                        {reviewAtiva.curation.tipo_radiografia ?? '—'}
-                      </dd>
+                      <dt className="text-xs text-slate-500">Primeiro parecer do curador (ao solicitar)</dt>
+                      <dd className="text-slate-300">{reviewAtiva.primeiro_parecer || '—'}</dd>
                     </div>
                   </dl>
+
+                  {carregandoFicha ? (
+                    <p className="text-sm text-slate-500">Carregando ficha completa...</p>
+                  ) : !fichaCompleta ? (
+                    <p className="text-sm text-slate-500">Não foi possível carregar os dados completos da ficha.</p>
+                  ) : (
+                    <>
+                      <BarraClassificacao
+                        tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia)}
+                        qualidade={rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica)}
+                        dentes={fichaCompleta.dentes}
+                        alteracoesObservadas={fichaCompleta.alteracoes_observadas}
+                        achadosDetalhe={fichaCompleta.achados_detalhe}
+                        descricaoDidatica={fichaCompleta.descricao_didatica}
+                        achadoPrincipal={fichaCompleta.achado_principal}
+                      />
+
+                      <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-base-border pt-4 text-sm sm:grid-cols-4">
+                        <div>
+                          <dt className="text-xs text-slate-500">Faixa etária</dt>
+                          <dd className="text-slate-300">
+                            {fichaCompleta.idade_min || fichaCompleta.idade_max
+                              ? `${fichaCompleta.idade_min ?? '?'} a ${fichaCompleta.idade_max ?? '?'}`
+                              : '—'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-slate-500">Sexo</dt>
+                          <dd className="text-slate-300">{rotular(OPCOES_GENERO, fichaCompleta.genero)}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs text-slate-500">Anonimização validada</dt>
+                          <dd className={fichaCompleta.anonimizacao_validada ? 'text-emerald-400' : 'text-red-400'}>
+                            {fichaCompleta.anonimizacao_validada ? 'Sim' : 'Não'}
+                          </dd>
+                        </div>
+                      </dl>
+
+                      {fichaCompleta.observacoes_internas && (
+                        <div className="mt-3 rounded-lg border border-base-border bg-base-surface2/70 p-3">
+                          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                            Observações internas do curador
+                          </p>
+                          <p className="text-sm text-slate-300">{fichaCompleta.observacoes_internas}</p>
+                        </div>
+                      )}
+
+                      <div className="mt-4 border-t border-base-border pt-4">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
+                          Marcações feitas pelo curador na imagem
+                        </p>
+                        <MarcacaoAchado curationId={fichaCompleta.id} marcacoes={fichaCompleta.marcacoes} />
+                      </div>
+                    </>
+                  )}
                 </section>
 
+                {/* Decisao do revisor: so os dois botoes, por pedido - sem
+                    parecer escrito obrigatorio, sem decisao final sugerida,
+                    sem observacoes. Clicar em um dos dois JA envia a
+                    resposta. */}
                 <section className="rounded-xl border border-base-border bg-base-surface p-4">
-                  <h2 className="mb-3 text-sm font-semibold text-slate-200">Parecer do revisor</h2>
+                  <h2 className="mb-1 text-sm font-semibold text-slate-200">Sua avaliação</h2>
+                  <p className="mb-4 text-xs text-slate-500">
+                    Depois de analisar o que o curador registrou acima, você concorda com essa avaliação ou discorda dela?
+                  </p>
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">
-                        Parecer do revisor
-                      </label>
-                      <textarea
-                        value={parecerRevisor}
-                        onChange={(e) => setParecerRevisor(e.target.value)}
-                        rows={4}
-                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
-                      />
-                    </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => responderReview('concorda')}
+                      disabled={enviando}
+                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-emerald-600/40 bg-emerald-500/10 px-4 py-6 text-emerald-300 transition-colors hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
+                    >
+                      <span className="text-3xl" aria-hidden="true">
+                        ✓
+                      </span>
+                      <span className="text-base font-semibold">Concordar com o curador</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => responderReview('discorda')}
+                      disabled={enviando}
+                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-red-600/40 bg-red-500/10 px-4 py-6 text-red-300 transition-colors hover:border-red-500 hover:bg-red-500/20 disabled:opacity-50"
+                    >
+                      <span className="text-3xl" aria-hidden="true">
+                        ✕
+                      </span>
+                      <span className="text-base font-semibold">Discordar</span>
+                    </button>
+                  </div>
 
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">
-                        Concordância
-                      </label>
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setConcordancia('concorda')}
-                          className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                            concordancia === 'concorda'
-                              ? 'border-emerald-500 bg-emerald-500/15 text-emerald-300'
-                              : 'border-slate-700 text-slate-300 hover:border-slate-500'
-                          }`}
-                        >
-                          Concordo
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setConcordancia('discorda')}
-                          className={`flex-1 rounded-md border px-4 py-2 text-sm font-medium transition-colors ${
-                            concordancia === 'discorda'
-                              ? 'border-red-500 bg-red-500/15 text-red-300'
-                              : 'border-slate-700 text-slate-300 hover:border-slate-500'
-                          }`}
-                        >
-                          Discordo
-                        </button>
-                      </div>
-                    </div>
+                  {erroFormulario && (
+                    <p className="mt-3 text-sm text-red-400" role="alert">
+                      {erroFormulario}
+                    </p>
+                  )}
 
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">
-                        Decisão final sugerida (opcional)
-                      </label>
-                      <select
-                        value={decisaoFinal}
-                        onChange={(e) => setDecisaoFinal(e.target.value)}
-                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
-                      >
-                        <option value="">Não sugerir</option>
-                        {OPCOES_DECISAO_FINAL.map((opcao) => (
-                          <option key={opcao.valor} value={opcao.valor}>
-                            {opcao.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-400">
-                        Observações (opcional)
-                      </label>
-                      <textarea
-                        value={observacoes}
-                        onChange={(e) => setObservacoes(e.target.value)}
-                        rows={3}
-                        className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
-                      />
-                    </div>
-
-                    {erroFormulario && (
-                      <p className="text-sm text-red-400" role="alert">
-                        {erroFormulario}
-                      </p>
-                    )}
-
-                    <div className="flex justify-end gap-2 border-t border-base-border pt-4">
-                      <button
-                        type="button"
-                        onClick={limparSelecao}
-                        className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={enviarParecer}
-                        disabled={enviando}
-                        className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
-                      >
-                        {enviando ? 'Enviando...' : 'Enviar parecer'}
-                      </button>
-                    </div>
+                  <div className="mt-4 flex justify-end border-t border-base-border pt-4">
+                    <button
+                      type="button"
+                      onClick={limparSelecao}
+                      disabled={enviando}
+                      className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
                   </div>
                 </section>
               </div>
