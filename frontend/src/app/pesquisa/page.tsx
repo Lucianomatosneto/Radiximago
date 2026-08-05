@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
@@ -10,53 +11,56 @@ import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 
+// `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
+// (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
+// la, na hora de renderizar, em vez de ficar fixo aqui no codigo.
 const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', label: 'Periapical' },
-  { valor: 'panoramica', label: 'Panorâmica' },
-  { valor: 'interproximal', label: 'Interproximal' },
-  { valor: 'oclusal', label: 'Oclusal' },
+  { valor: 'periapical', chave: 'periapical' },
+  { valor: 'panoramica', chave: 'panoramica' },
+  { valor: 'interproximal', chave: 'interproximal' },
+  { valor: 'oclusal', chave: 'oclusal' },
 ]
 
 const OPCOES_ARCADA = [
-  { valor: 'superior', label: 'Superior' },
-  { valor: 'inferior', label: 'Inferior' },
+  { valor: 'superior', chave: 'superior' },
+  { valor: 'inferior', chave: 'inferior' },
 ]
 
 const OPCOES_LADO = [
-  { valor: 'direito', label: 'Direito' },
-  { valor: 'esquerdo', label: 'Esquerdo' },
+  { valor: 'direito', chave: 'direito' },
+  { valor: 'esquerdo', chave: 'esquerdo' },
 ]
 
 const OPCOES_GENERO = [
-  { valor: 'masculino', label: 'Masculino' },
-  { valor: 'feminino', label: 'Feminino' },
+  { valor: 'masculino', chave: 'masculino' },
+  { valor: 'feminino', chave: 'feminino' },
 ]
 
 // Valores reais do enum AchadoPrincipal (backend/app/modules/curations.py) -
 // confirmado no arquivo antes de montar esta lista.
 const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', label: 'Normal' },
-  { valor: 'carie', label: 'Cárie' },
-  { valor: 'lesao_periapical', label: 'Lesão periapical' },
-  { valor: 'perda_ossea', label: 'Perda óssea' },
-  { valor: 'dente_incluso', label: 'Dente incluso' },
-  { valor: 'tratamento_endodontico', label: 'Tratamento endodôntico' },
-  { valor: 'erro_tecnico', label: 'Erro técnico' },
-  { valor: 'outro', label: 'Outro' },
+  { valor: 'normal', chave: 'normal' },
+  { valor: 'carie', chave: 'carie' },
+  { valor: 'lesao_periapical', chave: 'lesaoPeriapical' },
+  { valor: 'perda_ossea', chave: 'perdaOssea' },
+  { valor: 'dente_incluso', chave: 'denteIncluso' },
+  { valor: 'tratamento_endodontico', chave: 'tratamentoEndodontico' },
+  { valor: 'erro_tecnico', chave: 'erroTecnico' },
+  { valor: 'outro', chave: 'outro' },
 ]
 
 // Valores reais do enum QualidadeTecnica.
 const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', label: 'Ótima' },
-  { valor: 'boa', label: 'Boa' },
-  { valor: 'regular', label: 'Regular' },
-  { valor: 'insatisfatoria', label: 'Insatisfatória' },
+  { valor: 'otima', chave: 'otima' },
+  { valor: 'boa', chave: 'boa' },
+  { valor: 'regular', chave: 'regular' },
+  { valor: 'insatisfatoria', chave: 'insatisfatoria' },
 ]
 
 const OPCOES_DIFICULDADE = [
-  { valor: 'basico', label: 'Básico' },
-  { valor: 'intermediario', label: 'Intermediário' },
-  { valor: 'avancado', label: 'Avançado' },
+  { valor: 'basico', chave: 'basico' },
+  { valor: 'intermediario', chave: 'intermediario' },
+  { valor: 'avancado', chave: 'avancado' },
 ]
 
 // Valores reais do enum OrigemImagem (backend/app/modules/orthanc_references.py).
@@ -64,8 +68,8 @@ const OPCOES_DIFICULDADE = [
 // detectado automaticamente pelo Orthanc - ninguem escolhe isso na mao.
 // "externa" = chegou por upload manual (tela "Imagens recebidas").
 const OPCOES_ORIGEM = [
-  { valor: 'ufsc', label: 'UFSC (equipamento)' },
-  { valor: 'externa', label: 'Externa (upload)' },
+  { valor: 'ufsc', chave: 'ufsc' },
+  { valor: 'externa', chave: 'externa' },
 ]
 
 // Cor suave da caixa de texto/selecao de cada filtro na Busca avancada - um
@@ -155,9 +159,14 @@ interface ResultadoImagem {
   viewer_url: string | null
 }
 
-function rotular(opcoes: { valor: string; label: string }[], valor: string | null): string {
+function rotular(
+  opcoes: { valor: string; chave: string }[],
+  valor: string | null,
+  traduzir: (chave: string) => string
+): string {
   if (!valor) return '—'
-  return opcoes.find((o) => o.valor === valor)?.label ?? valor
+  const opcao = opcoes.find((o) => o.valor === valor)
+  return opcao ? traduzir(opcao.chave) : valor
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -173,6 +182,17 @@ async function extrairErro(response: Response, generica: string): Promise<string
 function PesquisaConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const t = useTranslations('Pesquisa')
+  const tComum = useTranslations('Comum')
+  const traduzirTipoRadiografia = (chave: string) => t(`opcoes.tipoRadiografia.${chave}`)
+  const traduzirGenero = (chave: string) => t(`opcoes.genero.${chave}`)
+  const traduzirArcada = (chave: string) => t(`opcoes.arcada.${chave}`)
+  const traduzirLado = (chave: string) => t(`opcoes.lado.${chave}`)
+  const traduzirAchadoPrincipal = (chave: string) => t(`opcoes.achadoPrincipal.${chave}`)
+  const traduzirQualidadeTecnica = (chave: string) => t(`opcoes.qualidadeTecnica.${chave}`)
+  const traduzirDificuldade = (chave: string) => t(`opcoes.dificuldade.${chave}`)
+  const traduzirOrigem = (chave: string) => t(`opcoes.origem.${chave}`)
+
   const [token, setToken] = useState<string | null>(null)
   const [carregandoPagina, setCarregandoPagina] = useState(true)
 
@@ -273,7 +293,7 @@ function PesquisaConteudo() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível realizar a pesquisa.'))
+        setErro(await extrairErro(resposta, t('erroPesquisaGenerico')))
         return
       }
       const dados = await resposta.json()
@@ -281,7 +301,7 @@ function PesquisaConteudo() {
       setTotalResultados(dados.total ?? (dados.itens ?? []).length)
       setSelecionados([])
     } catch {
-      setErro('Não foi possível realizar a pesquisa.')
+      setErro(t('erroPesquisaGenerico'))
     } finally {
       setPesquisando(false)
     }
@@ -336,7 +356,7 @@ function PesquisaConteudo() {
   if (carregandoPagina) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -362,21 +382,21 @@ function PesquisaConteudo() {
 
         <main className="flex-1 overflow-y-auto p-6">
           <h1 className="text-2xl font-bold text-ink">
-            Pesquisa <span className="text-brand-300">avançada</span>
+            {t('tituloPrefixo')} <span className="text-brand-300">{t('tituloDestaque')}</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
-            Encontre imagens radiográficas para apoiar estudos e pesquisas.
+            {t('subtitulo')}
             {totalDisponivel !== null && (
               <>
                 {' '}
                 <span className="font-semibold text-slate-200">{totalDisponivel}</span>{' '}
-                {totalDisponivel === 1 ? 'imagem disponível no total' : 'imagens disponíveis no total'}.
+                {totalDisponivel === 1 ? t('totalDisponivelSingular') : t('totalDisponivelPlural')}.
               </>
             )}
           </p>
 
           <div className="mt-6">
-            <p className="mb-3 text-sm font-medium text-slate-300">Acesso rápido por tipo de exame</p>
+            <p className="mb-3 text-sm font-medium text-slate-300">{t('acessoRapidoTitulo')}</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {/* Cada caixa com sua PROPRIA cor (../../lib/coresAchados) - Periapical
                   em teal, Panoramica em ciano, Interproximal em azul-claro e
@@ -398,154 +418,154 @@ function PesquisaConteudo() {
                   <span className="text-2xl" aria-hidden="true">
                     🦷
                   </span>
-                  {o.label}
+                  {traduzirTipoRadiografia(o.chave)}
                 </button>
               ))}
             </div>
           </div>
 
           <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5">
-            <p className="text-sm font-semibold text-ink">🔎 Busca avançada</p>
-            <p className="mb-4 mt-0.5 text-xs text-slate-400">Refine sua pesquisa utilizando os filtros abaixo.</p>
+            <p className="text-sm font-semibold text-ink">🔎 {t('buscaAvancadaTitulo')}</p>
+            <p className="mb-4 mt-0.5 text-xs text-slate-400">{t('buscaAvancadaSubtitulo')}</p>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
-                <label className={campoLabel}>Gênero</label>
+                <label className={campoLabel}>{t('campoGenero')}</label>
                 <div className="flex flex-wrap gap-2">
-                  {[{ valor: '', label: 'Todos' }, ...OPCOES_GENERO].map((o) => (
+                  {[{ valor: '', chave: '' }, ...OPCOES_GENERO].map((o) => (
                     <button
                       key={o.valor || 'todos'}
                       type="button"
                       onClick={() => atualizarFiltro('genero', o.valor)}
                       className={pillClasse(filtros.genero === o.valor)}
                     >
-                      {o.label}
+                      {o.valor ? traduzirGenero(o.chave) : t('campoTodos')}
                     </button>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className={campoLabel}>Dente (FDI)</label>
+                <label className={campoLabel}>{t('campoDente')}</label>
                 <input
                   type="number"
                   min={11}
                   max={48}
                   value={filtros.dente}
                   onChange={(e) => atualizarFiltro('dente', e.target.value)}
-                  placeholder="ex: 16"
+                  placeholder={t('placeholderDente')}
                   className={campoInput}
                   style={estiloCaixaFiltro(1)}
                 />
               </div>
 
               <div>
-                <label className={campoLabel}>Arcada</label>
+                <label className={campoLabel}>{t('campoArcada')}</label>
                 <select
                   value={filtros.arcada}
                   onChange={(e) => atualizarFiltro('arcada', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(2)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_ARCADA.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirArcada(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Lado</label>
+                <label className={campoLabel}>{t('campoLado')}</label>
                 <select
                   value={filtros.lado}
                   onChange={(e) => atualizarFiltro('lado', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(3)}
                 >
-                  <option className="bg-white text-slate-900" value="">Ambos</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoAmbos')}</option>
                   {OPCOES_LADO.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirLado(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Tipo de exame</label>
+                <label className={campoLabel}>{t('campoTipoExame')}</label>
                 <select
                   value={filtros.tipo_radiografia}
                   onChange={(e) => atualizarFiltro('tipo_radiografia', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(4)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todos</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirTipoRadiografia(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Patologia / alteração</label>
+                <label className={campoLabel}>{t('campoPatologia')}</label>
                 <select
                   value={filtros.achado_principal}
                   onChange={(e) => atualizarFiltro('achado_principal', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(5)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todos</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_ACHADO_PRINCIPAL.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirAchadoPrincipal(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Qualidade técnica</label>
+                <label className={campoLabel}>{t('campoQualidadeTecnica')}</label>
                 <select
                   value={filtros.qualidade_tecnica}
                   onChange={(e) => atualizarFiltro('qualidade_tecnica', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(6)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_QUALIDADE_TECNICA.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirQualidadeTecnica(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Dificuldade</label>
+                <label className={campoLabel}>{t('campoDificuldade')}</label>
                 <select
                   value={filtros.dificuldade}
                   onChange={(e) => atualizarFiltro('dificuldade', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(7)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_DIFICULDADE.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirDificuldade(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Origem</label>
+                <label className={campoLabel}>{t('campoOrigem')}</label>
                 <select
                   value={filtros.origem}
                   onChange={(e) => atualizarFiltro('origem', e.target.value)}
                   className={campoInput}
                   style={estiloCaixaFiltro(8)}
                 >
-                  <option className="bg-white text-slate-900" value="">Todas</option>
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_ORIGEM.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{o.label}</option>
+                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirOrigem(o.chave)}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className={campoLabel}>Idade mín.</label>
+                <label className={campoLabel}>{t('campoIdadeMin')}</label>
                 <input
                   type="number"
                   min={0}
@@ -558,7 +578,7 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>Idade máx.</label>
+                <label className={campoLabel}>{t('campoIdadeMax')}</label>
                 <input
                   type="number"
                   min={0}
@@ -578,7 +598,7 @@ function PesquisaConteudo() {
                 disabled={pesquisando}
                 className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-5 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
               >
-                🔍 {pesquisando ? 'Pesquisando...' : 'Pesquisar'}
+                🔍 {pesquisando ? t('pesquisando') : t('botaoPesquisar')}
               </button>
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
@@ -591,23 +611,23 @@ function PesquisaConteudo() {
           <div className="mt-6">
             {!jaPesquisou ? (
               <p className="py-12 text-center text-slate-500">
-                Use os filtros acima para buscar imagens
+                {t('dicaUseFiltros')}
               </p>
             ) : pesquisando ? (
-              <p className="py-12 text-center text-slate-500">Pesquisando...</p>
+              <p className="py-12 text-center text-slate-500">{t('pesquisando')}</p>
             ) : totalResultados === 0 ? (
               <p className="py-12 text-center text-slate-500">
-                Nenhuma imagem encontrada com esses filtros
+                {t('nenhumaImagemEncontrada')}
               </p>
             ) : (
               <>
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-slate-400">
                     <span className="rounded-full bg-brand/10 px-2.5 py-1 text-brand-300">
-                      {totalResultados} {totalResultados === 1 ? 'imagem encontrada' : 'imagens encontradas'}
+                      {totalResultados} {totalResultados === 1 ? t('imagemEncontradaSingular') : t('imagensEncontradasPlural')}
                     </span>
                     {resultados.length < totalResultados && (
-                      <span className="ml-2 text-slate-500">(mostrando as primeiras {resultados.length})</span>
+                      <span className="ml-2 text-slate-500">{t('mostrandoPrimeiras', { quantidade: resultados.length })}</span>
                     )}
                   </p>
                   {selecionados.length > 0 && (
@@ -616,7 +636,9 @@ function PesquisaConteudo() {
                       onClick={() => setIndiceVisualizador(0)}
                       className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
                     >
-                      ▶ Ver {selecionados.length} selecionada{selecionados.length > 1 ? 's' : ''} em sequência
+                      ▶ {selecionados.length > 1
+                        ? t('verSelecionadasPlural', { quantidade: selecionados.length })
+                        : t('verSelecionadasSingular', { quantidade: selecionados.length })}
                     </button>
                   )}
                 </div>
@@ -627,13 +649,13 @@ function PesquisaConteudo() {
                     pedido explicito pra nao ficar preso so a esses 4
                     numeros fixos. */}
                 <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface p-3">
-                  <span className="text-xs font-medium text-slate-400">Seleção:</span>
+                  <span className="text-xs font-medium text-slate-400">{t('selecaoLabel')}</span>
                   <button
                     type="button"
                     onClick={selecionarTodas}
                     className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                   >
-                    Selecionar todas ({resultados.length})
+                    {t('selecionarTodas', { quantidade: resultados.length })}
                   </button>
                   {[10, 15, 20, 25].map((n) => (
                     <button
@@ -659,7 +681,7 @@ function PesquisaConteudo() {
                       onClick={() => selecionarMais(quantidadeLote)}
                       className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                     >
-                      Selecionar mais
+                      {t('selecionarMaisBotao')}
                     </button>
                   </div>
                   {selecionados.length > 0 && (
@@ -668,7 +690,7 @@ function PesquisaConteudo() {
                       onClick={limparSelecao}
                       className="ml-auto rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-400 hover:border-status-danger hover:text-status-danger"
                     >
-                      Limpar seleção
+                      {t('limparSelecao')}
                     </button>
                   )}
                 </div>
@@ -683,7 +705,7 @@ function PesquisaConteudo() {
                       <div className="relative aspect-square overflow-hidden">
                         <MiniaturaImagem
                           curationId={imagem.curation_id}
-                          alt={imagem.descricao_didatica ?? `Imagem #${indice + 1}`}
+                          alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
                           className="h-full w-full bg-base-surface2 object-cover"
                         />
                         <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-semibold text-white">
@@ -698,7 +720,7 @@ function PesquisaConteudo() {
                             checked={selecionados.includes(imagem.curation_id)}
                             onChange={() => alternarSelecao(imagem.curation_id)}
                             onClick={(e) => e.stopPropagation()}
-                            aria-label={`Selecionar imagem #${indice + 1}`}
+                            aria-label={t('selecionarImagem', { numero: indice + 1 })}
                             className="h-3.5 w-3.5 accent-brand"
                           />
                         </label>
@@ -706,7 +728,7 @@ function PesquisaConteudo() {
                       <div className="flex flex-col gap-1 p-2">
                         <div className="flex flex-wrap items-center gap-1">
                           <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300">
-                            {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia)}
+                            {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia, traduzirTipoRadiografia)}
                           </span>
                           {/* Badge de origem: "ufsc" = veio direto do aparelho de raio-x
                               (deteccao automatica no Orthanc), "externa" = upload manual. */}
@@ -718,7 +740,7 @@ function PesquisaConteudo() {
                                   : 'bg-slate-500/10 text-slate-300'
                               }`}
                             >
-                              {rotular(OPCOES_ORIGEM, imagem.origem)}
+                              {rotular(OPCOES_ORIGEM, imagem.origem, traduzirOrigem)}
                             </span>
                           )}
                         </div>
@@ -728,9 +750,9 @@ function PesquisaConteudo() {
                             mesmo de abrir a imagem, igual acontece la. */}
                         <span
                           className={`truncate text-xs font-medium ${corTextoAchado(imagem.achado_principal)}`}
-                          title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
+                          title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal, traduzirAchadoPrincipal)}
                         >
-                          {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal)}
+                          {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal, traduzirAchadoPrincipal)}
                         </span>
                       </div>
                     </Link>
@@ -754,11 +776,12 @@ function PesquisaConteudo() {
 }
 
 export default function PesquisaPage() {
+  const tComum = useTranslations('Comum')
   return (
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center bg-base">
-          <p className="text-slate-300">Carregando...</p>
+          <p className="text-slate-300">{tComum('carregando')}</p>
         </main>
       }
     >
