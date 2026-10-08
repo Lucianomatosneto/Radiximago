@@ -192,6 +192,23 @@ function rotular(
   return opcao ? traduzir(opcao.chave) : valor
 }
 
+// Ao passar o mouse, o cartao do resultado cresce 70% (scale 1.7) por cima
+// dos vizinhos. Para nao "vazar" para fora da area da pagina (sumindo por
+// baixo do menu ou da borda), o ponto fixo da ampliacao muda conforme a
+// posicao do cartao: perto da borda esquerda ele cresce para a direita,
+// perto da direita cresce para a esquerda, e o mesmo em cima/embaixo.
+function ajustarOrigemAmpliacao(cartao: HTMLElement) {
+  const area = (cartao.closest('main') ?? document.body).getBoundingClientRect()
+  const r = cartao.getBoundingClientRect()
+  const sobraX = r.width * 0.35 + 8
+  const sobraY = r.height * 0.35 + 8
+  const topoVisivel = Math.max(area.top, 0)
+  const baseVisivel = Math.min(area.bottom, window.innerHeight)
+  const h = r.left - area.left < sobraX ? 'left' : area.right - r.right < sobraX ? 'right' : 'center'
+  const v = r.top - topoVisivel < sobraY ? 'top' : baseVisivel - r.bottom < sobraY ? 'bottom' : 'center'
+  cartao.style.transformOrigin = `${v} ${h}`
+}
+
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
     const dados = await response.json()
@@ -952,7 +969,8 @@ function PesquisaConteudo() {
                     <Link
                       key={imagem.curation_id}
                       href={`/visualizar/${imagem.curation_id}`}
-                      className="group flex flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface transition-colors hover:border-brand/50"
+                      onMouseEnter={(e) => ajustarOrigemAmpliacao(e.currentTarget)}
+                      className="group relative flex flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface transition duration-200 hover:z-30 hover:scale-[1.7] hover:border-brand/60 hover:shadow-2xl hover:delay-150 motion-reduce:hover:scale-100"
                     >
                       <div className="relative aspect-square overflow-hidden">
                         <MiniaturaImagem
