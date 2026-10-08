@@ -1,5 +1,6 @@
 'use client'
 
+import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 
 // Barra de acoes da ficha ativa. Todos os botoes chamam funcoes que ja
@@ -19,6 +20,7 @@ export default function BarraSuperiorCuradoria({
   onSolicitarSegundaOpiniao,
   salvando,
   aprovando,
+  extra,
 }: {
   posicaoAtual: number | null
   totalFila: number
@@ -32,10 +34,14 @@ export default function BarraSuperiorCuradoria({
   onSolicitarSegundaOpiniao: () => void
   salvando: boolean
   aprovando: boolean
+  /** Conteudo extra renderizado ao lado dos botoes de acao (ex.: badge
+   * "Aguardando sua decisao") - o estado/logica continua todo em
+   * curadoria/page.tsx, essa barra so reserva o espaco visual. */
+  extra?: ReactNode
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
-    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-border bg-base-surface px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-border bg-base-surface px-4 py-3">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <button
@@ -95,6 +101,7 @@ export default function BarraSuperiorCuradoria({
         >
           {t('descartar')}
         </button>
+        {extra}
       </div>
     </div>
   )

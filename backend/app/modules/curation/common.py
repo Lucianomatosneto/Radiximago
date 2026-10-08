@@ -41,12 +41,18 @@ def _registrar_historico(db, curation_id, usuario_id, acao, status_ant, status_n
     ))
 
 
-def _registrar_auditoria(db, usuario_id, acao, entidade_id, resultado, detalhes):
-    """Grava um registro na auditoria (Bloco 4)."""
+def _registrar_auditoria(db, usuario_id, acao, entidade_id, resultado, detalhes, entidade="curation"):
+    """
+    Grava um registro na auditoria (Bloco 4). `entidade` default "curation"
+    preserva todo chamador existente (aprovacao, descarte, edicao de
+    ficha etc.) - achados/erros_tecnicos (Fase 2) passam entidade="achado"
+    ou "erro_tecnico" explicitamente, reaproveitando o mesmo mecanismo em
+    vez de um sistema de auditoria paralelo.
+    """
     db.add(AuditLog(
         usuario_id=usuario_id,
         acao=acao,
-        entidade="curation",
+        entidade=entidade,
         entidade_id=entidade_id,
         resultado=resultado,
         detalhes=detalhes,

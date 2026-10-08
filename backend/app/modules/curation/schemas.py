@@ -1,5 +1,6 @@
 """Schemas Pydantic de entrada dos endpoints de curadoria."""
 
+from datetime import datetime
 from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -15,6 +16,7 @@ from app.modules.curations import (
     DecisaoRevisao,
     DecisaoFinalRevisao,
 )
+from app.modules.achados import TipoAchado, RegiaoAnatomica, TipoErroTecnico
 
 
 class Marcacao(BaseModel):
@@ -40,6 +42,13 @@ class Marcacao(BaseModel):
     # Tipo de lesao indicada por essa forma - o curador escolhe logo apos
     # desenhar, e o estudante ve o rotulo ao passar o mouse em cima dela.
     achado: Optional[AchadoPrincipal] = None
+    # Texto livre usado quando achado == "outro" (a enum AchadoPrincipal e
+    # fechada, entao nao ha como o curador descrever algo fora da lista so
+    # com o campo `achado`) - o estudante ve esse texto no lugar do rotulo
+    # generico "Outro" no tooltip, quando preenchido. Sem validacao cruzada
+    # com `achado` de proposito (mesmo padrao tolerante ja usado em outros
+    # campos de texto livre da ficha, ex.: parecer_revisor).
+    achado_descricao: Optional[str] = None
 
 
 class CurationCreate(BaseModel):
@@ -112,3 +121,72 @@ class AplicarDecisaoRevisao(BaseModel):
     anonimizacao_validada: Optional[bool] = None  # obrigatorio de fato so se decisao == aprovar
     motivo: Optional[str] = None                   # obrigatorio de fato so se decisao == descartar
     observacoes: Optional[str] = None
+
+
+# ---------------------------------------------------------------------
+# Classificacao odontologica estruturada (Fase 2) - Achado / ErroTecnico.
+# Modelos ORM e enums em app/modules/achados.py (Fase 1, aprovada).
+# ---------------------------------------------------------------------
+class AchadoCreate(BaseModel):
+    tipo: TipoAchado
+    regiao_anatomica: Optional[RegiaoAnatomica] = None
+    # Numeros FDI (11-48) relacionados a ESTE achado - validados/normalizados
+    # (duplicata removida, ordenado) na camada de rota, nao aqui, pra poder
+    # cruzar com `dente_nao_identificado` (que so o endpoint tem acesso aos
+    # dois valores juntos no momento da validacao).
+    dentes: Optional[List[int]] = None
+    dente_nao_identificado: bool = False
+    descricao: Optional[str] = None
+    # Mesmo formato geometrico ja usado em Curation.marcacoes - reaproveita
+    # `Marcacao` (acima) sem inventar um novo formato. Os subcampos
+    # achado/achado_descricao de Marcacao ficam sem uso aqui de proposito
+    # (a classificacao do achado ja e o proprio registro, nao mais um
+    # atributo por forma).
+    marcacoes: Optional[List[Marcacao]] = None
+
+
+class AchadoUpdate(BaseModel):
+    """Atualizacao parcial - so os campos enviados sao alterados."""
+    tipo: Optional[TipoAchado] = None
+    regiao_anatomica: Optional[RegiaoAnatomica] = None
+    dentes: Optional[List[int]] = None
+    dente_nao_identificado: Optional[bool] = None
+    descricao: Optional[str] = None
+    marcacoes: Optional[List[Marcacao]] = None
+
+
+class AchadoOut(BaseModel):
+    id: int
+    curation_id: int
+    tipo: str
+    regiao_anatomica: Optional[str] = None
+    dentes: Optional[List[int]] = None
+    dente_nao_identificado: bool
+    descricao: Optional[str] = None
+    marcacoes: list
+    criado_em: Optional[datetime] = None
+    atualizado_em: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class ErroTecnicoCreate(BaseModel):
+    tipo: TipoErroTecnico
+    descricao: Optional[str] = None
+
+
+class ErroTecnicoUpdate(BaseModel):
+    tipo: Optional[TipoErroTecnico] = None
+    descricao: Optional[str] = None
+
+
+class ErroTecnicoOut(BaseModel):
+    id: int
+    curation_id: int
+    tipo: str
+    descricao: Optional[str] = None
+    criado_em: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

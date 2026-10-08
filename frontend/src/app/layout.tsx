@@ -1,10 +1,17 @@
 import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 
-export const metadata = {
-  title: 'Rádix Imago',
-  description: 'Base inteligente de imagens para ensino e pesquisa em saúde',
+// Descricao do <meta> segue o mesmo idioma detectado pra pagina (ver
+// i18n/request.ts) - reaproveita Inicio.subtitulo em vez de duplicar o
+// texto aqui. O titulo da aba ("Rádix Imago") e nome proprio da marca,
+// entao continua igual nos dois idiomas de proposito.
+export async function generateMetadata() {
+  const t = await getTranslations('Inicio')
+  return {
+    title: 'Rádix Imago',
+    description: t('subtitulo'),
+  }
 }
 
 export default async function RootLayout({

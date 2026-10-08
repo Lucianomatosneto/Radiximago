@@ -222,6 +222,12 @@ def trocar_senha_propria(
 
 class SolicitarRedefinicao(BaseModel):
     email: EmailStr
+    # Idioma da tela que fez o pedido (ver frontend/src/i18n/config.ts) -
+    # so usado pra escolher o template do e-mail (PT/EN); nao tem efeito
+    # nenhum sobre token/expiracao/seguranca. "pt" se omitido ou invalido,
+    # sem 422 - o formulario de "esqueci a senha" nao deve falhar por causa
+    # de um campo puramente cosmetico.
+    idioma: str | None = None
 
 
 @router.post("/forgot-password")
@@ -252,7 +258,8 @@ def solicitar_redefinicao_senha(
     db.commit()
 
     link_reset = f"{settings.FRONTEND_URL}/redefinir-senha?token={usuario.reset_token}"
-    enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset)
+    idioma_email = dados.idioma if dados.idioma == "en" else "pt"
+    enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset, idioma=idioma_email)
 
     return mensagem_generica
 

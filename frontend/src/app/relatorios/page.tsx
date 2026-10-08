@@ -51,6 +51,13 @@ interface Usuario {
   nome: string
 }
 
+interface MinhasEstatisticas {
+  aprovadas_no_mes: number
+  curadorias_no_mes: number
+  posicao_ranking: number | null
+  total_curadores: number
+}
+
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
     const dados = await response.json()
@@ -137,6 +144,7 @@ export default function RelatoriosPage() {
 
   const [stats, setStats] = useState<StatsResponse | null>(null)
   const [mapaCuradores, setMapaCuradores] = useState<Record<number, string>>({})
+  const [minhasEstatisticas, setMinhasEstatisticas] = useState<MinhasEstatisticas | null>(null)
   const [erro, setErro] = useState('')
   const [perfil, setPerfil] = useState<string | null>(null)
 
@@ -162,11 +170,14 @@ export default function RelatoriosPage() {
     setCarregando(true)
     setErro('')
     try {
-      const [respostaStats, respostaUsuarios] = await Promise.all([
+      const [respostaStats, respostaUsuarios, respostaMinhasEstatisticas] = await Promise.all([
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
           credentials: 'include',
         }),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
+          credentials: 'include',
+        }),
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/minhas-estatisticas`, {
           credentials: 'include',
         }),
       ])
@@ -191,6 +202,13 @@ export default function RelatoriosPage() {
       }
       // Se /users/ falhar por qualquer motivo, os relatorios continuam de pe -
       // so o nome do curador cai no fallback "Usuario #<id>" abaixo.
+
+      // Idem para minhas-estatisticas: e so o card pessoal do curador, se
+      // falhar o resto da tela (indicadores gerais) continua funcionando -
+      // so o card fica de fora (minhasEstatisticas permanece null).
+      if (respostaMinhasEstatisticas.ok) {
+        setMinhasEstatisticas(await respostaMinhasEstatisticas.json())
+      }
     } catch {
       setErro(t('erroCarregar'))
     } finally {
@@ -227,6 +245,34 @@ export default function RelatoriosPage() {
             <p className="mb-4 text-sm text-red-400" role="alert">
               {erro}
             </p>
+          )}
+
+          {/* So pra quem cura de fato (nao administrador, que ja ve a
+              tabela completa "Fichas por curador" com nome de todos logo
+              abaixo) - card pessoal do mes corrente, com a POSICAO no
+              ranking mas sem revelar nome/id/contagem de nenhum colega. */}
+          {perfil === 'curador' && minhasEstatisticas && (
+            <section className="mb-6 rounded-xl border border-brand/40 bg-brand/5 p-5">
+              <h2 className="mb-3 text-sm font-semibold text-slate-200">{t('minhasEstatisticas.titulo')}</h2>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-sm text-slate-400">{t('minhasEstatisticas.aprovadasNoMes')}</p>
+                  <p className="mt-2 text-3xl font-bold text-emerald-400">{minhasEstatisticas.aprovadas_no_mes}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-400">{t('minhasEstatisticas.suaClassificacao')}</p>
+                  <p className="mt-2 text-3xl font-bold text-brand-300">
+                    {minhasEstatisticas.posicao_ranking !== null
+                      ? t('minhasEstatisticas.posicaoDeTotal', {
+                          posicao: minhasEstatisticas.posicao_ranking,
+                          total: minhasEstatisticas.total_curadores,
+                        })
+                      : t('minhasEstatisticas.semCuradoriasNoMes')}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-xs text-slate-500">{t('minhasEstatisticas.notaAnonimizado')}</p>
+            </section>
           )}
 
           {stats && (

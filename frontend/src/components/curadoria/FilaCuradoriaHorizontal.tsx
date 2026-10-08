@@ -123,7 +123,13 @@ export default function FilaCuradoriaHorizontal({
   return (
     <section
       aria-label={t('titulo')}
-      className="flex shrink-0 items-center gap-1.5 p-2"
+      // pt-0 (nao mais p-2 uniforme) - pedido explicito pra a margem
+      // superior das miniaturas encostar na margem inferior da caixa
+      // "Imagem X de Y" logo acima (ver o wrapper sem gap em
+      // curadoria/page.tsx). So o padding de CIMA foi zerado aqui e no
+      // scroll interno logo abaixo (py-1 -> pb-1) - direita/esquerda/baixo
+      // continuam com respiro normal.
+      className="flex shrink-0 items-center gap-1.5 px-2 pb-2 pt-0"
     >
       <button
         type="button"
@@ -149,7 +155,7 @@ export default function FilaCuradoriaHorizontal({
         <div
           ref={scrollRef}
           onScroll={atualizarLimites}
-          className="flex flex-1 gap-2 overflow-x-auto scroll-smooth py-1"
+          className="flex flex-1 gap-2 overflow-x-auto scroll-smooth pb-1 pt-0"
         >
           {fila.map((imagem) => {
             const ativo = ativoOrthancReferenceId === imagem.orthanc_reference_id

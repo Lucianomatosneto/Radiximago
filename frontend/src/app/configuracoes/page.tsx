@@ -1,6 +1,7 @@
 'use client'
 
 import { ReactNode, useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -85,6 +86,8 @@ function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: strin
 }
 
 export default function ConfiguracoesPage() {
+  const t = useTranslations('Configuracoes')
+  const tComum = useTranslations('Comum')
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
 
@@ -118,13 +121,13 @@ export default function ConfiguracoesPage() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, 'Não foi possível carregar as configurações.'))
+        setErro(await extrairErro(resposta, t('erroCarregarGenerico')))
         return
       }
       const dados: SettingsResponse = await resposta.json()
       setConfig(dados)
     } catch {
-      setErro('Não foi possível carregar as configurações.')
+      setErro(t('erroCarregarGenerico'))
     } finally {
       setCarregando(false)
     }
@@ -133,7 +136,7 @@ export default function ConfiguracoesPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -147,11 +150,10 @@ export default function ConfiguracoesPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">Configurações</h1>
+          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
 
           <div className="mb-6 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
-            Estas configurações são definidas no ambiente do servidor. A edição pela
-            interface ainda não está disponível — qualquer alteração requer suporte técnico.
+            {t('avisoSomenteServidor')}
           </div>
 
           {erro && (
@@ -161,53 +163,52 @@ export default function ConfiguracoesPage() {
           )}
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Secao titulo="Geral">
+            <Secao titulo={t('secaoGeral')}>
               <dl className="space-y-3">
-                <Campo label="Nome do sistema" valor="Radix Imago" />
-                <Campo label="Ambiente" valor={config?.environment ?? '—'} />
+                <Campo label={t('nomeSistema')} valor="Radix Imago" />
+                <Campo label={t('ambiente')} valor={config?.environment ?? '—'} />
               </dl>
             </Secao>
 
-            <Secao titulo="Segurança">
+            <Secao titulo={t('secaoSeguranca')}>
               <dl className="space-y-3">
-                <Campo label="Algoritmo de token" valor={config?.jwt_algorithm ?? '—'} />
+                <Campo label={t('algoritmoToken')} valor={config?.jwt_algorithm ?? '—'} />
                 <Campo
-                  label="Tempo de sessão"
-                  valor={config ? `${config.jwt_expire_minutes} minutos` : '—'}
+                  label={t('tempoSessao')}
+                  valor={config ? t('tempoSessaoMinutos', { minutos: config.jwt_expire_minutes }) : '—'}
                 />
               </dl>
             </Secao>
 
-            <Secao titulo="Integrações técnicas">
+            <Secao titulo={t('secaoIntegracoesTecnicas')}>
               <dl className="space-y-3">
-                <Campo label="URL do Orthanc" valor={config?.orthanc_url ?? '—'} />
-                <Campo label="URL do DICOMWeb" valor={config?.dicomweb_url ?? '—'} />
-                <Campo label="URL do OHIF" valor={config?.ohif_base_url ?? '—'} />
+                <Campo label={t('urlOrthanc')} valor={config?.orthanc_url ?? '—'} />
+                <Campo label={t('urlDicomweb')} valor={config?.dicomweb_url ?? '—'} />
+                <Campo label={t('urlOhif')} valor={config?.ohif_base_url ?? '—'} />
               </dl>
             </Secao>
 
-            <Secao titulo="Upload">
+            <Secao titulo={t('secaoUpload')}>
               <dl className="space-y-3">
                 <Campo
-                  label="Tamanho máximo de upload"
-                  valor={config ? `${config.max_upload_size_mb} MB` : '—'}
+                  label={t('tamanhoMaximoUpload')}
+                  valor={config ? t('tamanhoMaximoUploadMb', { mb: config.max_upload_size_mb }) : '—'}
                 />
               </dl>
             </Secao>
 
             <div className="lg:col-span-2">
-              <Secao titulo="Valores fixos do sistema">
+              <Secao titulo={t('secaoValoresFixos')}>
                 <p className="mb-4 text-xs text-slate-500">
-                  Não vêm da API — são os mesmos vocabulários já usados nas telas de Curadoria,
-                  Pesquisa e Usuários, mostrados aqui só como referência.
+                  {t('notaValoresFixos')}
                 </p>
                 <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <ListaValoresFixos
-                    titulo="Modalidades de radiografia"
+                    titulo={t('modalidadesRadiografia')}
                     valores={MODALIDADES_RADIOGRAFIA}
                   />
-                  <ListaValoresFixos titulo="Status de curadoria" valores={STATUS_CURADORIA} />
-                  <ListaValoresFixos titulo="Perfis de usuário" valores={PERFIS_USUARIO} />
+                  <ListaValoresFixos titulo={t('statusCuradoria')} valores={STATUS_CURADORIA} />
+                  <ListaValoresFixos titulo={t('perfisUsuario')} valores={PERFIS_USUARIO} />
                 </dl>
               </Secao>
             </div>

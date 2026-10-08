@@ -69,8 +69,12 @@ export default function FormasMarcacoes({
   const tAchado = useTranslations('Pesquisa.opcoes.achadoPrincipal')
   const tMarcacao = useTranslations('Visualizador.marcacao')
 
-  function rotularAchado(achado: string | null | undefined): string {
-    const chave = achado ? CHAVE_ACHADO[achado] : undefined
+  function rotularAchado(m: Marcacao): string {
+    // "Outro" com descricao livre preenchida: mostra o texto do curador em
+    // vez do rotulo generico "Outro" - e a descricao que de fato diz o
+    // que foi observado, ja que a lista de achados e fechada.
+    if (m.achado === 'outro' && m.achado_descricao?.trim()) return m.achado_descricao.trim()
+    const chave = m.achado ? CHAVE_ACHADO[m.achado] : undefined
     return chave ? tAchado(chave) : ''
   }
 
@@ -80,7 +84,7 @@ export default function FormasMarcacoes({
     // sem isso, passar o mouse numa marcacao antiga (de antes desse campo
     // existir, ou que o curador simplesmente nao preencheu) nao dava
     // nenhum retorno visual, parecendo que o hover nao funcionava.
-    const texto = rotularAchado(m.achado) || tMarcacao('lesaoGenerica')
+    const texto = rotularAchado(m) || tMarcacao('lesaoGenerica')
     return {
       onMouseMove: (evento: React.MouseEvent) => onHover({ texto, x: evento.clientX, y: evento.clientY }),
       onMouseLeave: () => onHover(null),
@@ -94,7 +98,7 @@ export default function FormasMarcacoes({
   // (0-1) da marcacao, pra funcionar em qualquer zoom/tamanho de imagem.
   function eventosHoverSeta(m: Marcacao) {
     if (!onHover) return {}
-    const texto = rotularAchado(m.achado) || tMarcacao('lesaoGenerica')
+    const texto = rotularAchado(m) || tMarcacao('lesaoGenerica')
     return {
       onMouseMove: (evento: React.MouseEvent<SVGRectElement>) => {
         const svg = evento.currentTarget.ownerSVGElement

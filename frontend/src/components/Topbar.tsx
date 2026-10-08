@@ -206,7 +206,9 @@ export default function Topbar() {
             </span>
             <span className="text-left leading-tight">
               <span className="block text-[11px] text-slate-400">{nome || t('visitante')}</span>
-              <span className="block font-medium capitalize text-ink">{perfil || '—'}</span>
+              <span className="block font-medium text-ink">
+                {perfil ? t(`perfis.${perfil}` as Parameters<typeof t>[0]) : '—'}
+              </span>
             </span>
             <span className="text-slate-500" aria-hidden="true">
               {menuAberto ? '▲' : '▼'}

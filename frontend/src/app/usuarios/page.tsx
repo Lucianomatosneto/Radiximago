@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, FormEvent, ReactNode } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -54,25 +55,24 @@ interface SolicitacaoAcesso {
   criado_em?: string
 }
 
-function capitalizar(texto: string): string {
-  return texto.charAt(0).toUpperCase() + texto.slice(1)
-}
-
-function formatarData(valor: string | undefined): string {
+function formatarData(valor: string | undefined, idioma: string): string {
   if (!valor) return '—'
   const data = new Date(valor)
   if (Number.isNaN(data.getTime())) return '—'
-  return data.toLocaleDateString('pt-BR')
+  return data.toLocaleDateString(idioma === 'en' ? 'en-US' : 'pt-BR')
 }
 
-function statusDoUsuario(usuario: Usuario): { label: string; classe: string } {
+function statusDoUsuario(
+  usuario: Usuario,
+  t: ReturnType<typeof useTranslations>
+): { label: string; classe: string } {
   if (usuario.bloqueado) {
-    return { label: 'Bloqueado', classe: 'bg-red-500/15 text-red-300 border-red-600/40' }
+    return { label: t('statusBloqueado'), classe: 'bg-red-500/15 text-red-300 border-red-600/40' }
   }
   if (!usuario.ativo) {
-    return { label: 'Inativo', classe: 'bg-slate-500/15 text-slate-300 border-slate-600/40' }
+    return { label: t('statusInativo'), classe: 'bg-slate-500/15 text-slate-300 border-slate-600/40' }
   }
-  return { label: 'Ativo', classe: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40' }
+  return { label: t('statusAtivo'), classe: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40' }
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -85,7 +85,7 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-function Modal({ children, onFechar }: { children: ReactNode; onFechar: () => void }) {
+function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFechar: () => void; fecharRotulo: string }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-md rounded-xl border border-base-border bg-base-surface p-6 shadow-2xl">
@@ -93,7 +93,7 @@ function Modal({ children, onFechar }: { children: ReactNode; onFechar: () => vo
       </div>
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={fecharRotulo}
         onClick={onFechar}
         className="fixed inset-0 -z-10"
       />
@@ -102,6 +102,9 @@ function Modal({ children, onFechar }: { children: ReactNode; onFechar: () => vo
 }
 
 export default function UsuariosPage() {
+  const t = useTranslations('Usuarios')
+  const tComum = useTranslations('Comum')
+  const idioma = useLocale()
   const router = useRouter()
   const [autenticado, setAutenticado] = useState(false)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
@@ -242,7 +245,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroExclusao(await extrairErro(response, 'Não foi possível excluir o usuário.'))
+        setErroExclusao(await extrairErro(response, t('erroExcluirUsuario')))
         return
       }
 
@@ -272,7 +275,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroExcluidos('Não foi possível carregar os usuários excluídos.')
+        setErroExcluidos(t('erroCarregarExcluidos'))
         return
       }
       const dados: UsuarioExcluido[] = await response.json()
@@ -310,7 +313,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroAprovacao(await extrairErro(response, 'Não foi possível aprovar a solicitação.'))
+        setErroAprovacao(await extrairErro(response, t('erroAprovarSolicitacao')))
         return
       }
 
@@ -333,7 +336,7 @@ export default function UsuariosPage() {
     if (!rejeicao || !autenticado) return
 
     if (!rejeicao.motivo.trim()) {
-      setErroRejeicao('Informe o motivo da rejeição.')
+      setErroRejeicao(t('erroMotivoRejeicaoObrigatorio'))
       return
     }
 
@@ -356,7 +359,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroRejeicao(await extrairErro(response, 'Não foi possível rejeitar a solicitação.'))
+        setErroRejeicao(await extrairErro(response, t('erroRejeitarSolicitacao')))
         return
       }
 
@@ -400,7 +403,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroEdicao(await extrairErro(response, 'Não foi possível salvar as alterações.'))
+        setErroEdicao(await extrairErro(response, t('erroSalvarAlteracoes')))
         return
       }
 
@@ -408,7 +411,7 @@ export default function UsuariosPage() {
       setUsuarios((prev) => prev.map((u) => (u.id === atualizado.id ? atualizado : u)))
       setEdicao(null)
     } catch {
-      setErroEdicao('Não foi possível salvar as alterações.')
+      setErroEdicao(t('erroSalvarAlteracoes'))
     } finally {
       setSalvandoEdicao(false)
     }
@@ -425,7 +428,7 @@ export default function UsuariosPage() {
     if (!autenticado) return
 
     if (formCriacao.senha.length < 8) {
-      setErroCriacao('A senha deve ter ao menos 8 caracteres.')
+      setErroCriacao(t('erroSenhaCurta'))
       return
     }
 
@@ -453,7 +456,7 @@ export default function UsuariosPage() {
         return
       }
       if (!response.ok) {
-        setErroCriacao(await extrairErro(response, 'Não foi possível criar o usuário.'))
+        setErroCriacao(await extrairErro(response, t('erroCriarUsuario')))
         return
       }
 
@@ -461,7 +464,7 @@ export default function UsuariosPage() {
       setUsuarios((prev) => [...prev, novo])
       setModalCriacaoAberto(false)
     } catch {
-      setErroCriacao('Não foi possível criar o usuário.')
+      setErroCriacao(t('erroCriarUsuario'))
     } finally {
       setCriando(false)
     }
@@ -470,7 +473,7 @@ export default function UsuariosPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -483,42 +486,42 @@ export default function UsuariosPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-1 text-xl font-semibold text-slate-100">Usuários</h1>
+          <h1 className="mb-1 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
           <p className="mb-6 text-sm text-slate-500">
-            Gerencie docentes, estudantes e administradores da plataforma.
+            {t('subtitulo')}
           </p>
 
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <DashboardCard label="Total de usuários" valor={usuarios.length} cor="blue" />
+            <DashboardCard label={t('cards.totalUsuarios')} valor={usuarios.length} cor="blue" />
             <DashboardCard
-              label="Docentes"
+              label={t('cards.docentes')}
               valor={usuarios.filter((u) => u.perfil === 'professor').length}
               cor="teal"
             />
             <DashboardCard
-              label="Estudantes"
+              label={t('cards.estudantes')}
               valor={usuarios.filter((u) => u.perfil === 'estudante').length}
               cor="green"
             />
-            <DashboardCard label="Convites pendentes" valor={solicitacoes.length} cor="amber" />
+            <DashboardCard label={t('cards.convitesPendentes')} valor={solicitacoes.length} cor="amber" />
           </div>
 
           {!carregandoSolicitacoes && solicitacoes.length > 0 && (
             <div className="mb-8">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Solicitações de acesso pendentes ({solicitacoes.length})
+                {t('solicitacoesPendentesTitulo', { total: solicitacoes.length })}
               </h2>
               <div className="overflow-x-auto rounded-xl border border-base-border">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-base-surface text-slate-400">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Nome</th>
-                      <th className="px-4 py-3 font-medium">E-mail</th>
-                      <th className="px-4 py-3 font-medium">Perfil solicitado</th>
-                      <th className="px-4 py-3 font-medium">Instituição</th>
-                      <th className="px-4 py-3 font-medium">Motivo</th>
-                      <th className="px-4 py-3 font-medium">Recebida em</th>
-                      <th className="px-4 py-3 font-medium">Ações</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.nome')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.email')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.perfilSolicitado')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.instituicao')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.motivo')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.recebidaEm')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.acoes')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 bg-base">
@@ -526,12 +529,14 @@ export default function UsuariosPage() {
                       <tr key={solicitacao.id} className="text-slate-200">
                         <td className="px-4 py-3">{solicitacao.nome}</td>
                         <td className="px-4 py-3 text-slate-400">{solicitacao.email}</td>
-                        <td className="px-4 py-3">{capitalizar(solicitacao.perfil_solicitado)}</td>
+                        <td className="px-4 py-3">
+                          {t(`perfis.${solicitacao.perfil_solicitado}` as Parameters<typeof t>[0])}
+                        </td>
                         <td className="px-4 py-3 text-slate-400">{solicitacao.instituicao || '—'}</td>
                         <td className="px-4 py-3 max-w-xs truncate text-slate-400" title={solicitacao.motivo || ''}>
                           {solicitacao.motivo || '—'}
                         </td>
-                        <td className="px-4 py-3 text-slate-400">{formatarData(solicitacao.criado_em)}</td>
+                        <td className="px-4 py-3 text-slate-400">{formatarData(solicitacao.criado_em, idioma)}</td>
                         <td className="px-4 py-3">
                           <div className="flex gap-2">
                             <button
@@ -540,7 +545,7 @@ export default function UsuariosPage() {
                               disabled={processandoSolicitacaoId === solicitacao.id}
                               className="rounded-md border border-emerald-700 px-3 py-1 text-xs text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-60"
                             >
-                              Aprovar
+                              {t('aprovar')}
                             </button>
                             <button
                               type="button"
@@ -548,7 +553,7 @@ export default function UsuariosPage() {
                               disabled={processandoSolicitacaoId === solicitacao.id}
                               className="rounded-md border border-red-700 px-3 py-1 text-xs text-red-300 hover:bg-red-900/30 disabled:opacity-60"
                             >
-                              Rejeitar
+                              {t('rejeitar')}
                             </button>
                           </div>
                         </td>
@@ -565,7 +570,7 @@ export default function UsuariosPage() {
               type="text"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
-              placeholder="Buscar por nome ou e-mail..."
+              placeholder={t('buscarPlaceholder')}
               className="w-64 rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
 
@@ -574,10 +579,10 @@ export default function UsuariosPage() {
               onChange={(e) => setFiltroPerfil(e.target.value)}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
-              <option value="">Todos os perfis</option>
+              <option value="">{t('todosPerfis')}</option>
               {PERFIS.map((perfil) => (
                 <option key={perfil} value={perfil}>
-                  {capitalizar(perfil)}
+                  {t(`perfis.${perfil}` as Parameters<typeof t>[0])}
                 </option>
               ))}
             </select>
@@ -587,9 +592,9 @@ export default function UsuariosPage() {
               onChange={(e) => setFiltroStatus(e.target.value)}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             >
-              <option value="">Todos os status</option>
-              <option value="ativo">Ativo</option>
-              <option value="bloqueado">Bloqueado</option>
+              <option value="">{t('todosStatus')}</option>
+              <option value="ativo">{t('statusAtivo')}</option>
+              <option value="bloqueado">{t('statusBloqueado')}</option>
             </select>
 
             <button
@@ -597,7 +602,7 @@ export default function UsuariosPage() {
               onClick={alternarListaExcluidos}
               className="ml-auto rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
             >
-              {mostrarExcluidos ? 'Ocultar excluídos' : 'Ver usuários excluídos'}
+              {mostrarExcluidos ? t('ocultarExcluidos') : t('verExcluidos')}
             </button>
 
             <button
@@ -605,14 +610,14 @@ export default function UsuariosPage() {
               onClick={abrirCriacao}
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
-              Novo usuário
+              {t('novoUsuario')}
             </button>
           </div>
 
           {mostrarExcluidos && (
             <div className="mb-6">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
-                Usuários excluídos{usuariosExcluidos.length > 0 ? ` (${usuariosExcluidos.length})` : ''}
+                {t('usuariosExcluidosTitulo')}{usuariosExcluidos.length > 0 ? ` (${usuariosExcluidos.length})` : ''}
               </h2>
 
               {erroExcluidos && (
@@ -625,25 +630,25 @@ export default function UsuariosPage() {
                 <table className="w-full text-left text-sm">
                   <thead className="bg-base-surface text-slate-400">
                     <tr>
-                      <th className="px-4 py-3 font-medium">Nome</th>
-                      <th className="px-4 py-3 font-medium">E-mail</th>
-                      <th className="px-4 py-3 font-medium">Perfil</th>
-                      <th className="px-4 py-3 font-medium">Instituição</th>
-                      <th className="px-4 py-3 font-medium">Excluído em</th>
-                      <th className="px-4 py-3 font-medium">Excluído por</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.nome')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.email')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.perfil')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.instituicao')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.excluidoEm')}</th>
+                      <th className="px-4 py-3 font-medium">{t('tabela.excluidoPor')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800 bg-base">
                     {carregandoExcluidos ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                          Carregando...
+                          {tComum('carregando')}
                         </td>
                       </tr>
                     ) : usuariosExcluidos.length === 0 ? (
                       <tr>
                         <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
-                          Nenhum usuário excluído.
+                          {t('nenhumExcluido')}
                         </td>
                       </tr>
                     ) : (
@@ -651,9 +656,9 @@ export default function UsuariosPage() {
                         <tr key={usuario.id} className="text-slate-400">
                           <td className="px-4 py-3 text-slate-300">{usuario.nome}</td>
                           <td className="px-4 py-3">{usuario.email}</td>
-                          <td className="px-4 py-3">{capitalizar(usuario.perfil)}</td>
+                          <td className="px-4 py-3">{t(`perfis.${usuario.perfil}` as Parameters<typeof t>[0])}</td>
                           <td className="px-4 py-3">{usuario.instituicao || '—'}</td>
-                          <td className="px-4 py-3">{formatarData(usuario.excluido_em)}</td>
+                          <td className="px-4 py-3">{formatarData(usuario.excluido_em, idioma)}</td>
                           <td className="px-4 py-3">{usuario.excluido_por || '—'}</td>
                         </tr>
                       ))
@@ -668,23 +673,23 @@ export default function UsuariosPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-base-surface text-slate-400">
                 <tr>
-                  <th className="px-4 py-3 font-medium">Nome</th>
-                  <th className="px-4 py-3 font-medium">E-mail</th>
-                  <th className="px-4 py-3 font-medium">Perfil</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Instituição</th>
-                  <th className="px-4 py-3 font-medium">Cadastrado em</th>
-                  <th className="px-4 py-3 font-medium">Ações</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.nome')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.email')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.perfil')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.status')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.instituicao')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.cadastradoEm')}</th>
+                  <th className="px-4 py-3 font-medium">{t('tabela.acoes')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-base">
                 {usuariosFiltrados.map((usuario) => {
-                  const status = statusDoUsuario(usuario)
+                  const status = statusDoUsuario(usuario, t)
                   return (
                     <tr key={usuario.id} className="text-slate-200">
                       <td className="px-4 py-3">{usuario.nome}</td>
                       <td className="px-4 py-3 text-slate-400">{usuario.email}</td>
-                      <td className="px-4 py-3">{capitalizar(usuario.perfil)}</td>
+                      <td className="px-4 py-3">{t(`perfis.${usuario.perfil}` as Parameters<typeof t>[0])}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${status.classe}`}
@@ -693,7 +698,7 @@ export default function UsuariosPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-400">{usuario.instituicao || '—'}</td>
-                      <td className="px-4 py-3 text-slate-400">{formatarData(usuario.criado_em)}</td>
+                      <td className="px-4 py-3 text-slate-400">{formatarData(usuario.criado_em, idioma)}</td>
                       <td className="px-4 py-3">
                         <div className="flex gap-2">
                           <button
@@ -701,21 +706,21 @@ export default function UsuariosPage() {
                             onClick={() => abrirEdicao(usuario)}
                             className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                           >
-                            Editar
+                            {t('editar')}
                           </button>
                           <button
                             type="button"
                             onClick={() => alternarBloqueio(usuario)}
                             className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-red-500 hover:text-red-300"
                           >
-                            {usuario.bloqueado ? 'Ativar' : 'Bloquear'}
+                            {usuario.bloqueado ? t('ativar') : t('bloquear')}
                           </button>
                           <button
                             type="button"
                             onClick={() => abrirExclusao(usuario)}
                             className="rounded-md border border-red-800/60 px-3 py-1 text-xs text-red-300 hover:bg-red-950/40"
                           >
-                            Excluir
+                            {t('excluir')}
                           </button>
                         </div>
                       </td>
@@ -726,7 +731,7 @@ export default function UsuariosPage() {
                 {usuariosFiltrados.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-6 text-center text-slate-500">
-                      Nenhum usuário encontrado.
+                      {t('nenhumEncontrado')}
                     </td>
                   </tr>
                 )}
@@ -737,11 +742,11 @@ export default function UsuariosPage() {
       </div>
 
       {edicao && (
-        <Modal onFechar={() => setEdicao(null)}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">Editar usuário</h2>
+        <Modal onFechar={() => setEdicao(null)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalEditarTitulo')}</h2>
           <form onSubmit={salvarEdicao} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Nome</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
                 type="text"
                 required
@@ -751,7 +756,7 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Instituição</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('tabela.instituicao')}</label>
               <input
                 type="text"
                 value={edicao.instituicao}
@@ -772,14 +777,14 @@ export default function UsuariosPage() {
                 onClick={() => setEdicao(null)}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
               >
-                Cancelar
+                {t('cancelar')}
               </button>
               <button
                 type="submit"
                 disabled={salvandoEdicao}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
               >
-                {salvandoEdicao ? 'Salvando...' : 'Salvar'}
+                {salvandoEdicao ? t('salvando') : t('salvar')}
               </button>
             </div>
           </form>
@@ -787,11 +792,11 @@ export default function UsuariosPage() {
       )}
 
       {modalCriacaoAberto && (
-        <Modal onFechar={() => setModalCriacaoAberto(false)}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">Novo usuário</h2>
+        <Modal onFechar={() => setModalCriacaoAberto(false)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalNovoTitulo')}</h2>
           <form onSubmit={criarUsuario} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Nome</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
                 type="text"
                 required
@@ -801,7 +806,7 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">E-mail</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoEmail')}</label>
               <input
                 type="email"
                 required
@@ -811,18 +816,18 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Senha</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoSenha')}</label>
               <input
                 type="password"
                 required
                 value={formCriacao.senha}
                 onChange={(e) => setFormCriacao({ ...formCriacao, senha: e.target.value })}
-                placeholder="Mínimo 8 caracteres"
+                placeholder={t('campoSenhaPlaceholder')}
                 className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Perfil</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoPerfil')}</label>
               <select
                 value={formCriacao.perfil}
                 onChange={(e) => setFormCriacao({ ...formCriacao, perfil: e.target.value })}
@@ -830,14 +835,14 @@ export default function UsuariosPage() {
               >
                 {PERFIS.map((perfil) => (
                   <option key={perfil} value={perfil}>
-                    {capitalizar(perfil)}
+                    {t(`perfis.${perfil}` as Parameters<typeof t>[0])}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">
-                Instituição (opcional)
+                {t('campoInstituicaoOpcional')}
               </label>
               <input
                 type="text"
@@ -859,14 +864,14 @@ export default function UsuariosPage() {
                 onClick={() => setModalCriacaoAberto(false)}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
               >
-                Cancelar
+                {t('cancelar')}
               </button>
               <button
                 type="submit"
                 disabled={criando}
                 className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-60"
               >
-                {criando ? 'Criando...' : 'Criar usuário'}
+                {criando ? t('criando') : t('criarUsuario')}
               </button>
             </div>
           </form>
@@ -874,13 +879,10 @@ export default function UsuariosPage() {
       )}
 
       {exclusao && (
-        <Modal onFechar={() => setExclusao(null)}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">Excluir usuário</h2>
+        <Modal onFechar={() => setExclusao(null)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalExcluirTitulo')}</h2>
           <p className="mb-4 text-sm text-slate-400">
-            Tem certeza que deseja excluir{' '}
-            <span className="text-slate-200">{exclusao.nome}</span> ({exclusao.email})? O usuário deixa de poder
-            entrar e sai da lista de usuários, mas o histórico é mantido e aparece em &quot;Usuários excluídos&quot;.
-            O e-mail fica livre para um novo cadastro.
+            {t('confirmarExclusao', { nome: exclusao.nome, email: exclusao.email })}
           </p>
 
           {erroExclusao && (
@@ -895,7 +897,7 @@ export default function UsuariosPage() {
               onClick={() => setExclusao(null)}
               className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
             >
-              Cancelar
+              {t('cancelar')}
             </button>
             <button
               type="button"
@@ -903,24 +905,26 @@ export default function UsuariosPage() {
               disabled={excluindo}
               className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60"
             >
-              {excluindo ? 'Excluindo...' : 'Excluir usuário'}
+              {excluindo ? t('excluindo') : t('excluirUsuario')}
             </button>
           </div>
         </Modal>
       )}
 
       {aprovacao && (
-        <Modal onFechar={() => setAprovacao(null)}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">Aprovar solicitação</h2>
+        <Modal onFechar={() => setAprovacao(null)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalAprovarTitulo')}</h2>
           <p className="mb-4 text-sm text-slate-400">
-            Aprovando o pedido de <span className="text-slate-200">{aprovacao.solicitacao.nome}</span> (
-            {aprovacao.solicitacao.email}). Intenção declarada:{' '}
-            <span className="text-slate-200">{capitalizar(aprovacao.solicitacao.perfil_solicitado)}</span>.
+            {t('aprovandoPedidoDe', {
+              nome: aprovacao.solicitacao.nome,
+              email: aprovacao.solicitacao.email,
+              perfil: t(`perfis.${aprovacao.solicitacao.perfil_solicitado}` as Parameters<typeof t>[0]),
+            })}
           </p>
           <form onSubmit={confirmarAprovacao} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">
-                Perfil a conceder <span className="text-red-400">*</span>
+                {t('perfilAConceder')} <span className="text-red-400">*</span>
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {PERFIS_CONCEDIVEIS.map((perfil) => (
@@ -934,12 +938,12 @@ export default function UsuariosPage() {
                         : 'border-slate-700 text-slate-300 hover:border-brand/50'
                     }`}
                   >
-                    {capitalizar(perfil)}
+                    {t(`perfis.${perfil}` as Parameters<typeof t>[0])}
                   </button>
                 ))}
               </div>
               <p className="mt-1.5 text-xs text-slate-500">
-                Você pode honrar a intenção do solicitante ou restringir a um perfil diferente (ex.: Estudante).
+                {t('ajudaPerfilConcedido')}
               </p>
             </div>
 
@@ -955,14 +959,14 @@ export default function UsuariosPage() {
                 onClick={() => setAprovacao(null)}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
               >
-                Cancelar
+                {t('cancelar')}
               </button>
               <button
                 type="submit"
                 disabled={processandoSolicitacaoId === aprovacao.solicitacao.id}
                 className="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-600 disabled:opacity-60"
               >
-                {processandoSolicitacaoId === aprovacao.solicitacao.id ? 'Aprovando...' : 'Aprovar solicitação'}
+                {processandoSolicitacaoId === aprovacao.solicitacao.id ? t('aprovando') : t('aprovarSolicitacao')}
               </button>
             </div>
           </form>
@@ -970,21 +974,21 @@ export default function UsuariosPage() {
       )}
 
       {rejeicao && (
-        <Modal onFechar={() => setRejeicao(null)}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">Rejeitar solicitação</h2>
+        <Modal onFechar={() => setRejeicao(null)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalRejeitarTitulo')}</h2>
           <p className="mb-4 text-sm text-slate-400">
-            Rejeitando o pedido de <span className="text-slate-200">{rejeicao.solicitacao.nome}</span> ({rejeicao.solicitacao.email}).
+            {t('rejeitandoPedidoDe', { nome: rejeicao.solicitacao.nome, email: rejeicao.solicitacao.email })}
           </p>
           <form onSubmit={confirmarRejeicao} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">Motivo da rejeição</label>
+              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoMotivoRejeicao')}</label>
               <textarea
                 required
                 rows={3}
                 value={rejeicao.motivo}
                 onChange={(e) => setRejeicao({ ...rejeicao, motivo: e.target.value })}
                 className="w-full resize-none rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                placeholder="Explique por que o pedido está sendo rejeitado"
+                placeholder={t('motivoRejeicaoPlaceholder')}
               />
             </div>
 
@@ -1000,14 +1004,14 @@ export default function UsuariosPage() {
                 onClick={() => setRejeicao(null)}
                 className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
               >
-                Cancelar
+                {t('cancelar')}
               </button>
               <button
                 type="submit"
                 disabled={processandoSolicitacaoId === rejeicao.solicitacao.id}
                 className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-60"
               >
-                {processandoSolicitacaoId === rejeicao.solicitacao.id ? 'Rejeitando...' : 'Rejeitar solicitação'}
+                {processandoSolicitacaoId === rejeicao.solicitacao.id ? t('rejeitando') : t('rejeitarSolicitacao')}
               </button>
             </div>
           </form>

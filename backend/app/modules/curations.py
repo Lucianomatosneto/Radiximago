@@ -30,6 +30,13 @@ from sqlalchemy.sql import func
 
 from app.core.database import Base
 
+# Import so pra registrar Achado/ErroTecnico no mapper do SQLAlchemy antes
+# de as relationships abaixo serem resolvidas (mesmo motivo de
+# orthanc_references.py ser importado por quem usa `relationship("Curation", ...)`
+# de la pra ca) - achados.py NAO importa nada deste arquivo, entao nao ha
+# import circular.
+from app.modules import achados as _achados  # noqa: F401
+
 
 # ---------------------------------------------------------------------
 # Listas fixas (vocabularios controlados) - fonte oficial dos valores
@@ -194,6 +201,13 @@ class Curation(Base):
     curador_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+
+    # Classificacao odontologica estruturada (Fase 1) - ADITIVA, em
+    # paralelo aos campos de classificacao acima (achado_principal,
+    # alteracoes_observadas, achados_detalhe, marcacoes), que continuam
+    # existindo e funcionando exatamente como antes. Ver achados.py.
+    achados = relationship("Achado", back_populates="curation")
+    erros_tecnicos = relationship("ErroTecnico", back_populates="curation")
 
 
 # ---------------------------------------------------------------------

@@ -1,8 +1,8 @@
 'use client'
 
-import { KeyboardEvent, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import StatusBadge from '../StatusBadge'
+import SeletorDentesQuadrante from './SeletorDentesQuadrante'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 
 // Constantes identicas as que existiam em FichaCuradoriaForm.tsx antes de
@@ -17,15 +17,6 @@ const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'oclusal', 'interpr
 
 const OPCOES_GENERO = ['masculino', 'feminino']
 
-// Dentes (notacao FDI): veio de FichaCuradoriaForm.tsx junto com o input e
-// a validacao - pedido explicito pra aparecer aqui, logo abaixo de Sexo.
-const DENTES_PERMANENTES = [
-  ...Array.from({ length: 8 }, (_, i) => 11 + i),
-  ...Array.from({ length: 8 }, (_, i) => 21 + i),
-  ...Array.from({ length: 8 }, (_, i) => 31 + i),
-  ...Array.from({ length: 8 }, (_, i) => 41 + i),
-]
-
 // Qualidade tecnica: veio de FichaCuradoriaForm.tsx - pedido explicito pra
 // aparecer logo abaixo de Dentes. Valores reais do enum QualidadeTecnica
 // no backend.
@@ -38,8 +29,17 @@ const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 // mesmo custando mais altura (a caixa ja tem rolagem propria - ver
 // overflow-y-auto no container abaixo - entao cabe do mesmo jeito).
 const campoLabel = 'mb-1 block text-sm font-medium text-slate-300'
+// Mesma cor de FichaCuradoriaForm.tsx (ver comentario completo la),
+// aplicada aqui pra TODAS as caixas de texto desta tela (pedido
+// explicito). COR SOLIDA (nao mais degrade azul->verde) - um degrade
+// azul->verde na largura da caixa ficava com aparencia bem diferente
+// aqui (caixa ESTREITA, 280px) do que nas caixas LARGAS de baixo
+// (Descricao didatica etc.) - o teal solido fica identico nos dois.
+// Usado pelos campos de faixa etaria e qualidade tecnica abaixo; o campo
+// de dentes (mais abaixo) usa a mesma cor num wrapper proprio, ja que o
+// input dele em si e transparente por cima do wrapper.
 const campoInput =
-  'w-full rounded-lg border border-base-border bg-base-surface2 px-2.5 py-1.5 text-sm text-slate-100 outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
 const botaoOpcao =
   'rounded-full border px-3 py-1.5 text-sm transition-colors'
 
@@ -63,25 +63,6 @@ export default function PainelDadosSobrepostos({
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
-  const [denteInput, setDenteInput] = useState('')
-  const [erroDente, setErroDente] = useState('')
-
-  function adicionarDente(event?: KeyboardEvent<HTMLInputElement>) {
-    if (event) event.preventDefault()
-    const numero = Number(denteInput)
-    if (!DENTES_PERMANENTES.includes(numero)) {
-      setErroDente(t('erroDenteInvalido'))
-      return
-    }
-    setErroDente('')
-    setDenteInput('')
-    if (form.dentes.includes(numero)) return
-    onChange({ ...form, dentes: [...form.dentes, numero].sort((a, b) => a - b) })
-  }
-
-  function removerDente(numero: number) {
-    onChange({ ...form, dentes: form.dentes.filter((d) => d !== numero) })
-  }
 
   return (
     <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 shadow-lg backdrop-blur-sm">
@@ -107,6 +88,14 @@ export default function PainelDadosSobrepostos({
         <label className={campoLabel}>
           {t('tipoRadiografia')} <span className="text-status-danger">*</span>
         </label>
+        {/* Grade 2x2 (Periapical/Panoramica numa linha, Oclusal/
+            Interproximal na outra) - pedido explicito pra economizar
+            altura nesta caixa e reduzir a necessidade de rolagem. So
+            volta a fazer sentido agora que a caixa que envolve este
+            painel tem largura FIXA em 280px (ver w-[280px] em
+            PainelVisualizador.tsx, nao mais o clamp() variavel de antes,
+            que as vezes deixava pouco espaco pra 2 colunas e espremia
+            nomes longos como "Interproximal"). */}
         <div className="grid grid-cols-2 gap-1.5">
           {OPCOES_TIPO_RADIOGRAFIA.map((valor) => (
             <button
@@ -167,42 +156,21 @@ export default function PainelDadosSobrepostos({
         </div>
       </div>
 
-      {/* Dentes (notação FDI): pedido explícito pra aparecer aqui, logo
-          abaixo de Sexo (antes ficava na página 1 da ficha, dentro de
-          "Região anatômica" - saiu de lá pra não duplicar o mesmo campo em
-          dois lugares, seguindo o mesmo padrão já usado pros outros campos
-          que vieram pra esta caixa). */}
+      {/* Dentes da FICHA (notação FDI) - regras odontológicas: quadrante
+          primeiro, números só aparecem depois de escolhido (Fase 3);
+          selecionar outro quadrante NÃO apaga os dentes já marcados nos
+          quadrantes anteriores (SeletorDentesQuadrante mantém a seleção
+          completa em `form.dentes`, independente de qual quadrante está
+          sendo exibido no momento). Continua gravando no MESMO campo
+          Curation.dentes de sempre - nenhum campo novo foi criado. */}
       <div className="border-t border-base-border pt-2.5">
         <label className={campoLabel}>{t('dentes')}</label>
-        <div className="flex flex-wrap gap-1.5 rounded-lg border border-base-border bg-base-surface2 p-2">
-          {form.dentes.map((numero) => (
-            <span
-              key={numero}
-              className="inline-flex items-center gap-1 rounded-full bg-brand/15 px-2 py-0.5 text-sm text-brand-300"
-            >
-              {numero}
-              <button
-                type="button"
-                onClick={() => removerDente(numero)}
-                aria-label={t('removerDente', { numero })}
-                className="text-brand-300 hover:text-brand-hover"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          <input
-            type="text"
-            value={denteInput}
-            onChange={(e) => setDenteInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') adicionarDente(e)
-            }}
-            placeholder={t('exemploDente')}
-            className="w-16 flex-1 bg-transparent text-sm text-slate-100 outline-none"
+        <div className="rounded-lg border border-teal-500/40 bg-teal-100/70 p-2 dark:bg-teal-600/20">
+          <SeletorDentesQuadrante
+            dentesSelecionados={form.dentes}
+            onChange={(dentes) => onChange({ ...form, dentes })}
           />
         </div>
-        {erroDente && <p className="mt-1 text-xs text-red-400">{erroDente}</p>}
       </div>
 
       {/* Qualidade tecnica: pedido explicito pra ficar logo abaixo de

@@ -8,9 +8,11 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
+import SeletorDentesQuadrante from '../../components/curadoria/SeletorDentesQuadrante'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { TIPOS_ACHADO, REGIOES_ANATOMICAS, TIPOS_ERRO_TECNICO, rotularTipoAchado } from '../../lib/achados'
 
 // `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
 // (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
@@ -102,7 +104,6 @@ function estiloCaixaFiltro(indice: number): { backgroundColor: string; borderCol
 
 interface Filtros {
   tipo_radiografia: string
-  dente: string
   arcada: string
   lado: string
   achado_principal: string
@@ -112,11 +113,17 @@ interface Filtros {
   origem: string
   idade_min: string
   idade_max: string
+  // Fase 4 - classificacao odontologica estruturada.
+  quadrante: string
+  dentesSelecionados: number[]
+  modoDentes: 'qualquer_um' | 'todos'
+  achado: string
+  regiaoAnatomica: string
+  erroTecnico: string
 }
 
 const FILTROS_VAZIOS: Filtros = {
   tipo_radiografia: '',
-  dente: '',
   arcada: '',
   lado: '',
   achado_principal: '',
@@ -126,11 +133,22 @@ const FILTROS_VAZIOS: Filtros = {
   origem: '',
   idade_min: '',
   idade_max: '',
+  quadrante: '',
+  dentesSelecionados: [],
+  modoDentes: 'qualquer_um',
+  achado: '',
+  regiaoAnatomica: '',
+  erroTecnico: '',
 }
 
-const CHAVES_FILTRO: (keyof Filtros)[] = [
+// So os filtros de valor simples (string) participam do deep-link por URL
+// (usado pelo Banco de imagens, que so manda tipo_radiografia/achado_principal/
+// qualidade_tecnica hoje - ver GradeCategoriasImagens.tsx) - quadrante/dentes
+// tem forma propria (lista + modo) e nao se encaixam nesse mecanismo de
+// "1 parametro = 1 chave de Filtros", entao ficam de fora dele.
+type ChaveFiltroTexto = Exclude<keyof Filtros, 'dentesSelecionados' | 'modoDentes'>
+const CHAVES_FILTRO: ChaveFiltroTexto[] = [
   'tipo_radiografia',
-  'dente',
   'arcada',
   'lado',
   'achado_principal',
@@ -140,6 +158,10 @@ const CHAVES_FILTRO: (keyof Filtros)[] = [
   'origem',
   'idade_min',
   'idade_max',
+  'quadrante',
+  'achado',
+  'regiaoAnatomica',
+  'erroTecnico',
 ]
 
 interface ResultadoImagem {
@@ -185,6 +207,16 @@ function PesquisaConteudo() {
   const searchParams = useSearchParams()
   const t = useTranslations('Pesquisa')
   const tComum = useTranslations('Comum')
+  // Reaproveita os MESMOS rotulos de regiao anatomica/erro tecnico ja
+  // criados na Fase 3 pra Curadoria (Curadoria.achadosEstruturados/
+  // erroTecnico) - mesmo vocabulario, sem duplicar traducao.
+  const tAchadosEstruturados = useTranslations('Curadoria.achadosEstruturados')
+  const tErroTecnico = useTranslations('Curadoria.erroTecnico')
+  // Mesmo namespace ja usado por PainelAchadosRadiografia.tsx pros 26
+  // valores de achado/alteracao observada - antes rotularTipoAchado
+  // devolvia um rotulo fixo em portugues aqui (bug de i18n), agora usa
+  // esse tradutor.
+  const tAlteracoesItens = useTranslations('AlteracoesObservadas.itens')
   const traduzirTipoRadiografia = (chave: string) => t(`opcoes.tipoRadiografia.${chave}`)
   const traduzirGenero = (chave: string) => t(`opcoes.genero.${chave}`)
   const traduzirArcada = (chave: string) => t(`opcoes.arcada.${chave}`)
@@ -213,6 +245,14 @@ function PesquisaConteudo() {
   // assim da pra ir selecionando "de 10 em 10", "de 15 em 15" etc,
   // acumulando aos poucos em vez de precisar clicar imagem por imagem.
   const [quantidadeLote, setQuantidadeLote] = useState(10)
+  // Incrementado a cada "Limpar filtros" e usado como `key` do
+  // SeletorDentesQuadrante abaixo - forca o componente a remontar do
+  // zero, o que reseta seu estado interno (quadranteAberto), ja que esse
+  // estado nao e controlado por fora (ver SeletorDentesQuadrante.tsx).
+  // Sem isso, o quadrante clicado por ultimo continuava aparecendo
+  // visualmente aberto mesmo depois de "Limpar filtros" (nenhum dente
+  // marcado, nenhum filtro real enviado, mas o painel ficava exposto).
+  const [chaveSeletorDentes, setChaveSeletorDentes] = useState(0)
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -259,8 +299,13 @@ function PesquisaConteudo() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autenticado])
 
-  function atualizarFiltro(campo: keyof Filtros, valor: string) {
+  function atualizarFiltro(campo: ChaveFiltroTexto, valor: string) {
     setFiltros({ ...filtros, [campo]: valor })
+  }
+
+  function limparFiltros() {
+    setFiltros(FILTROS_VAZIOS)
+    setChaveSeletorDentes((c) => c + 1)
   }
 
   async function pesquisar(filtrosParaUsar: Filtros = filtros) {
@@ -271,7 +316,6 @@ function PesquisaConteudo() {
 
     const params = new URLSearchParams()
     if (filtrosParaUsar.tipo_radiografia) params.set('tipo_radiografia', filtrosParaUsar.tipo_radiografia)
-    if (filtrosParaUsar.dente) params.set('dente', filtrosParaUsar.dente)
     if (filtrosParaUsar.arcada) params.set('arcada', filtrosParaUsar.arcada)
     if (filtrosParaUsar.lado) params.set('lado', filtrosParaUsar.lado)
     if (filtrosParaUsar.achado_principal) params.set('achado_principal', filtrosParaUsar.achado_principal)
@@ -281,6 +325,25 @@ function PesquisaConteudo() {
     if (filtrosParaUsar.origem) params.set('origem', filtrosParaUsar.origem)
     if (filtrosParaUsar.idade_min) params.set('idade_min', filtrosParaUsar.idade_min)
     if (filtrosParaUsar.idade_max) params.set('idade_max', filtrosParaUsar.idade_max)
+
+    // Fase 4 - dentes: se ha dentes INDIVIDUAIS marcados, eles mandam (o
+    // quadrante vira redundante, a interface nunca marca os dois ao mesmo
+    // tempo - ver SeletorDentesQuadrante). Sem dente nenhum marcado mas
+    // com um quadrante escolhido, o quadrante sozinho vira filtro (secao
+    // 9/10 do pedido: "Quadrante 4, nenhum dente selecionado" -> pesquisa
+    // por qualquer dente do Q4).
+    if (filtrosParaUsar.dentesSelecionados.length > 0) {
+      filtrosParaUsar.dentesSelecionados.forEach((d) => params.append('dentes', String(d)))
+      if (filtrosParaUsar.dentesSelecionados.length > 1) {
+        params.set('modo_dentes', filtrosParaUsar.modoDentes)
+      }
+    } else if (filtrosParaUsar.quadrante) {
+      params.set('quadrante', filtrosParaUsar.quadrante)
+    }
+    if (filtrosParaUsar.achado) params.set('achado', filtrosParaUsar.achado)
+    if (filtrosParaUsar.regiaoAnatomica) params.set('regiao_anatomica', filtrosParaUsar.regiaoAnatomica)
+    if (filtrosParaUsar.erroTecnico) params.set('erro_tecnico', filtrosParaUsar.erroTecnico)
+
     // Antes nao mandava "limit" nenhum, entao o backend usava o padrao
     // (50) - "Selecionar todas" e a selecao em lote so fazem sentido
     // sobre as imagens que de fato carregaram aqui, entao subimos pro
@@ -448,23 +511,53 @@ function PesquisaConteudo() {
                 </div>
               </div>
 
-              <div>
-                <label className={campoLabel}>{t('campoDente')}</label>
-                <input
-                  type="number"
-                  min={11}
-                  max={48}
-                  value={filtros.dente}
-                  onChange={(e) => atualizarFiltro('dente', e.target.value)}
-                  placeholder={t('placeholderDente')}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(1)}
+              {/* Fase 4: quadrante -> dentes, mesma regra da Curadoria (os
+                  numeros dos dentes so aparecem depois de escolhido um
+                  quadrante - secao 7/53 do pedido). Reaproveita o MESMO
+                  componente/lista FDI da Curadoria (SeletorDentesQuadrante,
+                  lib/dentesFdi.ts), sem duplicar nada. Quadrante SOZINHO
+                  (sem nenhum dente marcado) ja e um filtro valido por si so
+                  - por isso guarda o quadrante ativo em filtros.quadrante
+                  via onQuadranteChange, nao so os dentes marcados. */}
+              <div className="col-span-2 rounded-lg border p-2.5" style={estiloCaixaFiltro(1)}>
+                <label className={campoLabel}>{t('campoDentes')}</label>
+                <SeletorDentesQuadrante
+                  key={chaveSeletorDentes}
+                  dentesSelecionados={filtros.dentesSelecionados}
+                  onChange={(dentes) => setFiltros({ ...filtros, dentesSelecionados: dentes })}
+                  onQuadranteChange={(quadrante) => setFiltros((f) => ({ ...f, quadrante: quadrante ? String(quadrante) : '' }))}
                 />
+                {/* Modo ANY/TODOS - so aparece com mais de 1 dente marcado
+                    (pedido explicito, secao 14: "nao fazer o usuario
+                    selecionar um modo quando houver apenas um dente"). */}
+                {filtros.dentesSelecionados.length > 1 && (
+                  <div className="mt-2 flex items-center gap-3 text-xs text-slate-300">
+                    <label className="flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="modo_dentes"
+                        checked={filtros.modoDentes === 'qualquer_um'}
+                        onChange={() => setFiltros({ ...filtros, modoDentes: 'qualquer_um' })}
+                      />
+                      {t('modoQualquerUm')}
+                    </label>
+                    <label className="flex items-center gap-1.5">
+                      <input
+                        type="radio"
+                        name="modo_dentes"
+                        checked={filtros.modoDentes === 'todos'}
+                        onChange={() => setFiltros({ ...filtros, modoDentes: 'todos' })}
+                      />
+                      {t('modoTodos')}
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoArcada')}</label>
+                <label htmlFor="filtro-arcada" className={campoLabel}>{t('campoArcada')}</label>
                 <select
+                  id="filtro-arcada"
                   value={filtros.arcada}
                   onChange={(e) => atualizarFiltro('arcada', e.target.value)}
                   className={campoInput}
@@ -478,8 +571,9 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoLado')}</label>
+                <label htmlFor="filtro-lado" className={campoLabel}>{t('campoLado')}</label>
                 <select
+                  id="filtro-lado"
                   value={filtros.lado}
                   onChange={(e) => atualizarFiltro('lado', e.target.value)}
                   className={campoInput}
@@ -493,8 +587,9 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoTipoExame')}</label>
+                <label htmlFor="filtro-tipo-exame" className={campoLabel}>{t('campoTipoExame')}</label>
                 <select
+                  id="filtro-tipo-exame"
                   value={filtros.tipo_radiografia}
                   onChange={(e) => atualizarFiltro('tipo_radiografia', e.target.value)}
                   className={campoInput}
@@ -508,8 +603,9 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoPatologia')}</label>
+                <label htmlFor="filtro-patologia" className={campoLabel}>{t('campoPatologia')}</label>
                 <select
+                  id="filtro-patologia"
                   value={filtros.achado_principal}
                   onChange={(e) => atualizarFiltro('achado_principal', e.target.value)}
                   className={campoInput}
@@ -522,9 +618,70 @@ function PesquisaConteudo() {
                 </select>
               </div>
 
+              {/* Fase 4 - achado/condicao estruturado: busca HIBRIDA
+                  (legado + Achado estruturado) quando sozinho; so
+                  estruturado quando combinado com dentes/regiao (ver
+                  search_router.py). Diferente do campo "Patologia" acima
+                  (achado_principal, legado, write-orphaned na Curadoria
+                  atual - preservado sem alteracao nenhuma). */}
               <div>
-                <label className={campoLabel}>{t('campoQualidadeTecnica')}</label>
+                <label htmlFor="filtro-achado" className={campoLabel}>{t('campoAchado')}</label>
                 <select
+                  id="filtro-achado"
+                  value={filtros.achado}
+                  onChange={(e) => atualizarFiltro('achado', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(9)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {TIPOS_ACHADO.map((valor) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>
+                      {rotularTipoAchado(valor, tAchadosEstruturados('outro'), tAlteracoesItens)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filtro-regiao-anatomica" className={campoLabel}>{t('campoRegiaoAnatomica')}</label>
+                <select
+                  id="filtro-regiao-anatomica"
+                  value={filtros.regiaoAnatomica}
+                  onChange={(e) => atualizarFiltro('regiaoAnatomica', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(10)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {REGIOES_ANATOMICAS.map((valor) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>
+                      {tAchadosEstruturados(`regioes.${valor}` as Parameters<typeof tAchadosEstruturados>[0])}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filtro-erro-tecnico" className={campoLabel}>{t('campoErroTecnico')}</label>
+                <select
+                  id="filtro-erro-tecnico"
+                  value={filtros.erroTecnico}
+                  onChange={(e) => atualizarFiltro('erroTecnico', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(0)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {TIPOS_ERRO_TECNICO.map((valor) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>
+                      {tErroTecnico(`tipos.${valor}` as Parameters<typeof tErroTecnico>[0])}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filtro-qualidade-tecnica" className={campoLabel}>{t('campoQualidadeTecnica')}</label>
+                <select
+                  id="filtro-qualidade-tecnica"
                   value={filtros.qualidade_tecnica}
                   onChange={(e) => atualizarFiltro('qualidade_tecnica', e.target.value)}
                   className={campoInput}
@@ -538,8 +695,9 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoDificuldade')}</label>
+                <label htmlFor="filtro-dificuldade" className={campoLabel}>{t('campoDificuldade')}</label>
                 <select
+                  id="filtro-dificuldade"
                   value={filtros.dificuldade}
                   onChange={(e) => atualizarFiltro('dificuldade', e.target.value)}
                   className={campoInput}
@@ -553,8 +711,9 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label className={campoLabel}>{t('campoOrigem')}</label>
+                <label htmlFor="filtro-origem" className={campoLabel}>{t('campoOrigem')}</label>
                 <select
+                  id="filtro-origem"
                   value={filtros.origem}
                   onChange={(e) => atualizarFiltro('origem', e.target.value)}
                   className={campoInput}
@@ -594,6 +753,47 @@ function PesquisaConteudo() {
               </div>
             </div>
 
+            {/* Resumo do que esta selecionado no momento (secao 39 do
+                pedido) - so os filtros da classificacao odontologica nova,
+                que sao os que mais mudam de estado (quadrante/dentes/modo)
+                e onde fica menos obvio "o que exatamente vou pesquisar". */}
+            {(filtros.tipo_radiografia || filtros.quadrante || filtros.dentesSelecionados.length > 0 || filtros.achado || filtros.regiaoAnatomica || filtros.erroTecnico) && (
+              <div className="mt-4 flex flex-wrap items-center gap-1.5 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-slate-300">
+                <span className="font-medium text-brand-300">{t('resumoSelecaoTitulo')}:</span>
+                {filtros.tipo_radiografia && (
+                  <span>
+                    {t('resumoTipoRadiografia', { tipo: rotular(OPCOES_TIPO_RADIOGRAFIA, filtros.tipo_radiografia, traduzirTipoRadiografia) })}
+                  </span>
+                )}
+                {filtros.quadrante && <span>{t('resumoQuadrante', { numero: filtros.quadrante })}</span>}
+                {filtros.dentesSelecionados.length > 0 && (
+                  <span>{t('resumoDentes', { dentes: filtros.dentesSelecionados.join(', ') })}</span>
+                )}
+                {filtros.dentesSelecionados.length > 1 && (
+                  <span>
+                    {t('resumoModo', { modo: filtros.modoDentes === 'todos' ? t('modoTodos') : t('modoQualquerUm') })}
+                  </span>
+                )}
+                {filtros.achado && (
+                  <span>{t('resumoAchado', { achado: rotularTipoAchado(filtros.achado, tAchadosEstruturados('outro'), tAlteracoesItens) })}</span>
+                )}
+                {filtros.regiaoAnatomica && (
+                  <span>
+                    {t('resumoRegiao', {
+                      regiao: tAchadosEstruturados(`regioes.${filtros.regiaoAnatomica}` as Parameters<typeof tAchadosEstruturados>[0]),
+                    })}
+                  </span>
+                )}
+                {filtros.erroTecnico && (
+                  <span>
+                    {t('resumoErroTecnico', {
+                      erro: tErroTecnico(`tipos.${filtros.erroTecnico}` as Parameters<typeof tErroTecnico>[0]),
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+
             <div className="mt-5 flex items-center gap-3">
               <button
                 type="button"
@@ -602,6 +802,14 @@ function PesquisaConteudo() {
                 className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-5 py-2.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 🔍 {pesquisando ? t('pesquisando') : t('botaoPesquisar')}
+              </button>
+              <button
+                type="button"
+                onClick={limparFiltros}
+                disabled={pesquisando}
+                className="rounded-lg border border-base-border px-4 py-2.5 text-sm text-slate-300 hover:border-status-danger hover:text-status-danger disabled:opacity-50"
+              >
+                {t('botaoLimparFiltros')}
               </button>
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
