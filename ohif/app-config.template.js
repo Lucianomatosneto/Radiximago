@@ -176,8 +176,9 @@ window.config = {
       });
       if (pares.length) s.viewportGridService.setDisplaySetsForViewports(pares);
       // mais espaco para as imagens: recolhe a coluna "Studies" da esquerda
+      // (so clica se a coluna estiver aberta - o mesmo botao abre e fecha)
       var recolher = document.querySelector('[data-cy="side-panel-header-left"]');
-      if (recolher) recolher.click();
+      if (recolher && document.querySelector('[data-cy="studyBrowser-panel"]')) recolher.click();
       // o reprodutor de "cine" (play/FPS) nao faz sentido para radiografias
       // de uma imagem so e cobriria parte de cada quadro
       try { if (s.cineService) s.cineService.setIsCineEnabled(false); } catch (e) { /* opcional */ }
