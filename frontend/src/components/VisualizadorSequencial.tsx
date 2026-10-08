@@ -9,7 +9,9 @@ import MarcacaoAchado from './detalhe/MarcacaoAchado'
 import ImagemPrincipalMarcada from './detalhe/ImagemPrincipalMarcada'
 import AnotacoesImagem from './detalhe/AnotacoesImagem'
 import Logo from './Logo'
+import FundoMapaMundi from './fundo/FundoMapaMundi'
 import ThemeToggle from './ThemeToggle'
+import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
 import type { Marcacao } from '../lib/marcacoes'
 import { corTextoAchado } from '../lib/coresAchados'
 
@@ -85,6 +87,44 @@ function origemAmpliacaoFila(indice: number, total: number): string {
   return 'origin-left'
 }
 
+// StudyInstanceUID dentro do viewer_url (".../viewer?StudyInstanceUIDs=<uid>")
+function estudoDe(viewerUrl: string | null): string | null {
+  if (!viewerUrl) return null
+  try {
+    return new URL(viewerUrl).searchParams.get('StudyInstanceUIDs')
+  } catch {
+    return null
+  }
+}
+
+function origemDe(viewerUrl: string | null): string | null {
+  if (!viewerUrl) return null
+  try {
+    return new URL(viewerUrl).origin
+  } catch {
+    return null
+  }
+}
+
+// Um endereco do OHIF com todos os estudos da pagina, na ordem, e a grade.
+// Retorna null se algum item nao tiver estudo no OHIF.
+function montarUrlGrade(itensPagina: ItemSequencia[], grade: Grade): string | null {
+  if (itensPagina.length < 2) return null
+  const estudos = itensPagina.map((item) => estudoDe(item.viewer_url))
+  if (estudos.some((e) => !e)) return null
+  try {
+    const url = new URL(itensPagina[0].viewer_url as string)
+    url.search = ''
+    url.searchParams.set('StudyInstanceUIDs', estudos.join(','))
+    url.searchParams.set('radixGrade', `${grade.linhas}x${grade.colunas}`)
+    // URLSearchParams codifica a virgula como %2C; o OHIF aceita os dois,
+    // mas deixamos a virgula legivel como no endereco original
+    return url.toString().replace(/%2C/g, ',')
+  } catch {
+    return null
+  }
+}
+
 interface Props {
   itens: ItemSequencia[]
   indiceInicial: number
@@ -150,6 +190,61 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   // novo a cada troca.
   const [mostrarMarcacaoTodas, setMostrarMarcacaoTodas] = useState(false)
   const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
+
+  // LAYOUT DA AREA DE IMAGENS (quantas imagens lado a lado). Padrao: 2
+  // imagens (1 linha x 2 colunas). A escolha fica guardada neste navegador.
+  const [grade, setGrade] = useState<Grade>({ linhas: 1, colunas: 2 })
+  useEffect(() => {
+    try {
+      const salvo = JSON.parse(localStorage.getItem('radix_layout_visualizador') || 'null')
+      if (salvo && salvo.linhas >= 1 && salvo.colunas >= 1) setGrade({ linhas: salvo.linhas, colunas: salvo.colunas })
+    } catch {
+      // sem preferencia salva: fica o padrao
+    }
+  }, [])
+  function escolherGrade(nova: Grade) {
+    setGrade(nova)
+    try {
+      localStorage.setItem('radix_layout_visualizador', JSON.stringify(nova))
+    } catch {
+      // armazenamento indisponivel: vale so nesta sessao
+    }
+  }
+  // Com uma imagem so na selecao, nao faz sentido dividir a tela.
+  const celulas = Math.min(grade.linhas * grade.colunas, Math.max(1, itens.length))
+  const emGrade = celulas > 1
+  // "Pagina" de imagens visivel: as celulas mostram itens[inicio .. inicio+celulas-1]
+  const inicioPagina = Math.floor(indice / celulas) * celulas
+  const itensPagina = itens.slice(inicioPagina, inicioPagina + celulas)
+  // Ao trocar de layout, o OHIF recarrega com o 1o quadro ativo - os dados
+  // embaixo voltam para a 1a imagem da pagina, para os dois combinarem.
+  useEffect(() => {
+    if (celulas > 1) setIndice((i) => Math.floor(i / celulas) * celulas)
+  }, [celulas])
+  // UMA tela so com todas as imagens da pagina: um unico visualizador OHIF
+  // recebe todos os estudos da pagina e o parametro radixGrade
+  // (LINHASxCOLUNAS). O script do Radix dentro do OHIF (ohif/app-config)
+  // divide a area de imagens do proprio OHIF nessa grade - uma barra de
+  // ferramentas so, imagens lado a lado, como nos PACS. Se alguma imagem
+  // da pagina nao tiver estudo no OHIF, cai na grade de imagens simples.
+  const urlGrade = emGrade ? montarUrlGrade(itensPagina, grade) : null
+  const origemOhif = origemDe(itens.find((i) => i.viewer_url)?.viewer_url ?? null)
+
+  // Ao clicar numa imagem dentro do OHIF, ele avisa qual estudo ficou
+  // ativo - os dados embaixo (classificacao, downloads...) passam a ser os
+  // dessa imagem. So aceita mensagens vindas da origem do OHIF.
+  useEffect(() => {
+    if (!emGrade || !origemOhif) return
+    function aoReceber(evento: MessageEvent) {
+      if (evento.origin !== origemOhif) return
+      const dados = evento.data as { tipo?: unknown; estudo?: unknown } | null
+      if (!dados || dados.tipo !== 'radix-estudo-ativo' || typeof dados.estudo !== 'string') return
+      const posicao = itens.findIndex((item) => estudoDe(item.viewer_url) === dados.estudo)
+      if (posicao >= 0) setIndice(posicao)
+    }
+    window.addEventListener('message', aoReceber)
+    return () => window.removeEventListener('message', aoReceber)
+  }, [emGrade, origemOhif, itens])
 
   const atual = itens[indice]
   const seriesValidas = seriesDoItem === atual.curation_id ? series : []
@@ -259,11 +354,23 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     }
   }
 
+  // Em grade, as setas avancam/voltam uma "pagina" inteira de imagens.
   function irParaAnterior() {
+    if (emGrade) {
+      setIndice((i) => Math.max(0, Math.floor(i / celulas) * celulas - celulas))
+      return
+    }
     setIndice((i) => (i > 0 ? i - 1 : i))
   }
 
   function irParaProxima() {
+    if (emGrade) {
+      setIndice((i) => {
+        const proxima = Math.floor(i / celulas) * celulas + celulas
+        return proxima < itens.length ? proxima : i
+      })
+      return
+    }
     setIndice((i) => (i < itens.length - 1 ? i + 1 : i))
   }
 
@@ -397,8 +504,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   }
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-base">
-      <div className="flex items-center justify-between border-b border-base-border px-4 py-3 sm:px-6">
+    <div ref={containerRef} className="fixed inset-0 z-50 isolate flex flex-col bg-base">
+      {/* Mesmo padrao visual das demais telas: mapa-mundi discreto (modo
+          leitura) ao fundo. Fica DENTRO deste painel (que cobre a tela e
+          tambem e o elemento que entra em tela cheia), atras de tudo. As
+          areas das imagens continuam pretas, para a leitura. */}
+      <FundoMapaMundi intensidade="leitura" />
+      <div className="relative z-40 flex items-center justify-between border-b border-base-border bg-base/60 px-4 py-3 backdrop-blur-md sm:px-6">
         <div className="flex items-center gap-4">
           {/* Este visualizador cobre a tela inteira (fixed inset-0), inclusive
               a Topbar (onde a logo normalmente aparece) - por isso ela e
@@ -410,7 +522,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <div className="text-sm text-slate-300">
             {t('imagemPrefixo')} <span className="font-semibold text-ink">#{atual.numero}</span>{' '}
             <span className="text-slate-500">
-              {t('deSelecionadas', { indice: indice + 1, total: itens.length })}
+              {emGrade
+                ? t('paginaDeSelecionadas', {
+                    de: inicioPagina + 1,
+                    ate: inicioPagina + itensPagina.length,
+                    total: itens.length,
+                  })
+                : t('deSelecionadas', { indice: indice + 1, total: itens.length })}
             </span>
             {seriesValidas.length > 1 && (
               <span className="text-slate-500">
@@ -422,6 +540,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} />}
           <ThemeToggle />
           <button
             type="button"
@@ -526,7 +645,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <button
             type="button"
             onClick={irParaAnterior}
-            disabled={indice === 0}
+            disabled={emGrade ? inicioPagina === 0 : indice === 0}
             aria-label={t('estudoAnteriorAria')}
             title={t('estudoAnterior')}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
@@ -547,7 +666,72 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           )}
         </div>
 
-        {mostrarMarcacaoEfetivo ? (
+        {emGrade && urlGrade && !mostrarMarcacaoEfetivo ? (
+          // UMA tela, um visualizador: o OHIF divide a propria area de
+          // imagens na grade escolhida (ver montarUrlGrade). A "key" faz o
+          // OHIF recarregar so quando muda a pagina ou o layout.
+          <div className={`h-full w-full ${telaCheia && itens.length > 1 ? 'pl-[300px] sm:pl-[364px]' : 'px-14 sm:px-16'}`}>
+            <iframe
+              key={urlGrade}
+              src={urlGrade}
+              referrerPolicy="origin"
+              title={t('layout.visualizadorGradeTitulo', { total: itensPagina.length })}
+              className="h-full w-full border-0 bg-black"
+            />
+          </div>
+        ) : emGrade ? (
+          // Sem OHIF (ou com a marcacao do curador ligada): as imagens da
+          // pagina numa UNICA area preta, separadas so por linhas finas -
+          // sem molduras nem barras por imagem. Clique escolhe a imagem
+          // (dados embaixo); clique duplo abre so ela (layout de 1).
+          <div className={`h-full w-full ${telaCheia && itens.length > 1 ? 'pl-[300px] sm:pl-[364px]' : 'px-14 sm:px-16'}`}>
+            <div
+              className="grid h-full w-full gap-px overflow-hidden bg-white/10"
+              style={{ gridTemplateColumns: `repeat(${grade.colunas}, minmax(0,1fr))`, gridTemplateRows: `repeat(${grade.linhas}, minmax(0,1fr))` }}
+            >
+              {Array.from({ length: celulas }, (_, k) => {
+                const idx = inicioPagina + k
+                const item = itens[idx]
+                if (!item) return <div key={`vazio-${k}`} className="bg-black" />
+                const ativa = idx === indice
+                return (
+                  <button
+                    key={item.curation_id}
+                    type="button"
+                    onClick={() => setIndice(idx)}
+                    onDoubleClick={() => {
+                      setIndice(idx)
+                      escolherGrade({ linhas: 1, colunas: 1 })
+                    }}
+                    title={t('layout.celulaDica')}
+                    aria-label={t('irParaImagem', { numero: item.numero })}
+                    aria-pressed={ativa}
+                    className={`relative flex min-h-0 min-w-0 items-center justify-center bg-black ${ativa ? 'ring-2 ring-inset ring-teal-400/80' : ''}`}
+                  >
+                    {ativa && mostrarMarcacaoEfetivo ? (
+                      <ImagemPrincipalMarcada
+                        curationId={item.curation_id}
+                        alt={item.descricao_didatica ?? t('imagemNumero', { numero: item.numero })}
+                        marcacoes={item.marcacoes ?? []}
+                        srcPreCarregado={marcacaoPreviewUrl}
+                      />
+                    ) : (
+                      <MiniaturaImagem
+                        curationId={item.curation_id}
+                        alt={item.descricao_didatica ?? t('imagemNumero', { numero: item.numero })}
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    )}
+                    {/* etiqueta discreta no canto, como nos PACS */}
+                    <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
+                      #{item.numero}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        ) : mostrarMarcacaoEfetivo ? (
           // Mesma caixa (h-full w-full) que o iframe ocupa logo abaixo -
           // a imagem nao muda de tamanho nem de posicao ao ligar/desligar
           // a marcacao, so as formas aparecem/somem.
@@ -584,7 +768,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             esquerdo da imagem - quando a fila estiver visivel, empurrado
             pra depois dela (mesma logica da seta « de voltar), senao fica
             colado na borda. */}
-        {urlComSerie && !mostrarMarcacaoEfetivo && (
+        {urlComSerie && !mostrarMarcacaoEfetivo && !emGrade && (
           <div
             className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur ${
               telaCheia && itens.length > 1 ? 'left-[300px] sm:left-[364px]' : 'left-3 sm:left-6'
@@ -621,7 +805,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           <button
             type="button"
             onClick={irParaProxima}
-            disabled={indice === itens.length - 1}
+            disabled={emGrade ? inicioPagina + celulas >= itens.length : indice === itens.length - 1}
             aria-label={t('proximoEstudo')}
             title={t('proximoEstudoTitulo')}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-xl text-white hover:bg-white/20 disabled:opacity-30"
@@ -636,10 +820,14 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             num iframe) sem atrapalhar a navegacao normal - ver comentario
             dentro do proprio componente pra entender por que precisa desse
             botao em vez de so botao direito do mouse. */}
-        <AnotacoesImagem
-          curationId={atual.curation_id}
-          filaVisivel={telaCheia && itens.length > 1}
-        />
+        {/* Anotacoes pessoais: so no layout de 1 imagem (a anotacao e
+            presa a posicao da imagem na tela). */}
+        {!emGrade && (
+          <AnotacoesImagem
+            curationId={atual.curation_id}
+            filaVisivel={telaCheia && itens.length > 1}
+          />
+        )}
       </div>
 
       {atual.viewer_url && (

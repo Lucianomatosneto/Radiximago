@@ -36,7 +36,23 @@
         "titulo": "Auditoria completa",
         "descricao": "Rastreabilidade de cada ação realizada na plataforma."
       }
-    }
+    },
+    "galeria": {
+      "rotulo": "Acervo ilustrativo",
+      "titulo": "Imagens de várias áreas da saúde e da vida",
+      "subtitulo": "Radiologia, odontologia, anatomia, biologia, flora e fauna, organizadas para ensino e pesquisa.",
+      "altImagem": "Ilustração: {titulo}",
+      "itens": {
+        "rm": "Ressonância magnética do crânio",
+        "tc": "Tomografia do tórax",
+        "cardio": "Coração e artérias coronárias",
+        "rxodonto": "Radiografia panorâmica",
+        "celulas": "Células em microscopia",
+        "arvore": "Árvore",
+        "cao": "Cão"
+      }
+    },
+    "chamada": "Curadoria, pesquisa e ensino com imagens anonimizadas, organizadas por especialistas e em conformidade com a LGPD."
   },
   "Login": {
     "tituloDestaque1": "Base inteligente de imagens",
@@ -83,7 +99,8 @@
     "proximaImagem": "Próxima imagem",
     "aproximar": "Aproximar",
     "afastar": "Afastar",
-    "redefinirVista": "Redefinir vista"
+    "redefinirVista": "Redefinir vista",
+    "conhecaRadix": "Conheça o Radix Imago"
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -474,7 +491,19 @@
         "roxo": "Roxo",
         "laranja": "Laranja"
       }
-    }
+    },
+    "layout": {
+      "titulo": "Layout da tela: quantas imagens lado a lado",
+      "rotulo": "{total, plural, one {1 imagem} other {# imagens}} ({linhas}×{colunas})",
+      "prontos": "Layouts prontos",
+      "imagens": "{total, plural, one {1 imagem} other {# imagens}}",
+      "personalizar": "Personalizar (linhas × colunas)",
+      "gradeAria": "{linhas} linhas por {colunas} colunas",
+      "dica": "Passe o mouse na grade e clique para escolher. Clique numa imagem para ver os dados dela; clique duplo amplia só ela.",
+      "celulaDica": "Clique para selecionar · clique duplo para ver só esta imagem",
+      "visualizadorGradeTitulo": "Visualizador com {total} imagens lado a lado"
+    },
+    "paginaDeSelecionadas": "(imagens {de}–{ate} de {total} selecionadas)"
   },
   "Curadoria": {
     "inicio": "Início",
@@ -543,7 +572,10 @@
       "sexo": "Sexo",
       "dentes": "Dentes (notação FDI)",
       "qualidadeTecnica": "Qualidade técnica",
-      "selecione": "Selecione"
+      "selecione": "Selecione",
+      "marcacao": "Marcação de lesão",
+      "marcarImagem": "Marcar imagem",
+      "fecharMarcacao": "Fechar marcação"
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Dente não identificado",
@@ -563,7 +595,10 @@
       "selecioneImagem": "Selecione uma imagem na fila ao lado",
       "carregandoVisualizador": "Carregando visualizador...",
       "ohifTitulo": "Visualizador OHIF",
-      "naoDisponivel": "Não foi possível carregar o visualizador para esta imagem."
+      "naoDisponivel": "Não foi possível carregar o visualizador para esta imagem.",
+      "marcarImagem": "Marcar imagem",
+      "fecharMarcacao": "Fechar marcação",
+      "atalhoMarcar": "Abrir/fechar a imagem para marcação (tecla M)"
     },
     "marcador": {
       "removerMarcacao": "✕ Remover marcação",
@@ -692,6 +727,16 @@
       "descartar": "Descartar",
       "erroAprovar": "Não foi possível aprovar esta ficha.",
       "erroDescartar": "Não foi possível descartar esta ficha."
+    },
+    "foco": {
+      "voltarVisualizador": "Voltar ao visualizador",
+      "fixarGrande": "Fixar imagem de marcação em tamanho grande",
+      "cliqueParaFixar": "Clique para fixar em tamanho grande",
+      "passeMouse": "Passe o mouse para ampliar",
+      "registro": "Registro de curadoria",
+      "mostrarRegistro": "Mostrar",
+      "ocultarRegistro": "Ocultar",
+      "entrarTelaCheia": "Entrar em tela cheia (ou F11)"
     }
   },
   "SegundaOpiniaoPage": {
