@@ -11,12 +11,12 @@ Acesso: qualquer usuario logado (a pesquisa so expoe o que ja foi liberado).
 import io
 import logging
 import zipfile
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
-from sqlalchemy import func
+from sqlalchemy import and_, exists, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -35,7 +35,9 @@ from app.modules.curations import (
     QualidadeTecnica,
     Dificuldade,
     StatusCuradoria,
+    DENTES_PERMANENTES,
 )
+from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +48,19 @@ DENTES_SUPERIORES = list(range(11, 29))   # 11-28
 DENTES_INFERIORES = list(range(31, 49))   # 31-48
 DENTES_DIREITA = list(range(11, 19)) + list(range(41, 49))   # quadrantes 1 e 4
 DENTES_ESQUERDA = list(range(21, 29)) + list(range(31, 39))  # quadrantes 2 e 3
+
+# Quadrante (FDI) - mesmo principio de arcada/lado acima: SO existe como
+# faixa calculada em tempo de consulta, nunca como coluna persistida (Fase
+# 4, secao 6/62 - "quadrante e somente conceito de interface"). Reaproveita
+# a mesma logica ja usada no frontend (frontend/src/lib/dentesFdi.ts,
+# dentesDoQuadrante) so que do lado do banco, pra permitir "Quadrante 4,
+# nenhum dente especifico marcado" como filtro por si so (secao 9/10).
+DENTES_POR_QUADRANTE = {
+    1: list(range(11, 19)),
+    2: list(range(21, 29)),
+    3: list(range(31, 39)),
+    4: list(range(41, 49)),
+}
 
 
 def _chamar_orthanc(descricao_acao: str, funcao, *args, **kwargs):
@@ -160,10 +175,20 @@ def enviar_por_email_lote(
 @router.get("")
 def pesquisar_imagens(
     tipo_radiografia: Optional[TipoRadiografia] = Query(None),
-    dente: Optional[int] = Query(None, description="Numero FDI (11-48)"),
+    dente: Optional[int] = Query(None, description="Numero FDI (11-48) - filtro de um unico dente, mantido por compatibilidade"),
+    dentes: Optional[List[int]] = Query(None, description="Varios numeros FDI - combinar com modo_dentes"),
+    modo_dentes: Literal["qualquer_um", "todos"] = Query(
+        "qualquer_um", description="Como combinar 'dentes': qualquer_um (OR) ou todos (AND)"
+    ),
+    quadrante: Optional[int] = Query(None, ge=1, le=4, description="1-4 - equivale a filtrar pelos dentes daquele quadrante"),
     arcada: Optional[str] = Query(None, description="'superior' ou 'inferior'"),
     lado: Optional[str] = Query(None, description="'direito' ou 'esquerdo'"),
     achado_principal: Optional[AchadoPrincipal] = Query(None),
+    achado: Optional[TipoAchado] = Query(
+        None, description="Achado/condicao - busca hibrida (legado + estruturado), ou so estruturado se combinado com dentes/regiao_anatomica"
+    ),
+    regiao_anatomica: Optional[RegiaoAnatomica] = Query(None, description="So existe no sistema estruturado (Achado)"),
+    erro_tecnico: Optional[TipoErroTecnico] = Query(None),
     genero: Optional[Genero] = Query(None),
     qualidade_tecnica: Optional[QualidadeTecnica] = Query(None),
     dificuldade: Optional[Dificuldade] = Query(None),
@@ -180,8 +205,20 @@ def pesquisar_imagens(
     """
     Pesquisa imagens aprovadas com filtros opcionais.
 
-    Todos os filtros sao combinados com E (todos precisam bater).
-    Retorna dados no formato de card para o frontend.
+    Todos os filtros sao combinados com E (todos precisam bater). Dentro de
+    'dentes', o modo (qualquer_um/todos) decide OR/AND entre os numeros.
+
+    Achado/regiao/erro tecnico (Fase 4): 'achado' sozinho consulta o
+    legado (alteracoes_observadas) OU o estruturado (Achado.tipo) - os
+    dois vocabularios sao identicos, entao a uniao nao precisa de
+    normalizacao. Ja 'achado' combinado com 'dentes' e/ou
+    'regiao_anatomica' exige que o MESMO registro de Achado satisfaca as
+    duas condicoes ao mesmo tempo (EXISTS correlacionado) - o legado nao
+    tem como representar essa correlacao (alteracoes_observadas nao
+    associa dente nem regiao), entao nesse caso so o estruturado e
+    consultado. 'regiao_anatomica'/'erro_tecnico' sozinhos tambem so
+    existem no estruturado. Ver relatorio da Fase 4 para o raciocinio
+    completo por tras dessa regra.
     """
     # REGRA DE OURO: apenas fichas aprovadas.
     consulta = (
@@ -205,11 +242,12 @@ def pesquisar_imagens(
     if origem is not None:
         consulta = consulta.filter(OrthancReference.origem == origem.value)
 
-    # Filtro por dente especifico (o array de dentes contem aquele numero).
+    # Filtro por dente especifico (o array de dentes contem aquele numero) -
+    # mantido exatamente como antes, nenhuma mudanca de comportamento.
     if dente is not None:
         consulta = consulta.filter(Curation.dentes.any(dente))
 
-    # Filtros derivados do dente: arcada e lado.
+    # Filtros derivados do dente: arcada e lado - inalterados.
     if arcada == "superior":
         consulta = consulta.filter(Curation.dentes.overlap(DENTES_SUPERIORES))
     elif arcada == "inferior":
@@ -219,7 +257,33 @@ def pesquisar_imagens(
     elif lado == "esquerdo":
         consulta = consulta.filter(Curation.dentes.overlap(DENTES_ESQUERDA))
 
-    # Filtros de idade (sobreposicao de faixas).
+    # Multiplos dentes (Fase 4) - QUALQUER UM (overlap/&&) ou TODOS
+    # (contains/@>). Validacao de FDI manual (os mesmos 32 numeros
+    # permitidos em toda a aplicacao) porque Query(List[int]) nao valida
+    # o CONTEUDO da lista sozinho.
+    dentes_normalizados: Optional[List[int]] = None
+    if dentes:
+        invalidos = [d for d in dentes if d not in DENTES_PERMANENTES]
+        if invalidos:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
+            )
+        dentes_normalizados = sorted(set(dentes))
+        if modo_dentes == "todos":
+            consulta = consulta.filter(Curation.dentes.contains(dentes_normalizados))
+        else:
+            consulta = consulta.filter(Curation.dentes.overlap(dentes_normalizados))
+
+    # Quadrante SEM dentes especificos marcados (secao 9/10): filtro
+    # independente por si so - "a ficha tem pelo menos um dente deste
+    # quadrante". NAO participa da correlacao com Achado (isso e so pra
+    # selecao INDIVIDUAL de dentes, via 'dentes' acima) - e por isso que
+    # quadrante e 'dentes' sao parametros separados, nao um so.
+    if quadrante is not None:
+        consulta = consulta.filter(Curation.dentes.overlap(DENTES_POR_QUADRANTE[quadrante]))
+
+    # Filtros de idade (sobreposicao de faixas) - inalterados.
     if idade_min is not None:
         consulta = consulta.filter(
             (Curation.idade_max.is_(None)) | (Curation.idade_max >= idade_min)
@@ -227,6 +291,54 @@ def pesquisar_imagens(
     if idade_max is not None:
         consulta = consulta.filter(
             (Curation.idade_min.is_(None)) | (Curation.idade_min <= idade_max)
+        )
+
+    # ------------------------------------------------------------------
+    # Achado / regiao anatomica (Fase 4) - estrategia hibrida aprovada na
+    # Fase 3.1. 'dentes_normalizados' (selecao INDIVIDUAL de dentes, nao
+    # o quadrante sozinho) e reaproveitado aqui como a condicao de
+    # correlacao dente<->achado quando presente.
+    # ------------------------------------------------------------------
+    exige_estrutura = achado is not None and (dentes_normalizados or regiao_anatomica is not None)
+
+    if achado is not None and not exige_estrutura:
+        # Achado sozinho (sem dente/regiao) - hibrido: legado OU
+        # estruturado. O vocabulario e identico (TipoAchado reaproveita
+        # AlteracaoObservada + 'outro'), entao a uniao nao precisa de
+        # normalizacao/mapeamento. 'outro' nunca bate no legado (aquele
+        # enum nao tem esse valor), entao degrada corretamente pra
+        # "so estruturado" sem nenhum tratamento especial.
+        consulta = consulta.filter(
+            or_(
+                Curation.alteracoes_observadas.overlap([achado.value]),
+                exists().where(and_(Achado.curation_id == Curation.id, Achado.tipo == achado.value)),
+            )
+        )
+    elif achado is not None or regiao_anatomica is not None:
+        # Achado + dente e/ou regiao, OU regiao sozinha: so o sistema
+        # estruturado consegue representar essa correlacao (o legado nao
+        # associa dente nem regiao a um achado) - EXISTS correlacionado
+        # exigindo que o MESMO registro de Achado satisfaca tudo ao mesmo
+        # tempo (nao "a ficha tem o dente" E, separadamente, "a ficha tem
+        # o achado em outro lugar" - isso daria falso positivo, ver
+        # exemplo critico da Fase 4).
+        condicoes_achado = [Achado.curation_id == Curation.id]
+        if achado is not None:
+            condicoes_achado.append(Achado.tipo == achado.value)
+        if regiao_anatomica is not None:
+            condicoes_achado.append(Achado.regiao_anatomica == regiao_anatomica.value)
+        if dentes_normalizados:
+            if modo_dentes == "todos":
+                condicoes_achado.append(Achado.dentes.contains(dentes_normalizados))
+            else:
+                condicoes_achado.append(Achado.dentes.overlap(dentes_normalizados))
+        consulta = consulta.filter(exists().where(and_(*condicoes_achado)))
+
+    if erro_tecnico is not None:
+        consulta = consulta.filter(
+            exists().where(
+                and_(ErroTecnico.curation_id == Curation.id, ErroTecnico.tipo == erro_tecnico.value)
+            )
         )
 
     consulta = consulta.order_by(Curation.id)

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import FormasMarcacoes from '../detalhe/FormasMarcacoes'
 import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, gerarIdMarcacao, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
+import { detectarRecorteConteudo, type RecorteRelativo } from '../../lib/recorteImagem'
 
 // Mapeia o valor cru do enum AchadoPrincipal (mesmos valores de
 // lib/marcacoes.ts, usados aqui pra rotular o achado de CADA marcacao
@@ -42,11 +43,22 @@ const CHAVE_FORMA: Record<string, string> = {
 // de ferramentas). Clicar numa forma existente seleciona ela (mostra a
 // alca de redimensionar e o botao de remover); arrastar o corpo dela
 // move; arrastar a alca redimensiona.
-function coordenadas(clientX: number, clientY: number, wrapper: HTMLElement) {
+// `recorte` (opcional) e a caixa recortada visivel (ver
+// lib/recorteImagem.ts) - quando presente, o wrapper na tela mostra so
+// esse pedaco da imagem, entao um clique precisa ser remapeado da fracao
+// visivel (0-1 dentro do que aparece recortado) pra coordenada real na
+// imagem INTEIRA (0-1 da imagem completa, que e o que fica salvo em
+// Marcacao.x/y etc.). Sem recorte, os dois sistemas sao o mesmo (fracao
+// visivel == coordenada real), entao o calculo cai no comportamento de
+// sempre.
+function coordenadas(clientX: number, clientY: number, wrapper: HTMLElement, recorte: RecorteRelativo | null) {
   const rect = wrapper.getBoundingClientRect()
+  const fracaoX = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
+  const fracaoY = Math.min(1, Math.max(0, (clientY - rect.top) / rect.height))
+  if (!recorte) return { x: fracaoX, y: fracaoY }
   return {
-    x: Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)),
-    y: Math.min(1, Math.max(0, (clientY - rect.top) / rect.height)),
+    x: recorte.x + fracaoX * recorte.largura,
+    y: recorte.y + fracaoY * recorte.altura,
   }
 }
 
@@ -59,10 +71,18 @@ export default function MarcadorAchado({
   orthancReferenceId,
   marcacoes,
   onMarcar,
+  onCarregou,
 }: {
   orthancReferenceId: number
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
+  /** Chamado uma vez, quando a imagem deste painel termina de carregar
+   * (mesmo evento que dispara setSrc abaixo) - a Curadoria usa isso pra
+   * saber quando pode liberar o carregamento das miniaturas da fila (ver
+   * comentario grande em curadoria/page.tsx sobre a ordem de
+   * carregamento). Opcional pra nao quebrar nenhum outro uso deste
+   * componente. */
+  onCarregou?: () => void
 }) {
   const t = useTranslations('Curadoria.marcador')
   const tAchado = useTranslations('Pesquisa.opcoes.achadoPrincipal')
@@ -81,6 +101,17 @@ export default function MarcadorAchado({
   // automatica - com isso a altura ficava sem limite nenhum).
   const tamanhoNaturalRef = useRef<{ largura: number; altura: number } | null>(null)
   const [tamanhoRenderizado, setTamanhoRenderizado] = useState<{ largura: number; altura: number } | null>(null)
+  // Caixa (0-1, relativa a imagem inteira) do conteudo "nao-branco"
+  // detectado ao carregar a imagem - ver lib/recorteImagem.ts. Null
+  // enquanto nao detectado ainda, ou se nao houver borda branca relevante
+  // pra recortar (a imagem inteira e mostrada, como sempre foi). Ref (nao
+  // state) igual tamanhoNaturalRef logo acima, pelo mesmo motivo: e
+  // setado no onload e lido de dentro de recalcularTamanho, que e
+  // chamada por um ResizeObserver cujo callback e registrado uma unica
+  // vez (closure "presa" na 1a renderizacao) - um useState aqui ficaria
+  // desatualizado dentro dessa closure depois da deteccao terminar; ref
+  // sempre le o valor mais atual, nao importa quando foi capturada.
+  const recorteRef = useRef<RecorteRelativo | null>(null)
   const marcacoesRef = useRef(marcacoes)
   const desenhoRef = useRef<Marcacao | null>(null)
   const arrastoRef = useRef<Arrasto | null>(null)
@@ -97,6 +128,11 @@ export default function MarcadorAchado({
   // largura/altura explícitas no wrapper - isso evita o bug do
   // max-height:100% e garante que o SVG por cima (que usa h-full/w-full
   // do wrapper) sempre bata exatamente com a área visível da imagem.
+  //
+  // Quando ha recorte detectado, a conta usa as dimensoes do CONTEUDO
+  // recortado (natural * recorte.largura/altura) em vez da imagem
+  // inteira - assim o "contain" maximiza o pedaco util (a parte preta),
+  // nao a imagem toda com a borda branca incluida.
   function recalcularTamanho() {
     const container = containerRef.current
     const natural = tamanhoNaturalRef.current
@@ -104,8 +140,11 @@ export default function MarcadorAchado({
     const larguraDisponivel = container.clientWidth
     const alturaDisponivel = container.clientHeight
     if (!larguraDisponivel || !alturaDisponivel) return
-    const escala = Math.min(larguraDisponivel / natural.largura, alturaDisponivel / natural.altura)
-    setTamanhoRenderizado({ largura: natural.largura * escala, altura: natural.altura * escala })
+    const recorte = recorteRef.current
+    const larguraConteudo = natural.largura * (recorte?.largura ?? 1)
+    const alturaConteudo = natural.altura * (recorte?.altura ?? 1)
+    const escala = Math.min(larguraDisponivel / larguraConteudo, alturaDisponivel / alturaConteudo)
+    setTamanhoRenderizado({ largura: larguraConteudo * escala, altura: alturaConteudo * escala })
   }
 
   // Recalcula sempre que o painel muda de tamanho (janela redimensionada,
@@ -142,7 +181,12 @@ export default function MarcadorAchado({
         imagemTeste.onload = () => {
           if (cancelado) return
           tamanhoNaturalRef.current = { largura: imagemTeste.naturalWidth, altura: imagemTeste.naturalHeight }
+          // Detecta a borda branca (se houver) ANTES de mostrar a
+          // imagem - assim ja aparece recortada de cara, sem "pulo"
+          // visual (mesmo motivo do tamanho natural acima).
+          recorteRef.current = detectarRecorteConteudo(imagemTeste)
           setSrc(urlObjeto)
+          onCarregou?.()
         }
         imagemTeste.onerror = () => {
           if (!cancelado) setErro(true)
@@ -169,7 +213,7 @@ export default function MarcadorAchado({
     function aoMover(evento: MouseEvent) {
       const wrapper = wrapperRef.current
       if (!wrapper || (!desenhoRef.current && !arrastoRef.current)) return
-      const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper)
+      const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper, recorteRef.current)
 
       if (desenhoRef.current) {
         const atual = desenhoRef.current
@@ -246,7 +290,7 @@ export default function MarcadorAchado({
     if (evento.target !== evento.currentTarget) return
     const wrapper = wrapperRef.current
     if (!wrapper) return
-    const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper)
+    const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper, recorteRef.current)
     const id = gerarIdMarcacao()
     const nova: Marcacao =
       ferramenta === 'seta'
@@ -260,7 +304,7 @@ export default function MarcadorAchado({
     evento.stopPropagation()
     const wrapper = wrapperRef.current
     if (!wrapper) return
-    const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper)
+    const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper, recorteRef.current)
     setSelecionadoId(marcacao.id)
     arrastoRef.current = { tipo: 'mover', id: marcacao.id, inicioX: x, inicioY: y, original: marcacao }
   }
@@ -280,7 +324,25 @@ export default function MarcadorAchado({
 
   function definirAchadoDaSelecionada(achado: string) {
     if (!selecionadoId) return
-    onMarcar(marcacoes.map((m) => (m.id === selecionadoId ? { ...m, achado: achado || null } : m)))
+    onMarcar(
+      marcacoes.map((m) =>
+        m.id === selecionadoId
+          ? {
+              ...m,
+              achado: achado || null,
+              // Limpa a descricao livre se o curador trocar pra um achado
+              // diferente de "outro" - evita guardar texto orfao amarrado
+              // a um achado que nao e mais "outro".
+              achado_descricao: achado === 'outro' ? m.achado_descricao : null,
+            }
+          : m
+      )
+    )
+  }
+
+  function definirDescricaoDaSelecionada(descricao: string) {
+    if (!selecionadoId) return
+    onMarcar(marcacoes.map((m) => (m.id === selecionadoId ? { ...m, achado_descricao: descricao } : m)))
   }
 
   function traduzirAchado(valor: string): string {
@@ -295,6 +357,24 @@ export default function MarcadorAchado({
 
   const selecionada = marcacoes.find((m) => m.id === selecionadoId) ?? null
   const formasParaExibir = desenhoAtual ? [...marcacoes, desenhoAtual] : marcacoes
+
+  // Le a ref diretamente no corpo do componente (nao e um closure de
+  // efeito, e um valor lido "agora" a cada renderizacao - por isso nao
+  // tem o problema de closure presa que recalcularTamanho tem que evitar
+  // via ref no lugar de state). Quando ha recorte, a <img> e desenhada
+  // MAIOR que o wrapper (tamanho natural inteiro, escalado) e deslocada
+  // com offset negativo, pra so a parte recortada ficar visivel dentro
+  // do wrapper (que tem overflow-hidden); o <svg> usa esse mesmo recorte
+  // como viewBox, entao as marcacoes (coordenadas 0-1 da imagem INTEIRA,
+  // sem mudar nada nelas) caem automaticamente no lugar certo.
+  const recorteAtual = recorteRef.current
+  const imagemLarguraTotal = tamanhoRenderizado ? tamanhoRenderizado.largura / (recorteAtual?.largura ?? 1) : 0
+  const imagemAlturaTotal = tamanhoRenderizado ? tamanhoRenderizado.altura / (recorteAtual?.altura ?? 1) : 0
+  const imagemOffsetX = recorteAtual ? -recorteAtual.x * imagemLarguraTotal : 0
+  const imagemOffsetY = recorteAtual ? -recorteAtual.y * imagemAlturaTotal : 0
+  const viewBoxSvg = recorteAtual
+    ? `${recorteAtual.x} ${recorteAtual.y} ${recorteAtual.largura} ${recorteAtual.altura}`
+    : '0 0 1 1'
 
   return (
     <div className="flex h-full flex-col">
@@ -326,23 +406,43 @@ export default function MarcadorAchado({
       </div>
 
       {selecionada && (
-        <div className="mb-2 flex shrink-0 items-center gap-2">
-          <label className="text-xs text-slate-400" htmlFor="achado-marcacao">
-            {t('tipoLesao')}
-          </label>
-          <select
-            id="achado-marcacao"
-            value={selecionada.achado ?? ''}
-            onChange={(e) => definirAchadoDaSelecionada(e.target.value)}
-            className="rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-slate-100 outline-none focus:border-brand"
-          >
-            <option value="">{t('selecione')}</option>
-            {OPCOES_ACHADO_MARCACAO.map((opcao) => (
-              <option key={opcao.valor} value={opcao.valor}>
-                {traduzirAchado(opcao.valor)}
-              </option>
-            ))}
-          </select>
+        <div className="mb-2 flex shrink-0 flex-col gap-1.5">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-slate-400" htmlFor="achado-marcacao">
+              {t('tipoLesao')}
+            </label>
+            <select
+              id="achado-marcacao"
+              value={selecionada.achado ?? ''}
+              onChange={(e) => definirAchadoDaSelecionada(e.target.value)}
+              // Mesmo degrade de FichaCuradoriaForm.tsx, aplicado em todas
+              // as caixas de texto desta tela (pedido explicito).
+              className="rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-none focus:border-brand dark:bg-teal-600/20"
+            >
+              <option value="">{t('selecione')}</option>
+              {OPCOES_ACHADO_MARCACAO.map((opcao) => (
+                <option key={opcao.valor} value={opcao.valor}>
+                  {traduzirAchado(opcao.valor)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* So aparece quando o curador escolhe "Outro" - a lista de
+              achados e fechada (enum no backend), entao esse campo de
+              texto livre e o unico jeito de descrever algo que nao esta
+              nas opcoes acima. O estudante ve esse texto no tooltip, no
+              lugar do rotulo generico "Outro" (ver FormasMarcacoes.tsx). */}
+          {selecionada.achado === 'outro' && (
+            <input
+              type="text"
+              value={selecionada.achado_descricao ?? ''}
+              onChange={(e) => definirDescricaoDaSelecionada(e.target.value)}
+              placeholder={t('placeholderDescricaoOutro')}
+              aria-label={t('placeholderDescricaoOutro')}
+              className="w-full rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-none focus:border-brand dark:bg-teal-600/20"
+            />
+          )}
         </div>
       )}
 
@@ -379,13 +479,19 @@ export default function MarcadorAchado({
         ) : (
           <div
             ref={wrapperRef}
-            className="relative"
+            className="relative overflow-hidden"
             style={{ width: `${tamanhoRenderizado.largura}px`, height: `${tamanhoRenderizado.altura}px` }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={t('altImagemMarcacao')} className="block h-full w-full select-none" draggable={false} />
+            <img
+              src={src}
+              alt={t('altImagemMarcacao')}
+              className="absolute block max-w-none select-none"
+              style={{ left: imagemOffsetX, top: imagemOffsetY, width: imagemLarguraTotal, height: imagemAlturaTotal }}
+              draggable={false}
+            />
             <svg
-              viewBox="0 0 1 1"
+              viewBox={viewBoxSvg}
               preserveAspectRatio="none"
               className="absolute inset-0 h-full w-full"
               style={{ cursor: 'crosshair' }}

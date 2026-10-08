@@ -19,6 +19,11 @@ export interface Marcacao {
   // AchadoPrincipal do backend. Preenchido pelo curador logo apos
   // desenhar; o estudante ve o rotulo ao passar o mouse em cima.
   achado?: string | null
+  // Texto livre usado quando achado === "outro" - so faz sentido nesse
+  // caso (a lista de achados e fechada, entao nao ha como descrever algo
+  // fora dela so com `achado`). O estudante ve esse texto no tooltip no
+  // lugar do rotulo generico "Outro", quando preenchido.
+  achado_descricao?: string | null
 }
 
 export const FORMAS_MARCACAO: { tipo: TipoMarcacao; rotulo: string; icone: string }[] = [

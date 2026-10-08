@@ -61,14 +61,24 @@ def enviar_email(
         servidor.sendmail(settings.SMTP_FROM, [destinatario], mensagem.as_string())
 
 
-def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str) -> None:
-    corpo_html = f"""
-    <p>Olá, {nome}.</p>
-    <p>Recebemos uma solicitação para redefinir a senha da sua conta no Rádix Imago.</p>
-    <p><a href="{link_reset}">Clique aqui para definir uma nova senha</a></p>
-    <p>Esse link expira em 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
-    """
-    enviar_email(destinatario, "Redefinição de senha - Rádix Imago", corpo_html)
+def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str, idioma: str = "pt") -> None:
+    if idioma == "en":
+        assunto = "Password reset - Radix Imago"
+        corpo_html = f"""
+        <p>Hello, {nome}.</p>
+        <p>We received a request to reset the password for your Radix Imago account.</p>
+        <p><a href="{link_reset}">Click here to set a new password</a></p>
+        <p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+        """
+    else:
+        assunto = "Redefinição de senha - Rádix Imago"
+        corpo_html = f"""
+        <p>Olá, {nome}.</p>
+        <p>Recebemos uma solicitação para redefinir a senha da sua conta no Rádix Imago.</p>
+        <p><a href="{link_reset}">Clique aqui para definir uma nova senha</a></p>
+        <p>Esse link expira em 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
+        """
+    enviar_email(destinatario, assunto, corpo_html)
 
 
 def enviar_email_solicitacao_recebida(destinatario: str, nome: str) -> None:

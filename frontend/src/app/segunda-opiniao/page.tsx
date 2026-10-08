@@ -482,9 +482,14 @@ export default function SegundaOpiniaoPage() {
                         Usa os mesmos tokens de tema (bg-base-surface,
                         border-base-border, text-slate-300/400) do resto do
                         app, entao acompanha automaticamente o modo claro e o
-                        modo noturno. */}
+                        modo noturno. Largura FIXA em px (sem max-w em %):
+                        o painel "Studies" nativo do OHIF tem largura fixa,
+                        entao um cap em porcentagem faz essa coluna crescer
+                        alem da largura real dele em tela cheia (container
+                        bem mais largo) e invadir a area da imagem - mesmo
+                        ajuste feito em PainelVisualizador.tsx. */}
                     {fichaCompleta && (
-                      <div className="absolute bottom-2 left-2 top-2 z-10 w-[220px] max-w-[46%]">
+                      <div className="absolute bottom-2 left-2 top-2 z-10 w-[220px]">
                         <dl className="flex h-full w-full flex-col gap-2.5 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 text-sm shadow-lg backdrop-blur-sm">
                           <div>
                             <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('tipoRadiografia')}</dt>

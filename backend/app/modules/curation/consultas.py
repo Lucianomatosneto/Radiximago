@@ -5,7 +5,10 @@ ainda sem ficha, ficha completa e historico de segundas opinioes de uma
 ficha.
 """
 
+from datetime import datetime, timezone
+
 from fastapi import Depends, HTTPException, Query, Response
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -14,7 +17,7 @@ from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
-from app.modules.curations import Curation, CurationReview, StatusRevisao
+from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria, StatusRevisao
 
 from .common import _buscar_ficha
 from .router import router
@@ -284,6 +287,74 @@ def obter_preview_pendente(
 
     conteudo = orthanc_client.obter_preview_instancia(imagem.orthanc_id)
     return Response(content=conteudo, media_type="image/png")
+
+
+# ---------------------------------------------------------------------
+# GET /curation/minhas-estatisticas -> resumo pessoal do curador (mes atual)
+#
+# Precisa vir ANTES de GET /{curation_id} abaixo: como "minhas-estatisticas"
+# tambem tem 1 segmento de path, se essa rota literal fosse registrada
+# DEPOIS da rota dinamica {curation_id}, o FastAPI tentaria converter
+# "minhas-estatisticas" pra int (curation_id) e devolveria 422 antes mesmo
+# de considerar esta rota - Starlette resolve por ordem de registro, nao
+# por especificidade.
+# ---------------------------------------------------------------------
+@router.get("/minhas-estatisticas")
+def obter_minhas_estatisticas(
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Resumo pessoal do curador autenticado, referente ao mes corrente:
+    quantas fichas ele aprovou e sua posicao no ranking de volume de
+    curadorias (fichas que passaram pelas maos dele, em qualquer status -
+    mesmo criterio do "por_curador" de GET /admin/stats). Devolve so a
+    POSICAO e o TOTAL de curadores no mes - nunca nome, id ou contagem de
+    outro curador - pra dar uma nocao de classificacao sem expor
+    desempenho individual de colegas.
+    """
+    agora = datetime.now(timezone.utc)
+    inicio_mes = datetime(agora.year, agora.month, 1, tzinfo=timezone.utc)
+
+    # CurationHistory (nao Curation.status) porque guarda o momento exato
+    # de CADA aprovacao (status_novo == aprovada), inclusive as vindas de
+    # segunda opiniao (acao "aprovacao_pos_segunda_opiniao") - Curation so
+    # tem o status ATUAL, sem historico de quando cada transicao ocorreu.
+    aprovadas_no_mes = (
+        db.query(func.count(CurationHistory.id))
+        .filter(
+            CurationHistory.usuario_id == usuario.id,
+            CurationHistory.status_novo == StatusCuradoria.APROVADA.value,
+            CurationHistory.criado_em >= inicio_mes,
+        )
+        .scalar()
+    ) or 0
+
+    contagem_por_curador = dict(
+        db.query(Curation.curador_id, func.count(Curation.id))
+        .filter(Curation.curador_id.isnot(None), Curation.criado_em >= inicio_mes)
+        .group_by(Curation.curador_id)
+        .all()
+    )
+
+    curadorias_no_mes = contagem_por_curador.get(usuario.id, 0)
+    total_curadores = len(contagem_por_curador)
+    # So entra no ranking quem tem pelo menos 1 curadoria no mes - sem
+    # isso, um curador com 0 curadorias (fora do dict acima) contaria
+    # como "pior que todo mundo" e sairia com posicao = total_curadores + 1
+    # (ex.: "4a de 3"), o que nao faz sentido pra exibir.
+    posicao_ranking = (
+        1 + sum(1 for total in contagem_por_curador.values() if total > curadorias_no_mes)
+        if usuario.id in contagem_por_curador
+        else None
+    )
+
+    return {
+        "aprovadas_no_mes": aprovadas_no_mes,
+        "curadorias_no_mes": curadorias_no_mes,
+        "posicao_ranking": posicao_ranking,
+        "total_curadores": total_curadores,
+    }
 
 
 # ---------------------------------------------------------------------

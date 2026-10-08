@@ -1,12 +1,15 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 export default function AcessoNegadoPage() {
+  const t = useTranslations('AcessoNegado')
+  const tComum = useTranslations('Comum')
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
 
@@ -23,7 +26,7 @@ export default function AcessoNegadoPage() {
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
-        <p className="text-slate-300">Carregando...</p>
+        <p className="text-slate-300">{tComum('carregando')}</p>
       </main>
     )
   }
@@ -52,13 +55,12 @@ export default function AcessoNegadoPage() {
               />
             </svg>
 
-            <h1 className="text-xl font-semibold text-slate-100">Acesso não autorizado</h1>
+            <h1 className="text-xl font-semibold text-slate-100">{t('titulo')}</h1>
             <p className="mt-3 text-sm text-slate-400">
-              Você não possui permissão para acessar esta área ou visualizar esta imagem.
+              {t('descricao')}
             </p>
             <p className="mt-2 text-xs text-slate-500">
-              Caso acredite que isso seja um erro, entre em contato com o administrador do
-              sistema.
+              {t('orientacao')}
             </p>
 
             <button
@@ -66,7 +68,7 @@ export default function AcessoNegadoPage() {
               onClick={() => router.push('/dashboard')}
               className="mt-6 rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
-              Voltar ao início
+              {t('voltarInicio')}
             </button>
           </div>
         </main>

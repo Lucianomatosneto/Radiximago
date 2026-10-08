@@ -101,10 +101,12 @@ export default function Sidebar() {
   // qualquer pagina seguinte, ja que document.documentElement persiste).
   function aoClicarCuradoria() {
     document.documentElement.requestFullscreen().catch(() => {
-      // Navegador pode negar (raro, considerando que isso roda dentro do
-      // proprio evento de clique) - a Curadoria continua funcionando
-      // normalmente, so sem a tela cheia automatica; o botao manual "Tela
-      // cheia" la dentro continua disponivel.
+      // Navegador pode negar (varia por navegador/SO, mais comum do que
+      // o ideal na pratica) - a Curadoria continua funcionando
+      // normalmente, so sem a tela cheia automatica; ha 2 redes de
+      // seguranca dentro dela (ver curadoria/page.tsx): uma tentativa
+      // silenciosa no primeiro clique/tecla do curador la dentro, e o
+      // botao manual "Tela cheia" (sempre visivel, garantia final).
     })
   }
 

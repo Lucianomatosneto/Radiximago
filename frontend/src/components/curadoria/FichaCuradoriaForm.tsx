@@ -44,8 +44,27 @@ export const FORM_VAZIO: FormularioFicha = {
 }
 
 const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'
-const campoInput =
-  'w-full rounded-lg border border-base-border bg-base-surface2 px-2.5 py-1.5 text-sm text-slate-100 outline-none focus:border-brand'
+// So pra Descricao didatica/Observacoes internas (e replicado em todas as
+// outras caixas de texto da Curadoria - ver mesma constante em
+// PainelDadosSobrepostos.tsx, MarcadorAchado.tsx, PainelAchadosRadiografia.tsx
+// e ModalMotivo.tsx): cor de fundo DIRETO na propria caixa de texto
+// (pedido explicito pra NAO criar uma caixa adicional ao redor).
+//
+// COR SOLIDA (nao mais degrade azul->verde) - pedido explicito apos o
+// degrade `bg-gradient-to-r` (azul a esquerda, verde a direita) ficar
+// visualmente MUITO diferente dependendo da largura da caixa: numa caixa
+// estreita (ex.: campo de Dentes, dentro do painel sobreposto de 280px) a
+// transicao azul->verde se comprime e o olho le como uma cor unica
+// "meio-termo" (um tom azul-esverdeado/teal); ja numa caixa larga (ex.:
+// Descricao didatica/Observacoes internas, que ocupam quase a largura
+// toda da tela) a MESMA classe CSS mostra claramente azul de um lado e
+// verde do outro - a mesma cor, mas com aparencia bem diferente conforme
+// o tamanho do elemento. teal-600 (escuro) / teal-100 (claro) e
+// exatamente esse tom "meio-termo" entre o azul e o verde que a caixa
+// estreita ja mostrava - usando ele como cor SOLIDA (nao degrade),
+// qualquer caixa fica identica visualmente, nao importa a largura.
+const campoInputDegrade =
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
 
 // Ficha de curadoria: agora so tem "Regiao anatomica" (Descricao
 // didatica, Observacoes internas - Qualidade tecnica saiu pra caixa
@@ -92,7 +111,7 @@ export default function FichaCuradoriaForm({
               value={form.descricao_didatica}
               onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
               rows={2}
-              className={campoInput}
+              className={campoInputDegrade}
             />
           </div>
 
@@ -102,7 +121,7 @@ export default function FichaCuradoriaForm({
               value={form.observacoes_internas}
               onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
               rows={2}
-              className={campoInput}
+              className={campoInputDegrade}
             />
           </div>
         </div>

@@ -6,7 +6,14 @@ import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import StatusBadge from '../../components/StatusBadge'
+import DashboardCard from '../../components/DashboardCard'
 import { obterSessaoAtual } from '../../lib/sessao'
+
+// Status de curadoria que ainda NAO chegaram a uma decisao final - conta
+// como "aguardando curadoria" tanto quem nem tem ficha ainda (null) quanto
+// quem ja tem ficha mas segue em algum ponto do fluxo (em analise, em
+// segunda opiniao). So aprovada/descartada saem dessa contagem.
+const STATUS_AGUARDANDO = ['pendente', 'em_analise', 'segunda_opiniao', 'baixa_qualidade']
 
 // Quem pode ver esta pagina e enviar imagens novas - tem que bater com
 // PERFIS_ENVIO_IMAGENS do backend (auth.py) e com o item de menu
@@ -180,6 +187,14 @@ export default function ImagensPage() {
     }
   }
 
+  // Contagens EXATAS sobre a lista completa (imagens), nao a filtrada -
+  // os cards de resumo nao devem mudar conforme os filtros da tabela
+  // abaixo mudam, sao um retrato geral fixo da tela.
+  const totalAguardando = imagens.filter(
+    (imagem) => imagem.status_curadoria === null || STATUS_AGUARDANDO.includes(imagem.status_curadoria)
+  ).length
+  const totalAprovadas = imagens.filter((imagem) => imagem.status_curadoria === 'aprovada').length
+
   const imagensFiltradas = imagens.filter((imagem) => {
     const bateAnonimizacao =
       filtroAnonimizacao === '' || imagem.anonimizacao_status === filtroAnonimizacao
@@ -209,7 +224,12 @@ export default function ImagensPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <DashboardCard label={t('totalAguardandoCuradoria')} valor={totalAguardando} cor="amber" />
+            <DashboardCard label={t('totalAprovadas')} valor={totalAprovadas} cor="green" />
+          </div>
 
           {erroLista && (
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-700/40 bg-red-950/30 p-4">

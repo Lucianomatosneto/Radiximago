@@ -9,6 +9,8 @@ import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curado
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
 import PainelAchadosRadiografia from '../../components/curadoria/PainelAchadosRadiografia'
+import PainelAchadosEstruturados from '../../components/curadoria/PainelAchadosEstruturados'
+import PainelErroTecnico from '../../components/curadoria/PainelErroTecnico'
 import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
@@ -36,6 +38,20 @@ interface FichaAtiva {
   curationId: number
   orthancReferenceId: number
 }
+
+// Ordem unica das 5 "telas" do carrossel do painel lateral (setas ‹ › +
+// teclado) - marcacao (desenho) -> achados1/achados2 (checklist legado,
+// alteracoes_observadas) -> achadosEstruturados/erroTecnico (Fase 3, API
+// da Fase 2). Usar um array em vez de ternarios encadeados deixa a
+// navegacao (proxima/anterior) trivial: so andar +1/-1 no indice.
+type PaginaPainelLateral = 'marcacao' | 'achados1' | 'achados2' | 'achadosEstruturados' | 'erroTecnico'
+const PAGINAS_PAINEL_LATERAL: PaginaPainelLateral[] = [
+  'marcacao',
+  'achados1',
+  'achados2',
+  'achadosEstruturados',
+  'erroTecnico',
+]
 
 // Item de /curation/reviews/answered (mesmo formato de /reviews/pending)
 // + o parecer do revisor, que vem de uma segunda chamada a
@@ -129,25 +145,50 @@ export default function CuradoriaPage() {
   const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
-  // Nao e mais o alvo da Fullscreen API (ver alternarTelaCheia/comentario
-  // grande mais abaixo, no efeito que arma o clique da Curadoria no
-  // Sidebar) - continua existindo so pra aplicar o padding condicional
+  // Sinais de "a imagem principal terminou de carregar" - usados so pra
+  // liberar o carregamento das miniaturas da fila (permitirCarregarMiniaturas
+  // logo abaixo, no JSX). Resetados pra false no INICIO de abrirImagem
+  // (toda vez que uma imagem nova comeca a abrir, nao so a primeira -
+  // antes, permitirCarregarMiniaturas so olhava pra `!!fichaAtiva`, que
+  // vira true e fica true pra sempre a partir da 1a imagem, entao a
+  // partir da 2a imagem em diante a fila nunca mais era travada de novo).
+  // ohifCarregado vira true no evento "load" do iframe do OHIF (o sinal
+  // mais proximo de "terminou" que da pra observar de fora, ja que o OHIF
+  // e cross-origin - nao mede se ele ja RENDERIZOU a imagem por dentro).
+  // marcadorPronto vira true quando a imagem do painel "Imagem para
+  // marcacao" (MarcadorAchado) termina de carregar - esse painel e 100%
+  // nosso, entao aqui o sinal e exato.
+  const [ohifCarregado, setOhifCarregado] = useState(false)
+  const [marcadorPronto, setMarcadorPronto] = useState(false)
+  // Nao e o alvo da Fullscreen API (ver comentario grande no efeito que
+  // arma o clique da Curadoria no Sidebar, mais abaixo) - continua
+  // existindo so pra aplicar o padding condicional
   // (`${telaCheia ? 'p-4' : ''}`) no proprio elemento, no JSX.
   const visualizadorRef = useRef<HTMLDivElement | null>(null)
+  // Reflete o que a Fullscreen API relata de fato (ver fullscreenchange
+  // abaixo) - usado tanto pra esconder Topbar/cabecalho e ajustar o
+  // padding, quanto pelo botao manual "Tela cheia" (ver alternarTelaCheia
+  // mais abaixo) pra saber o rotulo/estado certo pra mostrar.
   const [telaCheia, setTelaCheia] = useState(false)
   // Trava contra 2 chamadas de alternarTelaCheia quase simultaneas pro
   // mesmo clique - ver comentario dentro de alternarTelaCheia.
   const telaCheiaEmAndamentoRef = useRef(false)
   const [modoAjustado, setModoAjustado] = useState(false)
-  const [iframeReloadKey, setIframeReloadKey] = useState(0)
-  // Painel ao lado do OHIF alterna entre a imagem de marcacao e os achados
-  // em radiografia (setas no proprio painel) - o curador marca a lesao
-  // primeiro (imagem), depois vira pra achados, que ganham a mesma altura
-  // grande do visualizador em vez de ficarem espremidos na faixa baixa da
-  // ficha la embaixo. Reseta pra "marcacao" sempre que uma imagem nova
-  // abre (ver carregarFichaCompleta/finalizarFichaAtiva) - cada imagem
-  // comeca do zero, sem herdar o "achados" da imagem anterior.
-  const [painelLateral, setPainelLateral] = useState<'marcacao' | 'achados'>('marcacao')
+  // Painel ao lado do OHIF alterna entre 3 "telas" num carrossel de setas
+  // (marcacao -> achados1 -> achados2 -> ...): a imagem de marcacao, e os
+  // achados em radiografia divididos em 2 paginas (as 5 categorias + o
+  // campo "Outros achados" nao cabiam sem rolagem interna nesse painel
+  // estreito - ver comentario grande em PainelAchadosRadiografia.tsx sobre
+  // a divisao). O curador marca a lesao primeiro (imagem), depois vira pra
+  // achados, que ganham a mesma altura grande do visualizador em vez de
+  // ficarem espremidos na faixa baixa da ficha la embaixo. Reseta pra
+  // "marcacao" sempre que uma imagem nova abre (ver
+  // carregarFichaCompleta/finalizarFichaAtiva) - cada imagem comeca do
+  // zero, sem herdar a pagina de achados da imagem anterior.
+  // Fase 3: carrossel ganhou mais 2 paginas (achadosEstruturados, novo
+  // painel via API da Fase 2; erroTecnico, dimensao independente) - ver
+  // PAGINAS_PAINEL_LATERAL logo abaixo, unica fonte da ordem das 5 paginas.
+  const [painelLateral, setPainelLateral] = useState<PaginaPainelLateral>('marcacao')
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
 
@@ -218,12 +259,12 @@ export default function CuradoriaPage() {
   }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
 
   // Sai da tela cheia quando o curador DEIXA a Curadoria (navega pra
-  // outra tela) - necessario porque o alvo da Fullscreen API agora e
+  // outra tela) - necessario porque o alvo da Fullscreen API e
   // document.documentElement (o <html> inteiro, ver comentario grande no
-  // Sidebar.tsx e em alternarTelaCheia abaixo), que NUNCA e desmontado
-  // por uma navegacao client-side do Next.js (diferente do antigo alvo,
-  // visualizadorRef, que era destruido ao sair da pagina e por isso saia
-  // de tela cheia sozinho, de graca). Sem isso, a tela cheia "vazaria"
+  // Sidebar.tsx), que NUNCA e desmontado por uma navegacao client-side do
+  // Next.js (diferente do antigo alvo, visualizadorRef, que era destruido
+  // ao sair da pagina e por isso saia de tela cheia sozinho, de graca).
+  // Sem isso, a tela cheia "vazaria"
   // pra qualquer outra tela que o curador abrisse em seguida. So dispara
   // no unmount (dependencia vazia) - trocar de imagem dentro da propria
   // Curadoria (Proxima/Anterior/clique na fila) nao desmonta este
@@ -235,6 +276,43 @@ export default function CuradoriaPage() {
       }
     }
   }, [])
+
+  // Rede de seguranca (SEM botao visivel) pro caso do clique no Sidebar
+  // (aoClicarCuradoria) nao ter conseguido entrar em tela cheia - por
+  // exemplo, se a "ativacao" daquele clique especifico nao foi aceita
+  // pelo navegador por algum motivo (varia entre navegadores/SOs). Em vez
+  // de reintroduzir um botao manual (pedido explicito pra NAO ter um),
+  // este efeito escuta a PROXIMA interacao real do curador DENTRO da
+  // propria Curadoria (primeiro clique ou tecla, em qualquer lugar da
+  // pagina - clicar numa miniatura, apertar uma tecla, o que for) e
+  // aproveita essa ativacao de usuario pra tentar de novo, silenciosamente
+  // - sem interceptar/atrapalhar o que quer que essa interacao ja fosse
+  // fazer (nao chama preventDefault nem stopPropagation). So arma UMA vez
+  // por entrada na tela (se ja esta em tela cheia quando o efeito monta,
+  // nem escuta) e se desarma sozinho assim que telaCheia vira true (nao
+  // fica escutando pra sempre nem tenta de novo depois de ja ter dado
+  // certo).
+  useEffect(() => {
+    if (telaCheia || document.fullscreenElement) return
+
+    function tentarDeNovo() {
+      document.removeEventListener('pointerdown', tentarDeNovo)
+      document.removeEventListener('keydown', tentarDeNovo)
+      if (document.fullscreenElement) return
+      document.documentElement.requestFullscreen().catch(() => {
+        // Se negar de novo, desiste silenciosamente - sem botao manual
+        // pra insistir, a Curadoria so continua funcionando em modo
+        // normal.
+      })
+    }
+
+    document.addEventListener('pointerdown', tentarDeNovo)
+    document.addEventListener('keydown', tentarDeNovo)
+    return () => {
+      document.removeEventListener('pointerdown', tentarDeNovo)
+      document.removeEventListener('keydown', tentarDeNovo)
+    }
+  }, [telaCheia])
 
   function aplicarFila(itens: ImagemPendente[], total: number, opcoes?: { append?: boolean }) {
     const novaFila = opcoes?.append ? [...filaRef.current, ...itens] : itens
@@ -285,22 +363,55 @@ export default function CuradoriaPage() {
     return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
   }, [])
 
-  // Alvo e document.documentElement (o <html> inteiro), NAO mais
-  // visualizadorRef - motivo detalhado no comentario grande em
-  // Sidebar.tsx (aoClicarCuradoria), que e quem consegue pedir tela
-  // cheia de forma confiavel (dentro do proprio clique no menu, antes da
-  // navegacao/carregamento). Como document.documentElement e o mesmo
-  // elemento em QUALQUER pagina (nunca e desmontado numa navegacao
-  // client-side do Next.js), o botao manual "Tela cheia" aqui dentro da
-  // Curadoria PRECISA mirar o mesmo alvo - senao os dois brigariam pelo
+  // Seta do teclado (ALEM do clique nas setas ‹ › do proprio painel) pra
+  // trocar entre "Imagem para marcacao" e as 2 paginas de "Achados em
+  // radiografia" - mesmo carrossel de 3 telas (marcacao -> achados1 ->
+  // achados2), so que tambem acionavel sem tirar a mao do teclado.
+  //
+  // So dispara quando o painel lateral esta de fato visivel (mesma conta
+  // de fichaVisivel mais abaixo no render - nao da pra usar a variavel em
+  // si aqui porque ela so existe DEPOIS do "if (carregando) return", e
+  // hooks tem que ficar todos ANTES de qualquer return condicional).
+  //
+  // Guarda contra roubar ArrowLeft/ArrowRight de QUALQUER campo de texto
+  // focado (inputs, textarea, select, contenteditable) - sem isso, mover
+  // o cursor dentro de "Observações internas"/"Outros achados"/etc com as
+  // setas trocaria de painel por acidente a cada tecla, em vez de mover o
+  // cursor no texto.
+  useEffect(() => {
+    function aoTeclar(evento: KeyboardEvent) {
+      if (evento.key !== 'ArrowLeft' && evento.key !== 'ArrowRight') return
+      if (!fichaAtiva || modoAjustado) return
+
+      const alvo = document.activeElement
+      const dentroDeCampo =
+        alvo instanceof HTMLElement &&
+        (alvo.tagName === 'INPUT' ||
+          alvo.tagName === 'TEXTAREA' ||
+          alvo.tagName === 'SELECT' ||
+          alvo.isContentEditable)
+      if (dentroDeCampo) return
+
+      setPainelLateral((atual) => {
+        const indice = PAGINAS_PAINEL_LATERAL.indexOf(atual)
+        const proximoIndice = evento.key === 'ArrowRight' ? indice + 1 : indice - 1
+        return PAGINAS_PAINEL_LATERAL[proximoIndice] ?? atual
+      })
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  }, [fichaAtiva, modoAjustado])
+
+  // Botao manual "Tela cheia" (voltou por pedido explicito - a tentativa
+  // automatica no clique do Sidebar, mais a rede de seguranca no primeiro
+  // clique/tecla dentro da Curadoria, nem sempre engatam de fato,
+  // dependendo do navegador). Alvo e document.documentElement (o <html>
+  // inteiro), NAO um elemento especifico da Curadoria - precisa ser o
+  // MESMO alvo usado pelo clique automatico do Sidebar (aoClicarCuradoria)
+  // e pela rede de seguranca acima, senao os tres brigariam pelo
   // "elemento de tela cheia atual" (so um pode estar em tela cheia por
-  // vez; pedir fullscreen num elemento diferente troca o alvo, nao
-  // "empilha"). Como fullscreenar o <html> nao esconde mais nada
-  // sozinho (o comportamento nativo de "so mostra o alvo e descendentes"
-  // so existe quando o alvo e um elemento especifico, nao a pagina
-  // inteira), Topbar e o cabecalho da Curadoria agora sao escondidos
-  // explicitamente via `telaCheia` no JSX (ver return abaixo) - antes
-  // isso acontecia de graca, so por visualizadorRef ser o alvo.
+  // vez - pedir fullscreen num elemento diferente troca o alvo, nao
+  // "empilha").
   async function alternarTelaCheia() {
     // Trava contra chamadas concorrentes pro MESMO clique (ex.: usuario
     // clica duas vezes rapido no botao manual) - sem isso, a 2a chamada
@@ -319,18 +430,13 @@ export default function CuradoriaPage() {
         await document.documentElement.requestFullscreen()
       }
     } catch {
-      // navegador pode negar (ex.: sem interacao do usuario) - ignora
+      // navegador pode negar (raro, considerando que isso roda dentro do
+      // proprio clique do usuario no botao) - ignora
     } finally {
       telaCheiaEmAndamentoRef.current = false
     }
   }
 
-  function centralizarImagem() {
-    // Sem ponte (postMessage) com o OHIF, que roda em outra origem - a
-    // forma segura de "recentralizar" sem tocar no funcionamento interno
-    // dele e recarregar o mesmo iframe, que volta ao estado inicial.
-    setIframeReloadKey((k) => k + 1)
-  }
 
   async function carregarViewerUrl(orthancReferenceId: number) {
     setCarregandoViewer(true)
@@ -549,6 +655,15 @@ export default function CuradoriaPage() {
     if (!autenticado || criandoId !== null) return
     setCriandoId(imagem.orthanc_reference_id)
     setErroFila('')
+    // Toda imagem nova comeca sem nenhum dos dois sinais de "carregou" -
+    // ve-lo comentario grande onde ohifCarregado/marcadorPronto sao
+    // declarados. Precisa ser aqui (INICIO de abrirImagem, antes de
+    // qualquer fetch), nao dentro de carregarFichaCompleta - senao ficaria
+    // tarde demais: a fila so seria travada de novo DEPOIS que a ficha ja
+    // tivesse carregado, deixando escapar a mesma corrida que este ajuste
+    // existe pra fechar.
+    setOhifCarregado(false)
+    setMarcadorPronto(false)
     try {
       // Viewer-url so precisa do orthanc_reference_id, que ja temos aqui -
       // disparamos em paralelo com a criacao da ficha, em vez de esperar a
@@ -774,6 +889,20 @@ export default function CuradoriaPage() {
 
   const fichaVisivel = !!fichaAtiva && !modoAjustado
 
+  // "Imagem principal terminou de carregar" = os dois sinais resolvidos,
+  // cada um com um fallback pra quando o sinal correspondente NUNCA vai
+  // disparar (senao a fila ficaria travada pra sempre nesses casos):
+  // - OHIF: so espera o iframe carregar (ohifCarregado) SE houver de fato
+  //   um iframe pra carregar (viewerPronto) - imagens sem StudyInstanceUID
+  //   (viewerInfo.abrivel === false) nunca renderizam iframe nenhum.
+  // - Marcador: so espera o painel "Imagem para marcacao" carregar
+  //   (marcadorPronto) SE ele estiver de fato visivel (fichaVisivel) -
+  //   no modo "Ajustar a tela" (modoAjustado) esse painel nem monta.
+  const viewerPronto = !!(viewerInfo?.abrivel && viewerInfo.viewer_url)
+  const ohifResolvido = !carregandoViewer && (!viewerPronto || ohifCarregado)
+  const marcadorResolvido = !fichaVisivel || marcadorPronto
+  const imagemPrincipalPronta = ohifResolvido && marcadorResolvido
+
   // Badge + dropdown "Aguardando sua decisao" - ao lado dos botoes de acao
   // (Salvar/Aprovar/Solicitar segunda opiniao/Descartar) na barra superior,
   // por pedido - antes ficava no cabecalho da pagina. So aparece quando ha
@@ -861,11 +990,11 @@ export default function CuradoriaPage() {
   return (
     <div className="flex h-screen flex-col bg-base">
       {/* Topbar e o cabecalho abaixo somem em tela cheia - o alvo da
-          Fullscreen API agora e document.documentElement (o <html>
-          inteiro, ver alternarTelaCheia acima), entao a pagina inteira
-          fica visivel automaticamente; antes, quando o alvo era
-          visualizadorRef, a propria API ja escondia tudo fora dele "de
-          graca". Agora precisa ser explicito. */}
+          Fullscreen API e document.documentElement (o <html> inteiro),
+          entao a pagina inteira fica visivel automaticamente; se o alvo
+          fosse um elemento especifico (ex.: visualizadorRef), a propria
+          API ja esconderia tudo fora dele "de graca" - com o <html> como
+          alvo, precisa ser explicito. */}
       {!telaCheia && <Topbar />}
 
       {/* Sem overflow-y-auto aqui de proposito: a linha de trabalho ocupa
@@ -896,8 +1025,8 @@ export default function CuradoriaPage() {
         )}
 
         {/* AREA DE TRABALHO - barra superior + fila horizontal + visualizador
-            + ficha. Nao e mais o elemento que vira tela cheia (ver
-            alternarTelaCheia acima) - o padding condicional
+            + ficha. Nao e o elemento que vira tela cheia (o alvo e o
+            <html> inteiro) - o padding condicional
             (${telaCheia ? 'p-4' : ''}) continua aqui, pra dar uma
             respiro ao redor do conteudo quando o cabecalho/Topbar somem
             e a pagina inteira fica em tela cheia. */}
@@ -905,46 +1034,61 @@ export default function CuradoriaPage() {
           ref={visualizadorRef}
           className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}
         >
-          {fichaAtiva && (
-            <BarraSuperiorCuradoria
-              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-              totalFila={totalPendentes}
-              podeAnterior={podeAnterior}
-              podeProxima={podeProxima}
-              onAnterior={irParaAnterior}
-              onProxima={irParaProxima}
-              onSalvar={aoClicarSalvar}
-              onAprovar={aprovar}
-              onDescartar={() => abrirModalMotivo('descartar')}
-              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-              salvando={salvandoRascunho}
-              aprovando={aprovando}
-              extra={badgeReviewsRespondidas}
-            />
-          )}
+          {/* Barra superior + fila horizontal agrupadas SEM gap entre elas
+              (flex-col padrao, sem "gap-*") - pedido explicito pra que o
+              topo das miniaturas da fila encoste na borda inferior da
+              barra ("Imagem X de Y"). O gap-3 do container pai (acima)
+              continua valendo em relacao aos outros irmaos (linha de
+              imagens, ficha), so esse par aqui fica colado. */}
+          <div className="flex shrink-0 flex-col">
+            {fichaAtiva && (
+              <BarraSuperiorCuradoria
+                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+                totalFila={totalPendentes}
+                podeAnterior={podeAnterior}
+                podeProxima={podeProxima}
+                onAnterior={irParaAnterior}
+                onProxima={irParaProxima}
+                onSalvar={aoClicarSalvar}
+                onAprovar={aprovar}
+                onDescartar={() => abrirModalMotivo('descartar')}
+                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+                salvando={salvandoRascunho}
+                aprovando={aprovando}
+                extra={badgeReviewsRespondidas}
+              />
+            )}
 
-          {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
-              e o visualizador, por pedido explicito. Sempre visivel (nao
-              so quando fichaAtiva existe) - e o mecanismo de selecionar a
-              primeira imagem em primeiro lugar (a LISTA em si e leve, so
-              texto - o que e pesado sao os fetches de preview de cada
-              miniatura, represados por permitirCarregarMiniaturas). */}
-          <FilaCuradoriaHorizontal
-            fila={fila}
-            carregando={carregandoFila}
-            erro={erroFila}
-            criandoId={criandoId}
-            ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
-            // So libera os fetches de preview das miniaturas depois que a
-            // ficha ativa (imagem principal + painel de marcacao)
-            // terminou de carregar - antes disso, dezenas de miniaturas
-            // ficando visiveis de uma vez disputariam as mesmas conexoes
-            // das chamadas criticas (criar ficha, buscar viewer-url,
-            // buscar ficha completa), atrasando a imagem principal (ver
-            // comentario em MiniaturaFila.tsx).
-            permitirCarregarMiniaturas={!!fichaAtiva}
-            onSelecionar={(imagem) => abrirImagem(imagem)}
-          />
+            {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
+                e o visualizador, por pedido explicito. Sempre visivel (nao
+                so quando fichaAtiva existe) - e o mecanismo de selecionar a
+                primeira imagem em primeiro lugar (a LISTA em si e leve, so
+                texto - o que e pesado sao os fetches de preview de cada
+                miniatura, represados por permitirCarregarMiniaturas). */}
+            <FilaCuradoriaHorizontal
+              fila={fila}
+              carregando={carregandoFila}
+              erro={erroFila}
+              criandoId={criandoId}
+              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+              // So libera os fetches de preview das miniaturas depois que a
+              // imagem principal (OHIF) E o painel de marcacao terminam de
+              // carregar de verdade - ver imagemPrincipalPronta acima. O
+              // `!!fichaAtiva` continua aqui porque imagemPrincipalPronta
+              // sozinho comeca TRUE antes de qualquer ficha existir (nenhum
+              // dos dois sinais tem nada pendente pra esperar ainda) - sem
+              // essa parte, as miniaturas ficariam livres pra carregar antes
+              // ate da 1a imagem abrir automaticamente. So usar `!!fichaAtiva`
+              // sozinho (como antes) tambem nao bastava: isso so mede se a
+              // FICHA (metadado) chegou, nao se as IMAGENS ja carregaram - e
+              // como fichaAtiva fica true pra sempre a partir da 1a imagem, a
+              // fila so ficava protegida nessa primeira vez; a partir da 2a
+              // imagem (Proxima/Anterior/clique na fila) ela nunca mais era
+              // travada de novo.
+              permitirCarregarMiniaturas={!!fichaAtiva && imagemPrincipalPronta}
+              onSelecionar={(imagem) => abrirImagem(imagem)}
+            />
+          </div>
 
           {/* LINHA DE IMAGENS - visualizador principal (OHIF, imagem
               atual do estudo) + painel lateral, lado a lado. O
@@ -975,58 +1119,95 @@ export default function CuradoriaPage() {
               onAlternarTelaCheia={alternarTelaCheia}
               modoAjustado={modoAjustado}
               onAlternarAjustar={() => setModoAjustado((v) => !v)}
-              onCentralizar={centralizarImagem}
-              iframeReloadKey={iframeReloadKey}
               statusFicha={statusFicha}
               segundaOpiniaoReview={segundaOpiniaoReview}
               form={form}
               onChange={setForm}
+              onIframeCarregado={() => setOhifCarregado(true)}
             />
 
-            {fichaVisivel && fichaAtiva && (
-              <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
-                <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">
-                  {painelLateral === 'marcacao' ? t('painelLateral.imagemParaMarcacao') : t('painelLateral.achadosEmRadiografia')}
-                </h2>
-                <div className="min-h-0 flex-1 px-6">
-                  {painelLateral === 'marcacao' ? (
-                    <MarcadorAchado
-                      orthancReferenceId={fichaAtiva.orthancReferenceId}
-                      marcacoes={form.marcacoes}
-                      onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
-                    />
-                  ) : (
-                    <PainelAchadosRadiografia form={form} onChange={setForm} />
-                  )}
-                </div>
+            {fichaVisivel && fichaAtiva && (() => {
+              // Titulos/rotulos das 5 telas do carrossel, montados aqui (nao
+              // como constante de modulo) porque dependem de `t()`. Ver
+              // PAGINAS_PAINEL_LATERAL (topo do arquivo) pra ordem/indices.
+              const indicePainel = PAGINAS_PAINEL_LATERAL.indexOf(painelLateral)
+              const titulos: Record<PaginaPainelLateral, string> = {
+                marcacao: t('painelLateral.imagemParaMarcacao'),
+                achados1: t('painelLateral.achadosEmRadiografiaPagina', { pagina: 1, total: 2 }),
+                achados2: t('painelLateral.achadosEmRadiografiaPagina', { pagina: 2, total: 2 }),
+                achadosEstruturados: t('painelLateral.achadosEstruturadosTitulo'),
+                erroTecnico: t('painelLateral.erroTecnicoTitulo'),
+              }
+              const rotulosProximo: Partial<Record<PaginaPainelLateral, string>> = {
+                marcacao: t('painelLateral.verAchados'),
+                achados1: t('painelLateral.verMaisAchados'),
+                achados2: t('painelLateral.verAchadosEstruturados'),
+                achadosEstruturados: t('painelLateral.verErroTecnico'),
+              }
+              const rotulosAnterior: Partial<Record<PaginaPainelLateral, string>> = {
+                achados1: t('painelLateral.voltarParaMarcacao'),
+                achados2: t('painelLateral.voltarAchadosAnteriores'),
+                achadosEstruturados: t('painelLateral.voltarAchadosEstruturados'),
+                erroTecnico: t('painelLateral.voltarErroTecnicoAnterior'),
+              }
 
-                {/* Setas do carrossel: so a de avancar (achados) aparece
-                    em cima da marcacao, so a de voltar aparece em cima
-                    dos achados - mesmo padrao visual da ficha de baixo. */}
-                {painelLateral === 'marcacao' && (
-                  <button
-                    type="button"
-                    onClick={() => setPainelLateral('achados')}
-                    aria-label={t('painelLateral.verAchados')}
-                    title={t('painelLateral.verAchados')}
-                    className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                  >
-                    ›
-                  </button>
-                )}
-                {painelLateral === 'achados' && (
-                  <button
-                    type="button"
-                    onClick={() => setPainelLateral('marcacao')}
-                    aria-label={t('painelLateral.voltarParaMarcacao')}
-                    title={t('painelLateral.voltarParaMarcacao')}
-                    className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                  >
-                    ‹
-                  </button>
-                )}
-              </section>
-            )}
+              return (
+                <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
+                  <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">{titulos[painelLateral]}</h2>
+                  <div className="min-h-0 flex-1 px-6">
+                    {painelLateral === 'marcacao' && (
+                      <MarcadorAchado
+                        orthancReferenceId={fichaAtiva.orthancReferenceId}
+                        marcacoes={form.marcacoes}
+                        onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
+                        onCarregou={() => setMarcadorPronto(true)}
+                      />
+                    )}
+                    {(painelLateral === 'achados1' || painelLateral === 'achados2') && (
+                      <PainelAchadosRadiografia form={form} onChange={setForm} pagina={painelLateral === 'achados1' ? 1 : 2} />
+                    )}
+                    {painelLateral === 'achadosEstruturados' && (
+                      <PainelAchadosEstruturados
+                        curationId={fichaAtiva.curationId}
+                        statusFicha={statusFicha}
+                        dentesDaFicha={form.dentes}
+                        marcacoesDaFicha={form.marcacoes}
+                      />
+                    )}
+                    {painelLateral === 'erroTecnico' && (
+                      <PainelErroTecnico curationId={fichaAtiva.curationId} statusFicha={statusFicha} />
+                    )}
+                  </div>
+
+                  {/* Setas do carrossel de 5 telas (marcacao -> achados1 ->
+                      achados2 -> achadosEstruturados -> erroTecnico): a de
+                      avancar so aparece quando ha uma proxima tela, a de
+                      voltar so quando ha uma anterior. */}
+                  {indicePainel < PAGINAS_PAINEL_LATERAL.length - 1 && (
+                    <button
+                      type="button"
+                      onClick={() => setPainelLateral(PAGINAS_PAINEL_LATERAL[indicePainel + 1])}
+                      aria-label={rotulosProximo[painelLateral]}
+                      title={rotulosProximo[painelLateral]}
+                      className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                    >
+                      ›
+                    </button>
+                  )}
+                  {indicePainel > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setPainelLateral(PAGINAS_PAINEL_LATERAL[indicePainel - 1])}
+                      aria-label={rotulosAnterior[painelLateral]}
+                      title={rotulosAnterior[painelLateral]}
+                      className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
+                    >
+                      ‹
+                    </button>
+                  )}
+                </section>
+              )
+            })()}
           </div>
 
           {/* Ficha de curadoria - escondida temporariamente no modo

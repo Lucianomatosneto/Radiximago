@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, FormEvent } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
 import RadiografiaIlustrativa from '../../components/RadiografiaIlustrativa'
 
 export default function EsqueciSenhaPage() {
+  const t = useTranslations('EsqueciSenha')
+  const idioma = useLocale()
   const [enviado, setEnviado] = useState(false)
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
@@ -18,7 +21,7 @@ export default function EsqueciSenhaPage() {
     const email = String(formData.get('email') ?? '').trim()
 
     if (!email) {
-      setErro('Informe seu e-mail.')
+      setErro(t('erroEmailObrigatorio'))
       return
     }
 
@@ -29,17 +32,17 @@ export default function EsqueciSenhaPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, idioma }),
       })
 
       if (!response.ok) {
-        setErro('Não foi possível processar o pedido. Tente novamente mais tarde.')
+        setErro(t('erroGenerico'))
         return
       }
 
       setEnviado(true)
     } catch {
-      setErro('Não foi possível processar o pedido. Tente novamente mais tarde.')
+      setErro(t('erroGenerico'))
     } finally {
       setCarregando(false)
     }
@@ -57,29 +60,29 @@ export default function EsqueciSenhaPage() {
 
       <div className="relative z-10 w-full max-w-sm rounded-2xl border border-white/10 bg-white/5 p-7 shadow-2xl backdrop-blur-xl">
         <div className="mb-6 text-center">
-          <h1 className="text-xl font-bold tracking-tight text-white">Esqueci minha senha</h1>
+          <h1 className="text-xl font-bold tracking-tight text-white">{t('titulo')}</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-slate-400">
-            Informe seu e-mail e enviaremos instruções para redefinir sua senha
+            {t('subtitulo')}
           </p>
         </div>
 
         {enviado ? (
           <div className="space-y-5">
             <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
-              Se esse e-mail estiver cadastrado, enviamos instruções de redefinição. Confira sua caixa de entrada.
+              {t('sucessoMensagem')}
             </div>
             <Link
               href="/login"
               className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
             >
-              Voltar para o login
+              {t('voltarLogin')}
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} noValidate className="space-y-4">
             <div>
               <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-slate-300">
-                E-mail
+                {t('email')}
               </label>
               <div className="relative">
                 <svg
@@ -99,7 +102,7 @@ export default function EsqueciSenhaPage() {
                   type="email"
                   autoFocus
                   className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
-                  placeholder="seu.email@exemplo.com"
+                  placeholder={t('emailPlaceholder')}
                 />
               </div>
             </div>
@@ -115,12 +118,12 @@ export default function EsqueciSenhaPage() {
               disabled={carregando}
               className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
             >
-              {carregando ? 'Enviando...' : 'Enviar instruções'}
+              {carregando ? t('enviando') : t('enviarInstrucoes')}
             </button>
 
             <div className="text-center">
               <Link href="/login" className="text-sm text-brand-300 transition-colors hover:text-brand-300">
-                Voltar para o login
+                {t('voltarLogin')}
               </Link>
             </div>
           </form>

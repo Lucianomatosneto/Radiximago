@@ -6,6 +6,7 @@ expiracao.
 
 from datetime import datetime, timedelta, timezone
 
+import app.modules.auth as auth_module
 from app.modules.users import UserRole
 from tests.conftest import SENHA_TESTE, obter_token
 
@@ -100,3 +101,52 @@ def test_reset_password_com_senha_curta(client, criar_usuario, db):
     )
 
     assert resposta.status_code == 422
+
+
+def test_forgot_password_idioma_en_repassado_ao_email(client, criar_usuario, monkeypatch):
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    chamadas = []
+    monkeypatch.setattr(
+        auth_module,
+        "enviar_email_redefinicao_senha",
+        lambda destinatario, nome, link_reset, idioma="pt": chamadas.append(idioma),
+    )
+
+    resposta = client.post(
+        "/auth/forgot-password", json={"email": usuario.email, "idioma": "en"}
+    )
+
+    assert resposta.status_code == 200
+    assert chamadas == ["en"]
+
+
+def test_forgot_password_sem_idioma_usa_pt_por_padrao(client, criar_usuario, monkeypatch):
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    chamadas = []
+    monkeypatch.setattr(
+        auth_module,
+        "enviar_email_redefinicao_senha",
+        lambda destinatario, nome, link_reset, idioma="pt": chamadas.append(idioma),
+    )
+
+    resposta = client.post("/auth/forgot-password", json={"email": usuario.email})
+
+    assert resposta.status_code == 200
+    assert chamadas == ["pt"]
+
+
+def test_forgot_password_idioma_invalido_cai_para_pt(client, criar_usuario, monkeypatch):
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    chamadas = []
+    monkeypatch.setattr(
+        auth_module,
+        "enviar_email_redefinicao_senha",
+        lambda destinatario, nome, link_reset, idioma="pt": chamadas.append(idioma),
+    )
+
+    resposta = client.post(
+        "/auth/forgot-password", json={"email": usuario.email, "idioma": "fr"}
+    )
+
+    assert resposta.status_code == 200
+    assert chamadas == ["pt"]

@@ -3,8 +3,12 @@
 import { useTranslations } from 'next-intl'
 
 const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
+// Mesma cor de FichaCuradoriaForm.tsx (ver comentario completo la), aplicada
+// em todas as caixas de texto da tela de Curadoria (pedido explicito) -
+// este modal so e usado dentro dela (descartar / solicitar segunda
+// opiniao). COR SOLIDA (nao degrade) - motivo no comentario acima.
 const campoInput =
-  'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-3 py-2 text-sm text-ink outline-none focus:border-brand'
 
 // Extraido de curadoria/page.tsx sem mudanca de comportamento - mesmo
 // modal de "motivo" usado tanto pra descartar quanto pra solicitar

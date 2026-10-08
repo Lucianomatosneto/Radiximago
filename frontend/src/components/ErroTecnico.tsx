@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Logo from './Logo'
 
@@ -8,6 +9,7 @@ interface ErroTecnicoProps {
 }
 
 export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
+  const t = useTranslations('ErroTecnico')
   const router = useRouter()
 
   return (
@@ -33,13 +35,13 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
           />
         </svg>
 
-        <h1 className="text-xl font-semibold text-slate-100">Erro técnico</h1>
-        <p className="mt-3 text-sm text-slate-400">Não foi possível carregar a imagem.</p>
+        <h1 className="text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+        <p className="mt-3 text-sm text-slate-400">{t('descricao')}</p>
         <p className="mt-2 text-xs text-slate-500">
-          O serviço de imagens está temporariamente indisponível.
+          {t('servicoIndisponivel')}
         </p>
         <p className="mt-1 text-xs text-slate-500">
-          Tente novamente mais tarde ou entre em contato com o suporte técnico.
+          {t('orientacao')}
         </p>
 
         <div className="mt-6 flex justify-center gap-3">
@@ -49,7 +51,7 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
               onClick={onRetry}
               className="rounded-md border border-slate-700 px-5 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300"
             >
-              Tentar novamente
+              {t('tentarNovamente')}
             </button>
           )}
           <button
@@ -57,7 +59,7 @@ export default function ErroTecnico({ onRetry }: ErroTecnicoProps) {
             onClick={() => router.push('/dashboard')}
             className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
           >
-            Voltar ao início
+            {t('voltarInicio')}
           </button>
         </div>
       </div>

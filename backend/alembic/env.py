@@ -7,6 +7,7 @@ from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, CurationHistory, CurationReview
 from app.modules.audit_logs import AuditLog
+from app.modules.achados import Achado, ErroTecnico
 
 config = context.config
 if config.config_file_name is not None:
