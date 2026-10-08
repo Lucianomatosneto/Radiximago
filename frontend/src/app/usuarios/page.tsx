@@ -486,7 +486,7 @@ export default function UsuariosPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-1 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-1">{t('titulo')}</h1>
           <p className="mb-6 text-sm text-slate-500">
             {t('subtitulo')}
           </p>

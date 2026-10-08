@@ -150,7 +150,7 @@ export default function ConfiguracoesPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-4">{t('titulo')}</h1>
 
           <div className="mb-6 rounded-lg border border-amber-700/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
             {t('avisoSomenteServidor')}

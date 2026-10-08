@@ -287,8 +287,8 @@ export default function MinhasImagensPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-ink">
-                {t('tituloPrefixo')} <span className="text-brand-300">{t('tituloDestaque')}</span>
+              <h1 className="titulo-pagina tela-entra">
+                {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
               </h1>
               <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
             </div>

@@ -217,6 +217,17 @@ export default function LoginPage() {
             <li className="flex items-center gap-2.5"><Icone tipo="pessoa" />{t('caracteristicaCuradas')}</li>
             <li className="flex items-center gap-2.5"><Icone tipo="rota" />{t('caracteristicaRastreaveis')}</li>
           </ul>
+
+          <Link
+            href="/conheca"
+            className="group mt-6 inline-flex items-center gap-2 text-[13.5px] font-medium text-teal-300 transition hover:text-teal-200"
+            style={sombraTexto}
+          >
+            {t('conhecaRadix')}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true">
+              <path d="M5 12h14M13 6l6 6-6 6" />
+            </svg>
+          </Link>
         </section>
 
         {/* barra de ferramentas do visualizador (canto superior direito) */}

@@ -8,6 +8,7 @@ SMTP_HOST/SMTP_USER/SMTP_PASSWORD no .env pra envio de verdade.
 """
 
 import logging
+from html import escape
 import smtplib
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -65,7 +66,7 @@ def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str
     if idioma == "en":
         assunto = "Password reset - Radix Imago"
         corpo_html = f"""
-        <p>Hello, {nome}.</p>
+        <p>Hello, {escape(nome)}.</p>
         <p>We received a request to reset the password for your Radix Imago account.</p>
         <p><a href="{link_reset}">Click here to set a new password</a></p>
         <p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
@@ -73,7 +74,7 @@ def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str
     else:
         assunto = "Redefinição de senha - Rádix Imago"
         corpo_html = f"""
-        <p>Olá, {nome}.</p>
+        <p>Olá, {escape(nome)}.</p>
         <p>Recebemos uma solicitação para redefinir a senha da sua conta no Rádix Imago.</p>
         <p><a href="{link_reset}">Clique aqui para definir uma nova senha</a></p>
         <p>Esse link expira em 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
@@ -81,18 +82,36 @@ def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str
     enviar_email(destinatario, assunto, corpo_html)
 
 
+def enviar_email_confirmacao_cadastro(
+    destinatario: str, nome: str, link_confirmacao: str, validade_horas: int
+) -> None:
+    """Primeira etapa do cadastro: prova de que a pessoa e dona do e-mail."""
+    corpo_html = f"""
+    <p>Olá, {escape(nome)}.</p>
+    <p>Recebemos um pedido de acesso ao Rádix Imago usando este e-mail.</p>
+    <p>Para continuar, confirme seu e-mail. Na página que abrir, digite a
+    <strong>mesma senha</strong> que você definiu no formulário.</p>
+    <p><a href="{escape(link_confirmacao, quote=True)}">Confirmar meu e-mail</a></p>
+    <p>O link vale por {validade_horas} horas e só pode ser usado uma vez.</p>
+    <p>Se não foi você quem fez esse pedido, ignore este e-mail: sem a
+    confirmação, nenhum acesso é liberado.</p>
+    """
+    enviar_email(destinatario, "Confirme seu e-mail - Rádix Imago", corpo_html)
+
+
 def enviar_email_solicitacao_recebida(destinatario: str, nome: str) -> None:
     corpo_html = f"""
-    <p>Olá, {nome}.</p>
-    <p>Recebemos sua solicitação de acesso ao Rádix Imago. Um administrador vai revisar
-    o pedido em breve, e você será avisado por e-mail quando ele for aprovado.</p>
+    <p>Olá, {escape(nome)}.</p>
+    <p>Seu e-mail foi confirmado e sua solicitação de acesso ao Rádix Imago foi
+    encaminhada. Um administrador vai revisar o pedido em breve, e você será
+    avisado por e-mail quando ele for aprovado.</p>
     """
     enviar_email(destinatario, "Solicitação de acesso recebida - Rádix Imago", corpo_html)
 
 
 def enviar_email_acesso_aprovado(destinatario: str, nome: str) -> None:
     corpo_html = f"""
-    <p>Olá, {nome}.</p>
+    <p>Olá, {escape(nome)}.</p>
     <p>Sua solicitação de acesso ao Rádix Imago foi aprovada. Você já pode entrar
     usando o e-mail e a senha que definiu na solicitação.</p>
     <p><a href="{settings.FRONTEND_URL}/login">Acessar o Rádix Imago</a></p>
@@ -104,9 +123,9 @@ def enviar_email_imagem_pesquisa(
     destinatario: str, nome: str, descricao: str, anexo_bytes: bytes, anexo_nome: str
 ) -> None:
     corpo_html = f"""
-    <p>Olá, {nome}.</p>
+    <p>Olá, {escape(nome)}.</p>
     <p>Segue em anexo a imagem que você selecionou na Pesquisa avançada do Rádix Imago.</p>
-    <p><strong>{descricao}</strong></p>
+    <p><strong>{escape(descricao)}</strong></p>
     """
     enviar_email(
         destinatario, "Imagem da Pesquisa - Rádix Imago", corpo_html,
@@ -126,9 +145,9 @@ def enviar_email_imagens_pesquisa_lote(
     delas seja uma serie com varios cortes (ex.: tomografia) - series nao
     sao enviadas por e-mail, so por download em ZIP.
     """
-    linhas_descricao = "".join(f"<li>{descricao}</li>" for descricao, _, _ in itens)
+    linhas_descricao = "".join(f"<li>{escape(descricao)}</li>" for descricao, _, _ in itens)
     corpo_html = f"""
-    <p>Olá, {nome}.</p>
+    <p>Olá, {escape(nome)}.</p>
     <p>Seguem em anexo as {len(itens)} imagens que você selecionou no Rádix Imago.</p>
     <ul>{linhas_descricao}</ul>
     """
@@ -140,8 +159,8 @@ def enviar_email_imagens_pesquisa_lote(
 
 def enviar_email_acesso_rejeitado(destinatario: str, nome: str, motivo: str) -> None:
     corpo_html = f"""
-    <p>Olá, {nome}.</p>
+    <p>Olá, {escape(nome)}.</p>
     <p>Sua solicitação de acesso ao Rádix Imago não foi aprovada.</p>
-    <p><strong>Motivo:</strong> {motivo}</p>
+    <p><strong>Motivo:</strong> {escape(motivo)}</p>
     """
     enviar_email(destinatario, "Solicitação de acesso não aprovada - Rádix Imago", corpo_html)

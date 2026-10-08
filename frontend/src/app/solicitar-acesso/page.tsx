@@ -4,7 +4,6 @@ import { useState, FormEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
-import RadiografiaIlustrativa from '../../components/RadiografiaIlustrativa'
 
 // Valores reais do enum IntencaoPerfil no backend - so a preferencia do
 // solicitante, o perfil de fato concedido e decidido pelo admin na
@@ -94,10 +93,6 @@ export default function SolicitarAcessoPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
-      <div className="fixed inset-0 -z-10">
-        <RadiografiaIlustrativa />
-      </div>
-
       <div className="fixed left-6 top-6 z-10">
         <Logo variante="login" />
       </div>

@@ -224,7 +224,7 @@ export default function ImagensPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-4">{t('titulo')}</h1>
 
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <DashboardCard label={t('totalAguardandoCuradoria')} valor={totalAguardando} cor="amber" />

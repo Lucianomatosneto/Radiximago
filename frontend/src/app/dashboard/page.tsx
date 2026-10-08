@@ -124,7 +124,7 @@ export default function DashboardPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-8">
-          <h1 className="text-xl font-semibold text-slate-100">{t('visaoGeral')}</h1>
+          <h1 className="titulo-pagina tela-entra">{t('visaoGeral')}</h1>
           <p className="mt-1 text-sm text-slate-400">
             {nome ? t('bemVindoDeVolta', { nome: nome.split(' ')[0] }) : ''}
             {t('resumoDeHoje', { data: dataDeHoje })}

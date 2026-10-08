@@ -147,7 +147,7 @@ export default function IntegracoesPage() {
         <main className="flex-1 overflow-y-auto p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+              <h1 className="titulo-pagina tela-entra">{t('titulo')}</h1>
               <p className="mt-1 text-sm text-slate-500">
                 {t('subtitulo')}
               </p>

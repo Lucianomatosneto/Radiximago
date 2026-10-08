@@ -257,7 +257,7 @@ export default function AuditoriaPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-6">{t('titulo')}</h1>
 
           <section className="rounded-xl border border-base-border bg-base-surface p-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

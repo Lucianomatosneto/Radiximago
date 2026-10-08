@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Topbar from '../../components/Topbar'
+import Logo from '../../components/Logo'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
@@ -52,6 +52,11 @@ const PAGINAS_PAINEL_LATERAL: PaginaPainelLateral[] = [
   'achadosEstruturados',
   'erroTecnico',
 ]
+// O carrossel (setas e teclado) percorre so os ACHADOS: a imagem para
+// marcacao nao faz mais parte dele - ela so abre pelo botao "Marcar imagem"
+// da caixa de dados (e entao ocupa o lugar grande do visualizador).
+const PAGINAS_CARROSSEL: PaginaPainelLateral[] = PAGINAS_PAINEL_LATERAL.filter((p) => p !== 'marcacao')
+const PAGINA_INICIAL: PaginaPainelLateral = 'achados1'
 
 // Item de /curation/reviews/answered (mesmo formato de /reviews/pending)
 // + o parecer do revisor, que vem de uma segunda chamada a
@@ -188,7 +193,39 @@ export default function CuradoriaPage() {
   // Fase 3: carrossel ganhou mais 2 paginas (achadosEstruturados, novo
   // painel via API da Fase 2; erroTecnico, dimensao independente) - ver
   // PAGINAS_PAINEL_LATERAL logo abaixo, unica fonte da ordem das 5 paginas.
-  const [painelLateral, setPainelLateral] = useState<PaginaPainelLateral>('marcacao')
+  const [painelLateral, setPainelLateral] = useState<PaginaPainelLateral>(PAGINA_INICIAL)
+  // MODO FOCO (so em tela cheia, com o painel "Imagem para marcacao"):
+  // a imagem do visualizador ocupa quase a tela toda e a imagem de
+  // marcacao vira uma miniatura ao lado. Passar o mouse na miniatura a
+  // amplia temporariamente (previa); clicar nela a FIXA em tamanho grande,
+  // trocando de lugar com o visualizador (que vira a miniatura). Clicar na
+  // miniatura do visualizador destroca. Nada e desmontado na troca (so
+  // muda o tamanho por CSS) - assim o iframe do OHIF nao recarrega.
+  const [marcacaoEmDestaque, setMarcacaoEmDestaque] = useState(false)
+  // Pagina de achados que estava aberta antes de "Marcar imagem" - ao
+  // fechar a marcacao, o painel lateral volta para ela.
+  const paginaAntesDaMarcacaoRef = useRef<PaginaPainelLateral>('achados1')
+  const [previaMarcacao, setPreviaMarcacao] = useState(false)
+  const tempoPreviaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Em tela cheia o "Registro de curadoria" (faixa de baixo) comeca
+  // recolhido, devolvendo essa altura para as imagens.
+  const [registroAberto, setRegistroAberto] = useState(false)
+  // Janela do navegador ja em tela cheia (F11, ou aberta pelo atalho
+  // "Abrir Radix Curadoria em tela cheia") - nesse caso o botao de tela
+  // cheia nao precisa aparecer.
+  const [janelaCheia, setJanelaCheia] = useState(false)
+  useEffect(() => {
+    const consulta = window.matchMedia('(display-mode: fullscreen)')
+    const verificar = () =>
+      setJanelaCheia(consulta.matches || (window.innerHeight >= screen.height - 2 && window.innerWidth >= screen.width - 2))
+    verificar()
+    window.addEventListener('resize', verificar)
+    consulta.addEventListener?.('change', verificar)
+    return () => {
+      window.removeEventListener('resize', verificar)
+      consulta.removeEventListener?.('change', verificar)
+    }
+  }, [])
 
   const [form, setForm] = useState<FormularioFicha>(FORM_VAZIO)
 
@@ -393,9 +430,10 @@ export default function CuradoriaPage() {
       if (dentroDeCampo) return
 
       setPainelLateral((atual) => {
-        const indice = PAGINAS_PAINEL_LATERAL.indexOf(atual)
+        const indice = PAGINAS_CARROSSEL.indexOf(atual)
+        if (indice < 0) return atual // marcacao aberta: setas nao trocam de pagina
         const proximoIndice = evento.key === 'ArrowRight' ? indice + 1 : indice - 1
-        return PAGINAS_PAINEL_LATERAL[proximoIndice] ?? atual
+        return PAGINAS_CARROSSEL[proximoIndice] ?? atual
       })
     }
     document.addEventListener('keydown', aoTeclar)
@@ -631,7 +669,7 @@ export default function CuradoriaPage() {
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
-    setPainelLateral('marcacao')
+    setPainelLateral(PAGINA_INICIAL)
     if (ficha.status === 'segunda_opiniao') {
       carregarReviewSegundaOpiniao(curationId)
     }
@@ -753,7 +791,7 @@ export default function CuradoriaPage() {
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
-    setPainelLateral('marcacao')
+    setPainelLateral(PAGINA_INICIAL)
     if (autenticado) carregarFila()
   }
 
@@ -879,6 +917,58 @@ export default function CuradoriaPage() {
     setErroMotivo('')
   }
 
+  // Sai do modo foco (volta o layout normal) ao sair da tela cheia ou ao
+  // trocar o painel lateral para os achados.
+  useEffect(() => {
+    if (painelLateral !== 'marcacao') {
+      setMarcacaoEmDestaque(false)
+      setPreviaMarcacao(false)
+    }
+  }, [painelLateral])
+
+  function abrirPreviaMarcacao() {
+    if (tempoPreviaRef.current) clearTimeout(tempoPreviaRef.current)
+    // pequeno atraso: so amplia se o mouse "parar" na miniatura, nao ao
+    // simplesmente passar por cima a caminho de outro botao
+    tempoPreviaRef.current = setTimeout(() => setPreviaMarcacao(true), 140)
+  }
+  function fecharPreviaMarcacao() {
+    if (tempoPreviaRef.current) clearTimeout(tempoPreviaRef.current)
+    setPreviaMarcacao(false)
+  }
+
+  // Tecla M abre/fecha a imagem de marcacao (fora de campos de texto).
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key !== 'm' && e.key !== 'M') return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      const alvo = document.activeElement
+      if (alvo instanceof HTMLElement && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable)) return
+      if (!fichaAtiva || modoAjustado) return
+      e.preventDefault()
+      alternarMarcacao()
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  })
+
+  // "Marcar imagem": a imagem para marcacao abre GRANDE no lugar do
+  // visualizador (que vira miniatura); fechar volta aos achados.
+  function alternarMarcacao() {
+    if (painelLateral === 'marcacao') {
+      fecharMarcacao()
+      return
+    }
+    paginaAntesDaMarcacaoRef.current = painelLateral
+    setPainelLateral('marcacao')
+    setMarcacaoEmDestaque(true)
+  }
+  function fecharMarcacao() {
+    setPainelLateral(paginaAntesDaMarcacaoRef.current === 'marcacao' ? PAGINA_INICIAL : paginaAntesDaMarcacaoRef.current)
+    setMarcacaoEmDestaque(false)
+    setPreviaMarcacao(false)
+  }
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
@@ -888,6 +978,16 @@ export default function CuradoriaPage() {
   }
 
   const fichaVisivel = !!fichaAtiva && !modoAjustado
+  // A Curadoria abre SEMPRE no layout de tela cheia (sem barra do topo,
+  // imagens em destaque), mesmo quando o navegador nao entra em tela cheia
+  // de verdade - a Fullscreen API so e aceita depois de um clique do
+  // usuario, entao o layout nao pode depender dela. O botao "Tela cheia"
+  // do visualizador continua existindo para esconder tambem as barras do
+  // proprio navegador.
+  const modoFoco = fichaVisivel && painelLateral === 'marcacao'
+  const marcacaoGrande = modoFoco && marcacaoEmDestaque
+  const marcacaoMiniatura = modoFoco && !marcacaoEmDestaque
+  const registroVisivel = registroAberto || !!erroFormulario
 
   // "Imagem principal terminou de carregar" = os dois sinais resolvidos,
   // cada um com um fallback pra quando o sinal correspondente NUNCA vai
@@ -995,27 +1095,41 @@ export default function CuradoriaPage() {
           fosse um elemento especifico (ex.: visualizadorRef), a propria
           API ja esconderia tudo fora dele "de graca" - com o <html> como
           alvo, precisa ser explicito. */}
-      {!telaCheia && <Topbar />}
+      {/* Sem Topbar: a Curadoria e sempre "tela cheia" (ver modoFoco). */}
 
       {/* Sem overflow-y-auto aqui de proposito: a linha de trabalho ocupa
           100% da altura disponivel - nunca sobra conteudo pra "vazar" e
           forcar rolagem da pagina inteira. */}
       <main className="flex h-full min-h-0 flex-1 flex-col gap-3 p-4">
-        {!telaCheia && (
-          /* Cabecalho compacto, uma linha so - o espaco vertical aqui e
-             precioso (a imagem e a ficha e que importam pro curador no
-             dia a dia, nao o titulo da tela). */
+        {(
+          /* Cabecalho compacto, uma linha so (o espaco vertical e das
+             imagens), no mesmo padrao visual das demais telas: logo,
+             titulo no estilo titulo-pagina e o atalho para o inicio. */
           <div className="flex shrink-0 items-center gap-3">
+            <Logo variante="icone" />
+            <h1 className="titulo-pagina !text-xl">{t('titulo')}</h1>
             <Link
               href="/dashboard"
-              className="rounded-full border border-base-border px-2.5 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+              className="ml-1 rounded-full border border-base-border bg-base-surface px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
             >
               ← {t('inicio')}
             </Link>
-            <h1 className="text-sm font-semibold text-ink">
-              {t('titulo')}<span className="text-brand-300">.</span>
-            </h1>
 
+            {/* Atalho visivel para a tela cheia "de verdade" (sem abas e
+                barra de endereco): o navegador so deixa entrar nela com um
+                clique ou tecla da pessoa - e cliques DENTRO do visualizador
+                (iframe do OHIF) nao chegam a esta pagina, entao o
+                "primeiro clique" automatico nem sempre consegue. Some
+                assim que a tela cheia esta ativa. */}
+            {!telaCheia && !janelaCheia && (
+              <button
+                type="button"
+                onClick={alternarTelaCheia}
+                className="ml-auto flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-400/10 px-3.5 py-1.5 text-xs font-medium text-teal-200 hover:bg-teal-400/20"
+              >
+                <span aria-hidden="true">⛶</span> {t('foco.entrarTelaCheia')}
+              </button>
+            )}
             {erroReviewsRespondidas && (
               <p className="text-xs text-red-400" role="alert">
                 {erroReviewsRespondidas}
@@ -1032,7 +1146,7 @@ export default function CuradoriaPage() {
             e a pagina inteira fica em tela cheia. */}
         <div
           ref={visualizadorRef}
-          className={`flex min-h-0 min-w-0 flex-1 flex-col gap-3 bg-base ${telaCheia ? 'p-4' : ''}`}
+          className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
         >
           {/* Barra superior + fila horizontal agrupadas SEM gap entre elas
               (flex-col padrao, sem "gap-*") - pedido explicito pra que o
@@ -1110,7 +1224,12 @@ export default function CuradoriaPage() {
               ficarem espremidos na faixa baixa da ficha (por isso
               achados saiu da ficha de baixo, que agora tem so 1 pagina -
               ver FichaCuradoriaForm.tsx e PainelAchadosRadiografia.tsx). */}
-          <div className="flex min-h-0 flex-[4] gap-3">
+          <div className="relative flex min-h-0 flex-[4] gap-3">
+            <div
+              className={`relative flex min-h-0 min-w-0 ${
+                marcacaoGrande ? 'h-[240px] w-[300px] flex-none self-start' : modoFoco ? 'flex-1' : 'flex-[2]'
+              }`}
+            >
             <PainelVisualizador
               fichaAtiva={!!fichaAtiva}
               carregandoViewer={carregandoViewer}
@@ -1124,13 +1243,33 @@ export default function CuradoriaPage() {
               form={form}
               onChange={setForm}
               onIframeCarregado={() => setOhifCarregado(true)}
+              miniatura={marcacaoGrande}
+              marcacaoAtiva={painelLateral === 'marcacao'}
+              onAlternarMarcacao={alternarMarcacao}
             />
+            {/* Visualizador reduzido a miniatura (marcacao em destaque):
+                uma camada transparente por cima captura o clique e
+                destroca - o iframe continua montado, so menor. */}
+            {marcacaoGrande && (
+              <button
+                type="button"
+                onClick={fecharMarcacao}
+                className="group absolute inset-0 z-20 flex items-end justify-center rounded-2xl bg-black/10 p-3 transition hover:bg-black/0"
+                aria-label={t('foco.voltarVisualizador')}
+                title={t('foco.voltarVisualizador')}
+              >
+                <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition group-hover:bg-brand">
+                  ⇄ {t('foco.voltarVisualizador')}
+                </span>
+              </button>
+            )}
+            </div>
 
             {fichaVisivel && fichaAtiva && (() => {
               // Titulos/rotulos das 5 telas do carrossel, montados aqui (nao
               // como constante de modulo) porque dependem de `t()`. Ver
               // PAGINAS_PAINEL_LATERAL (topo do arquivo) pra ordem/indices.
-              const indicePainel = PAGINAS_PAINEL_LATERAL.indexOf(painelLateral)
+              const indicePainel = PAGINAS_CARROSSEL.indexOf(painelLateral)
               const titulos: Record<PaginaPainelLateral, string> = {
                 marcacao: t('painelLateral.imagemParaMarcacao'),
                 achados1: t('painelLateral.achadosEmRadiografiaPagina', { pagina: 1, total: 2 }),
@@ -1151,18 +1290,58 @@ export default function CuradoriaPage() {
                 erroTecnico: t('painelLateral.voltarErroTecnicoAnterior'),
               }
 
+              // Tamanho do painel lateral conforme o modo:
+              // - miniatura (modo foco): coluna estreita; com o mouse em
+              //   cima, o painel "salta" para fora em tamanho grande (previa)
+              //   sem empurrar o resto do layout;
+              // - marcacao em destaque: ocupa o lugar grande do visualizador;
+              // - achados/erro tecnico: coluna de largura fixa, para a
+              //   imagem do visualizador continuar sendo o maior elemento.
+              const classeColuna = marcacaoMiniatura
+                ? 'relative w-[300px] flex-none'
+                : marcacaoGrande
+                  ? 'relative flex min-w-0 flex-1'
+                  : 'relative flex w-[440px] flex-none'
+              const classeSecao = marcacaoMiniatura
+                ? previaMarcacao
+                  ? 'absolute right-0 top-0 z-30 h-full w-[min(64vw,1100px)] shadow-[0_30px_90px_-20px_rgba(0,0,0,.95)] ring-1 ring-teal-400/50'
+                  : 'relative h-[300px] w-full'
+                : 'relative h-full w-full flex-1'
+              const compacto = marcacaoMiniatura
+
               return (
-                <section className="relative flex h-full min-h-[160px] flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3">
-                  <h2 className="mb-2 shrink-0 text-sm font-semibold text-ink">{titulos[painelLateral]}</h2>
-                  <div className="min-h-0 flex-1 px-6">
-                    {painelLateral === 'marcacao' && (
+                <div
+                  className={classeColuna}
+                  onMouseEnter={marcacaoMiniatura ? abrirPreviaMarcacao : undefined}
+                  onMouseLeave={marcacaoMiniatura ? fecharPreviaMarcacao : undefined}
+                >
+                <section className={`flex min-h-[160px] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3 transition-[width,box-shadow] duration-200 ${classeSecao}`}>
+                  <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
+                    <h2 className="text-sm font-semibold text-ink">{titulos[painelLateral]}</h2>
+                    {marcacaoGrande && (
+                      <button
+                        type="button"
+                        onClick={fecharMarcacao}
+                        className="rounded-full border border-base-border bg-base-surface2 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                      >
+                        ⇄ {t('foco.voltarVisualizador')}
+                      </button>
+                    )}
+                  </div>
+                  <div className={`min-h-0 flex-1 ${compacto ? 'px-0' : 'px-6'}`}>
+                    {/* Sempre montado (mesmo escondido) para a imagem de
+                        marcacao ja ir carregando junto com a principal -
+                        assim ela aparece na hora ao clicar "Marcar imagem"
+                        e a ordem de carregamento da fila continua a mesma. */}
+                    <div className={painelLateral === 'marcacao' ? 'h-full' : 'hidden'}>
                       <MarcadorAchado
                         orthancReferenceId={fichaAtiva.orthancReferenceId}
                         marcacoes={form.marcacoes}
                         onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
                         onCarregou={() => setMarcadorPronto(true)}
+                        compacto={compacto}
                       />
-                    )}
+                    </div>
                     {(painelLateral === 'achados1' || painelLateral === 'achados2') && (
                       <PainelAchadosRadiografia form={form} onChange={setForm} pagina={painelLateral === 'achados1' ? 1 : 2} />
                     )}
@@ -1183,10 +1362,10 @@ export default function CuradoriaPage() {
                       achados2 -> achadosEstruturados -> erroTecnico): a de
                       avancar so aparece quando ha uma proxima tela, a de
                       voltar so quando ha uma anterior. */}
-                  {indicePainel < PAGINAS_PAINEL_LATERAL.length - 1 && (
+                  {indicePainel >= 0 && indicePainel < PAGINAS_CARROSSEL.length - 1 && (
                     <button
                       type="button"
-                      onClick={() => setPainelLateral(PAGINAS_PAINEL_LATERAL[indicePainel + 1])}
+                      onClick={() => setPainelLateral(PAGINAS_CARROSSEL[indicePainel + 1])}
                       aria-label={rotulosProximo[painelLateral]}
                       title={rotulosProximo[painelLateral]}
                       className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
@@ -1197,7 +1376,7 @@ export default function CuradoriaPage() {
                   {indicePainel > 0 && (
                     <button
                       type="button"
-                      onClick={() => setPainelLateral(PAGINAS_PAINEL_LATERAL[indicePainel - 1])}
+                      onClick={() => setPainelLateral(PAGINAS_CARROSSEL[indicePainel - 1])}
                       aria-label={rotulosAnterior[painelLateral]}
                       title={rotulosAnterior[painelLateral]}
                       className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
@@ -1205,7 +1384,29 @@ export default function CuradoriaPage() {
                       ‹
                     </button>
                   )}
+
+                  {/* Miniatura/previa: o clique FIXA a imagem de marcacao em
+                      tamanho grande (no lugar do visualizador). Fica abaixo
+                      das setas do carrossel (z-10 x z-20), entao elas
+                      continuam clicaveis. */}
+                  {compacto && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        fecharPreviaMarcacao()
+                        setMarcacaoEmDestaque(true)
+                      }}
+                      className="absolute inset-0 z-[5] flex items-end justify-center p-4"
+                      aria-label={t('foco.fixarGrande')}
+                      title={t('foco.fixarGrande')}
+                    >
+                      <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15">
+                        {previaMarcacao ? t('foco.cliqueParaFixar') : t('foco.passeMouse')}
+                      </span>
+                    </button>
+                  )}
                 </section>
+                </div>
               )
             })()}
           </div>
@@ -1224,6 +1425,19 @@ export default function CuradoriaPage() {
               de trabalho - e, por estar aqui dentro, continua acessivel
               em tela cheia. */}
           {fichaVisivel && fichaAtiva && (
+            <button
+              type="button"
+              onClick={() => setRegistroAberto((v) => !v)}
+              aria-expanded={registroVisivel}
+              className="flex shrink-0 items-center justify-between rounded-xl border border-base-border bg-base-surface px-4 py-2 text-sm font-semibold text-ink hover:border-brand"
+            >
+              <span>{t('foco.registro')}</span>
+              <span className="text-xs font-normal text-slate-400">
+                {registroVisivel ? t('foco.ocultarRegistro') : t('foco.mostrarRegistro')} {registroVisivel ? '▾' : '▸'}
+              </span>
+            </button>
+          )}
+          {fichaVisivel && fichaAtiva && registroVisivel && (
             <div className="min-h-0 flex-1">
               <FichaCuradoriaForm
                 form={form}

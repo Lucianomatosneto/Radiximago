@@ -56,10 +56,15 @@ export default function PainelDadosSobrepostos({
   form,
   onChange,
   statusFicha,
+  marcacaoAtiva = false,
+  onAlternarMarcacao,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
   statusFicha: string
+  /** Estado e acao do botao "Marcar imagem" (abre a imagem para marcacao). */
+  marcacaoAtiva?: boolean
+  onAlternarMarcacao?: () => void
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
@@ -192,6 +197,32 @@ export default function PainelDadosSobrepostos({
           ))}
         </select>
       </div>
+
+      {/* Marcar imagem: ultimo item da caixa, na MESMA sequencia do Tab dos
+          campos acima (mesmo estilo de botao das opcoes). Abre o painel
+          com a imagem para marcacao (oval/retangulo/seta), que fica
+          escondido ate aqui para o visualizador ocupar a tela toda. */}
+      {onAlternarMarcacao && (
+        <div className="border-t border-base-border pt-2.5">
+          <label className={campoLabel}>{t('marcacao')}</label>
+          <button
+            type="button"
+            onClick={onAlternarMarcacao}
+            aria-pressed={marcacaoAtiva}
+            className={`${botaoOpcao} flex w-full items-center justify-center gap-2 ${
+              marcacaoAtiva
+                ? 'border-brand bg-brand text-white'
+                : 'border-base-border text-slate-300 hover:border-brand/50'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
+              <ellipse cx="12" cy="12" rx="8" ry="6" strokeDasharray="3 2.5" />
+              <path d="M17.5 17.5 21 21" />
+            </svg>
+            {marcacaoAtiva ? t('fecharMarcacao') : t('marcarImagem')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -369,7 +369,9 @@
         "ufsc": "UFSC (equipamento)",
         "externa": "Externa (upload)"
       }
-    }
+    },
+    "voltarBuscaAvancada": "Voltar à busca avançada",
+    "filtrosEmUso": "{total, plural, one {1 filtro em uso} other {# filtros em uso}}"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -503,7 +505,22 @@
       "celulaDica": "Clique para selecionar · clique duplo para ver só esta imagem",
       "visualizadorGradeTitulo": "Visualizador com {total} imagens lado a lado"
     },
-    "paginaDeSelecionadas": "(imagens {de}–{ate} de {total} selecionadas)"
+    "paginaDeSelecionadas": "(imagens {de}–{ate} de {total} selecionadas)",
+    "detalhes": "Detalhes",
+    "ocultarDetalhes": "Ocultar detalhes",
+    "temMarcacao": "Esta imagem tem marcação do curador",
+    "legenda": {
+      "dentes": "Dentes {lista}",
+      "semAlteracoes": "Sem alterações registradas"
+    },
+    "marcacoes": {
+      "botao": "Marcações",
+      "botaoTitulo": "Mostrar/ocultar as marcações do curador em todas as imagens (tecla K)",
+      "semMarcacao": "Nenhuma imagem selecionada tem marcação do curador",
+      "etiquetaAria": "{total, plural, one {1 marcação do curador} other {# marcações do curador}} - ver textos",
+      "titulo": "{total, plural, one {1 marcação do curador} other {# marcações do curador}}",
+      "semRotulo": "Sem rótulo"
+    }
   },
   "Curadoria": {
     "inicio": "Início",
@@ -980,14 +997,14 @@
   },
   "SolicitarAcesso": {
     "titulo": "Solicitar acesso",
-    "subtitulo": "Preencha seus dados. Um administrador vai revisar seu pedido antes da liberação.",
+    "subtitulo": "Preencha seus dados. Você vai receber um link para confirmar seu e-mail; depois, um administrador revisa o pedido.",
     "erroCamposObrigatorios": "Preencha nome, e-mail e senha.",
     "erroSenhaCurta": "A senha deve ter ao menos 8 caracteres.",
     "erroSenhasDiferentes": "As senhas não coincidem.",
     "erroTipoAcessoObrigatorio": "Selecione o tipo de acesso que você está solicitando.",
     "erroEnviarGenerico": "Não foi possível enviar sua solicitação. Tente novamente.",
     "erroEnviarGenericoTentarNovamente": "Não foi possível enviar sua solicitação. Tente novamente mais tarde.",
-    "sucessoMensagem": "Solicitação recebida. Um administrador vai revisar seu pedido em breve e você será avisado por e-mail.",
+    "sucessoMensagem": "Quase lá! Enviamos um link de confirmação para o e-mail informado. Abra o e-mail e confirme (o link vale por 24 horas) — só então o pedido segue para o administrador. Não chegou? Confira o spam ou envie o formulário de novo.",
     "voltarLogin": "Voltar para o login",
     "nomeCompleto": "Nome completo",
     "nomeCompletoPlaceholder": "Seu nome completo",
@@ -1143,5 +1160,23 @@
     "ativarModoEscuro": "Ativar modo escuro",
     "modoClaro": "Modo claro",
     "modoEscuro": "Modo escuro"
+  },
+  "ConfirmarEmail": {
+    "titulo": "Confirme seu e-mail",
+    "subtitulo": "Último passo: digite a senha que você definiu no pedido de acesso.",
+    "senha": "Senha definida no pedido",
+    "ajudaSenha": "É a mesma senha que você escolheu ao preencher o formulário. Ela comprova que foi você quem fez o pedido.",
+    "confirmar": "Confirmar e-mail",
+    "confirmando": "Confirmando...",
+    "sucessoMensagem": "E-mail confirmado! Seu pedido foi enviado para análise do administrador. Você receberá um e-mail quando o acesso for liberado.",
+    "irParaLogin": "Ir para o login",
+    "solicitarNovamente": "Fazer o pedido novamente",
+    "voltarLogin": "Voltar para o login",
+    "erroSenhaObrigatoria": "Digite a senha que você definiu no pedido.",
+    "erroSenhaIncorreta": "Senha incorreta. Use a mesma senha que você definiu no formulário de pedido.",
+    "erroLinkExpirado": "Este link expirou (ele vale por 24 horas). Faça o pedido novamente para receber um link novo.",
+    "erroLinkBloqueado": "Este link foi bloqueado depois de várias senhas incorretas. Faça o pedido novamente.",
+    "erroLinkInvalido": "Este link de confirmação é inválido ou já foi usado.",
+    "erroGenerico": "Não foi possível confirmar agora. Tente novamente em instantes."
   }
 }

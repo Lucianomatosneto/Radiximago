@@ -19,7 +19,27 @@
 // imagens do acervo. Com "reduzir movimento" ligado no sistema, desenha um
 // unico quadro parado.
 
-export interface OpcoesMapaMundi {
+/**
+ * - 'vivo': telas de entrada e de navegacao (Banco de imagens, Inicio):
+ *   todos os efeitos.
+ * - 'leitura': telas de trabalho com texto, tabelas e formularios: pontos
+ *   mais apagados, sem varredura, sem estrela cadente e sem lanterna do
+ *   mouse, para o fundo nunca competir com a leitura.
+ */
+export type IntensidadeFundo = 'vivo' | 'leitura'
+
+export interface ModoMapaMundi {
+  intensidade: IntensidadeFundo
+  /** Usa sempre a paleta escura (telas publicas, desenhadas so para fundo escuro). */
+  forcarEscuro: boolean
+}
+
+export interface ControleMapaMundi {
+  desligar: () => void
+  definirModo: (modo: ModoMapaMundi) => void
+}
+
+export interface OpcoesMapaMundi extends ModoMapaMundi {
   canvas: HTMLCanvasElement
   /** Mascara dos continentes (equiretangular, branco = terra). */
   mascaraContinentes: string
@@ -69,7 +89,10 @@ const ROTAS: [number, number][] = [[0, 2], [0, 3], [0, 4], [0, 12], [0, 8], [1, 
 // Uma volta completa no mundo a cada 6 minutos: movimento perceptivel, mas
 // calmo o bastante para nao disputar atencao com os cartoes.
 const SEGUNDOS_POR_VOLTA = 360
-const LONGITUDE_INICIAL = 10 // comeca com a Europa/Africa no centro, como o globo
+// Comeca com a Europa/Africa perto do centro da area de conteudo.
+const LONGITUDE_INICIAL = 15
+// Nas telas de leitura o mapa anda 3x mais devagar (quase parado).
+const FATOR_LENTIDAO_LEITURA = 3
 const PERIODO_VARREDURA = 11 // segundos entre uma passada e outra do meridiano de luz
 const PERIODO_METEORO = 9
 
@@ -88,13 +111,15 @@ function gerador(semente: number) {
 
 interface Ponto { x: number; y: number; brilho: number; fase: number }
 
-export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } {
+export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
   const canvas = op.canvas
   const ctx = canvas.getContext('2d')
-  if (!ctx) return { desligar: () => {} }
+  if (!ctx) return { desligar: () => {}, definirModo: () => {} }
 
   const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   let ativo = true
+  let modo: ModoMapaMundi = { intensidade: op.intensidade, forcarEscuro: op.forcarEscuro }
+  const leitura = () => modo.intensidade === 'leitura'
   let quadro = 0
   let terra: Uint8ClampedArray | null = null
   let larguraMascara = 0
@@ -115,7 +140,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
   let ultimoAviso = 0
 
   function temaClaro() {
-    return document.documentElement.classList.contains('light')
+    return !modo.forcarEscuro && document.documentElement.classList.contains('light')
   }
 
   function ehTerra(lat: number, lon: number) {
@@ -140,7 +165,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
 
     // Mapa um pouco mais largo que a tela (o mundo inteiro cabe e ainda
     // sobra para deslizar); em telas em pe, o mapa cresce pela altura.
-    mapaL = Math.max(w * 1.08, h * 1.75)
+    mapaL = Math.max(w * 1.1, h * 1.8)
     mapaA = (mapaL * (LAT_MAX - LAT_MIN)) / 360
     topo = (h - mapaA) / 2 + h * 0.03
     passo = Math.min(9, Math.max(5, mapaL / 290))
@@ -185,14 +210,21 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
       }
       return c
     }
-    camadaBase = criar(passo * 0.24, paleta.ponto, paleta.alfaPonto)
+    // no modo leitura os continentes ficam bem mais discretos
+    camadaBase = criar(passo * 0.24, paleta.ponto, paleta.alfaPonto * (leitura() ? 0.55 : 1))
     camadaForte = criar(passo * 0.34, paleta.pontoForte, 1)
   }
 
+  // "voltas" = quanto o mapa ja girou (fracao de uma volta). Acumula quadro
+  // a quadro, para a troca de velocidade entre telas nao dar "pulo".
+  let voltas = 0
+  let ultimoT = 0
   function deslocamento(t: number) {
+    const dt = Math.min(0.1, Math.max(0, t - ultimoT))
+    ultimoT = t
+    if (!reduzir) voltas += dt / (SEGUNDOS_POR_VOLTA * (leitura() ? FATOR_LENTIDAO_LEITURA : 1))
     const inicial = ((LONGITUDE_INICIAL + 180) / 360) * mapaL - w / 2
-    const andou = reduzir ? 0 : (t / SEGUNDOS_POR_VOLTA) * mapaL
-    return fract((inicial - andou) / mapaL) * mapaL
+    return fract((inicial - voltas * mapaL) / mapaL) * mapaL
   }
 
   // Desenha uma imagem do tamanho do mapa repetida lado a lado (para dar a
@@ -206,14 +238,14 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
   function desenharEstrelas(t: number) {
     if (!paleta.estrelas) return
     for (const e of estrelas) {
-      const a = 0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.3 + e.f))
+      const a = (0.25 + 0.35 * (0.5 + 0.5 * Math.sin(t * 1.3 + e.f))) * (leitura() ? 0.55 : 1)
       ctx!.fillStyle = `rgba(235,248,255,${a})`
       ctx!.fillRect(e.x, e.y, e.r, e.r)
     }
     // estrela cadente ocasional, cruzando o alto da tela
     const fase = t / PERIODO_METEORO
     const k = fract(fase)
-    if (k < 0.12 && !reduzir) {
+    if (k < 0.12 && !reduzir && !leitura()) {
       const rs = gerador(Math.floor(fase) + 3)
       const x0 = w * (0.2 + rs() * 0.7), y0 = h * (0.02 + rs() * 0.18)
       const p = k / 0.12
@@ -229,7 +261,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
   }
 
   function desenharVarredura(t: number, off: number) {
-    if (reduzir || !camadaForte) return
+    if (reduzir || leitura() || !camadaForte) return
     const k = fract(t / PERIODO_VARREDURA)
     if (k > 0.55) return // passa e depois descansa um pouco
     const x = -120 + (k / 0.55) * (w + 240)
@@ -251,7 +283,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
 
   function desenharCintilantes(t: number, off: number) {
     for (const p of cintilantes) {
-      const a = reduzir ? 0.6 : Math.max(0, Math.sin(t * 1.6 + p.fase))
+      const a = (reduzir ? 0.6 : Math.max(0, Math.sin(t * 1.6 + p.fase))) * (leitura() ? 0.45 : 1)
       if (a < 0.05) continue
       ctx!.fillStyle = rgba(paleta.pontoForte, a * 0.9)
       for (let base = -off; base < w; base += mapaL) {
@@ -264,6 +296,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
 
   // Rota em arco (curva de Bezier) com um pulso de luz percorrendo o caminho
   function desenharRotas(t: number, off: number) {
+    const f = leitura() ? 0.5 : 1
     ROTAS.forEach(([a, b], i) => {
       let [x1, y1] = projetar(...CIDADES[a])
       let [x2, y2] = projetar(...CIDADES[b])
@@ -284,7 +317,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
         ctx!.save()
         ctx!.translate(base, topo)
         // trilho fraco
-        ctx!.strokeStyle = rgba(paleta.rota, 0.13)
+        ctx!.strokeStyle = rgba(paleta.rota, 0.13 * f)
         ctx!.lineWidth = 1
         ctx!.beginPath(); ctx!.moveTo(x1, y1); ctx!.quadraticCurveTo(cx, cy, x2, y2); ctx!.stroke()
         // cauda do pulso
@@ -293,12 +326,12 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
           const u0 = cabeca - 0.16 * (1 - s / N), u1 = cabeca - 0.16 * (1 - (s + 1) / N)
           if (u1 <= 0) continue
           const [ax, ay] = ponto(Math.max(0, u0)), [bx, by] = ponto(u1)
-          ctx!.strokeStyle = rgba(paleta.rota, 0.75 * ((s + 1) / N) ** 2)
+          ctx!.strokeStyle = rgba(paleta.rota, 0.75 * f * ((s + 1) / N) ** 2)
           ctx!.lineWidth = 1.6
           ctx!.beginPath(); ctx!.moveTo(ax, ay); ctx!.lineTo(bx, by); ctx!.stroke()
         }
         const [hx, hy] = ponto(cabeca)
-        ctx!.fillStyle = rgba(paleta.pontoForte, 0.95)
+        ctx!.fillStyle = rgba(paleta.pontoForte, 0.95 * f)
         ctx!.shadowColor = rgba(paleta.rota, 0.9)
         ctx!.shadowBlur = 10
         ctx!.beginPath(); ctx!.arc(hx, hy, 1.9, 0, Math.PI * 2); ctx!.fill()
@@ -308,6 +341,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
   }
 
   function desenharCidades(t: number, off: number) {
+    const f = leitura() ? 0.5 : 1
     CIDADES.forEach(([lat, lon], i) => {
       const [px, py] = projetar(lat, lon)
       const principal = i === 0 // Florianopolis
@@ -315,17 +349,17 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
       for (let base = -off; base < w; base += mapaL) {
         const x = base + px, y = topo + py
         if (x < -30 || x > w + 30) continue
-        ctx!.strokeStyle = rgba(paleta.pulso, (1 - k) * (principal ? 0.9 : 0.55))
+        ctx!.strokeStyle = rgba(paleta.pulso, f * (1 - k) * (principal ? 0.9 : 0.55))
         ctx!.lineWidth = principal ? 1.4 : 1
         ctx!.beginPath(); ctx!.arc(x, y, 2 + k * (principal ? 22 : 14), 0, Math.PI * 2); ctx!.stroke()
-        ctx!.fillStyle = rgba(paleta.pontoForte, principal ? 1 : 0.85)
+        ctx!.fillStyle = rgba(paleta.pontoForte, f * (principal ? 1 : 0.85))
         ctx!.beginPath(); ctx!.arc(x, y, principal ? 2.6 : 1.8, 0, Math.PI * 2); ctx!.fill()
       }
     })
   }
 
   function desenharLanterna(off: number) {
-    if (mouse.forca < 0.02 || !camadaForte) return
+    if (leitura() || mouse.forca < 0.02 || !camadaForte) return
     ctx!.save()
     ctx!.beginPath(); ctx!.arc(mouse.x, mouse.y, 120, 0, Math.PI * 2); ctx!.clip()
     copiarMapa(camadaForte, off, 0.22 * mouse.forca)
@@ -424,6 +458,13 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): { desligar: () => void } 
   observador.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
 
   return {
+    definirModo(novo: ModoMapaMundi) {
+      if (novo.intensidade === modo.intensidade && novo.forcarEscuro === modo.forcarEscuro) return
+      modo = { ...novo }
+      if (!terra) return
+      pintarCamadas()
+      if (reduzir) desenhar(performance.now())
+    },
     desligar() {
       ativo = false
       cancelAnimationFrame(quadro)
