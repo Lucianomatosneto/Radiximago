@@ -36,7 +36,23 @@
         "titulo": "Full audit trail",
         "descricao": "Traceability of every action performed on the platform."
       }
-    }
+    },
+    "galeria": {
+      "rotulo": "Illustrative collection",
+      "titulo": "Images from many areas of health and life",
+      "subtitulo": "Radiology, dentistry, anatomy, biology, flora and fauna, organized for teaching and research.",
+      "altImagem": "Illustration: {titulo}",
+      "itens": {
+        "rm": "Brain MRI",
+        "tc": "Chest CT",
+        "cardio": "Heart and coronary arteries",
+        "rxodonto": "Panoramic radiograph",
+        "celulas": "Cells under microscopy",
+        "arvore": "Tree",
+        "cao": "Dog"
+      }
+    },
+    "chamada": "Curation, research and teaching with anonymized images, organized by specialists and compliant with Brazil’s LGPD."
   },
   "Login": {
     "tituloDestaque1": "Smart image platform",
@@ -83,7 +99,8 @@
     "proximaImagem": "Next image",
     "aproximar": "Zoom in",
     "afastar": "Zoom out",
-    "redefinirVista": "Reset view"
+    "redefinirVista": "Reset view",
+    "conhecaRadix": "Discover Radix Imago"
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -474,7 +491,19 @@
         "roxo": "Purple",
         "laranja": "Orange"
       }
-    }
+    },
+    "layout": {
+      "titulo": "Screen layout: how many images side by side",
+      "rotulo": "{total, plural, one {1 image} other {# images}} ({linhas}×{colunas})",
+      "prontos": "Ready-made layouts",
+      "imagens": "{total, plural, one {1 image} other {# images}}",
+      "personalizar": "Custom (rows × columns)",
+      "gradeAria": "{linhas} rows by {colunas} columns",
+      "dica": "Hover over the grid and click to choose. Click an image to see its details; double-click enlarges it alone.",
+      "celulaDica": "Click to select · double-click to view only this image",
+      "visualizadorGradeTitulo": "Viewer with {total} images side by side"
+    },
+    "paginaDeSelecionadas": "(images {de}–{ate} of {total} selected)"
   },
   "Curadoria": {
     "inicio": "Home",
@@ -543,7 +572,10 @@
       "sexo": "Sex",
       "dentes": "Teeth (FDI notation)",
       "qualidadeTecnica": "Technical quality",
-      "selecione": "Select"
+      "selecione": "Select",
+      "marcacao": "Lesion marking",
+      "marcarImagem": "Mark image",
+      "fecharMarcacao": "Close marking"
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Tooth not identified",
@@ -563,7 +595,10 @@
       "selecioneImagem": "Select an image from the queue",
       "carregandoVisualizador": "Loading viewer...",
       "ohifTitulo": "OHIF Viewer",
-      "naoDisponivel": "Couldn't load the viewer for this image."
+      "naoDisponivel": "Couldn't load the viewer for this image.",
+      "marcarImagem": "Mark image",
+      "fecharMarcacao": "Close marking",
+      "atalhoMarcar": "Open/close the marking image (M key)"
     },
     "marcador": {
       "removerMarcacao": "✕ Remove marking",
@@ -692,6 +727,16 @@
       "descartar": "Discard",
       "erroAprovar": "Couldn't approve this record.",
       "erroDescartar": "Couldn't discard this record."
+    },
+    "foco": {
+      "voltarVisualizador": "Back to viewer",
+      "fixarGrande": "Pin marking image at large size",
+      "cliqueParaFixar": "Click to pin at large size",
+      "passeMouse": "Hover to enlarge",
+      "registro": "Curation record",
+      "mostrarRegistro": "Show",
+      "ocultarRegistro": "Hide",
+      "entrarTelaCheia": "Enter full screen (or F11)"
     }
   },
   "SegundaOpiniaoPage": {
