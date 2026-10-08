@@ -360,7 +360,7 @@ export default function SegundaOpiniaoPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-4 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-4">{t('titulo')}</h1>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
             {/* LISTA - reviews pendentes */}

@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -63,3 +63,23 @@ class AccessRequest(Base):
     revisado_em = Column(DateTime(timezone=True), nullable=True)
 
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+    # CONFIRMACAO DO E-MAIL (cadastro em duas etapas - 2026-10)
+    # O pedido so chega ao administrador depois que o solicitante prova
+    # que e dono do e-mail informado: ele recebe um link com um codigo
+    # aleatorio de uso unico e, ao abrir, precisa digitar a mesma senha que
+    # definiu no formulario. Assim, mesmo que outra pessoa faca um pedido
+    # usando o e-mail de alguem, quem confirmar precisa saber a senha
+    # escolhida por quem preencheu (e a dona do e-mail nao a conhece).
+    #
+    # - email_confirmado_em: nulo enquanto nao confirmado. O admin so ve e
+    #   so consegue aprovar pedidos com esse campo preenchido.
+    # - token_confirmacao_hash: guardamos so o RESUMO (SHA-256) do codigo,
+    #   nunca o codigo em si - se o banco vazar, os links continuam inuteis.
+    # - token_confirmacao_expira_em: o link vale por pouco tempo (24 h).
+    # - tentativas_confirmacao: senhas erradas na tela de confirmacao; ao
+    #   atingir o limite o link e invalidado (protege contra adivinhacao).
+    email_confirmado_em = Column(DateTime(timezone=True), nullable=True)
+    token_confirmacao_hash = Column(String(64), unique=True, index=True, nullable=True)
+    token_confirmacao_expira_em = Column(DateTime(timezone=True), nullable=True)
+    tentativas_confirmacao = Column(SmallInteger, nullable=False, default=0, server_default="0")

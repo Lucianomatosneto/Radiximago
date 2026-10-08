@@ -218,6 +218,7 @@ def criar_solicitacao_acesso(db):
     def _criar(
         perfil_solicitado: IntencaoPerfil = IntencaoPerfil.ESTUDANTE,
         email: str | None = None,
+        email_confirmado: bool = True,
     ) -> AccessRequest:
         email_final = email or f"suite-solicitacao-{uuid.uuid4().hex[:12]}@teste.example"
         solicitacao = AccessRequest(
@@ -225,6 +226,7 @@ def criar_solicitacao_acesso(db):
             email=email_final,
             senha_hash=_HASH_SENHA_TESTE,
             perfil_solicitado=perfil_solicitado,
+            email_confirmado_em=datetime.now(timezone.utc) if email_confirmado else None,
         )
         db.add(solicitacao)
         db.commit()

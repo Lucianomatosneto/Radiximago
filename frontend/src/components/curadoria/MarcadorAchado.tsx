@@ -72,8 +72,13 @@ export default function MarcadorAchado({
   marcacoes,
   onMarcar,
   onCarregou,
+  compacto = false,
 }: {
   orthancReferenceId: number
+  /** Modo miniatura (tela cheia da Curadoria): mostra so a imagem, sem a
+   * barra de formas nem o texto de ajuda - o painel fica pequeno ao lado
+   * do visualizador e so vira editor quando o curador clica nele. */
+  compacto?: boolean
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
   /** Chamado uma vez, quando a imagem deste painel termina de carregar
@@ -378,7 +383,7 @@ export default function MarcadorAchado({
 
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex shrink-0 flex-wrap items-center gap-1.5">
+      <div className={`mb-2 shrink-0 flex-wrap items-center gap-1.5 ${compacto ? 'hidden' : 'flex'}`}>
         {FORMAS_MARCACAO.map((forma) => (
           <button
             key={forma.tipo}
@@ -405,7 +410,7 @@ export default function MarcadorAchado({
         )}
       </div>
 
-      {selecionada && (
+      {selecionada && !compacto && (
         <div className="mb-2 flex shrink-0 flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <label className="text-xs text-slate-400" htmlFor="achado-marcacao">
@@ -570,7 +575,7 @@ export default function MarcadorAchado({
           </div>
         )}
       </div>
-      <p className="mt-1.5 shrink-0 text-xs text-slate-500">
+      <p className={`mt-1.5 shrink-0 text-xs text-slate-500 ${compacto ? 'hidden' : ''}`}>
         {marcacoes.length > 0
           ? t('instrucaoComMarcacoes', { total: marcacoes.length })
           : t('instrucaoSemMarcacoes')}

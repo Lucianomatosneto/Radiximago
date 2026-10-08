@@ -52,6 +52,14 @@ const PainelVisualizador = forwardRef<HTMLElement, {
    * disso que da pra observar de fora. Opcional pra nao quebrar nenhum
    * outro uso deste componente. */
   onIframeCarregado?: () => void
+  /** Modo miniatura (tela cheia da Curadoria, com a imagem de marcacao em
+   * destaque): esconde o cabecalho e a caixa de dados sobreposta, deixando
+   * so a imagem do OHIF. Nada e desmontado - o iframe nao recarrega. */
+  miniatura?: boolean
+  /** Botao "Marcar imagem" (no fim da caixa de dados): abre/fecha o painel
+   * da imagem para marcacao. */
+  marcacaoAtiva?: boolean
+  onAlternarMarcacao?: () => void
 }>(function PainelVisualizador(
   {
     fichaAtiva,
@@ -66,6 +74,9 @@ const PainelVisualizador = forwardRef<HTMLElement, {
     form,
     onChange,
     onIframeCarregado,
+    miniatura = false,
+    marcacaoAtiva = false,
+    onAlternarMarcacao,
   },
   ref
 ) {
@@ -80,7 +91,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
       {fichaAtiva && (
         <>
           <SegundaOpiniaoBanner review={segundaOpiniaoReview} />
-          <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
+          <div className={`items-center justify-between border-b border-base-border px-4 py-3 ${miniatura ? 'hidden' : 'flex'}`}>
             <div className="flex items-center gap-3">
               {/* A Curadoria esconde a Topbar da pagina (que normalmente
                   mostra a logo) quando telaCheia e true - ver
@@ -93,6 +104,28 @@ const PainelVisualizador = forwardRef<HTMLElement, {
 
             {viewerPronto && (
               <div className="flex items-center gap-2">
+                {/* Atalho sempre visivel para a imagem de marcacao (tambem
+                    pela tecla M e pelo botao no fim da caixa de dados). */}
+                {onAlternarMarcacao && (
+                  <button
+                    type="button"
+                    onClick={onAlternarMarcacao}
+                    aria-pressed={marcacaoAtiva}
+                    title={t('atalhoMarcar')}
+                    className={`flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+                      marcacaoAtiva
+                        ? 'border-teal-400 bg-teal-500 text-white'
+                        : 'border-teal-400/60 bg-teal-400/15 text-teal-200 hover:bg-teal-400/25'
+                    }`}
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" className="h-3.5 w-3.5" aria-hidden="true">
+                      <ellipse cx="12" cy="12" rx="8" ry="6" strokeDasharray="3 2.5" />
+                      <path d="M17.5 17.5 21 21" />
+                    </svg>
+                    {marcacaoAtiva ? t('fecharMarcacao') : t('marcarImagem')}
+                    <kbd className="ml-0.5 rounded border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={onAlternarAjustar}
@@ -180,8 +213,14 @@ const PainelVisualizador = forwardRef<HTMLElement, {
             cobrir o icone ou recuar demais/de menos, so mudar o valor
             aqui (ex.: left-4 = 16px, left-8 = 32px). */}
         {fichaAtiva && (
-          <div className="absolute bottom-2 left-6 top-2 z-10 w-[280px]">
-            <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} />
+          <div className={`absolute bottom-2 left-6 top-2 z-10 w-[280px] ${miniatura ? 'hidden' : ''}`}>
+            <PainelDadosSobrepostos
+              form={form}
+              onChange={onChange}
+              statusFicha={statusFicha}
+              marcacaoAtiva={marcacaoAtiva}
+              onAlternarMarcacao={onAlternarMarcacao}
+            />
           </div>
         )}
       </div>

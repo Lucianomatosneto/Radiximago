@@ -239,7 +239,7 @@ export default function RelatoriosPage() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="mb-6 text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+          <h1 className="titulo-pagina tela-entra mb-6">{t('titulo')}</h1>
 
           {erro && (
             <p className="mb-4 text-sm text-red-400" role="alert">

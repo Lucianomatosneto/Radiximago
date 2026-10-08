@@ -12,8 +12,9 @@ import Logo from './Logo'
 import FundoMapaMundi from './fundo/FundoMapaMundi'
 import ThemeToggle from './ThemeToggle'
 import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
+import LegendaImagem from './visualizador/LegendaImagem'
+import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
 import type { Marcacao } from '../lib/marcacoes'
-import { corTextoAchado } from '../lib/coresAchados'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
 // este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
@@ -63,6 +64,9 @@ const OPCOES_ACHADO_PRINCIPAL = [
   { valor: 'outro', chave: 'outro' },
 ]
 
+const CLASSE_BOTAO_COMPACTO =
+  'rounded-md border border-base-border bg-base-surface/80 px-3 py-1 text-xs text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60'
+
 function rotular(
   opcoes: { valor: string; chave: string }[],
   valor: string | null | undefined,
@@ -71,20 +75,6 @@ function rotular(
   if (!valor) return '—'
   const opcao = opcoes.find((o) => o.valor === valor)
   return opcao ? traduzir(opcao.chave) : valor
-}
-
-// Ponto fixo (origem) da ampliacao de cada miniatura da fila, ao passar o
-// mouse. Sempre presa na borda ESQUERDA (a miniatura so cresce pra direita,
-// nunca some pela lateral esquerda da tela). Na vertical, muda conforme a
-// posicao na fila: a primeira (extremidade de cima) fica presa em cima e
-// cresce pra baixo; a ultima (extremidade de baixo) fica presa embaixo e
-// cresce pra cima; as do meio crescem pros dois lados igualmente (centro) -
-// assim nenhuma miniatura "estoura" pra fora da coluna, pra cima ou pra
-// baixo, perto das pontas da lista.
-function origemAmpliacaoFila(indice: number, total: number): string {
-  if (indice === 0) return 'origin-top-left'
-  if (indice === total - 1) return 'origin-bottom-left'
-  return 'origin-left'
 }
 
 // StudyInstanceUID dentro do viewer_url (".../viewer?StudyInstanceUIDs=<uid>")
@@ -183,6 +173,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
   const [indiceSerie, setIndiceSerie] = useState(0)
   const [mostrarMarcacao, setMostrarMarcacao] = useState(false)
+  // painel "Detalhes" (classificacao completa + marcacao), fechado por padrao
+  const [detalhesAbertos, setDetalhesAbertos] = useState(false)
   // "para todas as imagens": ao contrario de mostrarMarcacao, NAO e
   // resetado no efeito abaixo (que roda a cada troca de [indice]) - o
   // pedido explicito foi ligar uma vez e continuar mostrando a marcacao
@@ -192,23 +184,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
 
   // LAYOUT DA AREA DE IMAGENS (quantas imagens lado a lado). Padrao: 2
-  // imagens (1 linha x 2 colunas). A escolha fica guardada neste navegador.
+  // imagens (1 linha x 2 colunas). Toda vez que o visualizador abre, ele
+  // comeca em 1x2 (pedido: sempre abrir assim); trocar o layout vale so
+  // enquanto esta tela estiver aberta.
   const [grade, setGrade] = useState<Grade>({ linhas: 1, colunas: 2 })
-  useEffect(() => {
-    try {
-      const salvo = JSON.parse(localStorage.getItem('radix_layout_visualizador') || 'null')
-      if (salvo && salvo.linhas >= 1 && salvo.colunas >= 1) setGrade({ linhas: salvo.linhas, colunas: salvo.colunas })
-    } catch {
-      // sem preferencia salva: fica o padrao
-    }
-  }, [])
   function escolherGrade(nova: Grade) {
     setGrade(nova)
-    try {
-      localStorage.setItem('radix_layout_visualizador', JSON.stringify(nova))
-    } catch {
-      // armazenamento indisponivel: vale so nesta sessao
-    }
   }
   // Com uma imagem so na selecao, nao faz sentido dividir a tela.
   const celulas = Math.min(grade.linhas * grade.colunas, Math.max(1, itens.length))
@@ -260,6 +241,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   // "todas as imagens" estiver ligado (persiste) - sempre condicionado a
   // ter marcacao disponivel na imagem atual.
   const mostrarMarcacaoEfetivo = (mostrarMarcacao || mostrarMarcacaoTodas) && marcacaoDisponivel
+  // Quais imagens mostram a marcacao do curador desenhada: todas que tiverem
+  // marcacao, se o icone "Marcações do curador" estiver ligado; ou so a
+  // imagem escolhida, se a marcacao dela foi ligada em "Detalhes".
+  const mostraMarcacaoDe = (item: ItemSequencia) =>
+    (item.marcacoes ?? []).length > 0 &&
+    (mostrarMarcacaoTodas || (mostrarMarcacao && item.curation_id === atual.curation_id))
+  const selecaoTemMarcacao = itens.some((item) => (item.marcacoes ?? []).length > 0)
 
   useEffect(() => {
     setMensagem('')
@@ -332,6 +320,18 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       setTelaCheia(!!document.fullscreenElement)
     }
     document.addEventListener('fullscreenchange', aoMudarTelaCheia)
+    aoMudarTelaCheia()
+    // Abre JA em tela cheia. O navegador so permite isso logo depois de um
+    // clique da pessoa - como o visualizador abre a partir de um clique
+    // ("Ver imagens selecionadas", miniatura...), o pedido feito aqui, na
+    // abertura, normalmente e aceito. Se o navegador recusar, a tela abre
+    // normal e o botao "Tela cheia" continua disponivel.
+    const painel = containerRef.current
+    if (painel && document.fullscreenElement !== painel && painel.requestFullscreen) {
+      painel.requestFullscreen().catch(() => {
+        // recusado pelo navegador: segue fora da tela cheia
+      })
+    }
     return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
   }, [])
 
@@ -339,6 +339,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.key === 'ArrowRight') irParaProxima()
       else if (evento.key === 'ArrowLeft') irParaAnterior()
+      else if ((evento.key === 'k' || evento.key === 'K') && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
+        const alvo = evento.target as HTMLElement | null
+        if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable)) return
+        setMostrarMarcacaoTodas((v) => !v)
+      }
       else if (evento.key === 'Escape' && !document.fullscreenElement) onFechar()
     }
     document.addEventListener('keydown', aoTeclar)
@@ -540,6 +545,27 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Liga/desliga as marcacoes do curador desenhadas em TODAS as
+              imagens que tiverem marcacao (atalho: tecla K). */}
+          <button
+            type="button"
+            onClick={() => setMostrarMarcacaoTodas((v) => !v)}
+            disabled={!selecaoTemMarcacao}
+            aria-pressed={mostrarMarcacaoTodas}
+            title={selecaoTemMarcacao ? t('marcacoes.botaoTitulo') : t('marcacoes.semMarcacao')}
+            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
+              mostrarMarcacaoTodas
+                ? 'border-amber-300/80 bg-amber-300/15 text-amber-200'
+                : 'border-base-border text-slate-300 hover:border-amber-300/60 hover:text-amber-200'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <ellipse cx="12" cy="12" rx="9" ry="6.5" />
+              <path d="M4 20l4-4" />
+            </svg>
+            <span className="hidden md:inline">{t('marcacoes.botao')}</span>
+            <kbd className="hidden rounded border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
+          </button>
           {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} />}
           <ThemeToggle />
           <button
@@ -562,85 +588,9 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       </div>
 
       <div className="relative flex flex-1 items-center justify-center overflow-hidden">
-        {/* Fila das imagens selecionadas, so aparece no modo tela cheia -
-            coluna reta (nao mais na diagonal, ajuste pedido), encostada na
-            borda esquerda da imagem principal. Fica por cima do que o
-            proprio visualizador OHIF mostra naquele canto (a coluna
-            "Studies" dele), escondendo so aquilo - a seta de voltar (« logo
-            abaixo) continua visivel por cima da fila porque tem um z-index
-            (camada) maior. Clicar numa miniatura pula direto pra ela. */}
-        {telaCheia && itens.length > 1 && (
-          <div className="pointer-events-none absolute left-0 top-0 z-20 flex h-full">
-            {/* Coluna com o DOBRO da largura anterior (144px/176px ->
-                288px/352px), por pedido. Com mais espaço sobrando, cada
-                linha agora mostra a miniatura E, ao lado dela, o tipo de
-                radiografia e o achado principal daquela imagem (por pedido -
-                a "descrição" pedida aqui e essa, nao o texto livre da
-                descrição didática). */}
-            <div className="pointer-events-auto flex w-[288px] flex-col gap-2 overflow-hidden border-r border-base-border bg-base-surface p-3 shadow-xl sm:w-[352px]">
-              <span className="text-center text-xs font-semibold uppercase tracking-wide text-slate-400">
-                {t('filaTitulo', { total: itens.length })}
-              </span>
-              <div className="flex flex-1 flex-col gap-2 overflow-y-auto pr-1">
-                {itens.map((item, i) => (
-                  <button
-                    key={item.curation_id}
-                    type="button"
-                    onClick={() => setIndice(i)}
-                    aria-label={t('irParaImagem', { numero: item.numero })}
-                    title={t('imagemNumero', { numero: item.numero })}
-                    className={`group relative flex w-full shrink-0 items-center gap-2 rounded-lg border-2 p-1.5 text-left transition hover:z-10 ${
-                      i === indice
-                        ? 'border-brand bg-brand/10 ring-2 ring-brand ring-offset-1 ring-offset-base'
-                        : 'border-base-border opacity-80 hover:border-brand/50 hover:opacity-100'
-                    }`}
-                  >
-                    {/* Amplia 2,25x (1,5x + mais 50% em cima, por pedido)
-                        ao passar o mouse - o "transform" (escala) nao
-                        empurra o resto da fila, so desenha a miniatura
-                        maior por cima do que estiver do lado, por isso o
-                        hover:z-10 no botao acima, pra ela ficar por cima
-                        das vizinhas. A origem (origemAmpliacaoFila) prende
-                        a ampliacao na borda esquerda sempre, e em cima/
-                        embaixo so nas pontas da lista - e o translate-x
-                        empurra um pouco mais pra direita, por pedido, pra
-                        dar mais espaco e nao ficar colada na coluna. */}
-                    <span
-                      className={`relative block h-[84px] w-[84px] shrink-0 overflow-hidden rounded-md transition-transform duration-150 group-hover:translate-x-3 group-hover:scale-[2.25] ${origemAmpliacaoFila(i, itens.length)}`}
-                    >
-                      <MiniaturaImagem
-                        curationId={item.curation_id}
-                        alt={t('imagemNumero', { numero: item.numero })}
-                        className="h-full w-full object-cover"
-                      />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-xs font-semibold text-ink">{t('imagemNumero', { numero: item.numero })}</span>
-                      <span className="mt-0.5 block text-[11px] text-slate-400">
-                        {rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia, traduzirTipoRadiografia)}
-                      </span>
-                      <span className={`mt-0.5 line-clamp-2 block text-[11px] font-medium leading-snug ${corTextoAchado(item.achado_principal)}`}>
-                        {rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal, traduzirAchadoPrincipal)}
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Quando a fila (coluna da esquerda) esta visivel, essa seta e
-            empurrada pra depois dela (largura da coluna + uma margem) -
-            assim ela fica encostada na borda da imagem principal, igual a
-            seta de avançar do lado direito, em vez de ficar em cima da
-            coluna da fila. Sem a fila (fora do modo tela cheia, ou com uma
-            imagem so), volta pra posicao de sempre, colada na borda da
-            tela. */}
+        {/* Seta de voltar (pagina/imagem anterior), colada na borda esquerda. */}
         <div
-          className={`absolute z-30 flex items-center gap-1.5 ${
-            telaCheia && itens.length > 1 ? 'left-[300px] sm:left-[364px]' : 'left-2 sm:left-6'
-          }`}
+          className={"absolute left-2 z-30 flex items-center gap-1.5 sm:left-6"}
         >
           <button
             type="button"
@@ -666,11 +616,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           )}
         </div>
 
-        {emGrade && urlGrade && !mostrarMarcacaoEfetivo ? (
+        {emGrade && urlGrade && !itensPagina.some(mostraMarcacaoDe) ? (
           // UMA tela, um visualizador: o OHIF divide a propria area de
           // imagens na grade escolhida (ver montarUrlGrade). A "key" faz o
           // OHIF recarregar so quando muda a pagina ou o layout.
-          <div className={`h-full w-full ${telaCheia && itens.length > 1 ? 'pl-[300px] sm:pl-[364px]' : 'px-14 sm:px-16'}`}>
+          <div className="relative h-full w-full px-14 sm:px-16">
             <iframe
               key={urlGrade}
               src={urlGrade}
@@ -678,13 +628,28 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               title={t('layout.visualizadorGradeTitulo', { total: itensPagina.length })}
               className="h-full w-full border-0 bg-black"
             />
+            {/* Selos de marcacao no canto de cada quadro do OHIF. O OHIF
+                roda em outra origem e nao deixa colocar nada DENTRO dele,
+                entao esta camada transparente repete a mesma grade por
+                cima, descontando a barra de ferramentas do OHIF (topo) e
+                as faixas laterais estreitas. So os selos recebem clique. */}
+            <div
+              className="pointer-events-none absolute inset-y-0 left-14 right-14 grid pb-1 pl-10 pr-10 pt-[52px] sm:left-16 sm:right-16"
+              style={{ gridTemplateColumns: `repeat(${grade.colunas}, minmax(0,1fr))`, gridTemplateRows: `repeat(${grade.linhas}, minmax(0,1fr))` }}
+            >
+              {itensPagina.map((item) => (
+                <div key={item.curation_id} className="relative">
+                  <EtiquetaMarcacoes marcacoes={item.marcacoes} className="right-9 top-2" />
+                </div>
+              ))}
+            </div>
           </div>
         ) : emGrade ? (
           // Sem OHIF (ou com a marcacao do curador ligada): as imagens da
           // pagina numa UNICA area preta, separadas so por linhas finas -
           // sem molduras nem barras por imagem. Clique escolhe a imagem
           // (dados embaixo); clique duplo abre so ela (layout de 1).
-          <div className={`h-full w-full ${telaCheia && itens.length > 1 ? 'pl-[300px] sm:pl-[364px]' : 'px-14 sm:px-16'}`}>
+          <div className="h-full w-full px-14 sm:px-16">
             <div
               className="grid h-full w-full gap-px overflow-hidden bg-white/10"
               style={{ gridTemplateColumns: `repeat(${grade.colunas}, minmax(0,1fr))`, gridTemplateRows: `repeat(${grade.linhas}, minmax(0,1fr))` }}
@@ -695,9 +660,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 if (!item) return <div key={`vazio-${k}`} className="bg-black" />
                 const ativa = idx === indice
                 return (
-                  <button
+                  <div
                     key={item.curation_id}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setIndice(idx)
+                    }}
                     onClick={() => setIndice(idx)}
                     onDoubleClick={() => {
                       setIndice(idx)
@@ -708,12 +677,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     aria-pressed={ativa}
                     className={`relative flex min-h-0 min-w-0 items-center justify-center bg-black ${ativa ? 'ring-2 ring-inset ring-teal-400/80' : ''}`}
                   >
-                    {ativa && mostrarMarcacaoEfetivo ? (
+                    {mostraMarcacaoDe(item) ? (
                       <ImagemPrincipalMarcada
                         curationId={item.curation_id}
                         alt={item.descricao_didatica ?? t('imagemNumero', { numero: item.numero })}
                         marcacoes={item.marcacoes ?? []}
-                        srcPreCarregado={marcacaoPreviewUrl}
+                        srcPreCarregado={ativa ? marcacaoPreviewUrl : undefined}
                       />
                     ) : (
                       <MiniaturaImagem
@@ -726,7 +695,8 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
                     </span>
-                  </button>
+                    <EtiquetaMarcacoes marcacoes={item.marcacoes} className="right-2 top-2" />
+                  </div>
                 )
               })}
             </div>
@@ -756,6 +726,14 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           />
         )}
 
+        {/* Selo das marcacoes do curador no canto da imagem (layout de 1) */}
+        {!emGrade && (
+          <EtiquetaMarcacoes
+            marcacoes={atual.marcacoes}
+            className={urlComSerie && !mostrarMarcacaoEfetivo ? 'right-24 top-[60px]' : 'right-20 top-3'}
+          />
+        )}
+
         {/* Lembrete dos atalhos de teclado do proprio visualizador OHIF
             (nao e algo que a gente controla - sao atalhos que ja existem
             dentro dele) - so aparece quando o OHIF esta de fato na tela
@@ -771,7 +749,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         {urlComSerie && !mostrarMarcacaoEfetivo && !emGrade && (
           <div
             className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur ${
-              telaCheia && itens.length > 1 ? 'left-[300px] sm:left-[364px]' : 'left-3 sm:left-6'
+              'left-3 sm:left-6'
             }`}
           >
             <span className="flex items-center gap-2">
@@ -825,99 +803,146 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         {!emGrade && (
           <AnotacoesImagem
             curationId={atual.curation_id}
-            filaVisivel={telaCheia && itens.length > 1}
+            filaVisivel={false}
           />
         )}
       </div>
 
-      {atual.viewer_url && (
-        <p className="border-t border-base-border bg-base-surface2/60 px-4 py-1.5 text-center text-xs text-slate-400">
-          {t('instrucaoRolagem')}
-          {seriesValidas.length > 1 && t('instrucaoSeries')}
-        </p>
-      )}
+      {/* LEGENDAS: o texto de cada imagem fica logo abaixo dela, em ate
+          duas linhas pequenas - o foco da tela e a imagem. Em grade, cada
+          legenda fica na mesma coluna da sua imagem. Clicar numa legenda
+          escolhe aquela imagem (os botoes e os detalhes passam a ser dela). */}
+      <div
+        className="relative z-10 grid gap-x-2 gap-y-1 border-t border-base-border bg-base/70 px-14 py-1.5 backdrop-blur-md sm:px-16"
+        style={{ gridTemplateColumns: `repeat(${emGrade ? grade.colunas : 1}, minmax(0,1fr))` }}
+      >
+        {(emGrade ? itensPagina : [atual]).map((item) => {
+          const posicao = itens.indexOf(item)
+          return (
+            <LegendaImagem
+              key={item.curation_id}
+              item={item}
+              ativa={emGrade && posicao === indice}
+              onEscolher={() => setIndice(posicao)}
+              tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia, traduzirTipoRadiografia)}
+              qualidade={item.qualidade_tecnica ? rotular(OPCOES_QUALIDADE_TECNICA, item.qualidade_tecnica, traduzirQualidadeTecnica) : null}
+              achado={item.achado_principal ? rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal, traduzirAchadoPrincipal) : null}
+            />
+          )
+        })}
+      </div>
 
-      <div className="border-t border-base-border px-4 py-3 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <BarraClassificacao
-            tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia, traduzirTipoRadiografia)}
-            qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica, traduzirQualidadeTecnica)}
-            dentes={atual.dentes}
-            alteracoesObservadas={atual.alteracoes_observadas}
-            achadosDetalhe={atual.achados_detalhe}
-            descricaoDidatica={atual.descricao_didatica}
-            achadoPrincipal={atual.achado_principal}
-          />
-
-          <MarcacaoAchado
-            curationId={atual.curation_id}
-            marcacoes={marcacoes}
-            comImagem={false}
-            mostrar={mostrarMarcacao}
-            onMostrarChange={setMostrarMarcacao}
-            mostrarTodas={mostrarMarcacaoTodas}
-            onMostrarTodasChange={setMostrarMarcacaoTodas}
-          />
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-          {infoSerie?.eh_serie ? (
-            <>
-              <button
-                type="button"
-                onClick={baixarZipImagens}
-                disabled={baixandoImagens}
-                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-              >
-                {baixandoImagens
-                  ? t('baixando')
-                  : t('baixarImagensZip', { total: infoSerie.total_cortes })}
-              </button>
-              <button
-                type="button"
-                onClick={baixarZipDicom}
-                disabled={baixandoDicom}
-                className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-              >
-                {baixandoDicom ? t('baixando') : t('baixarDicomZip')}
-              </button>
-            </>
-          ) : (
-            <button
-              type="button"
-              onClick={baixarUnico}
-              disabled={baixandoUnico}
-              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-            >
-              {baixandoUnico ? t('baixando') : t('baixar')}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={salvarNoUsuario}
-            disabled={salvando || jaSalvo}
-            className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-          >
-            {jaSalvo ? t('salva') : salvando ? t('salvando') : t('salvarNoUsuario')}
-          </button>
-          {!infoSerie?.eh_serie && (
-            <button
-              type="button"
-              onClick={enviarPorEmail}
-              disabled={enviando}
-              className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
-            >
-              {enviando ? t('enviando') : t('enviarPorEmail')}
-            </button>
-          )}
-        </div>
-
-        {mensagem && <p className="mt-3 text-center text-sm text-emerald-400">{mensagem}</p>}
-        {erro && (
-          <p className="mt-3 text-center text-sm text-red-400" role="alert">
-            {erro}
-          </p>
+      {/* Barra de acoes compacta (uma linha). A classificacao completa e a
+          marcacao do curador ficam em "Detalhes", que abre por cima da
+          imagem so quando a pessoa pede. */}
+      <div className="relative z-40 border-t border-base-border bg-base/80 px-4 py-1.5 backdrop-blur-md sm:px-6">
+        {detalhesAbertos && (
+          <div className="absolute inset-x-0 bottom-full max-h-[60vh] overflow-y-auto border-t border-base-border bg-base-surface/95 px-4 pb-4 pt-2 shadow-2xl backdrop-blur-md sm:px-6">
+            <div className="mx-auto max-w-4xl">
+              <p className="text-xs font-semibold text-teal-200">
+                {t('imagemNumero', { numero: atual.numero })}
+              </p>
+              <BarraClassificacao
+                tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia, traduzirTipoRadiografia)}
+                qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica, traduzirQualidadeTecnica)}
+                dentes={atual.dentes}
+                alteracoesObservadas={atual.alteracoes_observadas}
+                achadosDetalhe={atual.achados_detalhe}
+                descricaoDidatica={atual.descricao_didatica}
+                achadoPrincipal={atual.achado_principal}
+              />
+              <MarcacaoAchado
+                curationId={atual.curation_id}
+                marcacoes={marcacoes}
+                comImagem={false}
+                mostrar={mostrarMarcacao}
+                onMostrarChange={setMostrarMarcacao}
+                mostrarTodas={mostrarMarcacaoTodas}
+                onMostrarTodasChange={setMostrarMarcacaoTodas}
+              />
+              {atual.viewer_url && (
+                <p className="mt-3 text-xs text-slate-400">
+                  {t('instrucaoRolagem')}
+                  {seriesValidas.length > 1 && t('instrucaoSeries')}
+                </p>
+              )}
+            </div>
+          </div>
         )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDetalhesAbertos((v) => !v)}
+              aria-expanded={detalhesAbertos}
+              className={`${CLASSE_BOTAO_COMPACTO} ${detalhesAbertos ? 'border-teal-400/70 text-teal-200' : ''}`}
+            >
+              {detalhesAbertos ? `▾ ${t('ocultarDetalhes')}` : `▴ ${t('detalhes')}`}
+              {marcacaoDisponivel && (
+                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" title={t('temMarcacao')} />
+              )}
+            </button>
+            {mensagem && <span className="truncate text-xs text-emerald-400">{mensagem}</span>}
+            {erro && (
+              <span className="truncate text-xs text-red-400" role="alert">
+                {erro}
+              </span>
+            )}
+          </div>
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+            {infoSerie?.eh_serie ? (
+              <>
+                <button
+                  type="button"
+                  onClick={baixarZipImagens}
+                  disabled={baixandoImagens}
+                  className={CLASSE_BOTAO_COMPACTO}
+                >
+                  {baixandoImagens
+                    ? t('baixando')
+                    : t('baixarImagensZip', { total: infoSerie.total_cortes })}
+                </button>
+                <button
+                  type="button"
+                  onClick={baixarZipDicom}
+                  disabled={baixandoDicom}
+                  className={CLASSE_BOTAO_COMPACTO}
+                >
+                  {baixandoDicom ? t('baixando') : t('baixarDicomZip')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={baixarUnico}
+                disabled={baixandoUnico}
+                className={CLASSE_BOTAO_COMPACTO}
+              >
+                {baixandoUnico ? t('baixando') : t('baixar')}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={salvarNoUsuario}
+              disabled={salvando || jaSalvo}
+              className={CLASSE_BOTAO_COMPACTO}
+            >
+              {jaSalvo ? t('salva') : salvando ? t('salvando') : t('salvarNoUsuario')}
+            </button>
+            {!infoSerie?.eh_serie && (
+              <button
+                type="button"
+                onClick={enviarPorEmail}
+                disabled={enviando}
+                className={CLASSE_BOTAO_COMPACTO}
+              >
+                {enviando ? t('enviando') : t('enviarPorEmail')}
+              </button>
+            )}
+          </div>
+
+        </div>
       </div>
     </div>
   )

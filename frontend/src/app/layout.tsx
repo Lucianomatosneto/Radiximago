@@ -1,5 +1,6 @@
 import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
+import FundoAplicacao from '../components/fundo/FundoAplicacao'
 import { getLocale, getTranslations } from 'next-intl/server'
 
 // Descricao do <meta> segue o mesmo idioma detectado pra pagina (ver
@@ -27,8 +28,16 @@ export default async function RootLayout({
   const locale = await getLocale()
 
   return (
-    <html lang={locale === 'en' ? 'en' : 'pt-BR'}>
+    <html
+      lang={locale === 'en' ? 'en' : 'pt-BR'}
+      // Impede a traducao automatica do navegador (Google Tradutor do
+      // Chrome): ela troca os textos da pagina por baixo do React e causa
+      // o erro "o conteudo do texto nao corresponde" (hidratacao). O
+      // sistema ja tem portugues e ingles proprios (seletor PT/EN).
+      translate="no"
+    >
       <head>
+        <meta name="google" content="notranslate" />
         <script
           // Aplica o tema salvo antes do 1o paint, pra nao "piscar" escuro
           // e depois trocar pra claro (ou vice-versa) - ve components/ThemeToggle.tsx.
@@ -39,7 +48,11 @@ export default async function RootLayout({
         />
       </head>
       <body>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {/* mapa-mundi de fundo (padrao visual de todas as telas - ver FundoAplicacao) */}
+          <FundoAplicacao />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   )

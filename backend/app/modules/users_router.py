@@ -98,6 +98,7 @@ class SolicitacaoAcessoResposta(BaseModel):
     status: str
     motivo_rejeicao: Optional[str]
     criado_em: Optional[datetime] = None
+    email_confirmado_em: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -199,6 +200,10 @@ def listar_solicitacoes_acesso(
     query = db.query(AccessRequest)
     if status_filtro:
         query = query.filter(AccessRequest.status == status_filtro)
+    if status_filtro == "pendente":
+        # So pedidos com e-mail ja confirmado chegam para analise - os que
+        # ainda aguardam confirmacao nao sao "pedidos de verdade" ainda.
+        query = query.filter(AccessRequest.email_confirmado_em.isnot(None))
     return query.order_by(AccessRequest.criado_em.desc()).all()
 
 
@@ -219,6 +224,10 @@ def aprovar_solicitacao_acesso(
         raise HTTPException(status_code=404, detail="Solicitação não encontrada.")
     if pedido.status != StatusSolicitacaoAcesso.pendente:
         raise HTTPException(status_code=409, detail="Essa solicitação já foi revisada.")
+    if not pedido.email_confirmado_em:
+        raise HTTPException(
+            status_code=409, detail="O solicitante ainda não confirmou o e-mail."
+        )
 
     existente = db.query(User).filter(User.email == pedido.email, User.excluido.is_(False)).first()
     if existente:

@@ -369,7 +369,9 @@
         "ufsc": "UFSC (equipment)",
         "externa": "External (upload)"
       }
-    }
+    },
+    "voltarBuscaAvancada": "Back to advanced search",
+    "filtrosEmUso": "{total, plural, one {1 filter in use} other {# filters in use}}"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -503,7 +505,22 @@
       "celulaDica": "Click to select · double-click to view only this image",
       "visualizadorGradeTitulo": "Viewer with {total} images side by side"
     },
-    "paginaDeSelecionadas": "(images {de}–{ate} of {total} selected)"
+    "paginaDeSelecionadas": "(images {de}–{ate} of {total} selected)",
+    "detalhes": "Details",
+    "ocultarDetalhes": "Hide details",
+    "temMarcacao": "This image has a curator marking",
+    "legenda": {
+      "dentes": "Teeth {lista}",
+      "semAlteracoes": "No findings recorded"
+    },
+    "marcacoes": {
+      "botao": "Markings",
+      "botaoTitulo": "Show/hide the curator markings on all images (K key)",
+      "semMarcacao": "None of the selected images has a curator marking",
+      "etiquetaAria": "{total, plural, one {1 curator marking} other {# curator markings}} - see texts",
+      "titulo": "{total, plural, one {1 curator marking} other {# curator markings}}",
+      "semRotulo": "No label"
+    }
   },
   "Curadoria": {
     "inicio": "Home",
@@ -980,14 +997,14 @@
   },
   "SolicitarAcesso": {
     "titulo": "Request access",
-    "subtitulo": "Fill in your details. An administrator will review your request before granting access.",
+    "subtitulo": "Fill in your details. You will get a link to confirm your email; then an administrator reviews the request.",
     "erroCamposObrigatorios": "Fill in your name, email and password.",
     "erroSenhaCurta": "The password must be at least 8 characters long.",
     "erroSenhasDiferentes": "The passwords don't match.",
     "erroTipoAcessoObrigatorio": "Select the type of access you're requesting.",
     "erroEnviarGenerico": "Couldn't send your request. Please try again.",
     "erroEnviarGenericoTentarNovamente": "Couldn't send your request. Please try again later.",
-    "sucessoMensagem": "Request received. An administrator will review it soon and you'll be notified by email.",
+    "sucessoMensagem": "Almost there! We sent a confirmation link to the email you entered. Open it and confirm (the link is valid for 24 hours) — only then does the request go to the administrator. Didn't get it? Check spam or submit the form again.",
     "voltarLogin": "Back to login",
     "nomeCompleto": "Full name",
     "nomeCompletoPlaceholder": "Your full name",
@@ -1143,5 +1160,23 @@
     "ativarModoEscuro": "Switch to dark mode",
     "modoClaro": "Light mode",
     "modoEscuro": "Dark mode"
+  },
+  "ConfirmarEmail": {
+    "titulo": "Confirm your email",
+    "subtitulo": "Last step: enter the password you chose in your access request.",
+    "senha": "Password from your request",
+    "ajudaSenha": "It is the same password you chose when filling in the form. It proves you made the request.",
+    "confirmar": "Confirm email",
+    "confirmando": "Confirming...",
+    "sucessoMensagem": "Email confirmed! Your request has been sent to the administrator for review. You will get an email once access is granted.",
+    "irParaLogin": "Go to login",
+    "solicitarNovamente": "Request access again",
+    "voltarLogin": "Back to login",
+    "erroSenhaObrigatoria": "Enter the password you chose in your request.",
+    "erroSenhaIncorreta": "Wrong password. Use the same password you chose in the request form.",
+    "erroLinkExpirado": "This link has expired (it is valid for 24 hours). Request access again to get a new link.",
+    "erroLinkBloqueado": "This link was blocked after several wrong passwords. Request access again.",
+    "erroLinkInvalido": "This confirmation link is invalid or has already been used.",
+    "erroGenerico": "Could not confirm right now. Please try again shortly."
   }
 }

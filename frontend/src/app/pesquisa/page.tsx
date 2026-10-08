@@ -235,6 +235,9 @@ function PesquisaConteudo() {
   const [totalDisponivel, setTotalDisponivel] = useState<number | null>(null)
   const [jaPesquisou, setJaPesquisou] = useState(false)
   const [pesquisando, setPesquisando] = useState(false)
+  // Depois de pesquisar, os campos de busca se recolhem para dar espaco as
+  // imagens encontradas; o botao "Voltar a busca avancada" os mostra de novo.
+  const [filtrosRecolhidos, setFiltrosRecolhidos] = useState(false)
   const [erro, setErro] = useState('')
   const [selecionados, setSelecionados] = useState<number[]>([])
   const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
@@ -303,6 +306,19 @@ function PesquisaConteudo() {
     setFiltros({ ...filtros, [campo]: valor })
   }
 
+  // Quantos filtros estao em uso (mostrado na barra recolhida).
+  const totalFiltrosAtivos =
+    (Object.keys(FILTROS_VAZIOS) as (keyof Filtros)[]).filter((chave) => {
+      if (chave === 'modoDentes') return false
+      const valor = filtros[chave]
+      return Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
+    }).length
+
+  function voltarBuscaAvancada() {
+    setFiltrosRecolhidos(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   function limparFiltros() {
     setFiltros(FILTROS_VAZIOS)
     setChaveSeletorDentes((c) => c + 1)
@@ -313,6 +329,7 @@ function PesquisaConteudo() {
     setPesquisando(true)
     setErro('')
     setJaPesquisou(true)
+    setFiltrosRecolhidos(true)
 
     const params = new URLSearchParams()
     if (filtrosParaUsar.tipo_radiografia) params.set('tipo_radiografia', filtrosParaUsar.tipo_radiografia)
@@ -447,8 +464,8 @@ function PesquisaConteudo() {
         <Topbar />
 
         <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="text-2xl font-bold text-ink">
-            {t('tituloPrefixo')} <span className="text-brand-300">{t('tituloDestaque')}</span>
+          <h1 className="titulo-pagina tela-entra">
+            {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
           </h1>
           <p className="mt-1 text-sm text-slate-400">
             {t('subtitulo')}
@@ -461,6 +478,28 @@ function PesquisaConteudo() {
             )}
           </p>
 
+          {filtrosRecolhidos ? (
+            // Busca recolhida: so uma barra fina com o botao de voltar, para
+            // as imagens encontradas ocuparem a tela.
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={voltarBuscaAvancada}
+                className="flex items-center gap-2 rounded-lg border border-teal-400/50 bg-teal-400/10 px-4 py-2 text-sm font-medium text-teal-200 transition hover:bg-teal-400/20"
+              >
+                <span aria-hidden="true">←</span> 🔎 {t('voltarBuscaAvancada')}
+              </button>
+              {totalFiltrosAtivos > 0 && (
+                <span className="text-xs text-slate-400">{t('filtrosEmUso', { total: totalFiltrosAtivos })}</span>
+              )}
+              {erro && (
+                <p className="text-sm text-red-400" role="alert">
+                  {erro}
+                </p>
+              )}
+            </div>
+          ) : (
+          <>
           <div className="mt-6">
             <p className="mb-3 text-sm font-medium text-slate-300">{t('acessoRapidoTitulo')}</p>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -818,6 +857,8 @@ function PesquisaConteudo() {
               )}
             </div>
           </section>
+          </>
+          )}
 
           <div className="mt-6">
             {!jaPesquisou ? (

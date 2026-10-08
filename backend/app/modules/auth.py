@@ -1,3 +1,4 @@
+import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -9,14 +10,28 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import limiter
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
-from app.core.email import enviar_email_redefinicao_senha, enviar_email_solicitacao_recebida
+from app.core.email import (
+    enviar_email_confirmacao_cadastro,
+    enviar_email_redefinicao_senha,
+    enviar_email_solicitacao_recebida,
+)
 from app.modules.users import User, UserRole
-from app.modules.access_requests import AccessRequest, IntencaoPerfil
+from app.modules.access_requests import AccessRequest, IntencaoPerfil, StatusSolicitacaoAcesso
 from app.modules.audit_logs import AuditLog
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
 RESET_TOKEN_VALIDADE_MINUTOS = 60
+
+# Confirmacao de e-mail do cadastro (ver AccessRequest): validade do link e
+# quantas senhas erradas sao toleradas antes de invalidar o link.
+CONFIRMACAO_VALIDADE_HORAS = 24
+CONFIRMACAO_MAX_TENTATIVAS = 5
+
+
+def _resumo_token(token: str) -> str:
+    """SHA-256 do codigo do link - e so isso que fica guardado no banco."""
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 # Nome e atributos do cookie httpOnly que carrega o JWT (migracao de
 # localStorage para cookie - 2026-08). httponly=True: inacessivel via JS no
@@ -311,43 +326,153 @@ class SolicitarAcesso(BaseModel):
 
 
 @router.post("/request-access", status_code=201)
+@limiter.limit("5/minute")
 def solicitar_acesso(
+    request: Request,
     dados: SolicitarAcesso,
     db: Session = Depends(get_db),
 ):
     """
-    Formulario publico de "Cadastrar" na tela de login. Nao cria a conta
-    na hora - fica pendente pra um admin revisar (ver /users/access-
-    requests). Sempre devolve sucesso genérico, mesmo se o e-mail ja
-    tiver conta ou pedido pendente - nao revela isso a quem preenche.
+    Formulario publico de "Cadastrar" na tela de login - ETAPA 1 de 2.
+    Grava o pedido e manda um link de confirmacao para o e-mail informado.
+    O pedido so aparece para o administrador depois da ETAPA 2
+    (/auth/confirm-email). Sempre devolve a mesma mensagem generica, mesmo
+    se o e-mail ja tiver conta ou pedido - nao revela isso a quem preenche.
     """
     if len(dados.senha) < 8:
         raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
 
     mensagem_generica = {
-        "mensagem": "Solicitação recebida. Um administrador vai revisar seu pedido em breve."
+        "mensagem": (
+            "Solicitação registrada. Enviamos um link de confirmação para o e-mail "
+            "informado - confirme-o para que o pedido siga para análise."
+        )
     }
 
+    # Hash calculado ANTES das verificacoes: assim a resposta leva o mesmo
+    # tempo exista ou nao conta com esse e-mail (nao da pista pelo relogio).
+    senha_hash = gerar_hash_senha(dados.senha)
+
     ja_tem_conta = db.query(User).filter(User.email == dados.email, User.excluido.is_(False)).first()
-    ja_tem_pedido_pendente = (
+    pedido_pendente = (
         db.query(AccessRequest)
-        .filter(AccessRequest.email == dados.email, AccessRequest.status == "pendente")
+        .filter(AccessRequest.email == dados.email, AccessRequest.status == StatusSolicitacaoAcesso.pendente)
         .first()
     )
-    if ja_tem_conta or ja_tem_pedido_pendente:
+    if ja_tem_conta or (pedido_pendente and pedido_pendente.email_confirmado_em):
         return mensagem_generica
 
-    pedido = AccessRequest(
-        nome=dados.nome,
-        email=dados.email,
-        senha_hash=gerar_hash_senha(dados.senha),
-        instituicao=dados.instituicao,
-        perfil_solicitado=dados.perfil_solicitado,
-        motivo=dados.motivo,
-    )
-    db.add(pedido)
+    token = secrets.token_urlsafe(32)
+    if pedido_pendente:
+        # Pedido anterior ainda NAO confirmado (link perdido ou vencido):
+        # os dados sao substituidos e um link novo e gerado (o antigo deixa
+        # de valer). Isso e seguro porque a confirmacao exige a senha deste
+        # ultimo formulario - quem nao a conhece nao consegue confirmar.
+        pedido = pedido_pendente
+        pedido.nome = dados.nome
+        pedido.senha_hash = senha_hash
+        pedido.instituicao = dados.instituicao
+        pedido.perfil_solicitado = dados.perfil_solicitado
+        pedido.motivo = dados.motivo
+    else:
+        pedido = AccessRequest(
+            nome=dados.nome,
+            email=dados.email,
+            senha_hash=senha_hash,
+            instituicao=dados.instituicao,
+            perfil_solicitado=dados.perfil_solicitado,
+            motivo=dados.motivo,
+        )
+        db.add(pedido)
+    pedido.token_confirmacao_hash = _resumo_token(token)
+    pedido.token_confirmacao_expira_em = datetime.now(timezone.utc) + timedelta(hours=CONFIRMACAO_VALIDADE_HORAS)
+    pedido.tentativas_confirmacao = 0
+    db.flush()
+    db.add(AuditLog(
+        usuario_id=None, acao="solicitacao_acesso_registrada", entidade="access_request",
+        entidade_id=pedido.id, resultado="sucesso",
+        detalhes="Pedido de acesso registrado; aguardando confirmação do e-mail.",
+    ))
     db.commit()
 
-    enviar_email_solicitacao_recebida(dados.email, dados.nome)
+    link = f"{settings.FRONTEND_URL}/confirmar-email?token={token}"
+    enviar_email_confirmacao_cadastro(dados.email, dados.nome, link, CONFIRMACAO_VALIDADE_HORAS)
 
     return mensagem_generica
+
+
+class ConfirmarEmail(BaseModel):
+    token: str
+    senha: str
+
+
+@router.post("/confirm-email")
+@limiter.limit("10/minute")
+def confirmar_email(
+    request: Request,
+    dados: ConfirmarEmail,
+    db: Session = Depends(get_db),
+):
+    """
+    ETAPA 2 do cadastro: a pessoa abre o link recebido por e-mail e digita
+    a senha que definiu no formulario. So entao o pedido vai para a fila do
+    administrador. A confirmacao e um POST (e nao "abrir o link e pronto")
+    de proposito: alguns servicos de e-mail abrem os links sozinhos para
+    checar virus, e isso nao pode confirmar nada sem a pessoa.
+    """
+    erro_link = "Link de confirmação inválido ou já utilizado."
+    if not dados.token or len(dados.token) > 200:
+        raise HTTPException(status_code=400, detail=erro_link)
+
+    pedido = (
+        db.query(AccessRequest)
+        .filter(
+            AccessRequest.token_confirmacao_hash == _resumo_token(dados.token),
+            AccessRequest.status == StatusSolicitacaoAcesso.pendente,
+        )
+        .first()
+    )
+    if not pedido or pedido.email_confirmado_em or not pedido.token_confirmacao_expira_em:
+        raise HTTPException(status_code=400, detail=erro_link)
+    if pedido.token_confirmacao_expira_em < datetime.now(timezone.utc):
+        raise HTTPException(
+            status_code=400, detail="Link de confirmação expirado. Faça a solicitação novamente."
+        )
+
+    if not verificar_senha(dados.senha, pedido.senha_hash):
+        pedido.tentativas_confirmacao = (pedido.tentativas_confirmacao or 0) + 1
+        bloqueou = pedido.tentativas_confirmacao >= CONFIRMACAO_MAX_TENTATIVAS
+        if bloqueou:
+            pedido.token_confirmacao_hash = None
+            pedido.token_confirmacao_expira_em = None
+        db.add(AuditLog(
+            usuario_id=None, acao="falha_confirmacao_email", entidade="access_request",
+            entidade_id=pedido.id, resultado="negado",
+            detalhes=(
+                "Senha incorreta na confirmação de e-mail"
+                + ("; link invalidado por excesso de tentativas." if bloqueou else ".")
+            ),
+        ))
+        db.commit()
+        if bloqueou:
+            raise HTTPException(
+                status_code=400,
+                detail="Link bloqueado por excesso de tentativas. Faça a solicitação novamente.",
+            )
+        raise HTTPException(status_code=401, detail="Senha incorreta.")
+
+    pedido.email_confirmado_em = datetime.now(timezone.utc)
+    pedido.token_confirmacao_hash = None
+    pedido.token_confirmacao_expira_em = None
+    pedido.tentativas_confirmacao = 0
+    db.add(AuditLog(
+        usuario_id=None, acao="confirmacao_email_solicitacao", entidade="access_request",
+        entidade_id=pedido.id, resultado="sucesso",
+        detalhes="E-mail confirmado; pedido encaminhado para análise do administrador.",
+    ))
+    db.commit()
+
+    enviar_email_solicitacao_recebida(pedido.email, pedido.nome)
+    return {
+        "mensagem": "E-mail confirmado. Seu pedido foi enviado para análise do administrador."
+    }

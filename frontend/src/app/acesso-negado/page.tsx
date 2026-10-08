@@ -39,7 +39,7 @@ export default function AcessoNegadoPage() {
         <Topbar />
 
         <main className="flex flex-1 items-center justify-center p-6">
-          <div className="max-w-md text-center">
+          <div className="painel-vidro tela-entra max-w-md rounded-2xl px-8 py-9 text-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -55,7 +55,7 @@ export default function AcessoNegadoPage() {
               />
             </svg>
 
-            <h1 className="text-xl font-semibold text-slate-100">{t('titulo')}</h1>
+            <h1 className="titulo-pagina tela-entra">{t('titulo')}</h1>
             <p className="mt-3 text-sm text-slate-400">
               {t('descricao')}
             </p>
