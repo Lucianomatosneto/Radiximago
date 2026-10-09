@@ -173,15 +173,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   // SeriesInstanceUID que não existe naquele estudo e dava erro.
   const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
   const [indiceSerie, setIndiceSerie] = useState(0)
-  const [mostrarMarcacao, setMostrarMarcacao] = useState(false)
   // painel "Detalhes" (classificacao completa + marcacao), fechado por padrao
   const [detalhesAbertos, setDetalhesAbertos] = useState(false)
-  // "para todas as imagens": ao contrario de mostrarMarcacao, NAO e
-  // resetado no efeito abaixo (que roda a cada troca de [indice]) - o
-  // pedido explicito foi ligar uma vez e continuar mostrando a marcacao
-  // de cada imagem da sequencia automaticamente, sem marcar o checkbox de
-  // novo a cada troca.
-  const [mostrarMarcacaoTodas, setMostrarMarcacaoTodas] = useState(false)
+  // MARCACOES DO CURADOR: quais imagens (curation_id) estao com a marcacao
+  // ligada. Cada imagem liga/desliga pelo seu proprio selo; o botao do topo
+  // (ou a tecla K) liga/desliga todas. A escolha de cada imagem continua
+  // valendo ao navegar entre elas.
+  const [marcacoesLigadas, setMarcacoesLigadas] = useState<number[]>([])
   const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
 
   // LAYOUT DA AREA DE IMAGENS (quantas imagens lado a lado). Padrao: 2
@@ -228,6 +226,37 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     return () => window.removeEventListener('message', aoReceber)
   }, [emGrade, origemOhif, itens])
 
+  // Envia ao OHIF as marcacoes das imagens que estao nele e quais estao
+  // ligadas - ele mesmo desenha as formas por cima da imagem.
+  const ohifRef = useRef<HTMLIFrameElement>(null)
+  const enviarMarcacoesRef = useRef<() => void>(() => {})
+  enviarMarcacoesRef.current = () => {
+    const janela = ohifRef.current?.contentWindow
+    if (!janela || !origemOhif) return
+    const estudos: Record<string, Marcacao[]> = {}
+    const visiveis: string[] = []
+    for (const item of emGrade ? itensPagina : [itens[indice]]) {
+      const uid = estudoDe(item?.viewer_url ?? null)
+      if (!uid) continue
+      estudos[uid] = item.marcacoes ?? []
+      if (marcacoesLigadas.includes(item.curation_id)) visiveis.push(uid)
+    }
+    janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis }, origemOhif)
+  }
+  useEffect(() => {
+    enviarMarcacoesRef.current()
+  })
+  useEffect(() => {
+    if (!origemOhif) return
+    function aoProntoOhif(evento: MessageEvent) {
+      if (evento.origin !== origemOhif) return
+      const dados = evento.data as { tipo?: unknown } | null
+      if (dados && dados.tipo === 'radix-ohif-pronto') enviarMarcacoesRef.current()
+    }
+    window.addEventListener('message', aoProntoOhif)
+    return () => window.removeEventListener('message', aoProntoOhif)
+  }, [origemOhif])
+
   const atual = itens[indice]
   const seriesValidas = seriesDoItem === atual.curation_id ? series : []
   const serieAtual = seriesValidas[indiceSerie] ?? null
@@ -237,24 +266,31 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       : atual.viewer_url
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
-  // Junta os dois toggles num unico flag de exibicao: mostra se "esta
-  // imagem" estiver ligado (o de sempre, reseta a cada troca) OU se
-  // "todas as imagens" estiver ligado (persiste) - sempre condicionado a
-  // ter marcacao disponivel na imagem atual.
-  const mostrarMarcacaoEfetivo = (mostrarMarcacao || mostrarMarcacaoTodas) && marcacaoDisponivel
-  // Quais imagens mostram a marcacao do curador desenhada: todas que tiverem
-  // marcacao, se o icone "Marcações do curador" estiver ligado; ou so a
-  // imagem escolhida, se a marcacao dela foi ligada em "Detalhes".
-  const mostraMarcacaoDe = (item: ItemSequencia) =>
-    (item.marcacoes ?? []).length > 0 &&
-    (mostrarMarcacaoTodas || (mostrarMarcacao && item.curation_id === atual.curation_id))
+  const temMarcacao = (item: ItemSequencia) => (item.marcacoes ?? []).length > 0
+  const mostraMarcacaoDe = (item: ItemSequencia) => temMarcacao(item) && marcacoesLigadas.includes(item.curation_id)
+  const itensComMarcacao = itens.filter(temMarcacao)
+  const todasMarcacoesLigadas =
+    itensComMarcacao.length > 0 && itensComMarcacao.every((item) => marcacoesLigadas.includes(item.curation_id))
+  const mostrarMarcacao = marcacoesLigadas.includes(atual.curation_id)
+  const mostrarMarcacaoEfetivo = mostrarMarcacao && marcacaoDisponivel
+  function alternarMarcacaoDe(curationId: number, ligar?: boolean) {
+    setMarcacoesLigadas((lista) => {
+      const ligada = lista.includes(curationId)
+      const novo = ligar ?? !ligada
+      if (novo === ligada) return lista
+      return novo ? [...lista, curationId] : lista.filter((id) => id !== curationId)
+    })
+  }
+  function alternarTodasMarcacoes(ligar?: boolean) {
+    const novo = ligar ?? !todasMarcacoesLigadas
+    setMarcacoesLigadas(novo ? itensComMarcacao.map((item) => item.curation_id) : [])
+  }
   const selecaoTemMarcacao = itens.some((item) => (item.marcacoes ?? []).length > 0)
 
   useEffect(() => {
     setMensagem('')
     setErro('')
     setJaSalvo(false)
-    setMostrarMarcacao(false)
     setInfoSerie(null)
     setIndiceSerie(0)
     setMarcacaoPreviewUrl('')
@@ -343,7 +379,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       else if ((evento.key === 'k' || evento.key === 'K') && !evento.ctrlKey && !evento.metaKey && !evento.altKey) {
         const alvo = evento.target as HTMLElement | null
         if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable)) return
-        setMostrarMarcacaoTodas((v) => !v)
+        alternarTodasMarcacoes()
       }
       else if (evento.key === 'Escape' && !document.fullscreenElement) onFechar()
     }
@@ -550,12 +586,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               imagens que tiverem marcacao (atalho: tecla K). */}
           <button
             type="button"
-            onClick={() => setMostrarMarcacaoTodas((v) => !v)}
+            onClick={() => alternarTodasMarcacoes()}
             disabled={!selecaoTemMarcacao}
-            aria-pressed={mostrarMarcacaoTodas}
+            aria-pressed={todasMarcacoesLigadas}
             title={selecaoTemMarcacao ? t('marcacoes.botaoTitulo') : t('marcacoes.semMarcacao')}
             className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              mostrarMarcacaoTodas
+              todasMarcacoesLigadas
                 ? 'border-amber-300/80 bg-amber-300/15 text-amber-200'
                 : 'border-base-border text-slate-300 hover:border-amber-300/60 hover:text-amber-200'
             }`}
@@ -617,12 +653,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
           )}
         </div>
 
-        {emGrade && urlGrade && !itensPagina.some(mostraMarcacaoDe) ? (
+        {emGrade && urlGrade ? (
           // UMA tela, um visualizador: o OHIF divide a propria area de
           // imagens na grade escolhida (ver montarUrlGrade). A "key" faz o
           // OHIF recarregar so quando muda a pagina ou o layout.
           <div className="relative h-full w-full px-14 sm:px-16">
             <iframe
+              ref={ohifRef}
               key={urlGrade}
               src={urlGrade}
               referrerPolicy="origin"
@@ -640,7 +677,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             >
               {itensPagina.map((item) => (
                 <div key={item.curation_id} className="relative">
-                  <EtiquetaMarcacoes item={item} className="right-9 top-2" />
+                  <SelosImagem item={item} ligada={mostraMarcacaoDe(item)} onAlternar={() => alternarMarcacaoDe(item.curation_id)} className="right-9 top-2" />
                 </div>
               ))}
             </div>
@@ -696,28 +733,30 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
                     </span>
-                    <EtiquetaMarcacoes item={item} className="right-2 top-2" />
+                    <SelosImagem item={item} ligada={mostraMarcacaoDe(item)} onAlternar={() => alternarMarcacaoDe(item.curation_id)} className="right-2 top-2" />
                   </div>
                 )
               })}
             </div>
           </div>
+        ) : urlComSerie ? (
+          // As marcacoes do curador sao desenhadas DENTRO do OHIF (ver
+          // ohif/app-config.template.js): a imagem e a mesma com ou sem
+          // marcacao, so as formas aparecem/somem.
+          <iframe
+            ref={ohifRef}
+            key={atual.curation_id}
+            src={urlComSerie}
+            referrerPolicy="origin"
+            title={t('visualizadorOhifTitulo', { numero: atual.numero })}
+            className="h-full w-full flex-1 border-0"
+          />
         ) : mostrarMarcacaoEfetivo ? (
-          // Mesma caixa (h-full w-full) que o iframe ocupa logo abaixo -
-          // a imagem nao muda de tamanho nem de posicao ao ligar/desligar
-          // a marcacao, so as formas aparecem/somem.
           <ImagemPrincipalMarcada
             curationId={atual.curation_id}
             alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
             marcacoes={marcacoes}
             srcPreCarregado={marcacaoPreviewUrl}
-          />
-        ) : urlComSerie ? (
-          <iframe
-            key={atual.curation_id}
-            src={urlComSerie}
-            title={t('visualizadorOhifTitulo', { numero: atual.numero })}
-            className="h-full w-full flex-1 border-0"
           />
         ) : (
           <MiniaturaImagem
@@ -729,9 +768,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
 
         {/* Selo das marcacoes do curador no canto da imagem (layout de 1) */}
         {!emGrade && (
-          <EtiquetaMarcacoes
+          <SelosImagem
             item={atual}
-            className={urlComSerie && !mostrarMarcacaoEfetivo ? 'right-24 top-[60px]' : 'right-20 top-3'}
+            ligada={mostrarMarcacaoEfetivo}
+            onAlternar={() => alternarMarcacaoDe(atual.curation_id)}
+            className={urlComSerie ? 'right-24 top-[60px]' : 'right-20 top-3'}
           />
         )}
 
@@ -747,7 +788,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             esquerdo da imagem - quando a fila estiver visivel, empurrado
             pra depois dela (mesma logica da seta « de voltar), senao fica
             colado na borda. */}
-        {urlComSerie && !mostrarMarcacaoEfetivo && !emGrade && (
+        {urlComSerie && !emGrade && (
           <div
             className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur ${
               'left-3 sm:left-6'
@@ -857,9 +898,9 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 marcacoes={marcacoes}
                 comImagem={false}
                 mostrar={mostrarMarcacao}
-                onMostrarChange={setMostrarMarcacao}
-                mostrarTodas={mostrarMarcacaoTodas}
-                onMostrarTodasChange={setMostrarMarcacaoTodas}
+                onMostrarChange={(v: boolean) => alternarMarcacaoDe(atual.curation_id, v)}
+                mostrarTodas={todasMarcacoesLigadas}
+                onMostrarTodasChange={(v: boolean) => alternarTodasMarcacoes(v)}
               />
               {atual.viewer_url && (
                 <p className="mt-3 text-xs text-slate-400">
@@ -952,6 +993,51 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
 
         </div>
       </div>
+    </div>
+  )
+}
+
+// Os dois selos do canto de cada imagem: o de MARCACAO (so aparece se o
+// curador marcou algo na imagem; clique liga/desliga as formas desenhadas)
+// e o "i" da DESCRICAO da curadoria (passar o mouse abre; clique fixa).
+function SelosImagem({
+  item,
+  ligada,
+  onAlternar,
+  className = '',
+}: {
+  item: ItemSequencia
+  ligada: boolean
+  onAlternar: () => void
+  className?: string
+}) {
+  const t = useTranslations('Visualizador.marcacoes')
+  const total = (item.marcacoes ?? []).length
+  return (
+    <div className={`pointer-events-none absolute z-20 flex items-start gap-1.5 ${className}`}>
+      {total > 0 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onAlternar()
+          }}
+          aria-pressed={ligada}
+          title={ligada ? t('ocultarDaImagem') : t('mostrarDaImagem')}
+          className={`pointer-events-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold backdrop-blur transition ${
+            ligada
+              ? 'border-amber-300 bg-amber-300/25 text-amber-100'
+              : 'border-amber-300/60 bg-black/70 text-amber-200 hover:border-amber-300'
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <ellipse cx="12" cy="12" rx="9" ry="6.5" />
+            <path d="M4 20l4-4" />
+          </svg>
+          {total}
+        </button>
+      )}
+      <EtiquetaMarcacoes item={item} embutido mostrarContagem={false} />
     </div>
   )
 }

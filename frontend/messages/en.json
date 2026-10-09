@@ -524,7 +524,11 @@
       "semRotulo": "No label",
       "tituloImagem": "Curation of image #{numero}",
       "tituloCuradoria": "Curation of this image",
-      "semDescricao": "This image has no curation description yet."
+      "semDescricao": "This image has no curation description yet.",
+      "fixarDescricao": "Click to keep the description open",
+      "soltarDescricao": "Click to close the description",
+      "mostrarDaImagem": "Show the curator markings on this image",
+      "ocultarDaImagem": "Hide the curator markings on this image"
     },
     "impressao": {
       "todas": "All in this sequence",
