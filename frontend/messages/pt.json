@@ -524,7 +524,11 @@
       "semRotulo": "Sem rótulo",
       "tituloImagem": "Curadoria da imagem #{numero}",
       "tituloCuradoria": "Curadoria desta imagem",
-      "semDescricao": "Esta imagem ainda não tem descrição da curadoria."
+      "semDescricao": "Esta imagem ainda não tem descrição da curadoria.",
+      "fixarDescricao": "Clique para deixar a descrição aberta",
+      "soltarDescricao": "Clique para fechar a descrição",
+      "mostrarDaImagem": "Mostrar as marcações do curador nesta imagem",
+      "ocultarDaImagem": "Ocultar as marcações do curador desta imagem"
     },
     "impressao": {
       "todas": "Todas desta sequência",

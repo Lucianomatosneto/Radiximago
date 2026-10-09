@@ -23,14 +23,24 @@ export default function EtiquetaMarcacoes({
   item,
   className = '',
   flutuante = false,
+  embutido = false,
+  mostrarContagem = true,
 }: {
   item: ItemDescritivel
   className?: string
   flutuante?: boolean
+  /** dentro de outro grupo posicionado (nao usa position:absolute proprio) */
+  embutido?: boolean
+  /** mostra o numero de marcacoes ao lado do "i" */
+  mostrarContagem?: boolean
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
-  const [aberta, setAberta] = useState(false)
+  // Passar o mouse (ou focar com Tab) abre; um CLIQUE deixa a caixa fixa
+  // aberta ate clicar de novo no selo.
+  const [passando, setPassando] = useState(false)
+  const [fixada, setFixada] = useState(false)
+  const aberta = passando || fixada
   const botaoRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const totalMarcacoes = (item.marcacoes ?? []).length
@@ -76,25 +86,29 @@ export default function EtiquetaMarcacoes({
 
   return (
     <div
-      className={`pointer-events-auto absolute z-20 ${className}`}
-      onMouseEnter={() => setAberta(true)}
-      onMouseLeave={() => setAberta(false)}
+      className={`pointer-events-auto z-20 ${embutido ? 'relative' : 'absolute'} ${className}`}
+      onMouseEnter={() => setPassando(true)}
+      onMouseLeave={() => setPassando(false)}
     >
       <button
         ref={botaoRef}
         type="button"
-        onFocus={() => setAberta(true)}
-        onBlur={() => setAberta(false)}
+        onFocus={() => setPassando(true)}
+        onBlur={() => setPassando(false)}
         onClick={(e) => {
           // dentro de um link (cartao da Pesquisa): nao abrir a imagem
           e.preventDefault()
           e.stopPropagation()
-          setAberta((v) => !v)
+          setFixada((v) => !v)
         }}
+        aria-pressed={fixada}
+        title={fixada ? t('soltarDescricao') : t('fixarDescricao')}
         aria-expanded={aberta}
         aria-label={t('etiquetaAria', { total: totalMarcacoes })}
         className={`flex items-center gap-1 rounded-full border bg-black/70 px-2 py-0.5 text-[11px] font-semibold backdrop-blur ${
-          totalMarcacoes > 0
+          fixada ? 'ring-2 ring-teal-300/70 ' : ''
+        }${
+          mostrarContagem && totalMarcacoes > 0
             ? 'border-amber-300/60 text-amber-200 hover:border-amber-300'
             : 'border-teal-300/50 text-teal-100 hover:border-teal-300'
         }`}
@@ -103,7 +117,7 @@ export default function EtiquetaMarcacoes({
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11v6M12 7.5v.5" strokeLinecap="round" />
         </svg>
-        {totalMarcacoes > 0 && <span>{totalMarcacoes}</span>}
+        {mostrarContagem && totalMarcacoes > 0 && <span>{totalMarcacoes}</span>}
       </button>
 
       {aberta && !flutuante && (
