@@ -371,7 +371,9 @@
       }
     },
     "voltarBuscaAvancada": "Back to advanced search",
-    "filtrosEmUso": "{total, plural, one {1 filter in use} other {# filters in use}}"
+    "filtrosEmUso": "{total, plural, one {1 filter in use} other {# filters in use}}",
+    "imprimirTodas": "All results",
+    "imprimirSelecionadas": "Selected only"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -514,12 +516,19 @@
       "semAlteracoes": "No findings recorded"
     },
     "marcacoes": {
-      "botao": "Markings",
+      "botao": "Curator markings",
       "botaoTitulo": "Show/hide the curator markings on all images (K key)",
       "semMarcacao": "None of the selected images has a curator marking",
-      "etiquetaAria": "{total, plural, one {1 curator marking} other {# curator markings}} - see texts",
+      "etiquetaAria": "See the curation description{total, plural, =0 {} one { (1 marking)} other { (# markings)}}",
       "titulo": "{total, plural, one {1 curator marking} other {# curator markings}}",
-      "semRotulo": "No label"
+      "semRotulo": "No label",
+      "tituloImagem": "Curation of image #{numero}",
+      "tituloCuradoria": "Curation of this image",
+      "semDescricao": "This image has no curation description yet."
+    },
+    "impressao": {
+      "todas": "All in this sequence",
+      "daTela": "Those on screen"
     }
   },
   "Curadoria": {
@@ -1178,5 +1187,28 @@
     "erroLinkBloqueado": "This link was blocked after several wrong passwords. Request access again.",
     "erroLinkInvalido": "This confirmation link is invalid or has already been used.",
     "erroGenerico": "Could not confirm right now. Please try again shortly."
+  },
+  "Impressao": {
+    "botao": "Print",
+    "comDescricao": "With the curation description",
+    "semDescricao": "Without description (images only)",
+    "preparando": "Preparing to print…",
+    "progresso": "{feitas} of {total} images ready",
+    "falhas": "{total, plural, one {1 image could not be loaded} other {# images could not be loaded}}",
+    "cancelar": "Cancel",
+    "cabecalho": "Page {pagina} of {total} · {data}",
+    "imagemNumero": "Image {numero}",
+    "imagemIndisponivel": "Image unavailable",
+    "rodape": "Radix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis."
+  },
+  "DescricaoCuradoria": {
+    "tipo": "Type",
+    "qualidade": "Quality",
+    "dentes": "Teeth",
+    "achadoPrincipal": "Main finding",
+    "alteracoes": "Observed changes",
+    "achadosDetalhados": "Detailed findings",
+    "descricao": "Teaching description",
+    "marcacoes": "Curator markings"
   }
 }

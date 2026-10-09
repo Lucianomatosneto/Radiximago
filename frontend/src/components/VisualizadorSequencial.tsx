@@ -14,6 +14,7 @@ import ThemeToggle from './ThemeToggle'
 import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
 import LegendaImagem from './visualizador/LegendaImagem'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
+import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
@@ -563,7 +564,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
               <ellipse cx="12" cy="12" rx="9" ry="6.5" />
               <path d="M4 20l4-4" />
             </svg>
-            <span className="hidden md:inline">{t('marcacoes.botao')}</span>
+            <span>{t('marcacoes.botao')}</span>
             <kbd className="hidden rounded border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
           </button>
           {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} />}
@@ -639,7 +640,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             >
               {itensPagina.map((item) => (
                 <div key={item.curation_id} className="relative">
-                  <EtiquetaMarcacoes marcacoes={item.marcacoes} className="right-9 top-2" />
+                  <EtiquetaMarcacoes item={item} className="right-9 top-2" />
                 </div>
               ))}
             </div>
@@ -695,7 +696,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
                     </span>
-                    <EtiquetaMarcacoes marcacoes={item.marcacoes} className="right-2 top-2" />
+                    <EtiquetaMarcacoes item={item} className="right-2 top-2" />
                   </div>
                 )
               })}
@@ -729,7 +730,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         {/* Selo das marcacoes do curador no canto da imagem (layout de 1) */}
         {!emGrade && (
           <EtiquetaMarcacoes
-            marcacoes={atual.marcacoes}
+            item={atual}
             className={urlComSerie && !mostrarMarcacaoEfetivo ? 'right-24 top-[60px]' : 'right-20 top-3'}
           />
         )}
@@ -891,6 +892,13 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             )}
           </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <MenuImpressao
+                compacto
+                grupos={[
+                  { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
+                  { chave: 'tela', rotulo: t('impressao.daTela'), itens: emGrade ? itensPagina : [atual] },
+                ]}
+              />
             {infoSerie?.eh_serie ? (
               <>
                 <button
