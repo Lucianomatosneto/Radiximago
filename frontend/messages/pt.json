@@ -371,7 +371,9 @@
       }
     },
     "voltarBuscaAvancada": "Voltar à busca avançada",
-    "filtrosEmUso": "{total, plural, one {1 filtro em uso} other {# filtros em uso}}"
+    "filtrosEmUso": "{total, plural, one {1 filtro em uso} other {# filtros em uso}}",
+    "imprimirTodas": "Todas as encontradas",
+    "imprimirSelecionadas": "Somente as selecionadas"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -514,12 +516,19 @@
       "semAlteracoes": "Sem alterações registradas"
     },
     "marcacoes": {
-      "botao": "Marcações",
+      "botao": "Marcações do curador",
       "botaoTitulo": "Mostrar/ocultar as marcações do curador em todas as imagens (tecla K)",
       "semMarcacao": "Nenhuma imagem selecionada tem marcação do curador",
-      "etiquetaAria": "{total, plural, one {1 marcação do curador} other {# marcações do curador}} - ver textos",
+      "etiquetaAria": "Ver a descrição da curadoria{total, plural, =0 {} one { (1 marcação)} other { (# marcações)}}",
       "titulo": "{total, plural, one {1 marcação do curador} other {# marcações do curador}}",
-      "semRotulo": "Sem rótulo"
+      "semRotulo": "Sem rótulo",
+      "tituloImagem": "Curadoria da imagem #{numero}",
+      "tituloCuradoria": "Curadoria desta imagem",
+      "semDescricao": "Esta imagem ainda não tem descrição da curadoria."
+    },
+    "impressao": {
+      "todas": "Todas desta sequência",
+      "daTela": "As que estão na tela"
     }
   },
   "Curadoria": {
@@ -1178,5 +1187,28 @@
     "erroLinkBloqueado": "Este link foi bloqueado depois de várias senhas incorretas. Faça o pedido novamente.",
     "erroLinkInvalido": "Este link de confirmação é inválido ou já foi usado.",
     "erroGenerico": "Não foi possível confirmar agora. Tente novamente em instantes."
+  },
+  "Impressao": {
+    "botao": "Imprimir",
+    "comDescricao": "Com a descrição da curadoria",
+    "semDescricao": "Sem descrição (só as imagens)",
+    "preparando": "Preparando a impressão…",
+    "progresso": "{feitas} de {total} imagens prontas",
+    "falhas": "{total, plural, one {1 imagem não pôde ser carregada} other {# imagens não puderam ser carregadas}}",
+    "cancelar": "Cancelar",
+    "cabecalho": "Página {pagina} de {total} · {data}",
+    "imagemNumero": "Imagem {numero}",
+    "imagemIndisponivel": "Imagem indisponível",
+    "rodape": "Rádix Imago - material de ensino e pesquisa (UFSC). Imagens anonimizadas. Não destinado a diagnóstico."
+  },
+  "DescricaoCuradoria": {
+    "tipo": "Tipo",
+    "qualidade": "Qualidade",
+    "dentes": "Dentes",
+    "achadoPrincipal": "Achado principal",
+    "alteracoes": "Alterações observadas",
+    "achadosDetalhados": "Achados detalhados",
+    "descricao": "Descrição didática",
+    "marcacoes": "Marcações do curador"
   }
 }
