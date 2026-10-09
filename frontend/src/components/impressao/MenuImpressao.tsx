@@ -30,7 +30,7 @@ export interface GrupoImpressao {
   itens: ItemImpressao[]
 }
 
-interface Trabalho {
+export interface Trabalho {
   itens: ItemImpressao[]
   comDescricao: boolean
 }
@@ -102,7 +102,15 @@ export default function MenuImpressao({ grupos, compacto = false }: { grupos: Gr
   )
 }
 
-function ImpressaoEmAndamento({ trabalho, onTerminar }: { trabalho: Trabalho; onTerminar: () => void }) {
+export function ImpressaoEmAndamento({
+  trabalho,
+  onTerminar,
+  dicaPdf = false,
+}: {
+  trabalho: Trabalho
+  onTerminar: () => void
+  dicaPdf?: boolean
+}) {
   const t = useTranslations('Impressao')
   const descrever = useDescricaoCuradoria()
   const [urls, setUrls] = useState<Record<number, string>>({})
@@ -184,6 +192,7 @@ function ImpressaoEmAndamento({ trabalho, onTerminar }: { trabalho: Trabalho; on
             <div className="h-full bg-teal-400 transition-all" style={{ width: `${total ? (prontas / total) * 100 : 0}%` }} />
           </div>
           {falhas > 0 && <p className="mt-2 text-xs text-amber-300">{t('falhas', { total: falhas })}</p>}
+          {dicaPdf && <p className="mt-3 rounded-lg bg-teal-400/10 p-2 text-xs text-teal-100">{t('dicaPdf')}</p>}
           <button
             type="button"
             onClick={() => {

@@ -1199,7 +1199,8 @@
     "cabecalho": "Page {pagina} of {total} · {data}",
     "imagemNumero": "Image {numero}",
     "imagemIndisponivel": "Image unavailable",
-    "rodape": "Radix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis."
+    "rodape": "Radix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis.",
+    "dicaPdf": "In the window that opens, set \"Destination\" to \"Save as PDF\" and click Save."
   },
   "DescricaoCuradoria": {
     "tipo": "Type",
@@ -1210,5 +1211,23 @@
     "achadosDetalhados": "Detailed findings",
     "descricao": "Teaching description",
     "marcacoes": "Curator markings"
+  },
+  "Salvar": {
+    "salvarComo": "Save as",
+    "tipoZip": "ZIP file",
+    "imagem": "Image",
+    "zipCom": "Images (.zip) with the curation description",
+    "zipSem": "Images (.zip) without description",
+    "pdfCom": "PDF with the curation description",
+    "pdfSem": "PDF without description",
+    "preparandoZip": "Preparing the file…",
+    "salvo": "File saved.",
+    "salvoComFalhas": "File saved, but {total, plural, one {1 image could not be included} other {# images could not be included}}.",
+    "leiaMe": "Radix Imago - Federal University of Santa Catarina (UFSC)\r\n\r\nFor teaching and research only. Images are anonymized (LGPD) and are not intended for diagnosis.\r\nDo not share outside the academic context.\r\n",
+    "salvarMinhas": "Save to My images",
+    "ajudaMinhas": "Keeps the images in your personal list (My images menu). Images already there are not duplicated.",
+    "salvandoMinhas": "Saving to My images…",
+    "minhasSalvas": "{total, plural, one {1 image is} other {# images are}} in My images.",
+    "minhasFalhas": "{total, plural, one {1 image could not be saved} other {# images could not be saved}}."
   }
 }

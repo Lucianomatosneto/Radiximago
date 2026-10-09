@@ -8,6 +8,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
+import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesQuadrante from '../../components/curadoria/SeletorDentesQuadrante'
 import type { Marcacao } from '../../lib/marcacoes'
@@ -901,6 +902,22 @@ function PesquisaConteudo() {
                     )}
                   </p>
                   <div className="flex flex-wrap items-center gap-2">
+                  {(() => {
+                    const gruposAcoes = [
+                      {
+                        chave: 'todas',
+                        rotulo: t('imprimirTodas'),
+                        itens: resultados.map((imagem, indice) => ({ ...imagem, numero: indice + 1 })),
+                      },
+                      { chave: 'selecionadas', rotulo: t('imprimirSelecionadas'), itens: itensSelecionados },
+                    ]
+                    return (
+                      <>
+                        <MenuSalvarMinhasImagens grupos={gruposAcoes} />
+                        <MenuSalvarComo grupos={gruposAcoes} />
+                      </>
+                    )
+                  })()}
                   <MenuImpressao
                     grupos={[
                       {
