@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
+import EtiquetaMarcacoes from '../../components/visualizador/EtiquetaMarcacoes'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
@@ -1011,6 +1012,13 @@ function PesquisaConteudo() {
                         <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-semibold text-white">
                           {indice + 1}
                         </span>
+                        {/* Selo "i": ao passar o mouse mostra a descricao da curadoria
+                            (continua funcionando com o cartao ampliado em 70%) */}
+                        <EtiquetaMarcacoes
+                          item={{ ...imagem, numero: indice + 1 }}
+                          flutuante
+                          className="bottom-1.5 right-1.5"
+                        />
                         <label
                           onClick={(e) => e.stopPropagation()}
                           className="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-md bg-black/70"

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricaoCuradoria'
 
@@ -14,18 +15,64 @@ import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricao
 // Por que um selo e nao "passar o mouse na imagem inteira": a imagem roda
 // dentro do OHIF (outra origem, num iframe) e o navegador nao avisa a tela
 // do Radix quando o mouse esta la dentro.
+// `flutuante`: para lugares pequenos que cortam o que passa da borda (ex.:
+// os cartoes da Pesquisa, que tambem crescem 70% ao passar o mouse). Nesse
+// modo a caixa de descricao e desenhada solta na tela (portal), sempre por
+// cima de tudo, e acompanha o selo se o cartao crescer ou mudar de lugar.
 export default function EtiquetaMarcacoes({
   item,
   className = '',
+  flutuante = false,
 }: {
   item: ItemDescritivel
   className?: string
+  flutuante?: boolean
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
   const [aberta, setAberta] = useState(false)
+  const botaoRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   const totalMarcacoes = (item.marcacoes ?? []).length
   const linhas = descrever(item)
+
+  // Modo flutuante: recalcula a posicao enquanto a caixa esta aberta
+  // (o cartao pode estar crescendo por causa do zoom de 70%).
+  useEffect(() => {
+    if (!flutuante || !aberta) return
+    const LARGURA = 320
+    function posicionar() {
+      const r = botaoRef.current?.getBoundingClientRect()
+      if (!r) return
+      const left = Math.min(Math.max(8, r.right - LARGURA), window.innerWidth - LARGURA - 8)
+      const abaixo = r.bottom + 6
+      const top = abaixo + 360 > window.innerHeight ? Math.max(8, r.top - 6 - 360) : abaixo
+      setPos({ left, top })
+    }
+    posicionar()
+    const id = setInterval(posicionar, 80)
+    return () => clearInterval(id)
+  }, [flutuante, aberta])
+
+  const conteudo = (
+    <>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-teal-200">
+        {item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
+      </p>
+      {linhas.length === 0 ? (
+        <p className="text-xs italic text-slate-400">{t('semDescricao')}</p>
+      ) : (
+        <dl className="space-y-1 text-xs leading-snug">
+          {linhas.map((l) => (
+            <div key={l.rotulo}>
+              <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
+              <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
+            </div>
+          ))}
+        </dl>
+      )}
+    </>
+  )
 
   return (
     <div
@@ -34,10 +81,13 @@ export default function EtiquetaMarcacoes({
       onMouseLeave={() => setAberta(false)}
     >
       <button
+        ref={botaoRef}
         type="button"
         onFocus={() => setAberta(true)}
         onBlur={() => setAberta(false)}
         onClick={(e) => {
+          // dentro de um link (cartao da Pesquisa): nao abrir a imagem
+          e.preventDefault()
           e.stopPropagation()
           setAberta((v) => !v)
         }}
@@ -56,28 +106,27 @@ export default function EtiquetaMarcacoes({
         {totalMarcacoes > 0 && <span>{totalMarcacoes}</span>}
       </button>
 
-      {aberta && (
+      {aberta && !flutuante && (
         <div
           role="tooltip"
           className="absolute right-0 top-full mt-1 max-h-[60vh] w-80 overflow-y-auto rounded-lg border border-teal-300/40 bg-base-surface/95 p-3 text-left shadow-2xl backdrop-blur-md"
         >
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-teal-200">
-            {item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
-          </p>
-          {linhas.length === 0 ? (
-            <p className="text-xs italic text-slate-400">{t('semDescricao')}</p>
-          ) : (
-            <dl className="space-y-1.5 text-xs">
-              {linhas.map((l) => (
-                <div key={l.rotulo}>
-                  <dt className="font-semibold text-slate-400">{l.rotulo}</dt>
-                  <dd className="whitespace-pre-line text-ink">{l.valor}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
+          {conteudo}
         </div>
       )}
+      {aberta &&
+        flutuante &&
+        pos &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{ left: pos.left, top: pos.top }}
+            className="pointer-events-none fixed z-[300] max-h-[360px] w-80 overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 p-3 text-left shadow-2xl backdrop-blur-md"
+          >
+            {conteudo}
+          </div>,
+          document.body
+        )}
     </div>
   )
 }
