@@ -109,7 +109,7 @@ async function emParalelo<T>(itens: T[], tarefa: (item: T) => Promise<void>) {
 
 // Mensagem de confirmacao que some sozinha depois de alguns segundos
 function useMensagemTemporaria(): [string, (m: string) => void] {
-  const [mensagem, setMensagem] = useMensagemTemporaria()
+  const [mensagem, setMensagem] = useState('')
   useEffect(() => {
     if (!mensagem) return
     const id = setTimeout(() => setMensagem(''), 6000)
