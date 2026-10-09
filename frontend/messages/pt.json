@@ -1199,7 +1199,8 @@
     "cabecalho": "Página {pagina} de {total} · {data}",
     "imagemNumero": "Imagem {numero}",
     "imagemIndisponivel": "Imagem indisponível",
-    "rodape": "Rádix Imago - material de ensino e pesquisa (UFSC). Imagens anonimizadas. Não destinado a diagnóstico."
+    "rodape": "Rádix Imago - material de ensino e pesquisa (UFSC). Imagens anonimizadas. Não destinado a diagnóstico.",
+    "dicaPdf": "Na janela que vai abrir, em \"Destino\", escolha \"Salvar como PDF\" e clique em Salvar."
   },
   "DescricaoCuradoria": {
     "tipo": "Tipo",
@@ -1210,5 +1211,23 @@
     "achadosDetalhados": "Achados detalhados",
     "descricao": "Descrição didática",
     "marcacoes": "Marcações do curador"
+  },
+  "Salvar": {
+    "salvarComo": "Salvar como",
+    "tipoZip": "Arquivo ZIP",
+    "imagem": "Imagem",
+    "zipCom": "Imagens (.zip) com a descrição da curadoria",
+    "zipSem": "Imagens (.zip) sem descrição",
+    "pdfCom": "PDF com a descrição da curadoria",
+    "pdfSem": "PDF sem descrição",
+    "preparandoZip": "Preparando o arquivo…",
+    "salvo": "Arquivo salvo.",
+    "salvoComFalhas": "Arquivo salvo, mas {total, plural, one {1 imagem não pôde ser incluída} other {# imagens não puderam ser incluídas}}.",
+    "leiaMe": "Rádix Imago - Universidade Federal de Santa Catarina (UFSC)\r\n\r\nMaterial exclusivo para ensino e pesquisa. As imagens são anonimizadas (LGPD) e não se destinam a diagnóstico.\r\nNão compartilhe fora do contexto acadêmico.\r\n",
+    "salvarMinhas": "Salvar em Minhas imagens",
+    "ajudaMinhas": "Guarda as imagens na sua lista pessoal (menu Minhas imagens). As que já estavam lá não são duplicadas.",
+    "salvandoMinhas": "Salvando em Minhas imagens…",
+    "minhasSalvas": "{total, plural, one {1 imagem está} other {# imagens estão}} em Minhas imagens.",
+    "minhasFalhas": "{total, plural, one {1 imagem não pôde ser salva} other {# imagens não puderam ser salvas}}."
   }
 }
