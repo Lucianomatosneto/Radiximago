@@ -535,6 +535,20 @@
     "impressao": {
       "todas": "Todas desta sequência",
       "daTela": "As que estão na tela"
+    },
+    "notas": {
+      "titulo": "Minhas anotações",
+      "nova": "Fazer uma anotação",
+      "placeholder": "Escreva sua anotação sobre esta imagem...",
+      "salvar": "Salvar",
+      "cancelar": "Cancelar",
+      "editar": "Clique para editar",
+      "excluir": "Excluir esta anotação",
+      "vazio": "Nenhuma anotação sua nesta imagem.",
+      "privada": "Só você vê suas anotações",
+      "erroVazio": "Escreva algo antes de salvar.",
+      "erroSalvar": "Não foi possível salvar a anotação.",
+      "erroExcluir": "Não foi possível excluir a anotação."
     }
   },
   "Curadoria": {

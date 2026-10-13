@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricaoCuradoria'
+import NotasVisualizador from './NotasVisualizador'
 
 // Selo no canto de cada imagem do visualizador. Aparece SEMPRE (mesmo sem
 // marcacao): um "i" de informacao e, se houver, o numero de marcacoes do
@@ -27,6 +28,7 @@ export default function EtiquetaMarcacoes({
   mostrarContagem = true,
   onFocoMarcacao,
   onIsolarMarcacao,
+  curationId,
 }: {
   item: ItemDescritivel
   className?: string
@@ -39,6 +41,8 @@ export default function EtiquetaMarcacoes({
   onFocoMarcacao?: (indice: number | null) => void
   /** clique na linha "Marcação N" (isola a marcacao na imagem) */
   onIsolarMarcacao?: (indice: number) => void
+  /** com o id da imagem, o quadro ganha as anotacoes pessoais de quem ve */
+  curationId?: number
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
@@ -115,6 +119,11 @@ export default function EtiquetaMarcacoes({
             )
           )}
         </dl>
+      )}
+      {/* anotacoes pessoais (so no quadro que recebe clique; o modo
+          flutuante e so leitura) - escrever deixa o quadro fixo aberto */}
+      {curationId !== undefined && !flutuante && (
+        <NotasVisualizador curationId={curationId} onAbrir={() => setFixada(true)} />
       )}
     </>
   )

@@ -1109,6 +1109,7 @@ function SelosImagem({
         mostrarContagem={false}
         onFocoMarcacao={onFocoMarcacao}
         onIsolarMarcacao={onIsolarMarcacao}
+        curationId={item.curation_id}
       />
     </div>
   )

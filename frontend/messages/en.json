@@ -535,6 +535,20 @@
     "impressao": {
       "todas": "All in this sequence",
       "daTela": "Those on screen"
+    },
+    "notas": {
+      "titulo": "My notes",
+      "nova": "Write a note",
+      "placeholder": "Write your note about this image...",
+      "salvar": "Save",
+      "cancelar": "Cancel",
+      "editar": "Click to edit",
+      "excluir": "Delete this note",
+      "vazio": "You have no notes on this image.",
+      "privada": "Only you can see your notes",
+      "erroVazio": "Write something before saving.",
+      "erroSalvar": "Could not save the note.",
+      "erroExcluir": "Could not delete the note."
     }
   },
   "Curadoria": {
