@@ -530,7 +530,10 @@
       "mostrarDaImagem": "Show the curator markings on this image",
       "ocultarDaImagem": "Hide the curator markings on this image",
       "holofoteLigar": "Spotlight: darken the image outside the highlighted marking",
-      "holofoteDesligar": "Turn off the spotlight"
+      "holofoteDesligar": "Turn off the spotlight",
+      "arrastarQuadro": "Drag to move this panel (double-click puts it back)",
+      "abrirDescricao": "Click to open the image information",
+      "fecharDescricao": "Click to close the image information"
     },
     "impressao": {
       "todas": "All in this sequence",
