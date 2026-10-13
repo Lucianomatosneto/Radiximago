@@ -131,7 +131,8 @@
       "integracoes": "Integrations",
       "configuracoes": "Settings",
       "compartilhadasComigo": "Shared with me",
-      "vocabulario": "Vocabulary"
+      "vocabulario": "Vocabulary",
+      "macros": "Macros"
     },
     "novasCompartilhadas": "{quantidade} new"
   },
@@ -820,6 +821,46 @@
       "marcacaoN": "Marking {numero}",
       "semAchado": "no finding",
       "placeholderAchados": "Describe findings not in the list of changes"
+    },
+    "macroErroCriar": "Could not create the macro.",
+    "macros": {
+      "botao": "Macros",
+      "dica": "Team templates (or say “macro <name>”)",
+      "procurar": "Search macro…",
+      "nenhuma": "No macro found.",
+      "semTexto": "(no text)",
+      "dicaVoz": "By voice: “macro” + macro name.",
+      "salvarFichaComoMacro": "Save this record as a macro",
+      "nomeNova": "Macro name",
+      "salvar": "Save",
+      "criada": "Macro “{nome}” created.",
+      "gerenciar": "Manage macros"
+    },
+    "conferencia": {
+      "titulo": "Automatic record check",
+      "ok": "Checked",
+      "pendencias": "{quantidade} to review",
+      "bloqueio": "REQUIRED",
+      "aviso": "CHECK",
+      "tituloModal": "Check before approving",
+      "textoBloqueio": "There are required items pending. Fix them to approve.",
+      "textoAviso": "We found points that may be missing or inconsistent. Review or approve anyway.",
+      "voltar": "Go back and review",
+      "aprovarMesmoAssim": "Approve anyway",
+      "itens": {
+        "anonimizacao": "Anonymization not validated.",
+        "tipo": "Radiograph type not set.",
+        "sexo": "Sex not set.",
+        "qualidade": "Technical quality not set.",
+        "semDentes": "There are findings/markings but no tooth set.",
+        "denteNoTexto": "Tooth/teeth {dentes} mentioned in the text but not set in Teeth.",
+        "marcacaoSemAchado": "Marking(s) {numeros} without a finding.",
+        "outroSemTexto": "Marking(s) {numeros} with “Other” but no description.",
+        "contradicao": "The description says “normal/no changes”, but changes are marked.",
+        "semAchados": "No finding recorded. If the image is normal, say so in the description.",
+        "descricaoVazia": "Teaching description is empty.",
+        "duvidasVoz": "{quantidade} voice doubt(s) not yet confirmed."
+      }
     }
   },
   "SegundaOpiniaoPage": {
@@ -1382,7 +1423,7 @@
     "instrucao": "Click the microphone, speak and click again.",
     "privacidade": "Audio is transcribed inside Rádix and is not stored.",
     "ouvido": "Heard",
-    "preenchido": "Filled in — to review",
+    "preenchido": "Filled by voice",
     "conferirTudo": "All reviewed ✓",
     "aproximada": "similar word, please check",
     "marcarConferido": "Mark as reviewed",
@@ -1409,8 +1450,47 @@
     "ajuda4": "Other: “achado outro: reabsorção cervical” (goes to Detailed findings).",
     "ajuda5": "Running text: “descrição: …”, “achados detalhados: …”, “observações internas: …” — ends with “fim”.",
     "ajuda6": "Commands: “desfazer”, “salvar”, “corrigir dente 36 para 46”, “apagar descrição”.",
-    "ajuda7": "Whatever is not understood stays in “Not recognized” for you to choose where it goes.",
+    "ajuda7": "Similar words (likely transcription errors) are NOT filled automatically: they appear under “Doubts” for one-click confirmation — and you can teach the system.",
     "destino": "Speech goes to:",
-    "ajuda8": "Highlighted section (right column): speech without a guide word goes there — in Description, Detailed findings or Notes it becomes text; in Markings, “two caries” is enough. “Next section” / “previous section” move the highlight."
+    "ajuda8": "Highlighted section (right column): speech without a guide word goes there — in Description, Detailed findings or Notes it becomes text; in Markings, “two caries” is enough. “Next section” / “previous section” move the highlight.",
+    "desfeito": "Last change undone.",
+    "aprendido": "Learned: “{frase}” will be recognized next time.",
+    "duvidas": "Doubts ({quantidade}) — confirm before they enter the record",
+    "lembrar": "Remember this correction (teach the system)",
+    "ajuda9": "Macros: “macro normal periapical” applies the saved template (⚡ Macros menu)."
+  },
+  "Macros": {
+    "tituloPrefixo": "Curation",
+    "tituloDestaque": "macros",
+    "subtitulo": "Team templates that fill description, findings, notes, changes, type and quality at once. Use the ⚡ Macros menu in Curation or say “macro <name>”. Applying a macro only fills the draft — approval stays manual.",
+    "erroCarregar": "Could not load macros.",
+    "erroSalvar": "Could not save.",
+    "salva": "Macro saved.",
+    "macros": "Macros",
+    "nova": "New macro",
+    "nome": "Name (what you say after “macro”)",
+    "exemploNome": "e.g. normal periapical",
+    "dicaNome": "Use short names that are easy to say.",
+    "tipo": "Radiograph type",
+    "qualidade": "Technical quality",
+    "naoAlterar": "— do not change —",
+    "campos": {
+      "descricao_didatica": "Teaching description",
+      "achados_detalhe": "Detailed findings",
+      "observacoes_internas": "Internal notes"
+    },
+    "alteracoes": "Changes set by the macro",
+    "cancelar": "Cancel",
+    "salvar": "Save",
+    "nenhuma": "No macros yet.",
+    "inativa": "inactive",
+    "nAlteracoes": "{quantidade} change(s)",
+    "editar": "Edit",
+    "desativar": "Deactivate",
+    "reativar": "Reactivate",
+    "frases": "Phrases learned by voice",
+    "frasesSubtitulo": "When a curator confirms a doubt with “Remember”, the heard phrase starts to count as the chosen change.",
+    "nenhumaFrase": "No learned phrases yet.",
+    "esquecer": "Forget"
   }
 }

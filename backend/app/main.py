@@ -22,6 +22,9 @@ from app.modules.curation import router as curation_router
 from app.modules.saved_images_router import router as saved_images_router
 from app.modules.anotacoes_router import router as anotacoes_router
 from app.modules.compartilhamentos_router import router as compartilhamentos_router
+from app.modules.vocabulario_router import router as vocabulario_router
+from app.modules.voz_router import router as voz_router
+from app.modules.macros_router import router_frases, router_macros
 
 app = FastAPI(
     title="Radix Imago API",
@@ -59,6 +62,10 @@ app.include_router(curation_router)
 app.include_router(saved_images_router)
 app.include_router(anotacoes_router)
 app.include_router(compartilhamentos_router)
+app.include_router(vocabulario_router)
+app.include_router(voz_router)
+app.include_router(router_macros)
+app.include_router(router_frases)
 
 @app.get("/health")
 async def health():

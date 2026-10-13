@@ -53,7 +53,21 @@ A imagem fica à esquerda (mesmo tamanho) e **todas as seções da ficha** ficam
 - "Abrir marcação" (seção Marcações ou tecla **M**) abre a imagem de marcação grande à esquerda; o visualizador vira miniatura.
 - O OHIF recebe `radixRecolherEstudos=1` e recolhe a coluna "Studies" (os dados agora estão na coluna do Rádix). Requer `docker compose restart radix-ohif`.
 
-O que não for entendido vai para **Não reconhecido**, com sugestão ("Você quis dizer…?") e botões de destino. Nada é aprovado automaticamente.
+O que não for entendido vai para **Dúvidas**, com sugestão ("Você quis dizer…?") e botões de destino. Nada é aprovado automaticamente.
+
+## 3.2 Recursos de laudo profissional (segurança, agilidade e qualidade)
+
+Inspirados nos sistemas de laudo por voz mais usados em radiologia (PowerScribe — Nuance/Microsoft; Fluency — 3M/Solventum) e nos modelos de laudo estruturado da RSNA:
+
+| Recurso | Como funciona no Rádix | Ganho |
+|---|---|---|
+| **Texto direto no campo** | O que foi reconhecido com certeza entra no campo e a seção **brilha em âmbar** por ~2 s. Não há lista "a conferir". | Agilidade |
+| **Nada por adivinhação** | Palavra **parecida** (provável erro de transcrição) não entra sozinha: aparece em **Dúvidas** com "Você quis dizer…?" (1 clique). Palavra solta curta não gera dúvida por semelhança. | Segurança |
+| **O sistema aprende** | Ao aceitar uma dúvida com **"Lembrar"**, a frase ouvida vira sinônimo (`POST /voz/frases`): alteração → tabela `frases_aprendidas_voz`; termo → `sinonimos_termo`. Gerência em **/macros**. | Qualidade crescente |
+| **Macros (frases prontas)** | Menu **⚡ Macros** na coluna ou fala "macro <nome>". Preenchem descrição, achados, observações, alterações, tipo e qualidade. "Salvar esta ficha como macro". Nome parecido vira dúvida (nunca aplica sozinho). | Agilidade |
+| **Conferência antes de aprovar** | Regras fixas (`lib/conferenciaFicha.ts`): **obrigatório** (anonimização, tipo) bloqueia; **atenção** (sexo, qualidade, dente citado no texto e não marcado, marcação sem achado, "Outro" sem texto, descrição "normal" com alterações marcadas, ficha sem achados, descrição vazia, dúvidas da voz pendentes) permite "Aprovar mesmo assim". Selo "✓ Conferida / ! N a revisar" na coluna e contagem em cada seção. | Qualidade |
+
+Backend: `app/modules/macros.py`, `macros_router.py`, migração `a8c3e5f1b7d2`. Auditoria: `macro_criada`, `macro_editada`, `macro_desativada`, `voz_frase_aprendida`, `voz_frase_esquecida`.
 
 ## 4. Segurança e LGPD
 
@@ -79,6 +93,8 @@ Para trocar o modelo (ex.: `base`, mais leve), altere `args: MODELO` no `docker-
 - Backend: `docker compose exec radix-api pytest` (inclui `test_vocabulario.py`, `test_voz.py`).
 - Serviço de voz (sem baixar modelo): `cd whisper && pytest test_app.py`.
 - Interpretador: `cd frontend && npx tsx testes/vozCuradoria.teste.ts`.
+- Conferência: `cd frontend && npx tsx testes/conferencia.teste.ts`.
+- Macros e frases aprendidas: `docker compose exec radix-api pytest tests/test_macros.py`.
 
 ## 7. Dados para a dissertação
 

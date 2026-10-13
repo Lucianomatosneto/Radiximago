@@ -3,32 +3,44 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { interpretar, type Alteracao, type NaoReconhecido, type TermoVoz } from '../../lib/vozCuradoria'
+import {
+  interpretar,
+  type Alteracao,
+  type CampoVoz,
+  type MacroVoz,
+  type NaoReconhecido,
+  type Sugestao,
+  type TermoVoz,
+} from '../../lib/vozCuradoria'
 import { SECAO_DO_CAMPO, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
 
-// CURADORIA POR VOZ (painel flutuante da tela de Curadoria).
+// CURADORIA POR VOZ (topo da coluna da ficha; flutua no canto so no modo
+// "ampliar imagem", quando a coluna fica escondida).
 //
-// Fluxo: o curador clica no microfone (ou Alt+V), fala, clica de novo ->
-// o audio vai para o backend (/voz/transcrever), que repassa ao Whisper
-// LOCAL (o audio nao sai da maquina do Radix e nao e guardado) -> volta o
-// texto -> as regras de lib/vozCuradoria.ts preenchem os campos -> a ficha
-// e salva como RASCUNHO (nunca aprovada: aprovar continua sendo um clique
-// do curador). Cada campo preenchido aparece aqui "a conferir"; o que nao
-// foi entendido vai para "Não reconhecido", com botoes de destino.
-// A auditoria registra "preenchimento_por_voz".
+// Fluxo: microfone (clique ou Alt+V) -> audio vai ao backend
+// (/voz/transcrever) -> Whisper LOCAL (o audio nao sai da maquina e nao e
+// guardado) -> texto -> regras de lib/vozCuradoria.ts -> ficha salva como
+// RASCUNHO (aprovar continua manual). Auditoria: "preenchimento_por_voz".
 //
-// Com `embutido`, o painel deixa de flutuar e fica no topo da coluna da
-// ficha (layout atual da Curadoria). A SECAO ATIVA (em destaque na coluna)
-// e o destino da fala sem palavra-guia - o painel mostra "A fala vai para:
-// ..." - e, depois de preencher, a coluna rola ate a secao que recebeu o
-// dado (onSecao).
+// Comportamento inspirado nos sistemas de laudo por voz profissionais
+// (PowerScribe, Fluency):
+// - o que foi reconhecido COM CERTEZA vai direto ao campo, e a secao da
+//   coluna pisca em destaque (onDestacar) - nao ha lista "a conferir";
+// - o que foi reconhecido por SEMELHANCA (provavel erro de transcricao)
+//   NAO entra sozinho: aparece em "Dúvidas" com "Você quis dizer…?", e o
+//   curador confirma com um clique; marcando "Lembrar", a frase ouvida e
+//   ensinada ao sistema (POST /voz/frases) e da proxima vez e reconhecida;
+// - "macro <nome>" aplica uma frase pronta da equipe;
+// - a secao em destaque e o destino da fala sem palavra-guia.
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const DURACAO_MAXIMA_MS = 60_000
 
-interface ItemConferir extends Alteracao {
-  id: number
-  conferido: boolean
+type Duvida = NaoReconhecido & { id: number; lembrar: boolean }
+type Preenchido = Alteracao & { id: number }
+
+function ensinavel(s: Sugestao): boolean {
+  return s.destino?.tipo === 'alteracao' || s.destino?.tipo === 'termo'
 }
 
 export default function PainelVoz({
@@ -39,6 +51,11 @@ export default function PainelVoz({
   embutido = false,
   secaoAtiva,
   onSecao,
+  onDestacar,
+  macros = [],
+  frasesAprendidas = [],
+  onAprendeu,
+  onDuvidas,
 }: {
   fichaId: number
   form: FormularioFicha
@@ -51,6 +68,14 @@ export default function PainelVoz({
   secaoAtiva?: SecaoFicha
   /** pede para a coluna destacar/rolar ate uma secao */
   onSecao?: (secao: SecaoFicha) => void
+  /** faz piscar as secoes que acabaram de receber dados */
+  onDestacar?: (campos: CampoVoz[]) => void
+  macros?: MacroVoz[]
+  frasesAprendidas?: { frase: string; alteracao: string }[]
+  /** chamado depois de ensinar uma frase (recarregar vocabulario/frases) */
+  onAprendeu?: () => void
+  /** informa quantas duvidas estao pendentes (conferencia antes de aprovar) */
+  onDuvidas?: (quantidade: number) => void
 }) {
   const t = useTranslations('Voz')
   const tSecoes = useTranslations('Curadoria.secoes')
@@ -60,20 +85,31 @@ export default function PainelVoz({
   const [segundos, setSegundos] = useState(0)
   const [transcrevendo, setTranscrevendo] = useState(false)
   const [erro, setErro] = useState('')
+  const [aviso, setAviso] = useState('')
   const [ultimoTexto, setUltimoTexto] = useState('')
-  const [conferir, setConferir] = useState<ItemConferir[]>([])
-  const [naoReconhecidos, setNaoReconhecidos] = useState<(NaoReconhecido & { id: number })[]>([])
-  const [historico, setHistorico] = useState<FormularioFicha[]>([])
+  const [preenchidos, setPreenchidos] = useState<Preenchido[]>([])
+  const [duvidas, setDuvidas] = useState<Duvida[]>([])
+  const [podeDesfazer, setPodeDesfazer] = useState(false)
   const [ajuda, setAjuda] = useState(false)
   const [vocabulario, setVocabulario] = useState<TermoVoz[]>([])
 
   const formRef = useRef(form)
   formRef.current = form
+  // valores atuais para o processamento que termina depois da gravacao
+  const opcoesRef = useRef({ secaoAtiva, macros, frasesAprendidas, vocabulario })
+  opcoesRef.current = { secaoAtiva, macros, frasesAprendidas, vocabulario }
   const gravadorRef = useRef<MediaRecorder | null>(null)
   const pedacosRef = useRef<Blob[]>([])
   const relogioRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const limiteRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const contadorRef = useRef(0)
+
+  const carregarVocabulario = useCallback(() => {
+    fetch(`${API}/vocabulario`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.termos && setVocabulario(d.termos))
+      .catch(() => {})
+  }, [])
 
   // servico de voz no ar? + vocabulario controlado
   useEffect(() => {
@@ -81,18 +117,19 @@ export default function PainelVoz({
       .then((r) => (r.ok ? r.json() : { disponivel: false }))
       .then((d) => setDisponivel(Boolean(d.disponivel)))
       .catch(() => setDisponivel(false))
-    fetch(`${API}/vocabulario`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d?.termos && setVocabulario(d.termos))
-      .catch(() => {})
-  }, [])
+    carregarVocabulario()
+  }, [carregarVocabulario])
 
-  // outra ficha: recomeca a conferencia
   useEffect(() => {
-    setConferir([])
-    setNaoReconhecidos([])
+    onDuvidas?.(duvidas.length)
+  }, [duvidas.length, onDuvidas])
+
+  // outra ficha: recomeca
+  useEffect(() => {
+    setPreenchidos([])
+    setDuvidas([])
     historicoRef.current = []
-    setHistorico([])
+    setPodeDesfazer(false)
     setUltimoTexto('')
     setErro('')
   }, [fichaId])
@@ -101,12 +138,13 @@ export default function PainelVoz({
   // efeitos colaterais quando o React reexecuta atualizacoes de estado
   const historicoRef = useRef<FormularioFicha[]>([])
   const aplicar = useCallback(
-    (novo: FormularioFicha) => {
+    (novo: FormularioFicha, campos: CampoVoz[]) => {
       historicoRef.current = [...historicoRef.current.slice(-19), formRef.current]
-      setHistorico(historicoRef.current)
+      setPodeDesfazer(true)
       onAplicar(novo)
+      if (campos.length) onDestacar?.(campos)
     },
-    [onAplicar]
+    [onAplicar, onDestacar]
   )
 
   const desfazer = useCallback(() => {
@@ -114,32 +152,38 @@ export default function PainelVoz({
     if (!h.length) return
     const anterior = h[h.length - 1]
     historicoRef.current = h.slice(0, -1)
-    setHistorico(historicoRef.current)
+    setPodeDesfazer(historicoRef.current.length > 0)
     onAplicar(anterior)
-    setConferir((c) => c.slice(0, -1))
-  }, [onAplicar])
+    setAviso(t('desfeito'))
+  }, [onAplicar, t])
 
   function processarTexto(texto: string) {
     setUltimoTexto(texto)
-    const r = interpretar(texto, formRef.current, vocabulario, { secaoAtiva })
-    // destaca a secao que recebeu o ultimo dado (a coluna rola ate ela)
+    setAviso('')
+    const o = opcoesRef.current
+    const r = interpretar(texto, formRef.current, o.vocabulario, {
+      secaoAtiva: o.secaoAtiva,
+      macros: o.macros,
+      frasesAprendidas: o.frasesAprendidas,
+    })
+    // a coluna rola ate a secao que recebeu o ultimo dado
     const ultima = r.alteracoes.length ? SECAO_DO_CAMPO[r.alteracoes[r.alteracoes.length - 1].campo] : undefined
     if (ultima && onSecao) onSecao(ultima)
     if (r.alteracoes.length) {
-      aplicar({ ...formRef.current, ...r.ficha })
-      setConferir((c) => [
-        ...c,
-        ...r.alteracoes.map((a) => ({ ...a, id: ++contadorRef.current, conferido: false })),
-      ])
+      aplicar({ ...formRef.current, ...r.ficha }, r.alteracoes.map((a) => a.campo))
+      setPreenchidos((p) => [...r.alteracoes.map((a) => ({ ...a, id: ++contadorRef.current })).reverse(), ...p].slice(0, 30))
     }
     if (r.naoReconhecidos.length) {
-      setNaoReconhecidos((n) => [...n, ...r.naoReconhecidos.map((x) => ({ ...x, id: ++contadorRef.current }))])
+      setDuvidas((d) => [
+        ...d,
+        ...r.naoReconhecidos.map((x) => ({ ...x, id: ++contadorRef.current, lembrar: !!x.parecido && x.sugestoes.some(ensinavel) })),
+      ])
     }
     for (const c of r.comandos) {
       if (c === 'salvar') onSalvar()
       if (c === 'desfazer') desfazer()
-      if ((c === 'proxima_secao' || c === 'secao_anterior') && onSecao && secaoAtiva) {
-        onSecao(secaoVizinha(secaoAtiva, c === 'proxima_secao' ? 1 : -1))
+      if ((c === 'proxima_secao' || c === 'secao_anterior') && onSecao && o.secaoAtiva) {
+        onSecao(secaoVizinha(o.secaoAtiva, c === 'proxima_secao' ? 1 : -1))
       }
     }
     if (!r.alteracoes.length && !r.naoReconhecidos.length && !r.comandos.length) setErro(t('nadaEntendido'))
@@ -199,7 +243,6 @@ export default function PainelVoz({
       gravador.start()
       gravadorRef.current = gravador
       setGravando(true)
-      // embutido na coluna: continua compacto (a coluna mostra o resultado)
       if (!embutido) setAberto(true)
       setSegundos(0)
       relogioRef.current = setInterval(() => setSegundos((s) => s + 1), 1000)
@@ -240,81 +283,212 @@ export default function PainelVoz({
     }
   }, [])
 
-  function enviarPara(item: NaoReconhecido & { id: number }, campo: 'descricao_didatica' | 'achados_detalhe' | 'observacoes_internas') {
+  function registrar(campo: CampoVoz, descricao: string) {
+    setPreenchidos((p) => [{ id: ++contadorRef.current, campo, descricao }, ...p].slice(0, 30))
+  }
+
+  function enviarPara(item: Duvida, campo: 'descricao_didatica' | 'achados_detalhe' | 'observacoes_internas') {
     const atual = formRef.current[campo].trim()
     const valor = item.texto.charAt(0).toUpperCase() + item.texto.slice(1)
-    aplicar({ ...formRef.current, [campo]: atual ? `${atual}${/[.!?;,]$/.test(atual) ? '' : ';'} ${valor}` : valor })
+    aplicar({ ...formRef.current, [campo]: atual ? `${atual}${/[.!?;,]$/.test(atual) ? '' : ';'} ${valor}` : valor }, [campo])
     const nomes = { descricao_didatica: t('campoDescricao'), achados_detalhe: t('campoAchados'), observacoes_internas: t('campoObservacoes') }
-    setConferir((c) => [...c, { id: ++contadorRef.current, campo, descricao: `${nomes[campo]}: ${valor}`, conferido: false }])
-    setNaoReconhecidos((n) => n.filter((x) => x.id !== item.id))
+    registrar(campo, `${nomes[campo]}: ${valor}`)
+    setDuvidas((n) => n.filter((x) => x.id !== item.id))
     onSecao?.(SECAO_DO_CAMPO[campo])
   }
 
-  function aplicarSugestao(item: NaoReconhecido & { id: number }, indice: number) {
-    const sug = item.sugestoes[indice]
-    aplicar({ ...formRef.current, ...sug.aplicar(formRef.current) })
-    setConferir((c) => [...c, { id: ++contadorRef.current, campo: 'alteracoes_observadas', descricao: sug.rotulo, conferido: false }])
-    setNaoReconhecidos((n) => n.filter((x) => x.id !== item.id))
+  async function aceitarSugestao(item: Duvida, sug: Sugestao) {
+    const campo: CampoVoz = sug.campo ?? 'alteracoes_observadas'
+    aplicar({ ...formRef.current, ...sug.aplicar(formRef.current) }, [campo])
+    registrar(campo, sug.rotulo)
+    setDuvidas((n) => n.filter((x) => x.id !== item.id))
+    if (SECAO_DO_CAMPO[campo]) onSecao?.(SECAO_DO_CAMPO[campo])
+    // "Lembrar": ensina a frase ouvida para as proximas vezes
+    if (item.lembrar && ensinavel(sug) && sug.destino) {
+      try {
+        const r = await fetch(`${API}/voz/frases`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ frase: item.texto, tipo: sug.destino.tipo, valor: sug.destino.valor }),
+        })
+        if (r.ok) {
+          setAviso(t('aprendido', { frase: item.texto }))
+          if (sug.destino.tipo === 'termo') carregarVocabulario()
+          onAprendeu?.()
+        }
+      } catch {
+        // ensinar e opcional: a ficha ja foi preenchida
+      }
+    }
   }
 
-  const pendentes = conferir.filter((c) => !c.conferido)
   const minutos = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`
 
-  // ------------------------------------------------------------- recolhido
-  // destino da fala (secao ativa), mostrado no painel embutido
-  const destino = secaoAtiva ? (
-    <p className="text-[11px] text-slate-400">
-      {t('destino')} <span className="font-semibold text-teal-200">{tSecoes(secaoAtiva)}</span>
-    </p>
-  ) : null
+  // ---------------------------------------------------------------- partes
+  const botaoMicrofone = (grande: boolean) => (
+    <button
+      type="button"
+      onClick={alternar}
+      disabled={transcrevendo || disponivel === false}
+      aria-pressed={gravando}
+      title={gravando ? t('parar') : t('falar')}
+      className={`flex shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-40 ${grande ? 'h-12 w-12' : 'h-9 w-9'} ${
+        gravando ? 'animate-pulse border-red-400 bg-red-500/80 text-white' : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+      }`}
+    >
+      {gravando ? <span className="h-3 w-3 rounded-sm bg-white" /> : <IconeMicrofone className={grande ? 'h-5 w-5' : 'h-4 w-4'} />}
+    </button>
+  )
 
-  if (!aberto && embutido) {
-    return (
-      <div className="flex items-center gap-2 rounded-xl border border-teal-300/40 bg-base-surface px-2 py-1.5">
-        <button
-          type="button"
-          onClick={alternar}
-          disabled={transcrevendo || disponivel === false}
-          aria-pressed={gravando}
-          title={gravando ? t('parar') : t('falar')}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-40 ${
-            gravando ? 'animate-pulse border-red-400 bg-red-500/80 text-white' : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-          }`}
-        >
-          {gravando ? <span className="h-3 w-3 rounded-sm bg-white" /> : <IconeMicrofone className="h-4 w-4" />}
-        </button>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-xs font-semibold text-ink">
-            {gravando ? `${t('gravando')} ${minutos}` : transcrevendo ? t('transcrevendo') : t('titulo')}
+  const barra = (
+    <div className="flex items-center gap-2 px-2 py-1.5">
+      {botaoMicrofone(false)}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-semibold text-ink">
+          {gravando ? `${t('gravando')} ${minutos}` : transcrevendo ? t('transcrevendo') : t('titulo')}
+        </p>
+        {secaoAtiva && (
+          <p className="text-[11px] text-slate-400">
+            {t('destino')} <span className="font-semibold text-teal-200">{tSecoes(secaoAtiva)}</span>
           </p>
-          {destino}
-          {erro ? (
-            <p className="truncate text-[11px] text-red-400" title={erro}>{erro}</p>
-          ) : ultimoTexto ? (
-            <p className="truncate text-[11px] italic text-slate-500" title={ultimoTexto}>“{ultimoTexto}”</p>
-          ) : null}
-        </div>
-        {naoReconhecidos.length > 0 && (
-          <button type="button" onClick={() => setAberto(true)} className="rounded-full bg-orange-400/90 px-2 py-0.5 text-[11px] font-bold text-black" title={t('naoReconhecido')}>
-            ? {naoReconhecidos.length}
-          </button>
         )}
-        {pendentes.length > 0 && (
-          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">{t('aConferir', { quantidade: pendentes.length })}</span>
-        )}
-        <button type="button" onClick={() => setAberto(true)} className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-slate-300 hover:border-teal-300" aria-label={t('abrirPainel')} title={t('abrirPainel')}>
-          ▸
-        </button>
+        {erro ? (
+          <p className="truncate text-[11px] text-red-400" title={erro}>{erro}</p>
+        ) : aviso ? (
+          <p className="truncate text-[11px] text-emerald-300" title={aviso}>{aviso}</p>
+        ) : ultimoTexto ? (
+          <p className="truncate text-[11px] italic text-slate-500" title={ultimoTexto}>“{ultimoTexto}”</p>
+        ) : null}
       </div>
+      {podeDesfazer && (
+        <button type="button" onClick={desfazer} title={t('desfazer')} aria-label={t('desfazer')} className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-slate-300 hover:border-teal-300">
+          ↶
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => setAberto((v) => !v)}
+        aria-expanded={aberto}
+        title={aberto ? t('recolher') : t('abrirPainel')}
+        className="rounded-full border border-white/15 px-2 py-0.5 text-xs text-slate-300 hover:border-teal-300"
+      >
+        {aberto ? '▾' : '▸'}
+      </button>
+    </div>
+  )
+
+  const blocoDuvidas = duvidas.length > 0 && (
+    <div className="border-t border-orange-300/30 bg-orange-400/5 px-2 py-2">
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-orange-200">
+        {t('duvidas', { quantidade: duvidas.length })}
+      </p>
+      <ul className="max-h-[30vh] space-y-2 overflow-y-auto pr-1">
+        {duvidas.map((n) => (
+          <li key={n.id} className="rounded-md border border-orange-300/30 bg-black/10 p-2">
+            <p className="text-xs text-slate-300">
+              {t('ouvido')}: <span className="italic text-ink">“{n.texto}”</span>
+            </p>
+            {n.sugestoes.length > 0 && (
+              <div className="mt-1 flex flex-wrap gap-1">
+                {n.sugestoes.map((s, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => aceitarSugestao(n, s)}
+                    className={`rounded border px-1.5 py-0.5 text-[11px] ${
+                      i === 0 ? 'border-teal-300 bg-teal-400/15 font-semibold text-teal-100' : 'border-teal-300/40 text-teal-100'
+                    } hover:bg-teal-300/20`}
+                  >
+                    {i === 0 && n.parecido ? `${t('voceQuisDizer')} ${s.rotulo}?` : s.rotulo}
+                  </button>
+                ))}
+              </div>
+            )}
+            {n.sugestoes.some(ensinavel) && (
+              <label className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-400">
+                <input
+                  type="checkbox"
+                  checked={n.lembrar}
+                  onChange={(e) => setDuvidas((l) => l.map((x) => (x.id === n.id ? { ...x, lembrar: e.target.checked } : x)))}
+                  className="h-3 w-3"
+                />
+                {t('lembrar')}
+              </label>
+            )}
+            <div className="mt-1 flex flex-wrap gap-1">
+              <button type="button" onClick={() => enviarPara(n, 'descricao_didatica')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
+                → {t('campoDescricao')}
+              </button>
+              <button type="button" onClick={() => enviarPara(n, 'achados_detalhe')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
+                → {t('campoAchados')}
+              </button>
+              <button type="button" onClick={() => enviarPara(n, 'observacoes_internas')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
+                → {t('campoObservacoes')}
+              </button>
+              <button type="button" onClick={() => setDuvidas((l) => l.filter((x) => x.id !== n.id))} className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:text-red-300">
+                {t('descartar')}
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+
+  const blocoAberto = aberto && (
+    <div className="max-h-[35vh] space-y-3 overflow-y-auto border-t border-white/10 p-3">
+      {disponivel === false && <p className="rounded-md bg-red-500/10 p-2 text-xs text-red-300">{t('indisponivel')}</p>}
+      <p className="text-[10px] text-slate-500">{t('privacidade')} {t('rodape')}</p>
+      <div>
+        <button type="button" onClick={() => setAjuda((v) => !v)} className="text-[11px] font-semibold text-teal-200 hover:underline" aria-expanded={ajuda}>
+          {ajuda ? '▾' : '▸'} {t('ajudaTitulo')}
+        </button>
+        {ajuda && (
+          <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] leading-relaxed text-slate-300">
+            {(['ajuda1', 'ajuda2', 'ajuda3', 'ajuda4', 'ajuda5', 'ajuda6', 'ajuda7', 'ajuda8', 'ajuda9'] as const).map((k) => (
+              <li key={k}>{t(k)}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {preenchidos.length > 0 && (
+        <div>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('preenchido')}</p>
+          <ul className="space-y-0.5">
+            {preenchidos.map((c) => (
+              <li key={c.id} className="flex items-start gap-1.5 text-xs text-slate-300">
+                <span className="text-emerald-400" aria-hidden="true">✓</span>
+                <span className="min-w-0 break-words">{c.descricao}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+
+  if (embutido) {
+    return (
+      <section
+        className={`overflow-hidden rounded-xl border bg-base-surface ${
+          duvidas.length ? 'border-orange-300/50' : 'border-teal-300/40'
+        } ${disponivel === false ? 'opacity-90' : ''}`}
+        aria-label={t('titulo')}
+        onKeyDown={(e) => e.stopPropagation()}
+      >
+        {barra}
+        {disponivel === false && !aberto && <p className="px-2 pb-1.5 text-[11px] text-red-300">{t('indisponivel')}</p>}
+        {blocoDuvidas}
+        {blocoAberto}
+      </section>
     )
   }
 
-  if (!aberto) {
+  // ---------------------------------------------- flutuante (ampliar imagem)
+  if (!aberto && !duvidas.length) {
     return (
       <div className="fixed bottom-4 right-4 z-[60] flex items-center gap-2">
-        {pendentes.length > 0 && (
-          <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs font-bold text-black">{t('aConferir', { quantidade: pendentes.length })}</span>
-        )}
         <button
           type="button"
           onClick={() => setAberto(true)}
@@ -327,155 +501,15 @@ export default function PainelVoz({
       </div>
     )
   }
-
-  // ----------------------------------------------------------------- aberto
   return (
     <section
-      className={
-        embutido
-          ? 'flex max-h-[45vh] w-full flex-col overflow-hidden rounded-xl border border-teal-300/40 bg-base-surface text-left'
-          : 'fixed bottom-4 right-4 z-[60] flex max-h-[75vh] w-[min(26rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md'
-      }
+      className="fixed bottom-4 right-4 z-[60] w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
       aria-label={t('titulo')}
       onKeyDown={(e) => e.stopPropagation()}
     >
-      <header className="flex items-center gap-2 border-b border-white/10 px-3 py-2">
-        <IconeMicrofone className="h-4 w-4 text-teal-200" />
-        <h2 className="text-sm font-semibold text-ink">{t('titulo')}</h2>
-        <button type="button" onClick={() => setAjuda((v) => !v)} className="ml-auto rounded-full border border-white/15 px-2 text-xs text-slate-300 hover:border-teal-300" aria-expanded={ajuda}>
-          ?
-        </button>
-        <button type="button" onClick={() => setAberto(false)} className="text-slate-400 hover:text-ink" aria-label={t('recolher')}>
-          ▾
-        </button>
-      </header>
-
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-        {ajuda && (
-          <div className="rounded-lg border border-white/10 bg-black/20 p-2 text-[11px] leading-relaxed text-slate-300">
-            <p className="mb-1 font-semibold text-teal-200">{t('ajudaTitulo')}</p>
-            <ul className="list-disc space-y-0.5 pl-4">
-              {(['ajuda1', 'ajuda2', 'ajuda3', 'ajuda4', 'ajuda5', 'ajuda6', 'ajuda7', 'ajuda8'] as const).map((k) => (
-                <li key={k}>{t(k)}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {disponivel === false && <p className="rounded-md bg-red-500/10 p-2 text-xs text-red-300">{t('indisponivel')}</p>}
-
-        {/* MICROFONE */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={alternar}
-            disabled={transcrevendo || disponivel === false}
-            aria-pressed={gravando}
-            title={gravando ? t('parar') : t('falar')}
-            className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-40 ${
-              gravando ? 'animate-pulse border-red-400 bg-red-500/80 text-white' : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
-            }`}
-          >
-            {gravando ? <span className="h-4 w-4 rounded-sm bg-white" /> : <IconeMicrofone className="h-6 w-6" />}
-          </button>
-          <div className="min-w-0 text-xs">
-            {gravando ? (
-              <p className="font-semibold text-red-300">
-                {t('gravando')} {minutos}
-              </p>
-            ) : transcrevendo ? (
-              <p className="text-teal-200">{t('transcrevendo')}</p>
-            ) : (
-              <p className="text-slate-400">{t('instrucao')}</p>
-            )}
-            {destino}
-            <p className="text-[10px] text-slate-500">{t('privacidade')}</p>
-          </div>
-        </div>
-
-        {erro && <p className="text-xs text-red-400">{erro}</p>}
-
-        {ultimoTexto && (
-          <div>
-            <p className="text-[10px] uppercase tracking-wide text-slate-500">{t('ouvido')}</p>
-            <p className="text-xs italic text-slate-300">“{ultimoTexto}”</p>
-          </div>
-        )}
-
-        {/* A CONFERIR */}
-        {conferir.length > 0 && (
-          <div>
-            <div className="mb-1 flex items-center justify-between">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-200">{t('preenchido')}</p>
-              {pendentes.length > 0 && (
-                <button type="button" className="text-[11px] text-teal-200 hover:underline" onClick={() => setConferir((c) => c.map((x) => ({ ...x, conferido: true })))}>
-                  {t('conferirTudo')}
-                </button>
-              )}
-            </div>
-            <ul className="space-y-1">
-              {conferir.map((c) => (
-                <li
-                  key={c.id}
-                  className={`flex items-start gap-2 rounded-md px-2 py-1 text-xs ${
-                    c.conferido ? 'text-slate-400' : c.aproximada ? 'bg-orange-400/15 text-orange-100 ring-1 ring-orange-300/50' : 'bg-amber-300/10 text-amber-50 ring-1 ring-amber-300/40'
-                  }`}
-                >
-                  <span className="min-w-0 flex-1 break-words">
-                    {c.descricao}
-                    {c.aproximada && !c.conferido && <span className="ml-1 text-[10px] text-orange-300">({t('aproximada')})</span>}
-                  </span>
-                  {!c.conferido && (
-                    <button type="button" onClick={() => setConferir((l) => l.map((x) => (x.id === c.id ? { ...x, conferido: true } : x)))} className="shrink-0 text-emerald-300 hover:text-emerald-200" aria-label={t('marcarConferido')}>
-                      ✓
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* NAO RECONHECIDO */}
-        {naoReconhecidos.length > 0 && (
-          <div>
-            <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-amber-300">{t('naoReconhecido')}</p>
-            <ul className="space-y-2">
-              {naoReconhecidos.map((n) => (
-                <li key={n.id} className="rounded-md border border-amber-300/30 bg-amber-300/5 p-2">
-                  <p className="text-xs italic text-ink">“{n.texto}”</p>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {n.sugestoes.map((s, i) => (
-                      <button key={i} type="button" onClick={() => aplicarSugestao(n, i)} className="rounded border border-teal-300/50 px-1.5 py-0.5 text-[11px] text-teal-100 hover:bg-teal-300/10">
-                        {t('voceQuisDizer')} {s.rotulo}?
-                      </button>
-                    ))}
-                    <button type="button" onClick={() => enviarPara(n, 'descricao_didatica')} className="rounded border border-white/20 px-1.5 py-0.5 text-[11px] text-slate-200 hover:bg-white/10">
-                      → {t('campoDescricao')}
-                    </button>
-                    <button type="button" onClick={() => enviarPara(n, 'achados_detalhe')} className="rounded border border-white/20 px-1.5 py-0.5 text-[11px] text-slate-200 hover:bg-white/10">
-                      → {t('campoAchados')}
-                    </button>
-                    <button type="button" onClick={() => enviarPara(n, 'observacoes_internas')} className="rounded border border-white/20 px-1.5 py-0.5 text-[11px] text-slate-200 hover:bg-white/10">
-                      → {t('campoObservacoes')}
-                    </button>
-                    <button type="button" onClick={() => setNaoReconhecidos((l) => l.filter((x) => x.id !== n.id))} className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:text-red-300">
-                      {t('descartar')}
-                    </button>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <footer className="flex items-center gap-2 border-t border-white/10 px-3 py-2">
-        <button type="button" onClick={desfazer} disabled={!historico.length} className="rounded-md border border-white/15 px-2 py-1 text-xs text-slate-200 hover:border-teal-300 disabled:opacity-40">
-          ↶ {t('desfazer')}
-        </button>
-        <span className="ml-auto text-[10px] text-slate-500">{t('rodape')}</span>
-      </footer>
+      {barra}
+      {blocoDuvidas}
+      {blocoAberto}
     </section>
   )
 }

@@ -20,8 +20,12 @@
 //   Descrição, Achados detalhados ou Observações em destaque, a fala SEM
 //   palavra-guia vira texto daquele campo (acrescentado ao que ja existe);
 //   com Marcações em destaque, "dois cárie" = "marcação dois cárie".
-// O que nao for entendido NAO entra em campo nenhum: vai para a lista
-// "Não reconhecido", com sugestao quando ha uma palavra parecida.
+// - macros: "macro periapical normal" aplica a frase pronta cadastrada
+// SEGURANCA (como nos sistemas de laudo profissionais): nada entra na
+// ficha por adivinhacao. Palavra PARECIDA com um item da lista nao e
+// preenchida sozinha: vira uma duvida ("Você quis dizer…?") que o curador
+// aceita com um clique - e pode "ensinar" (frasesAprendidas) para a
+// proxima vez. O que nao for entendido vai para "Não reconhecido".
 
 import type { Marcacao } from './marcacoes'
 import { CATEGORIAS_ALTERACOES } from './alteracoesObservadas'
@@ -64,11 +68,17 @@ export type CampoVoz =
 export interface Sugestao {
   rotulo: string
   aplicar: (ficha: FichaVoz) => FichaVoz
+  /** o que a sugestao preenche - usado para "ensinar" a frase ouvida */
+  destino?: { tipo: 'alteracao' | 'termo' | 'tipo' | 'macro'; valor: string }
+  /** campo da ficha que a sugestao preenche (destaque na coluna) */
+  campo?: CampoVoz
 }
 
 export interface NaoReconhecido {
   texto: string
   sugestoes: Sugestao[]
+  /** true = havia uma palavra parecida (erro provavel de transcricao) */
+  parecido?: boolean
 }
 
 export interface Alteracao {
@@ -90,6 +100,65 @@ export type ComandoVoz = 'desfazer' | 'salvar' | 'proxima_secao' | 'secao_anteri
 export interface OpcoesInterpretar {
   /** secao em destaque na coluna da ficha (destino da fala sem palavra-guia) */
   secaoAtiva?: SecaoFicha
+  /** frases que o curador ensinou a valer como uma alteracao da lista */
+  frasesAprendidas?: { frase: string; alteracao: string }[]
+  /** macros (frases prontas) da equipe */
+  macros?: MacroVoz[]
+}
+
+export interface ConteudoMacro {
+  descricao_didatica?: string
+  achados_detalhe?: string
+  observacoes_internas?: string
+  alteracoes_observadas?: string[]
+  tipo_radiografia?: string
+  qualidade_tecnica?: string
+}
+
+export interface MacroVoz {
+  id: number
+  nome: string
+  conteudo: ConteudoMacro
+}
+
+const NOMES_CAMPO_TEXTO = {
+  descricao_didatica: 'Descrição',
+  achados_detalhe: 'Achados detalhados',
+  observacoes_internas: 'Observações internas',
+} as const
+
+/** Aplica uma macro: texto vazio recebe o texto; texto ja escrito recebe o
+ * texto acrescentado no fim; alteracoes sao somadas; tipo e qualidade
+ * passam a ser os da macro. Devolve a ficha nova e o que mudou. */
+export function aplicarMacro<F extends FichaVoz>(ficha: F, macro: MacroVoz): { ficha: F; alteracoes: Alteracao[] } {
+  const c = macro.conteudo || {}
+  const novo: F = { ...ficha, alteracoes_observadas: [...ficha.alteracoes_observadas] }
+  const alteracoes: Alteracao[] = []
+  const rotulo = `Macro “${macro.nome}”`
+  for (const campo of ['descricao_didatica', 'achados_detalhe', 'observacoes_internas'] as const) {
+    const texto = (c[campo] || '').trim()
+    if (!texto) continue
+    novo[campo] = juntarTexto(ficha[campo], texto) as F[typeof campo]
+    alteracoes.push({ campo, descricao: `${rotulo}: ${NOMES_CAMPO_TEXTO[campo]}` })
+  }
+  const novas = (c.alteracoes_observadas || []).filter((a) => !novo.alteracoes_observadas.includes(a))
+  if (novas.length) {
+    novo.alteracoes_observadas = [...novo.alteracoes_observadas, ...novas]
+    alteracoes.push({ campo: 'alteracoes_observadas', descricao: `${rotulo}: ${novas.length} alteração(ões)` })
+  }
+  if (c.tipo_radiografia) {
+    novo.tipo_radiografia = c.tipo_radiografia
+    alteracoes.push({ campo: 'tipo_radiografia', descricao: `${rotulo}: tipo` })
+  }
+  if (c.qualidade_tecnica) {
+    novo.qualidade_tecnica = c.qualidade_tecnica
+    alteracoes.push({ campo: 'qualidade_tecnica', descricao: `${rotulo}: qualidade` })
+  }
+  return { ficha: novo, alteracoes }
+}
+
+function formaFalada(texto: string): string {
+  return normalizar(texto).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
 }
 
 // ---------------------------------------------------------------- texto
@@ -232,8 +301,9 @@ export const ALTERACOES: Opcao[] = CATEGORIAS_ALTERACOES.flatMap((c) =>
 type Guia =
   | 'descricao' | 'continuar_descricao' | 'achados' | 'observacoes'
   | 'dentes' | 'qualidade' | 'idade' | 'sexo' | 'alteracao' | 'achado' | 'outro' | 'marcacao' | 'tipo'
-  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior'
+  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior' | 'macro'
 const GUIAS: [string, Guia][] = ([
+  ['macro', 'macro'],
   ['proxima secao', 'proxima_secao'],
   ['secao seguinte', 'proxima_secao'],
   ['proximo campo', 'proxima_secao'],
@@ -372,6 +442,16 @@ export function interpretar(
     tokens = tokenizar(texto)
   }
 
+  // alteracoes da lista + frases que o curador ensinou
+  const aprendidas = opcoes.frasesAprendidas ?? []
+  const listaAlteracoes: Opcao[] = aprendidas.length
+    ? ALTERACOES.map((op) => {
+        const extras = aprendidas.filter((f) => f.alteracao === op.valor).map((f) => formaFalada(f.frase))
+        return extras.length ? { ...op, formas: Array.from(new Set([...op.formas, ...extras])) } : op
+      })
+    : ALTERACOES
+  const macros = (opcoes.macros ?? []).map((m) => ({ ...m, forma: formaFalada(m.nome) }))
+
   // termos do vocabulario controlado como opcoes (nome + sinonimos)
   const opcoesTermos: (Opcao & { id: number })[] = vocabulario.map((t) => ({
     id: t.id,
@@ -429,47 +509,70 @@ export function interpretar(
   // procura palavra parecida em todas as listas
   const sugerir = (n: string): Sugestao[] => {
     const candidatos: { s: number; sug: Sugestao }[] = []
-    const avaliar = (op: Opcao, fazer: (f: FichaVoz) => FichaVoz, rotulo: string) => {
+    const avaliar = (op: Opcao, sug: Omit<Sugestao, 'rotulo'> & { rotulo: string }) => {
       const s = Math.max(...op.formas.map((f) => semelhanca(n, f)))
-      if (s >= LIMIAR_SUGESTAO) candidatos.push({ s, sug: { rotulo, aplicar: fazer } })
+      if (s >= LIMIAR_SUGESTAO) candidatos.push({ s, sug })
     }
-    for (const op of ALTERACOES)
-      avaliar(op, (f) => ({ ...f, alteracoes_observadas: f.alteracoes_observadas.includes(op.valor) ? f.alteracoes_observadas : [...f.alteracoes_observadas, op.valor] }), `Alteração: ${op.rotulo}`)
-    for (const op of TIPOS) avaliar(op, (f) => ({ ...f, tipo_radiografia: op.valor }), `Tipo: ${op.rotulo}`)
-    for (const op of opcoesTermos)
-      avaliar(op, (f) => ({ ...f, termos: f.termos.includes(op.id) ? f.termos : [...f.termos, op.id], achados_detalhe: juntarTexto(f.achados_detalhe, op.rotulo) }), `Termo: ${op.rotulo}`)
+    for (const op of listaAlteracoes) avaliar(op, sugestaoAlteracao(op))
+    for (const op of TIPOS)
+      avaliar(op, { rotulo: `Tipo: ${op.rotulo}`, aplicar: (f) => ({ ...f, tipo_radiografia: op.valor }), destino: { tipo: 'tipo', valor: op.valor }, campo: 'tipo_radiografia' })
+    for (const op of opcoesTermos) avaliar(op, sugestaoTermo(op))
     // "carie" sozinha: perguntar qual tipo
     if (n === 'carie' || n === 'caries') {
-      for (const op of ALTERACOES.filter((a) => a.valor.startsWith('carie')))
-        candidatos.push({ s: 0.9, sug: { rotulo: `Alteração: ${op.rotulo}`, aplicar: (f) => ({ ...f, alteracoes_observadas: f.alteracoes_observadas.includes(op.valor) ? f.alteracoes_observadas : [...f.alteracoes_observadas, op.valor] }) } })
+      for (const op of listaAlteracoes.filter((a) => a.valor.startsWith('carie'))) candidatos.push({ s: 0.9, sug: sugestaoAlteracao(op) })
     }
-    return candidatos.sort((a, b) => b.s - a.s).slice(0, 4).map((c) => c.sug)
+    const vistos = new Set<string>()
+    return candidatos
+      .sort((a, b) => b.s - a.s)
+      .filter((c) => !vistos.has(c.sug.rotulo) && vistos.add(c.sug.rotulo))
+      .slice(0, 4)
+      .map((c) => c.sug)
   }
+  const sugestaoAlteracao = (op: Opcao): Sugestao => ({
+    rotulo: `Alteração: ${op.rotulo}`,
+    aplicar: (f) => ({ ...f, alteracoes_observadas: f.alteracoes_observadas.includes(op.valor) ? f.alteracoes_observadas : [...f.alteracoes_observadas, op.valor] }),
+    destino: { tipo: 'alteracao', valor: op.valor },
+    campo: 'alteracoes_observadas',
+  })
+  const sugestaoTermo = (op: Opcao & { id: number }): Sugestao => ({
+    rotulo: `Termo: ${op.rotulo}`,
+    aplicar: (f) => ({
+      ...f,
+      termos: f.termos.includes(op.id) ? f.termos : [...f.termos, op.id],
+      achados_detalhe: normalizar(f.achados_detalhe).includes(normalizar(op.rotulo)) ? f.achados_detalhe : juntarTexto(f.achados_detalhe, op.rotulo),
+    }),
+    destino: { tipo: 'termo', valor: String(op.id) },
+    campo: 'termos',
+  })
 
-  // tenta reconhecer por semelhanca um trecho solto (ate 5 palavras)
-  const reconhecerAproximado = (i: number): number => {
-    let melhor: { s: number; n: number; fazer: () => void } | null = null
+  // trecho solto (ate 5 palavras) PARECIDO com um item da lista: NAO
+  // preenche - vira duvida com a sugestao no topo (o curador confirma com
+  // um clique e pode ensinar a frase). Palavra unica curta nao entra (gera
+  // falsos alarmes). Devolve quantas palavras consumiu (0 = nada parecido).
+  const duvidaAproximada = (i: number): number => {
+    let melhor: { s: number; n: number; sug: Sugestao } | null = null
     for (let tam = Math.min(5, tokens.length - i); tam >= 1; tam--) {
       const pedaco = tokens.slice(i, i + tam)
       if (pedaco.some((t) => t.pontuacao)) continue
       const n = pedaco.map((t) => t.n).join(' ')
-      if (n.length < 5) continue
-      const testar = (op: Opcao, fazer: () => void) => {
+      if (n.length < (tam === 1 ? 7 : 6)) continue
+      const testar = (op: Opcao, sug: Sugestao) => {
         for (const f of op.formas) {
           if (f.split(' ').length !== tam) continue
-          const s = semelhanca(n, f)
-          if (s >= LIMIAR_AUTOMATICO && (!melhor || s > melhor.s)) melhor = { s, n: tam, fazer }
+          const sc = semelhanca(n, f)
+          if (sc >= LIMIAR_AUTOMATICO && (!melhor || sc > melhor.s)) melhor = { s: sc, n: tam, sug }
         }
       }
-      for (const op of ALTERACOES) testar(op, () => aplicarAlteracao(op, true))
-      for (const op of TIPOS) testar(op, () => { ficha.tipo_radiografia = op.valor; anotar('tipo_radiografia', `Tipo: ${op.rotulo}`, true) })
-      for (const op of opcoesTermos) testar(op, () => aplicarTermo(op, true))
+      for (const op of listaAlteracoes) testar(op, sugestaoAlteracao(op))
+      for (const op of opcoesTermos) testar(op, sugestaoTermo(op))
     }
-    if (melhor) {
-      ;(melhor as { fazer: () => void }).fazer()
-      return (melhor as { n: number }).n
-    }
-    return 0
+    if (!melhor) return 0
+    const m = melhor as { s: number; n: number; sug: Sugestao }
+    const original = texto.slice(tokens[i].inicio, tokens[i + m.n - 1].fim)
+    const n = tokens.slice(i, i + m.n).map((t) => t.n).join(' ')
+    const outras = sugerir(n).filter((x) => x.rotulo !== m.sug.rotulo).slice(0, 3)
+    naoReconhecidos.push({ texto: original, sugestoes: [m.sug, ...outras], parecido: true })
+    return m.n
   }
 
   // texto livre ate "fim" (ou fim do trecho)
@@ -648,7 +751,7 @@ export function interpretar(
         while (k < tokens.length) {
           k = pularPontuacaoEVazias(k)
           if (k >= tokens.length || casarGuia(tokens, k)) break
-          const c = casarOpcao(tokens, k, ALTERACOES)
+          const c = casarOpcao(tokens, k, listaAlteracoes)
           const ct = casarOpcao(tokens, k, opcoesTermos)
           if (ct && (!c || ct.n >= c.n)) {
             aplicarTermo(ct.op as Opcao & { id: number })
@@ -662,7 +765,7 @@ export function interpretar(
             algum = true
             continue
           }
-          const aprox = reconhecerAproximado(k)
+          const aprox = duvidaAproximada(k)
           if (aprox) {
             k += aprox
             algum = true
@@ -684,7 +787,7 @@ export function interpretar(
             k = pularPontuacaoEVazias(k + proximo[1])
           } else {
             const ct = casarOpcao(tokens, k, opcoesTermos)
-            const ca = casarOpcao(tokens, k, ALTERACOES)
+            const ca = casarOpcao(tokens, k, listaAlteracoes)
             if (ct) {
               aplicarTermo(ct.op as Opcao & { id: number })
               i = k + ct.n
@@ -744,6 +847,41 @@ export function interpretar(
           pendente.push(...tokens.slice(i, k + 1))
           i = k + 1
         }
+        continue
+      }
+
+      if (g === 'macro') {
+        // nome da macro: a mais longa que casar exatamente; se nenhuma,
+        // a mais parecida vira DUVIDA (nunca aplica sozinha)
+        let melhor: { m: (typeof macros)[number]; n: number } | null = null
+        for (const m of macros) {
+          const n2 = m.forma ? casarFrase(tokens, j, m.forma) : 0
+          if (n2 && (!melhor || n2 > melhor.n)) melhor = { m, n: n2 }
+        }
+        if (melhor) {
+          const r = aplicarMacro(ficha, melhor.m)
+          ficha = r.ficha
+          alteracoes.push(...r.alteracoes)
+          i = j + melhor.n
+          continue
+        }
+        const [nome, prox] = lerLivreCurto(j)
+        const nn = formaFalada(nome)
+        const parecidas = macros
+          .map((m) => ({ m, s: semelhanca(nn, m.forma) }))
+          .filter((x) => nn && x.s >= LIMIAR_SUGESTAO)
+          .sort((a, b) => b.s - a.s)
+          .slice(0, 3)
+        naoReconhecidos.push({
+          texto: `Macro ${nome || '(sem nome)'}`,
+          parecido: parecidas.length > 0,
+          sugestoes: parecidas.map(({ m }) => ({
+            rotulo: `Macro: ${m.nome}`,
+            aplicar: (f) => aplicarMacro(f, m).ficha,
+            destino: { tipo: 'macro', valor: String(m.id) },
+          })),
+        })
+        i = prox
         continue
       }
 
@@ -810,7 +948,7 @@ export function interpretar(
 
     // valores soltos (sem palavra-guia)
     const ct = casarOpcao(tokens, i, opcoesTermos)
-    const ca = casarOpcao(tokens, i, ALTERACOES)
+    const ca = casarOpcao(tokens, i, listaAlteracoes)
     const ctp = casarOpcao(tokens, i, TIPOS)
     const cg = casarOpcao(tokens, i, GENEROS)
     const maior = [ct && { k: 't', n: ct.n }, ca && { k: 'a', n: ca.n }, ctp && { k: 'p', n: ctp.n }, cg && { k: 'g', n: cg.n }]
@@ -832,7 +970,7 @@ export function interpretar(
     }
 
     if (!PALAVRAS_VAZIAS.has(tok.n)) {
-      const aprox = reconhecerAproximado(i)
+      const aprox = duvidaAproximada(i)
       if (aprox) {
         fecharPendente()
         i += aprox

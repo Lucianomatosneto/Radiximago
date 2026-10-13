@@ -131,7 +131,8 @@
       "integracoes": "Integrações",
       "configuracoes": "Configurações",
       "compartilhadasComigo": "Compartilhadas comigo",
-      "vocabulario": "Vocabulário"
+      "vocabulario": "Vocabulário",
+      "macros": "Macros"
     },
     "novasCompartilhadas": "{quantidade} novas"
   },
@@ -820,6 +821,46 @@
       "marcacaoN": "Marcação {numero}",
       "semAchado": "sem achado",
       "placeholderAchados": "Descreva achados que não estão na lista de alterações"
+    },
+    "macroErroCriar": "Não foi possível criar a macro.",
+    "macros": {
+      "botao": "Macros",
+      "dica": "Frases prontas da equipe (ou fale “macro <nome>”)",
+      "procurar": "Procurar macro…",
+      "nenhuma": "Nenhuma macro encontrada.",
+      "semTexto": "(sem texto)",
+      "dicaVoz": "Por voz: “macro” + nome da macro.",
+      "salvarFichaComoMacro": "Salvar esta ficha como macro",
+      "nomeNova": "Nome da macro",
+      "salvar": "Salvar",
+      "criada": "Macro “{nome}” criada.",
+      "gerenciar": "Gerenciar macros"
+    },
+    "conferencia": {
+      "titulo": "Conferência automática da ficha",
+      "ok": "Conferida",
+      "pendencias": "{quantidade} a revisar",
+      "bloqueio": "OBRIGATÓRIO",
+      "aviso": "ATENÇÃO",
+      "tituloModal": "Conferência antes de aprovar",
+      "textoBloqueio": "Há itens obrigatórios pendentes. Corrija para poder aprovar.",
+      "textoAviso": "Encontramos pontos que podem estar faltando ou incoerentes. Revise ou aprove mesmo assim.",
+      "voltar": "Voltar e revisar",
+      "aprovarMesmoAssim": "Aprovar mesmo assim",
+      "itens": {
+        "anonimizacao": "Anonimização não validada.",
+        "tipo": "Tipo de radiografia não informado.",
+        "sexo": "Sexo não informado.",
+        "qualidade": "Qualidade técnica não informada.",
+        "semDentes": "Há achados/marcações, mas nenhum dente informado.",
+        "denteNoTexto": "Dente(s) {dentes} citado(s) no texto, mas não marcado(s) em Dentes.",
+        "marcacaoSemAchado": "Marcação(ões) {numeros} sem achado.",
+        "outroSemTexto": "Marcação(ões) {numeros} com “Outro” sem descrição.",
+        "contradicao": "A descrição diz “normal/sem alterações”, mas há alterações marcadas.",
+        "semAchados": "Nenhum achado registrado. Se a imagem é normal, diga isso na descrição.",
+        "descricaoVazia": "Descrição didática vazia.",
+        "duvidasVoz": "{quantidade} dúvida(s) da voz ainda não confirmada(s)."
+      }
     }
   },
   "SegundaOpiniaoPage": {
@@ -1382,7 +1423,7 @@
     "instrucao": "Clique no microfone, fale e clique de novo.",
     "privacidade": "O áudio é transcrito no próprio Rádix e não é guardado.",
     "ouvido": "Ouvido",
-    "preenchido": "Preenchido — a conferir",
+    "preenchido": "Preenchido pela voz",
     "conferirTudo": "Conferi tudo ✓",
     "aproximada": "palavra parecida, confira",
     "marcarConferido": "Marcar como conferido",
@@ -1409,8 +1450,47 @@
     "ajuda4": "Outro: “achado outro: reabsorção cervical” (vai para Achados detalhados).",
     "ajuda5": "Texto corrido: “descrição: …”, “achados detalhados: …”, “observações internas: …” — termina com “fim”.",
     "ajuda6": "Comandos: “desfazer”, “salvar”, “corrigir dente 36 para 46”, “apagar descrição”.",
-    "ajuda7": "O que não for entendido fica em “Não reconhecido” para você escolher o destino.",
+    "ajuda7": "Palavra parecida (provável erro de transcrição) NÃO entra sozinha: aparece em “Dúvidas” para você confirmar com um clique — e pode ensinar o sistema.",
     "destino": "A fala vai para:",
-    "ajuda8": "Seção em destaque (coluna da direita): fala sem palavra-guia vai para ela — em Descrição, Achados detalhados ou Observações vira texto; em Marcações, “dois cárie” basta. “Próxima seção” / “seção anterior” trocam o destaque."
+    "ajuda8": "Seção em destaque (coluna da direita): fala sem palavra-guia vai para ela — em Descrição, Achados detalhados ou Observações vira texto; em Marcações, “dois cárie” basta. “Próxima seção” / “seção anterior” trocam o destaque.",
+    "desfeito": "Última alteração desfeita.",
+    "aprendido": "Aprendido: “{frase}” será reconhecido da próxima vez.",
+    "duvidas": "Dúvidas ({quantidade}) — confirme antes de entrar na ficha",
+    "lembrar": "Lembrar esta correção (ensinar o sistema)",
+    "ajuda9": "Macros: “macro periapical normal” aplica a frase pronta cadastrada (menu ⚡ Macros)."
+  },
+  "Macros": {
+    "tituloPrefixo": "Macros da",
+    "tituloDestaque": "curadoria",
+    "subtitulo": "Frases prontas da equipe: preenchem descrição, achados, observações, alterações, tipo e qualidade de uma vez. Use pelo menu ⚡ Macros da Curadoria ou falando “macro <nome>”. Aplicar uma macro só preenche o rascunho — aprovar continua manual.",
+    "erroCarregar": "Não foi possível carregar as macros.",
+    "erroSalvar": "Não foi possível salvar.",
+    "salva": "Macro salva.",
+    "macros": "Macros",
+    "nova": "Nova macro",
+    "nome": "Nome (é o que se fala depois de “macro”)",
+    "exemploNome": "Ex.: periapical normal",
+    "dicaNome": "Use nomes curtos e fáceis de falar.",
+    "tipo": "Tipo de radiografia",
+    "qualidade": "Qualidade técnica",
+    "naoAlterar": "— não alterar —",
+    "campos": {
+      "descricao_didatica": "Descrição didática",
+      "achados_detalhe": "Achados detalhados",
+      "observacoes_internas": "Observações internas"
+    },
+    "alteracoes": "Alterações marcadas pela macro",
+    "cancelar": "Cancelar",
+    "salvar": "Salvar",
+    "nenhuma": "Nenhuma macro cadastrada ainda.",
+    "inativa": "desativada",
+    "nAlteracoes": "{quantidade} alteração(ões)",
+    "editar": "Editar",
+    "desativar": "Desativar",
+    "reativar": "Reativar",
+    "frases": "Frases que a voz aprendeu",
+    "frasesSubtitulo": "Quando o curador confirma uma dúvida com “Lembrar”, a frase ouvida passa a valer como a alteração escolhida.",
+    "nenhumaFrase": "Nenhuma frase aprendida ainda.",
+    "esquecer": "Esquecer"
   }
 }

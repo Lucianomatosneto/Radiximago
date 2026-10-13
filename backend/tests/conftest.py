@@ -27,6 +27,8 @@ from app.modules.orthanc_references import OrthancReference
 from app.modules.saved_images import SavedImage
 from app.modules.compartilhamentos import CompartilhamentoImagem
 from app.modules.anotacoes import AnotacaoImagem
+from app.modules.macros import FraseAprendida, MacroCuradoria
+from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.audit_logs import AuditLog
 from app.modules.access_requests import AccessRequest, IntencaoPerfil
 
@@ -97,6 +99,10 @@ def criar_usuario(db):
     yield _criar
 
     for usuario_id in criados:
+        db.query(CurationTermo).filter(CurationTermo.vinculado_por_id == usuario_id).delete()
+        db.query(MacroCuradoria).filter(MacroCuradoria.criado_por_id == usuario_id).delete()
+        db.query(FraseAprendida).filter(FraseAprendida.criado_por_id == usuario_id).delete()
+        db.query(TermoVocabulario).filter(TermoVocabulario.criado_por_id == usuario_id).delete()
         db.query(CompartilhamentoImagem).filter(
             (CompartilhamentoImagem.remetente_id == usuario_id) | (CompartilhamentoImagem.destinatario_id == usuario_id)
         ).delete(synchronize_session=False)

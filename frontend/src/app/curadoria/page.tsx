@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -10,7 +10,11 @@ import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/Paine
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
 import ColunaFichaCuradoria from '../../components/curadoria/ColunaFichaCuradoria'
 import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
-import type { SecaoFicha } from '../../lib/secoesCuradoria'
+import { SECAO_DO_CAMPO, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
+import { conferirFicha } from '../../lib/conferenciaFicha'
+import MenuMacros from '../../components/curadoria/MenuMacros'
+import { ListaConferencia } from '../../components/curadoria/ColunaFichaCuradoria'
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
 import PainelVoz from '../../components/curadoria/PainelVoz'
@@ -168,6 +172,15 @@ export default function CuradoriaPage() {
   // ↑/↓, botoes ▲/▼ e a curadoria por voz usam ela. Cada imagem nova
   // comeca de novo em "Dados da imagem".
   const [secaoAtiva, setSecaoAtiva] = useState<SecaoFicha>('dados')
+  // RECURSOS DE LAUDO PROFISSIONAL (ver PainelVoz, MenuMacros e
+  // lib/conferenciaFicha.ts): macros da equipe, frases ensinadas a voz,
+  // brilho nas secoes recem-preenchidas, duvidas pendentes da voz e a
+  // conferencia antes de aprovar.
+  const [macros, setMacros] = useState<MacroVoz[]>([])
+  const [frasesAprendidas, setFrasesAprendidas] = useState<{ frase: string; alteracao: string }[]>([])
+  const [destaques, setDestaques] = useState<Partial<Record<SecaoFicha, number>>>({})
+  const [duvidasVoz, setDuvidasVoz] = useState(0)
+  const [conferenciaAberta, setConferenciaAberta] = useState(false)
   // "Abrir marcação" (botao da secao Marcações, tecla M ou atalho no
   // cabecalho do visualizador): a imagem para marcacao ocupa o lugar grande
   // da esquerda e o visualizador vira uma miniatura no canto (clicar nela
@@ -883,6 +896,37 @@ export default function CuradoriaPage() {
     return () => document.removeEventListener('keydown', aoTeclar)
   })
 
+  // macros e frases ensinadas (equipe toda)
+  const carregarRecursosLaudo = useCallback(() => {
+    const api = process.env.NEXT_PUBLIC_API_URL
+    fetch(`${api}/macros`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.macros && setMacros(d.macros))
+      .catch(() => {})
+    fetch(`${api}/voz/frases`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.frases && setFrasesAprendidas(d.frases))
+      .catch(() => {})
+  }, [])
+  useEffect(() => {
+    if (autenticado) carregarRecursosLaudo()
+  }, [autenticado, carregarRecursosLaudo])
+
+  // brilho nas secoes que acabaram de receber dados
+  const destacarCampos = useCallback((campos: CampoVoz[]) => {
+    const agora = Date.now()
+    setDestaques((d) => {
+      const novo = { ...d }
+      for (const c of campos) {
+        const secao = SECAO_DO_CAMPO[c]
+        if (secao) novo[secao] = agora
+      }
+      return novo
+    })
+  }, [])
+
+  const conferencia = useMemo(() => conferirFicha(form, duvidasVoz), [form, duvidasVoz])
+
   // "Abrir marcação": a imagem para marcacao abre GRANDE no lugar do
   // visualizador (que vira miniatura); fechar devolve o visualizador.
   function alternarMarcacao() {
@@ -897,6 +941,52 @@ export default function CuradoriaPage() {
   function aplicarVoz(novo: FormularioFicha) {
     setForm(novo)
     salvarRascunho({ silencioso: true, formulario: novo, origemVoz: true })
+  }
+
+  // macro escolhida no menu: preenche a ficha (sem salvar sozinha - o
+  // curador confere e salva/aprova) e faz as secoes alteradas brilharem
+  function aplicarMacroDoMenu(macro: MacroVoz) {
+    const r = aplicarMacro(form, macro)
+    setForm(r.ficha)
+    destacarCampos(r.alteracoes.map((a) => a.campo))
+    const ultima = r.alteracoes.length ? SECAO_DO_CAMPO[r.alteracoes[r.alteracoes.length - 1].campo] : undefined
+    if (ultima) setSecaoAtiva(ultima)
+  }
+
+  // "Salvar esta ficha como macro" (texto, alteracoes, tipo e qualidade)
+  async function criarMacroDaFicha(nome: string): Promise<string | null> {
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/macros`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          nome,
+          conteudo: {
+            descricao_didatica: form.descricao_didatica,
+            achados_detalhe: form.achados_detalhe,
+            observacoes_internas: form.observacoes_internas,
+            alteracoes_observadas: form.alteracoes_observadas,
+            tipo_radiografia: form.tipo_radiografia || null,
+            qualidade_tecnica: form.qualidade_tecnica || null,
+          },
+        }),
+      })
+      if (!r.ok) return await extrairErro(r, t('macroErroCriar'))
+      carregarRecursosLaudo()
+      return null
+    } catch {
+      return t('macroErroCriar')
+    }
+  }
+
+  // Aprovar passa antes pela conferencia automatica
+  function pedirAprovacao() {
+    if (conferencia.length > 0) {
+      setConferenciaAberta(true)
+      return
+    }
+    aprovar()
   }
 
   if (carregando) {
@@ -1091,7 +1181,7 @@ export default function CuradoriaPage() {
                 onAnterior={irParaAnterior}
                 onProxima={irParaProxima}
                 onSalvar={aoClicarSalvar}
-                onAprovar={aprovar}
+                onAprovar={pedirAprovacao}
                 onDescartar={() => abrirModalMotivo('descartar')}
                 onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
                 salvando={salvandoRascunho}
@@ -1229,7 +1319,10 @@ export default function CuradoriaPage() {
                   onSecao={setSecaoAtiva}
                   marcacaoAberta={marcacaoAberta}
                   onAlternarMarcacao={alternarMarcacao}
-                  teclasAtivas={!modalMotivo && !descarteFinalAlvo}
+                  teclasAtivas={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta}
+                  destaques={destaques}
+                  conferencia={conferencia}
+                  acoesBarra={<MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />}
                   topo={
                     <PainelVoz
                       embutido
@@ -1239,6 +1332,11 @@ export default function CuradoriaPage() {
                       onSalvar={() => salvarRascunho({ origemVoz: true })}
                       secaoAtiva={secaoAtiva}
                       onSecao={setSecaoAtiva}
+                      onDestacar={destacarCampos}
+                      macros={macros}
+                      frasesAprendidas={frasesAprendidas}
+                      onAprendeu={carregarRecursosLaudo}
+                      onDuvidas={setDuvidasVoz}
                     />
                   }
                 />
@@ -1257,7 +1355,54 @@ export default function CuradoriaPage() {
           form={form}
           onAplicar={aplicarVoz}
           onSalvar={() => salvarRascunho({ origemVoz: true })}
+          macros={macros}
+          frasesAprendidas={frasesAprendidas}
+          onAprendeu={carregarRecursosLaudo}
+          onDuvidas={setDuvidasVoz}
         />
+      )}
+
+      {/* CONFERENCIA ANTES DE APROVAR: bloqueios impedem; avisos deixam
+          aprovar "mesmo assim" (decisao do curador, que fica registrada
+          normalmente na aprovacao). */}
+      {conferenciaAberta && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-conferencia">
+          <div className="w-full max-w-lg rounded-2xl border border-base-border bg-base-surface p-5 shadow-2xl">
+            <h2 id="titulo-conferencia" className="text-base font-bold text-ink">{t('conferencia.tituloModal')}</h2>
+            <p className="mb-3 mt-1 text-sm text-slate-400">
+              {conferencia.some((c) => c.nivel === 'bloqueio') ? t('conferencia.textoBloqueio') : t('conferencia.textoAviso')}
+            </p>
+            <ListaConferencia
+              itens={conferencia}
+              onIr={(secao) => {
+                setConferenciaAberta(false)
+                setModoAjustado(false)
+                setSecaoAtiva(secao)
+              }}
+            />
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                autoFocus
+                onClick={() => setConferenciaAberta(false)}
+                className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-brand"
+              >
+                {t('conferencia.voltar')}
+              </button>
+              <button
+                type="button"
+                disabled={conferencia.some((c) => c.nivel === 'bloqueio') || aprovando}
+                onClick={() => {
+                  setConferenciaAberta(false)
+                  aprovar()
+                }}
+                className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+              >
+                {t('conferencia.aprovarMesmoAssim')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {modalMotivo && (

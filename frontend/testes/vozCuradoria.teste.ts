@@ -2,14 +2,14 @@
 // Rodar dentro da pasta frontend:  npx tsx testes/vozCuradoria.teste.ts
 
 import type { SecaoFicha } from '../src/lib/secoesCuradoria'
-import { interpretar, type FichaVoz } from '../src/lib/vozCuradoria'
+import { aplicarMacro, interpretar, type FichaVoz, type OpcoesInterpretar } from '../src/lib/vozCuradoria'
 const vazia: FichaVoz = { tipo_radiografia: 'panoramica', dentes: [], idade_min: '', idade_max: '', genero: '', marcacoes: [
   { id: 'a', tipo: 'oval', x: .1, y: .1, largura: .1, altura: .1 }, { id: 'b', tipo: 'seta', x1: 0, y1: 0, x2: .2, y2: .2 }],
   achados_detalhe: '', alteracoes_observadas: [], qualidade_tecnica: '', descricao_didatica: '', observacoes_internas: '', termos: [] }
 const vocab = [{ id: 7, termo: 'Calcificação pulpar', sinonimos: [{ sinonimo: 'nódulo pulpar' }] }]
 let falhas = 0
-function caso(nome: string, texto: string, verificar: (r: ReturnType<typeof interpretar>) => boolean, secaoAtiva?: SecaoFicha) {
-  const r = interpretar(texto, vazia, vocab, { secaoAtiva })
+function caso(nome: string, texto: string, verificar: (r: ReturnType<typeof interpretar>) => boolean, secaoAtiva?: SecaoFicha, extra: Omit<OpcoesInterpretar, 'secaoAtiva'> = {}) {
+  const r = interpretar(texto, vazia, vocab, { secaoAtiva, ...extra })
   const ok = verificar(r)
   if (!ok) falhas++
   console.log(ok ? 'OK  ' : 'FALHA', nome)
@@ -31,7 +31,9 @@ caso('outro que e termo vira termo', 'outro: nodulo pulpar', r => r.ficha.termos
 caso('idade e sexo', 'idade de 30 a 45 anos, sexo feminino', r => r.ficha.idade_min === '30' && r.ficha.idade_max === '45' && r.ficha.genero === 'feminino')
 caso('comandos', 'salvar. desfazer', r => r.comandos.join() === 'salvar,desfazer')
 caso('corrigir dente', 'dente 36. corrigir dente 36 para 46', r => r.ficha.dentes.join() === '46')
-caso('erro de transcricao aproximado', 'reabsorsão radicular externa', r => r.ficha.alteracoes_observadas.includes('reabsorcao_radicular_externa') && r.alteracoes[0].aproximada === true)
+caso('parecido vira duvida, nao preenche', 'reabsorsão radicular externa', r =>
+  r.ficha.alteracoes_observadas.length === 0 && r.alteracoes.length === 0 && r.naoReconhecidos.length === 1 &&
+  r.naoReconhecidos[0].parecido === true && r.naoReconhecidos[0].sugestoes[0].destino?.valor === 'reabsorcao_radicular_externa')
 caso('carie sozinha pede escolha', 'cárie', r => r.naoReconhecidos.length === 1 && r.naoReconhecidos[0].sugestoes.length >= 4)
 caso('continuar descricao', 'descrição: primeira parte fim. continuar descrição: segunda parte', r => r.ficha.descricao_didatica === 'Primeira parte; Segunda parte')
 caso('achados detalhados livre', 'achados detalhados: área radiolúcida na região apical do dente 36', r => r.ficha.achados_detalhe === 'Área radiolúcida na região apical do dente 36' && r.ficha.dentes.length === 0)
@@ -51,4 +53,26 @@ caso('marcacoes ativa sem a palavra marcacao', 'um cárie', r => r.ficha.marcaco
 caso('dados ativa continua com regras normais', 'o paciente mexeu', r => r.naoReconhecidos.length === 1, 'dados')
 caso('comandos de navegacao', 'próxima seção', r => r.comandos.join() === 'proxima_secao' && r.ficha.descricao_didatica === '', 'descricao')
 caso('secao anterior', 'seção anterior', r => r.comandos.join() === 'secao_anterior')
+// ---- frases aprendidas e macros
+const aprendidas = { frasesAprendidas: [{ frase: 'reabsorsão radicular externa', alteracao: 'reabsorcao_radicular_externa' }] }
+caso('frase aprendida vira reconhecimento exato', 'reabsorsão radicular externa', r =>
+  r.ficha.alteracoes_observadas.includes('reabsorcao_radicular_externa') && r.naoReconhecidos.length === 0, undefined, aprendidas)
+const macros = { macros: [
+  { id: 1, nome: 'Periapical normal', conteudo: { descricao_didatica: 'Radiografia periapical sem alterações.', tipo_radiografia: 'periapical', qualidade_tecnica: 'boa' } },
+  { id: 2, nome: 'Cárie profunda', conteudo: { alteracoes_observadas: ['carie_proxima_polpa'], achados_detalhe: 'Cárie extensa' } },
+] }
+caso('macro exata aplica', 'macro periapical normal. dente 36', r =>
+  r.ficha.descricao_didatica === 'Radiografia periapical sem alterações.' && r.ficha.tipo_radiografia === 'periapical' &&
+  r.ficha.qualidade_tecnica === 'boa' && r.ficha.dentes.join() === '36', undefined, macros)
+caso('macro com acento falado sem acento', 'macro carie profunda', r =>
+  r.ficha.alteracoes_observadas.includes('carie_proxima_polpa') && r.ficha.achados_detalhe === 'Cárie extensa', undefined, macros)
+caso('macro parecida vira duvida', 'macro periapical normau', r =>
+  r.ficha.descricao_didatica === '' && r.naoReconhecidos.length === 1 && r.naoReconhecidos[0].sugestoes[0].rotulo === 'Macro: Periapical normal', undefined, macros)
+caso('palavra curta solta nao vira duvida de semelhanca', 'cisto', r => r.ficha.alteracoes_observadas.includes('cisto'))
+{
+  const r = aplicarMacro({ ...vazia, descricao_didatica: 'Texto já escrito' }, macros.macros[0])
+  const ok = r.ficha.descricao_didatica === 'Texto já escrito; Radiografia periapical sem alterações.' && r.alteracoes.length === 3
+  if (!ok) falhas++
+  console.log(ok ? 'OK  ' : 'FALHA', 'aplicarMacro acrescenta ao texto existente')
+}
 process.exit(falhas ? 1 : 0)

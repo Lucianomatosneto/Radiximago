@@ -52,6 +52,8 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, cor: COR_BLUE },
+  { chave: 'vocabulario', href: '/vocabulario', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
+  { chave: 'macros', href: '/macros', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'relatorios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
   { chave: 'integracoes', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },

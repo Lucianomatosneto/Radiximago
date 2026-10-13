@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosRadiografia from './PainelAchadosRadiografia'
@@ -9,6 +9,7 @@ import PainelErroTecnico from './PainelErroTecnico'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import { corMarcacao, rotularAchadoMarcacao } from '../../lib/marcacoes'
 import { SECOES_FICHA, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
+import type { ItemConferencia } from '../../lib/conferenciaFicha'
 
 // COLUNA DA FICHA DE CURADORIA (direita da tela; a imagem fica a esquerda).
 //
@@ -52,6 +53,8 @@ function Secao({
   onAtivar,
   registrar,
   extra,
+  piscando,
+  pendencias,
   children,
 }: {
   id: SecaoFicha
@@ -61,6 +64,10 @@ function Secao({
   onAtivar: () => void
   registrar: (el: HTMLElement | null) => void
   extra?: ReactNode
+  /** chave que muda a cada preenchimento: reinicia a animacao de destaque */
+  piscando?: number
+  /** avisos da conferencia nesta secao */
+  pendencias?: { bloqueio: number; aviso: number }
   children: ReactNode
 }) {
   return (
@@ -70,12 +77,15 @@ function Secao({
       aria-current={ativa ? 'step' : undefined}
       onMouseDown={() => !ativa && onAtivar()}
       onFocusCapture={() => !ativa && onAtivar()}
-      className={`scroll-mt-2 rounded-xl border p-3 transition-[border-color,box-shadow] duration-200 ${
+      className={`scroll-mt-2 rounded-xl border p-3 relative transition-[border-color,box-shadow] duration-200 ${
         ativa
           ? 'border-teal-400 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.18),0_0_22px_-4px_rgba(45,212,191,.45)]'
           : 'border-base-border bg-base-surface/70 opacity-90 hover:opacity-100'
       }`}
     >
+      {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
+          (key), os campos da secao continuam montados */}
+      {piscando ? <span key={piscando} aria-hidden="true" className="secao-preenchida pointer-events-none absolute inset-0 rounded-xl" /> : null}
       <header className="mb-2 flex items-center gap-2">
         <span
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
@@ -85,6 +95,14 @@ function Secao({
           {numero}
         </span>
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
+        {pendencias && pendencias.bloqueio + pendencias.aviso > 0 && (
+          <span
+            className={`rounded-full px-1.5 text-[10px] font-bold ${pendencias.bloqueio ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'}`}
+            aria-label={`${pendencias.bloqueio + pendencias.aviso}`}
+          >
+            ! {pendencias.bloqueio + pendencias.aviso}
+          </span>
+        )}
         {extra && <div className="ml-auto">{extra}</div>}
       </header>
       {children}
@@ -105,6 +123,9 @@ export default function ColunaFichaCuradoria({
   onAlternarMarcacao,
   topo,
   teclasAtivas = true,
+  destaques = {},
+  conferencia = [],
+  acoesBarra,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -120,7 +141,20 @@ export default function ColunaFichaCuradoria({
   topo?: ReactNode
   /** desliga ↑/↓ (ex.: modal aberto) */
   teclasAtivas?: boolean
+  /** secoes que acabaram de receber dados (valor = marca de tempo) */
+  destaques?: Partial<Record<SecaoFicha, number>>
+  /** resultado da conferencia automatica (lib/conferenciaFicha.ts) */
+  conferencia?: ItemConferencia[]
+  /** botoes extras na barra do titulo (menu de macros) */
+  acoesBarra?: ReactNode
 }) {
+  const tConf = useTranslations('Curadoria.conferencia')
+  const [verConferencia, setVerConferencia] = useState(false)
+  const pendencias = (id: SecaoFicha) => ({
+    bloqueio: conferencia.filter((c) => c.secao === id && c.nivel === 'bloqueio').length,
+    aviso: conferencia.filter((c) => c.secao === id && c.nivel === 'aviso').length,
+  })
+  const bloqueios = conferencia.filter((c) => c.nivel === 'bloqueio').length
   const t = useTranslations('Curadoria.coluna')
   const tSecoes = useTranslations('Curadoria.secoes')
   const refs = useRef<Partial<Record<SecaoFicha, HTMLElement | null>>>({})
@@ -167,6 +201,8 @@ export default function ColunaFichaCuradoria({
     registrar: (el: HTMLElement | null) => {
       refs.current[id] = el
     },
+    piscando: destaques[id],
+    pendencias: pendencias(id),
   })
 
   return (
@@ -174,9 +210,25 @@ export default function ColunaFichaCuradoria({
       {topo && <div className="shrink-0">{topo}</div>}
 
       {/* barra com o titulo e as setas ▲/▼ entre secoes */}
-      <div className="flex shrink-0 items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
-        <h2 className="text-sm font-bold text-ink">{t('titulo')}</h2>
-        <span className="text-[11px] text-slate-500">{t('ajudaTeclas')}</span>
+      <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
+        <h2 className="text-sm font-bold text-ink" title={t('ajudaTeclas')}>{t('titulo')}</h2>
+        {/* conferencia automatica: ✓ tudo certo / ! N pendencias */}
+        <button
+          type="button"
+          onClick={() => setVerConferencia((v) => !v)}
+          aria-expanded={verConferencia}
+          title={tConf('titulo')}
+          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
+            conferencia.length === 0
+              ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200'
+              : bloqueios
+                ? 'border-red-400/60 bg-red-500/15 text-red-200'
+                : 'border-amber-300/60 bg-amber-300/10 text-amber-100'
+          }`}
+        >
+          {conferencia.length === 0 ? `✓ ${tConf('ok')}` : `! ${tConf('pendencias', { quantidade: conferencia.length })}`}
+        </button>
+        {acoesBarra}
         <div className="ml-auto flex gap-1">
           <button
             type="button"
@@ -200,6 +252,16 @@ export default function ColunaFichaCuradoria({
           </button>
         </div>
       </div>
+
+      {verConferencia && conferencia.length > 0 && (
+        <ListaConferencia
+          itens={conferencia}
+          onIr={(secao) => {
+            onSecao(secao)
+            setVerConferencia(false)
+          }}
+        />
+      )}
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
         <Secao {...p('dados')}>
@@ -306,5 +368,26 @@ export default function ColunaFichaCuradoria({
         <div className="h-[40vh]" aria-hidden="true" />
       </div>
     </div>
+  )
+}
+
+/** Lista de pendencias da conferencia, cada uma com "ir para a secao". */
+export function ListaConferencia({ itens, onIr }: { itens: ItemConferencia[]; onIr: (secao: SecaoFicha) => void }) {
+  const t = useTranslations('Curadoria.conferencia')
+  const tSecoes = useTranslations('Curadoria.secoes')
+  return (
+    <ul className="shrink-0 space-y-1 rounded-xl border border-amber-300/30 bg-amber-300/5 p-2">
+      {itens.map((item, i) => (
+        <li key={i} className="flex items-start gap-2 text-xs">
+          <span className={`mt-0.5 shrink-0 rounded px-1 text-[10px] font-bold ${item.nivel === 'bloqueio' ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'}`}>
+            {item.nivel === 'bloqueio' ? t('bloqueio') : t('aviso')}
+          </span>
+          <span className="min-w-0 flex-1 text-slate-200">{t(`itens.${item.chave}`, item.parametros ?? {})}</span>
+          <button type="button" onClick={() => onIr(item.secao)} className="shrink-0 text-[11px] text-teal-200 hover:underline">
+            {tSecoes(item.secao)} →
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }
