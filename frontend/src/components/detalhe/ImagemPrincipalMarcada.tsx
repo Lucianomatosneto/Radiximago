@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import FormasMarcacoes from './FormasMarcacoes'
+import NumerosMarcacoes from './NumerosMarcacoes'
 import type { Marcacao } from '../../lib/marcacoes'
 import { useHoverMarcacao } from '../../lib/useHoverMarcacao'
 
@@ -104,14 +105,12 @@ export default function ImagemPrincipalMarcada({
         />
       )}
       {caixa && (
-        <svg
-          viewBox="0 0 1 1"
-          preserveAspectRatio="none"
-          className="absolute"
-          style={{ left: caixa.left, top: caixa.top, width: caixa.width, height: caixa.height }}
-        >
-          <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`principal-${curationId}`} onHover={setHover} />
-        </svg>
+        <div className="absolute" style={{ left: caixa.left, top: caixa.top, width: caixa.width, height: caixa.height }}>
+          <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
+            <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`principal-${curationId}`} onHover={setHover} />
+          </svg>
+          <NumerosMarcacoes marcacoes={marcacoes} />
+        </div>
       )}
       {hover && (
         <span

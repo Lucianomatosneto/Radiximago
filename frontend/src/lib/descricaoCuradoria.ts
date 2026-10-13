@@ -75,7 +75,7 @@ export function useDescricaoCuradoria() {
     )
     add(t('achadosDetalhados'), item.achados_detalhe)
     add(t('descricao'), item.descricao_didatica)
-    add(t('marcacoes'), (item.marcacoes ?? []).map(textoMarcacao).join('; '))
+    ;(item.marcacoes ?? []).forEach((m, i) => add(t('marcacaoN', { numero: i + 1 }), textoMarcacao(m)))
     return linhas
   }
 }

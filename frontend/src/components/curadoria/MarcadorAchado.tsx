@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import FormasMarcacoes from '../detalhe/FormasMarcacoes'
+import NumerosMarcacoes from '../detalhe/NumerosMarcacoes'
 import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, gerarIdMarcacao, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
 import { detectarRecorteConteudo, type RecorteRelativo } from '../../lib/recorteImagem'
 
@@ -572,6 +573,7 @@ export default function MarcadorAchado({
               </g>
             ))}
           </svg>
+          <NumerosMarcacoes marcacoes={marcacoes} recorte={recorteAtual} />
           </div>
         )}
       </div>

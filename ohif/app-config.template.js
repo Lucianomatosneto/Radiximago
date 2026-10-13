@@ -310,13 +310,23 @@ window.config = {
         alvo.appendChild(svg);
       }
       while (svg.firstChild) svg.removeChild(svg.firstChild);
+      var numeros = [];
       var defs = el('defs', {});
       var marker = el('marker', { id: 'radix-ponta-' + id, viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '5', markerHeight: '5', orient: 'auto-start-reverse' });
       marker.appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#ffffff' }));
       defs.appendChild(marker);
       svg.appendChild(defs);
 
-      lista.forEach(function (m) {
+      lista.forEach(function (m, indice) {
+        // numero da marcacao (ordem em que o curador marcou), no canto de
+        // cima/esquerda da forma ou na cauda da seta - igual ao Radix
+        var ancora;
+        if (m.tipo === 'seta') ancora = tela(m.x1 || 0, m.y1 || 0);
+        else if (m.tipo === 'oval') {
+          var rx0 = (m.largura || 0) / 2, ry0 = (m.altura || 0) / 2;
+          ancora = tela((m.x || 0) + rx0 - rx0 * Math.SQRT1_2, (m.y || 0) + ry0 - ry0 * Math.SQRT1_2);
+        } else ancora = tela(m.x || 0, m.y || 0);
+        numeros.push({ n: indice + 1, p: ancora });
         if (m.tipo === 'seta') {
           var a = tela(m.x1 || 0, m.y1 || 0), b = tela(m.x2 || 0, m.y2 || 0);
           svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#ffffff', 'stroke-width': '2', 'marker-end': 'url(#radix-ponta-' + id + ')' }));
@@ -336,6 +346,13 @@ window.config = {
           points: pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '),
           stroke: '#ffffff', 'stroke-width': '1.5', 'stroke-opacity': '0.9', fill: 'rgba(255,255,255,0.18)'
         }));
+      });
+      // os numeros por ultimo, para ficarem por cima das formas
+      numeros.forEach(function (item) {
+        svg.appendChild(el('circle', { cx: item.p[0], cy: item.p[1], r: '10', fill: '#fbbf24', stroke: '#ffffff', 'stroke-width': '1.5' }));
+        var tx = el('text', { x: item.p[0], y: item.p[1], 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': '12', 'font-weight': '700', 'font-family': 'Inter, Arial, sans-serif', fill: '#000000' });
+        tx.textContent = String(item.n);
+        svg.appendChild(tx);
       });
     });
   }

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import MiniaturaImagem from '../MiniaturaImagem'
 import FormasMarcacoes from './FormasMarcacoes'
+import NumerosMarcacoes from './NumerosMarcacoes'
 import type { Marcacao } from '../../lib/marcacoes'
 import { useHoverMarcacao } from '../../lib/useHoverMarcacao'
 
@@ -94,6 +95,7 @@ export default function MarcacaoAchado({
               <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`bloco-${curationId}`} onHover={setHover} />
             </svg>
           )}
+          {mostrar && <NumerosMarcacoes marcacoes={marcacoes} />}
         </div>
       )}
       {hover && (

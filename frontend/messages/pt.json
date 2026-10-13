@@ -1214,7 +1214,8 @@
     "alteracoes": "Alterações observadas",
     "achadosDetalhados": "Achados detalhados",
     "descricao": "Descrição didática",
-    "marcacoes": "Marcações do curador"
+    "marcacoes": "Marcações do curador",
+    "marcacaoN": "Marcação {numero}"
   },
   "Salvar": {
     "salvarComo": "Salvar como",

@@ -39,7 +39,7 @@ import io
 import math
 from typing import Any
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 
 
 def desenhar_marcacoes_na_imagem(conteudo_png: bytes, marcacoes: list[dict[str, Any]] | None) -> bytes:
@@ -72,15 +72,25 @@ def desenhar_marcacoes_na_imagem(conteudo_png: bytes, marcacoes: list[dict[str, 
     # tanto numa miniatura pequena quanto numa imagem de alta resolucao.
     espessura = max(2, round(min(largura, altura) * 0.004))
 
-    for marcacao in marcacoes:
+    numeros: list[tuple[int, float, float]] = []
+    for indice, marcacao in enumerate(marcacoes, start=1):
         tipo = marcacao.get("tipo")
         if tipo == "seta":
             _desenhar_seta(desenho, marcacao, largura, altura, espessura)
         elif tipo in ("oval", "retangulo"):
             _desenhar_forma_fechada(desenho, marcacao, largura, altura, tipo)
-        # Tipos desconhecidos (ex.: um valor novo adicionado no futuro que
-        # este modulo ainda nao conhece) sao simplesmente ignorados, em vez
-        # de quebrar o download/e-mail inteiro por causa de uma marcacao.
+        else:
+            # Tipos desconhecidos (ex.: um valor novo adicionado no futuro
+            # que este modulo ainda nao conhece) sao simplesmente
+            # ignorados, em vez de quebrar o download/e-mail inteiro.
+            continue
+        ax, ay = _ponto_numero(marcacao)
+        numeros.append((indice, ax * largura, ay * altura))
+
+    # Numero de cada marcacao (ordem em que o curador marcou) - o mesmo que
+    # aparece na tela e na descricao ("Marcação 1: ..."). Desenhado por
+    # ultimo para ficar por cima das formas.
+    _desenhar_numeros(desenho, numeros, largura, altura)
 
     composta = Image.alpha_composite(imagem_original, camada).convert("RGB")
     buffer = io.BytesIO()
@@ -145,3 +155,41 @@ def _desenhar_seta(
         y2 - tamanho_ponta * math.sin(angulo + angulo_abertura),
     )
     desenho.polygon([(x2, y2), ponta_1, ponta_2], fill=(255, 255, 255, 255))
+
+
+def _ponto_numero(marcacao: dict[str, Any]) -> tuple[float, float]:
+    """Ponto (0-1) onde fica o numero - mesma regra de
+    pontoNumeroMarcacao em frontend/src/lib/marcacoes.ts."""
+    if marcacao.get("tipo") == "seta":
+        return (marcacao.get("x1") or 0, marcacao.get("y1") or 0)
+    x = marcacao.get("x") or 0
+    y = marcacao.get("y") or 0
+    if marcacao.get("tipo") == "oval":
+        rx = (marcacao.get("largura") or 0) / 2
+        ry = (marcacao.get("altura") or 0) / 2
+        fator = math.sqrt(0.5)
+        return (x + rx - rx * fator, y + ry - ry * fator)
+    return (x, y)
+
+
+def _desenhar_numeros(
+    desenho: "ImageDraw.ImageDraw",
+    numeros: list[tuple[int, float, float]],
+    largura: int,
+    altura: int,
+) -> None:
+    if not numeros:
+        return
+    raio = max(9, round(min(largura, altura) * 0.018))
+    try:
+        fonte = ImageFont.load_default(size=round(raio * 1.2))
+    except TypeError:  # Pillow antigo, sem tamanho na fonte padrao
+        fonte = ImageFont.load_default()
+    for numero, cx, cy in numeros:
+        desenho.ellipse(
+            [cx - raio, cy - raio, cx + raio, cy + raio],
+            fill=(251, 191, 36, 255),
+            outline=(255, 255, 255, 255),
+            width=max(1, raio // 6),
+        )
+        desenho.text((cx, cy), str(numero), fill=(0, 0, 0, 255), font=fonte, anchor="mm")

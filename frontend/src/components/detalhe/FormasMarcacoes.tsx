@@ -78,13 +78,19 @@ export default function FormasMarcacoes({
     return chave ? tAchado(chave) : ''
   }
 
+  // "1. Cárie": o mesmo numero do selo desenhado na imagem
+  function numerado(m: Marcacao, texto: string) {
+    const n = marcacoes.indexOf(m)
+    return n >= 0 ? `${n + 1}. ${texto}` : texto
+  }
+
   function eventosHover(m: Marcacao) {
     if (!onHover) return {}
     // Mesmo sem tipo de lesao definido pelo curador, o hover mostra algo -
     // sem isso, passar o mouse numa marcacao antiga (de antes desse campo
     // existir, ou que o curador simplesmente nao preencheu) nao dava
     // nenhum retorno visual, parecendo que o hover nao funcionava.
-    const texto = rotularAchado(m) || tMarcacao('lesaoGenerica')
+    const texto = numerado(m, rotularAchado(m) || tMarcacao('lesaoGenerica'))
     return {
       onMouseMove: (evento: React.MouseEvent) => onHover({ texto, x: evento.clientX, y: evento.clientY }),
       onMouseLeave: () => onHover(null),
@@ -98,7 +104,7 @@ export default function FormasMarcacoes({
   // (0-1) da marcacao, pra funcionar em qualquer zoom/tamanho de imagem.
   function eventosHoverSeta(m: Marcacao) {
     if (!onHover) return {}
-    const texto = rotularAchado(m) || tMarcacao('lesaoGenerica')
+    const texto = numerado(m, rotularAchado(m) || tMarcacao('lesaoGenerica'))
     return {
       onMouseMove: (evento: React.MouseEvent<SVGRectElement>) => {
         const svg = evento.currentTarget.ownerSVGElement

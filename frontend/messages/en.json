@@ -1214,7 +1214,8 @@
     "alteracoes": "Observed changes",
     "achadosDetalhados": "Detailed findings",
     "descricao": "Teaching description",
-    "marcacoes": "Curator markings"
+    "marcacoes": "Curator markings",
+    "marcacaoN": "Marking {numero}"
   },
   "Salvar": {
     "salvarComo": "Save as",

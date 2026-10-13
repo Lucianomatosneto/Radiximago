@@ -54,3 +54,21 @@ export function rotularAchadoMarcacao(valor: string | null | undefined): string 
 export function gerarIdMarcacao(): string {
   return Math.random().toString(36).slice(2, 10)
 }
+
+// NUMERACAO DAS MARCACOES: cada marcacao recebe o numero da ordem em que o
+// curador a fez (1, 2, 3...). O mesmo numero aparece no selo desenhado na
+// imagem e na descricao ("Marcação 1: Cárie · Oval"), para quem estuda
+// ligar facilmente o texto a forma. Este e o ponto (0-1, relativo a
+// imagem) onde o numero fica: no canto de cima/esquerda da forma (para nao
+// cobrir a lesao) ou, na seta, na cauda (a ponta indica a lesao).
+export function pontoNumeroMarcacao(m: Marcacao): { x: number; y: number } {
+  if (m.tipo === 'seta') return { x: m.x1 ?? 0, y: m.y1 ?? 0 }
+  const x = m.x ?? 0
+  const y = m.y ?? 0
+  if (m.tipo === 'oval') {
+    const rx = (m.largura ?? 0) / 2
+    const ry = (m.altura ?? 0) / 2
+    return { x: x + rx - rx * Math.SQRT1_2, y: y + ry - ry * Math.SQRT1_2 }
+  }
+  return { x, y }
+}
