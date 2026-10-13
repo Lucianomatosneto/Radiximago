@@ -16,6 +16,7 @@ import LegendaImagem from './visualizador/LegendaImagem'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
 import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
+import { textoMarcacao } from '../lib/descricaoCuradoria'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
 // este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
@@ -148,6 +149,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const router = useRouter()
   const t = useTranslations('Visualizador')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tDescricao = useTranslations('DescricaoCuradoria')
   const traduzirTipoRadiografia = (chave: string) => tOpcoes(`tipoRadiografia.${chave}`)
   const traduzirQualidadeTecnica = (chave: string) => tOpcoes(`qualidadeTecnica.${chave}`)
   const traduzirAchadoPrincipal = (chave: string) => tOpcoes(`achadoPrincipal.${chave}`)
@@ -233,12 +235,17 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   enviarMarcacoesRef.current = () => {
     const janela = ohifRef.current?.contentWindow
     if (!janela || !origemOhif) return
-    const estudos: Record<string, Marcacao[]> = {}
+    // cada marcacao leva o texto ja traduzido ("Marcação 1: Cárie · Oval"),
+    // que o OHIF mostra ao passar o mouse sobre o numero ou a forma
+    const estudos: Record<string, (Marcacao & { texto: string })[]> = {}
     const visiveis: string[] = []
     for (const item of emGrade ? itensPagina : [itens[indice]]) {
       const uid = estudoDe(item?.viewer_url ?? null)
       if (!uid) continue
-      estudos[uid] = item.marcacoes ?? []
+      estudos[uid] = (item.marcacoes ?? []).map((m, i) => ({
+        ...m,
+        texto: `${tDescricao('marcacaoN', { numero: i + 1 })}: ${textoMarcacao(m)}`,
+      }))
       if (marcacoesLigadas.includes(item.curation_id)) visiveis.push(uid)
     }
     janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis }, origemOhif)

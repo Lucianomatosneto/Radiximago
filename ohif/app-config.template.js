@@ -258,6 +258,72 @@ window.config = {
     return n;
   }
 
+  // caixinha com a descricao da marcacao, que aparece ao passar o mouse
+  // sobre o numero (ou sobre a propria forma) - fica fora do SVG porque o
+  // SVG e redesenhado a cada quadro
+  var dica = null;
+  function mostrarDica(texto, x, y) {
+    if (!dica) {
+      dica = document.createElement('div');
+      dica.className = 'radix-dica-marcacao';
+      dica.setAttribute('role', 'tooltip');
+      dica.style.cssText = 'position:fixed;z-index:99999;pointer-events:none;max-width:280px;padding:6px 10px;border-radius:8px;background:rgba(15,23,42,0.95);color:#f8fafc;font:600 13px/1.35 Inter,Arial,sans-serif;border:1px solid #fbbf24;box-shadow:0 6px 18px rgba(0,0,0,0.45);white-space:normal';
+      document.body.appendChild(dica);
+    }
+    dica.textContent = texto;
+    dica.style.display = 'block';
+    var larg = dica.offsetWidth, alt = dica.offsetHeight;
+    var px = x + 14, py = y + 14;
+    if (px + larg > window.innerWidth - 4) px = x - larg - 14;
+    if (py + alt > window.innerHeight - 4) py = y - alt - 14;
+    dica.style.left = Math.max(4, px) + 'px';
+    dica.style.top = Math.max(4, py) + 'px';
+  }
+  function esconderDica() { if (dica) dica.style.display = 'none'; }
+
+  function dentroPoligono(px, py, pts) {
+    var dentro = false;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+      var xi = pts[i][0], yi = pts[i][1], xj = pts[j][0], yj = pts[j][1];
+      if (((yi > py) !== (yj > py)) && (px < (xj - xi) * (py - yi) / ((yj - yi) || 1e-9) + xi)) dentro = !dentro;
+    }
+    return dentro;
+  }
+  function distSegmento(px, py, a, b) {
+    var dx = b[0] - a[0], dy = b[1] - a[1];
+    var l2 = dx * dx + dy * dy;
+    var t = l2 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / l2)) : 0;
+    var cx = a[0] + t * dx, cy = a[1] + t * dy;
+    return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+  }
+  // qual marcacao esta sob o mouse: o numero tem prioridade; depois a forma
+  // menor (a mais "de dentro"), para formas sobrepostas
+  function marcacaoSob(alvos, px, py) {
+    var i, achado = null, menorArea = Infinity;
+    for (i = alvos.length - 1; i >= 0; i--) {
+      var n = alvos[i].numero;
+      if (Math.sqrt((px - n[0]) * (px - n[0]) + (py - n[1]) * (py - n[1])) <= 13) return alvos[i];
+    }
+    for (i = 0; i < alvos.length; i++) {
+      var a = alvos[i];
+      if (a.seta) { if (distSegmento(px, py, a.seta[0], a.seta[1]) <= 6) return a; continue; }
+      if (a.pts && dentroPoligono(px, py, a.pts) && a.area < menorArea) { achado = a; menorArea = a.area; }
+    }
+    return achado;
+  }
+  function ouvirMouse(alvo) {
+    if (alvo.__radixOuvindo) return;
+    alvo.__radixOuvindo = true;
+    alvo.addEventListener('mousemove', function (ev) {
+      var alvos = alvo.__radixAlvos || [];
+      if (!alvos.length) { esconderDica(); return; }
+      var r = alvo.getBoundingClientRect();
+      var m = marcacaoSob(alvos, ev.clientX - r.left, ev.clientY - r.top);
+      if (m) mostrarDica(m.texto, ev.clientX, ev.clientY); else esconderDica();
+    });
+    alvo.addEventListener('mouseleave', esconderDica);
+  }
+
   function algumVisivel() {
     for (var k in estado.visiveis) if (estado.visiveis[k]) return true;
     return false;
@@ -276,7 +342,11 @@ window.config = {
 
   function limparTudo() {
     var lista = document.querySelectorAll('svg.radix-marcas');
-    for (var i = 0; i < lista.length; i++) lista[i].remove();
+    for (var i = 0; i < lista.length; i++) {
+      if (lista[i].parentNode) lista[i].parentNode.__radixAlvos = [];
+      lista[i].remove();
+    }
+    esconderDica();
   }
 
   function desenhar() {
@@ -293,7 +363,7 @@ window.config = {
       var ds = dsUid && s.displaySetService.getDisplaySetByUID(dsUid);
       var uid = ds && ds.StudyInstanceUID;
       var lista = uid && estado.visiveis[uid] ? (estado.estudos[uid] || []) : [];
-      if (!lista.length) { if (svg) svg.remove(); return; }
+      if (!lista.length) { if (svg) svg.remove(); alvo.__radixAlvos = []; return; }
 
       var dados = cvp.getImageData && cvp.getImageData();
       if (!dados || !dados.imageData || !dados.dimensions) return;
@@ -311,6 +381,8 @@ window.config = {
       }
       while (svg.firstChild) svg.removeChild(svg.firstChild);
       var numeros = [];
+      var alvos = [];
+      ouvirMouse(alvo);
       var defs = el('defs', {});
       var marker = el('marker', { id: 'radix-ponta-' + id, viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '5', markerHeight: '5', orient: 'auto-start-reverse' });
       marker.appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#ffffff' }));
@@ -327,8 +399,10 @@ window.config = {
           ancora = tela((m.x || 0) + rx0 - rx0 * Math.SQRT1_2, (m.y || 0) + ry0 - ry0 * Math.SQRT1_2);
         } else ancora = tela(m.x || 0, m.y || 0);
         numeros.push({ n: indice + 1, p: ancora });
+        var texto = m.texto || ('Marca\u00e7\u00e3o ' + (indice + 1));
         if (m.tipo === 'seta') {
           var a = tela(m.x1 || 0, m.y1 || 0), b = tela(m.x2 || 0, m.y2 || 0);
+          alvos.push({ texto: texto, numero: ancora, seta: [a, b] });
           svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#ffffff', 'stroke-width': '2', 'marker-end': 'url(#radix-ponta-' + id + ')' }));
           return;
         }
@@ -342,11 +416,15 @@ window.config = {
         } else {
           pts = [tela(x, y), tela(x + w, y), tela(x + w, y + h), tela(x, y + h)];
         }
+        var area = 0;
+        for (var q = 0, z = pts.length - 1; q < pts.length; z = q++) area += (pts[z][0] + pts[q][0]) * (pts[z][1] - pts[q][1]);
+        alvos.push({ texto: texto, numero: ancora, pts: pts, area: Math.abs(area / 2) });
         svg.appendChild(el('polygon', {
           points: pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '),
           stroke: '#ffffff', 'stroke-width': '1.5', 'stroke-opacity': '0.9', fill: 'rgba(255,255,255,0.18)'
         }));
       });
+      alvo.__radixAlvos = alvos;
       // os numeros por ultimo, para ficarem por cima das formas
       numeros.forEach(function (item) {
         svg.appendChild(el('circle', { cx: item.p[0], cy: item.p[1], r: '10', fill: '#fbbf24', stroke: '#ffffff', 'stroke-width': '1.5' }));

@@ -573,7 +573,7 @@ export default function MarcadorAchado({
               </g>
             ))}
           </svg>
-          <NumerosMarcacoes marcacoes={marcacoes} recorte={recorteAtual} />
+          <NumerosMarcacoes marcacoes={marcacoes} recorte={recorteAtual} dica={false} />
           </div>
         )}
       </div>
