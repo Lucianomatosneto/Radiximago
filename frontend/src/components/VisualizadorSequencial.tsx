@@ -235,7 +235,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   enviarMarcacoesRef.current = () => {
     const janela = ohifRef.current?.contentWindow
     if (!janela || !origemOhif) return
-    // cada marcacao leva o texto ja traduzido ("Marcação 1: Cárie · Oval"),
+    // cada marcacao leva o texto ja traduzido ("Marcação 1: Cárie"),
     // que o OHIF mostra ao passar o mouse sobre o numero ou a forma
     const estudos: Record<string, (Marcacao & { texto: string })[]> = {}
     const visiveis: string[] = []

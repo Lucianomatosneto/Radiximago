@@ -57,7 +57,7 @@ export function gerarIdMarcacao(): string {
 
 // NUMERACAO DAS MARCACOES: cada marcacao recebe o numero da ordem em que o
 // curador a fez (1, 2, 3...). O mesmo numero aparece no selo desenhado na
-// imagem e na descricao ("Marcação 1: Cárie · Oval"), para quem estuda
+// imagem e na descricao ("Marcação 1: Cárie"), para quem estuda
 // ligar facilmente o texto a forma. Este e o ponto (0-1, relativo a
 // imagem) onde o numero fica: no canto de cima/esquerda da forma (para nao
 // cobrir a lesao) ou, na seta, na cauda (a ponta indica a lesao).

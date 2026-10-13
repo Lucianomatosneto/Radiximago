@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { FORMAS_MARCACAO, rotularAchadoMarcacao, type Marcacao } from './marcacoes'
+import { rotularAchadoMarcacao, type Marcacao } from './marcacoes'
 
 // Texto da curadoria de uma imagem, montado num so lugar para ser igual em
 // todo o sistema: na caixinha que abre ao passar o mouse no visualizador e
@@ -37,10 +37,11 @@ const CHAVE_ACHADO: Record<string, string> = {
 const TIPOS = ['periapical', 'panoramica', 'interproximal', 'oclusal']
 const QUALIDADES = ['otima', 'boa', 'regular', 'insatisfatoria']
 
+// So o achado ("Cárie") - o formato do desenho (oval, retangulo, seta)
+// nao entra no texto: e detalhe de desenho, nao informacao para o estudante.
 export function textoMarcacao(m: Marcacao): string {
   const achado = m.achado === 'outro' && m.achado_descricao ? m.achado_descricao : rotularAchadoMarcacao(m.achado)
-  const forma = FORMAS_MARCACAO.find((f) => f.tipo === m.tipo)?.rotulo
-  return [achado || '—', forma].filter(Boolean).join(' · ')
+  return achado || '—'
 }
 
 /** Devolve uma funcao que transforma um item em linhas "rotulo: valor" (so as preenchidas). */

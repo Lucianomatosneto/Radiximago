@@ -11,7 +11,7 @@ import { textoMarcacao } from '../../lib/descricaoCuradoria'
 // visivel dela, no editor da Curadoria).
 //
 // Com `dica` (padrao), passar o mouse sobre o numero mostra a descricao
-// daquela marcacao ("Marcação 1: Cárie · Oval"). No editor da Curadoria
+// daquela marcacao ("Marcação 1: Cárie"). No editor da Curadoria
 // usa-se dica={false} para o selo nao atrapalhar o desenho.
 export default function NumerosMarcacoes({
   marcacoes,
