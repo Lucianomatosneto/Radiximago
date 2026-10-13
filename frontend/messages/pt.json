@@ -535,9 +535,10 @@
       "abrirDescricao": "Clique para abrir as informações da imagem",
       "fecharDescricao": "Clique para fechar as informações da imagem",
       "barraArrastar": "Arraste aqui para mover",
-      "ampliarQuadro": "Ampliar o quadro (metade da tela)",
+      "ampliarQuadro": "Ampliar o quadro (metade da tela, ao lado da imagem)",
       "restaurarQuadro": "Voltar ao tamanho normal",
-      "redimensionarQuadro": "Arraste para aumentar ou diminuir o quadro (clique duplo: tamanho normal)"
+      "redimensionarQuadro": "Arraste para aumentar ou diminuir o quadro (clique duplo: tamanho normal)",
+      "barraAmpliado": "Quadro ampliado — clique no botão ao lado para voltar ao tamanho normal"
     },
     "impressao": {
       "todas": "Todas desta sequência",

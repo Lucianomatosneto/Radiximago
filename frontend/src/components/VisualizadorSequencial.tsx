@@ -311,8 +311,44 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     const janela = ohifRef.current?.contentWindow
     if (uid && janela && origemOhif) janela.postMessage({ tipo: 'radix-isolar', uid, indice: indiceMarcacao }, origemOhif)
   }
+  // QUADRO DE INFORMACOES AMPLIADO: ocupa metade da area de imagens, do lado
+  // que nao cobre a imagem descrita. Com uma coluna so (imagem unica ou uma
+  // coluna de imagens) a area de imagens encolhe para a metade esquerda e o
+  // quadro fica na direita - imagem de um lado, informacoes do outro.
+  const areaRef = useRef<HTMLDivElement>(null)
+  const [quadroAmpliado, setQuadroAmpliado] = useState<number | null>(null)
+  const itensNaTela = emGrade ? itensPagina : [atual]
+  const itemAmpliado = itensNaTela.find((item) => item.curation_id === quadroAmpliado) ?? null
+  function ladoQuadro(item: ItemSequencia): 'direita' | 'esquerda' | 'encolher' {
+    if (!emGrade || grade.colunas === 1) return 'encolher'
+    const coluna = itensPagina.indexOf(item) % grade.colunas
+    return coluna < grade.colunas / 2 ? 'direita' : 'esquerda'
+  }
+  const encolherArea = itemAmpliado !== null && ladoQuadro(itemAmpliado) === 'encolher'
+  useEffect(() => {
+    // trocou de pagina/imagem/layout e a imagem ampliada saiu da tela
+    if (quadroAmpliado !== null && !itemAmpliado) setQuadroAmpliado(null)
+  }, [quadroAmpliado, itemAmpliado])
+  function areaAmpliadaDe(item: ItemSequencia) {
+    return () => {
+      const r = areaRef.current?.getBoundingClientRect()
+      if (!r) return null
+      const metade = r.width / 2
+      const esquerda = ladoQuadro(item) === 'esquerda'
+      return {
+        left: Math.round(esquerda ? r.left + 8 : r.left + metade + 4),
+        top: Math.round(r.top + 8),
+        width: Math.round(metade - 12),
+        height: Math.round(r.height - 16),
+      }
+    }
+  }
+
   function propsSelos(item: ItemSequencia) {
     return {
+      ampliado: quadroAmpliado === item.curation_id,
+      onAmpliar: (v: boolean) => setQuadroAmpliado(v ? item.curation_id : null),
+      areaAmpliada: areaAmpliadaDe(item),
       item,
       ligada: mostraMarcacaoDe(item),
       onAlternar: () => alternarMarcacaoDe(item.curation_id),
@@ -660,7 +696,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         </div>
       </div>
 
-      <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+      <div
+        ref={areaRef}
+        className="relative flex flex-1 items-center justify-center overflow-hidden transition-[padding] duration-200"
+        style={encolherArea ? { paddingRight: '50%' } : undefined}
+      >
         {/* Seta de voltar (pagina/imagem anterior), colada na borda esquerda. */}
         <div
           className={"absolute left-2 z-30 flex items-center gap-1.5 sm:left-6"}
@@ -806,7 +846,15 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         {!emGrade && (
           <SelosImagem
             {...propsSelos(atual)}
-            className={urlComSerie ? 'right-24 top-[60px]' : 'right-20 top-3'}
+            className={
+              encolherArea
+                ? urlComSerie
+                  ? 'right-[calc(50%+6rem)] top-[60px]'
+                  : 'right-[calc(50%+5rem)] top-3'
+                : urlComSerie
+                  ? 'right-24 top-[60px]'
+                  : 'right-20 top-3'
+            }
           />
         )}
 
@@ -1042,6 +1090,9 @@ function SelosImagem({
   onIsolarMarcacao,
   holofote,
   onAlternarHolofote,
+  ampliado,
+  onAmpliar,
+  areaAmpliada,
   className = '',
 }: {
   item: ItemSequencia
@@ -1051,6 +1102,9 @@ function SelosImagem({
   onIsolarMarcacao?: (indice: number) => void
   holofote?: boolean
   onAlternarHolofote?: () => void
+  ampliado?: boolean
+  onAmpliar?: (valor: boolean) => void
+  areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
   className?: string
 }) {
   const t = useTranslations('Visualizador.marcacoes')
@@ -1110,6 +1164,9 @@ function SelosImagem({
         onFocoMarcacao={onFocoMarcacao}
         onIsolarMarcacao={onIsolarMarcacao}
         curationId={item.curation_id}
+        ampliado={ampliado}
+        onAmpliar={onAmpliar}
+        areaAmpliada={areaAmpliada}
       />
     </div>
   )

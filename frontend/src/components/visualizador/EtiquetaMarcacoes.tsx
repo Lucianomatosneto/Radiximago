@@ -29,6 +29,9 @@ export default function EtiquetaMarcacoes({
   onFocoMarcacao,
   onIsolarMarcacao,
   curationId,
+  ampliado = false,
+  onAmpliar,
+  areaAmpliada,
 }: {
   item: ItemDescritivel
   className?: string
@@ -43,6 +46,11 @@ export default function EtiquetaMarcacoes({
   onIsolarMarcacao?: (indice: number) => void
   /** com o id da imagem, o quadro ganha as anotacoes pessoais de quem ve */
   curationId?: number
+  /** quadro AMPLIADO: ocupa metade da area de imagens, do lado oposto ao
+   *  da imagem descrita (quem chama decide o lado e o retangulo) */
+  ampliado?: boolean
+  onAmpliar?: (valor: boolean) => void
+  areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
@@ -52,7 +60,7 @@ export default function EtiquetaMarcacoes({
   // continua abrindo ao passar o mouse.
   const [passando, setPassando] = useState(false)
   const [fixada, setFixada] = useState(false)
-  const aberta = fixada || (flutuante && passando)
+  const aberta = fixada || (flutuante && passando) || ampliado
   const botaoRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   // Deslocamento do quadro arrastado pela pessoa (para tirar de cima da
@@ -133,18 +141,33 @@ export default function EtiquetaMarcacoes({
       // ponteiro ja liberado
     }
   }
-  const maximizado = tamanho !== null && tamanho.w >= largMaxSeguro() - 1
-  function largMaxSeguro() {
-    return typeof window === 'undefined' ? 0 : largMax()
-  }
-  function alternarMaximizar() {
-    if (maximizado) {
-      setTamanho(null)
-    } else {
-      setTamanho({ w: largMax(), h: altMax() })
-      // ao ampliar, traz o quadro de volta para dentro da tela
-      setDesloc({ x: 0, y: 0 })
+  // Ampliar: o quadro passa a ocupar METADE da area de imagens, do lado
+  // que nao cobre a imagem descrita, com a mesma altura da area de imagens.
+  const podeAmpliar = !!onAmpliar && !!areaAmpliada
+  const maximizado = podeAmpliar && ampliado
+  const [retAmp, setRetAmp] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  useEffect(() => {
+    if (!maximizado || !areaAmpliada) {
+      setRetAmp(null)
+      return
     }
+    function medir() {
+      const r = areaAmpliada!()
+      setRetAmp((atual) =>
+        r && (!atual || atual.left !== r.left || atual.top !== r.top || atual.width !== r.width || atual.height !== r.height) ? r : atual
+      )
+    }
+    medir()
+    // acompanha mudancas de tamanho da tela/area (e a animacao do layout)
+    const id = setInterval(medir, 150)
+    window.addEventListener('resize', medir)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('resize', medir)
+    }
+  }, [maximizado, areaAmpliada])
+  function alternarMaximizar() {
+    onAmpliar?.(!ampliado)
     setFixada(true)
   }
 
@@ -223,6 +246,26 @@ export default function EtiquetaMarcacoes({
     </>
   )
 
+  const botaoAmpliar = (
+    <button
+      type="button"
+      onClick={alternarMaximizar}
+      title={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
+      aria-label={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
+      className="flex shrink-0 items-center border-l border-teal-300/25 px-2 text-teal-100/80 hover:bg-teal-400/15 hover:text-teal-100"
+    >
+      {maximizado ? (
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+        </svg>
+      )}
+    </button>
+  )
+
   return (
     <div
       className={`pointer-events-auto z-20 ${embutido ? 'relative' : 'absolute'} ${className}`}
@@ -238,6 +281,12 @@ export default function EtiquetaMarcacoes({
           // dentro de um link (cartao da Pesquisa): nao abrir a imagem
           e.preventDefault()
           e.stopPropagation()
+          if (ampliado) {
+            // fechar o quadro ampliado tambem desfaz a ampliacao
+            onAmpliar?.(false)
+            setFixada(false)
+            return
+          }
           setFixada((v) => !v)
         }}
         aria-pressed={fixada}
@@ -259,7 +308,7 @@ export default function EtiquetaMarcacoes({
         {mostrarContagem && totalMarcacoes > 0 && <span>{totalMarcacoes}</span>}
       </button>
 
-      {aberta && !flutuante && (
+      {aberta && !flutuante && !maximizado && (
         <div
           ref={caixaRef}
           role="tooltip"
@@ -295,23 +344,7 @@ export default function EtiquetaMarcacoes({
                 ))}
               </svg>
             </div>
-            <button
-              type="button"
-              onClick={alternarMaximizar}
-              title={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
-              aria-label={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
-              className="flex shrink-0 items-center border-l border-teal-300/25 px-2 text-teal-100/80 hover:bg-teal-400/15 hover:text-teal-100"
-            >
-              {maximizado ? (
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
-                </svg>
-              ) : (
-                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-                </svg>
-              )}
-            </button>
+            {podeAmpliar && botaoAmpliar}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto p-3">{conteudo}</div>
           {/* canto para aumentar/diminuir o quadro (baixo, a esquerda) */}
@@ -331,6 +364,30 @@ export default function EtiquetaMarcacoes({
           </div>
         </div>
       )}
+      {/* QUADRO AMPLIADO: metade da area de imagens, do lado oposto ao da
+          imagem descrita, com a mesma altura da area de imagens. Vai para
+          o elemento em tela cheia (ou o body), por cima do visualizador. */}
+      {aberta &&
+        !flutuante &&
+        maximizado &&
+        retAmp &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
+            style={{ left: retAmp.left, top: retAmp.top, width: retAmp.width, height: retAmp.height }}
+            className="fixed z-[250] flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+          >
+            <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
+              <div className="flex flex-1 select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80">
+                <span className="truncate">{t('barraAmpliado')}</span>
+              </div>
+              {botaoAmpliar}
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 text-[13px]">{conteudo}</div>
+          </div>,
+          (typeof document !== 'undefined' && document.fullscreenElement) || document.body
+        )}
       {aberta &&
         flutuante &&
         pos &&

@@ -535,9 +535,10 @@
       "abrirDescricao": "Click to open the image information",
       "fecharDescricao": "Click to close the image information",
       "barraArrastar": "Drag here to move",
-      "ampliarQuadro": "Enlarge the panel (half the screen)",
+      "ampliarQuadro": "Enlarge the panel (half the screen, beside the image)",
       "restaurarQuadro": "Back to normal size",
-      "redimensionarQuadro": "Drag to resize the panel (double-click: normal size)"
+      "redimensionarQuadro": "Drag to resize the panel (double-click: normal size)",
+      "barraAmpliado": "Enlarged panel — click the button beside to return to normal size"
     },
     "impressao": {
       "todas": "All in this sequence",
