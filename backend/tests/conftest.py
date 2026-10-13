@@ -25,6 +25,8 @@ from app.modules.users import User, UserRole
 from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference
 from app.modules.saved_images import SavedImage
+from app.modules.compartilhamentos import CompartilhamentoImagem
+from app.modules.anotacoes import AnotacaoImagem
 from app.modules.audit_logs import AuditLog
 from app.modules.access_requests import AccessRequest, IntencaoPerfil
 
@@ -95,6 +97,10 @@ def criar_usuario(db):
     yield _criar
 
     for usuario_id in criados:
+        db.query(CompartilhamentoImagem).filter(
+            (CompartilhamentoImagem.remetente_id == usuario_id) | (CompartilhamentoImagem.destinatario_id == usuario_id)
+        ).delete(synchronize_session=False)
+        db.query(AnotacaoImagem).filter(AnotacaoImagem.usuario_id == usuario_id).delete()
         db.query(SavedImage).filter(SavedImage.user_id == usuario_id).delete()
         db.query(AuditLog).filter(AuditLog.usuario_id == usuario_id).delete()
         db.query(CurationHistory).filter(CurationHistory.usuario_id == usuario_id).delete()
@@ -159,6 +165,8 @@ def criar_ficha(db):
     yield _criar
 
     for curation_id, ref_id in criadas:
+        db.query(CompartilhamentoImagem).filter(CompartilhamentoImagem.curation_id == curation_id).delete()
+        db.query(AnotacaoImagem).filter(AnotacaoImagem.curation_id == curation_id).delete()
         db.query(SavedImage).filter(SavedImage.curation_id == curation_id).delete()
         db.query(CurationReview).filter(CurationReview.curation_id == curation_id).delete()
         db.query(CurationHistory).filter(CurationHistory.curation_id == curation_id).delete()

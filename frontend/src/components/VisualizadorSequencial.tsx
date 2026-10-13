@@ -16,6 +16,7 @@ import LegendaImagem from './visualizador/LegendaImagem'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
 import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
+import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
 import { textoMarcacao } from '../lib/descricaoCuradoria'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
@@ -34,6 +35,8 @@ export interface ItemSequencia {
   qualidade_tecnica?: string | null
   dentes?: number[] | null
   achado_principal?: string | null
+  /** imagem recebida em "Compartilhadas comigo" */
+  compartilhamento?: InfoCompartilhamento
 }
 
 // `chave` referencia o namespace Pesquisa.opcoes (ja usado na tela de
@@ -1164,6 +1167,7 @@ function SelosImagem({
         onFocoMarcacao={onFocoMarcacao}
         onIsolarMarcacao={onIsolarMarcacao}
         curationId={item.curation_id}
+        compartilhamento={item.compartilhamento}
         ampliado={ampliado}
         onAmpliar={onAmpliar}
         areaAmpliada={areaAmpliada}

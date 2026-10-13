@@ -51,6 +51,7 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'pesquisaAvancada', href: '/pesquisa', ativo: true, cor: COR_LIME },
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
+  { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, cor: COR_BLUE },
   { chave: 'relatorios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
   { chave: 'integracoes', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
@@ -65,6 +66,29 @@ export default function Sidebar() {
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
+  }, [])
+
+  // Quantas imagens chegaram em "Compartilhadas comigo" e ainda nao foram
+  // vistas - mostrado como um numero ao lado do item do menu.
+  const [novasCompartilhadas, setNovasCompartilhadas] = useState(0)
+  useEffect(() => {
+    let cancelado = false
+    function contar() {
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/shares/recebidas/novas`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((dados) => {
+          if (!cancelado && dados) setNovasCompartilhadas(dados.quantidade ?? 0)
+        })
+        .catch(() => {})
+    }
+    contar()
+    const id = setInterval(contar, 60000)
+    window.addEventListener('radix-compartilhadas-vistas', contar)
+    return () => {
+      cancelado = true
+      clearInterval(id)
+      window.removeEventListener('radix-compartilhadas-vistas', contar)
+    }
   }, [])
 
   // A Curadoria abre a primeira imagem em tela cheia automaticamente, sem
@@ -162,7 +186,17 @@ export default function Sidebar() {
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
               >
-                {t(`itens.${item.chave}`)}
+                <span className="flex items-center justify-between gap-2">
+                  {t(`itens.${item.chave}`)}
+                  {item.chave === 'compartilhadasComigo' && novasCompartilhadas > 0 && (
+                    <span
+                      className="rounded-full bg-amber-400 px-1.5 text-[11px] font-bold leading-5 text-black"
+                      aria-label={t('novasCompartilhadas', { quantidade: novasCompartilhadas })}
+                    >
+                      {novasCompartilhadas}
+                    </span>
+                  )}
+                </span>
               </Link>
             )
           })}

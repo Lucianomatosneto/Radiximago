@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricaoCuradoria'
 import NotasVisualizador from './NotasVisualizador'
+import CompartilharImagem from '../compartilhar/CompartilharImagem'
+import AnotacoesCompartilhadas, { type InfoCompartilhamento } from '../compartilhar/AnotacoesCompartilhadas'
 
 // Selo no canto de cada imagem do visualizador. Aparece SEMPRE (mesmo sem
 // marcacao): um "i" de informacao e, se houver, o numero de marcacoes do
@@ -29,6 +31,7 @@ export default function EtiquetaMarcacoes({
   onFocoMarcacao,
   onIsolarMarcacao,
   curationId,
+  compartilhamento,
   ampliado = false,
   onAmpliar,
   areaAmpliada,
@@ -46,6 +49,8 @@ export default function EtiquetaMarcacoes({
   onIsolarMarcacao?: (indice: number) => void
   /** com o id da imagem, o quadro ganha as anotacoes pessoais de quem ve */
   curationId?: number
+  /** imagem recebida de outro usuario: mostra o recado e as anotacoes dele */
+  compartilhamento?: InfoCompartilhamento
   /** quadro AMPLIADO: ocupa metade da area de imagens, do lado oposto ao
    *  da imagem descrita (quem chama decide o lado e o retangulo) */
   ampliado?: boolean
@@ -240,8 +245,12 @@ export default function EtiquetaMarcacoes({
       )}
       {/* anotacoes pessoais (so no quadro que recebe clique; o modo
           flutuante e so leitura) - escrever deixa o quadro fixo aberto */}
+      {compartilhamento && !flutuante && <AnotacoesCompartilhadas compartilhamento={compartilhamento} />}
       {curationId !== undefined && !flutuante && (
         <NotasVisualizador curationId={curationId} onAbrir={() => setFixada(true)} />
+      )}
+      {curationId !== undefined && !flutuante && (
+        <CompartilharImagem curationId={curationId} onAbrir={() => setFixada(true)} />
       )}
     </>
   )
