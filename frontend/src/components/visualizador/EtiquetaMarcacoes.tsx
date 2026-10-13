@@ -95,6 +95,59 @@ export default function EtiquetaMarcacoes({
       // ponteiro ja liberado
     }
   }
+
+  // TAMANHO do quadro: a pessoa pode aumentar pelo canto de baixo/esquerda
+  // (o quadro fica preso a direita do selo, entao cresce para a esquerda e
+  // para baixo) ate no maximo METADE DA LARGURA da tela; a altura vai ate
+  // 85% da tela. null = tamanho automatico (o de sempre).
+  const [tamanho, setTamanho] = useState<{ w: number; h: number } | null>(null)
+  const redimRef = useRef<{ px: number; py: number; w: number; h: number } | null>(null)
+  const LARG_MIN = 288
+  const ALT_MIN = 160
+  const largMax = () => Math.max(LARG_MIN, Math.floor(window.innerWidth * 0.5))
+  const altMax = () => Math.max(ALT_MIN, Math.floor(window.innerHeight * 0.85))
+
+  function iniciarRedim(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.button !== 0 || !caixaRef.current) return
+    e.preventDefault()
+    e.stopPropagation()
+    const r = caixaRef.current.getBoundingClientRect()
+    redimRef.current = { px: e.clientX, py: e.clientY, w: r.width, h: r.height }
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setFixada(true)
+  }
+  function moverRedim(e: React.PointerEvent<HTMLDivElement>) {
+    const a = redimRef.current
+    if (!a) return
+    // puxar para a esquerda aumenta a largura; para baixo, a altura
+    const w = Math.min(Math.max(a.w - (e.clientX - a.px), LARG_MIN), largMax())
+    const h = Math.min(Math.max(a.h + (e.clientY - a.py), ALT_MIN), altMax())
+    setTamanho({ w, h })
+  }
+  function terminarRedim(e: React.PointerEvent<HTMLDivElement>) {
+    if (!redimRef.current) return
+    redimRef.current = null
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId)
+    } catch {
+      // ponteiro ja liberado
+    }
+  }
+  const maximizado = tamanho !== null && tamanho.w >= largMaxSeguro() - 1
+  function largMaxSeguro() {
+    return typeof window === 'undefined' ? 0 : largMax()
+  }
+  function alternarMaximizar() {
+    if (maximizado) {
+      setTamanho(null)
+    } else {
+      setTamanho({ w: largMax(), h: altMax() })
+      // ao ampliar, traz o quadro de volta para dentro da tela
+      setDesloc({ x: 0, y: 0 })
+    }
+    setFixada(true)
+  }
+
   const totalMarcacoes = (item.marcacoes ?? []).length
   const linhas = descrever(item)
 
@@ -210,30 +263,72 @@ export default function EtiquetaMarcacoes({
         <div
           ref={caixaRef}
           role="tooltip"
-          style={{ transform: `translate(${desloc.x}px, ${desloc.y}px)` }}
+          style={{
+            transform: `translate(${desloc.x}px, ${desloc.y}px)`,
+            ...(tamanho ? { width: tamanho.w, height: tamanho.h, maxHeight: 'none' } : {}),
+          }}
           className="absolute right-0 top-full mt-1 flex max-h-[60vh] w-80 flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
         >
-          {/* alca para arrastar o quadro */}
+          {/* barra superior: alca para arrastar o quadro inteiro + ampliar */}
+          <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
+            <div
+              onPointerDown={iniciarArraste}
+              onPointerMove={moverArraste}
+              onPointerUp={terminarArraste}
+              onPointerCancel={terminarArraste}
+              onDoubleClick={() => setDesloc({ x: 0, y: 0 })}
+              title={t('arrastarQuadro')}
+              aria-label={t('arrastarQuadro')}
+              className="flex flex-1 cursor-grab touch-none select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80 hover:bg-teal-400/10 hover:text-teal-100 active:cursor-grabbing"
+            >
+              {/* icone de "mover" (setas nas quatro direcoes) */}
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+              </svg>
+              <span className="truncate">{t('barraArrastar')}</span>
+              <svg viewBox="0 0 24 8" className="ml-auto h-2 w-6 shrink-0 opacity-70" fill="currentColor" aria-hidden="true">
+                {[3, 9, 15, 21].map((cx) => (
+                  <g key={cx}>
+                    <circle cx={cx} cy={2} r={1.3} />
+                    <circle cx={cx} cy={6} r={1.3} />
+                  </g>
+                ))}
+              </svg>
+            </div>
+            <button
+              type="button"
+              onClick={alternarMaximizar}
+              title={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
+              aria-label={maximizado ? t('restaurarQuadro') : t('ampliarQuadro')}
+              className="flex shrink-0 items-center border-l border-teal-300/25 px-2 text-teal-100/80 hover:bg-teal-400/15 hover:text-teal-100"
+            >
+              {maximizado ? (
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                </svg>
+              )}
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto p-3">{conteudo}</div>
+          {/* canto para aumentar/diminuir o quadro (baixo, a esquerda) */}
           <div
-            onPointerDown={iniciarArraste}
-            onPointerMove={moverArraste}
-            onPointerUp={terminarArraste}
-            onPointerCancel={terminarArraste}
-            onDoubleClick={() => setDesloc({ x: 0, y: 0 })}
-            title={t('arrastarQuadro')}
-            aria-label={t('arrastarQuadro')}
-            className="flex shrink-0 cursor-grab touch-none select-none items-center justify-center border-b border-white/10 py-1 text-slate-400 hover:bg-white/5 hover:text-teal-200 active:cursor-grabbing"
+            onPointerDown={iniciarRedim}
+            onPointerMove={moverRedim}
+            onPointerUp={terminarRedim}
+            onPointerCancel={terminarRedim}
+            onDoubleClick={() => setTamanho(null)}
+            title={t('redimensionarQuadro')}
+            aria-label={t('redimensionarQuadro')}
+            className="absolute bottom-0 left-0 flex h-4 w-4 cursor-nesw-resize touch-none items-end justify-start p-0.5 text-teal-200/60 hover:text-teal-100"
           >
-            <svg viewBox="0 0 24 8" className="h-2 w-6" fill="currentColor" aria-hidden="true">
-              {[3, 9, 15, 21].map((cx) => (
-                <g key={cx}>
-                  <circle cx={cx} cy={2} r={1.3} />
-                  <circle cx={cx} cy={6} r={1.3} />
-                </g>
-              ))}
+            <svg viewBox="0 0 10 10" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden="true">
+              <path d="M1 1v8h8M1 5l4 4" />
             </svg>
           </div>
-          <div className="overflow-y-auto p-3">{conteudo}</div>
         </div>
       )}
       {aberta &&

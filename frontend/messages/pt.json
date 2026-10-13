@@ -533,7 +533,11 @@
       "holofoteDesligar": "Desligar o holofote",
       "arrastarQuadro": "Arraste para mover o quadro (clique duplo devolve ao lugar)",
       "abrirDescricao": "Clique para abrir as informações da imagem",
-      "fecharDescricao": "Clique para fechar as informações da imagem"
+      "fecharDescricao": "Clique para fechar as informações da imagem",
+      "barraArrastar": "Arraste aqui para mover",
+      "ampliarQuadro": "Ampliar o quadro (metade da tela)",
+      "restaurarQuadro": "Voltar ao tamanho normal",
+      "redimensionarQuadro": "Arraste para aumentar ou diminuir o quadro (clique duplo: tamanho normal)"
     },
     "impressao": {
       "todas": "Todas desta sequência",

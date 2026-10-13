@@ -533,7 +533,11 @@
       "holofoteDesligar": "Turn off the spotlight",
       "arrastarQuadro": "Drag to move this panel (double-click puts it back)",
       "abrirDescricao": "Click to open the image information",
-      "fecharDescricao": "Click to close the image information"
+      "fecharDescricao": "Click to close the image information",
+      "barraArrastar": "Drag here to move",
+      "ampliarQuadro": "Enlarge the panel (half the screen)",
+      "restaurarQuadro": "Back to normal size",
+      "redimensionarQuadro": "Drag to resize the panel (double-click: normal size)"
     },
     "impressao": {
       "todas": "All in this sequence",
