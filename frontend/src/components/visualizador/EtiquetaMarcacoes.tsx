@@ -25,6 +25,8 @@ export default function EtiquetaMarcacoes({
   flutuante = false,
   embutido = false,
   mostrarContagem = true,
+  onFocoMarcacao,
+  onIsolarMarcacao,
 }: {
   item: ItemDescritivel
   className?: string
@@ -33,6 +35,10 @@ export default function EtiquetaMarcacoes({
   embutido?: boolean
   /** mostra o numero de marcacoes ao lado do "i" */
   mostrarContagem?: boolean
+  /** mouse sobre a linha "Marcação N" (destaca a marcacao na imagem) */
+  onFocoMarcacao?: (indice: number | null) => void
+  /** clique na linha "Marcação N" (isola a marcacao na imagem) */
+  onIsolarMarcacao?: (indice: number) => void
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
@@ -73,12 +79,41 @@ export default function EtiquetaMarcacoes({
         <p className="text-xs italic text-slate-400">{t('semDescricao')}</p>
       ) : (
         <dl className="space-y-1 text-xs leading-snug">
-          {linhas.map((l) => (
-            <div key={l.rotulo}>
-              <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
-              <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
-            </div>
-          ))}
+          {linhas.map((l) =>
+            l.marcacao === undefined ? (
+              <div key={l.rotulo}>
+                <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
+                <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
+              </div>
+            ) : (
+              // Linha de uma marcacao: com a cor dela e ligada a imagem -
+              // passar o mouse destaca a marcacao; clicar isola.
+              <div
+                key={l.rotulo}
+                className={`-mx-1 flex items-center gap-1.5 rounded px-1 py-0.5 ${
+                  onFocoMarcacao ? 'cursor-pointer hover:bg-white/10' : ''
+                }`}
+                onMouseEnter={() => onFocoMarcacao?.(l.marcacao!)}
+                onMouseLeave={() => onFocoMarcacao?.(null)}
+                onClick={(e) => {
+                  if (!onIsolarMarcacao) return
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onIsolarMarcacao(l.marcacao!)
+                }}
+              >
+                <span
+                  className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-black"
+                  style={{ background: l.cor }}
+                  aria-hidden="true"
+                >
+                  {l.marcacao + 1}
+                </span>
+                <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
+                <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
+              </div>
+            )
+          )}
         </dl>
       )}
     </>

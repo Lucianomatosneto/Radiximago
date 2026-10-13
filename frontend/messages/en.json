@@ -528,7 +528,9 @@
       "fixarDescricao": "Click to keep the description open",
       "soltarDescricao": "Click to close the description",
       "mostrarDaImagem": "Show the curator markings on this image",
-      "ocultarDaImagem": "Hide the curator markings on this image"
+      "ocultarDaImagem": "Hide the curator markings on this image",
+      "holofoteLigar": "Spotlight: darken the image outside the highlighted marking",
+      "holofoteDesligar": "Turn off the spotlight"
     },
     "impressao": {
       "todas": "All in this sequence",

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import { rotularAchadoMarcacao, type Marcacao } from './marcacoes'
+import { corMarcacao, rotularAchadoMarcacao, type Marcacao } from './marcacoes'
 
 // Texto da curadoria de uma imagem, montado num so lugar para ser igual em
 // todo o sistema: na caixinha que abre ao passar o mouse no visualizador e
@@ -22,6 +22,9 @@ export interface ItemDescritivel {
 export interface LinhaDescricao {
   rotulo: string
   valor: string
+  /** linhas "Marcação N": indice da marcacao (0, 1, 2...) e a cor dela */
+  marcacao?: number
+  cor?: string
 }
 
 const CHAVE_ACHADO: Record<string, string> = {
@@ -76,7 +79,9 @@ export function useDescricaoCuradoria() {
     )
     add(t('achadosDetalhados'), item.achados_detalhe)
     add(t('descricao'), item.descricao_didatica)
-    ;(item.marcacoes ?? []).forEach((m, i) => add(t('marcacaoN', { numero: i + 1 }), textoMarcacao(m)))
+    ;(item.marcacoes ?? []).forEach((m, i) =>
+      linhas.push({ rotulo: t('marcacaoN', { numero: i + 1 }), valor: textoMarcacao(m), marcacao: i, cor: corMarcacao(m) })
+    )
     return linhas
   }
 }

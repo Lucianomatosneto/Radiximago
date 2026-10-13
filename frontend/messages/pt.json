@@ -528,7 +528,9 @@
       "fixarDescricao": "Clique para deixar a descrição aberta",
       "soltarDescricao": "Clique para fechar a descrição",
       "mostrarDaImagem": "Mostrar as marcações do curador nesta imagem",
-      "ocultarDaImagem": "Ocultar as marcações do curador desta imagem"
+      "ocultarDaImagem": "Ocultar as marcações do curador desta imagem",
+      "holofoteLigar": "Holofote: escurecer a imagem fora da marcação em destaque",
+      "holofoteDesligar": "Desligar o holofote"
     },
     "impressao": {
       "todas": "Todas desta sequência",

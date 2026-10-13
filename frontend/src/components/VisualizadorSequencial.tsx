@@ -182,6 +182,10 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   // (ou a tecla K) liga/desliga todas. A escolha de cada imagem continua
   // valendo ao navegar entre elas.
   const [marcacoesLigadas, setMarcacoesLigadas] = useState<number[]>([])
+  // Marcacao destacada pela DESCRICAO (mouse sobre a linha "Marcação N")
+  // e o "holofote" (escurece a imagem fora da marcacao em foco).
+  const [focoMarcacao, setFocoMarcacao] = useState<{ uid: string; indice: number } | null>(null)
+  const [holofote, setHolofote] = useState(false)
   const [marcacaoPreviewUrl, setMarcacaoPreviewUrl] = useState('')
 
   // LAYOUT DA AREA DE IMAGENS (quantas imagens lado a lado). Padrao: 2
@@ -248,7 +252,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
       }))
       if (marcacoesLigadas.includes(item.curation_id)) visiveis.push(uid)
     }
-    janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis }, origemOhif)
+    janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis, foco: focoMarcacao, holofote }, origemOhif)
   }
   useEffect(() => {
     enviarMarcacoesRef.current()
@@ -293,6 +297,31 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     setMarcacoesLigadas(novo ? itensComMarcacao.map((item) => item.curation_id) : [])
   }
   const selecaoTemMarcacao = itens.some((item) => (item.marcacoes ?? []).length > 0)
+
+  // Descricao ligada a imagem: mouse sobre "Marcação N" destaca a marcacao
+  // dentro do OHIF; clique isola (so ela aparece) - e liga as marcacoes
+  // daquela imagem, se estavam desligadas.
+  function focarMarcacaoDe(item: ItemSequencia, indiceMarcacao: number | null) {
+    const uid = estudoDe(item.viewer_url ?? null)
+    setFocoMarcacao(uid && indiceMarcacao !== null ? { uid, indice: indiceMarcacao } : null)
+  }
+  function isolarMarcacaoDe(item: ItemSequencia, indiceMarcacao: number) {
+    const uid = estudoDe(item.viewer_url ?? null)
+    alternarMarcacaoDe(item.curation_id, true)
+    const janela = ohifRef.current?.contentWindow
+    if (uid && janela && origemOhif) janela.postMessage({ tipo: 'radix-isolar', uid, indice: indiceMarcacao }, origemOhif)
+  }
+  function propsSelos(item: ItemSequencia) {
+    return {
+      item,
+      ligada: mostraMarcacaoDe(item),
+      onAlternar: () => alternarMarcacaoDe(item.curation_id),
+      onFocoMarcacao: (i: number | null) => focarMarcacaoDe(item, i),
+      onIsolarMarcacao: (i: number) => isolarMarcacaoDe(item, i),
+      holofote,
+      onAlternarHolofote: () => setHolofote((v) => !v),
+    }
+  }
 
   useEffect(() => {
     setMensagem('')
@@ -684,7 +713,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
             >
               {itensPagina.map((item) => (
                 <div key={item.curation_id} className="relative">
-                  <SelosImagem item={item} ligada={mostraMarcacaoDe(item)} onAlternar={() => alternarMarcacaoDe(item.curation_id)} className="right-9 top-2" />
+                  <SelosImagem {...propsSelos(item)} className="right-9 top-2" />
                 </div>
               ))}
             </div>
@@ -740,7 +769,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                     <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
                     </span>
-                    <SelosImagem item={item} ligada={mostraMarcacaoDe(item)} onAlternar={() => alternarMarcacaoDe(item.curation_id)} className="right-2 top-2" />
+                    <SelosImagem {...propsSelos(item)} className="right-2 top-2" />
                   </div>
                 )
               })}
@@ -776,9 +805,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         {/* Selo das marcacoes do curador no canto da imagem (layout de 1) */}
         {!emGrade && (
           <SelosImagem
-            item={atual}
-            ligada={mostrarMarcacaoEfetivo}
-            onAlternar={() => alternarMarcacaoDe(atual.curation_id)}
+            {...propsSelos(atual)}
             className={urlComSerie ? 'right-24 top-[60px]' : 'right-20 top-3'}
           />
         )}
@@ -1011,11 +1038,19 @@ function SelosImagem({
   item,
   ligada,
   onAlternar,
+  onFocoMarcacao,
+  onIsolarMarcacao,
+  holofote,
+  onAlternarHolofote,
   className = '',
 }: {
   item: ItemSequencia
   ligada: boolean
   onAlternar: () => void
+  onFocoMarcacao?: (indice: number | null) => void
+  onIsolarMarcacao?: (indice: number) => void
+  holofote?: boolean
+  onAlternarHolofote?: () => void
   className?: string
 }) {
   const t = useTranslations('Visualizador.marcacoes')
@@ -1044,7 +1079,37 @@ function SelosImagem({
           {total}
         </button>
       )}
-      <EtiquetaMarcacoes item={item} embutido mostrarContagem={false} />
+      {total > 0 && ligada && onAlternarHolofote && (
+        // "Holofote": escurece a imagem fora da marcacao em foco (mouse
+        // sobre ela ou sobre a linha dela na descricao).
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onAlternarHolofote()
+          }}
+          aria-pressed={!!holofote}
+          title={holofote ? t('holofoteDesligar') : t('holofoteLigar')}
+          aria-label={holofote ? t('holofoteDesligar') : t('holofoteLigar')}
+          className={`pointer-events-auto flex items-center rounded-full border px-1.5 py-0.5 backdrop-blur transition ${
+            holofote
+              ? 'border-amber-300 bg-amber-300/25 text-amber-100'
+              : 'border-amber-300/60 bg-black/70 text-amber-200 hover:border-amber-300'
+          }`}
+        >
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
+      <EtiquetaMarcacoes
+        item={item}
+        embutido
+        mostrarContagem={false}
+        onFocoMarcacao={onFocoMarcacao}
+        onIsolarMarcacao={onIsolarMarcacao}
+      />
     </div>
   )
 }

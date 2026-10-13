@@ -222,6 +222,16 @@ window.config = {
 // funcoes do proprio motor de imagens do OHIF (cornerstone).
 // So aceita mensagens da origem do Radix (lida do document.referrer).
 // ---------------------------------------------------------------------
+// Estilo (igual as telas do Radix e aos arquivos baixados/impressos):
+//  - cor por tipo de achado (paleta Okabe & Ito, para daltonicos);
+//  - contorno com "halo" (borda escura fina), sem veu branco por cima;
+//  - numero FORA da forma, ligado a ela por uma linha-guia.
+// Interacao ("foco + contexto"):
+//  - mouse sobre a forma ou o numero: ela fica mais forte, vai para a
+//    frente e as outras ficam esmaecidas; abre a descricao dela;
+//  - clique: isola a marcacao (so ela aparece); clique de novo ou Esc: todas;
+//  - a tela do Radix tambem pode destacar (mouse na linha "Marcação N" da
+//    descricao), isolar e ligar o "holofote" (escurece o resto da imagem).
 ;(function () {
   if (window.parent === window) return;
   var origemRadix = '';
@@ -229,18 +239,35 @@ window.config = {
   if (!origemRadix) return;
 
   var NS = 'http://www.w3.org/2000/svg';
-  var estado = { estudos: {}, visiveis: {} };
+  // mesma tabela de frontend/src/lib/marcacoes.ts (CORES_ACHADO)
+  var CORES = {
+    carie: '#E69F00', lesao_periapical: '#CC79A7', perda_ossea: '#56B4E9', dente_incluso: '#009E73',
+    tratamento_endodontico: '#F0E442', erro_tecnico: '#D55E00', normal: '#FFFFFF', outro: '#C3CEDD'
+  };
+  var HALO = 'rgba(0,0,0,0.6)';
+  var estado = { estudos: {}, visiveis: {}, foco: null, holofote: false, isoladas: {} };
   var rodando = false;
 
   window.addEventListener('message', function (ev) {
     if (ev.origin !== origemRadix) return;
     var d = ev.data;
-    if (!d || d.tipo !== 'radix-marcacoes') return;
-    estado.estudos = d.estudos || {};
-    estado.visiveis = {};
-    (d.visiveis || []).forEach(function (uid) { estado.visiveis[uid] = true; });
-    iniciar();
+    if (!d) return;
+    if (d.tipo === 'radix-marcacoes') {
+      estado.estudos = d.estudos || {};
+      estado.visiveis = {};
+      (d.visiveis || []).forEach(function (uid) { estado.visiveis[uid] = true; });
+      estado.foco = d.foco && typeof d.foco.uid === 'string' ? d.foco : null;
+      estado.holofote = !!d.holofote;
+      iniciar();
+    } else if (d.tipo === 'radix-isolar' && typeof d.uid === 'string' && typeof d.indice === 'number') {
+      estado.isoladas[d.uid] = estado.isoladas[d.uid] === d.indice ? null : d.indice;
+      iniciar();
+    }
   });
+
+  document.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape') estado.isoladas = {};
+  }, true);
 
   // avisa a tela do Radix que esta pronto para receber as marcacoes
   var avisos = 0;
@@ -252,15 +279,15 @@ window.config = {
     if (avisos > 40) clearInterval(avisar);
   }, 500);
 
-  function el(nome, attrs) {
+  function el(nome, attrs, pai) {
     var n = document.createElementNS(NS, nome);
     for (var k in attrs) n.setAttribute(k, attrs[k]);
+    if (pai) pai.appendChild(n);
     return n;
   }
+  function cor(m) { return (m && m.achado && CORES[m.achado]) || '#FFFFFF'; }
 
-  // caixinha com a descricao da marcacao, que aparece ao passar o mouse
-  // sobre o numero (ou sobre a propria forma) - fica fora do SVG porque o
-  // SVG e redesenhado a cada quadro
+  // ---------- caixinha com a descricao (fora do SVG, que e redesenhado) ----------
   var dica = null;
   function mostrarDica(texto, x, y) {
     if (!dica) {
@@ -281,6 +308,47 @@ window.config = {
   }
   function esconderDica() { if (dica) dica.style.display = 'none'; }
 
+  // ---------- geometria (mesma conta de geometriaMarcacao em lib/marcacoes.ts) ----------
+  function geometria(m, tela) {
+    if (m.tipo === 'seta') {
+      var a = tela(m.x1 || 0, m.y1 || 0), b = tela(m.x2 || 0, m.y2 || 0);
+      var ang = Math.atan2(b[1] - a[1], b[0] - a[0]), tam = 13, ab = 28 * Math.PI / 180;
+      var p1 = [b[0] - tam * Math.cos(ang - ab), b[1] - tam * Math.sin(ang - ab)];
+      var p2 = [b[0] - tam * Math.cos(ang + ab), b[1] - tam * Math.sin(ang + ab)];
+      var dx = a[0] - b[0], dy = a[1] - b[1], len = Math.sqrt(dx * dx + dy * dy) || 1;
+      dx /= len; dy /= len;
+      return {
+        seta: { a: a, b: b }, pontos: [a, b],
+        caminho: 'M' + a[0] + ',' + a[1] + ' L' + b[0] + ',' + b[1],
+        ponta: 'M' + p1[0] + ',' + p1[1] + ' L' + b[0] + ',' + b[1] + ' L' + p2[0] + ',' + p2[1],
+        ancora: a, selo: [a[0] + dx * 18, a[1] + dy * 18], area: len * 10
+      };
+    }
+    var x = m.x || 0, y = m.y || 0, w = m.largura || 0, h = m.altura || 0, pts = [], k;
+    if (m.tipo === 'oval') {
+      for (k = 0; k < 72; k++) {
+        var t = (k / 72) * Math.PI * 2;
+        pts.push(tela(x + w / 2 + (w / 2) * Math.cos(t), y + h / 2 + (h / 2) * Math.sin(t)));
+      }
+    } else {
+      pts = [tela(x, y), tela(x + w, y), tela(x + w, y + h), tela(x, y + h)];
+    }
+    var ancora;
+    if (m.tipo === 'oval') {
+      var rx = w / 2, ry = h / 2;
+      ancora = tela(x + rx - rx * Math.SQRT1_2, y + ry - ry * Math.SQRT1_2);
+    } else ancora = tela(x, y);
+    var centro = tela(x + w / 2, y + h / 2);
+    var ddx = ancora[0] - centro[0], ddy = ancora[1] - centro[1], l = Math.sqrt(ddx * ddx + ddy * ddy);
+    if (l < 0.5) { ddx = -Math.SQRT1_2; ddy = -Math.SQRT1_2; } else { ddx /= l; ddy /= l; }
+    var area = 0;
+    for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) area += (pts[j][0] + pts[i][0]) * (pts[j][1] - pts[i][1]);
+    return {
+      pontos: pts,
+      caminho: 'M' + pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' L') + ' Z',
+      ancora: ancora, selo: [ancora[0] + ddx * 24, ancora[1] + ddy * 24], area: Math.abs(area / 2)
+    };
+  }
   function dentroPoligono(px, py, pts) {
     var dentro = false;
     for (var i = 0, j = pts.length - 1; i < pts.length; j = i++) {
@@ -290,63 +358,108 @@ window.config = {
     return dentro;
   }
   function distSegmento(px, py, a, b) {
-    var dx = b[0] - a[0], dy = b[1] - a[1];
-    var l2 = dx * dx + dy * dy;
+    var dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy;
     var t = l2 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / l2)) : 0;
     var cx = a[0] + t * dx, cy = a[1] + t * dy;
     return Math.sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
   }
-  // qual marcacao esta sob o mouse: o numero tem prioridade; depois a forma
-  // menor (a mais "de dentro"), para formas sobrepostas
-  function marcacaoSob(alvos, px, py) {
-    var i, achado = null, menorArea = Infinity;
-    for (i = alvos.length - 1; i >= 0; i--) {
-      var n = alvos[i].numero;
-      if (Math.sqrt((px - n[0]) * (px - n[0]) + (py - n[1]) * (py - n[1])) <= 13) return alvos[i];
+  // numero primeiro; depois a seta; depois a MENOR forma que contem o ponto
+  function marcacaoSob(geos, px, py) {
+    var i, g, achado = null, menor = Infinity;
+    for (i = geos.length - 1; i >= 0; i--) {
+      g = geos[i];
+      if (g && Math.sqrt((px - g.selo[0]) * (px - g.selo[0]) + (py - g.selo[1]) * (py - g.selo[1])) <= 13) return i;
     }
-    for (i = 0; i < alvos.length; i++) {
-      var a = alvos[i];
-      if (a.seta) { if (distSegmento(px, py, a.seta[0], a.seta[1]) <= 6) return a; continue; }
-      if (a.pts && dentroPoligono(px, py, a.pts) && a.area < menorArea) { achado = a; menorArea = a.area; }
+    for (i = 0; i < geos.length; i++) {
+      g = geos[i];
+      if (g && g.seta && distSegmento(px, py, g.seta.a, g.seta.b) <= 7) return i;
+    }
+    for (i = 0; i < geos.length; i++) {
+      g = geos[i];
+      if (g && !g.seta && g.area < menor && dentroPoligono(px, py, g.pontos)) { achado = i; menor = g.area; }
     }
     return achado;
   }
+  function caminhoHolofote(g, w, h) {
+    var fora = 'M0,0 H' + w + ' V' + h + ' H0 Z';
+    if (!g.seta) return fora + ' ' + g.caminho;
+    var a = g.seta.a, b = g.seta.b, cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    var r = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1])) / 2 + 30, pts = [];
+    for (var k = 0; k < 48; k++) { var t = (k / 48) * Math.PI * 2; pts.push((cx + r * Math.cos(t)) + ',' + (cy + r * Math.sin(t))); }
+    return fora + ' M' + pts.join(' L') + ' Z';
+  }
+
+  // ---------- mouse: descricao, destaque e clique para isolar ----------
   function ouvirMouse(alvo) {
     if (alvo.__radixOuvindo) return;
     alvo.__radixOuvindo = true;
-    alvo.addEventListener('mousemove', function (ev) {
-      var alvos = alvo.__radixAlvos || [];
-      if (!alvos.length) { esconderDica(); return; }
+    var inicio = null;
+    function sob(ev) {
+      var geos = alvo.__radixGeos || [];
+      if (!geos.length) return null;
       var r = alvo.getBoundingClientRect();
-      var m = marcacaoSob(alvos, ev.clientX - r.left, ev.clientY - r.top);
-      if (m) mostrarDica(m.texto, ev.clientX, ev.clientY); else esconderDica();
+      return marcacaoSob(geos, ev.clientX - r.left, ev.clientY - r.top);
+    }
+    alvo.addEventListener('mousemove', function (ev) {
+      var i = sob(ev);
+      alvo.__radixFoco = i;
+      if (i !== null && alvo.__radixLista && alvo.__radixLista[i]) {
+        var m = alvo.__radixLista[i];
+        mostrarDica(m.texto || ('Marcação ' + (i + 1)), ev.clientX, ev.clientY);
+      } else esconderDica();
     });
-    alvo.addEventListener('mouseleave', esconderDica);
+    alvo.addEventListener('mouseleave', function () { alvo.__radixFoco = null; esconderDica(); });
+    alvo.addEventListener('mousedown', function (ev) { inicio = [ev.clientX, ev.clientY]; }, true);
+    alvo.addEventListener('mouseup', function (ev) {
+      if (!inicio || ev.button !== 0) return;
+      var moveu = Math.abs(ev.clientX - inicio[0]) + Math.abs(ev.clientY - inicio[1]);
+      inicio = null;
+      if (moveu > 4) return; // foi um arraste (brilho/contraste, mover): nao isola
+      var i = sob(ev), uid = alvo.__radixUid;
+      if (i === null || !uid) return;
+      estado.isoladas[uid] = estado.isoladas[uid] === i ? null : i;
+    }, true);
   }
 
+  // ---------- desenho ----------
   function algumVisivel() {
+    if (estado.foco) return true;
     for (var k in estado.visiveis) if (estado.visiveis[k]) return true;
     return false;
   }
-
   function iniciar() {
     if (rodando) return;
     rodando = true;
     requestAnimationFrame(quadro);
   }
-
   function quadro() {
     try { desenhar(); } catch (e) { /* proximo quadro tenta de novo */ }
     if (algumVisivel()) { requestAnimationFrame(quadro); } else { limparTudo(); rodando = false; }
   }
-
   function limparTudo() {
     var lista = document.querySelectorAll('svg.radix-marcas');
     for (var i = 0; i < lista.length; i++) {
-      if (lista[i].parentNode) lista[i].parentNode.__radixAlvos = [];
+      if (lista[i].parentNode) { lista[i].parentNode.__radixGeos = []; lista[i].parentNode.__radixFoco = null; }
       lista[i].remove();
     }
     esconderDica();
+  }
+
+  function desenharMarcacao(svg, g, m, n, forte, apagada) {
+    var c = cor(m);
+    var grupo = el('g', { opacity: apagada ? '0.25' : '1' }, svg);
+    var larguraHalo = forte ? '7' : '5', larguraTraco = forte ? '3.5' : '2.5';
+    el('path', { d: g.caminho, fill: 'none', stroke: HALO, 'stroke-width': larguraHalo, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
+    if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: HALO, 'stroke-width': larguraHalo, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
+    var traco = { d: g.caminho, stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', fill: 'none' };
+    if (!g.seta) { traco.fill = c; traco['fill-opacity'] = '0.06'; }
+    el('path', traco, grupo);
+    if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
+    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: HALO, 'stroke-width': '3.5', 'stroke-linecap': 'round' }, grupo);
+    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: c, 'stroke-width': '1.5', 'stroke-linecap': 'round' }, grupo);
+    el('circle', { cx: g.selo[0], cy: g.selo[1], r: forte ? '12' : '11', fill: c, stroke: '#0b1220', 'stroke-width': '2' }, grupo);
+    var tx = el('text', { x: g.selo[0], y: g.selo[1], 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': '12', 'font-weight': '800', 'font-family': 'Inter, Arial, sans-serif', fill: '#000000' }, grupo);
+    tx.textContent = String(n);
   }
 
   function desenhar() {
@@ -362,8 +475,15 @@ window.config = {
       var dsUid = vp.displaySetInstanceUIDs && vp.displaySetInstanceUIDs[0];
       var ds = dsUid && s.displaySetService.getDisplaySetByUID(dsUid);
       var uid = ds && ds.StudyInstanceUID;
-      var lista = uid && estado.visiveis[uid] ? (estado.estudos[uid] || []) : [];
-      if (!lista.length) { if (svg) svg.remove(); alvo.__radixAlvos = []; return; }
+      var todas = (uid && estado.estudos[uid]) || [];
+      var focoExterno = estado.foco && estado.foco.uid === uid ? estado.foco.indice : null;
+      // marcacoes desligadas, mas com o mouse na linha da descricao: mostra so aquela
+      var mostrar = uid && estado.visiveis[uid] ? 'todas' : (focoExterno !== null ? 'foco' : '');
+      if (!todas.length || !mostrar) {
+        if (svg) svg.remove();
+        alvo.__radixGeos = []; alvo.__radixFoco = null;
+        return;
+      }
 
       var dados = cvp.getImageData && cvp.getImageData();
       if (!dados || !dados.imageData || !dados.dimensions) return;
@@ -379,58 +499,36 @@ window.config = {
         if (getComputedStyle(alvo).position === 'static') alvo.style.position = 'relative';
         alvo.appendChild(svg);
       }
-      while (svg.firstChild) svg.removeChild(svg.firstChild);
-      var numeros = [];
-      var alvos = [];
       ouvirMouse(alvo);
-      var defs = el('defs', {});
-      var marker = el('marker', { id: 'radix-ponta-' + id, viewBox: '0 0 10 10', refX: '8', refY: '5', markerWidth: '5', markerHeight: '5', orient: 'auto-start-reverse' });
-      marker.appendChild(el('path', { d: 'M0,0 L10,5 L0,10 z', fill: '#ffffff' }));
-      defs.appendChild(marker);
-      svg.appendChild(defs);
+      alvo.__radixUid = uid;
+      alvo.__radixLista = todas;
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
 
-      lista.forEach(function (m, indice) {
-        // numero da marcacao (ordem em que o curador marcou), no canto de
-        // cima/esquerda da forma ou na cauda da seta - igual ao Radix
-        var ancora;
-        if (m.tipo === 'seta') ancora = tela(m.x1 || 0, m.y1 || 0);
-        else if (m.tipo === 'oval') {
-          var rx0 = (m.largura || 0) / 2, ry0 = (m.altura || 0) / 2;
-          ancora = tela((m.x || 0) + rx0 - rx0 * Math.SQRT1_2, (m.y || 0) + ry0 - ry0 * Math.SQRT1_2);
-        } else ancora = tela(m.x || 0, m.y || 0);
-        numeros.push({ n: indice + 1, p: ancora });
-        var texto = m.texto || ('Marca\u00e7\u00e3o ' + (indice + 1));
-        if (m.tipo === 'seta') {
-          var a = tela(m.x1 || 0, m.y1 || 0), b = tela(m.x2 || 0, m.y2 || 0);
-          alvos.push({ texto: texto, numero: ancora, seta: [a, b] });
-          svg.appendChild(el('line', { x1: a[0], y1: a[1], x2: b[0], y2: b[1], stroke: '#ffffff', 'stroke-width': '2', 'marker-end': 'url(#radix-ponta-' + id + ')' }));
-          return;
+      var isolada = estado.isoladas[uid];
+      if (isolada === undefined || isolada >= todas.length) isolada = null;
+      var geos = todas.map(function (m, i) {
+        // a linha da descricao sob o mouse sempre aparece, mesmo isolada outra
+        if (i !== focoExterno) {
+          if (mostrar === 'foco') return null;
+          if (isolada !== null && i !== isolada) return null;
         }
-        var x = m.x || 0, y = m.y || 0, w = m.largura || 0, h = m.altura || 0;
-        var pts = [];
-        if (m.tipo === 'oval') {
-          for (var k = 0; k < 48; k++) {
-            var ang = (k / 48) * Math.PI * 2;
-            pts.push(tela(x + w / 2 + (w / 2) * Math.cos(ang), y + h / 2 + (h / 2) * Math.sin(ang)));
-          }
-        } else {
-          pts = [tela(x, y), tela(x + w, y), tela(x + w, y + h), tela(x, y + h)];
-        }
-        var area = 0;
-        for (var q = 0, z = pts.length - 1; q < pts.length; z = q++) area += (pts[z][0] + pts[q][0]) * (pts[z][1] - pts[q][1]);
-        alvos.push({ texto: texto, numero: ancora, pts: pts, area: Math.abs(area / 2) });
-        svg.appendChild(el('polygon', {
-          points: pts.map(function (p) { return p[0] + ',' + p[1]; }).join(' '),
-          stroke: '#ffffff', 'stroke-width': '1.5', 'stroke-opacity': '0.9', fill: 'rgba(255,255,255,0.18)'
-        }));
+        return geometria(m, tela);
       });
-      alvo.__radixAlvos = alvos;
-      // os numeros por ultimo, para ficarem por cima das formas
-      numeros.forEach(function (item) {
-        svg.appendChild(el('circle', { cx: item.p[0], cy: item.p[1], r: '10', fill: '#fbbf24', stroke: '#ffffff', 'stroke-width': '1.5' }));
-        var tx = el('text', { x: item.p[0], y: item.p[1], 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': '12', 'font-weight': '700', 'font-family': 'Inter, Arial, sans-serif', fill: '#000000' });
-        tx.textContent = String(item.n);
-        svg.appendChild(tx);
+      alvo.__radixGeos = geos;
+
+      var local = alvo.__radixFoco;
+      if (local !== null && local !== undefined && !geos[local]) local = null;
+      var ativo = local !== null && local !== undefined ? local : (focoExterno !== null && geos[focoExterno] ? focoExterno : isolada);
+
+      if (estado.holofote && ativo !== null && geos[ativo]) {
+        var r = alvo.getBoundingClientRect();
+        el('path', { d: caminhoHolofote(geos[ativo], r.width, r.height), fill: 'rgba(0,0,0,0.55)', 'fill-rule': 'evenodd' }, svg);
+      }
+      var ordem = [];
+      geos.forEach(function (g, i) { if (g && i !== ativo) ordem.push(i); });
+      if (ativo !== null && geos[ativo]) ordem.push(ativo);
+      ordem.forEach(function (i) {
+        desenharMarcacao(svg, geos[i], todas[i], i + 1, i === ativo, ativo !== null && i !== ativo);
       });
     });
   }

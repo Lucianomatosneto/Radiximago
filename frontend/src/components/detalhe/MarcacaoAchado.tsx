@@ -3,10 +3,8 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import MiniaturaImagem from '../MiniaturaImagem'
-import FormasMarcacoes from './FormasMarcacoes'
-import NumerosMarcacoes from './NumerosMarcacoes'
+import CamadaMarcacoes from './CamadaMarcacoes'
 import type { Marcacao } from '../../lib/marcacoes'
-import { useHoverMarcacao } from '../../lib/useHoverMarcacao'
 
 // Mostra as marcacoes feitas pelo curador (formas desenhadas durante a
 // curadoria) sobre a mesma imagem estatica de preview usada nos cards -
@@ -50,7 +48,6 @@ export default function MarcacaoAchado({
 }) {
   const t = useTranslations('Visualizador.marcacao')
   const [mostrarInterno, setMostrarInterno] = useState(false)
-  const [hover, setHover] = useHoverMarcacao()
   const mostrar = mostrarControlado ?? mostrarInterno
   const definirMostrar = onMostrarChange ?? setMostrarInterno
   const disponivel = marcacoes.length > 0
@@ -90,22 +87,8 @@ export default function MarcacaoAchado({
       {comImagem && disponivel && (
         <div className="relative mt-3 inline-block max-w-full overflow-hidden rounded-lg border border-base-border">
           <MiniaturaImagem curationId={curationId} alt={t('altImagemMarcada')} className="block max-h-[50vh] w-auto" />
-          {mostrar && (
-            <svg viewBox="0 0 1 1" preserveAspectRatio="none" className="absolute inset-0 h-full w-full">
-              <FormasMarcacoes marcacoes={marcacoes} idPrefixo={`bloco-${curationId}`} onHover={setHover} />
-            </svg>
-          )}
-          {mostrar && <NumerosMarcacoes marcacoes={marcacoes} />}
+          {mostrar && <CamadaMarcacoes marcacoes={marcacoes} />}
         </div>
-      )}
-      {hover && (
-        <span
-          role="tooltip"
-          className="pointer-events-none fixed z-50 max-w-xs rounded-lg border border-base-border bg-base-surface2 px-3 py-1.5 text-xs leading-relaxed text-slate-200 shadow-xl"
-          style={{ left: hover.x + 14, top: hover.y + 14 }}
-        >
-          {hover.texto}
-        </span>
       )}
     </div>
   )

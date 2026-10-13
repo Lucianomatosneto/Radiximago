@@ -2,16 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import FormasMarcacoes from '../detalhe/FormasMarcacoes'
-import NumerosMarcacoes from '../detalhe/NumerosMarcacoes'
+import CamadaMarcacoes from '../detalhe/CamadaMarcacoes'
 import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, gerarIdMarcacao, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
 import { detectarRecorteConteudo, type RecorteRelativo } from '../../lib/recorteImagem'
 
 // Mapeia o valor cru do enum AchadoPrincipal (mesmos valores de
 // lib/marcacoes.ts, usados aqui pra rotular o achado de CADA marcacao
 // individual) pra chave de traducao do namespace Pesquisa.opcoes.achadoPrincipal
-// - mesmo mapa ja usado em detalhe/FormasMarcacoes.tsx, reaproveitado aqui
-// em vez de duplicar os 8 rotulos numa terceira lista.
+// (mapa equivalente ao de lib/descricaoCuradoria.ts).
 const CHAVE_ACHADO: Record<string, string> = {
   normal: 'normal',
   carie: 'carie',
@@ -438,7 +436,7 @@ export default function MarcadorAchado({
               achados e fechada (enum no backend), entao esse campo de
               texto livre e o unico jeito de descrever algo que nao esta
               nas opcoes acima. O estudante ve esse texto no tooltip, no
-              lugar do rotulo generico "Outro" (ver FormasMarcacoes.tsx). */}
+              lugar do rotulo generico "Outro" (ver CamadaMarcacoes.tsx). */}
           {selecionada.achado === 'outro' && (
             <input
               type="text"
@@ -496,6 +494,16 @@ export default function MarcadorAchado({
               style={{ left: imagemOffsetX, top: imagemOffsetY, width: imagemLarguraTotal, height: imagemAlturaTotal }}
               draggable={false}
             />
+            {/* desenho das marcacoes no estilo padrao (cor por achado,
+                halo, numero com linha-guia); a selecionada fica em
+                destaque. O <svg> logo abaixo e so a camada invisivel que
+                recebe os cliques de mover/redimensionar. */}
+            <CamadaMarcacoes
+              marcacoes={formasParaExibir}
+              recorte={recorteAtual}
+              interativo={false}
+              destaque={selecionada ? marcacoes.indexOf(selecionada) : null}
+            />
             <svg
               viewBox={viewBoxSvg}
               preserveAspectRatio="none"
@@ -503,8 +511,6 @@ export default function MarcadorAchado({
               style={{ cursor: 'crosshair' }}
               onMouseDown={aoPressionarFundo}
             >
-            <FormasMarcacoes marcacoes={formasParaExibir} idPrefixo={`editor-${orthancReferenceId}`} />
-
             {marcacoes.map((m) => (
               <g key={`interativo-${m.id}`}>
                 {m.tipo === 'seta' ? (
@@ -573,7 +579,6 @@ export default function MarcadorAchado({
               </g>
             ))}
           </svg>
-          <NumerosMarcacoes marcacoes={marcacoes} recorte={recorteAtual} dica={false} />
           </div>
         )}
       </div>
