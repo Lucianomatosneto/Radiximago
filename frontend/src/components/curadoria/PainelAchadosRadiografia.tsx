@@ -131,10 +131,15 @@ export default function PainelAchadosRadiografia({
   form,
   onChange,
   pagina,
+  mostrarOutros = true,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
-  pagina: 1 | 2
+  /** 'todas' = as 5 categorias juntas (coluna da ficha, com rolagem da
+   * propria coluna) */
+  pagina: 1 | 2 | 'todas'
+  /** campo "Outros achados" (na coluna ele e a secao "Achados detalhados") */
+  mostrarOutros?: boolean
 }) {
   const t = useTranslations('Curadoria.achados')
   const tCategorias = useTranslations('AlteracoesObservadas.categorias')
@@ -157,7 +162,7 @@ export default function PainelAchadosRadiografia({
     }
   }
 
-  const categorias = pagina === 1 ? CATEGORIAS_PAGINA_1 : CATEGORIAS_PAGINA_2
+  const categorias = pagina === 'todas' ? CATEGORIAS_ALTERACOES : pagina === 1 ? CATEGORIAS_PAGINA_1 : CATEGORIAS_PAGINA_2
 
   return (
     <div className="flex h-full flex-col gap-2 overflow-y-auto">
@@ -193,7 +198,7 @@ export default function PainelAchadosRadiografia({
           o campo de texto livre que ja existia ("Achados detalhados")
           como o lugar de escrever um achado que nao esta entre as opcoes
           acima. So na pagina 2, junto com as ultimas categorias. */}
-      {pagina === 2 && (
+      {pagina !== 1 && mostrarOutros && (
         <div>
           <label className={campoLabel}>{t('outrosAchados')}</label>
           <textarea

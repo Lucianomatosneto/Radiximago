@@ -8,12 +8,12 @@ import Logo from '../../components/Logo'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
-import PainelAchadosRadiografia from '../../components/curadoria/PainelAchadosRadiografia'
-import PainelAchadosEstruturados from '../../components/curadoria/PainelAchadosEstruturados'
-import PainelErroTecnico from '../../components/curadoria/PainelErroTecnico'
-import FichaCuradoriaForm, { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
+import ColunaFichaCuradoria from '../../components/curadoria/ColunaFichaCuradoria'
+import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
+import type { SecaoFicha } from '../../lib/secoesCuradoria'
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
+import PainelVoz from '../../components/curadoria/PainelVoz'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
 import { obterSessaoAtual } from '../../lib/sessao'
 
@@ -39,24 +39,6 @@ interface FichaAtiva {
   orthancReferenceId: number
 }
 
-// Ordem unica das 5 "telas" do carrossel do painel lateral (setas ‹ › +
-// teclado) - marcacao (desenho) -> achados1/achados2 (checklist legado,
-// alteracoes_observadas) -> achadosEstruturados/erroTecnico (Fase 3, API
-// da Fase 2). Usar um array em vez de ternarios encadeados deixa a
-// navegacao (proxima/anterior) trivial: so andar +1/-1 no indice.
-type PaginaPainelLateral = 'marcacao' | 'achados1' | 'achados2' | 'achadosEstruturados' | 'erroTecnico'
-const PAGINAS_PAINEL_LATERAL: PaginaPainelLateral[] = [
-  'marcacao',
-  'achados1',
-  'achados2',
-  'achadosEstruturados',
-  'erroTecnico',
-]
-// O carrossel (setas e teclado) percorre so os ACHADOS: a imagem para
-// marcacao nao faz mais parte dele - ela so abre pelo botao "Marcar imagem"
-// da caixa de dados (e entao ocupa o lugar grande do visualizador).
-const PAGINAS_CARROSSEL: PaginaPainelLateral[] = PAGINAS_PAINEL_LATERAL.filter((p) => p !== 'marcacao')
-const PAGINA_INICIAL: PaginaPainelLateral = 'achados1'
 
 // Item de /curation/reviews/answered (mesmo formato de /reviews/pending)
 // + o parecer do revisor, que vem de uma segunda chamada a
@@ -105,6 +87,7 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   if (form.idade_max !== '') payload.idade_max = Number(form.idade_max)
   if (form.genero !== '') payload.genero = form.genero
   payload.marcacoes = form.marcacoes
+  payload.termos = form.termos
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
   return payload
 }
@@ -179,37 +162,17 @@ export default function CuradoriaPage() {
   // mesmo clique - ver comentario dentro de alternarTelaCheia.
   const telaCheiaEmAndamentoRef = useRef(false)
   const [modoAjustado, setModoAjustado] = useState(false)
-  // Painel ao lado do OHIF alterna entre 3 "telas" num carrossel de setas
-  // (marcacao -> achados1 -> achados2 -> ...): a imagem de marcacao, e os
-  // achados em radiografia divididos em 2 paginas (as 5 categorias + o
-  // campo "Outros achados" nao cabiam sem rolagem interna nesse painel
-  // estreito - ver comentario grande em PainelAchadosRadiografia.tsx sobre
-  // a divisao). O curador marca a lesao primeiro (imagem), depois vira pra
-  // achados, que ganham a mesma altura grande do visualizador em vez de
-  // ficarem espremidos na faixa baixa da ficha la embaixo. Reseta pra
-  // "marcacao" sempre que uma imagem nova abre (ver
-  // carregarFichaCompleta/finalizarFichaAtiva) - cada imagem comeca do
-  // zero, sem herdar a pagina de achados da imagem anterior.
-  // Fase 3: carrossel ganhou mais 2 paginas (achadosEstruturados, novo
-  // painel via API da Fase 2; erroTecnico, dimensao independente) - ver
-  // PAGINAS_PAINEL_LATERAL logo abaixo, unica fonte da ordem das 5 paginas.
-  const [painelLateral, setPainelLateral] = useState<PaginaPainelLateral>(PAGINA_INICIAL)
-  // MODO FOCO (so em tela cheia, com o painel "Imagem para marcacao"):
-  // a imagem do visualizador ocupa quase a tela toda e a imagem de
-  // marcacao vira uma miniatura ao lado. Passar o mouse na miniatura a
-  // amplia temporariamente (previa); clicar nela a FIXA em tamanho grande,
-  // trocando de lugar com o visualizador (que vira a miniatura). Clicar na
-  // miniatura do visualizador destroca. Nada e desmontado na troca (so
-  // muda o tamanho por CSS) - assim o iframe do OHIF nao recarrega.
-  const [marcacaoEmDestaque, setMarcacaoEmDestaque] = useState(false)
-  // Pagina de achados que estava aberta antes de "Marcar imagem" - ao
-  // fechar a marcacao, o painel lateral volta para ela.
-  const paginaAntesDaMarcacaoRef = useRef<PaginaPainelLateral>('achados1')
-  const [previaMarcacao, setPreviaMarcacao] = useState(false)
-  const tempoPreviaRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Em tela cheia o "Registro de curadoria" (faixa de baixo) comeca
-  // recolhido, devolvendo essa altura para as imagens.
-  const [registroAberto, setRegistroAberto] = useState(false)
+  // LAYOUT EM COLUNA: imagem a esquerda (mesmo tamanho de antes) e, a
+  // direita, TODAS as secoes da ficha numa coluna com rolagem
+  // (ColunaFichaCuradoria.tsx). `secaoAtiva` e a secao em destaque - setas
+  // ↑/↓, botoes ▲/▼ e a curadoria por voz usam ela. Cada imagem nova
+  // comeca de novo em "Dados da imagem".
+  const [secaoAtiva, setSecaoAtiva] = useState<SecaoFicha>('dados')
+  // "Abrir marcação" (botao da secao Marcações, tecla M ou atalho no
+  // cabecalho do visualizador): a imagem para marcacao ocupa o lugar grande
+  // da esquerda e o visualizador vira uma miniatura no canto (clicar nela
+  // fecha a marcacao). Nada e desmontado - o iframe do OHIF nao recarrega.
+  const [marcacaoAberta, setMarcacaoAberta] = useState(false)
   // Janela do navegador ja em tela cheia (F11, ou aberta pelo atalho
   // "Abrir Radix Curadoria em tela cheia") - nesse caso o botao de tela
   // cheia nao precisa aparecer.
@@ -415,30 +378,6 @@ export default function CuradoriaPage() {
   // o cursor dentro de "Observações internas"/"Outros achados"/etc com as
   // setas trocaria de painel por acidente a cada tecla, em vez de mover o
   // cursor no texto.
-  useEffect(() => {
-    function aoTeclar(evento: KeyboardEvent) {
-      if (evento.key !== 'ArrowLeft' && evento.key !== 'ArrowRight') return
-      if (!fichaAtiva || modoAjustado) return
-
-      const alvo = document.activeElement
-      const dentroDeCampo =
-        alvo instanceof HTMLElement &&
-        (alvo.tagName === 'INPUT' ||
-          alvo.tagName === 'TEXTAREA' ||
-          alvo.tagName === 'SELECT' ||
-          alvo.isContentEditable)
-      if (dentroDeCampo) return
-
-      setPainelLateral((atual) => {
-        const indice = PAGINAS_CARROSSEL.indexOf(atual)
-        if (indice < 0) return atual // marcacao aberta: setas nao trocam de pagina
-        const proximoIndice = evento.key === 'ArrowRight' ? indice + 1 : indice - 1
-        return PAGINAS_CARROSSEL[proximoIndice] ?? atual
-      })
-    }
-    document.addEventListener('keydown', aoTeclar)
-    return () => document.removeEventListener('keydown', aoTeclar)
-  }, [fichaAtiva, modoAjustado])
 
   // Botao manual "Tela cheia" (voltou por pedido explicito - a tentativa
   // automatica no clique do Sidebar, mais a rede de seguranca no primeiro
@@ -669,7 +608,8 @@ export default function CuradoriaPage() {
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
-    setPainelLateral(PAGINA_INICIAL)
+    setSecaoAtiva('dados')
+    setMarcacaoAberta(false)
     if (ficha.status === 'segunda_opiniao') {
       carregarReviewSegundaOpiniao(curationId)
     }
@@ -686,6 +626,7 @@ export default function CuradoriaPage() {
       descricao_didatica: ficha.descricao_didatica ?? '',
       observacoes_internas: ficha.observacoes_internas ?? '',
       anonimizacao_validada: ficha.anonimizacao_validada ?? false,
+      termos: ficha.termos ?? [],
     })
   }
 
@@ -791,11 +732,18 @@ export default function CuradoriaPage() {
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
-    setPainelLateral(PAGINA_INICIAL)
+    setSecaoAtiva('dados')
+    setMarcacaoAberta(false)
     if (autenticado) carregarFila()
   }
 
-  async function salvarRascunho(opcoes?: { silencioso?: boolean }): Promise<boolean> {
+  async function salvarRascunho(opcoes?: {
+    silencioso?: boolean
+    /** salvar este formulario (em vez do estado atual, que pode nao ter atualizado ainda) */
+    formulario?: FormularioFicha
+    /** a edicao veio da curadoria por voz (vai para a auditoria) */
+    origemVoz?: boolean
+  }): Promise<boolean> {
     if (!fichaAtiva || !autenticado) return false
     setSalvandoRascunho(true)
     setErroFormulario('')
@@ -806,7 +754,10 @@ export default function CuradoriaPage() {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(construirPayloadEdicao(form)),
+          body: JSON.stringify({
+            ...construirPayloadEdicao(opcoes?.formulario ?? form),
+            ...(opcoes?.origemVoz ? { origem_voz: true } : {}),
+          }),
         }
       )
       if (resposta.status === 401) {
@@ -917,26 +868,6 @@ export default function CuradoriaPage() {
     setErroMotivo('')
   }
 
-  // Sai do modo foco (volta o layout normal) ao sair da tela cheia ou ao
-  // trocar o painel lateral para os achados.
-  useEffect(() => {
-    if (painelLateral !== 'marcacao') {
-      setMarcacaoEmDestaque(false)
-      setPreviaMarcacao(false)
-    }
-  }, [painelLateral])
-
-  function abrirPreviaMarcacao() {
-    if (tempoPreviaRef.current) clearTimeout(tempoPreviaRef.current)
-    // pequeno atraso: so amplia se o mouse "parar" na miniatura, nao ao
-    // simplesmente passar por cima a caminho de outro botao
-    tempoPreviaRef.current = setTimeout(() => setPreviaMarcacao(true), 140)
-  }
-  function fecharPreviaMarcacao() {
-    if (tempoPreviaRef.current) clearTimeout(tempoPreviaRef.current)
-    setPreviaMarcacao(false)
-  }
-
   // Tecla M abre/fecha a imagem de marcacao (fora de campos de texto).
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent) {
@@ -952,21 +883,20 @@ export default function CuradoriaPage() {
     return () => document.removeEventListener('keydown', aoTeclar)
   })
 
-  // "Marcar imagem": a imagem para marcacao abre GRANDE no lugar do
-  // visualizador (que vira miniatura); fechar volta aos achados.
+  // "Abrir marcação": a imagem para marcacao abre GRANDE no lugar do
+  // visualizador (que vira miniatura); fechar devolve o visualizador.
   function alternarMarcacao() {
-    if (painelLateral === 'marcacao') {
-      fecharMarcacao()
-      return
-    }
-    paginaAntesDaMarcacaoRef.current = painelLateral
-    setPainelLateral('marcacao')
-    setMarcacaoEmDestaque(true)
+    setMarcacaoAberta((v) => !v)
+    setSecaoAtiva('marcacoes')
   }
   function fecharMarcacao() {
-    setPainelLateral(paginaAntesDaMarcacaoRef.current === 'marcacao' ? PAGINA_INICIAL : paginaAntesDaMarcacaoRef.current)
-    setMarcacaoEmDestaque(false)
-    setPreviaMarcacao(false)
+    setMarcacaoAberta(false)
+  }
+
+  // voz: aplica o que foi entendido e salva como rascunho (origem: voz)
+  function aplicarVoz(novo: FormularioFicha) {
+    setForm(novo)
+    salvarRascunho({ silencioso: true, formulario: novo, origemVoz: true })
   }
 
   if (carregando) {
@@ -984,10 +914,7 @@ export default function CuradoriaPage() {
   // usuario, entao o layout nao pode depender dela. O botao "Tela cheia"
   // do visualizador continua existindo para esconder tambem as barras do
   // proprio navegador.
-  const modoFoco = fichaVisivel && painelLateral === 'marcacao'
-  const marcacaoGrande = modoFoco && marcacaoEmDestaque
-  const marcacaoMiniatura = modoFoco && !marcacaoEmDestaque
-  const registroVisivel = registroAberto || !!erroFormulario
+  const marcacaoGrande = fichaVisivel && marcacaoAberta
 
   // "Imagem principal terminou de carregar" = os dois sinais resolvidos,
   // cada um com um fallback pra quando o sinal correspondente NUNCA vai
@@ -1095,7 +1022,7 @@ export default function CuradoriaPage() {
           fosse um elemento especifico (ex.: visualizadorRef), a propria
           API ja esconderia tudo fora dele "de graca" - com o <html> como
           alvo, precisa ser explicito. */}
-      {/* Sem Topbar: a Curadoria e sempre "tela cheia" (ver modoFoco). */}
+      {/* Sem Topbar: a Curadoria e sempre "tela cheia". */}
 
       {/* Sem overflow-y-auto aqui de proposito: a linha de trabalho ocupa
           100% da altura disponivel - nunca sobra conteudo pra "vazar" e
@@ -1204,252 +1131,134 @@ export default function CuradoriaPage() {
             />
           </div>
 
-          {/* LINHA DE IMAGENS - visualizador principal (OHIF, imagem
-              atual do estudo) + painel lateral, lado a lado. O
-              visualizador usa flex-[2] (definido dentro do proprio
-              PainelVisualizador) contra o flex-1 do painel lateral: a
-              marcacao/achados fica exatamente na metade do tamanho do
-              visualizador, mas com a MESMA ALTURA (bem maior que a faixa
-              baixa da ficha). O painel lateral some junto com a ficha no
-              modo "ajustar a tela", devolvendo toda a largura ao
-              visualizador.
+          {/* LINHA PRINCIPAL - imagem a ESQUERDA (mesmo tamanho de antes:
+              flex-[2] contra a coluna de 440px) e, a DIREITA, a coluna com
+              TODAS as secoes da ficha (ColunaFichaCuradoria.tsx), com
+              rolagem propria e uma secao em destaque (setas ↑/↓, ▲/▼ e
+              voz). Substitui o antigo carrossel de 5 telas + a faixa
+              "Registro de curadoria" embaixo. No modo "ampliar imagem" a
+              coluna some e a imagem ocupa a largura toda.
 
-              Esse painel lateral alterna entre 2 conteudos, com uma
-              seta (estilo carrossel, igual a ficha): "Imagem para
-              marcacao" (MarcadorAchado, onde o curador desenha
-              oval/retangulo/seta pra indicar a lesao) e "Achados em
-              radiografia" (checklist completo). A ideia e que o curador
-              marca a lesao primeiro, depois vira pra achados - que
-              assim ganham a altura toda do visualizador em vez de
-              ficarem espremidos na faixa baixa da ficha (por isso
-              achados saiu da ficha de baixo, que agora tem so 1 pagina -
-              ver FichaCuradoriaForm.tsx e PainelAchadosRadiografia.tsx). */}
-          <div className="relative flex min-h-0 flex-[4] gap-3">
-            <div
-              className={`relative flex min-h-0 min-w-0 ${
-                marcacaoGrande ? 'h-[240px] w-[300px] flex-none self-start' : modoFoco ? 'flex-1' : 'flex-[2]'
-              }`}
-            >
-            <PainelVisualizador
-              fichaAtiva={!!fichaAtiva}
-              carregandoViewer={carregandoViewer}
-              viewerInfo={viewerInfo}
-              telaCheia={telaCheia}
-              onAlternarTelaCheia={alternarTelaCheia}
-              modoAjustado={modoAjustado}
-              onAlternarAjustar={() => setModoAjustado((v) => !v)}
-              statusFicha={statusFicha}
-              segundaOpiniaoReview={segundaOpiniaoReview}
-              form={form}
-              onChange={setForm}
-              onIframeCarregado={() => setOhifCarregado(true)}
-              miniatura={marcacaoGrande}
-              marcacaoAtiva={painelLateral === 'marcacao'}
-              onAlternarMarcacao={alternarMarcacao}
-            />
-            {/* Visualizador reduzido a miniatura (marcacao em destaque):
-                uma camada transparente por cima captura o clique e
-                destroca - o iframe continua montado, so menor. */}
-            {marcacaoGrande && (
-              <button
-                type="button"
-                onClick={fecharMarcacao}
-                className="group absolute inset-0 z-20 flex items-end justify-center rounded-2xl bg-black/10 p-3 transition hover:bg-black/0"
-                aria-label={t('foco.voltarVisualizador')}
-                title={t('foco.voltarVisualizador')}
+              "Abrir marcação": a imagem para marcacao ocupa o lugar grande
+              da esquerda e o visualizador vira miniatura no canto (clicar
+              nela fecha). O MarcadorAchado fica sempre montado (escondido)
+              para a imagem de marcacao ir carregando junto com a principal. */}
+          <div className="relative flex min-h-0 flex-1 gap-3">
+            <div className="relative flex min-h-0 min-w-0 flex-[2] gap-3">
+              <div
+                className={`relative flex min-h-0 min-w-0 ${
+                  marcacaoGrande ? 'h-[240px] w-[300px] flex-none self-start' : 'flex-1'
+                }`}
               >
-                <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition group-hover:bg-brand">
-                  ⇄ {t('foco.voltarVisualizador')}
-                </span>
-              </button>
-            )}
-            </div>
+                <PainelVisualizador
+                  fichaAtiva={!!fichaAtiva}
+                  carregandoViewer={carregandoViewer}
+                  viewerInfo={viewerInfo}
+                  telaCheia={telaCheia}
+                  onAlternarTelaCheia={alternarTelaCheia}
+                  modoAjustado={modoAjustado}
+                  onAlternarAjustar={() => setModoAjustado((v) => !v)}
+                  statusFicha={statusFicha}
+                  segundaOpiniaoReview={segundaOpiniaoReview}
+                  form={form}
+                  onChange={setForm}
+                  onIframeCarregado={() => setOhifCarregado(true)}
+                  miniatura={marcacaoGrande}
+                  marcacaoAtiva={marcacaoAberta}
+                  onAlternarMarcacao={alternarMarcacao}
+                  dadosNaColuna
+                />
+                {/* Visualizador reduzido a miniatura (marcacao aberta): uma
+                    camada transparente por cima captura o clique e fecha a
+                    marcacao - o iframe continua montado, so menor. */}
+                {marcacaoGrande && (
+                  <button
+                    type="button"
+                    onClick={fecharMarcacao}
+                    className="group absolute inset-0 z-20 flex items-end justify-center rounded-2xl bg-black/10 p-3 transition hover:bg-black/0"
+                    aria-label={t('foco.voltarVisualizador')}
+                    title={t('foco.voltarVisualizador')}
+                  >
+                    <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition group-hover:bg-brand">
+                      ⇄ {t('foco.voltarVisualizador')}
+                    </span>
+                  </button>
+                )}
+              </div>
 
-            {fichaVisivel && fichaAtiva && (() => {
-              // Titulos/rotulos das 5 telas do carrossel, montados aqui (nao
-              // como constante de modulo) porque dependem de `t()`. Ver
-              // PAGINAS_PAINEL_LATERAL (topo do arquivo) pra ordem/indices.
-              const indicePainel = PAGINAS_CARROSSEL.indexOf(painelLateral)
-              const titulos: Record<PaginaPainelLateral, string> = {
-                marcacao: t('painelLateral.imagemParaMarcacao'),
-                achados1: t('painelLateral.achadosEmRadiografiaPagina', { pagina: 1, total: 2 }),
-                achados2: t('painelLateral.achadosEmRadiografiaPagina', { pagina: 2, total: 2 }),
-                achadosEstruturados: t('painelLateral.achadosEstruturadosTitulo'),
-                erroTecnico: t('painelLateral.erroTecnicoTitulo'),
-              }
-              const rotulosProximo: Partial<Record<PaginaPainelLateral, string>> = {
-                marcacao: t('painelLateral.verAchados'),
-                achados1: t('painelLateral.verMaisAchados'),
-                achados2: t('painelLateral.verAchadosEstruturados'),
-                achadosEstruturados: t('painelLateral.verErroTecnico'),
-              }
-              const rotulosAnterior: Partial<Record<PaginaPainelLateral, string>> = {
-                achados1: t('painelLateral.voltarParaMarcacao'),
-                achados2: t('painelLateral.voltarAchadosAnteriores'),
-                achadosEstruturados: t('painelLateral.voltarAchadosEstruturados'),
-                erroTecnico: t('painelLateral.voltarErroTecnicoAnterior'),
-              }
-
-              // Tamanho do painel lateral conforme o modo:
-              // - miniatura (modo foco): coluna estreita; com o mouse em
-              //   cima, o painel "salta" para fora em tamanho grande (previa)
-              //   sem empurrar o resto do layout;
-              // - marcacao em destaque: ocupa o lugar grande do visualizador;
-              // - achados/erro tecnico: coluna de largura fixa, para a
-              //   imagem do visualizador continuar sendo o maior elemento.
-              const classeColuna = marcacaoMiniatura
-                ? 'relative w-[300px] flex-none'
-                : marcacaoGrande
-                  ? 'relative flex min-w-0 flex-1'
-                  : 'relative flex w-[440px] flex-none'
-              const classeSecao = marcacaoMiniatura
-                ? previaMarcacao
-                  ? 'absolute right-0 top-0 z-30 h-full w-[min(64vw,1100px)] shadow-[0_30px_90px_-20px_rgba(0,0,0,.95)] ring-1 ring-teal-400/50'
-                  : 'relative h-[300px] w-full'
-                : 'relative h-full w-full flex-1'
-              const compacto = marcacaoMiniatura
-
-              return (
-                <div
-                  className={classeColuna}
-                  onMouseEnter={marcacaoMiniatura ? abrirPreviaMarcacao : undefined}
-                  onMouseLeave={marcacaoMiniatura ? fecharPreviaMarcacao : undefined}
+              {fichaAtiva && (
+                <section
+                  className={
+                    marcacaoGrande
+                      ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3'
+                      : 'hidden'
+                  }
                 >
-                <section className={`flex min-h-[160px] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3 transition-[width,box-shadow] duration-200 ${classeSecao}`}>
                   <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-                    <h2 className="text-sm font-semibold text-ink">{titulos[painelLateral]}</h2>
-                    {marcacaoGrande && (
-                      <button
-                        type="button"
-                        onClick={fecharMarcacao}
-                        className="rounded-full border border-base-border bg-base-surface2 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                      >
-                        ⇄ {t('foco.voltarVisualizador')}
-                      </button>
-                    )}
+                    <h2 className="text-sm font-semibold text-ink">{t('painelLateral.imagemParaMarcacao')}</h2>
+                    <button
+                      type="button"
+                      onClick={fecharMarcacao}
+                      className="rounded-full border border-base-border bg-base-surface2 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                    >
+                      ⇄ {t('foco.voltarVisualizador')}
+                    </button>
                   </div>
-                  <div className={`min-h-0 flex-1 ${compacto ? 'px-0' : 'px-6'}`}>
-                    {/* Sempre montado (mesmo escondido) para a imagem de
-                        marcacao ja ir carregando junto com a principal -
-                        assim ela aparece na hora ao clicar "Marcar imagem"
-                        e a ordem de carregamento da fila continua a mesma. */}
-                    <div className={painelLateral === 'marcacao' ? 'h-full' : 'hidden'}>
-                      <MarcadorAchado
-                        orthancReferenceId={fichaAtiva.orthancReferenceId}
-                        marcacoes={form.marcacoes}
-                        onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
-                        onCarregou={() => setMarcadorPronto(true)}
-                        compacto={compacto}
-                      />
-                    </div>
-                    {(painelLateral === 'achados1' || painelLateral === 'achados2') && (
-                      <PainelAchadosRadiografia form={form} onChange={setForm} pagina={painelLateral === 'achados1' ? 1 : 2} />
-                    )}
-                    {painelLateral === 'achadosEstruturados' && (
-                      <PainelAchadosEstruturados
-                        curationId={fichaAtiva.curationId}
-                        statusFicha={statusFicha}
-                        dentesDaFicha={form.dentes}
-                        marcacoesDaFicha={form.marcacoes}
-                      />
-                    )}
-                    {painelLateral === 'erroTecnico' && (
-                      <PainelErroTecnico curationId={fichaAtiva.curationId} statusFicha={statusFicha} />
-                    )}
+                  <div className="min-h-0 flex-1 px-6">
+                    <MarcadorAchado
+                      orthancReferenceId={fichaAtiva.orthancReferenceId}
+                      marcacoes={form.marcacoes}
+                      onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
+                      onCarregou={() => setMarcadorPronto(true)}
+                    />
                   </div>
-
-                  {/* Setas do carrossel de 5 telas (marcacao -> achados1 ->
-                      achados2 -> achadosEstruturados -> erroTecnico): a de
-                      avancar so aparece quando ha uma proxima tela, a de
-                      voltar so quando ha uma anterior. */}
-                  {indicePainel >= 0 && indicePainel < PAGINAS_CARROSSEL.length - 1 && (
-                    <button
-                      type="button"
-                      onClick={() => setPainelLateral(PAGINAS_CARROSSEL[indicePainel + 1])}
-                      aria-label={rotulosProximo[painelLateral]}
-                      title={rotulosProximo[painelLateral]}
-                      className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                    >
-                      ›
-                    </button>
-                  )}
-                  {indicePainel > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setPainelLateral(PAGINAS_CARROSSEL[indicePainel - 1])}
-                      aria-label={rotulosAnterior[painelLateral]}
-                      title={rotulosAnterior[painelLateral]}
-                      className="absolute left-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-lg text-slate-300 shadow hover:border-brand hover:text-brand-300"
-                    >
-                      ‹
-                    </button>
-                  )}
-
-                  {/* Miniatura/previa: o clique FIXA a imagem de marcacao em
-                      tamanho grande (no lugar do visualizador). Fica abaixo
-                      das setas do carrossel (z-10 x z-20), entao elas
-                      continuam clicaveis. */}
-                  {compacto && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        fecharPreviaMarcacao()
-                        setMarcacaoEmDestaque(true)
-                      }}
-                      className="absolute inset-0 z-[5] flex items-end justify-center p-4"
-                      aria-label={t('foco.fixarGrande')}
-                      title={t('foco.fixarGrande')}
-                    >
-                      <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15">
-                        {previaMarcacao ? t('foco.cliqueParaFixar') : t('foco.passeMouse')}
-                      </span>
-                    </button>
-                  )}
                 </section>
-                </div>
-              )
-            })()}
-          </div>
-
-          {/* Ficha de curadoria - escondida temporariamente no modo
-              "ajustar a tela" (as acoes continuam na barra superior).
-              Proporcao 4:1 (80% da altura pro visualizador, 20% pra
-              ficha) - so foi possivel encolher tanto a ficha porque
-              "Achados em radiografia" (a secao mais alta, com a lista
-              inteira de checkboxes) saiu daqui de vez: agora mora no
-              painel lateral, ao lado do OHIF (ver comentario acima e
-              PainelAchadosRadiografia.tsx). O que resta aqui embaixo
-              (so "Regiao anatomica", sem mais paginacao - ver
-              FichaCuradoriaForm.tsx) e bem mais curto. As duas linhas
-              sempre somam exatamente a altura disponivel dentro da area
-              de trabalho - e, por estar aqui dentro, continua acessivel
-              em tela cheia. */}
-          {fichaVisivel && fichaAtiva && (
-            <button
-              type="button"
-              onClick={() => setRegistroAberto((v) => !v)}
-              aria-expanded={registroVisivel}
-              className="flex shrink-0 items-center justify-between rounded-xl border border-base-border bg-base-surface px-4 py-2 text-sm font-semibold text-ink hover:border-brand"
-            >
-              <span>{t('foco.registro')}</span>
-              <span className="text-xs font-normal text-slate-400">
-                {registroVisivel ? t('foco.ocultarRegistro') : t('foco.mostrarRegistro')} {registroVisivel ? '▾' : '▸'}
-              </span>
-            </button>
-          )}
-          {fichaVisivel && fichaAtiva && registroVisivel && (
-            <div className="min-h-0 flex-1">
-              <FichaCuradoriaForm
-                form={form}
-                onChange={setForm}
-                statusFicha={statusFicha}
-                erro={erroFormulario}
-                rascunhoSalvo={rascunhoSalvo}
-              />
+              )}
             </div>
-          )}
+
+            {fichaVisivel && fichaAtiva && (
+              <aside className="flex min-h-0 w-[440px] flex-none">
+                <ColunaFichaCuradoria
+                  form={form}
+                  onChange={setForm}
+                  statusFicha={statusFicha}
+                  curationId={fichaAtiva.curationId}
+                  erro={erroFormulario}
+                  rascunhoSalvo={rascunhoSalvo}
+                  secaoAtiva={secaoAtiva}
+                  onSecao={setSecaoAtiva}
+                  marcacaoAberta={marcacaoAberta}
+                  onAlternarMarcacao={alternarMarcacao}
+                  teclasAtivas={!modalMotivo && !descarteFinalAlvo}
+                  topo={
+                    <PainelVoz
+                      embutido
+                      fichaId={fichaAtiva.curationId}
+                      form={form}
+                      onAplicar={aplicarVoz}
+                      onSalvar={() => salvarRascunho({ origemVoz: true })}
+                      secaoAtiva={secaoAtiva}
+                      onSecao={setSecaoAtiva}
+                    />
+                  }
+                />
+              </aside>
+            )}
+          </div>
         </div>
       </main>
+
+      {/* Curadoria por voz: no layout normal o painel fica no topo da
+          coluna da ficha (ver acima); no modo "ampliar imagem" (coluna
+          escondida) ele volta a flutuar no canto da tela. */}
+      {fichaAtiva && !fichaVisivel && (
+        <PainelVoz
+          fichaId={fichaAtiva.curationId}
+          form={form}
+          onAplicar={aplicarVoz}
+          onSalvar={() => salvarRascunho({ origemVoz: true })}
+        />
+      )}
 
       {modalMotivo && (
         <ModalMotivo

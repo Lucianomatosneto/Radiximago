@@ -58,6 +58,7 @@ export default function PainelDadosSobrepostos({
   statusFicha,
   marcacaoAtiva = false,
   onAlternarMarcacao,
+  embutido = false,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -65,12 +66,20 @@ export default function PainelDadosSobrepostos({
   /** Estado e acao do botao "Marcar imagem" (abre a imagem para marcacao). */
   marcacaoAtiva?: boolean
   onAlternarMarcacao?: () => void
+  /** dentro da coluna da ficha: sem caixa propria (a secao ja tem borda) */
+  embutido?: boolean
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
 
   return (
-    <div className="flex h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 shadow-lg backdrop-blur-sm">
+    <div
+      className={
+        embutido
+          ? 'flex w-full flex-col gap-3'
+          : 'flex h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 shadow-lg backdrop-blur-sm'
+      }
+    >
       <div>
         <div className="mb-1.5 flex items-center gap-2">
           <span className="text-xs font-medium text-slate-400">{t('status')}</span>

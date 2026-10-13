@@ -60,6 +60,11 @@ const PainelVisualizador = forwardRef<HTMLElement, {
    * da imagem para marcacao. */
   marcacaoAtiva?: boolean
   onAlternarMarcacao?: () => void
+  /** Layout em coluna da Curadoria: os dados da imagem ficam na coluna da
+   * direita (secao "Dados da imagem"), entao a caixa sobreposta some e o
+   * OHIF recebe radixRecolherEstudos=1 para recolher a coluna "Studies"
+   * (ver ohif/app-config.template.js) - a radiografia ganha essa largura. */
+  dadosNaColuna?: boolean
 }>(function PainelVisualizador(
   {
     fichaAtiva,
@@ -77,11 +82,16 @@ const PainelVisualizador = forwardRef<HTMLElement, {
     miniatura = false,
     marcacaoAtiva = false,
     onAlternarMarcacao,
+    dadosNaColuna = false,
   },
   ref
 ) {
   const t = useTranslations('Curadoria.visualizador')
   const viewerPronto = !!(viewerInfo?.abrivel && viewerInfo.viewer_url)
+  const urlViewer =
+    viewerPronto && dadosNaColuna
+      ? `${viewerInfo!.viewer_url!}${viewerInfo!.viewer_url!.includes('?') ? '&' : '?'}radixRecolherEstudos=1`
+      : viewerInfo?.viewer_url ?? ''
 
   return (
     <section
@@ -173,7 +183,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
           </div>
         ) : viewerPronto ? (
           <iframe
-            src={viewerInfo!.viewer_url!}
+            src={urlViewer}
             title={t('ohifTitulo')}
             className="h-full w-full border-0"
             onLoad={onIframeCarregado}
@@ -212,7 +222,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
             (limitacao do ambiente onde este ajuste foi feito) - se ainda
             cobrir o icone ou recuar demais/de menos, so mudar o valor
             aqui (ex.: left-4 = 16px, left-8 = 32px). */}
-        {fichaAtiva && (
+        {fichaAtiva && !dadosNaColuna && (
           <div className={`absolute bottom-2 left-6 top-2 z-10 w-[280px] ${miniatura ? 'hidden' : ''}`}>
             <PainelDadosSobrepostos
               form={form}

@@ -124,6 +124,27 @@ window.config = {
 })();
 
 // ---------------------------------------------------------------------
+// CURADORIA: RECOLHER A COLUNA "STUDIES" DO OHIF
+// Com radixRecolherEstudos=1 na URL (usado pela tela de Curadoria, que
+// mostra os dados da imagem na coluna da direita do proprio Radix), a
+// coluna "Studies" da esquerda do OHIF e recolhida uma vez, assim que
+// aparece - a radiografia ganha essa largura. O mesmo botao do OHIF abre
+// a coluna de novo, se a pessoa quiser. Sem o parametro, nada muda.
+// ---------------------------------------------------------------------
+;(function () {
+  var params = new URLSearchParams(window.location.search);
+  if (params.get('radixRecolherEstudos') !== '1') return;
+  var tentativas = 0;
+  var relogio = setInterval(function () {
+    tentativas++;
+    var painel = document.querySelector('[data-cy="studyBrowser-panel"]');
+    var botao = document.querySelector('[data-cy="side-panel-header-left"]');
+    if (painel && botao) { botao.click(); clearInterval(relogio); return; }
+    if (tentativas > 120) clearInterval(relogio); // ~30 s: desiste em silencio
+  }, 250);
+})();
+
+// ---------------------------------------------------------------------
 // VARIAS IMAGENS NA MESMA TELA (layout do "Visualizador de imagens
 // selecionadas" do Radix)
 // Quando o Radix abre o OHIF com varios estudos na URL e o parametro
