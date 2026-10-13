@@ -129,8 +129,10 @@
       "relatorios": "Relatórios",
       "auditoria": "Auditoria",
       "integracoes": "Integrações",
-      "configuracoes": "Configurações"
-    }
+      "configuracoes": "Configurações",
+      "compartilhadasComigo": "Compartilhadas comigo"
+    },
+    "novasCompartilhadas": "{quantidade} novas"
   },
   "Topbar": {
     "ajuda": "Ajuda",
@@ -1258,5 +1260,45 @@
     "salvandoMinhas": "Salvando em Minhas imagens…",
     "minhasSalvas": "{total, plural, one {1 imagem está} other {# imagens estão}} em Minhas imagens.",
     "minhasFalhas": "{total, plural, one {1 imagem não pôde ser salva} other {# imagens não puderam ser salvas}}."
+  },
+  "Compartilhar": {
+    "titulo": "Compartilhar",
+    "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
+    "placeholderEmail": "E-mail do cadastro da pessoa",
+    "placeholderMensagem": "Recado (opcional)",
+    "explicacao": "A pessoa verá a imagem e as suas anotações (só para leitura) em \"Compartilhadas comigo\". Você pode desfazer quando quiser.",
+    "cancelar": "Cancelar",
+    "enviar": "Compartilhar",
+    "enviando": "Compartilhando...",
+    "enviado": "Compartilhado.",
+    "erroEmail": "Digite um e-mail válido.",
+    "erroEnviar": "Não foi possível compartilhar a imagem.",
+    "erroMuitas": "Muitos compartilhamentos seguidos. Aguarde um minuto e tente de novo.",
+    "erroDesfazer": "Não foi possível desfazer o compartilhamento.",
+    "jaCompartilhada": "Compartilhada com:",
+    "desfazer": "Desfazer este compartilhamento",
+    "desfazerCurto": "desfazer",
+    "anotacoesDe": "Anotações de {nome}",
+    "anotacoesIndisponiveis": "As anotações não estão mais disponíveis.",
+    "semAnotacoes": "Nenhuma anotação nesta imagem.",
+    "somenteLeitura": "Somente leitura — sempre a versão atual.",
+    "avisoCadastro": "Se a pessoa ainda não tem cadastro no Rádix Imago, envie a ela o link abaixo para se cadastrar; depois que o cadastro for aprovado, compartilhe a imagem de novo.",
+    "copiarLink": "Copiar link",
+    "linkCopiado": "Copiado ✓"
+  },
+  "CompartilhadasComigo": {
+    "tituloPrefixo": "Compartilhadas",
+    "tituloDestaque": "comigo",
+    "subtitulo": "Imagens que outros usuários compartilharam com você, com as anotações deles.",
+    "vazio": "Ainda não compartilharam nenhuma imagem com você.",
+    "erroCarregar": "Não foi possível carregar as imagens compartilhadas.",
+    "erroRemover": "Não foi possível remover a imagem.",
+    "imagem": "Imagem {numero}",
+    "nova": "Nova",
+    "de": "De",
+    "anotacoes": "{quantidade, plural, =0 {Sem anotações} one {# anotação} other {# anotações}}",
+    "abrir": "⛶ Abrir",
+    "remover": "Remover",
+    "verTodas": "Ver todas ({quantidade})"
   }
 }

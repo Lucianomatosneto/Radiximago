@@ -129,8 +129,10 @@
       "relatorios": "Reports",
       "auditoria": "Audit log",
       "integracoes": "Integrations",
-      "configuracoes": "Settings"
-    }
+      "configuracoes": "Settings",
+      "compartilhadasComigo": "Shared with me"
+    },
+    "novasCompartilhadas": "{quantidade} new"
   },
   "Topbar": {
     "ajuda": "Help",
@@ -1258,5 +1260,45 @@
     "salvandoMinhas": "Saving to My images…",
     "minhasSalvas": "{total, plural, one {1 image is} other {# images are}} in My images.",
     "minhasFalhas": "{total, plural, one {1 image could not be saved} other {# images could not be saved}}."
+  },
+  "Compartilhar": {
+    "titulo": "Share",
+    "abrir": "Share this image and your notes with another user",
+    "placeholderEmail": "The person's registered e-mail",
+    "placeholderMensagem": "Message (optional)",
+    "explicacao": "The person will see the image and your notes (read-only) in \"Shared with me\". You can undo it at any time.",
+    "cancelar": "Cancel",
+    "enviar": "Share",
+    "enviando": "Sharing...",
+    "enviado": "Shared.",
+    "erroEmail": "Enter a valid e-mail.",
+    "erroEnviar": "Could not share the image.",
+    "erroMuitas": "Too many shares in a row. Wait a minute and try again.",
+    "erroDesfazer": "Could not undo the share.",
+    "jaCompartilhada": "Shared with:",
+    "desfazer": "Undo this share",
+    "desfazerCurto": "undo",
+    "anotacoesDe": "Notes by {nome}",
+    "anotacoesIndisponiveis": "These notes are no longer available.",
+    "semAnotacoes": "No notes on this image.",
+    "somenteLeitura": "Read-only — always the current version.",
+    "avisoCadastro": "If the person isn't registered in Rádix Imago yet, send them the link below to sign up; once the registration is approved, share the image again.",
+    "copiarLink": "Copy link",
+    "linkCopiado": "Copied ✓"
+  },
+  "CompartilhadasComigo": {
+    "tituloPrefixo": "Shared",
+    "tituloDestaque": "with me",
+    "subtitulo": "Images other users shared with you, with their notes.",
+    "vazio": "No one has shared an image with you yet.",
+    "erroCarregar": "Could not load the shared images.",
+    "erroRemover": "Could not remove the image.",
+    "imagem": "Image {numero}",
+    "nova": "New",
+    "de": "From",
+    "anotacoes": "{quantidade, plural, =0 {No notes} one {# note} other {# notes}}",
+    "abrir": "⛶ Open",
+    "remover": "Remove",
+    "verTodas": "View all ({quantidade})"
   }
 }
