@@ -188,6 +188,32 @@ html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-purple-200,.text-purpl
 html.light[data-fundo]:not([data-fundo-escuro]) .text-teal-300{color:#0f766e}
 html.light[data-fundo]:not([data-fundo-escuro]) .text-orange-300{color:#c2410c}
 html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-blue-300,.text-blue-400){color:#1d4ed8}
+
+/* 6. MODO ESCURO CONFORTAVEL (pedido de 2026-10: "ajustar o brilho para
+      cansar menos a vista"). No escuro, o que cansa nao e o fundo, e sim o
+      que BRILHA sobre ele: cores muito vivas (saturadas), azul forte nos
+      botoes e caixinhas brancas (checkbox) que acendem como lampadas.
+      Aqui as cores continuam as mesmas (cada uma ainda identifica a sua
+      categoria), mas em versoes menos saturadas e menos luminosas - todas
+      ainda com contraste acima de 7:1 sobre os paineis (WCAG AAA). */
+html.dark[data-fundo]{
+  --color-brand: 46 88 178;
+  --color-brand-hover: 58 104 200;
+  --color-brand-300: 125 160 214;
+}
+/* menu lateral e campos de formulario coloridos: mesma cor, mais apagada */
+html.dark[data-fundo] aside nav a{filter:saturate(.55) brightness(.88)}
+html.dark[data-fundo] main :is(select,input:not([type=checkbox]):not([type=radio]),textarea){filter:saturate(.55) brightness(.95)}
+/* textos coloridos vivos -> tons suaves equivalentes */
+html.dark[data-fundo] .text-teal-200{color:#a9d6ce}
+html.dark[data-fundo] .text-teal-300{color:#7fc4b8}
+html.dark[data-fundo] :is(.text-emerald-200,.text-emerald-300,.text-emerald-400){color:#86c5a3}
+html.dark[data-fundo] :is(.text-amber-200,.text-amber-300,.text-amber-400){color:#dcc086}
+html.dark[data-fundo] :is(.text-blue-300,.text-blue-400,.text-sky-200,.text-sky-300,.text-cyan-300,.text-indigo-300){color:#98b3d8}
+html.dark[data-fundo] :is(.text-purple-200,.text-purple-300,.text-purple-400,.text-violet-300){color:#b9a8d6}
+html.dark[data-fundo] :is(.text-red-200,.text-red-300,.text-red-400,.text-rose-300){color:#e08f8f}
+html.dark[data-fundo] :is(.text-orange-200,.text-orange-300){color:#dba984}
+html.dark[data-fundo] :is(.text-lime-300,.text-green-300,.text-yellow-300){color:#b9cc8e}
 `
 
 // Classes reutilizaveis do padrao visual (titulo das telas, painel de vidro,
@@ -204,7 +230,7 @@ const ESTILO_COMPONENTES = `
   background:linear-gradient(100deg,#0f172a 0%,#0f766e 60%,#0d9488 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.dark .titulo-pagina{background-image:linear-gradient(100deg,#dee4ec 0%,#c9e9e3 45%,#4fd1bd 100%)}
+.dark .titulo-pagina{background-image:linear-gradient(100deg,#d8dee6 0%,#bcdcd6 45%,#62bfae 100%)}
 @media (min-width:640px){.titulo-pagina{font-size:2rem}}
 .titulo-pagina--grande{font-size:2.25rem}
 @media (min-width:640px){.titulo-pagina--grande{font-size:3rem}}

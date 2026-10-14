@@ -750,20 +750,53 @@ export const TOPICOS_AJUDA: TopicoAjuda[] = [
       resumo: 'O menu "Compartilhadas comigo" lista o que outros usuários enviaram para você.',
       passos: [
         'No menu, clique em "Compartilhadas comigo" (o número indica quantas são novas).',
-        'Clique em "⛶ Abrir" para ver a imagem com as anotações de quem enviou.',
-        'Para tirar uma imagem da sua lista, clique em "Remover".',
+        'No cartão, o "i" abre ao lado a descrição da imagem e as anotações de quem enviou (a janela pode ser arrastada).',
+        'O ícone de expandir mostra a imagem grande à esquerda e a descrição à direita.',
+        'Para tirar uma imagem da sua lista, clique no "x" vermelho.',
       ],
-      palavras: 'compartilhadas comigo recebidas recebi enviaram para mim remover apagar abrir anotacoes colega',
+      palavras: 'compartilhadas comigo recebidas recebi enviaram para mim remover apagar abrir expandir anotacoes colega',
     },
     en: {
       titulo: 'View and remove images shared with me',
       resumo: 'The "Shared with me" menu lists what other users sent you.',
       passos: [
         'In the menu, click "Shared with me" (the number shows how many are new).',
-        'Click "⛶ Open" to see the image with the sender\'s notes.',
-        'To take an image off your list, click "Remove".',
+        'On the card, the "i" opens beside it the image description and the sender\'s notes (the window can be dragged).',
+        'The expand icon shows the image large on the left and the description on the right.',
+        'To take an image off your list, click the red "x".',
       ],
       palavras: 'shared with me received remove delete open notes',
+    },
+  },
+
+  {
+    id: 'apagarAnotacaoRecebida',
+    categoria: 'anotacoes',
+    rotas: ['/compartilhadas-comigo'],
+    link: '/compartilhadas-comigo',
+    pt: {
+      titulo: 'Apagar anotações de quem compartilhou comigo',
+      resumo: 'Some só da sua visão (ex.: para imprimir sem elas); quem escreveu continua com a anotação.',
+      passos: [
+        'Em "Compartilhadas comigo", clique no "i" do cartão da imagem.',
+        'Em "Anotações de <nome>", clique na lixeira ao lado da anotação e clique de novo em "Apagar?" para confirmar.',
+        'Para tirar todas de uma vez, use "Apagar todas" (também pede o segundo clique).',
+        'Mudou de ideia? Clique em "Mostrar as apagadas" para ver todas de novo.',
+      ],
+      dica: 'Você nunca apaga a anotação de outra pessoa: ela só deixa de aparecer para você. Anotações novas de quem compartilhou continuam aparecendo.',
+      palavras: 'apagar excluir remover esconder ocultar anotacao anotacoes recebida compartilhada colega professor remetente imprimir lixeira',
+    },
+    en: {
+      titulo: 'Delete notes from whoever shared with me',
+      resumo: 'They disappear only from your view (e.g. to print without them); the author keeps the note.',
+      passos: [
+        'In "Shared with me", click the "i" on the image card.',
+        'Under "Notes from <name>", click the bin next to the note and click "Delete?" again to confirm.',
+        'To remove them all at once, use "Delete all" (it also asks for a second click).',
+        'Changed your mind? Click "Show the deleted" to see them all again.',
+      ],
+      dica: "You never delete someone else's note: it just stops showing for you. New notes from the sender still appear.",
+      palavras: 'delete remove hide note notes received shared colleague sender print bin',
     },
   },
 

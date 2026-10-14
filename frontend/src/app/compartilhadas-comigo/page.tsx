@@ -1,19 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial, { type ItemSequencia } from '../../components/VisualizadorSequencial'
+import EtiquetaMarcacoes from '../../components/visualizador/EtiquetaMarcacoes'
+import { ESTILO_CARTOES, corDestaqueCategoria } from '../../components/GradeCategoriasImagens'
 import type { Marcacao } from '../../lib/marcacoes'
-import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
+import { corTextoAchado } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 // "Compartilhadas comigo": imagens que outros usuarios compartilharam com
 // quem esta logado, com o recado e as anotacoes de quem compartilhou (so
 // leitura, sempre a versao atual). Ver backend/app/modules/compartilhamentos_router.py.
+//
+// Cartoes no mesmo padrao de Minhas imagens: miniatura quadrada e acoes so
+// com icones - "i" (descricao + anotacoes de quem compartilhou, numa janela
+// AO LADO do cartao, que pode ser arrastada), expandir (imagem na metade
+// esquerda e descricao na direita) e x (tirar da lista). As anotacoes
+// recebidas podem ser "apagadas" so da visao de quem recebeu.
 
 interface Recebida {
   id: number
@@ -31,6 +40,7 @@ interface Recebida {
   qualidade_tecnica?: string | null
   dentes?: number[] | null
   descricao_didatica: string | null
+  erros_tecnicos?: string[]
   viewer_url: string | null
 }
 
@@ -57,6 +67,25 @@ export default function CompartilhadasComigoPage() {
   const [erro, setErro] = useState('')
   const [removendo, setRemovendo] = useState<number | null>(null)
   const [aberta, setAberta] = useState<number | null>(null)
+  const [expandida, setExpandida] = useState<number | null>(null)
+
+  // anotacoes recebidas "apagadas" (ou mostradas de novo) na janela do "i":
+  // atualiza o contador do cartao
+  useEffect(() => {
+    function aoMudar(e: Event) {
+      const id = (e as CustomEvent<{ id: number }>).detail?.id
+      if (id === undefined) return
+      fetch(`${API}/shares/recebidas/${id}/anotacoes`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((dados) => {
+          if (!dados) return
+          setItens((atual) => atual.map((i) => (i.id === id ? { ...i, quantidade_anotacoes: dados.itens.length } : i)))
+        })
+        .catch(() => {})
+    }
+    window.addEventListener('radix-anotacoes-compartilhadas', aoMudar)
+    return () => window.removeEventListener('radix-anotacoes-compartilhadas', aoMudar)
+  }, [])
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -145,6 +174,7 @@ export default function CompartilhadasComigoPage() {
     qualidade_tecnica: i.qualidade_tecnica,
     dentes: i.dentes,
     achado_principal: i.achado_principal,
+    erros_tecnicos: i.erros_tecnicos,
     compartilhamento: { id: i.id, remetente_nome: i.remetente_nome, mensagem: i.mensagem },
   }))
 
@@ -192,18 +222,24 @@ export default function CompartilhadasComigoPage() {
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {itens.map((item, indice) => (
+                  // mesmo visual "vidro" de Minhas imagens e do Banco de imagens
                   <div
                     key={item.id}
-                    className={`flex flex-col rounded-2xl border bg-gradient-to-br p-4 ${corCartaoTipoRadiografia(item.tipo_radiografia)}`}
+                    style={{ '--cor': corDestaqueCategoria(item.tipo_radiografia), animationDelay: `${Math.min(indice, 12) * 45}ms` } as CSSProperties}
+                    data-cartao-imagem
+                    className="cartao-categoria flex flex-col rounded-2xl p-4"
                   >
                     <div className="relative mb-3 overflow-hidden rounded-lg">
                       <MiniaturaImagem
                         curationId={item.curation_id}
                         alt={item.descricao_didatica ?? t('imagem', { numero: indice + 1 })}
-                        className="h-36 w-full bg-base-surface2 object-cover"
+                        className="aspect-square w-full bg-base-surface2 object-cover"
                       />
+                      <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-semibold text-white">
+                        {indice + 1}
+                      </span>
                       {item.novo && (
-                        <span className="absolute left-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">
+                        <span className="absolute right-2 top-2 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">
                           {t('nova')}
                         </span>
                       )}
@@ -213,6 +249,7 @@ export default function CompartilhadasComigoPage() {
                       {item.compartilhado_em && <span> · {dataCurta(item.compartilhado_em)}</span>}
                     </p>
                     <span className="mt-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
+                      <span className="h-1.5 w-1.5 rounded-full bg-brand-300" aria-hidden="true" />
                       {rotularTipo(item.tipo_radiografia)}
                     </span>
                     <span className={`mt-1 truncate text-xs font-medium ${corTextoAchado(item.achado_principal)}`}>
@@ -222,21 +259,37 @@ export default function CompartilhadasComigoPage() {
                     <p className="mt-1 text-[11px] text-slate-500">
                       {t('anotacoes', { quantidade: item.quantidade_anotacoes })}
                     </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
+
+                    {/* acoes so com icones: i (descricao + anotacoes), expandir e x */}
+                    <div className="mt-auto flex items-center justify-end gap-1.5 pt-3">
+                      <EtiquetaMarcacoes
+                        item={{ ...item, numero: indice + 1 }}
+                        curationId={item.curation_id}
+                        compartilhamento={{ id: item.id, remetente_nome: item.remetente_nome, mensagem: item.mensagem }}
+                        flutuante
+                        janela
+                        embutido
+                      />
                       <button
                         type="button"
-                        onClick={() => setAberta(indice)}
-                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
+                        onClick={() => setExpandida(indice)}
+                        title={t('expandir')}
+                        aria-label={t('expandir')}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-base-border bg-base-surface/30 text-slate-200 hover:border-brand hover:text-brand-300"
                       >
-                        {t('abrir')}
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                        </svg>
                       </button>
                       <button
                         type="button"
                         onClick={() => remover(item.id)}
                         disabled={removendo === item.id}
-                        className="rounded-lg border border-base-border px-3 py-2 text-sm text-red-400 hover:border-red-500 disabled:opacity-50"
+                        title={t('remover')}
+                        aria-label={t('remover')}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-base-border bg-base-surface/30 text-lg leading-none text-red-400 hover:border-red-500 disabled:opacity-50"
                       >
-                        {removendo === item.id ? '...' : t('remover')}
+                        {removendo === item.id ? '…' : '×'}
                       </button>
                     </div>
                   </div>
@@ -247,8 +300,21 @@ export default function CompartilhadasComigoPage() {
         </main>
       </div>
 
+      <style>{ESTILO_CARTOES}</style>
+
       {aberta !== null && itensVisualizador.length > 0 && (
         <VisualizadorSequencial itens={itensVisualizador} indiceInicial={aberta} onFechar={() => setAberta(null)} />
+      )}
+
+      {/* expandir: imagem na metade esquerda e descricao (com as anotacoes
+          de quem compartilhou) na metade direita */}
+      {expandida !== null && itensVisualizador[expandida] && (
+        <VisualizadorSequencial
+          itens={[itensVisualizador[expandida]]}
+          indiceInicial={0}
+          onFechar={() => setExpandida(null)}
+          descricaoAoLado
+        />
       )}
     </div>
   )

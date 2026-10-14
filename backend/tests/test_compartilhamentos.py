@@ -140,3 +140,64 @@ def test_remetente_desfaz_e_destinatario_remove(client, criar_usuario, criar_fic
     acoes = {a.acao for a in db.query(AuditLog).filter(AuditLog.usuario_id == remetente.id).all()}
     assert {"compartilhamento_imagem", "compartilhamento_desfeito"} <= acoes
     assert db.query(CompartilhamentoImagem).filter(CompartilhamentoImagem.remetente_id == remetente.id).count() == 0
+
+
+def _compartilhar(client, t_rem, ficha_id, destinatario):
+    client.post(f"/shares/{ficha_id}", json={"email": destinatario.email}, headers=cabecalho_auth(t_rem))
+
+
+def test_destinatario_apaga_anotacoes_so_da_propria_visao(client, criar_usuario, criar_ficha):
+    remetente = criar_usuario()
+    destinatario = criar_usuario()
+    t_rem = obter_token(client, remetente.email)
+    t_dest = obter_token(client, destinatario.email)
+    ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
+    n1 = _anotar(client, t_rem, ficha.id, "Primeira")
+    _anotar(client, t_rem, ficha.id, "Segunda")
+    _compartilhar(client, t_rem, ficha.id, destinatario)
+    comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
+    url = f"/shares/recebidas/{comp_id}/anotacoes"
+
+    # apaga UMA para si
+    r = client.post(f"{url}/ocultar", json={"ids": [n1["id"]]}, headers=cabecalho_auth(t_dest))
+    assert r.status_code == 200 and r.json()["ocultas"] == 1
+    anot = client.get(url, headers=cabecalho_auth(t_dest)).json()
+    assert [a["texto"] for a in anot["itens"]] == ["Segunda"]
+    assert anot["ocultas"] == 1
+    assert client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["quantidade_anotacoes"] == 1
+
+    # a anotacao continua existindo para quem escreveu
+    minhas = client.get(f"/annotations/{ficha.id}", headers=cabecalho_auth(t_rem)).json()["itens"]
+    assert {a["texto"] for a in minhas} == {"Primeira", "Segunda"}
+
+    # apagar todas (sem ids) e depois mostrar de novo
+    client.post(f"{url}/ocultar", json={}, headers=cabecalho_auth(t_dest))
+    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"] == []
+    # anotacao NOVA do remetente aparece mesmo depois de "apagar todas"
+    _anotar(client, t_rem, ficha.id, "Nova")
+    assert [a["texto"] for a in client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"]] == ["Nova"]
+    client.post(f"{url}/reexibir", headers=cabecalho_auth(t_dest))
+    assert len(client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"]) == 3
+
+
+def test_ocultar_anotacoes_isolado_e_so_ids_do_remetente(client, criar_usuario, criar_ficha):
+    remetente = criar_usuario()
+    destinatario = criar_usuario()
+    terceiro = criar_usuario()
+    t_rem = obter_token(client, remetente.email)
+    t_dest = obter_token(client, destinatario.email)
+    t_ter = obter_token(client, terceiro.email)
+    ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
+    _anotar(client, t_rem, ficha.id, "Do remetente")
+    alheia = _anotar(client, t_ter, ficha.id, "Do terceiro")
+    _compartilhar(client, t_rem, ficha.id, destinatario)
+    comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
+
+    # terceiro nao mexe no compartilhamento dos outros
+    r = client.post(f"/shares/recebidas/{comp_id}/anotacoes/ocultar", json={}, headers=cabecalho_auth(t_ter))
+    assert r.status_code == 404
+    # id de anotacao que nao e do remetente e ignorado
+    r = client.post(
+        f"/shares/recebidas/{comp_id}/anotacoes/ocultar", json={"ids": [alheia["id"]]}, headers=cabecalho_auth(t_dest)
+    )
+    assert r.json()["ocultas"] == 0

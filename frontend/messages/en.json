@@ -1550,7 +1550,15 @@
     "somenteLeitura": "Read-only — always the current version.",
     "avisoCadastro": "If the person isn't registered in Rádix Imago yet, send them the link below to sign up; once the registration is approved, share the image again.",
     "copiarLink": "Copy link",
-    "linkCopiado": "Copied ✓"
+    "linkCopiado": "Copied ✓",
+    "apagarParaMim": "Delete this note for you only",
+    "apagarCurto": "Delete?",
+    "confirmarApagar": "Click again to delete",
+    "apagarTodas": "Delete all",
+    "confirmarApagarTodas": "Click again to delete all",
+    "apagarSoParaVoce": "Deleting only removes it from your view; the author keeps the note.",
+    "mostrarApagadas": "Show {quantidade, plural, one {the deleted one} other {the # deleted}}",
+    "erroApagar": "Could not update the notes."
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Shared",
@@ -1565,7 +1573,9 @@
     "anotacoes": "{quantidade, plural, =0 {No notes} one {# note} other {# notes}}",
     "abrir": "⛶ Open",
     "remover": "Remove",
-    "verTodas": "View all ({quantidade})"
+    "verTodas": "View all ({quantidade})",
+    "expandir": "Expand",
+    "info": "Image description"
   },
   "Vocabulario": {
     "tituloPrefixo": "Controlled",

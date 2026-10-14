@@ -286,7 +286,7 @@ export default function EtiquetaMarcacoes({
       )}
       {/* anotacoes pessoais (so no quadro que recebe clique; o modo
           flutuante e so leitura) - escrever deixa o quadro fixo aberto */}
-      {compartilhamento && !flutuante && <AnotacoesCompartilhadas compartilhamento={compartilhamento} />}
+      {compartilhamento && (!flutuante || janela) && <AnotacoesCompartilhadas compartilhamento={compartilhamento} />}
       {/* na JANELA (Minhas imagens) as anotacoes tambem aparecem; clicar
           dentro delas nao fecha a janela (data-sem-fechar) */}
       {curationId !== undefined && (!flutuante || janela) && (

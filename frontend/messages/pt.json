@@ -1550,7 +1550,15 @@
     "somenteLeitura": "Somente leitura — sempre a versão atual.",
     "avisoCadastro": "Se a pessoa ainda não tem cadastro no Rádix Imago, envie a ela o link abaixo para se cadastrar; depois que o cadastro for aprovado, compartilhe a imagem de novo.",
     "copiarLink": "Copiar link",
-    "linkCopiado": "Copiado ✓"
+    "linkCopiado": "Copiado ✓",
+    "apagarParaMim": "Apagar esta anotação só para você",
+    "apagarCurto": "Apagar?",
+    "confirmarApagar": "Clique de novo para apagar",
+    "apagarTodas": "Apagar todas",
+    "confirmarApagarTodas": "Clique de novo para apagar todas",
+    "apagarSoParaVoce": "Apagar tira só da sua visão; quem escreveu continua com a anotação.",
+    "mostrarApagadas": "Mostrar {quantidade, plural, one {a apagada} other {as # apagadas}}",
+    "erroApagar": "Não foi possível atualizar as anotações."
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Compartilhadas",
@@ -1565,7 +1573,9 @@
     "anotacoes": "{quantidade, plural, =0 {Sem anotações} one {# anotação} other {# anotações}}",
     "abrir": "⛶ Abrir",
     "remover": "Remover",
-    "verTodas": "Ver todas ({quantidade})"
+    "verTodas": "Ver todas ({quantidade})",
+    "expandir": "Expandir",
+    "info": "Descrição da imagem"
   },
   "Vocabulario": {
     "tituloPrefixo": "Vocabulário",

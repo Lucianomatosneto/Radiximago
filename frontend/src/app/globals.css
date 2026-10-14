@@ -87,6 +87,13 @@
   font-display: swap;
 }
 
+/* Controles nativos do navegador (caixinhas de marcar, listas dos
+   selects, barras de rolagem, calendarios) no mesmo tema da tela: no
+   escuro eles deixam de aparecer como quadrados BRANCOS acesos. */
+html.dark { color-scheme: dark; }
+html.light { color-scheme: light; }
+html.dark input:is([type='checkbox'], [type='radio']) { accent-color: #3f8f84; }
+
 @layer base {
   body {
     @apply bg-base text-ink;

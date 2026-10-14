@@ -12,10 +12,14 @@ Privacidade (LGPD):
 - a anotacao continua sendo do remetente: o destinatario nao edita nada;
 - o remetente pode desfazer o compartilhamento a qualquer momento e o
   destinatario pode remover a imagem do proprio espaco (a linha e apagada);
+- o destinatario pode "apagar" anotacoes do remetente DA PROPRIA VISAO
+  (anotacoes_ocultas, ex.: para imprimir sem elas) - a anotacao NAO e
+  apagada de verdade: continua do remetente, que segue vendo e editando;
 - o e-mail digitado NAO e guardado aqui - so o id do usuario encontrado.
 """
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, UniqueConstraint, text
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.sql import func
 
 from app.core.database import Base
@@ -34,6 +38,9 @@ class CompartilhamentoImagem(Base):
     # quando o destinatario viu o compartilhamento (nulo = novo) - usado so
     # para o contador de novidades do proprio destinatario
     visto_em = Column(DateTime(timezone=True), nullable=True)
+    # ids das anotacoes do remetente que o destinatario ocultou da propria
+    # visao ("apagar para mim"); vazio = ve todas
+    anotacoes_ocultas = Column(ARRAY(Integer), nullable=False, server_default=text("'{}'"), default=list)
 
     __table_args__ = (
         # a mesma imagem nao e compartilhada duas vezes com a mesma pessoa
