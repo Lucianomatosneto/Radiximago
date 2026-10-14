@@ -1556,9 +1556,10 @@
     "confirmarApagar": "Click again to delete",
     "apagarTodas": "Delete all",
     "confirmarApagarTodas": "Click again to delete all",
-    "apagarSoParaVoce": "Deleting only removes it from your view; the author keeps the note.",
+    "apagarSoParaVoce": "Deleting only removes it from your view (it cannot be edited); the author keeps the text.",
     "mostrarApagadas": "Show {quantidade, plural, one {the deleted one} other {the # deleted}}",
-    "erroApagar": "Could not update the notes."
+    "erroApagar": "Could not update the notes.",
+    "apagarRecadoParaMim": "Delete this message for you only"
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Shared",

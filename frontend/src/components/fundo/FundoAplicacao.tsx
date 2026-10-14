@@ -185,7 +185,9 @@ html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-red-200,.text-red-300,
 html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-emerald-300,.text-emerald-400){color:#047857}
 html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-amber-200,.text-amber-300,.text-amber-400){color:#92400e}
 html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-purple-200,.text-purple-300){color:#7e22ce}
-html.light[data-fundo]:not([data-fundo-escuro]) .text-teal-300{color:#0f766e}
+html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-teal-100,.text-teal-200,.text-teal-300){color:#0f766e}
+html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-sky-200,.text-sky-300){color:#0369a1}
+html.light[data-fundo]:not([data-fundo-escuro]) [class*="text-teal-100/"]{color:rgb(15 118 110 / .85)}
 html.light[data-fundo]:not([data-fundo-escuro]) .text-orange-300{color:#c2410c}
 html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-blue-300,.text-blue-400){color:#1d4ed8}
 

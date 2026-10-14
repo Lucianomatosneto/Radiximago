@@ -7,6 +7,8 @@ import { useTranslations } from 'next-intl'
 // compartilhou (o servidor so devolve se o compartilhamento ainda existir e
 // for para o usuario logado).
 //
+// O RECADO de quem enviou (ex.: "favor avaliar") e as anotacoes nao podem
+// ser editados por quem recebeu - so "apagados".
 // "Apagar" aqui e SO PARA QUEM RECEBEU: a anotacao some da sua visao (ex.:
 // para imprimir sem ela), mas continua existindo para quem a escreveu -
 // ninguem apaga dados de outra pessoa. "Mostrar as apagadas" desfaz.
@@ -29,18 +31,21 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
   const t = useTranslations('Compartilhar')
   const [notas, setNotas] = useState<Nota[] | null>(null)
   const [ocultas, setOcultas] = useState(0)
+  // recado atual (o servidor manda null se quem recebeu ja o apagou)
+  const [mensagem, setMensagem] = useState<string | null>(compartilhamento.mensagem)
   const [erro, setErro] = useState(false)
   const [erroAcao, setErroAcao] = useState('')
-  const [confirmando, setConfirmando] = useState<number | 'todas' | null>(null)
+  const [confirmando, setConfirmando] = useState<number | 'todas' | 'recado' | null>(null)
   const base = `${API}/shares/recebidas/${compartilhamento.id}/anotacoes`
 
   async function carregar(cancelado?: () => boolean) {
     try {
       const r = await fetch(base, { credentials: 'include' })
       if (!r.ok) throw new Error()
-      const dados: { itens: Nota[]; ocultas?: number } = await r.json()
+      const dados: { itens: Nota[]; ocultas?: number; mensagem?: string | null } = await r.json()
       if (cancelado?.()) return
       setNotas(dados.itens)
+      if (dados.mensagem !== undefined) setMensagem(dados.mensagem)
       setOcultas(dados.ocultas ?? 0)
     } catch {
       if (!cancelado?.()) setErro(true)
@@ -65,16 +70,18 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
     return () => clearTimeout(id)
   }, [confirmando])
 
-  async function acao(caminho: 'ocultar' | 'reexibir', ids?: number[]) {
+  async function acao(caminho: 'ocultar' | 'reexibir', corpo: { ids?: number[]; mensagem?: boolean }[] = [{}]) {
     setErroAcao('')
     try {
-      const r = await fetch(`${base}/${caminho}`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ids ? { ids } : {}),
-      })
-      if (!r.ok) throw new Error()
+      for (const c of corpo) {
+        const r = await fetch(`${base}/${caminho}`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(c),
+        })
+        if (!r.ok) throw new Error()
+      }
       await carregar()
       // avisa a tela (ex.: contador de anotacoes do cartao)
       window.dispatchEvent(new CustomEvent('radix-anotacoes-compartilhadas', { detail: { id: compartilhamento.id } }))
@@ -83,14 +90,19 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
     }
   }
 
-  function pedirApagar(alvo: number | 'todas') {
+  function pedirApagar(alvo: number | 'todas' | 'recado') {
     if (confirmando !== alvo) {
       setConfirmando(alvo)
       return
     }
     setConfirmando(null)
-    acao('ocultar', alvo === 'todas' ? undefined : [alvo])
+    if (alvo === 'recado') acao('ocultar', [{ mensagem: true }])
+    // "apagar todas": as anotacoes e tambem o recado
+    else if (alvo === 'todas') acao('ocultar', [{}, ...(mensagem ? [{ mensagem: true }] : [])])
+    else acao('ocultar', [{ ids: [alvo] }])
   }
+
+  const totalVisivel = (notas?.length ?? 0) + (mensagem ? 1 : 0)
 
   const estiloLixeira = (ativo: boolean) =>
     `flex h-5 shrink-0 items-center justify-center gap-1 rounded px-1 text-[10px] font-semibold ${
@@ -103,8 +115,21 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
       <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-200">
         {t('anotacoesDe', { nome: compartilhamento.remetente_nome })}
       </p>
-      {compartilhamento.mensagem && (
-        <p className="mt-1 whitespace-pre-line text-xs italic text-slate-300">“{compartilhamento.mensagem}”</p>
+      {/* recado de quem enviou: nao editavel, so pode ser apagado (para si) */}
+      {mensagem && (
+        <div className="mt-1 flex items-start gap-1.5 rounded px-1 py-0.5 hover:bg-white/5">
+          <p className="min-w-0 flex-1 whitespace-pre-line break-words text-xs italic text-slate-300">“{mensagem}”</p>
+          <button
+            type="button"
+            onClick={() => pedirApagar('recado')}
+            title={confirmando === 'recado' ? t('confirmarApagar') : t('apagarRecadoParaMim')}
+            aria-label={confirmando === 'recado' ? t('confirmarApagar') : t('apagarRecadoParaMim')}
+            className={estiloLixeira(confirmando === 'recado')}
+          >
+            <IconeLixeira />
+            {confirmando === 'recado' && <span>{t('apagarCurto')}</span>}
+          </button>
+        </div>
       )}
       {erro ? (
         <p className="mt-1 text-xs text-slate-400">{t('anotacoesIndisponiveis')}</p>
@@ -144,7 +169,7 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
               {t('mostrarApagadas', { quantidade: ocultas })}
             </button>
           )}
-          {notas && notas.length > 1 && (
+          {totalVisivel > 1 && (
             <button type="button" onClick={() => pedirApagar('todas')} className={estiloLixeira(confirmando === 'todas') + ' px-1.5'}>
               <IconeLixeira />
               {confirmando === 'todas' ? t('confirmarApagarTodas') : t('apagarTodas')}

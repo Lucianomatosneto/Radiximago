@@ -201,3 +201,31 @@ def test_ocultar_anotacoes_isolado_e_so_ids_do_remetente(client, criar_usuario, 
         f"/shares/recebidas/{comp_id}/anotacoes/ocultar", json={"ids": [alheia["id"]]}, headers=cabecalho_auth(t_dest)
     )
     assert r.json()["ocultas"] == 0
+
+
+def test_destinatario_apaga_recado_so_da_propria_visao(client, criar_usuario, criar_ficha, db):
+    remetente = criar_usuario()
+    destinatario = criar_usuario()
+    t_rem = obter_token(client, remetente.email)
+    t_dest = obter_token(client, destinatario.email)
+    ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
+    client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "favor avaliar"}, headers=cabecalho_auth(t_rem))
+    comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
+    url = f"/shares/recebidas/{comp_id}/anotacoes"
+
+    r = client.post(f"{url}/ocultar", json={"mensagem": True}, headers=cabecalho_auth(t_dest))
+    assert r.status_code == 200
+    assert client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["mensagem"] is None
+    anot = client.get(url, headers=cabecalho_auth(t_dest)).json()
+    assert anot["mensagem"] is None and anot["ocultas"] == 1
+    # o recado continua guardado (nao foi apagado do banco)
+    assert db.get(CompartilhamentoImagem, comp_id).mensagem == "favor avaliar"
+
+    # mostrar de novo
+    client.post(f"{url}/reexibir", headers=cabecalho_auth(t_dest))
+    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["mensagem"] == "favor avaliar"
+
+    # recado NOVO do remetente volta a aparecer mesmo depois de apagado
+    client.post(f"{url}/ocultar", json={"mensagem": True}, headers=cabecalho_auth(t_dest))
+    client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "veja de novo"}, headers=cabecalho_auth(t_rem))
+    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["mensagem"] == "veja de novo"

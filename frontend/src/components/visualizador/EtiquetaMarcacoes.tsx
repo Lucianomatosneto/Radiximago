@@ -347,12 +347,12 @@ export default function EtiquetaMarcacoes({
         title={fixada ? t('fecharDescricao') : t('abrirDescricao')}
         aria-expanded={aberta}
         aria-label={t('etiquetaAria', { total: totalMarcacoes })}
-        className={`flex items-center gap-1 rounded-full border bg-black/70 px-2 py-0.5 text-[11px] font-semibold backdrop-blur ${
+        className={`flex items-center gap-1 rounded-full border bg-white/90 px-2 py-0.5 text-[11px] font-semibold backdrop-blur dark:bg-black/70 ${
           fixada ? 'ring-2 ring-teal-300/70 ' : ''
         }${
           mostrarContagem && totalMarcacoes > 0
-            ? 'border-amber-300/60 text-amber-200 hover:border-amber-300'
-            : 'border-teal-300/50 text-teal-100 hover:border-teal-300'
+            ? 'border-amber-500/70 text-amber-800 hover:border-amber-500 dark:border-amber-300/60 dark:text-amber-200 dark:hover:border-amber-300'
+            : 'border-teal-600/50 text-teal-800 hover:border-teal-600 dark:border-teal-300/50 dark:text-teal-100 dark:hover:border-teal-300'
         }`}
       >
         <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">

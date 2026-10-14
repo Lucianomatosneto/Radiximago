@@ -10,7 +10,7 @@ Endpoints (sempre em cima do usuario logado):
 - POST   /shares/recebidas/vistas               -> marca todas como vistas
 - DELETE /shares/recebidas/{id}                 -> tiro uma imagem do meu espaco
 - GET    /shares/recebidas/{id}/anotacoes       -> anotacoes ATUAIS do remetente (so leitura)
-- POST   /shares/recebidas/{id}/anotacoes/ocultar   -> "apaga" anotacoes do remetente SO da minha visao
+- POST   /shares/recebidas/{id}/anotacoes/ocultar   -> "apaga" anotacoes (ou o recado) do remetente SO da minha visao
 - POST   /shares/recebidas/{id}/anotacoes/reexibir  -> volta a mostrar todas
 
 Seguranca / LGPD:
@@ -141,6 +141,8 @@ def compartilhar(
     if existente:
         # compartilhar de novo atualiza o recado e volta a aparecer como novo
         existente.mensagem = mensagem or existente.mensagem
+        if mensagem:
+            existente.mensagem_oculta = False  # recado novo volta a aparecer
         existente.visto_em = None
     else:
         db.add(CompartilhamentoImagem(
@@ -247,7 +249,8 @@ def listar_recebidas(
             "id": comp.id,
             "curation_id": ficha.id,
             "remetente_nome": remetente.nome,
-            "mensagem": comp.mensagem,
+            # recado "apagado" por quem recebeu nao aparece mais para ele
+            "mensagem": None if comp.mensagem_oculta else comp.mensagem,
             "compartilhado_em": comp.criado_em.isoformat() if comp.criado_em else None,
             "novo": comp.visto_em is None,
             # so as que quem recebeu ainda ve (sem as que ele "apagou")
@@ -337,8 +340,10 @@ def anotacoes_do_remetente(
     visiveis = [a for a in todas if a.id not in ocultas]
     return {
         "remetente_nome": remetente.nome,
-        # quantas o usuario "apagou" da propria visao (e ainda existem)
-        "ocultas": len(todas) - len(visiveis),
+        # o recado (se nao foi "apagado") e quantas coisas o usuario apagou
+        # da propria visao: anotacoes que ainda existem + o recado
+        "mensagem": None if comp.mensagem_oculta else comp.mensagem,
+        "ocultas": len(todas) - len(visiveis) + (1 if comp.mensagem_oculta and comp.mensagem else 0),
         "itens": [
             {
                 "id": a.id,
@@ -357,6 +362,8 @@ def anotacoes_do_remetente(
 class OcultarAnotacoesPayload(BaseModel):
     # ids das anotacoes a esconder; vazio/ausente = TODAS as atuais
     ids: Optional[list[int]] = Field(default=None, max_length=500)
+    # True = esconde SO o recado (as anotacoes ficam como estao)
+    mensagem: bool = False
 
 
 @router.post("/recebidas/{compartilhamento_id}/anotacoes/ocultar")
@@ -369,6 +376,10 @@ def ocultar_anotacoes(
     """'Apagar' anotacoes recebidas: some SO da visao de quem recebeu.
     A anotacao continua existindo para quem a escreveu."""
     comp, _, _, _ = _compartilhamento_recebido(db, usuario, compartilhamento_id)
+    if payload.mensagem:
+        comp.mensagem_oculta = True
+        db.commit()
+        return {"ocultas": len(comp.anotacoes_ocultas or []) + 1}
     do_remetente = {a.id for a in _anotacoes_remetente(db, comp)}
     alvo = do_remetente if not payload.ids else set(payload.ids)
     # so ids que sao mesmo do remetente nesta imagem (ignora o resto)
@@ -386,5 +397,6 @@ def reexibir_anotacoes(
 ):
     comp, _, _, _ = _compartilhamento_recebido(db, usuario, compartilhamento_id)
     comp.anotacoes_ocultas = []
+    comp.mensagem_oculta = False
     db.commit()
     return {"ocultas": 0}

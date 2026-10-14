@@ -1556,9 +1556,10 @@
     "confirmarApagar": "Clique de novo para apagar",
     "apagarTodas": "Apagar todas",
     "confirmarApagarTodas": "Clique de novo para apagar todas",
-    "apagarSoParaVoce": "Apagar tira só da sua visão; quem escreveu continua com a anotação.",
+    "apagarSoParaVoce": "Apagar tira só da sua visão (não dá para editar); quem escreveu continua com o texto.",
     "mostrarApagadas": "Mostrar {quantidade, plural, one {a apagada} other {as # apagadas}}",
-    "erroApagar": "Não foi possível atualizar as anotações."
+    "erroApagar": "Não foi possível atualizar as anotações.",
+    "apagarRecadoParaMim": "Apagar este recado só para você"
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Compartilhadas",

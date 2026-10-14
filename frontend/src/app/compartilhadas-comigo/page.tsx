@@ -79,7 +79,13 @@ export default function CompartilhadasComigoPage() {
         .then((r) => (r.ok ? r.json() : null))
         .then((dados) => {
           if (!dados) return
-          setItens((atual) => atual.map((i) => (i.id === id ? { ...i, quantidade_anotacoes: dados.itens.length } : i)))
+          setItens((atual) =>
+            atual.map((i) =>
+              i.id === id
+                ? { ...i, quantidade_anotacoes: dados.itens.length, mensagem: dados.mensagem === undefined ? i.mensagem : dados.mensagem }
+                : i
+            )
+          )
         })
         .catch(() => {})
     }
