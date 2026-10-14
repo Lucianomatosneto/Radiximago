@@ -1144,6 +1144,26 @@ export default function CuradoriaPage() {
     </div>
   )
 
+  // barra "Imagem X de Y" + Salvar/Aprovar/Descartar/2a opiniao: no topo da
+  // metade DIREITA (acima da ficha); no modo "ampliar imagem", em cima de tudo
+  const barraSuperior = fichaAtiva ? (
+    <BarraSuperiorCuradoria
+      posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+      totalFila={totalPendentes}
+      podeAnterior={podeAnterior}
+      podeProxima={podeProxima}
+      onAnterior={irParaAnterior}
+      onProxima={irParaProxima}
+      onSalvar={aoClicarSalvar}
+      onAprovar={pedirAprovacao}
+      onDescartar={() => abrirModalMotivo('descartar')}
+      onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+      salvando={salvandoRascunho}
+      aprovando={aprovando}
+      extra={badgeReviewsRespondidas}
+    />
+  ) : null
+
   return (
     <div className="flex h-screen flex-col bg-base">
       {/* Topbar e o cabecalho abaixo somem em tela cheia - o alvo da
@@ -1205,30 +1225,13 @@ export default function CuradoriaPage() {
           ref={visualizadorRef}
           className="flex min-h-0 min-w-0 flex-1 flex-col"
         >
-          {/* Barra superior ("Imagem X de Y", Salvar, Aprovar...) em toda a
-              largura. Logo abaixo, a tela se divide em DUAS METADES:
-              - ESQUERDA: a fila de miniaturas (colada na barra) e a imagem;
-              - DIREITA: a ficha de curadoria inteira, do topo (onde antes
-                passavam as miniaturas) ate o fim da tela.
-              No modo "ampliar imagem" (ficha escondida) a esquerda ocupa tudo. */}
-          {fichaAtiva && (
-            <BarraSuperiorCuradoria
-              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-              totalFila={totalPendentes}
-              podeAnterior={podeAnterior}
-              podeProxima={podeProxima}
-              onAnterior={irParaAnterior}
-              onProxima={irParaProxima}
-              onSalvar={aoClicarSalvar}
-              onAprovar={pedirAprovacao}
-              onDescartar={() => abrirModalMotivo('descartar')}
-              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-              salvando={salvandoRascunho}
-              aprovando={aprovando}
-              extra={badgeReviewsRespondidas}
-            />
-          )}
-
+          {/* Tela em DUAS METADES:
+              - ESQUERDA: miniaturas (5 por vez) no topo e a imagem;
+              - DIREITA: barra "Imagem X de Y" (Salvar, Aprovar...) no topo e
+                a ficha de curadoria ate o fim da tela.
+              No modo "ampliar imagem" (ficha escondida) a barra volta para
+              cima e a esquerda ocupa a largura toda. */}
+          {fichaAtiva && !fichaVisivel && barraSuperior}
           <div className="relative flex min-h-0 flex-1 gap-3">
             <div className={`flex min-h-0 min-w-0 flex-col gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
               {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
@@ -1259,6 +1262,7 @@ export default function CuradoriaPage() {
                 // travada de novo.
                 permitirCarregarMiniaturas={!!fichaAtiva && imagemPrincipalPronta}
                 onSelecionar={(imagem) => abrirImagem(imagem)}
+                porVez={fichaVisivel && fichaAtiva ? 5 : undefined}
               />
 
               {/* Imagem (visualizador OHIF) sem o cabecalho de botoes por cima;
@@ -1328,7 +1332,9 @@ export default function CuradoriaPage() {
             </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className="flex min-h-0 min-w-0 flex-1 pt-2">
+              <aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+                {barraSuperior}
+                <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
                   form={form}
                   onChange={setForm}
@@ -1361,9 +1367,11 @@ export default function CuradoriaPage() {
                       onAprendeu={carregarRecursosLaudo}
                       onDuvidas={setDuvidasVoz}
                       onNadaRegistrar={() => nadaARegistrar(secaoAtiva)}
+                      teclaEnter={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto}
                     />
                   }
                 />
+                </div>
               </aside>
             )}
           </div>

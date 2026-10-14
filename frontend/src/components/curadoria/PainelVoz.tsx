@@ -57,6 +57,7 @@ export default function PainelVoz({
   onAprendeu,
   onDuvidas,
   onNadaRegistrar,
+  teclaEnter = false,
 }: {
   fichaId: number
   form: FormularioFicha
@@ -80,6 +81,9 @@ export default function PainelVoz({
   onDuvidas?: (quantidade: number) => void
   /** fala "nada a registrar": marca a secao em destaque como revisada */
   onNadaRegistrar?: () => void
+  /** ENTER liga/desliga o microfone para o item no holofote (desligar
+   * quando houver janela/modal aberto) */
+  teclaEnter?: boolean
 }) {
   const t = useTranslations('Voz')
   const tEtapas = useTranslations('Curadoria.etapas')
@@ -161,10 +165,14 @@ export default function PainelVoz({
     setAviso(t('desfeito'))
   }, [onAplicar, t])
 
+  // item no holofote QUANDO a gravacao comecou: o que foi dito vai para ele,
+  // mesmo que o curador aperte Tab antes de a transcricao terminar
+  const etapaGravacaoRef = useRef<EtapaFicha | undefined>(undefined)
+
   function processarTexto(texto: string) {
     setUltimoTexto(texto)
     setAviso('')
-    const o = opcoesRef.current
+    const o = { ...opcoesRef.current, etapaAtiva: etapaGravacaoRef.current ?? opcoesRef.current.etapaAtiva }
     const r = interpretar(texto, formRef.current, o.vocabulario, {
       secaoAtiva: o.etapaAtiva ? SECAO_DA_ETAPA[o.etapaAtiva] : undefined,
       etapa: o.etapaAtiva,
@@ -244,6 +252,7 @@ export default function PainelVoz({
         if (blob.size > 0) enviar(blob)
       }
       gravador.start()
+      etapaGravacaoRef.current = opcoesRef.current.etapaAtiva
       gravadorRef.current = gravador
       setGravando(true)
       if (!embutido) setAberto(true)
@@ -265,6 +274,39 @@ export default function PainelVoz({
   }
 
   const alternar = () => (gravando ? parar() : iniciar())
+
+  // holofote mudou de item (Tab/↓) com o microfone aberto: fecha o trecho -
+  // o que foi falado vai para o item em que a gravacao comecou
+  const gravandoRef = useRef(gravando)
+  gravandoRef.current = gravando
+  useEffect(() => {
+    if (gravandoRef.current) parar()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [etapaAtiva])
+
+  // ENTER = abre o microfone no item em destaque; ENTER de novo = fecha e
+  // preenche. Um trecho por item (o microfone nao fica aberto a ficha
+  // inteira). Dentro de campos de texto o Enter continua normal.
+  const podeEnterRef = useRef({ transcrevendo, disponivel })
+  podeEnterRef.current = { transcrevendo, disponivel }
+  useEffect(() => {
+    if (!teclaEnter) return
+    function tecla(e: KeyboardEvent) {
+      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+      const alvo = document.activeElement
+      if (
+        alvo instanceof HTMLElement &&
+        (alvo.tagName === 'TEXTAREA' || alvo.tagName === 'INPUT' || alvo.tagName === 'SELECT' || alvo.isContentEditable)
+      )
+        return
+      e.preventDefault()
+      const { transcrevendo: ocupado, disponivel: ok } = podeEnterRef.current
+      if (ocupado || ok === false) return
+      alternarRef.current()
+    }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [teclaEnter])
 
   // atalho Alt+V (liga/desliga o microfone)
   const alternarRef = useRef(alternar)
@@ -352,6 +394,12 @@ export default function PainelVoz({
         {etapaAtiva && (
           <p className="text-[11px] text-slate-400">
             {t('destino')} <span className="font-semibold text-teal-200">{tEtapas(etapaAtiva)}</span>
+            {teclaEnter && (
+              <span className="ml-2 text-slate-500">
+                <kbd className="rounded border border-white/20 px-1 font-mono text-[10px] text-slate-300">Enter</kbd>{' '}
+                {gravando ? t('enterParar') : t('enterFalar')}
+              </span>
+            )}
           </p>
         )}
         {erro ? (

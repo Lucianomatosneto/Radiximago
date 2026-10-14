@@ -822,7 +822,7 @@
       "titulo": "Curation record",
       "secaoAnterior": "Previous section (↑)",
       "proximaSecao": "Next section (↓)",
-      "ajudaTeclas": "Say the value of the lit item and press Tab (or ↓) to go to the next one; Shift+Tab (or ↑) goes back.",
+      "ajudaTeclas": "Press Enter to open the microphone on the lit item, speak, and Enter again to fill it; Tab (or ↓) goes to the next item; Shift+Tab (or ↑) goes back.",
       "semMarcacoes": "No markings on this image.",
       "abrirMarcacao": "Open marking",
       "fecharMarcacao": "Close marking",
@@ -838,7 +838,7 @@
       "nadaRegistrado": "Reviewed — nothing to record",
       "irProxima": "Next: {secao}",
       "proximoItem": "Next: {item}",
-      "lembreteTeclas": "Tab or ↓ next item · Shift+Tab or ↑ previous"
+      "lembreteTeclas": "Enter speaks · Tab or ↓ next item · Shift+Tab or ↑ previous"
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {
@@ -1617,7 +1617,9 @@
     "aprendido": "Learned: “{frase}” will be recognized next time.",
     "duvidas": "Doubts ({quantidade}) — confirm before they enter the record",
     "lembrar": "Remember this correction (teach the system)",
-    "ajuda9": "Macros: “macro normal periapical” applies the saved template (⚡ Macros menu)."
+    "ajuda9": "Macros: “macro normal periapical” applies the saved template (⚡ Macros menu).",
+    "enterFalar": "to speak",
+    "enterParar": "to stop and fill"
   },
   "Macros": {
     "tituloPrefixo": "Curation",

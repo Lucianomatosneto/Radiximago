@@ -822,7 +822,7 @@
       "titulo": "Ficha de curadoria",
       "secaoAnterior": "Seção anterior (↑)",
       "proximaSecao": "Próxima seção (↓)",
-      "ajudaTeclas": "Fale o valor do item aceso e aperte Tab (ou ↓) para ir ao próximo; Shift+Tab (ou ↑) volta.",
+      "ajudaTeclas": "Aperte Enter para abrir o microfone no item aceso, fale, e Enter de novo para preencher; Tab (ou ↓) vai ao próximo item; Shift+Tab (ou ↑) volta.",
       "semMarcacoes": "Nenhuma marcação nesta imagem.",
       "abrirMarcacao": "Abrir marcação",
       "fecharMarcacao": "Fechar marcação",
@@ -838,7 +838,7 @@
       "nadaRegistrado": "Revisada — nada a registrar",
       "irProxima": "Próxima: {secao}",
       "proximoItem": "Próximo: {item}",
-      "lembreteTeclas": "Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior"
+      "lembreteTeclas": "Enter fala · Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -1617,7 +1617,9 @@
     "aprendido": "Aprendido: “{frase}” será reconhecido da próxima vez.",
     "duvidas": "Dúvidas ({quantidade}) — confirme antes de entrar na ficha",
     "lembrar": "Lembrar esta correção (ensinar o sistema)",
-    "ajuda9": "Macros: “macro periapical normal” aplica a frase pronta cadastrada (menu ⚡ Macros)."
+    "ajuda9": "Macros: “macro periapical normal” aplica a frase pronta cadastrada (menu ⚡ Macros).",
+    "enterFalar": "para falar",
+    "enterParar": "para encerrar e preencher"
   },
   "Macros": {
     "tituloPrefixo": "Macros da",

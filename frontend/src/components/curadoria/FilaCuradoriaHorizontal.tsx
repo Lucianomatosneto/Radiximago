@@ -58,6 +58,7 @@ export default function FilaCuradoriaHorizontal({
   ativoOrthancReferenceId,
   onSelecionar,
   permitirCarregarMiniaturas = true,
+  porVez,
 }: {
   fila: ImagemPendente[]
   carregando: boolean
@@ -74,6 +75,9 @@ export default function FilaCuradoriaHorizontal({
    * isso desligado - so as miniaturas ficam com o "pulso" de carregando
    * ate liberar. */
   permitirCarregarMiniaturas?: boolean
+  /** Mostra so N miniaturas por vez (paginas), dividindo a largura entre
+   * elas; as setas ‹ › trocam de grupo. Sem isso, faixa rolavel completa. */
+  porVez?: number
 }) {
   const t = useTranslations('Curadoria.fila')
   // Posicao capturada no mouseenter (getBoundingClientRect da miniatura) -
@@ -108,9 +112,30 @@ export default function FilaCuradoriaHorizontal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fila.length])
 
+  // modo "N por vez": primeira miniatura do grupo visivel. Acompanha a
+  // imagem aberta (Proxima/Anterior) para ela sempre aparecer no grupo.
+  const [inicio, setInicio] = useState(0)
+  const indiceAtivo = fila.findIndex((i) => i.orthanc_reference_id === ativoOrthancReferenceId)
+  useEffect(() => {
+    if (!porVez) return
+    setInicio((atual) => {
+      const maximo = Math.max(0, fila.length - porVez)
+      let novo = Math.min(atual, maximo)
+      if (indiceAtivo >= 0 && (indiceAtivo < novo || indiceAtivo >= novo + porVez)) novo = Math.min(maximo, Math.floor(indiceAtivo / porVez) * porVez)
+      return novo
+    })
+  }, [porVez, indiceAtivo, fila.length])
+
   function rolar(direcao: 1 | -1) {
+    if (porVez) {
+      setInicio((atual) => Math.max(0, Math.min(Math.max(0, fila.length - porVez), atual + direcao * porVez)))
+      return
+    }
     scrollRef.current?.scrollBy({ left: direcao * PASSO_SCROLL_PX, behavior: 'smooth' })
   }
+  const voltarAtivo = porVez ? inicio > 0 : podeVoltar
+  const avancarAtivo = porVez ? inicio + porVez < fila.length : podeAvancar
+  const visiveis = porVez ? fila.slice(inicio, inicio + porVez) : fila
 
   function aoEntrarMouse(imagem: ImagemPendente, evento: React.MouseEvent<HTMLDivElement>) {
     setEmFoco({ imagem, rect: evento.currentTarget.getBoundingClientRect() })
@@ -134,7 +159,7 @@ export default function FilaCuradoriaHorizontal({
       <button
         type="button"
         onClick={() => rolar(-1)}
-        disabled={!podeVoltar}
+        disabled={!voltarAtivo}
         aria-label={t('anteriores')}
         title={t('anteriores')}
         style={{ height: TAMANHO_MINIATURA_PX }}
@@ -155,14 +180,15 @@ export default function FilaCuradoriaHorizontal({
         <div
           ref={scrollRef}
           onScroll={atualizarLimites}
-          className="flex flex-1 gap-2 overflow-x-auto scroll-smooth pb-1 pt-0"
+          className={porVez ? 'grid min-w-0 flex-1 gap-2 pb-1 pt-0' : 'flex flex-1 gap-2 overflow-x-auto scroll-smooth pb-1 pt-0'}
+          style={porVez ? { gridTemplateColumns: `repeat(${porVez}, minmax(0, 1fr))` } : undefined}
         >
-          {fila.map((imagem) => {
+          {visiveis.map((imagem) => {
             const ativo = ativoOrthancReferenceId === imagem.orthanc_reference_id
             return (
               <div
                 key={imagem.orthanc_reference_id}
-                className="relative shrink-0"
+                className={porVez ? 'relative min-w-0' : 'relative shrink-0'}
                 onMouseEnter={(e) => aoEntrarMouse(imagem, e)}
                 onMouseLeave={() => aoSairMouse(imagem.orthanc_reference_id)}
               >
@@ -170,7 +196,7 @@ export default function FilaCuradoriaHorizontal({
                   type="button"
                   disabled={criandoId !== null}
                   onClick={() => onSelecionar(imagem)}
-                  style={{ height: TAMANHO_MINIATURA_PX, width: TAMANHO_MINIATURA_PX }}
+                  style={{ height: TAMANHO_MINIATURA_PX, width: porVez ? '100%' : TAMANHO_MINIATURA_PX }}
                   // p-0 + bg-transparent: sem isso, o padding e o
                   // background padrao do navegador pra <button> (nao
                   // zerados por nenhum reset global do projeto) sobravam
@@ -218,7 +244,7 @@ export default function FilaCuradoriaHorizontal({
       <button
         type="button"
         onClick={() => rolar(1)}
-        disabled={!podeAvancar}
+        disabled={!avancarAtivo}
         aria-label={t('proximas')}
         title={t('proximas')}
         style={{ height: TAMANHO_MINIATURA_PX }}

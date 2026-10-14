@@ -41,7 +41,7 @@ export default function BarraSuperiorCuradoria({
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-base-border bg-base-surface px-4 py-3">
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-base-border bg-base-surface px-3 py-2">
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <button
@@ -75,7 +75,7 @@ export default function BarraSuperiorCuradoria({
           type="button"
           onClick={onSalvar}
           disabled={salvando || aprovando}
-          className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
+          className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
         >
           {salvando ? t('salvando') : t('salvar')}
         </button>
@@ -83,21 +83,21 @@ export default function BarraSuperiorCuradoria({
           type="button"
           onClick={onAprovar}
           disabled={aprovando || salvando}
-          className="flex items-center gap-1.5 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-brand hover:bg-brand-hover px-3 py-1.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
         >
           {aprovando ? t('aprovando') : t('aprovar')}
         </button>
         <button
           type="button"
           onClick={onSolicitarSegundaOpiniao}
-          className="rounded-lg border border-purple-800/60 px-4 py-2 text-sm text-purple-300 hover:bg-purple-950/40"
+          className="rounded-lg border border-purple-800/60 px-3 py-1.5 text-sm text-purple-300 hover:bg-purple-950/40"
         >
           {t('solicitarSegundaOpiniao')}
         </button>
         <button
           type="button"
           onClick={onDescartar}
-          className="rounded-lg border border-red-800/60 px-4 py-2 text-sm text-red-300 hover:bg-red-950/40"
+          className="rounded-lg border border-red-800/60 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/40"
         >
           {t('descartar')}
         </button>

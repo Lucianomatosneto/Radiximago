@@ -6,7 +6,7 @@ import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { ETAPAS_FICHA, ETAPA_INICIAL, SECAO_DA_ETAPA, SECOES_FICHA, etapaVizinha, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECOES_FICHA, etapaVizinha, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
 import AjudaSecao from './AjudaSecao'
@@ -91,18 +91,8 @@ function Secao({
       {piscando ? <span key={piscando} aria-hidden="true" className="secao-preenchida pointer-events-none absolute inset-0 rounded-xl" /> : null}
       <header className="mb-2 flex items-center gap-2">
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
-        {!simples && (
-          <>
-            <AjudaSecao secao={id} />
-            <span
-              className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${
-                estado === 'concluida' ? 'bg-emerald-500/15 text-emerald-300' : holofote ? 'bg-amber-400/20 text-amber-200' : 'bg-white/5 text-slate-400'
-              }`}
-            >
-              {estado === 'concluida' ? t('concluida') : t('pendente')}
-            </span>
-          </>
-        )}
+        {!simples && <AjudaSecao secao={id} />}
+        {estado === 'concluida' && <span className="text-xs font-bold text-emerald-400" title={t('concluida')}>✓</span>}
         {extra && <div className="ml-auto">{extra}</div>}
       </header>
       {/* secao apagada: o primeiro clique so acende (nao muda valores); em
@@ -163,7 +153,6 @@ export default function ColunaFichaCuradoria({
   const secaoAtiva = SECAO_DA_ETAPA[etapaAtiva]
   const rolagemRef = useRef<HTMLDivElement>(null)
   const tSecoes = useTranslations('Curadoria.secoes')
-  const tEtapas = useTranslations('Curadoria.etapas')
   // clique num item so acende (sem pular a rolagem); teclas rolam ate ele
   const porCliqueRef = useRef(false)
 
@@ -211,8 +200,6 @@ export default function ColunaFichaCuradoria({
   }, [teclasAtivas, onEtapa])
 
   const tFicha = useTranslations('Curadoria.ficha')
-  const indice = ETAPAS_FICHA.indexOf(etapaAtiva)
-  const proximaEtapa = indice < ETAPAS_FICHA.length - 1 ? ETAPAS_FICHA[indice + 1] : null
 
   function ativarPorClique(etapa: EtapaFicha) {
     porCliqueRef.current = true
@@ -231,37 +218,24 @@ export default function ColunaFichaCuradoria({
     rodape: rodape(id),
   })
 
-  // rodape da secao ativa: "Nada a registrar" (opcionais, sem conteudo) e
-  // "Próximo item (Tab)" - nada muda de item sozinho
+  // rodape da secao ativa: so "Nada a registrar" (opcionais, sem
+  // conteudo). Passar ao proximo item e sempre Tab/↓.
   function rodape(id: SecaoFicha): ReactNode {
     const opcional = SECOES_OPCIONAIS.includes(id)
     const comConteudo = temConteudo(id, form)
+    if (!opcional || comConteudo || !onNadaRegistrar) return null
     const revisada = revisadas.includes(id)
     return (
-      <>
-        {opcional && !comConteudo && onNadaRegistrar && (
-          <button
-            type="button"
-            onClick={() => onNadaRegistrar(id)}
-            aria-pressed={revisada}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
-              revisada ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200' : 'border-slate-400/50 text-slate-200 hover:border-emerald-400'
-            }`}
-          >
-            {revisada ? `✓ ${t('nadaRegistrado')}` : t('nadaRegistrar')}
-          </button>
-        )}
-        {proximaEtapa && (
-          <button
-            type="button"
-            onClick={() => onEtapa(proximaEtapa)}
-            className="ml-auto flex items-center gap-1.5 rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-slate-900 hover:bg-teal-400"
-          >
-            {t('proximoItem', { item: tEtapas(proximaEtapa) })}
-            <kbd className="rounded border border-slate-900/40 px-1 font-mono text-[10px]">Tab</kbd>
-          </button>
-        )}
-      </>
+      <button
+        type="button"
+        onClick={() => onNadaRegistrar(id)}
+        aria-pressed={revisada}
+        className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+          revisada ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200' : 'border-slate-400/50 text-slate-200 hover:border-emerald-400'
+        }`}
+      >
+        {revisada ? `✓ ${t('nadaRegistrado')}` : t('nadaRegistrar')}
+      </button>
     )
   }
 

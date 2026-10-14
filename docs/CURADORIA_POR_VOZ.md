@@ -124,6 +124,23 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 - Observação: se o curador clicar dentro da imagem do OHIF (iframe), as teclas
   vão para o visualizador; basta clicar na ficha para o Tab/↓ voltar a valer.
 
+## 3.7 Microfone por item (Enter) e tela em metades
+
+- **Enter** abre o microfone no item aceso pelo holofote; **Enter** de novo
+  fecha e preenche aquele item. O microfone não fica mais aberto a ficha
+  inteira: é um trecho curto por item. Se o curador apertar Tab com o
+  microfone aberto, o trecho é encerrado e vai para o item em que a gravação
+  começou. Dentro de campos de texto o Enter continua normal.
+- Achados: clicar em "Abrir marcação", marcar as lesões (numeradas) e, com
+  Achados aceso, Enter → "um lesão periapical. dois cárie em dentina" → Enter.
+- Metade **esquerda**: miniaturas (5 por vez, setas ‹ › trocam o grupo) e a
+  imagem. Metade **direita**: barra "Imagem X de Y" (Salvar, Aprovar...),
+  painel de voz e a ficha.
+- Saíram da tela: "Nenhuma marcação. Desenhe as lesões...", o selo
+  "Pendente", o "Resumo automático da imagem (usado pela Pesquisa)" — que
+  continua sendo gerado e usado pela Pesquisa, só não aparece — e o botão
+  "Próximo: ...". Item concluído mostra só um ✓ verde.
+
 ## 4. Segurança e LGPD
 
 - **Áudio não sai da máquina do Rádix** e não é gravado (fica só em memória durante a transcrição).

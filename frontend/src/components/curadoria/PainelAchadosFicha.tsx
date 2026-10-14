@@ -15,7 +15,8 @@ import { PalavraChave } from './PainelDadosSobrepostos'
 // Por voz: "um lesão periapical no dente 36", "dois cárie em dentina"...
 // (ou so o achado: vai para a proxima marcacao ainda sem achado).
 // Imagem normal: "Imagem sem alterações" (sem marcacoes).
-// O resumo usado pela Pesquisa (alteracoes_observadas) e montado sozinho.
+// O resumo usado pela Pesquisa (alteracoes_observadas) continua sendo
+// montado sozinho (lib/achadosFicha.ts), so nao aparece mais na tela.
 
 const TODOS_DENTES = [
   18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -177,7 +178,6 @@ export default function PainelAchadosFicha({
     <div className="space-y-3">
       {form.marcacoes.length === 0 ? (
         <div className="space-y-2">
-          <p className="text-xs text-slate-400">{t('semMarcacoes')}</p>
           <button
             type="button"
             onClick={() => onChange({ ...form, sem_alteracoes: !form.sem_alteracoes })}
@@ -252,22 +252,6 @@ export default function PainelAchadosFicha({
         </div>
       )}
 
-      <div className="border-t border-white/10 pt-2">
-        <p className="mb-1 text-[11px] text-slate-500">{t('resumo')}</p>
-        <div className="flex flex-wrap gap-1">
-          {form.sem_alteracoes ? (
-            <span className="rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[11px] text-emerald-200">{t('normalMarcado')}</span>
-          ) : form.alteracoes_observadas.length ? (
-            form.alteracoes_observadas.map((v) => (
-              <span key={v} className="rounded-full border border-violet-300/40 bg-violet-400/10 px-2 py-0.5 text-[11px] text-violet-100">
-                {rotulo(v)}
-              </span>
-            ))
-          ) : (
-            <span className="text-[11px] text-slate-500">—</span>
-          )}
-        </div>
-      </div>
     </div>
   )
 }
