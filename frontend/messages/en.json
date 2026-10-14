@@ -1456,7 +1456,15 @@
     "ativarModoClaro": "Switch to light mode",
     "ativarModoEscuro": "Switch to dark mode",
     "modoClaro": "Light mode",
-    "modoEscuro": "Dark mode"
+    "modoEscuro": "Dark mode",
+    "escuro": "dark",
+    "claro": "light",
+    "estadoAuto": "Automatic theme (follows your computer): {tema} now",
+    "estadoEscuro": "Dark mode (your choice)",
+    "estadoClaro": "Light mode (your choice)",
+    "cliqueAuto": "click to go back to automatic",
+    "cliqueEscuro": "click for dark mode",
+    "cliqueClaro": "click for light mode"
   },
   "ConfirmarEmail": {
     "titulo": "Confirm your email",

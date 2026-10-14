@@ -1,6 +1,7 @@
 import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
 import FundoAplicacao from '../components/fundo/FundoAplicacao'
+import { SCRIPT_TEMA_INICIAL } from '../lib/tema'
 import { getLocale, getTranslations } from 'next-intl/server'
 
 // Descricao do <meta> segue o mesmo idioma detectado pra pagina (ver
@@ -39,12 +40,10 @@ export default async function RootLayout({
       <head>
         <meta name="google" content="notranslate" />
         <script
-          // Aplica o tema salvo antes do 1o paint, pra nao "piscar" escuro
-          // e depois trocar pra claro (ou vice-versa) - ve components/ThemeToggle.tsx.
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var t=localStorage.getItem('tema');document.documentElement.classList.add(t==='light'?'light':'dark');}catch(e){document.documentElement.classList.add('dark');}})();",
-          }}
+          // Aplica o tema antes do 1o paint, pra nao "piscar" escuro e
+          // depois trocar pra claro (ou vice-versa): a escolha salva ou, sem
+          // escolha, o tema do computador/celular - ve lib/tema.ts.
+          dangerouslySetInnerHTML={{ __html: SCRIPT_TEMA_INICIAL }}
         />
       </head>
       <body>

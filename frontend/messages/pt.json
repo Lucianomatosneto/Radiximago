@@ -1456,7 +1456,15 @@
     "ativarModoClaro": "Ativar modo claro",
     "ativarModoEscuro": "Ativar modo escuro",
     "modoClaro": "Modo claro",
-    "modoEscuro": "Modo escuro"
+    "modoEscuro": "Modo escuro",
+    "escuro": "escuro",
+    "claro": "claro",
+    "estadoAuto": "Tema automático (segue o seu computador): {tema} agora",
+    "estadoEscuro": "Modo escuro (escolhido por você)",
+    "estadoClaro": "Modo claro (escolhido por você)",
+    "cliqueAuto": "clique para voltar ao automático",
+    "cliqueEscuro": "clique para o modo escuro",
+    "cliqueClaro": "clique para o modo claro"
   },
   "ConfirmarEmail": {
     "titulo": "Confirme seu e-mail",
