@@ -69,6 +69,15 @@ Inspirados nos sistemas de laudo por voz mais usados em radiologia (PowerScribe 
 
 Backend: `app/modules/macros.py`, `macros_router.py`, migração `a8c3e5f1b7d2`. Auditoria: `macro_criada`, `macro_editada`, `macro_desativada`, `voz_frase_aprendida`, `voz_frase_esquecida`.
 
+## 3.3 Roteiro da curadoria (sem pular etapas, nada em branco)
+
+- **Trilha de 8 passos** no topo da coluna: ✓ verde = seção concluída; número em destaque = seção atual; ▲▼ ao lado. Contador "N/8".
+- Cada seção mostra o selo **Concluída / Pendente** e um **"?"** com exemplos do que falar no microfone e uma dica.
+- Seções opcionais (Marcações, Alterações, Achados detalhados, Achados por dente, Erro técnico, Observações) só contam como concluídas com conteúdo **ou** com **"Nada a registrar"** (botão ou fala) — fica registrado que foram olhadas. Ao marcar, a coluna vai para a próxima pendente. Dados da imagem e Descrição exigem conteúdo (`lib/progressoFicha.ts`).
+- Seções não revisadas entram na conferência antes de aprovar como "atenção".
+- Imagem nova: a coluna volta ao passo 1 (topo) e o roteiro recomeça.
+- **📘 Como laudar**: guia passo a passo (o que fazer, o que falar, dicas) que abre sozinho na primeira vez neste navegador e depois pelo botão (`GuiaLaudo.tsx`).
+
 ## 4. Segurança e LGPD
 
 - **Áudio não sai da máquina do Rádix** e não é gravado (fica só em memória durante a transcrição).

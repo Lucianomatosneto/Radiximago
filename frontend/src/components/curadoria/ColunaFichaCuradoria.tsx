@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosRadiografia from './PainelAchadosRadiografia'
@@ -10,6 +10,8 @@ import type { FormularioFicha } from './FichaCuradoriaForm'
 import { corMarcacao, rotularAchadoMarcacao } from '../../lib/marcacoes'
 import { SECOES_FICHA, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
+import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
+import AjudaSecao from './AjudaSecao'
 
 // COLUNA DA FICHA DE CURADORIA (direita da tela; a imagem fica a esquerda).
 //
@@ -24,6 +26,13 @@ import type { ItemConferencia } from '../../lib/conferenciaFicha'
 //   falado vira a descricao), e depois de preencher a coluna rola ate a
 //   secao que recebeu o dado.
 // O painel de voz fica fixo no topo da coluna (`topo`), fora da rolagem.
+//
+// ROTEIRO (para nao errar a sequencia nem deixar nada em branco): uma
+// trilha de 8 passos no topo mostra cada secao como concluida (verde) ou
+// pendente; cada secao tem o selo "Concluída/Pendente", um "?" com o que
+// falar no microfone e, nas secoes opcionais, o botao "Nada a registrar"
+// (ou a fala "nada a registrar"), que conta como revisada e leva a proxima
+// pendente. Ver lib/progressoFicha.ts.
 //
 // Justificativa (dissertacao): um unico fluxo vertical reduz a troca de
 // contexto (antes eram 5 telas num carrossel + uma faixa embaixo) e da ao
@@ -54,7 +63,8 @@ function Secao({
   registrar,
   extra,
   piscando,
-  pendencias,
+  estado,
+  rodape,
   children,
 }: {
   id: SecaoFicha
@@ -66,10 +76,12 @@ function Secao({
   extra?: ReactNode
   /** chave que muda a cada preenchimento: reinicia a animacao de destaque */
   piscando?: number
-  /** avisos da conferencia nesta secao */
-  pendencias?: { bloqueio: number; aviso: number }
+  estado: EstadoSecao
+  /** "Nada a registrar" / "Concluir e ir para a próxima" */
+  rodape?: ReactNode
   children: ReactNode
 }) {
+  const t = useTranslations('Curadoria.coluna')
   return (
     <section
       ref={registrar}
@@ -79,8 +91,10 @@ function Secao({
       onFocusCapture={() => !ativa && onAtivar()}
       className={`scroll-mt-2 rounded-xl border p-3 relative transition-[border-color,box-shadow] duration-200 ${
         ativa
-          ? 'border-teal-400 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.18),0_0_22px_-4px_rgba(45,212,191,.45)]'
-          : 'border-base-border bg-base-surface/70 opacity-90 hover:opacity-100'
+          ? 'z-10 border-teal-400 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.18),0_0_22px_-4px_rgba(45,212,191,.45)]'
+          : estado === 'concluida'
+            ? 'border-emerald-500/30 bg-base-surface/60 opacity-75 hover:opacity-100'
+            : 'border-base-border bg-base-surface/70 opacity-90 hover:opacity-100'
       }`}
     >
       {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
@@ -89,23 +103,24 @@ function Secao({
       <header className="mb-2 flex items-center gap-2">
         <span
           className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-            ativa ? 'bg-teal-400 text-slate-900' : 'bg-base-surface2 text-slate-400'
+            estado === 'concluida' ? 'bg-emerald-500 text-white' : ativa ? 'bg-teal-400 text-slate-900' : 'bg-base-surface2 text-slate-400'
           }`}
         >
-          {numero}
+          {estado === 'concluida' ? '✓' : numero}
         </span>
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
-        {pendencias && pendencias.bloqueio + pendencias.aviso > 0 && (
-          <span
-            className={`rounded-full px-1.5 text-[10px] font-bold ${pendencias.bloqueio ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'}`}
-            aria-label={`${pendencias.bloqueio + pendencias.aviso}`}
-          >
-            ! {pendencias.bloqueio + pendencias.aviso}
-          </span>
-        )}
+        <AjudaSecao secao={id} />
+        <span
+          className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${
+            estado === 'concluida' ? 'bg-emerald-500/15 text-emerald-300' : ativa ? 'animate-pulse bg-amber-400/20 text-amber-200' : 'bg-white/5 text-slate-400'
+          }`}
+        >
+          {estado === 'concluida' ? t('concluida') : t('pendente')}
+        </span>
         {extra && <div className="ml-auto">{extra}</div>}
       </header>
       {children}
+      {ativa && rodape && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2">{rodape}</div>}
     </section>
   )
 }
@@ -124,8 +139,10 @@ export default function ColunaFichaCuradoria({
   topo,
   teclasAtivas = true,
   destaques = {},
-  conferencia = [],
   acoesBarra,
+  revisadas = [],
+  onNadaRegistrar,
+  onAbrirGuia,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -143,19 +160,20 @@ export default function ColunaFichaCuradoria({
   teclasAtivas?: boolean
   /** secoes que acabaram de receber dados (valor = marca de tempo) */
   destaques?: Partial<Record<SecaoFicha, number>>
-  /** resultado da conferencia automatica (lib/conferenciaFicha.ts) */
-  conferencia?: ItemConferencia[]
   /** botoes extras na barra do titulo (menu de macros) */
   acoesBarra?: ReactNode
+  /** secoes opcionais declaradas "Nada a registrar" nesta ficha */
+  revisadas?: SecaoFicha[]
+  /** marca/desmarca "Nada a registrar" numa secao */
+  onNadaRegistrar?: (secao: SecaoFicha) => void
+  /** abre o guia "Como laudar" */
+  onAbrirGuia?: () => void
 }) {
-  const tConf = useTranslations('Curadoria.conferencia')
-  const [verConferencia, setVerConferencia] = useState(false)
-  const pendencias = (id: SecaoFicha) => ({
-    bloqueio: conferencia.filter((c) => c.secao === id && c.nivel === 'bloqueio').length,
-    aviso: conferencia.filter((c) => c.secao === id && c.nivel === 'aviso').length,
-  })
-  const bloqueios = conferencia.filter((c) => c.nivel === 'bloqueio').length
   const t = useTranslations('Curadoria.coluna')
+  const estado = estadoSecoes(form, revisadas)
+  const concluidas = SECOES_FICHA.filter((s) => estado[s] === 'concluida').length
+  const proxima = proximaPendente(estado, secaoAtiva)
+  const rolagemRef = useRef<HTMLDivElement>(null)
   const tSecoes = useTranslations('Curadoria.secoes')
   const refs = useRef<Partial<Record<SecaoFicha, HTMLElement | null>>>({})
   // clique numa secao so destaca (sem pular a rolagem); teclas, botoes e
@@ -169,6 +187,11 @@ export default function ColunaFichaCuradoria({
     }
     refs.current[secaoAtiva]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [secaoAtiva])
+
+  // imagem nova: a coluna volta ao topo (comeca o laudo do passo 1)
+  useEffect(() => {
+    if (rolagemRef.current) rolagemRef.current.scrollTop = 0
+  }, [curationId])
 
   const secaoRef = useRef(secaoAtiva)
   secaoRef.current = secaoAtiva
@@ -202,8 +225,42 @@ export default function ColunaFichaCuradoria({
       refs.current[id] = el
     },
     piscando: destaques[id],
-    pendencias: pendencias(id),
+    estado: estado[id],
+    rodape: rodape(id),
   })
+
+  // rodape da secao ativa: "Nada a registrar" (opcionais, sem conteudo) e
+  // "Próxima pendente"
+  function rodape(id: SecaoFicha): ReactNode {
+    const opcional = SECOES_OPCIONAIS.includes(id)
+    const comConteudo = temConteudo(id, form)
+    const revisada = revisadas.includes(id)
+    return (
+      <>
+        {opcional && !comConteudo && onNadaRegistrar && (
+          <button
+            type="button"
+            onClick={() => onNadaRegistrar(id)}
+            aria-pressed={revisada}
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+              revisada ? 'border-emerald-400 bg-emerald-500/20 text-emerald-200' : 'border-slate-400/50 text-slate-200 hover:border-emerald-400'
+            }`}
+          >
+            {revisada ? `✓ ${t('nadaRegistrado')}` : t('nadaRegistrar')}
+          </button>
+        )}
+        {estado[id] === 'concluida' && proxima && (
+          <button
+            type="button"
+            onClick={() => onSecao(proxima)}
+            className="ml-auto rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-slate-900 hover:bg-teal-400"
+          >
+            {t('irProxima', { secao: tSecoes(proxima) })} ▼
+          </button>
+        )}
+      </>
+    )
+  }
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-2">
@@ -212,24 +269,49 @@ export default function ColunaFichaCuradoria({
       {/* barra com o titulo e as setas ▲/▼ entre secoes */}
       <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
         <h2 className="text-sm font-bold text-ink" title={t('ajudaTeclas')}>{t('titulo')}</h2>
-        {/* conferencia automatica: ✓ tudo certo / ! N pendencias */}
-        <button
-          type="button"
-          onClick={() => setVerConferencia((v) => !v)}
-          aria-expanded={verConferencia}
-          title={tConf('titulo')}
-          className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${
-            conferencia.length === 0
-              ? 'border-emerald-400/50 bg-emerald-400/10 text-emerald-200'
-              : bloqueios
-                ? 'border-red-400/60 bg-red-500/15 text-red-200'
-                : 'border-amber-300/60 bg-amber-300/10 text-amber-100'
-          }`}
-        >
-          {conferencia.length === 0 ? `✓ ${tConf('ok')}` : `! ${tConf('pendencias', { quantidade: conferencia.length })}`}
-        </button>
+        <span title={t('progresso', { feitas: concluidas, total: SECOES_FICHA.length })} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${concluidas === SECOES_FICHA.length ? 'bg-emerald-500/20 text-emerald-200' : 'bg-white/5 text-slate-300'}`}>
+          {concluidas}/{SECOES_FICHA.length}
+        </span>
+        {onAbrirGuia && (
+          <button
+            type="button"
+            onClick={onAbrirGuia}
+            title={t('comoLaudar')}
+            className="rounded-full border border-sky-300/50 bg-sky-400/10 px-2.5 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-400/20"
+          >
+            📘 {t('comoLaudar')}
+          </button>
+        )}
         {acoesBarra}
-        <div className="ml-auto flex gap-1">
+      </div>
+
+      {/* trilha do roteiro: 8 passos, verde = concluido, teal = atual */}
+      <ol className="flex shrink-0 items-center gap-1 px-1" aria-label={t('roteiro')}>
+        {SECOES_FICHA.map((id, i) => {
+          const ativa = id === secaoAtiva
+          const feita = estado[id] === 'concluida'
+          return (
+            <li key={id} className="flex flex-1 items-center gap-1">
+              <button
+                type="button"
+                onClick={() => onSecao(id)}
+                title={`${i + 1}. ${tSecoes(id)} — ${feita ? t('concluida') : t('pendente')}`}
+                aria-current={ativa ? 'step' : undefined}
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition ${
+                  ativa
+                    ? 'bg-teal-400 text-slate-900 ring-2 ring-teal-200/60'
+                    : feita
+                      ? 'bg-emerald-500 text-white'
+                      : 'border border-slate-500 text-slate-400 hover:border-teal-300'
+                }`}
+              >
+                {feita && !ativa ? '✓' : i + 1}
+              </button>
+              {i < SECOES_FICHA.length - 1 && <span className={`h-0.5 flex-1 rounded ${feita ? 'bg-emerald-500/60' : 'bg-white/10'}`} />}
+            </li>
+          )
+        })}
+        <li className="ml-1 flex shrink-0 gap-1">
           <button
             type="button"
             onClick={() => onSecao(secaoVizinha(secaoAtiva, -1))}
@@ -250,20 +332,10 @@ export default function ColunaFichaCuradoria({
           >
             ▼
           </button>
-        </div>
-      </div>
+        </li>
+      </ol>
 
-      {verConferencia && conferencia.length > 0 && (
-        <ListaConferencia
-          itens={conferencia}
-          onIr={(secao) => {
-            onSecao(secao)
-            setVerConferencia(false)
-          }}
-        />
-      )}
-
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
         <Secao {...p('dados')}>
           <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} embutido />
         </Secao>

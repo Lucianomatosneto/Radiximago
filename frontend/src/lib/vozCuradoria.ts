@@ -95,7 +95,7 @@ export interface ResultadoVoz {
   comandos: ComandoVoz[]
 }
 
-export type ComandoVoz = 'desfazer' | 'salvar' | 'proxima_secao' | 'secao_anterior'
+export type ComandoVoz = 'desfazer' | 'salvar' | 'proxima_secao' | 'secao_anterior' | 'nada_a_registrar'
 
 export interface OpcoesInterpretar {
   /** secao em destaque na coluna da ficha (destino da fala sem palavra-guia) */
@@ -301,8 +301,10 @@ export const ALTERACOES: Opcao[] = CATEGORIAS_ALTERACOES.flatMap((c) =>
 type Guia =
   | 'descricao' | 'continuar_descricao' | 'achados' | 'observacoes'
   | 'dentes' | 'qualidade' | 'idade' | 'sexo' | 'alteracao' | 'achado' | 'outro' | 'marcacao' | 'tipo'
-  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior' | 'macro'
+  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior' | 'macro' | 'nada_a_registrar'
 const GUIAS: [string, Guia][] = ([
+  ['nada a registrar', 'nada_a_registrar'],
+  ['nada para registrar', 'nada_a_registrar'],
   ['macro', 'macro'],
   ['proxima secao', 'proxima_secao'],
   ['secao seguinte', 'proxima_secao'],
@@ -885,7 +887,7 @@ export function interpretar(
         continue
       }
 
-      if (g === 'desfazer' || g === 'salvar' || g === 'proxima_secao' || g === 'secao_anterior') {
+      if (g === 'desfazer' || g === 'salvar' || g === 'proxima_secao' || g === 'secao_anterior' || g === 'nada_a_registrar') {
         comandos.push(g)
         i += n
         continue

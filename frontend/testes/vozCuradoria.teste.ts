@@ -75,4 +75,6 @@ caso('palavra curta solta nao vira duvida de semelhanca', 'cisto', r => r.ficha.
   if (!ok) falhas++
   console.log(ok ? 'OK  ' : 'FALHA', 'aplicarMacro acrescenta ao texto existente')
 }
+caso('nada a registrar e comando mesmo com secao de texto ativa', 'nada a registrar', r =>
+  r.comandos.join() === 'nada_a_registrar' && r.ficha.observacoes_internas === '', 'observacoes')
 process.exit(falhas ? 1 : 0)

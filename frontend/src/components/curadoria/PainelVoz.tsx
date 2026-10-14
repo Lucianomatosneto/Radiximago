@@ -56,6 +56,7 @@ export default function PainelVoz({
   frasesAprendidas = [],
   onAprendeu,
   onDuvidas,
+  onNadaRegistrar,
 }: {
   fichaId: number
   form: FormularioFicha
@@ -76,6 +77,8 @@ export default function PainelVoz({
   onAprendeu?: () => void
   /** informa quantas duvidas estao pendentes (conferencia antes de aprovar) */
   onDuvidas?: (quantidade: number) => void
+  /** fala "nada a registrar": marca a secao em destaque como revisada */
+  onNadaRegistrar?: () => void
 }) {
   const t = useTranslations('Voz')
   const tSecoes = useTranslations('Curadoria.secoes')
@@ -182,6 +185,7 @@ export default function PainelVoz({
     for (const c of r.comandos) {
       if (c === 'salvar') onSalvar()
       if (c === 'desfazer') desfazer()
+      if (c === 'nada_a_registrar') onNadaRegistrar?.()
       if ((c === 'proxima_secao' || c === 'secao_anterior') && onSecao && o.secaoAtiva) {
         onSecao(secaoVizinha(o.secaoAtiva, c === 'proxima_secao' ? 1 : -1))
       }

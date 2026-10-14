@@ -9,7 +9,7 @@
 // - AVISO: o curador pode aprovar mesmo assim, mas ve o que pode estar
 //   faltando ou incoerente, com um botao para ir direto a secao.
 
-import type { SecaoFicha } from './secoesCuradoria'
+import { SECOES_FICHA, type SecaoFicha } from './secoesCuradoria'
 import { normalizar } from './vozCuradoria'
 
 export interface ItemConferencia {
@@ -51,7 +51,7 @@ export function dentesCitados(texto: string): number[] {
 
 const FRASES_NORMAL = ['sem alteracoes', 'sem alteracao', 'dentro da normalidade', 'nada digno de nota', 'aspecto normal', 'normal']
 
-export function conferirFicha(ficha: FichaConferencia, duvidasVoz = 0): ItemConferencia[] {
+export function conferirFicha(ficha: FichaConferencia, duvidasVoz = 0, secoesPendentes: SecaoFicha[] = []): ItemConferencia[] {
   const itens: ItemConferencia[] = []
   const add = (nivel: ItemConferencia['nivel'], chave: string, secao: SecaoFicha, parametros?: ItemConferencia['parametros']) =>
     itens.push({ nivel, chave, secao, parametros })
@@ -83,6 +83,12 @@ export function conferirFicha(ficha: FichaConferencia, duvidasVoz = 0): ItemConf
   if (!ficha.descricao_didatica.trim()) add('aviso', 'descricaoVazia', 'descricao')
 
   if (duvidasVoz > 0) add('aviso', 'duvidasVoz', 'dados', { quantidade: duvidasVoz })
+
+  // roteiro: secoes opcionais que ninguem olhou (nem "Nada a registrar")
+  for (const secao of secoesPendentes) {
+    if (secao === 'dados' || secao === 'descricao') continue // ja cobertas acima
+    add('aviso', 'secaoPendente', secao, { numero: SECOES_FICHA.indexOf(secao) + 1 })
+  }
 
   return itens.sort((a, b) => (a.nivel === b.nivel ? 0 : a.nivel === 'bloqueio' ? -1 : 1))
 }

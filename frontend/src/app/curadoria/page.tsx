@@ -13,6 +13,9 @@ import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCur
 import { SECAO_DO_CAMPO, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
+import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo } from '../../lib/progressoFicha'
+import { SECOES_FICHA } from '../../lib/secoesCuradoria'
+import GuiaLaudo, { guiaJaVisto } from '../../components/curadoria/GuiaLaudo'
 import MenuMacros from '../../components/curadoria/MenuMacros'
 import { ListaConferencia } from '../../components/curadoria/ColunaFichaCuradoria'
 import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCuradoria'
@@ -181,6 +184,10 @@ export default function CuradoriaPage() {
   const [destaques, setDestaques] = useState<Partial<Record<SecaoFicha, number>>>({})
   const [duvidasVoz, setDuvidasVoz] = useState(0)
   const [conferenciaAberta, setConferenciaAberta] = useState(false)
+  // roteiro: secoes opcionais declaradas "Nada a registrar" nesta ficha
+  // (zera a cada imagem nova) e o guia "Como laudar"
+  const [revisadas, setRevisadas] = useState<SecaoFicha[]>([])
+  const [guiaAberto, setGuiaAberto] = useState(false)
   // "Abrir marcação" (botao da secao Marcações, tecla M ou atalho no
   // cabecalho do visualizador): a imagem para marcacao ocupa o lugar grande
   // da esquerda e o visualizador vira uma miniatura no canto (clicar nela
@@ -623,6 +630,7 @@ export default function CuradoriaPage() {
     setSegundaOpiniaoReview(null)
     setSecaoAtiva('dados')
     setMarcacaoAberta(false)
+    setRevisadas([])
     if (ficha.status === 'segunda_opiniao') {
       carregarReviewSegundaOpiniao(curationId)
     }
@@ -747,6 +755,7 @@ export default function CuradoriaPage() {
     setSegundaOpiniaoReview(null)
     setSecaoAtiva('dados')
     setMarcacaoAberta(false)
+    setRevisadas([])
     if (autenticado) carregarFila()
   }
 
@@ -925,7 +934,30 @@ export default function CuradoriaPage() {
     })
   }, [])
 
-  const conferencia = useMemo(() => conferirFicha(form, duvidasVoz), [form, duvidasVoz])
+  const estadoRoteiro = useMemo(() => estadoSecoes(form, revisadas), [form, revisadas])
+  const conferencia = useMemo(
+    () => conferirFicha(form, duvidasVoz, SECOES_FICHA.filter((s) => estadoRoteiro[s] === 'pendente')),
+    [form, duvidasVoz, estadoRoteiro]
+  )
+
+  // guia "Como laudar": abre sozinho na primeira ficha deste navegador
+  const temFicha = !!fichaAtiva
+  useEffect(() => {
+    if (temFicha && !guiaJaVisto()) setGuiaAberto(true)
+  }, [temFicha])
+
+  // "Nada a registrar" (botao ou voz): marca/desmarca a secao opcional e,
+  // ao marcar, leva a proxima secao pendente
+  function nadaARegistrar(secao: SecaoFicha) {
+    if (!SECOES_OPCIONAIS.includes(secao) || temConteudo(secao, form)) return
+    const marcando = !revisadas.includes(secao)
+    const novas = marcando ? [...revisadas, secao] : revisadas.filter((s) => s !== secao)
+    setRevisadas(novas)
+    if (marcando) {
+      const proxima = proximaPendente(estadoSecoes(form, novas), secao)
+      if (proxima) setSecaoAtiva(proxima)
+    }
+  }
 
   // "Abrir marcação": a imagem para marcacao abre GRANDE no lugar do
   // visualizador (que vira miniatura); fechar devolve o visualizador.
@@ -1319,9 +1351,11 @@ export default function CuradoriaPage() {
                   onSecao={setSecaoAtiva}
                   marcacaoAberta={marcacaoAberta}
                   onAlternarMarcacao={alternarMarcacao}
-                  teclasAtivas={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta}
+                  teclasAtivas={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto}
                   destaques={destaques}
-                  conferencia={conferencia}
+                  revisadas={revisadas}
+                  onNadaRegistrar={nadaARegistrar}
+                  onAbrirGuia={() => setGuiaAberto(true)}
                   acoesBarra={<MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />}
                   topo={
                     <PainelVoz
@@ -1337,6 +1371,7 @@ export default function CuradoriaPage() {
                       frasesAprendidas={frasesAprendidas}
                       onAprendeu={carregarRecursosLaudo}
                       onDuvidas={setDuvidasVoz}
+                      onNadaRegistrar={() => nadaARegistrar(secaoAtiva)}
                     />
                   }
                 />
@@ -1361,6 +1396,8 @@ export default function CuradoriaPage() {
           onDuvidas={setDuvidasVoz}
         />
       )}
+
+      <GuiaLaudo aberto={guiaAberto} onFechar={() => setGuiaAberto(false)} />
 
       {/* CONFERENCIA ANTES DE APROVAR: bloqueios impedem; avisos deixam
           aprovar "mesmo assim" (decisao do curador, que fica registrada

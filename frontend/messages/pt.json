@@ -820,7 +820,15 @@
       "fecharMarcacao": "Fechar marcação",
       "marcacaoN": "Marcação {numero}",
       "semAchado": "sem achado",
-      "placeholderAchados": "Descreva achados que não estão na lista de alterações"
+      "placeholderAchados": "Descreva achados que não estão na lista de alterações",
+      "concluida": "Concluída",
+      "pendente": "Pendente",
+      "progresso": "{feitas} de {total} seções",
+      "comoLaudar": "Como laudar",
+      "roteiro": "Roteiro da curadoria",
+      "nadaRegistrar": "Nada a registrar nesta seção",
+      "nadaRegistrado": "Revisada — nada a registrar",
+      "irProxima": "Próxima: {secao}"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -859,7 +867,135 @@
         "contradicao": "A descrição diz “normal/sem alterações”, mas há alterações marcadas.",
         "semAchados": "Nenhum achado registrado. Se a imagem é normal, diga isso na descrição.",
         "descricaoVazia": "Descrição didática vazia.",
-        "duvidasVoz": "{quantidade} dúvida(s) da voz ainda não confirmada(s)."
+        "duvidasVoz": "{quantidade} dúvida(s) da voz ainda não confirmada(s).",
+        "secaoPendente": "Seção {numero} não revisada. Se não houver o que registrar, use “Nada a registrar”."
+      }
+    },
+    "ajudaSecoes": {
+      "rotulo": "Como falar: {secao}",
+      "comoFalar": "Com esta seção em destaque, fale:",
+      "comum": "Sempre: “próxima seção”, “seção anterior”, “nada a registrar”, “desfazer”, “salvar”. Microfone: Alt+V.",
+      "dados": {
+        "falar1": "periapical  (ou panorâmica, oclusal, interproximal)",
+        "falar2": "sexo feminino   •   idade de 30 a 40",
+        "falar3": "dente 36 e 37   (ou “dente três seis”)",
+        "falar4": "qualidade boa   (ótima, regular, insatisfatória)",
+        "dica": "A anonimização é marcada com o mouse, de propósito: é uma confirmação de segurança (LGPD) que não deve ser feita por voz."
+      },
+      "marcacoes": {
+        "falar1": "um cárie   (= marcação 1: cárie)",
+        "falar2": "dois lesão periapical",
+        "falar3": "três outro: calcificação pulpar",
+        "dica": "Desenhe as marcações com o mouse (botão “Abrir marcação” ou tecla M). O número de cada marcação aparece na imagem; depois diga o número e o achado."
+      },
+      "alteracoes": {
+        "falar1": "lesão periapical",
+        "falar2": "alteração perda óssea vertical e cálculo",
+        "falar3": "cárie em dentina",
+        "dica": "Pode falar várias de uma vez. “Cárie” sozinha abre uma dúvida perguntando qual tipo."
+      },
+      "achados_detalhados": {
+        "falar1": "reabsorção cervical na face distal",
+        "falar2": "achados detalhados: … fim   (de qualquer seção)",
+        "dica": "Com esta seção em destaque, tudo o que você falar (sem palavra-guia no começo) vira texto aqui, até dizer “fim”."
+      },
+      "achados_dente": {
+        "falar1": "nada a registrar   (se não houver)",
+        "dica": "Esta seção é preenchida com o mouse: escolha o dente, a região e o achado. Por voz, só “nada a registrar”."
+      },
+      "erro_tecnico": {
+        "falar1": "nada a registrar   (se a técnica estiver adequada)",
+        "dica": "Registre com o mouse o tipo de erro técnico, se houver. Por voz, só “nada a registrar”."
+      },
+      "descricao": {
+        "falar1": "Radiografia periapical da região de molares inferiores…",
+        "falar2": "continuar descrição: …   (acrescenta)",
+        "falar3": "macro periapical normal   (frase pronta)",
+        "dica": "Com esta seção em destaque, fale o texto direto; ele é acrescentado ao que já existe. “descrição: … fim” substitui o texto."
+      },
+      "observacoes": {
+        "falar1": "conferir com o professor responsável",
+        "falar2": "nada a registrar",
+        "dica": "Uso interno da equipe; não aparece para estudantes."
+      }
+    },
+    "guia": {
+      "titulo": "Como laudar no Rádix — passo a passo",
+      "fechar": "Fechar",
+      "passoDe": "Passo {atual} de {total}",
+      "oQueFazer": "O que fazer",
+      "oQueFalar": "O que falar no microfone",
+      "teclas": "← → trocam o passo • Esc fecha",
+      "anterior": "Anterior",
+      "proximo": "Próximo",
+      "comecar": "Começar a laudar",
+      "passos": {
+        "inicio": {
+          "titulo": "Como funciona",
+          "texto": "A ficha tem 8 seções, sempre na mesma ordem. A seção em destaque (borda verde-azulada) é onde você está — e é para onde vai o que você falar. A trilha de bolinhas no topo mostra o que já foi concluído (✓ verde) e o que falta.",
+          "fazer1": "Clique no microfone (ou Alt+V), fale e clique de novo.",
+          "fazer2": "Use ↓ ↑ (ou ▼ ▲) para passar de seção. Clique no “?” de cada seção para ver exemplos do que falar.",
+          "fazer3": "Se uma seção não tiver nada, clique “Nada a registrar” (ou fale). Assim nada fica esquecido em branco.",
+          "dica": "A voz nunca preenche por adivinhação: palavras parecidas aparecem em “Dúvidas” para você confirmar. A aprovação é sempre manual."
+        },
+        "dados": {
+          "titulo": "1. Dados da imagem",
+          "texto": "Identifique a radiografia e confirme que ela está anonimizada.",
+          "fazer1": "Confira a imagem: não pode haver nome, data de nascimento ou outro dado do paciente.",
+          "fazer2": "Marque “Anonimização validada” com o mouse (obrigatório).",
+          "falar1": "periapical, sexo feminino, idade de 30 a 40",
+          "falar2": "dente 36 e 37, qualidade boa"
+        },
+        "marcacoes": {
+          "titulo": "2. Marcações",
+          "texto": "Indique na imagem onde está cada achado.",
+          "fazer1": "Clique “Abrir marcação” (ou tecla M) e desenhe oval, retângulo ou seta.",
+          "fazer2": "Feche a marcação e diga o achado de cada número.",
+          "falar1": "um cárie",
+          "falar2": "dois outro: calcificação pulpar"
+        },
+        "alteracoes": {
+          "titulo": "3. Alterações observadas",
+          "texto": "Marque na lista padronizada tudo o que você observa.",
+          "falar1": "lesão periapical e reabsorção radicular externa",
+          "falar2": "nada a registrar   (se a imagem for normal)"
+        },
+        "achados_detalhados": {
+          "titulo": "4. Achados detalhados",
+          "texto": "O que não está na lista vai aqui, em texto livre.",
+          "falar1": "reabsorção cervical na face distal do 36",
+          "dica": "Achados repetidos aqui podem virar termos oficiais na tela Vocabulário."
+        },
+        "achados_dente": {
+          "titulo": "5. Achados por dente/região",
+          "texto": "Detalhe, com o mouse, o achado de cada dente ou região.",
+          "falar1": "nada a registrar"
+        },
+        "erro_tecnico": {
+          "titulo": "6. Erro técnico",
+          "texto": "Registre se houve erro técnico (posicionamento, exposição, processamento). Isso também é material didático!",
+          "falar1": "nada a registrar"
+        },
+        "descricao": {
+          "titulo": "7. Descrição didática",
+          "texto": "O texto que o estudante vai ler. Explique o que a imagem ensina.",
+          "falar1": "(fale direto) Radiografia periapical mostrando…",
+          "falar2": "macro periapical normal",
+          "dica": "Use macros (⚡) para descrições que se repetem; depois só ajuste."
+        },
+        "observacoes": {
+          "titulo": "8. Observações internas",
+          "texto": "Recados para a equipe (não aparecem para estudantes).",
+          "falar1": "conferir com o professor responsável",
+          "falar2": "nada a registrar"
+        },
+        "aprovar": {
+          "titulo": "Aprovar",
+          "texto": "Quando as 8 seções estiverem ✓, clique em Aprovar. O sistema faz uma conferência automática: itens obrigatórios impedem a aprovação; avisos podem ser revistos ou aprovados mesmo assim.",
+          "fazer1": "Confira a lista que aparecer e use “ir para a seção” para corrigir.",
+          "fazer2": "Depois de aprovar, a próxima imagem abre já no passo 1.",
+          "falar1": "salvar   (salva o rascunho; aprovar é sempre com o mouse)"
+        }
       }
     }
   },
@@ -1449,7 +1585,7 @@
     "ajuda3": "Marcações: “marcação dois cárie” ou “marcação dois outro: calcificação pulpar”.",
     "ajuda4": "Outro: “achado outro: reabsorção cervical” (vai para Achados detalhados).",
     "ajuda5": "Texto corrido: “descrição: …”, “achados detalhados: …”, “observações internas: …” — termina com “fim”.",
-    "ajuda6": "Comandos: “desfazer”, “salvar”, “corrigir dente 36 para 46”, “apagar descrição”.",
+    "ajuda6": "Comandos: “desfazer”, “salvar”, “corrigir dente 36 para 46”, “apagar descrição”, “próxima seção”, “seção anterior”, “nada a registrar”.",
     "ajuda7": "Palavra parecida (provável erro de transcrição) NÃO entra sozinha: aparece em “Dúvidas” para você confirmar com um clique — e pode ensinar o sistema.",
     "destino": "A fala vai para:",
     "ajuda8": "Seção em destaque (coluna da direita): fala sem palavra-guia vai para ela — em Descrição, Achados detalhados ou Observações vira texto; em Marcações, “dois cárie” basta. “Próxima seção” / “seção anterior” trocam o destaque.",
