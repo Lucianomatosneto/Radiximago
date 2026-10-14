@@ -269,6 +269,14 @@ export default function MinhasImagensPage() {
           descricao_didatica: itemExpandido.descricao_didatica,
           tipo_radiografia: itemExpandido.tipo_radiografia,
           viewer_url: itemExpandido.viewer_url,
+          // dados completos: a descricao ao lado mostra tudo da curadoria
+          achados_detalhe: itemExpandido.achados_detalhe,
+          alteracoes_observadas: itemExpandido.alteracoes_observadas,
+          marcacoes: itemExpandido.marcacoes,
+          qualidade_tecnica: itemExpandido.qualidade_tecnica,
+          dentes: itemExpandido.dentes,
+          achado_principal: itemExpandido.achado_principal,
+          erros_tecnicos: itemExpandido.erros_tecnicos,
         },
       ]
     : []
@@ -467,6 +475,7 @@ export default function MinhasImagensPage() {
           itens={itensExpandido}
           indiceInicial={0}
           onFechar={() => setItemExpandido(null)}
+          descricaoAoLado
         />
       )}
     </div>

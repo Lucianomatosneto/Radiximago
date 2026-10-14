@@ -123,6 +123,10 @@ interface Props {
   itens: ItemSequencia[]
   indiceInicial: number
   onFechar: () => void
+  /** "Expandir" de Minhas imagens: imagem na METADE ESQUERDA e a descricao
+   *  da imagem (quadro ampliado) na metade direita; a coluna "Studies" do
+   *  OHIF (miniaturas a esquerda) fica recolhida */
+  descricaoAoLado?: boolean
 }
 
 interface InfoSerie {
@@ -147,7 +151,7 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-export default function VisualizadorSequencial({ itens, indiceInicial, onFechar }: Props) {
+export default function VisualizadorSequencial({ itens, indiceInicial, onFechar, descricaoAoLado = false }: Props) {
   const router = useRouter()
   const t = useTranslations('Visualizador')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
@@ -272,10 +276,14 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const atual = itens[indice]
   const seriesValidas = seriesDoItem === atual.curation_id ? series : []
   const serieAtual = seriesValidas[indiceSerie] ?? null
-  const urlComSerie =
+  const urlBase =
     atual.viewer_url && serieAtual
       ? `${atual.viewer_url}&SeriesInstanceUIDs=${serieAtual.series_instance_uid}`
       : atual.viewer_url
+  // descricaoAoLado: recolhe a coluna "Studies" do OHIF (ver
+  // ohif/app-config.template.js) - a radiografia fica com a largura toda
+  const urlComSerie =
+    urlBase && descricaoAoLado ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1` : urlBase
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
   const temMarcacao = (item: ItemSequencia) => (item.marcacoes ?? []).length > 0
@@ -326,6 +334,10 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
     return coluna < grade.colunas / 2 ? 'direita' : 'esquerda'
   }
   const encolherArea = itemAmpliado !== null && ladoQuadro(itemAmpliado) === 'encolher'
+  // "Expandir" de Minhas imagens: a descricao ja abre ampliada ao lado
+  useEffect(() => {
+    if (descricaoAoLado && !emGrade) setQuadroAmpliado(atual.curation_id)
+  }, [descricaoAoLado, emGrade, atual.curation_id])
   useEffect(() => {
     // trocou de pagina/imagem/layout e a imagem ampliada saiu da tela
     if (quadroAmpliado !== null && !itemAmpliado) setQuadroAmpliado(null)
