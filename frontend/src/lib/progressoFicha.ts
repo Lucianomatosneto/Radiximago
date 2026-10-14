@@ -22,13 +22,14 @@ export interface FichaProgresso {
   achados_detalhe: string
   descricao_didatica: string
   observacoes_internas: string
-  marcacoes: { achado?: string | null; achado_descricao?: string | null }[]
-  achados?: { tipo: string }[]
+  marcacoes: { id: string; achado?: string | null; achado_descricao?: string | null }[]
+  achados?: { tipo: string; marcacoes: string[] }[]
   sem_alteracoes?: boolean
+  erros_tecnicos?: string[]
 }
 
 /** secoes que aceitam "Nada a registrar" */
-export const SECOES_OPCIONAIS: SecaoFicha[] = ['marcacoes', 'achados_detalhados', 'erro_tecnico', 'observacoes']
+export const SECOES_OPCIONAIS: SecaoFicha[] = ['erro_tecnico', 'observacoes']
 
 export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
   switch (secao) {
@@ -40,23 +41,21 @@ export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
         !!f.qualidade_tecnica &&
         (f.tipo_radiografia === 'panoramica' || f.dentes.length > 0)
       )
-    case 'marcacoes':
-      return (
-        f.marcacoes.length > 0 &&
-        f.marcacoes.every((m) => !!m.achado && (m.achado !== 'outro' || !!(m.achado_descricao || '').trim()))
-      )
-    case 'achados':
-      // pelo menos um achado OU "Imagem sem alterações" (nunca em branco)
-      return (f.achados ?? []).length > 0 || !!f.sem_alteracoes
-    case 'achados_detalhados':
-      return !!f.achados_detalhe.trim()
+    case 'achados': {
+      // "Imagem sem alterações" OU achados com TODAS as marcacoes
+      // classificadas (nenhuma marcacao sem achado)
+      if (f.sem_alteracoes) return true
+      const achados = f.achados ?? []
+      const ligadas = new Set(achados.flatMap((a) => a.marcacoes))
+      return achados.length > 0 && f.marcacoes.every((m) => ligadas.has(m.id))
+    }
+    case 'erro_tecnico':
+      return (f.erros_tecnicos ?? []).length > 0
     case 'descricao':
       return !!f.descricao_didatica.trim()
     case 'observacoes':
       return !!f.observacoes_internas.trim()
     default:
-      // erro tecnico fica em painel proprio (API separada): conta como
-      // concluido quando declarado revisado
       return false
   }
 }

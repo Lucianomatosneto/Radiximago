@@ -15,7 +15,8 @@ import SeletorDentesQuadrante from '../../components/curadoria/SeletorDentesQuad
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
-import { TIPOS_ACHADO, REGIOES_ANATOMICAS, TIPOS_ERRO_TECNICO, rotularTipoAchado } from '../../lib/achados'
+import { TIPOS_ACHADO, REGIOES_ANATOMICAS, rotularTipoAchado } from '../../lib/achados'
+import { ERROS_TECNICOS, rotuloErro } from '../../lib/errosTecnicos'
 
 // `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
 // (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
@@ -25,6 +26,7 @@ const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'panoramica', chave: 'panoramica' },
   { valor: 'interproximal', chave: 'interproximal' },
   { valor: 'oclusal', chave: 'oclusal' },
+  { valor: 'tomografia', chave: 'tomografia' },
 ]
 
 const OPCOES_ARCADA = [
@@ -123,6 +125,9 @@ interface Filtros {
   achado: string
   regiaoAnatomica: string
   erroTecnico: string
+  // Busca por palavras nos textos livres e termo do vocabulario controlado
+  texto: string
+  termo_id: string
 }
 
 const FILTROS_VAZIOS: Filtros = {
@@ -142,6 +147,8 @@ const FILTROS_VAZIOS: Filtros = {
   achado: '',
   regiaoAnatomica: '',
   erroTecnico: '',
+  texto: '',
+  termo_id: '',
 }
 
 // So os filtros de valor simples (string) participam do deep-link por URL
@@ -165,6 +172,8 @@ const CHAVES_FILTRO: ChaveFiltroTexto[] = [
   'achado',
   'regiaoAnatomica',
   'erroTecnico',
+  'texto',
+  'termo_id',
 ]
 
 interface ResultadoImagem {
@@ -276,6 +285,8 @@ function PesquisaConteudo() {
   // visualmente aberto mesmo depois de "Limpar filtros" (nenhum dente
   // marcado, nenhum filtro real enviado, mas o painel ficava exposto).
   const [chaveSeletorDentes, setChaveSeletorDentes] = useState(0)
+  // termos do vocabulario controlado (filtro "Termo padronizado")
+  const [termosVocabulario, setTermosVocabulario] = useState<{ id: number; termo: string; quantidade_fichas: number }[]>([])
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -285,6 +296,15 @@ function PesquisaConteudo() {
       }
       setAutenticado(true)
       setCarregandoPagina(false)
+
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/vocabulario`, { credentials: 'include' })
+        .then((resposta) => (resposta.ok ? resposta.json() : null))
+        .then((dados) => {
+          if (dados?.termos) setTermosVocabulario(dados.termos)
+        })
+        .catch(() => {
+          // sem o vocabulario, o filtro de termo so nao aparece
+        })
 
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
         credentials: 'include',
@@ -380,6 +400,8 @@ function PesquisaConteudo() {
     if (filtrosParaUsar.achado) params.set('achado', filtrosParaUsar.achado)
     if (filtrosParaUsar.regiaoAnatomica) params.set('regiao_anatomica', filtrosParaUsar.regiaoAnatomica)
     if (filtrosParaUsar.erroTecnico) params.set('erro_tecnico', filtrosParaUsar.erroTecnico)
+    if (filtrosParaUsar.texto.trim()) params.set('texto', filtrosParaUsar.texto.trim())
+    if (filtrosParaUsar.termo_id) params.set('termo_id', filtrosParaUsar.termo_id)
 
     // Antes nao mandava "limit" nenhum, entao o backend usava o padrao
     // (50) - "Selecionar todas" e a selecao em lote so fazem sentido
@@ -552,6 +574,50 @@ function PesquisaConteudo() {
           <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5">
             <p className="text-sm font-semibold text-ink">🔎 {t('buscaAvancadaTitulo')}</p>
             <p className="mb-4 mt-0.5 text-xs text-slate-400">{t('buscaAvancadaSubtitulo')}</p>
+
+            {/* BUSCA POR PALAVRAS: procura nos textos livres da ficha
+                (achados detalhados, descricao didatica e o "Outro" das
+                marcacoes), sem diferenca de acento/maiusculas, no plural e
+                com pequenos erros de digitacao - e por sinonimos do
+                vocabulario. Combina com todos os outros filtros. */}
+            <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <label htmlFor="filtro-texto" className={campoLabel}>{t('campoTexto')}</label>
+                <input
+                  id="filtro-texto"
+                  type="search"
+                  value={filtros.texto}
+                  onChange={(e) => atualizarFiltro('texto', e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') pesquisar()
+                  }}
+                  maxLength={150}
+                  placeholder={t('placeholderTexto')}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(2)}
+                />
+                <p className="mt-1 text-[11px] text-slate-500">{t('ajudaTexto')}</p>
+              </div>
+              {termosVocabulario.length > 0 && (
+                <div>
+                  <label htmlFor="filtro-termo" className={campoLabel}>{t('campoTermo')}</label>
+                  <select
+                    id="filtro-termo"
+                    value={filtros.termo_id}
+                    onChange={(e) => atualizarFiltro('termo_id', e.target.value)}
+                    className={campoInput}
+                    style={estiloCaixaFiltro(3)}
+                  >
+                    <option className="bg-white text-slate-900" value="">{t('campoTodos')}</option>
+                    {termosVocabulario.map((termo) => (
+                      <option className="bg-white text-slate-900" key={termo.id} value={String(termo.id)}>
+                        {termo.termo} ({termo.quantidade_fichas})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
@@ -729,9 +795,9 @@ function PesquisaConteudo() {
                   style={estiloCaixaFiltro(0)}
                 >
                   <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {TIPOS_ERRO_TECNICO.map((valor) => (
+                  {ERROS_TECNICOS.map(({ valor }) => (
                     <option className="bg-white text-slate-900" key={valor} value={valor}>
-                      {tErroTecnico(`tipos.${valor}` as Parameters<typeof tErroTecnico>[0])}
+                      {rotuloErro(valor)}
                     </option>
                   ))}
                 </select>
@@ -846,7 +912,7 @@ function PesquisaConteudo() {
                 {filtros.erroTecnico && (
                   <span>
                     {t('resumoErroTecnico', {
-                      erro: tErroTecnico(`tipos.${filtros.erroTecnico}` as Parameters<typeof tErroTecnico>[0]),
+                      erro: rotuloErro(filtros.erroTecnico),
                     })}
                   </span>
                 )}

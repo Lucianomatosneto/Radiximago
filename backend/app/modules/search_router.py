@@ -39,7 +39,10 @@ from app.modules.curations import (
 )
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico
 
+from app.modules.busca_texto import condicao_busca_texto, condicao_termo
+
 logger = logging.getLogger(__name__)
+
 
 router = APIRouter(prefix="/search", tags=["Pesquisa"])
 
@@ -197,6 +200,11 @@ def pesquisar_imagens(
     origem: Optional[OrigemImagem] = Query(
         None, description="'ufsc' (recebida direto do equipamento) ou 'externa' (upload manual)"
     ),
+    texto: Optional[str] = Query(
+        None, max_length=150,
+        description="Busca por palavras nos textos livres (achados detalhados, descricao, 'Outro' das marcacoes) - ver busca_texto.py",
+    ),
+    termo_id: Optional[int] = Query(None, description="Termo do vocabulario controlado (ver /vocabulario)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     usuario: User = Depends(obter_usuario_atual),
@@ -241,6 +249,14 @@ def pesquisar_imagens(
         consulta = consulta.filter(Curation.dificuldade == dificuldade.value)
     if origem is not None:
         consulta = consulta.filter(OrthancReference.origem == origem.value)
+
+    # Busca por palavras (texto livre, com sinonimos) e termo do vocabulario.
+    if texto:
+        condicao = condicao_busca_texto(db, texto)
+        if condicao is not None:
+            consulta = consulta.filter(condicao)
+    if termo_id is not None:
+        consulta = consulta.filter(condicao_termo(termo_id))
 
     # Filtro por dente especifico (o array de dentes contem aquele numero) -
     # mantido exatamente como antes, nenhuma mudanca de comportamento.

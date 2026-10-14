@@ -90,6 +90,15 @@ Substitui o checklist de 26 caixinhas "Alterações observadas" e a seção "Ach
 - Marcação ligada a um achado recebe o rótulo/cor equivalente (`lib/achadosFicha.ts::marcacoesSincronizadas`).
 - Base: laudo estruturado (RSNA RadReport; DICOM SR TID 1500) e normalização de dados.
 
+## 3.5 Ficha em 5 seções, palavras-chave e holofote
+
+Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Descrição didática → Observações internas**.
+
+- **Holofote**: a seção em destaque fica iluminada e as outras escurecem; cada campo mostra a sua **palavra-chave de voz** (🎤).
+- **Dados**: "ok"/"anonimizada" (anonimização); "pe", "in", "o", "pan", "tomografia" (tipo; "Tomografia (TCFC)" passou a existir); "idade 35" (Idade, antes "Faixa etária"; "até" opcional); "sexo m/f"; "dentes 36 e 37" (odontograma único, sem quadrantes); qualidade técnica em botões lado a lado.
+- **Achados = marcações**: a imagem de marcação abre sozinha nesta seção; cada marcação (1, 2, 3…) vira um achado (tipo + dente + região). Voz: "um lesão periapical no dente 36. dois cárie em dentina". Achado falado sem número vai para a próxima marcação sem achado. Apagar a marcação apaga o achado. Sem lesões: "Imagem sem alterações". A seção "Achados detalhados" saiu (texto antigo continua visível se existir).
+- **Erro técnico**: lista de 30 erros (`lib/errosTecnicos.ts`; enum `TipoErroTecnico`), mostrando só os possíveis para o tipo de exame — intraorais (gerais), panorâmica (gerais sem corte de cone + específicos) e TCFC (específicos). Salvos junto com a ficha (`PATCH /curation/{id}` → `erros_tecnicos`). Voz: nome do erro; "sem erro técnico" = nada a registrar.
+
 ## 4. Segurança e LGPD
 
 - **Áudio não sai da máquina do Rádix** e não é gravado (fica só em memória durante a transcrição).

@@ -20,7 +20,7 @@ from app.modules import orthanc_client
 from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria, StatusRevisao
 
 from app.modules.vocabulario import CurationTermo
-from app.modules.achados import Achado
+from app.modules.achados import Achado, ErroTecnico
 from .common import _buscar_ficha
 from .router import router
 
@@ -409,6 +409,9 @@ def obter_ficha(
             for a in db.query(Achado).filter(Achado.curation_id == ficha.id).order_by(Achado.id).all()
         ],
         "sem_alteracoes": ficha.achado_principal == "normal",
+        "erros_tecnicos": [
+            t for (t,) in db.query(ErroTecnico.tipo).filter(ErroTecnico.curation_id == ficha.id).order_by(ErroTecnico.id).all()
+        ],
     }
 
 

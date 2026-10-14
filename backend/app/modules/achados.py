@@ -116,7 +116,44 @@ class TipoErroTecnico(str, enum.Enum):
     antigo valor `AchadoPrincipal.ERRO_TECNICO`, que misturava os dois
     conceitos - ver especificacao consolidada, secao sobre Erro Tecnico).
     """
+    # Lista atual (erros tecnicos aparentes em radiografias e tomografias
+    # odontologicas). O frontend mostra so os que valem para o tipo de
+    # exame da ficha (intraoral / panoramica / TCFC) - ver
+    # frontend/src/lib/errosTecnicos.ts.
+    # Gerais (intraorais e panoramica)
+    MAGNIFICACAO = "magnificacao"
+    DISTORCAO = "distorcao"
+    ALONGAMENTO = "alongamento"
+    ENCURTAMENTO = "encurtamento"
+    SOBREPOSICAO_ESTRUTURAS = "sobreposicao_estruturas"
+    CORTE_ESTRUTURAS = "corte_estruturas"
+    CORTE_CONE = "corte_cone"
+    SUBEXPOSICAO = "subexposicao"
+    SUPEREXPOSICAO = "superexposicao"
+    RUIDO_EXCESSIVO = "ruido_excessivo"
     MOVIMENTO = "movimento"
+    FALTA_NITIDEZ = "falta_nitidez"
+    ARTEFATO_METALICO = "artefato_metalico"
+    ARTEFATO_RECEPTOR = "artefato_receptor"
+    # Panoramica
+    IMAGEM_FANTASMA = "imagem_fantasma"
+    LINGUA_AFASTADA_PALATO = "lingua_afastada_palato"
+    LABIOS_ABERTOS = "labios_abertos"
+    POSICIONAMENTO_AP_INCORRETO = "posicionamento_ap_incorreto"
+    ROTACAO_CABECA = "rotacao_cabeca"
+    INCLINACAO_CABECA = "inclinacao_cabeca"
+    QUEIXO_INADEQUADO = "queixo_inadequado"
+    SOBREPOSICAO_COLUNA = "sobreposicao_coluna"
+    # Tomografia (TCFC / CBCT)
+    TC_ARTEFATO_MOVIMENTO = "tc_artefato_movimento"
+    TC_ARTEFATO_METALICO = "tc_artefato_metalico"
+    TC_BEAM_HARDENING = "tc_beam_hardening"
+    TC_TRUNCAMENTO = "tc_truncamento"
+    TC_RUIDO = "tc_ruido"
+    TC_VOLUME_PARCIAL = "tc_volume_parcial"
+    TC_ARTEFATO_ANEL = "tc_artefato_anel"
+    TC_PERDA_RESOLUCAO = "tc_perda_resolucao"
+    # Legado (lista anterior - mantidos para fichas antigas continuarem validas)
     CORTE_APICE = "corte_apice"
     CORTE_COROA = "corte_coroa"
     ANGULACAO_INADEQUADA = "angulacao_inadequada"

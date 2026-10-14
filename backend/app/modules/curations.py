@@ -50,6 +50,9 @@ class TipoRadiografia(str, enum.Enum):
     INTERPROXIMAL = "interproximal"
     PERIAPICAL = "periapical"
     OCLUSAL = "oclusal"
+    # Tomografia computadorizada de feixe conico (TCFC / CBCT) - incluida
+    # para a curadoria filtrar os erros tecnicos proprios da tomografia.
+    TOMOGRAFIA = "tomografia"
 
 
 class Genero(str, enum.Enum):

@@ -104,6 +104,8 @@ class CurationUpdate(BaseModel):
     # "Imagem sem alteracoes" (radiografia normal) - guardado como
     # achado_principal = "normal". So vale se a ficha nao tiver achados.
     sem_alteracoes: Optional[bool] = None
+    # Erros tecnicos da imagem (lista completa - substitui os anteriores).
+    erros_tecnicos: Optional[List[TipoErroTecnico]] = None
 
 
 class CurationApprove(BaseModel):

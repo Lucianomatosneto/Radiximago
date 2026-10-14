@@ -9,7 +9,7 @@ from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
-from app.modules.achados import Achado, TipoAchado
+from app.modules.achados import Achado, ErroTecnico, TipoAchado
 from app.modules.curations import AlteracaoObservada
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico, _valor
@@ -267,6 +267,15 @@ def editar_curadoria(
             ficha.achado_principal = "normal"
         elif ficha.achado_principal == "normal":
             ficha.achado_principal = None
+    if dados.erros_tecnicos is not None:
+        # lista completa (substitui): um registro por tipo, sem repetir
+        db.query(ErroTecnico).filter(ErroTecnico.curation_id == ficha.id).delete(synchronize_session=False)
+        for tipo in dict.fromkeys(e.value for e in dados.erros_tecnicos):
+            db.add(ErroTecnico(curation_id=ficha.id, tipo=tipo))
+        _registrar_historico(
+            db, ficha.id, usuario.id, "erros_tecnicos_atualizados",
+            ficha.status, ficha.status, f"{len(dados.erros_tecnicos)} erro(s) tecnico(s) registrado(s).",
+        )
     if dados.origem_voz:
         _registrar_auditoria(
             db, usuario.id, "preenchimento_por_voz", ficha.id, "sucesso",

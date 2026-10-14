@@ -15,7 +15,7 @@ import { CATEGORIAS_ALTERACOES } from '../../lib/alteracoesObservadas'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_PERMITIDOS = ['administrador', 'curador', 'suporte']
-const TIPOS = ['periapical', 'panoramica', 'oclusal', 'interproximal']
+const TIPOS = ['periapical', 'panoramica', 'oclusal', 'interproximal', 'tomografia']
 const QUALIDADES = ['otima', 'boa', 'regular', 'insatisfatoria']
 
 interface Conteudo {

@@ -30,7 +30,8 @@
 import type { Marcacao } from './marcacoes'
 import { CATEGORIAS_ALTERACOES } from './alteracoesObservadas'
 import { SECOES_TEXTO, type SecaoFicha } from './secoesCuradoria'
-import { adicionarAchado, type AchadoFicha } from './achadosFicha'
+import { adicionarAchado, comAchados, type AchadoFicha } from './achadosFicha'
+import { errosParaTipo, rotuloErro } from './errosTecnicos'
 
 export interface FichaVoz {
   tipo_radiografia: string
@@ -48,6 +49,8 @@ export interface FichaVoz {
   /** secao unica "Achados" (lib/achadosFicha.ts) */
   achados?: AchadoFicha[]
   sem_alteracoes?: boolean
+  anonimizacao_validada?: boolean
+  erros_tecnicos?: string[]
 }
 
 export interface TermoVoz {
@@ -68,6 +71,8 @@ export type CampoVoz =
   | 'observacoes_internas'
   | 'marcacoes'
   | 'termos'
+  | 'anonimizacao'
+  | 'erros_tecnicos'
 
 export interface Sugestao {
   rotulo: string
@@ -239,9 +244,18 @@ type Opcao = { valor: string; rotulo: string; formas: string[] }
 
 const TIPOS: Opcao[] = [
   { valor: 'periapical', rotulo: 'Periapical', formas: ['periapical'] },
-  { valor: 'panoramica', rotulo: 'Panorâmica', formas: ['panoramica', 'panorama', 'panoramico'] },
+  { valor: 'panoramica', rotulo: 'Panorâmica', formas: ['panoramica', 'panorama', 'panoramico', 'pan', 'pano'] },
   { valor: 'interproximal', rotulo: 'Interproximal', formas: ['interproximal', 'bitewing', 'bite wing', 'interproximais'] },
   { valor: 'oclusal', rotulo: 'Oclusal', formas: ['oclusal'] },
+  { valor: 'tomografia', rotulo: 'Tomografia (TCFC)', formas: ['tomografia', 'tomografia computadorizada', 'tcfc', 'cone beam', 'cbct', 'tomo'] },
+]
+// atalhos curtos (so depois de "tipo" ou como fala inteira): pan, in, pe, o
+const TIPOS_CURTOS: Opcao[] = [
+  { valor: 'panoramica', rotulo: 'Panorâmica', formas: ['pan', 'pano'] },
+  { valor: 'interproximal', rotulo: 'Interproximal', formas: ['in', 'im', 'inter'] },
+  { valor: 'periapical', rotulo: 'Periapical', formas: ['pe', 'peri'] },
+  { valor: 'oclusal', rotulo: 'Oclusal', formas: ['o', 'oh'] },
+  { valor: 'tomografia', rotulo: 'Tomografia (TCFC)', formas: ['tc', 'tomo'] },
 ]
 const QUALIDADES: Opcao[] = [
   { valor: 'otima', rotulo: 'Ótima', formas: ['otima', 'excelente'] },
@@ -253,6 +267,14 @@ const GENEROS: Opcao[] = [
   { valor: 'masculino', rotulo: 'Masculino', formas: ['masculino', 'homem'] },
   { valor: 'feminino', rotulo: 'Feminino', formas: ['feminino', 'mulher'] },
 ]
+// atalhos de sexo (so depois de "sexo" ou como fala inteira): m / f
+const GENEROS_CURTOS: Opcao[] = [
+  { valor: 'masculino', rotulo: 'Masculino', formas: ['m', 'eme'] },
+  { valor: 'feminino', rotulo: 'Feminino', formas: ['f', 'efe'] },
+]
+// erros tecnicos como opcoes faladas (lib/errosTecnicos.ts)
+const opcoesErros = (tipo: string): Opcao[] =>
+  errosParaTipo(tipo).map((e) => ({ valor: e.valor, rotulo: e.rotulo, formas: e.formas }))
 // achados das marcacoes (mesmos valores de AchadoPrincipal no backend)
 const ACHADOS_MARCACAO: Opcao[] = [
   { valor: 'normal', rotulo: 'Normal', formas: ['normal'] },
@@ -328,8 +350,13 @@ const REGIOES_FALADAS: [string, string, string][] = [
 type Guia =
   | 'descricao' | 'continuar_descricao' | 'achados' | 'observacoes'
   | 'dentes' | 'qualidade' | 'idade' | 'sexo' | 'alteracao' | 'achado' | 'outro' | 'marcacao' | 'tipo'
-  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior' | 'macro' | 'nada_a_registrar'
+  | 'fim' | 'desfazer' | 'salvar' | 'corrigir' | 'apagar' | 'proxima_secao' | 'secao_anterior' | 'macro' | 'nada_a_registrar' | 'anonimizacao' | 'erro'
 const GUIAS: [string, Guia][] = ([
+  ['anonimizacao', 'anonimizacao'],
+  ['anonimizada', 'anonimizacao'],
+  ['anonimizado', 'anonimizacao'],
+  ['erros tecnicos', 'erro'],
+  ['erro tecnico', 'erro'],
   ['nada a registrar', 'nada_a_registrar'],
   ['nada para registrar', 'nada_a_registrar'],
   ['macro', 'macro'],
@@ -363,6 +390,8 @@ const GUIAS: [string, Guia][] = ([
   ['outra', 'outro'],
   ['marcacao', 'marcacao'],
   ['tipo de radiografia', 'tipo'],
+  ['tipo de exame', 'tipo'],
+  ['tipo', 'tipo'],
   ['fim da descricao', 'fim'],
   ['fim do texto', 'fim'],
   ['fim', 'fim'],
@@ -467,6 +496,32 @@ export function interpretar(
 
   // "sem alterações" / "imagem normal" (a fala inteira): imagem normal
   const falaInteira = tokens.filter((t) => !t.pontuacao).map((t) => t.n).join(' ')
+  // atalhos de uma palavra (fala inteira), validos com "Dados" em destaque
+  // ou sem secao: "ok" (anonimizacao), "m"/"f" (sexo), "pan"/"in"/"pe"/"o"
+  if (!opcoes.secaoAtiva || opcoes.secaoAtiva === 'dados') {
+    if (['ok', 'anonimizada', 'anonimizado'].includes(falaInteira)) {
+      ficha = { ...ficha, anonimizacao_validada: true }
+      alteracoes.push({ campo: 'anonimizacao', descricao: 'Anonimização validada' })
+      return { ficha, alteracoes, naoReconhecidos, comandos }
+    }
+    const g = GENEROS_CURTOS.find((o) => o.formas.includes(falaInteira))
+    if (g) {
+      ficha = { ...ficha, genero: g.valor }
+      alteracoes.push({ campo: 'genero', descricao: `Sexo: ${g.rotulo}` })
+      return { ficha, alteracoes, naoReconhecidos, comandos }
+    }
+    const tc = TIPOS_CURTOS.find((o) => o.formas.includes(falaInteira))
+    if (tc) {
+      ficha = { ...ficha, tipo_radiografia: tc.valor }
+      alteracoes.push({ campo: 'tipo_radiografia', descricao: `Tipo: ${tc.rotulo}` })
+      return { ficha, alteracoes, naoReconhecidos, comandos }
+    }
+  }
+  // "sem erro técnico" (fala inteira) = nada a registrar no erro tecnico
+  if (['sem erro tecnico', 'sem erros tecnicos', 'nenhum erro tecnico', 'nenhum erro', 'sem erro'].includes(falaInteira)) {
+    comandos.push('nada_a_registrar')
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
   if (['sem alteracoes', 'sem alteracao', 'imagem sem alteracoes', 'imagem normal', 'radiografia normal', 'radiografia sem alteracoes'].includes(falaInteira)) {
     if ((ficha.achados ?? []).length) {
       naoReconhecidos.push({ texto: textoFalado, sugestoes: [] })
@@ -478,9 +533,23 @@ export function interpretar(
   }
 
   // Marcações em destaque: "dois cárie" vale como "marcação dois cárie"
-  if (opcoes.secaoAtiva === 'marcacoes' && tokens.length && !casarGuia(tokens, 0) && lerNumero(tokens, 0)) {
-    texto = `marcação ${texto}`
-    tokens = tokenizar(texto)
+  // "Achados" em destaque: numero no comeco de cada frase = numero da
+  // marcacao ("um lesão periapical. dois cárie em dentina")
+  if (opcoes.secaoAtiva === 'achados' && tokens.length) {
+    let novo = ''
+    let ultimo = 0
+    tokens.forEach((t, k) => {
+      const inicioFrase = k === 0 || tokens[k - 1].pontuacao
+      const num = inicioFrase && !casarGuia(tokens, k) ? lerNumero(tokens, k) : null
+      if (num && num[0] >= 1 && num[0] <= 20) {
+        novo += texto.slice(ultimo, t.inicio) + 'marcação '
+        ultimo = t.inicio
+      }
+    })
+    if (ultimo > 0 || novo) {
+      texto = novo + texto.slice(ultimo)
+      tokens = tokenizar(texto)
+    }
   }
 
   // alteracoes da lista + frases que o curador ensinou
@@ -506,11 +575,27 @@ export function interpretar(
   const anotar = (campo: CampoVoz, descricao: string, aproximada = false) =>
     alteracoes.push({ campo, descricao, aproximada })
 
+  const aplicarErro = (valor: string) => {
+    const atuais = ficha.erros_tecnicos ?? []
+    if (!atuais.includes(valor)) ficha = { ...ficha, erros_tecnicos: [...atuais, valor] }
+    anotar('erros_tecnicos', `Erro técnico: ${rotuloErro(valor)}`)
+  }
+
   // Achado falado + ONDE (logo em seguida, na mesma frase):
   // "lesão periapical no dente 36, região periapical, marcação um".
   // Devolve quantas palavras de "onde" foram lidas.
   const aplicarAlteracao = (op: Opcao, inicioContexto = -1): number => {
     const ctx = inicioContexto >= 0 ? lerContexto(inicioContexto) : { dentes: [] as number[], regiao: '', marcacoes: [] as string[], marcacoesNum: [] as number[], n: 0 }
+    // sem "marcação N": vai para a proxima marcacao que ainda nao tem
+    // achado (o curador fala na sequencia das marcacoes)
+    if (!ctx.marcacoes.length) {
+      const ligadas = new Set((ficha.achados ?? []).flatMap((a) => a.marcacoes))
+      const livre = ficha.marcacoes.findIndex((m) => !ligadas.has(m.id))
+      if (livre >= 0) {
+        ctx.marcacoes = [ficha.marcacoes[livre].id]
+        ctx.marcacoesNum = [livre + 1]
+      }
+    }
     ficha = adicionarAchado(ficha as FichaVoz & { marcacoes: Marcacao[] }, { tipo: op.valor, dentes: ctx.dentes, regiao: ctx.regiao, marcacoes: ctx.marcacoes })
     const onde = [
       ctx.dentes.length ? `dente ${ctx.dentes.join(', ')}` : '',
@@ -805,7 +890,7 @@ export function interpretar(
       }
 
       if (g === 'sexo') {
-        const c = casarOpcao(tokens, j, GENEROS)
+        const c = casarOpcao(tokens, j, [...GENEROS, ...GENEROS_CURTOS])
         if (c) {
           ficha.genero = c.op.valor
           anotar('genero', `Sexo: ${c.op.rotulo}`)
@@ -838,7 +923,7 @@ export function interpretar(
       }
 
       if (g === 'tipo') {
-        const c = casarOpcao(tokens, j, TIPOS)
+        const c = casarOpcao(tokens, j, [...TIPOS, ...TIPOS_CURTOS])
         if (c) {
           ficha.tipo_radiografia = c.op.valor
           anotar('tipo_radiografia', `Tipo: ${c.op.rotulo}`)
@@ -909,6 +994,34 @@ export function interpretar(
         continue
       }
 
+      if (g === 'anonimizacao') {
+        // "anonimização ok" / "anonimizada": confirma a anonimizacao
+        let k = j
+        while (k < tokens.length && ['ok', 'validada', 'confirmada', 'sim', 'conferida'].includes(tokens[k].n)) k++
+        ficha = { ...ficha, anonimizacao_validada: true }
+        anotar('anonimizacao', 'Anonimização validada')
+        i = k
+        continue
+      }
+
+      if (g === 'erro') {
+        // "erro técnico corte de cone e subexposição"
+        let k = j
+        let algum = false
+        while (k < tokens.length) {
+          k = pularPontuacaoEVazias(k)
+          if (k >= tokens.length || casarGuia(tokens, k)) break
+          const c = casarOpcao(tokens, k, opcoesErros(ficha.tipo_radiografia))
+          if (!c) break
+          aplicarErro(c.op.valor)
+          k += c.n
+          algum = true
+        }
+        if (!algum) pendente.push(...tokens.slice(i, j + 1))
+        i = algum ? k : j
+        continue
+      }
+
       if (g === 'marcacao') {
         const num = lerNumero(tokens, j)
         if (!num) {
@@ -939,6 +1052,20 @@ export function interpretar(
             anotar('termos', `Termo: ${termo.rotulo}`)
           }
           i = prox
+          continue
+        }
+        // achado da lista padronizada (26) ligado a esta marcacao + onde
+        const ca = casarOpcao(tokens, k, listaAlteracoes)
+        if (ca) {
+          const ctx = lerContexto(k + ca.n)
+          const outros = (ficha.achados ?? []).filter((a) => !a.marcacoes.includes(alvo.id))
+          ficha = comAchados(ficha as FichaVoz & { marcacoes: Marcacao[] }, [
+            ...outros,
+            { tipo: ca.op.valor, dentes: ctx.dentes, regiao: ctx.regiao, marcacoes: [alvo.id] },
+          ])
+          const onde = [ctx.dentes.length ? `dente ${ctx.dentes.join(', ')}` : '', ctx.regiao].filter(Boolean).join(' • ')
+          anotar('alteracoes_observadas', `Marcação ${num[0]}: ${ca.op.rotulo}${onde ? ` (${onde})` : ''}`)
+          i = k + ca.n + ctx.n
           continue
         }
         const c = casarOpcao(tokens, k, ACHADOS_MARCACAO)
@@ -1047,6 +1174,26 @@ export function interpretar(
       fecharPendente()
       i++
       continue
+    }
+
+    // "Dados" em destaque: "ok" confirma a anonimizacao
+    if (opcoes.secaoAtiva === 'dados' && tok.n === 'ok') {
+      fecharPendente()
+      ficha = { ...ficha, anonimizacao_validada: true }
+      anotar('anonimizacao', 'Anonimização validada')
+      i++
+      continue
+    }
+
+    // "Erro técnico" em destaque: nomes de erro soltos
+    if (opcoes.secaoAtiva === 'erro_tecnico') {
+      const ce = casarOpcao(tokens, i, opcoesErros(ficha.tipo_radiografia))
+      if (ce) {
+        fecharPendente()
+        aplicarErro(ce.op.valor)
+        i += ce.n
+        continue
+      }
     }
 
     // valores soltos (sem palavra-guia)

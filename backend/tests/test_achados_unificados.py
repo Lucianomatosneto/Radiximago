@@ -71,3 +71,24 @@ def test_sem_alteracoes_e_validacoes(client, criar_usuario, criar_ficha, db):
     assert client.patch(f"/curation/{ficha.id}", headers=h, json={"achados": [{"tipo": "outro"}]}).status_code == 422
     db.query(Achado).filter(Achado.curation_id == ficha.id).delete()
     db.commit()
+
+
+def test_erros_tecnicos_na_ficha_e_tomografia(client, criar_usuario, criar_ficha, db):
+    from app.modules.achados import ErroTecnico
+    curador = criar_usuario(perfil=UserRole.curador)
+    h = cabecalho_auth(obter_token(client, curador.email))
+    ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+
+    r = client.patch(f"/curation/{ficha.id}", headers=h, json={
+        "tipo_radiografia": "tomografia",
+        "erros_tecnicos": ["tc_beam_hardening", "tc_truncamento", "tc_beam_hardening"],
+    })
+    assert r.status_code == 200, r.text
+    dados = client.get(f"/curation/{ficha.id}", headers=h).json()
+    assert dados["tipo_radiografia"] == "tomografia"
+    assert dados["erros_tecnicos"] == ["tc_beam_hardening", "tc_truncamento"]
+    assert client.patch(f"/curation/{ficha.id}", headers=h, json={"erros_tecnicos": []}).status_code == 200
+    assert client.get(f"/curation/{ficha.id}", headers=h).json()["erros_tecnicos"] == []
+    assert client.patch(f"/curation/{ficha.id}", headers=h, json={"erros_tecnicos": ["inventado"]}).status_code == 422
+    db.query(ErroTecnico).filter(ErroTecnico.curation_id == ficha.id).delete()
+    db.commit()

@@ -48,8 +48,8 @@ caso('descricao ativa recebe fala sem guia', 'imagem com boa nitidez mostrando l
 caso('observacoes ativa ate fim e depois regras normais', 'conferir com o professor fim. qualidade boa', r =>
   r.ficha.observacoes_internas === 'Conferir com o professor' && r.ficha.qualidade_tecnica === 'boa', 'observacoes')
 caso('palavra-guia vence a secao ativa', 'dente 36 e 37', r => r.ficha.dentes.join() === '36,37' && r.ficha.descricao_didatica === '', 'descricao')
-caso('achados ativa', 'reabsorção cervical na distal', r => r.ficha.achados_detalhe === 'Reabsorção cervical na distal', 'achados_detalhados')
-caso('marcacoes ativa sem a palavra marcacao', 'um cárie', r => r.ficha.marcacoes[0].achado === 'carie', 'marcacoes')
+caso('observacoes ativa recebe texto', 'reabsorção cervical na distal', r => r.ficha.observacoes_internas === 'Reabsorção cervical na distal', 'observacoes')
+caso('achados ativa sem a palavra marcacao', 'um cárie', r => r.ficha.marcacoes[0].achado === 'carie', 'achados')
 caso('dados ativa continua com regras normais', 'o paciente mexeu', r => r.naoReconhecidos.length === 1, 'dados')
 caso('comandos de navegacao', 'próxima seção', r => r.comandos.join() === 'proxima_secao' && r.ficha.descricao_didatica === '', 'descricao')
 caso('secao anterior', 'seção anterior', r => r.comandos.join() === 'secao_anterior')
@@ -93,4 +93,34 @@ caso('mesmo tipo sem dente e completado depois', 'perda óssea horizontal. perda
 })
 caso('sem alteracoes marca imagem normal', 'Imagem sem alterações.', r => r.ficha.sem_alteracoes === true && r.alteracoes.length === 1)
 caso('dente depois de achado nao vira descricao', 'alteração cisto na mandíbula', r => (r.ficha.achados ?? [])[0]?.regiao === 'mandibula')
+// ---- atalhos e secoes novas
+caso('atalho tipo pan', 'pan', r => r.ficha.tipo_radiografia === 'panoramica', 'dados')
+caso('atalho tipo pe', 'pe', r => r.ficha.tipo_radiografia === 'periapical', 'dados')
+caso('atalho tipo o', 'o', r => r.ficha.tipo_radiografia === 'oclusal', 'dados')
+caso('atalho tipo in depois de tipo', 'tipo in', r => r.ficha.tipo_radiografia === 'interproximal')
+caso('tomografia', 'tomografia', r => r.ficha.tipo_radiografia === 'tomografia')
+caso('sexo m', 'sexo m', r => r.ficha.genero === 'masculino')
+caso('f sozinho com dados ativa', 'F.', r => r.ficha.genero === 'feminino', 'dados')
+caso('ok anonimiza', 'ok', r => r.ficha.anonimizacao_validada === true, 'dados')
+caso('anonimizada ok na frase', 'anonimizada ok, tipo pe, sexo f, idade 35', r =>
+  r.ficha.anonimizacao_validada === true && r.ficha.tipo_radiografia === 'periapical' && r.ficha.genero === 'feminino' && r.ficha.idade_min === '35' && r.ficha.idade_max === '35')
+caso('um lesao periapical liga a marcacao 1', 'um lesão periapical no dente 36', r => {
+  const a = r.ficha.achados ?? []
+  return a.length === 1 && a[0].marcacoes.join() === 'a' && a[0].dentes.join() === '36'
+}, 'achados')
+caso('dois cárie em dentina liga marcacao 2', 'um lesão periapical. dois cárie em dentina no 37', r => {
+  const a = r.ficha.achados ?? []
+  return a.length === 2 && a[1].marcacoes.join() === 'b' && a[1].tipo === 'carie_dentina' && a[1].dentes.join() === '37'
+}, 'achados')
+caso('achado solto vai para a proxima marcacao livre', 'cisto. lesão radiopaca', r => {
+  const a = r.ficha.achados ?? []
+  return a[0].marcacoes.join() === 'a' && a[1].marcacoes.join() === 'b'
+})
+caso('erros tecnicos com guia (panoramica)', 'erro técnico rotação da cabeça e subexposição', r => (r.ficha.erros_tecnicos ?? []).join() === 'rotacao_cabeca,subexposicao')
+caso('corte de cone nao vale para panoramica', 'erro técnico corte de cone', r => (r.ficha.erros_tecnicos ?? []).length === 0)
+caso('erro solto com secao ativa', 'imagem fantasma', r => (r.ficha.erros_tecnicos ?? []).join() === 'imagem_fantasma', 'erro_tecnico')
+caso('sem erro tecnico vira nada a registrar', 'sem erro técnico', r => r.comandos.join() === 'nada_a_registrar', 'erro_tecnico')
+caso('ok no comeco da frase com dados ativa', 'ok, pan, sexo f, idade 42', r => r.ficha.anonimizacao_validada === true && r.ficha.tipo_radiografia === 'panoramica' && r.ficha.genero === 'feminino', 'dados')
+caso('numero no comeco de cada frase vira marcacao', 'um lesão periapical no dente 36. dois cárie em dentina', r =>
+  r.naoReconhecidos.length === 0 && (r.ficha.achados ?? []).length === 2 && (r.ficha.achados ?? [])[1].marcacoes.join() === 'b', 'achados')
 process.exit(falhas ? 1 : 0)

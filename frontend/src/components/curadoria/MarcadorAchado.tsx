@@ -72,12 +72,16 @@ export default function MarcadorAchado({
   onMarcar,
   onCarregou,
   compacto = false,
+  semAchado = false,
 }: {
   orthancReferenceId: number
   /** Modo miniatura (tela cheia da Curadoria): mostra so a imagem, sem a
    * barra de formas nem o texto de ajuda - o painel fica pequeno ao lado
    * do visualizador e so vira editor quando o curador clica nele. */
   compacto?: boolean
+  /** o achado de cada marcacao e escolhido na secao "Achados" da ficha:
+   * esconde a lista antiga de achado daqui */
+  semAchado?: boolean
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
   /** Chamado uma vez, quando a imagem deste painel termina de carregar
@@ -409,7 +413,7 @@ export default function MarcadorAchado({
         )}
       </div>
 
-      {selecionada && !compacto && (
+      {selecionada && !compacto && !semAchado && (
         <div className="mb-2 flex shrink-0 flex-col gap-1.5">
           <div className="flex items-center gap-2">
             <label className="text-xs text-slate-400" htmlFor="achado-marcacao">

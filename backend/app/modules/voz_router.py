@@ -1,0 +1,121 @@
+"""
+Curadoria por voz - ponte entre a tela de Curadoria e o servico local de
+transcricao (container radix-whisper, ver whisper/app.py).
+
+- POST /voz/transcrever  -> recebe o audio gravado no navegador, repassa ao
+  Whisper local e devolve o TEXTO. O audio nao e gravado em lugar nenhum.
+- GET  /voz/saude        -> o servico de voz esta no ar? (a tela usa para
+  mostrar ou nao o microfone)
+
+O texto e interpretado NO NAVEGADOR (regras fixas, frontend/src/lib/vozCuradoria.ts)
+e so vira dado da ficha quando o curador salva (PATCH /curation/{id} com
+origem_voz=true - fica na auditoria como "preenchimento_por_voz").
+
+So curadores (e administrador/suporte) usam; limite de 30 trechos por
+minuto. A auditoria registra cada transcricao (duracao), nunca o audio.
+"""
+
+import httpx
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from sqlalchemy.orm import Session
+
+from app.core.config import settings
+from app.core.database import get_db
+from app.core.rate_limit import limiter
+from app.modules.audit_logs import AuditLog
+from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
+from app.modules.users import User
+from app.modules.vocabulario import SinonimoTermo, TermoVocabulario
+
+router = APIRouter(prefix="/voz", tags=["Curadoria por voz"])
+
+TAMANHO_MAXIMO = 10 * 1024 * 1024
+
+# "Dica" de vocabulario para o Whisper (initial_prompt): palavras que o
+# curador vai falar - melhora o reconhecimento dos termos tecnicos.
+PROMPT_BASE = (
+    "Curadoria de radiografia odontológica. Periapical, panorâmica, interproximal, oclusal. "
+    "Qualidade ótima, boa, regular, insatisfatória. Dente 11, 26, 36, 48. Sexo masculino, feminino. "
+    "Idade de 30 a 40 anos. Alteração: cárie de esmalte, cárie em dentina, cárie próxima à polpa, cárie secundária, "
+    "perda óssea horizontal, perda óssea vertical, cálculo dentário, alargamento do ligamento periodontal, "
+    "lesão periapical, reabsorção radicular externa, reabsorção radicular interna, tratamento endodôntico, "
+    "fratura radicular, restauração, coroa protética, núcleo, pino, cisto, lesão radiopaca, lesão radiolúcida, "
+    "dente incluso, supranumerário, agenesia, seio maxilar, corpo estranho. "
+    "Marcação um: outro. Descrição: ... fim. Achados detalhados. Observações internas. Desfazer. Salvar."
+)
+
+
+def _prompt(db: Session) -> str:
+    termos = [t for (t,) in db.query(TermoVocabulario.termo).filter(TermoVocabulario.ativo.is_(True)).limit(60).all()]
+    sinonimos = [
+        s for (s,) in db.query(SinonimoTermo.sinonimo)
+        .join(TermoVocabulario, TermoVocabulario.id == SinonimoTermo.termo_id)
+        .filter(TermoVocabulario.ativo.is_(True)).limit(60).all()
+    ]
+    extras = ", ".join(termos + sinonimos)
+    return (PROMPT_BASE + (" " + extras + "." if extras else ""))[:800]
+
+
+@router.get("/saude")
+def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
+    try:
+        r = httpx.get(f"{settings.WHISPER_URL}/saude", timeout=5)
+        r.raise_for_status()
+        return {"disponivel": True, **r.json()}
+    except Exception:
+        return {"disponivel": False}
+
+
+@router.post("/transcrever")
+@limiter.limit("30/minute")
+def transcrever(
+    request: Request,
+    arquivo: UploadFile = File(...),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    tipo = (arquivo.content_type or "").split(";")[0].strip().lower()
+    if not (tipo.startswith("audio/") or tipo in ("video/webm", "application/octet-stream")):
+        raise HTTPException(status_code=415, detail="Envie um arquivo de áudio.")
+    conteudo = arquivo.file.read(TAMANHO_MAXIMO + 1)
+    if not conteudo:
+        raise HTTPException(status_code=400, detail="Áudio vazio.")
+    if len(conteudo) > TAMANHO_MAXIMO:
+        raise HTTPException(status_code=413, detail="Áudio muito longo.")
+
+    try:
+        resposta = httpx.post(
+            f"{settings.WHISPER_URL}/transcrever",
+            files={"arquivo": (arquivo.filename or "audio.webm", conteudo, tipo or "audio/webm")},
+            data={"prompt": _prompt(db)},
+            timeout=180,
+        )
+    except httpx.HTTPError:
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço de voz indisponível. Verifique se o container radix-whisper está ligado.",
+        )
+    finally:
+        del conteudo
+
+    if resposta.status_code >= 400:
+        try:
+            detalhe = resposta.json().get("detail") or "Não foi possível transcrever o áudio."
+        except ValueError:
+            detalhe = "Não foi possível transcrever o áudio."
+        raise HTTPException(status_code=resposta.status_code if resposta.status_code < 500 else 502, detail=detalhe)
+
+    dados = resposta.json()
+    db.add(AuditLog(
+        usuario_id=usuario.id,
+        acao="transcricao_voz",
+        entidade="voz",
+        resultado="sucesso",
+        detalhes=f"duracao_s={dados.get('duracao_s')} processamento_s={dados.get('processamento_s')} modelo={dados.get('modelo')}",
+    ))
+    db.commit()
+    return {
+        "texto": dados.get("texto", ""),
+        "duracao_s": dados.get("duracao_s"),
+        "processamento_s": dados.get("processamento_s"),
+    }

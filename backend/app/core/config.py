@@ -20,6 +20,8 @@ class Settings(BaseSettings):
     ORTHANC_PASSWORD: str
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
     OHIF_BASE_URL: str = "http://localhost:3001"
+    # servico de transcricao de voz (container radix-whisper, rede interna)
+    WHISPER_URL: str = "http://radix-whisper:9000"
     MAX_UPLOAD_SIZE_MB: int = 50
 
     # E-mail (SMTP) - usado pra redefinicao de senha. Se SMTP_HOST ficar

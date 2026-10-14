@@ -29,8 +29,8 @@ export interface FichaConferencia {
   alteracoes_observadas: string[]
   achados_detalhe: string
   descricao_didatica: string
-  marcacoes: { achado?: string | null; achado_descricao?: string | null }[]
-  achados?: { tipo: string; dentes: number[]; regiao: string }[]
+  marcacoes: { id: string; achado?: string | null; achado_descricao?: string | null }[]
+  achados?: { tipo: string; dentes: number[]; regiao: string; marcacoes: string[] }[]
   sem_alteracoes?: boolean
 }
 
@@ -71,11 +71,10 @@ export function conferirFicha(ficha: FichaConferencia, duvidasVoz = 0, secoesPen
   const faltando = citados.filter((d) => !ficha.dentes.includes(d))
   if (faltando.length) add('aviso', 'denteNoTexto', 'dados', { dentes: faltando.join(', ') })
 
-  // marcacoes
-  const semAchado = ficha.marcacoes.map((m, i) => (!m.achado ? i + 1 : 0)).filter(Boolean)
-  if (semAchado.length) add('aviso', 'marcacaoSemAchado', 'marcacoes', { numeros: semAchado.join(', ') })
-  const outroVazio = ficha.marcacoes.map((m, i) => (m.achado === 'outro' && !(m.achado_descricao || '').trim() ? i + 1 : 0)).filter(Boolean)
-  if (outroVazio.length) add('aviso', 'outroSemTexto', 'marcacoes', { numeros: outroVazio.join(', ') })
+  // marcacoes: cada uma precisa de um achado (secao Achados)
+  const ligadas = new Set((ficha.achados ?? []).flatMap((a) => a.marcacoes))
+  const semAchado = ficha.marcacoes.map((m, i) => (!ligadas.has(m.id) ? i + 1 : 0)).filter(Boolean)
+  if (semAchado.length && !ficha.sem_alteracoes) add('aviso', 'marcacaoSemAchado', 'achados', { numeros: semAchado.join(', ') })
 
   // coerencia
   const descricao = normalizar(ficha.descricao_didatica)

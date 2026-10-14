@@ -2,236 +2,211 @@
 
 import { useTranslations } from 'next-intl'
 import StatusBadge from '../StatusBadge'
-import SeletorDentesQuadrante from './SeletorDentesQuadrante'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 
-// Constantes identicas as que existiam em FichaCuradoriaForm.tsx antes de
-// serem movidas pra ca - ver comentario em PainelVisualizador.tsx sobre o
-// motivo da mudanca (ocupar visualmente o espaco onde o OHIF mostra o
-// painel "Studies", que o Radix nao consegue remover de dentro por ser
-// iframe cross-origin). Os rotulos vem do namespace compartilhado
-// Pesquisa.opcoes (mesmo texto usado na tela de Pesquisa avançada), so pra
-// nao duplicar a mesma traducao em dois lugares - so o `valor` (chave real
-// do backend) fica fixo aqui.
-const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'oclusal', 'interproximal']
+// DADOS DA IMAGEM (secao 1 da ficha). Cada campo mostra a sua PALAVRA-CHAVE
+// de voz (🎤) quando a secao esta em destaque - o curador fala a palavra e
+// o valor, e o sistema sabe exatamente qual campo preencher:
+//   anonimização: "ok" / "anonimizada"   tipo: "pan", "in", "pe", "o", "tomografia"
+//   idade: "idade 35"                     sexo: "m" / "f" (ou masculino/feminino)
+//   dentes: "dentes 36 e 37"              qualidade: "qualidade boa"
+// Dentes sem a etapa de quadrante: odontograma unico (notacao FDI), um
+// clique liga/desliga o dente.
 
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'interproximal', 'oclusal', 'panoramica', 'tomografia']
+const ATALHO_TIPO: Record<string, string> = { periapical: 'pe', interproximal: 'in', oclusal: 'o', panoramica: 'pan', tomografia: 'tomo' }
 const OPCOES_GENERO = ['masculino', 'feminino']
-
-// Qualidade tecnica: veio de FichaCuradoriaForm.tsx - pedido explicito pra
-// aparecer logo abaixo de Dentes. Valores reais do enum QualidadeTecnica
-// no backend.
 const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
+const ARCADA_SUPERIOR = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28]
+const ARCADA_INFERIOR = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38]
 
-// Tamanho de texto/controles alinhado ao pedido: todos os campos aqui do
-// mesmo tamanho da palavra "Curadoria" / "Ficha de curadoria" (text-sm,
-// 14px) - antes eram bem menores (text-[11px]/text-xs) por causa do
-// espaco apertado, mas o pedido foi explicito pra aumentar a legibilidade
-// mesmo custando mais altura (a caixa ja tem rolagem propria - ver
-// overflow-y-auto no container abaixo - entao cabe do mesmo jeito).
-const campoLabel = 'mb-1 block text-sm font-medium text-slate-300'
-// Mesma cor de FichaCuradoriaForm.tsx (ver comentario completo la),
-// aplicada aqui pra TODAS as caixas de texto desta tela (pedido
-// explicito). COR SOLIDA (nao mais degrade azul->verde) - um degrade
-// azul->verde na largura da caixa ficava com aparencia bem diferente
-// aqui (caixa ESTREITA, 280px) do que nas caixas LARGAS de baixo
-// (Descricao didatica etc.) - o teal solido fica identico nos dois.
-// Usado pelos campos de faixa etaria e qualidade tecnica abaixo; o campo
-// de dentes (mais abaixo) usa a mesma cor num wrapper proprio, ja que o
-// input dele em si e transparente por cima do wrapper.
+const campoLabel = 'flex items-center gap-2 text-sm font-medium text-slate-300'
 const campoInput =
   'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
-const botaoOpcao =
-  'rounded-full border px-3 py-1.5 text-sm transition-colors'
+const botaoOpcao = 'rounded-full border px-3 py-1.5 text-sm transition-colors'
 
-// Caixa sobreposta no canto superior esquerdo do visualizador OHIF (por
-// cima da area onde o OHIF normalmente mostra o painel "Studies"). Reune
-// os campos da ficha que precisam ficar sempre visiveis e acessiveis,
-// inclusive no modo "ajustar a tela" (onde a ficha completa, mais abaixo
-// na tela, fica escondida): status da ficha, anonimizacao (obrigatoria pra
-// aprovar), tipo de radiografia (obrigatorio), dados do paciente (faixa
-// etaria + sexo), dentes (notacao FDI) e qualidade tecnica. Fundo quase
-// solido (bg-base-surface/95 + backdrop-blur) pra garantir leitura por
-// cima da imagem de raio-X.
+/** etiqueta da palavra-chave de voz de um campo */
+export function PalavraChave({ texto, visivel }: { texto: string; visivel: boolean }) {
+  if (!visivel) return null
+  return (
+    <span className="rounded-full border border-amber-300/60 bg-amber-300/15 px-2 py-px font-mono text-[11px] font-semibold text-amber-100">
+      🎤 {texto}
+    </span>
+  )
+}
+
 export default function PainelDadosSobrepostos({
   form,
   onChange,
   statusFicha,
-  marcacaoAtiva = false,
-  onAlternarMarcacao,
-  embutido = false,
+  palavrasChave = false,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
   statusFicha: string
-  /** Estado e acao do botao "Marcar imagem" (abre a imagem para marcacao). */
+  /** mostra as palavras-chave de voz (secao em destaque) */
+  palavrasChave?: boolean
+  // compatibilidade com usos antigos (ignorados)
+  embutido?: boolean
   marcacaoAtiva?: boolean
   onAlternarMarcacao?: () => void
-  /** dentro da coluna da ficha: sem caixa propria (a secao ja tem borda) */
-  embutido?: boolean
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const pk = palavrasChave
+
+  function alternarDente(d: number) {
+    const dentes = form.dentes.includes(d) ? form.dentes.filter((x) => x !== d) : [...form.dentes, d].sort((a, b) => a - b)
+    onChange({ ...form, dentes })
+  }
+
+  const linhaDentes = (lista: number[]) => (
+    <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-0.5">
+      {lista.map((d, i) => {
+        const marcado = form.dentes.includes(d)
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => alternarDente(d)}
+            aria-pressed={marcado}
+            className={`rounded py-1 text-[11px] font-semibold transition-colors ${i === 8 ? 'ml-1' : ''} ${
+              marcado ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
+            }`}
+          >
+            {d}
+          </button>
+        )
+      })}
+    </div>
+  )
 
   return (
-    <div
-      className={
-        embutido
-          ? 'flex w-full flex-col gap-3'
-          : 'flex h-full w-full flex-col gap-3 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 shadow-lg backdrop-blur-sm'
-      }
-    >
-      <div>
-        <div className="mb-1.5 flex items-center gap-2">
-          <span className="text-xs font-medium text-slate-400">{t('status')}</span>
-          <StatusBadge status={statusFicha} />
-        </div>
-        {/* Anonimização validada: checkbox e texto maiores (h-5 w-5 e
-            text-sm, antes h-3.5 w-3.5 e text-xs) - pedido explícito. */}
-        <label className="flex items-center gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            checked={form.anonimizacao_validada}
-            onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
-            className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
-          />
-          {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
-        </label>
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-xs font-medium text-slate-400">{t('status')}</span>
+        <StatusBadge status={statusFicha} />
       </div>
 
+      <label className="flex items-center gap-2 text-sm text-slate-300">
+        <input
+          type="checkbox"
+          checked={form.anonimizacao_validada}
+          onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
+          className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
+        />
+        {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
+        <PalavraChave texto={t('chaveAnonimizacao')} visivel={pk} />
+      </label>
+
       <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>
+        <p className={`${campoLabel} mb-1.5`}>
           {t('tipoRadiografia')} <span className="text-status-danger">*</span>
-        </label>
-        {/* Grade 2x2 (Periapical/Panoramica numa linha, Oclusal/
-            Interproximal na outra) - pedido explicito pra economizar
-            altura nesta caixa e reduzir a necessidade de rolagem. So
-            volta a fazer sentido agora que a caixa que envolve este
-            painel tem largura FIXA em 280px (ver w-[280px] em
-            PainelVisualizador.tsx, nao mais o clamp() variavel de antes,
-            que as vezes deixava pouco espaco pra 2 colunas e espremia
-            nomes longos como "Interproximal"). */}
-        <div className="grid grid-cols-2 gap-1.5">
+          <PalavraChave texto={t('chaveTipo')} visivel={pk} />
+        </p>
+        <div className="flex flex-wrap gap-1.5">
           {OPCOES_TIPO_RADIOGRAFIA.map((valor) => (
             <button
               key={valor}
               type="button"
               onClick={() => onChange({ ...form, tipo_radiografia: valor })}
               className={`${botaoOpcao} ${
-                form.tipo_radiografia === valor
-                  ? 'border-brand bg-brand text-white'
-                  : 'border-base-border text-slate-300 hover:border-brand/50'
+                form.tipo_radiografia === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
               {tOpcoes(`tipoRadiografia.${valor}`)}
+              {pk && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{ATALHO_TIPO[valor]}”</span>}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>{t('faixaEtaria')}</label>
-        <div className="grid grid-cols-2 gap-1.5">
-          <input
-            type="number"
-            value={form.idade_min}
-            onChange={(e) => onChange({ ...form, idade_min: e.target.value })}
-            placeholder={t('idadeMin')}
-            className={campoInput}
-          />
-          <input
-            type="number"
-            value={form.idade_max}
-            onChange={(e) => onChange({ ...form, idade_max: e.target.value })}
-            placeholder={t('idadeMax')}
-            className={campoInput}
-          />
+      <div className="grid gap-3 border-t border-base-border pt-2.5 sm:grid-cols-2">
+        <div>
+          <p className={`${campoLabel} mb-1.5`}>
+            {t('idade')}
+            <PalavraChave texto={t('chaveIdade')} visivel={pk} />
+          </p>
+          <div className="flex items-center gap-1.5">
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={form.idade_min}
+              onChange={(e) => {
+                const v = e.target.value
+                // um valor so = idade exata (min = max); "até" vira faixa
+                onChange({ ...form, idade_min: v, idade_max: form.idade_max === '' || form.idade_max === form.idade_min ? v : form.idade_max })
+              }}
+              placeholder={t('anos')}
+              className={campoInput}
+            />
+            <span className="text-xs text-slate-500">{t('ate')}</span>
+            <input
+              type="number"
+              min={0}
+              max={120}
+              value={form.idade_max === form.idade_min ? '' : form.idade_max}
+              onChange={(e) => onChange({ ...form, idade_max: e.target.value || form.idade_min })}
+              placeholder={t('opcional')}
+              className={campoInput}
+            />
+          </div>
+        </div>
+        <div>
+          <p className={`${campoLabel} mb-1.5`}>
+            {t('sexo')} <span className="text-status-danger">*</span>
+            <PalavraChave texto={t('chaveSexo')} visivel={pk} />
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {OPCOES_GENERO.map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => onChange({ ...form, genero: valor })}
+                className={`${botaoOpcao} ${form.genero === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'}`}
+              >
+                {tOpcoes(`genero.${valor}`)}
+                {pk && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{valor === 'masculino' ? 'm' : 'f'}”</span>}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>
-          {t('sexo')} <span className="text-status-danger">*</span>
-        </label>
-        <div className="flex flex-wrap gap-1.5">
-          {OPCOES_GENERO.map((valor) => (
+        <p className={`${campoLabel} mb-1.5`}>
+          {t('dentes')}
+          <PalavraChave texto={t('chaveDentes')} visivel={pk} />
+          {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
+        </p>
+        <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
+          {linhaDentes(ARCADA_SUPERIOR)}
+          <div className="border-t border-white/10" />
+          {linhaDentes(ARCADA_INFERIOR)}
+        </div>
+      </div>
+
+      <div className="border-t border-base-border pt-2.5">
+        <p className={`${campoLabel} mb-1.5`}>
+          {t('qualidadeTecnica')}
+          <PalavraChave texto={t('chaveQualidade')} visivel={pk} />
+        </p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {OPCOES_QUALIDADE_TECNICA.map((valor) => (
             <button
               key={valor}
               type="button"
-              onClick={() => onChange({ ...form, genero: valor })}
-              className={`${botaoOpcao} ${
-                form.genero === valor
-                  ? 'border-brand bg-brand text-white'
-                  : 'border-base-border text-slate-300 hover:border-brand/50'
+              onClick={() => onChange({ ...form, qualidade_tecnica: valor })}
+              className={`${botaoOpcao} px-1 ${
+                form.qualidade_tecnica === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
-              {tOpcoes(`genero.${valor}`)}
+              {tOpcoes(`qualidadeTecnica.${valor}`)}
             </button>
           ))}
         </div>
       </div>
-
-      {/* Dentes da FICHA (notação FDI) - regras odontológicas: quadrante
-          primeiro, números só aparecem depois de escolhido (Fase 3);
-          selecionar outro quadrante NÃO apaga os dentes já marcados nos
-          quadrantes anteriores (SeletorDentesQuadrante mantém a seleção
-          completa em `form.dentes`, independente de qual quadrante está
-          sendo exibido no momento). Continua gravando no MESMO campo
-          Curation.dentes de sempre - nenhum campo novo foi criado. */}
-      <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>{t('dentes')}</label>
-        <div className="rounded-lg border border-teal-500/40 bg-teal-100/70 p-2 dark:bg-teal-600/20">
-          <SeletorDentesQuadrante
-            dentesSelecionados={form.dentes}
-            onChange={(dentes) => onChange({ ...form, dentes })}
-          />
-        </div>
-      </div>
-
-      {/* Qualidade tecnica: pedido explicito pra ficar logo abaixo de
-          Dentes (antes ficava na ficha de baixo, dentro de "Região
-          anatômica" - saiu de lá pra não duplicar o mesmo campo em dois
-          lugares). */}
-      <div className="border-t border-base-border pt-2.5">
-        <label className={campoLabel}>{t('qualidadeTecnica')}</label>
-        <select
-          value={form.qualidade_tecnica}
-          onChange={(e) => onChange({ ...form, qualidade_tecnica: e.target.value })}
-          className={campoInput}
-        >
-          <option value="">{t('selecione')}</option>
-          {OPCOES_QUALIDADE_TECNICA.map((valor) => (
-            <option key={valor} value={valor}>
-              {tOpcoes(`qualidadeTecnica.${valor}`)}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Marcar imagem: ultimo item da caixa, na MESMA sequencia do Tab dos
-          campos acima (mesmo estilo de botao das opcoes). Abre o painel
-          com a imagem para marcacao (oval/retangulo/seta), que fica
-          escondido ate aqui para o visualizador ocupar a tela toda. */}
-      {onAlternarMarcacao && (
-        <div className="border-t border-base-border pt-2.5">
-          <label className={campoLabel}>{t('marcacao')}</label>
-          <button
-            type="button"
-            onClick={onAlternarMarcacao}
-            aria-pressed={marcacaoAtiva}
-            className={`${botaoOpcao} flex w-full items-center justify-center gap-2 ${
-              marcacaoAtiva
-                ? 'border-brand bg-brand text-white'
-                : 'border-base-border text-slate-300 hover:border-brand/50'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" aria-hidden="true">
-              <ellipse cx="12" cy="12" rx="8" ry="6" strokeDasharray="3 2.5" />
-              <path d="M17.5 17.5 21 21" />
-            </svg>
-            {marcacaoAtiva ? t('fecharMarcacao') : t('marcarImagem')}
-          </button>
-        </div>
-      )}
     </div>
   )
 }

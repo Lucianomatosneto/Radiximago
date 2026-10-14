@@ -11,20 +11,17 @@
 
 export type SecaoFicha =
   | 'dados'
-  | 'marcacoes'
   | 'achados'
-  | 'achados_detalhados'
   | 'erro_tecnico'
   | 'descricao'
   | 'observacoes'
 
 export const SECOES_FICHA: SecaoFicha[] = [
   'dados',
-  'marcacoes',
-  // secao unica "Achados": substitui "Alterações observadas" + "Achados por
-  // dente/região" (um achado = um registro - ver lib/achadosFicha.ts)
+  // secao unica "Achados" = as MARCACOES da imagem: cada marcacao e um
+  // achado (tipo + dente + regiao). Substitui "Marcações", "Alterações
+  // observadas", "Achados por dente/região" e "Achados detalhados".
   'achados',
-  'achados_detalhados',
   'erro_tecnico',
   'descricao',
   'observacoes',
@@ -33,7 +30,6 @@ export const SECOES_FICHA: SecaoFicha[] = [
 /** Secoes de TEXTO CORRIDO: com uma delas ativa, a fala sem palavra-guia
  * vira texto daquele campo (em vez de ir para "Não reconhecido"). */
 export const SECOES_TEXTO: Partial<Record<SecaoFicha, 'achados_detalhe' | 'descricao_didatica' | 'observacoes_internas'>> = {
-  achados_detalhados: 'achados_detalhe',
   descricao: 'descricao_didatica',
   observacoes: 'observacoes_internas',
 }
@@ -45,10 +41,12 @@ export const SECAO_DO_CAMPO: Record<string, SecaoFicha> = {
   idade: 'dados',
   genero: 'dados',
   qualidade_tecnica: 'dados',
-  marcacoes: 'marcacoes',
+  anonimizacao: 'dados',
+  marcacoes: 'achados',
   alteracoes_observadas: 'achados',
-  achados_detalhe: 'achados_detalhados',
-  termos: 'achados_detalhados',
+  achados_detalhe: 'achados',
+  termos: 'achados',
+  erros_tecnicos: 'erro_tecnico',
   descricao_didatica: 'descricao',
   observacoes_internas: 'observacoes',
 }

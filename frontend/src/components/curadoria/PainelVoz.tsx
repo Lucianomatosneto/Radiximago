@@ -424,9 +424,6 @@ export default function PainelVoz({
               <button type="button" onClick={() => enviarPara(n, 'descricao_didatica')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
                 → {t('campoDescricao')}
               </button>
-              <button type="button" onClick={() => enviarPara(n, 'achados_detalhe')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
-                → {t('campoAchados')}
-              </button>
               <button type="button" onClick={() => enviarPara(n, 'observacoes_internas')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
                 → {t('campoObservacoes')}
               </button>

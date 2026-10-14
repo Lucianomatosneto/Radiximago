@@ -38,7 +38,7 @@ def test_macro_ciclo_completo(client, criar_usuario, db):
     assert client.post("/macros", headers=h, json={"nome": nome.upper(), "conteudo": {"achados_detalhe": "x"}}).status_code == 409
     # conteudo invalido
     assert client.post("/macros", headers=h, json={"nome": "x1" + nome, "conteudo": {"alteracoes_observadas": ["inventada"]}}).status_code == 422
-    assert client.post("/macros", headers=h, json={"nome": "x2" + nome, "conteudo": {"tipo_radiografia": "tomografia"}}).status_code == 422
+    assert client.post("/macros", headers=h, json={"nome": "x2" + nome, "conteudo": {"tipo_radiografia": "ressonancia"}}).status_code == 422
     assert client.post("/macros", headers=h, json={"nome": "x3" + nome, "conteudo": {}}).status_code == 422
     assert client.post("/macros", headers=h, json={"nome": "fim", "conteudo": {"achados_detalhe": "x"}}).status_code == 422
 

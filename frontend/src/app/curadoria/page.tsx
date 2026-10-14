@@ -13,7 +13,7 @@ import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCur
 import { SECAO_DO_CAMPO, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
-import { achadosDaApi, achadosParaApi, marcacoesSincronizadas } from '../../lib/achadosFicha'
+import { achadosDaApi, achadosParaApi, comAchados, marcacoesSincronizadas } from '../../lib/achadosFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo } from '../../lib/progressoFicha'
 import { SECOES_FICHA } from '../../lib/secoesCuradoria'
 import GuiaLaudo, { guiaJaVisto } from '../../components/curadoria/GuiaLaudo'
@@ -100,6 +100,7 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   payload.marcacoes = marcacoes
   payload.achados = achadosParaApi(form.achados, marcacoes)
   payload.sem_alteracoes = form.sem_alteracoes && form.achados.length === 0
+  payload.erros_tecnicos = form.erros_tecnicos
   payload.termos = form.termos
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
   return payload
@@ -656,6 +657,7 @@ export default function CuradoriaPage() {
       termos: ficha.termos ?? [],
       achados: achadosDaApi(ficha.achados, ficha.alteracoes_observadas),
       sem_alteracoes: !!ficha.sem_alteracoes,
+      erros_tecnicos: Array.isArray(ficha.erros_tecnicos) ? ficha.erros_tecnicos : [],
     })
   }
 
@@ -943,6 +945,13 @@ export default function CuradoriaPage() {
   }, [])
 
   const estadoRoteiro = useMemo(() => estadoSecoes(form, revisadas), [form, revisadas])
+  // secao "Achados" em destaque: a imagem de marcacao abre sozinha (o
+  // curador ve os numeros das marcacoes enquanto fala "um ...", "dois ...");
+  // saindo da secao, volta o visualizador
+  useEffect(() => {
+    setMarcacaoAberta(secaoAtiva === 'achados')
+  }, [secaoAtiva])
+
   const conferencia = useMemo(
     () => conferirFicha(form, duvidasVoz, SECOES_FICHA.filter((s) => estadoRoteiro[s] === 'pendente')),
     [form, duvidasVoz, estadoRoteiro]
@@ -971,7 +980,7 @@ export default function CuradoriaPage() {
   // visualizador (que vira miniatura); fechar devolve o visualizador.
   function alternarMarcacao() {
     setMarcacaoAberta((v) => !v)
-    setSecaoAtiva('marcacoes')
+    setSecaoAtiva('achados')
   }
   function fecharMarcacao() {
     setMarcacaoAberta(false)
@@ -1280,11 +1289,14 @@ export default function CuradoriaPage() {
                 imagem" (ficha escondida) a imagem volta a ocupar tudo. */}
             <div className={`relative flex min-h-0 min-w-0 gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
               <div
-                className={`relative flex min-h-0 min-w-0 ${
+                className={`flex min-h-0 min-w-0 ${
                   // marcacao aberta: o visualizador fica INVISIVEL por baixo
                   // (continua montado - o OHIF nao recarrega) e a imagem de
-                  // marcacao ocupa exatamente o mesmo quadro
-                  marcacaoGrande ? 'pointer-events-none absolute inset-0 opacity-0' : 'flex-1'
+                  // marcacao ocupa exatamente o mesmo quadro. Atencao: nao
+                  // juntar "relative" com "absolute" na mesma classe - no
+                  // CSS do Tailwind "relative" vence e o quadro invisivel
+                  // continuava ocupando espaco (faixa vazia a esquerda).
+                  marcacaoGrande ? 'pointer-events-none absolute inset-0 opacity-0' : 'relative flex-1'
                 }`}
               >
                 <PainelVisualizador
@@ -1329,7 +1341,15 @@ export default function CuradoriaPage() {
                     <MarcadorAchado
                       orthancReferenceId={fichaAtiva.orthancReferenceId}
                       marcacoes={form.marcacoes}
-                      onMarcar={(marcacoes) => setForm({ ...form, marcacoes })}
+                      semAchado
+                      onMarcar={(marcacoes) => {
+                        // marcacao apagada: o achado ligado a ela sai junto
+                        const ids = new Set(marcacoes.map((m) => m.id))
+                        const achados = form.achados
+                          .map((a) => ({ ...a, marcacoes: a.marcacoes.filter((id) => ids.has(id)) }))
+                          .filter((a, i) => a.marcacoes.length > 0 || form.achados[i].marcacoes.length === 0)
+                        setForm(comAchados({ ...form, marcacoes }, achados))
+                      }}
                       onCarregou={() => setMarcadorPronto(true)}
                     />
                   </div>

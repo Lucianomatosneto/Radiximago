@@ -9,7 +9,8 @@ function caso(nome: string, ok: boolean) {
 }
 const base: FichaConferencia = {
   tipo_radiografia: 'periapical', dentes: [36], genero: 'feminino', qualidade_tecnica: 'boa', anonimizacao_validada: true,
-  alteracoes_observadas: ['lesao_periapical'], achados_detalhe: '', descricao_didatica: 'Lesão periapical no dente 36.', marcacoes: [{ achado: 'lesao_periapical' }],
+  alteracoes_observadas: ['lesao_periapical'], achados_detalhe: '', descricao_didatica: 'Lesão periapical no dente 36.', marcacoes: [{ id: 'm1', achado: 'lesao_periapical' }],
+  achados: [{ tipo: 'lesao_periapical', dentes: [36], regiao: '', marcacoes: ['m1'] }],
 }
 const chaves = (f: Partial<FichaConferencia>, d = 0) => conferirFicha({ ...base, ...f }, d).map((i) => i.chave)
 
@@ -19,9 +20,9 @@ caso('dente citado no texto e nao marcado', chaves({ descricao_didatica: 'Reabso
 caso('dentesCitados le lista', dentesCitados('dentes 36, 37 e 38; elemento 11. Idade 45 anos').join() === '11,36,37,38')
 caso('numero que nao e dente ignorado', dentesCitados('dente 59 e idade 30').length === 0)
 caso('contradicao normal x alteracoes', chaves({ descricao_didatica: 'Radiografia sem alterações.' }).includes('contradicao'))
-caso('marcacao sem achado', chaves({ marcacoes: [{ achado: null }, { achado: 'outro', achado_descricao: '' }] }).join().includes('marcacaoSemAchado'))
-caso('outro sem texto', chaves({ marcacoes: [{ achado: 'outro', achado_descricao: ' ' }] }).includes('outroSemTexto'))
-caso('nenhum achado e descricao nao diz normal', chaves({ alteracoes_observadas: [], marcacoes: [], descricao_didatica: 'Imagem para estudo.' }).includes('semAchados'))
-caso('normal declarado nao pede achado', !chaves({ alteracoes_observadas: [], marcacoes: [], descricao_didatica: 'Dentro da normalidade.' }).includes('semAchados'))
+caso('marcacao sem achado', chaves({ marcacoes: [{ id: 'm1' }, { id: 'm2' }] }).includes('marcacaoSemAchado'))
+caso('achado sem dente nem regiao', chaves({ achados: [{ tipo: 'cisto', dentes: [], regiao: '', marcacoes: ['m1'] }] }).includes('achadoSemLocal'))
+caso('nenhum achado e descricao nao diz normal', chaves({ alteracoes_observadas: [], marcacoes: [], achados: [], descricao_didatica: 'Imagem para estudo.' }).includes('semAchados'))
+caso('normal declarado nao pede achado', !chaves({ alteracoes_observadas: [], marcacoes: [], achados: [], descricao_didatica: 'Dentro da normalidade.' }).includes('semAchados'))
 caso('duvidas da voz', chaves({}, 2).includes('duvidasVoz'))
 process.exit(falhas ? 1 : 0)

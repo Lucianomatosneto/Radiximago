@@ -34,6 +34,8 @@ export interface FormularioFicha {
   achados: AchadoFicha[]
   // "Imagem sem alterações" (radiografia normal)
   sem_alteracoes: boolean
+  // erros tecnicos da imagem (lib/errosTecnicos.ts)
+  erros_tecnicos: string[]
 }
 
 export const FORM_VAZIO: FormularioFicha = {
@@ -52,6 +54,7 @@ export const FORM_VAZIO: FormularioFicha = {
   termos: [],
   achados: [],
   sem_alteracoes: false,
+  erros_tecnicos: [],
 }
 
 const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'

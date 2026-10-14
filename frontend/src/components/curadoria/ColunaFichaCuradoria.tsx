@@ -4,9 +4,8 @@ import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
-import PainelErroTecnico from './PainelErroTecnico'
+import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { corMarcacao, rotularAchadoMarcacao } from '../../lib/marcacoes'
 import { SECOES_FICHA, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
@@ -90,10 +89,10 @@ function Secao({
       onFocusCapture={() => !ativa && onAtivar()}
       className={`scroll-mt-2 rounded-xl border p-3 relative transition-[border-color,box-shadow] duration-200 ${
         ativa
-          ? 'z-10 border-teal-400 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.18),0_0_22px_-4px_rgba(45,212,191,.45)]'
+          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55),0_0_0_9999px_rgba(2,6,23,.25)]'
           : estado === 'concluida'
-            ? 'border-emerald-500/30 bg-base-surface/60 opacity-75 hover:opacity-100'
-            : 'border-base-border bg-base-surface/70 opacity-90 hover:opacity-100'
+            ? 'border-emerald-500/30 bg-base-surface/60 opacity-45 saturate-50 hover:opacity-90'
+            : 'border-base-border bg-base-surface/70 opacity-45 saturate-50 hover:opacity-90'
       }`}
     >
       {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
@@ -336,11 +335,13 @@ export default function ColunaFichaCuradoria({
 
       <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
         <Secao {...p('dados')}>
-          <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} embutido />
+          <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} palavrasChave={secaoAtiva === 'dados'} />
         </Secao>
 
+        {/* Achados = marcacoes da imagem (a imagem de marcacao abre sozinha
+            quando esta secao fica em destaque - ver curadoria/page.tsx) */}
         <Secao
-          {...p('marcacoes')}
+          {...p('achados')}
           extra={
             <button
               type="button"
@@ -355,51 +356,11 @@ export default function ColunaFichaCuradoria({
             </button>
           }
         >
-          {form.marcacoes.length === 0 ? (
-            <p className="text-xs text-slate-500">{t('semMarcacoes')}</p>
-          ) : (
-            <ul className="space-y-1">
-              {form.marcacoes.map((m, i) => (
-                <li key={m.id} className="flex items-center gap-2 text-sm text-slate-300">
-                  <span
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-slate-900"
-                    style={{ background: corMarcacao(m) }}
-                  >
-                    {i + 1}
-                  </span>
-                  <span className="min-w-0 truncate">
-                    {t('marcacaoN', { numero: i + 1 })}:{' '}
-                    {m.achado ? (
-                      <>
-                        {rotularAchadoMarcacao(m.achado)}
-                        {m.achado === 'outro' && m.achado_descricao ? ` — ${m.achado_descricao}` : ''}
-                      </>
-                    ) : (
-                      <span className="italic text-slate-500">{t('semAchado')}</span>
-                    )}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Secao>
-
-        <Secao {...p('achados')}>
-          <PainelAchadosFicha form={form} onChange={onChange} />
-        </Secao>
-
-        <Secao {...p('achados_detalhados')}>
-          <textarea
-            value={form.achados_detalhe}
-            onChange={(e) => onChange({ ...form, achados_detalhe: e.target.value })}
-            rows={3}
-            className={campoTexto}
-            placeholder={t('placeholderAchados')}
-          />
+          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={secaoAtiva === 'achados'} />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>
-          <PainelErroTecnico curationId={curationId} statusFicha={statusFicha} />
+          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={secaoAtiva === 'erro_tecnico'} />
         </Secao>
 
         <Secao {...p('descricao')}>
