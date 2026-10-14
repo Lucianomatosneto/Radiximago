@@ -381,7 +381,7 @@
     "imprimirSelecionadas": "Somente as selecionadas",
     "campoTexto": "Buscar por palavras",
     "placeholderTexto": "Ex.: reabsorção, calcificação pulpar, nódulo...",
-    "ajudaTexto": "Procura nos achados detalhados, na descrição didática e no \"Outro\" das marcações — ignora acentos, aceita plural, pequenos erros e sinônimos do vocabulário.",
+    "ajudaTexto": "Ignora acentos, aceita plural, pequenos erros e sinônimos do vocabulário.",
     "campoTermo": "Termo padronizado",
     "gruposDentes": {
       "incisivos": "Incisivos",

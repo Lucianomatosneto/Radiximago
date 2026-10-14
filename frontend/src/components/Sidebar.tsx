@@ -39,7 +39,6 @@ const COR_CYAN = 'from-cyan-100 to-cyan-50 border-cyan-300 text-cyan-700 dark:fr
 const COR_TEAL = 'from-teal-100 to-teal-50 border-teal-300 text-teal-700 dark:from-teal-600/30 dark:to-teal-900/10 dark:border-teal-700/40 dark:text-teal-300'
 const COR_EMERALD = 'from-emerald-100 to-emerald-50 border-emerald-300 text-emerald-700 dark:from-emerald-600/30 dark:to-emerald-900/10 dark:border-emerald-700/40 dark:text-emerald-300'
 const COR_GREEN = 'from-green-100 to-green-50 border-green-300 text-green-700 dark:from-green-600/30 dark:to-green-900/10 dark:border-green-700/40 dark:text-green-300'
-const COR_LIME = 'from-lime-100 to-lime-50 border-lime-300 text-lime-700 dark:from-lime-600/30 dark:to-lime-900/10 dark:border-lime-700/40 dark:text-lime-300'
 
 const ITENS_MENU: ItemMenu[] = [
   { chave: 'inicio', href: '/dashboard', ativo: true, cor: COR_BLUE },
@@ -48,7 +47,8 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
   { chave: 'curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
   { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
-  { chave: 'pesquisaAvancada', href: '/pesquisa', ativo: true, cor: COR_LIME },
+  // "Pesquisa avancada" saiu do menu: ja e acessada pelo Banco de imagens
+  // (cartoes e botao) e por Minhas imagens
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, cor: COR_BLUE },

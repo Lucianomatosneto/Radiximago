@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { obterSessaoAtual } from '../lib/sessao'
 
 interface Categoria {
   // Chaves em GradeCategorias.categorias/.rotulos (messages/*.json) - o
@@ -194,9 +195,11 @@ interface PropsCartao {
   contagem: number | null
   total: number | null
   indice: number
+  /** percentual do acervo (barra + "x% do acervo"): so curador e administrador */
+  mostrarPercentual: boolean
 }
 
-function CartaoCategoria({ categoria, contagem, total, indice }: PropsCartao) {
+function CartaoCategoria({ categoria, contagem, total, indice, mostrarPercentual }: PropsCartao) {
   const t = useTranslations('GradeCategorias')
   const numero = useContador(contagem)
   const fracao = contagem !== null && total ? contagem / total : 0
@@ -242,11 +245,13 @@ function CartaoCategoria({ categoria, contagem, total, indice }: PropsCartao) {
       </span>
 
       <div className="relative mt-auto pt-5">
-        <div className="h-1 overflow-hidden rounded-full bg-[rgba(15,23,42,.08)] dark:bg-white/10">
-          <div className="cartao-barra h-full rounded-full" style={{ width: `${Math.max(fracao > 0 ? 3 : 0, percentual)}%` }} />
-        </div>
+        {mostrarPercentual && (
+          <div className="h-1 overflow-hidden rounded-full bg-[rgba(15,23,42,.08)] dark:bg-white/10">
+            <div className="cartao-barra h-full rounded-full" style={{ width: `${Math.max(fracao > 0 ? 3 : 0, percentual)}%` }} />
+          </div>
+        )}
         <div className="mt-2.5 flex items-center justify-between text-xs">
-          <span className="text-ink-3">{contagem !== null && total ? t('doAcervo', { pct: percentual }) : ' '}</span>
+          <span className="text-ink-3">{mostrarPercentual && contagem !== null && total ? t('doAcervo', { pct: percentual }) : ' '}</span>
           <span className="cartao-ver flex items-center gap-1 font-medium">
             {t('abrir')}
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -266,6 +271,11 @@ interface Props {
 
 export default function GradeCategoriasImagens({ contagens }: Props) {
   const t = useTranslations('GradeCategorias')
+  // percentual do acervo so para curador e administrador (estudante nao ve)
+  const [mostrarPercentual, setMostrarPercentual] = useState(false)
+  useEffect(() => {
+    obterSessaoAtual().then((sessao) => setMostrarPercentual(!!sessao && ['administrador', 'curador'].includes(sessao.perfil)))
+  }, [])
 
   function contagemDaCategoria(categoria: Categoria): number | null {
     if (!contagens) return null
@@ -295,6 +305,7 @@ export default function GradeCategoriasImagens({ contagens }: Props) {
                   contagem={contagemDaCategoria(categoria)}
                   total={contagens?.total ?? null}
                   indice={indice++}
+                  mostrarPercentual={mostrarPercentual}
                 />
               ))}
             </div>

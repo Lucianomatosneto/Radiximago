@@ -381,7 +381,7 @@
     "imprimirSelecionadas": "Selected only",
     "campoTexto": "Search by words",
     "placeholderTexto": "E.g.: resorption, pulp calcification, nodule...",
-    "ajudaTexto": "Searches detailed findings, the teaching description and the \"Other\" text of markings — ignores accents, accepts plurals, small typos and vocabulary synonyms.",
+    "ajudaTexto": "Ignores accents, accepts plurals, small typos and vocabulary synonyms.",
     "campoTermo": "Standard term",
     "gruposDentes": {
       "incisivos": "Incisors",
