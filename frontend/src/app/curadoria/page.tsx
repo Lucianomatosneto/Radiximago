@@ -1274,7 +1274,11 @@ export default function CuradoriaPage() {
               nela fecha). O MarcadorAchado fica sempre montado (escondido)
               para a imagem de marcacao ir carregando junto com a principal. */}
           <div className="relative flex min-h-0 flex-1 gap-3">
-            <div className="relative flex min-h-0 min-w-0 flex-[2] gap-3">
+            {/* Imagem com METADE da largura da tela, a esquerda (altura
+                igual a de antes - a linha ocupa o espaco abaixo da fila de
+                miniaturas); a outra metade e da ficha. No modo "ampliar
+                imagem" (ficha escondida) a imagem volta a ocupar tudo. */}
+            <div className={`relative flex min-h-0 min-w-0 gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
               <div
                 className={`relative flex min-h-0 min-w-0 ${
                   marcacaoGrande ? 'h-[240px] w-[300px] flex-none self-start' : 'flex-1'
@@ -1347,7 +1351,7 @@ export default function CuradoriaPage() {
             </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className="flex min-h-0 w-[440px] flex-none">
+              <aside className="flex min-h-0 min-w-0 flex-1">
                 <ColunaFichaCuradoria
                   form={form}
                   onChange={setForm}
