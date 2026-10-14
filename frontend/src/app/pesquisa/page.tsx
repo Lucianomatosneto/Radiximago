@@ -565,7 +565,7 @@ function PesquisaConteudo() {
             </div>
           ) : (
           <>
-          <section className="mt-4 rounded-2xl border border-base-border bg-base-surface/35 p-4" onKeyDown={setasNasListas}>
+          <section className="busca-holofote mt-4 rounded-2xl border border-base-border bg-base-surface/35 p-4" onKeyDown={setasNasListas}>
             {/* titulo da busca e, NO FIM DA MESMA LINHA, o icone "Acesso
                 rapido por tipo de exame" (as caixas de tipo abrem logo abaixo) */}
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -622,7 +622,7 @@ function PesquisaConteudo() {
                 marcacoes), sem diferenca de acento/maiusculas, no plural e
                 com pequenos erros de digitacao - e por sinonimos do
                 vocabulario. Combina com todos os outros filtros. */}
-            <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div className="grade-busca mb-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <label htmlFor="filtro-texto" className={campoLabel}>{t('campoTexto')}</label>
                 <input
@@ -661,7 +661,9 @@ function PesquisaConteudo() {
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {/* HOLOFOTE (globals.css .busca-holofote): o campo em uso fica aceso e
+                os demais quase apagados, como na Curadoria */}
+            <div className="grade-busca grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
                 <label className={campoLabel}>{t('campoGenero')}</label>
                 <div className="flex flex-wrap gap-2" onKeyDown={setasEntreBotoes}>

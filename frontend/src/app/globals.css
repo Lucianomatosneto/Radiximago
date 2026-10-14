@@ -206,3 +206,30 @@
 }
 .secao-preenchida { animation: secao-preenchida 2.6s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) { .secao-preenchida { animation-duration: 0.01s; } }
+
+/* HOLOFOTE DA PESQUISA AVANCADA: enquanto um campo de filtro esta em uso
+   (foco do teclado ou clique), ele fica aceso com contorno teal e os outros
+   campos ficam quase apagados - o mesmo "holofote" da Curadoria. Sem campo
+   em uso, tudo aparece normal. */
+.busca-holofote .grade-busca > * {
+  border-radius: 0.75rem;
+  align-self: start; /* contorno so do tamanho do campo */
+  /* folga para o contorno do holofote nao encostar no rotulo */
+  padding: 6px;
+  margin: -6px;
+  transition: opacity 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+.busca-holofote:has(.grade-busca :focus) .grade-busca > * {
+  opacity: 0.25;
+  filter: saturate(0.3);
+}
+.busca-holofote:has(.grade-busca :focus) .grade-busca > *:hover {
+  opacity: 0.7;
+}
+.busca-holofote .grade-busca > *:focus-within {
+  opacity: 1 !important;
+  filter: none !important;
+  box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.85), 0 0 28px -4px rgba(45, 212, 191, 0.6);
+  outline: 6px solid transparent;
+  background-color: rgb(var(--color-base-surface) / 0.55);
+}
