@@ -1182,7 +1182,27 @@ export default function CuradoriaPage() {
       salvando={salvandoRascunho}
       aprovando={aprovando}
       extra={badgeReviewsRespondidas}
+      parte={fichaVisivel ? 'navegacao' : 'tudo'}
+    />
+  ) : null
+  // acoes da ficha (Salvar/Aprovar/...) no fim da coluna, depois das caixas
+  const acoesFicha = fichaAtiva ? (
+    <BarraSuperiorCuradoria
+      posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+      totalFila={totalPendentes}
+      podeAnterior={podeAnterior}
+      podeProxima={podeProxima}
+      onAnterior={irParaAnterior}
+      onProxima={irParaProxima}
+      onSalvar={aoClicarSalvar}
+      onAprovar={pedirAprovacao}
+      onDescartar={() => abrirModalMotivo('descartar')}
+      onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+      salvando={salvandoRascunho}
+      aprovando={aprovando}
+      extra={badgeReviewsRespondidas}
       destacarAprovar={etapaAtiva === 'aprovar'}
+      parte="acoes"
     />
   ) : null
 
@@ -1377,6 +1397,7 @@ export default function CuradoriaPage() {
                   destaques={destaques}
                   revisadas={revisadas}
                   onNadaRegistrar={nadaARegistrar}
+                  acoesFinais={acoesFicha}
                   topo={
                     <PainelVoz
                       embutido

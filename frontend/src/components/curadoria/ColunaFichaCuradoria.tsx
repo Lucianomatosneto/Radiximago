@@ -129,6 +129,7 @@ export default function ColunaFichaCuradoria({
   destaques = {},
   revisadas = [],
   onNadaRegistrar,
+  acoesFinais,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -151,6 +152,8 @@ export default function ColunaFichaCuradoria({
   revisadas?: SecaoFicha[]
   /** marca/desmarca "Nada a registrar" numa secao */
   onNadaRegistrar?: (secao: SecaoFicha) => void
+  /** Salvar/Aprovar/2a opiniao/Descartar: no fim, depois da ultima caixa */
+  acoesFinais?: ReactNode
 }) {
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
@@ -176,7 +179,7 @@ export default function ColunaFichaCuradoria({
       return
     }
     const alvo = caixa.querySelector<HTMLElement>(`[data-etapa="${etapaAtiva}"]`)
-    alvo?.scrollIntoView({ behavior: 'smooth', block: SECAO_DA_ETAPA[etapaAtiva] === 'dados' ? 'center' : 'start' })
+    alvo?.scrollIntoView({ behavior: 'smooth', block: SECAO_DA_ETAPA[etapaAtiva] === 'dados' || etapaAtiva === 'aprovar' ? 'center' : 'start' })
   }, [etapaAtiva])
 
   // imagem nova: a coluna volta ao topo (comeca na anonimizacao)
@@ -336,6 +339,14 @@ export default function ColunaFichaCuradoria({
             className={campoTexto}
           />
         </Secao>
+
+        {/* acoes da ficha no FIM de todas as caixas; o holofote chega aqui
+            no passo "Aprovar" (Enter aprova) */}
+        {acoesFinais && (
+          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10' : ''}`}>
+            {acoesFinais}
+          </div>
+        )}
 
         {erro && (
           <p className="text-sm text-red-400" role="alert">

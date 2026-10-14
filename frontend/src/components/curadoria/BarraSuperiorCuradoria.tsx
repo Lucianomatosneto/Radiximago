@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl'
 // Barra de acoes da ficha ativa. Todos os botoes chamam funcoes que ja
 // existiam na tela de Curadoria antes deste sprint (salvar rascunho,
 // aprovar, abrir modal de descarte/segunda opiniao) - nada de logica nova
-// aqui, so a barra que concentra os acessos no topo.
+// aqui. A navegacao fica no topo da coluna e as acoes no FIM da ficha
+// (depois de Observacoes internas), onde o holofote chega no passo Aprovar.
 export default function BarraSuperiorCuradoria({
   posicaoAtual,
   totalFila,
@@ -22,6 +23,7 @@ export default function BarraSuperiorCuradoria({
   aprovando,
   extra,
   destacarAprovar = false,
+  parte = 'tudo',
 }: {
   posicaoAtual: number | null
   totalFila: number
@@ -41,10 +43,15 @@ export default function BarraSuperiorCuradoria({
   extra?: ReactNode
   /** holofote no Aprovar (ultimo passo da ficha): botao aceso + "Enter" */
   destacarAprovar?: boolean
+  /** 'navegacao' = so "← Imagem X de Y →" (topo da coluna); 'acoes' = so
+   * Salvar/Aprovar/2a opiniao/Descartar (no FIM da ficha, depois da
+   * ultima caixa de curadoria); 'tudo' = os dois juntos */
+  parte?: 'tudo' | 'navegacao' | 'acoes'
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
     <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-base-border bg-base-surface px-3 py-2">
+      {parte !== 'acoes' && (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
           <button
@@ -72,7 +79,9 @@ export default function BarraSuperiorCuradoria({
           {posicaoAtual !== null ? t('imagemXdeY', { atual: posicaoAtual, total: totalFila }) : '—'}
         </span>
       </div>
+      )}
 
+      {parte !== 'navegacao' && (
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -109,6 +118,7 @@ export default function BarraSuperiorCuradoria({
         </button>
         {extra}
       </div>
+      )}
     </div>
   )
 }

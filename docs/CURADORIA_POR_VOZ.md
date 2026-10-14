@@ -155,8 +155,9 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 - Limite do servidor: 120 trechos por minuto por usuário.
 
 - **Passo final "Aprovar"**: depois de Observações internas (por voz
-  "não"/"pronto" ou Tab), o holofote vai para o botão **Aprovar** da barra
-  superior, o microfone **fecha** e **Enter** faz a aprovação final (passa
+  "não"/"pronto" ou Tab), o holofote vai para o botão **Aprovar**, que fica
+  com Salvar, Segunda opinião e Descartar **no fim da ficha** (depois da
+  última caixa; no topo ficou só "← Imagem X de Y →"), o microfone **fecha** e **Enter** faz a aprovação final (passa
   pela conferência; só com avisos, o foco já fica em "Aprovar mesmo assim",
   então Enter de novo confirma). A imagem seguinte abre com o holofote em
   "Anonimização validada" e o microfone **reabre sozinho**.
