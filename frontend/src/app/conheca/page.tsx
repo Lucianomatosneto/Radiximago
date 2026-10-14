@@ -102,7 +102,13 @@ const RECURSOS: Recurso[] = [
   { chave: 'auditoria', icone: <IconeAuditoria />, span: 'md:col-span-3' },
 ]
 
-const CONFIANCA = ['lgpd', 'anonimizado', 'auditoria', 'local'] as const
+const CONFIANCA = ['piloto', 'lgpd', 'anonimizado', 'auditoria', 'local'] as const
+const AREAS_EXPANSAO = [
+  { chave: 'radiologia', cor: '#3B82F6' },
+  { chave: 'anatomia', cor: '#EF4444' },
+  { chave: 'biologia', cor: '#A855F7' },
+  { chave: 'vida', cor: '#22C55E' },
+] as const
 const PILARES = ['tipos', 'perfis', 'anonimo', 'rastreio'] as const
 const PASSOS = ['envio', 'anonimizacao', 'curadoria', 'ensino'] as const
 const PUBLICO = [
@@ -124,7 +130,8 @@ function Rotulo({ children }: { children: React.ReactNode }) {
 //      galeria rolando, tudo visivel sem rolar;
 //   2. numeros (so fatos verificaveis do sistema, sem metricas inventadas);
 //   3. como funciona (4 etapas); 4. recursos; 5. para quem;
-//   6. seguranca e privacidade; 7. chamada final; 8. rodape institucional.
+//   6. piloto em Odontologia e expansao prevista para outras areas;
+//   7. seguranca e privacidade; 8. chamada final; 9. rodape institucional.
 // Imagens da galeria: ilustrativas geradas por IA (sem dados de pacientes).
 export default function ConhecaPage() {
   const t = useTranslations('Inicio')
@@ -140,6 +147,9 @@ export default function ConhecaPage() {
           </a>
           <a href="#recursos" className="hidden text-slate-400 transition-colors hover:text-ink md:inline">
             {t('recursosRotulo')}
+          </a>
+          <a href="#expansao" className="hidden text-slate-400 transition-colors hover:text-ink lg:inline">
+            {t('expansao.rotulo')}
           </a>
           <a href="#seguranca" className="hidden text-slate-400 transition-colors hover:text-ink md:inline">
             {t('seguranca.rotulo')}
@@ -301,7 +311,40 @@ export default function ConhecaPage() {
         </div>
       </section>
 
-      {/* 6. SEGURANCA E PRIVACIDADE */}
+      {/* 6. PILOTO (ODONTOLOGIA) E EXPANSAO PARA OUTRAS AREAS */}
+      <section id="expansao" className="scroll-mt-6 pt-20">
+        <Rotulo>{t('expansao.rotulo')}</Rotulo>
+        <h2 className="mt-2 max-w-2xl text-3xl font-semibold tracking-tight text-ink">{t('expansao.titulo')}</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-3">{t('expansao.texto')}</p>
+        <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-[1.1fr_1.6fr]">
+          {/* agora: piloto */}
+          <div className="relative overflow-hidden rounded-2xl border border-orange-400/40 bg-gradient-to-br from-orange-500/15 to-amber-400/5 p-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-orange-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500" aria-hidden="true" />
+              {t('expansao.agora')}
+            </span>
+            <h3 className="mt-3 text-2xl font-semibold text-ink">🦷 {t('expansao.piloto.titulo')}</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-2">{t('expansao.piloto.texto')}</p>
+          </div>
+          {/* depois: expansao */}
+          <div className="painel-vidro rounded-2xl p-6">
+            <span className="inline-flex items-center gap-2 rounded-full bg-teal-500/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+              {t('expansao.depois')}
+            </span>
+            <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {AREAS_EXPANSAO.map((a) => (
+                <li key={a.chave} className="flex items-center gap-2.5 rounded-xl border border-dashed border-[rgba(15,23,42,.15)] px-3 py-2.5 text-sm text-ink-2 dark:border-white/15">
+                  <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: a.cor }} aria-hidden="true" />
+                  {t(`expansao.areas.${a.chave}`)}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-xs text-ink-3">{t('expansao.nota')}</p>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. SEGURANCA E PRIVACIDADE */}
       <section id="seguranca" className="scroll-mt-6 pt-20">
         <div className="painel-vidro grid grid-cols-1 gap-8 rounded-3xl p-8 md:grid-cols-[1fr_1.4fr] md:p-10">
           <div>
@@ -322,7 +365,7 @@ export default function ConhecaPage() {
         </div>
       </section>
 
-      {/* 7. CHAMADA FINAL */}
+      {/* 8. CHAMADA FINAL */}
       <section className="pb-16 pt-20">
         <div className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-600/20 via-cyan-500/10 to-teal-500/10 px-8 py-12 text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink">{t('ctaFinal.titulo')}</h2>
@@ -338,7 +381,7 @@ export default function ConhecaPage() {
         </div>
       </section>
 
-      {/* 8. RODAPE INSTITUCIONAL */}
+      {/* 9. RODAPE INSTITUCIONAL */}
       <footer className="flex flex-col items-center gap-3 border-t border-white/10 py-8 text-center text-xs text-slate-500">
         <Logo variante="footer" />
         <p className="max-w-2xl">{t('rodapeInstitucional')}</p>

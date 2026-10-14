@@ -60,21 +60,22 @@
         "cao": "Cão"
       }
     },
-    "chamada": "Curadoria, pesquisa e ensino com radiografias odontológicas anonimizadas, organizadas por especialistas e em conformidade com a LGPD.",
-    "selo": "Plataforma acadêmica · PPGINFOS · UFSC",
+    "chamada": "Curadoria, pesquisa e ensino com imagens anonimizadas. O piloto começa pela Odontologia, com radiografias odontológicas, e a plataforma foi desenhada para se expandir a outras áreas da saúde e da vida.",
+    "selo": "Piloto em Odontologia · PPGINFOS · UFSC",
     "verComoFunciona": "Ver como funciona",
     "confianca": {
       "lgpd": "Conforme a LGPD",
       "anonimizado": "100% anonimizado",
       "auditoria": "Auditoria de cada ação",
-      "local": "Voz processada no próprio servidor"
+      "local": "Voz processada no próprio servidor",
+      "piloto": "Piloto em Odontologia"
     },
     "pilares": {
       "rotulo": "Em números",
       "itens": {
         "tipos": {
           "valor": "5",
-          "texto": "tipos de exame: periapical, interproximal, oclusal, panorâmica e tomografia"
+          "texto": "tipos de exame odontológico no piloto: periapical, interproximal, oclusal, panorâmica e tomografia"
         },
         "perfis": {
           "valor": "6",
@@ -154,7 +155,25 @@
       "texto": "Solicite seu acesso. Um administrador revisa o pedido e libera o perfil adequado.",
       "botao": "Solicitar acesso"
     },
-    "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC)."
+    "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC).",
+    "expansao": {
+      "rotulo": "Piloto e expansão",
+      "titulo": "Começa pela Odontologia. Foi feito para crescer.",
+      "texto": "O piloto valida o fluxo completo com radiografias odontológicas da UFSC. A mesma base (anonimização, curadoria, busca e auditoria) foi construída para receber novas áreas, uma de cada vez.",
+      "agora": "Em andamento",
+      "depois": "Expansão prevista",
+      "piloto": {
+        "titulo": "Odontologia",
+        "texto": "Radiografias periapicais, interproximais, oclusais, panorâmicas e tomografias odontológicas."
+      },
+      "areas": {
+        "radiologia": "Radiologia médica (ressonância e tomografia)",
+        "anatomia": "Anatomia",
+        "biologia": "Biologia e microscopia",
+        "vida": "Flora e fauna"
+      },
+      "nota": "As áreas da expansão entram após a validação do piloto. As imagens da galeria acima ilustram essas áreas."
+    }
   },
   "Login": {
     "tituloDestaque1": "Base inteligente de imagens",

@@ -60,21 +60,22 @@
         "cao": "Dog"
       }
     },
-    "chamada": "Curation, research and teaching with anonymized dental radiographs, organized by specialists and compliant with Brazil's LGPD.",
-    "selo": "Academic platform · PPGINFOS · UFSC",
+    "chamada": "Curation, research and teaching with anonymized images. The pilot starts with Dentistry, using dental radiographs, and the platform was designed to expand to other health and life science areas.",
+    "selo": "Dentistry pilot · PPGINFOS · UFSC",
     "verComoFunciona": "See how it works",
     "confianca": {
       "lgpd": "LGPD compliant",
       "anonimizado": "100% anonymized",
       "auditoria": "Every action audited",
-      "local": "Voice processed on our own server"
+      "local": "Voice processed on our own server",
+      "piloto": "Dentistry pilot"
     },
     "pilares": {
       "rotulo": "By the numbers",
       "itens": {
         "tipos": {
           "valor": "5",
-          "texto": "exam types: periapical, bitewing, occlusal, panoramic and CT"
+          "texto": "dental exam types in the pilot: periapical, bitewing, occlusal, panoramic and CT"
         },
         "perfis": {
           "valor": "6",
@@ -154,7 +155,25 @@
       "texto": "Request your access. An administrator reviews the request and grants the right profile.",
       "botao": "Request access"
     },
-    "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC)."
+    "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC).",
+    "expansao": {
+      "rotulo": "Pilot and expansion",
+      "titulo": "It starts with Dentistry. It was built to grow.",
+      "texto": "The pilot validates the complete workflow with UFSC dental radiographs. The same foundation (anonymization, curation, search and audit) was built to welcome new areas, one at a time.",
+      "agora": "In progress",
+      "depois": "Planned expansion",
+      "piloto": {
+        "titulo": "Dentistry",
+        "texto": "Periapical, bitewing, occlusal and panoramic radiographs, and dental CT."
+      },
+      "areas": {
+        "radiologia": "Medical radiology (MRI and CT)",
+        "anatomia": "Anatomy",
+        "biologia": "Biology and microscopy",
+        "vida": "Flora and fauna"
+      },
+      "nota": "Expansion areas come after the pilot is validated. The gallery images above illustrate these areas."
+    }
   },
   "Login": {
     "tituloDestaque1": "Smart image platform",
