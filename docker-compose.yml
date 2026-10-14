@@ -213,6 +213,29 @@ services:
     networks:
       - radix-network
 
+  # --- Transcricao de voz (curadoria por voz) ---
+  # Whisper "small" rodando LOCALMENTE (o audio nao sai daqui). Sem porta
+  # publicada: so o radix-api conversa com ele, pela rede interna. O
+  # modelo e baixado na construcao da imagem (precisa de internet so na
+  # primeira vez: docker compose build radix-whisper). Teto de memoria
+  # para nunca travar o computador; o modelo so e carregado quando o
+  # curador usa o microfone e e descarregado apos 10 minutos parado.
+  radix-whisper:
+    build:
+      context: ./whisper
+      dockerfile: Dockerfile
+      args:
+        MODELO: small
+    container_name: radix-whisper
+    restart: unless-stopped
+    environment:
+      - RADIX_WHISPER_OCIOSO_S=600
+      - RADIX_WHISPER_THREADS=4
+    mem_limit: 1600m
+    cpus: 4
+    networks:
+      - radix-network
+
   # --- Frontend Next.js ---
   radix-frontend:
     build:

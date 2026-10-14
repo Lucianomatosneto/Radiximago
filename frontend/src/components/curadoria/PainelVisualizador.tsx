@@ -65,6 +65,9 @@ const PainelVisualizador = forwardRef<HTMLElement, {
    * OHIF recebe radixRecolherEstudos=1 para recolher a coluna "Studies"
    * (ver ohif/app-config.template.js) - a radiografia ganha essa largura. */
   dadosNaColuna?: boolean
+  /** Sem o cabecalho de botoes (logo, status, Marcar imagem, Ampliar,
+   * Tela cheia) acima da imagem - layout de curadoria com a ficha ao lado. */
+  semCabecalho?: boolean
 }>(function PainelVisualizador(
   {
     fichaAtiva,
@@ -83,6 +86,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
     marcacaoAtiva = false,
     onAlternarMarcacao,
     dadosNaColuna = false,
+    semCabecalho = false,
   },
   ref
 ) {
@@ -101,7 +105,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
       {fichaAtiva && (
         <>
           <SegundaOpiniaoBanner review={segundaOpiniaoReview} />
-          <div className={`items-center justify-between border-b border-base-border px-4 py-3 ${miniatura ? 'hidden' : 'flex'}`}>
+          <div className={`items-center justify-between border-b border-base-border px-4 py-3 ${miniatura || semCabecalho ? 'hidden' : 'flex'}`}>
             <div className="flex items-center gap-3">
               {/* A Curadoria esconde a Topbar da pagina (que normalmente
                   mostra a logo) quando telaCheia e true - ver

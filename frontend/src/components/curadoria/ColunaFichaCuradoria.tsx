@@ -6,37 +6,27 @@ import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { SECOES_FICHA, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { ETAPAS_FICHA, ETAPA_INICIAL, SECAO_DA_ETAPA, SECOES_FICHA, etapaVizinha, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
-import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
+import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
 import AjudaSecao from './AjudaSecao'
 
-// COLUNA DA FICHA DE CURADORIA (direita da tela; a imagem fica a esquerda).
+// COLUNA DA FICHA DE CURADORIA (metade direita da tela; a imagem e as
+// miniaturas ficam na metade esquerda).
 //
-// Todas as secoes da ficha numa unica coluna com barra de rolagem, de cima
-// para baixo, na ordem de SECOES_FICHA (lib/secoesCuradoria.ts). Uma secao
-// fica EM DESTAQUE (borda e brilho teal):
-// - na curadoria MANUAL, as setas ↓/↑ do teclado (fora de campos de texto)
-//   e os botoes ▼/▲ passam para a secao seguinte/anterior, e a coluna rola
-//   sozinha ate ela; clicar numa secao tambem a destaca;
-// - na curadoria por VOZ, a secao em destaque e o destino da fala sem
-//   palavra-guia (ex.: com "Descrição didática" em destaque, o que for
-//   falado vira a descricao), e depois de preencher a coluna rola ate a
-//   secao que recebeu o dado.
+// Todas as secoes da ficha numa unica coluna com rolagem, na ordem de
+// SECOES_FICHA (lib/secoesCuradoria.ts). O HOLOFOTE anda ITEM POR ITEM
+// (ETAPAS_FICHA): "Anonimização", "Tipo de radiografia", "Idade",
+// "Gênero", "Dentes", "Qualidade técnica", "Achados", "Erro técnico",
+// "Descrição didática" e "Observações internas".
+// - Cada imagem nova comeca SEMPRE em "Anonimização validada".
+// - O holofote SO muda com Tab ou ↓ (proximo) e Shift+Tab ou ↑ (anterior);
+//   falar ou clicar num valor nao muda o item sozinho - o curador fala,
+//   confere e passa adiante. Clicar num item apagado tambem o acende.
+// - So o item em destaque fica aceso; os outros ficam quase apagados, para
+//   o curador nao se perder (principio de foco/visibilidade do estado do
+//   sistema, Nielsen). A voz sem palavra-guia vai para o item aceso.
 // O painel de voz fica fixo no topo da coluna (`topo`), fora da rolagem.
-//
-// ROTEIRO (para nao errar a sequencia nem deixar nada em branco): uma
-// trilha de 8 passos no topo mostra cada secao como concluida (verde) ou
-// pendente; cada secao tem o selo "Concluída/Pendente", um "?" com o que
-// falar no microfone e, nas secoes opcionais, o botao "Nada a registrar"
-// (ou a fala "nada a registrar"), que conta como revisada e leva a proxima
-// pendente. Ver lib/progressoFicha.ts.
-//
-// Justificativa (dissertacao): um unico fluxo vertical reduz a troca de
-// contexto (antes eram 5 telas num carrossel + uma faixa embaixo) e da ao
-// curador uma "posicao atual" visivel, o que tambem deixa a voz previsivel
-// - o sistema mostra ANTES de falar onde o texto vai entrar (principio de
-// visibilidade do estado do sistema, Nielsen).
 
 const campoTexto =
   'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
@@ -54,70 +44,70 @@ function emCampoDeTexto(): boolean {
 // desmontaria os campos (perde o foco do texto e recarrega os paineis).
 function Secao({
   id,
-  numero,
   titulo,
   ativa,
+  holofote,
   onAtivar,
-  registrar,
   extra,
   piscando,
   estado,
   rodape,
+  simples = false,
   children,
 }: {
   id: SecaoFicha
-  numero: number
   titulo: string
+  /** o item em destaque esta nesta secao */
   ativa: boolean
+  /** a secao inteira e o item em destaque (todas menos "Dados") */
+  holofote: boolean
   onAtivar: () => void
-  registrar: (el: HTMLElement | null) => void
   extra?: ReactNode
   /** chave que muda a cada preenchimento: reinicia a animacao de destaque */
   piscando?: number
   estado: EstadoSecao
-  /** "Nada a registrar" / "Concluir e ir para a próxima" */
   rodape?: ReactNode
+  /** sem "?" e sem selo Pendente/Concluída (secao "Dados") */
+  simples?: boolean
   children: ReactNode
 }) {
   const t = useTranslations('Curadoria.coluna')
   return (
     <section
-      ref={registrar}
       data-secao={id}
-      aria-current={ativa ? 'step' : undefined}
-      onMouseDown={() => !ativa && onAtivar()}
-      onFocusCapture={() => !ativa && onAtivar()}
-      className={`scroll-mt-2 rounded-xl border p-3 relative transition-[border-color,box-shadow] duration-200 ${
-        ativa
-          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55),0_0_0_9999px_rgba(2,6,23,.25)]'
-          : estado === 'concluida'
-            ? 'border-emerald-500/30 bg-base-surface/60 opacity-45 saturate-50 hover:opacity-90'
-            : 'border-base-border bg-base-surface/70 opacity-45 saturate-50 hover:opacity-90'
+      data-etapa={simples ? undefined : id}
+      aria-current={holofote ? 'step' : undefined}
+      onMouseDown={() => !ativa && !simples && onAtivar()}
+      className={`scroll-mt-2 rounded-xl border p-3 relative transition-[opacity,border-color,box-shadow] duration-200 ${
+        holofote
+          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)]'
+          : ativa
+            ? 'z-10 border-base-border bg-base-surface'
+            : 'border-base-border bg-base-surface/70 opacity-[.18] saturate-0 hover:opacity-50'
       }`}
     >
       {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
           (key), os campos da secao continuam montados */}
       {piscando ? <span key={piscando} aria-hidden="true" className="secao-preenchida pointer-events-none absolute inset-0 rounded-xl" /> : null}
       <header className="mb-2 flex items-center gap-2">
-        <span
-          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold ${
-            estado === 'concluida' ? 'bg-emerald-500 text-white' : ativa ? 'bg-teal-400 text-slate-900' : 'bg-base-surface2 text-slate-400'
-          }`}
-        >
-          {estado === 'concluida' ? '✓' : numero}
-        </span>
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
-        <AjudaSecao secao={id} />
-        <span
-          className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${
-            estado === 'concluida' ? 'bg-emerald-500/15 text-emerald-300' : ativa ? 'animate-pulse bg-amber-400/20 text-amber-200' : 'bg-white/5 text-slate-400'
-          }`}
-        >
-          {estado === 'concluida' ? t('concluida') : t('pendente')}
-        </span>
+        {!simples && (
+          <>
+            <AjudaSecao secao={id} />
+            <span
+              className={`rounded-full px-1.5 py-px text-[10px] font-semibold ${
+                estado === 'concluida' ? 'bg-emerald-500/15 text-emerald-300' : holofote ? 'bg-amber-400/20 text-amber-200' : 'bg-white/5 text-slate-400'
+              }`}
+            >
+              {estado === 'concluida' ? t('concluida') : t('pendente')}
+            </span>
+          </>
+        )}
         {extra && <div className="ml-auto">{extra}</div>}
       </header>
-      {children}
+      {/* secao apagada: o primeiro clique so acende (nao muda valores); em
+          "Dados" cada item cuida disso (PainelDadosSobrepostos) */}
+      <div className={ativa || simples ? '' : 'pointer-events-none'}>{children}</div>
       {ativa && rodape && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2">{rodape}</div>}
     </section>
   )
@@ -126,12 +116,11 @@ function Secao({
 export default function ColunaFichaCuradoria({
   form,
   onChange,
-  statusFicha,
   curationId,
   erro,
   rascunhoSalvo,
-  secaoAtiva,
-  onSecao,
+  etapaAtiva,
+  onEtapa,
   marcacaoAberta,
   onAlternarMarcacao,
   topo,
@@ -144,17 +133,18 @@ export default function ColunaFichaCuradoria({
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
-  statusFicha: string
+  statusFicha?: string
   curationId: number
   erro: string
   rascunhoSalvo: boolean
-  secaoAtiva: SecaoFicha
-  onSecao: (secao: SecaoFicha) => void
+  /** item no holofote */
+  etapaAtiva: EtapaFicha
+  onEtapa: (etapa: EtapaFicha) => void
   marcacaoAberta: boolean
   onAlternarMarcacao: () => void
   /** conteudo fixo acima da rolagem (painel de voz) */
   topo?: ReactNode
-  /** desliga ↑/↓ (ex.: modal aberto) */
+  /** desliga Tab/↑/↓ (ex.: modal aberto) */
   teclasAtivas?: boolean
   /** secoes que acabaram de receber dados (valor = marca de tempo) */
   destaques?: Partial<Record<SecaoFicha, number>>
@@ -170,12 +160,11 @@ export default function ColunaFichaCuradoria({
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
   const concluidas = SECOES_FICHA.filter((s) => estado[s] === 'concluida').length
-  const proxima = proximaPendente(estado, secaoAtiva)
+  const secaoAtiva = SECAO_DA_ETAPA[etapaAtiva]
   const rolagemRef = useRef<HTMLDivElement>(null)
   const tSecoes = useTranslations('Curadoria.secoes')
-  const refs = useRef<Partial<Record<SecaoFicha, HTMLElement | null>>>({})
-  // clique numa secao so destaca (sem pular a rolagem); teclas, botoes e
-  // voz rolam ate o topo da secao
+  const tEtapas = useTranslations('Curadoria.etapas')
+  // clique num item so acende (sem pular a rolagem); teclas rolam ate ele
   const porCliqueRef = useRef(false)
 
   useEffect(() => {
@@ -183,52 +172,67 @@ export default function ColunaFichaCuradoria({
       porCliqueRef.current = false
       return
     }
-    refs.current[secaoAtiva]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }, [secaoAtiva])
+    const caixa = rolagemRef.current
+    if (!caixa) return
+    if (etapaAtiva === ETAPA_INICIAL) {
+      caixa.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    const alvo = caixa.querySelector<HTMLElement>(`[data-etapa="${etapaAtiva}"]`)
+    alvo?.scrollIntoView({ behavior: 'smooth', block: SECAO_DA_ETAPA[etapaAtiva] === 'dados' ? 'center' : 'start' })
+  }, [etapaAtiva])
 
-  // imagem nova: a coluna volta ao topo (comeca o laudo do passo 1)
+  // imagem nova: a coluna volta ao topo (comeca na anonimizacao)
   useEffect(() => {
     if (rolagemRef.current) rolagemRef.current.scrollTop = 0
   }, [curationId])
 
-  const secaoRef = useRef(secaoAtiva)
-  secaoRef.current = secaoAtiva
+  // TAB / ↓ = proximo item; SHIFT+TAB / ↑ = item anterior. Tab vale ate
+  // dentro de campos de texto (para sair da idade ou da descricao); ↑/↓
+  // dentro de campos de texto continuam movendo o cursor/numero.
+  const etapaRef = useRef(etapaAtiva)
+  etapaRef.current = etapaAtiva
   useEffect(() => {
     if (!teclasAtivas) return
     function aoTeclar(e: KeyboardEvent) {
-      if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
-      if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
-      if (emCampoDeTexto()) return
+      if (e.ctrlKey || e.metaKey || e.altKey) return
+      let passo: 1 | -1 | 0 = 0
+      if (e.key === 'Tab') passo = e.shiftKey ? -1 : 1
+      else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.shiftKey && !emCampoDeTexto()) passo = e.key === 'ArrowDown' ? 1 : -1
+      if (!passo) return
       e.preventDefault()
-      onSecao(secaoVizinha(secaoRef.current, e.key === 'ArrowDown' ? 1 : -1))
+      // o foco sai do campo do item anterior (senao ↑/↓ ficariam presos nele)
+      const ativo = document.activeElement
+      if (ativo instanceof HTMLElement) ativo.blur()
+      onEtapa(etapaVizinha(etapaRef.current, passo))
     }
     document.addEventListener('keydown', aoTeclar)
     return () => document.removeEventListener('keydown', aoTeclar)
-  }, [teclasAtivas, onSecao])
+  }, [teclasAtivas, onEtapa])
 
-  const indice = SECOES_FICHA.indexOf(secaoAtiva)
   const tFicha = useTranslations('Curadoria.ficha')
+  const indice = ETAPAS_FICHA.indexOf(etapaAtiva)
+  const proximaEtapa = indice < ETAPAS_FICHA.length - 1 ? ETAPAS_FICHA[indice + 1] : null
+
+  function ativarPorClique(etapa: EtapaFicha) {
+    porCliqueRef.current = true
+    onEtapa(etapa)
+  }
 
   // propriedades comuns de cada secao
   const p = (id: SecaoFicha) => ({
     id,
-    numero: SECOES_FICHA.indexOf(id) + 1,
     titulo: tSecoes(id),
     ativa: id === secaoAtiva,
-    onAtivar: () => {
-      porCliqueRef.current = true
-      onSecao(id)
-    },
-    registrar: (el: HTMLElement | null) => {
-      refs.current[id] = el
-    },
+    holofote: id !== 'dados' && id === secaoAtiva,
+    onAtivar: () => ativarPorClique(primeiraEtapa(id)),
     piscando: destaques[id],
     estado: estado[id],
     rodape: rodape(id),
   })
 
   // rodape da secao ativa: "Nada a registrar" (opcionais, sem conteudo) e
-  // "Próxima pendente"
+  // "Próximo item (Tab)" - nada muda de item sozinho
   function rodape(id: SecaoFicha): ReactNode {
     const opcional = SECOES_OPCIONAIS.includes(id)
     const comConteudo = temConteudo(id, form)
@@ -247,13 +251,14 @@ export default function ColunaFichaCuradoria({
             {revisada ? `✓ ${t('nadaRegistrado')}` : t('nadaRegistrar')}
           </button>
         )}
-        {estado[id] === 'concluida' && proxima && (
+        {proximaEtapa && (
           <button
             type="button"
-            onClick={() => onSecao(proxima)}
-            className="ml-auto rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-slate-900 hover:bg-teal-400"
+            onClick={() => onEtapa(proximaEtapa)}
+            className="ml-auto flex items-center gap-1.5 rounded-full bg-teal-500 px-3 py-1 text-xs font-semibold text-slate-900 hover:bg-teal-400"
           >
-            {t('irProxima', { secao: tSecoes(proxima) })} ▼
+            {t('proximoItem', { item: tEtapas(proximaEtapa) })}
+            <kbd className="rounded border border-slate-900/40 px-1 font-mono text-[10px]">Tab</kbd>
           </button>
         )}
       </>
@@ -264,12 +269,13 @@ export default function ColunaFichaCuradoria({
     <div className="flex h-full min-h-0 w-full flex-col gap-2">
       {topo && <div className="shrink-0">{topo}</div>}
 
-      {/* barra com o titulo e as setas ▲/▼ entre secoes */}
+      {/* barra com o titulo, o progresso e o lembrete das teclas */}
       <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
         <h2 className="text-sm font-bold text-ink" title={t('ajudaTeclas')}>{t('titulo')}</h2>
         <span title={t('progresso', { feitas: concluidas, total: SECOES_FICHA.length })} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${concluidas === SECOES_FICHA.length ? 'bg-emerald-500/20 text-emerald-200' : 'bg-white/5 text-slate-300'}`}>
           {concluidas}/{SECOES_FICHA.length}
         </span>
+        <span className="text-[11px] text-slate-400">{t('lembreteTeclas')}</span>
         {onAbrirGuia && (
           <button
             type="button"
@@ -283,63 +289,18 @@ export default function ColunaFichaCuradoria({
         {acoesBarra}
       </div>
 
-      {/* trilha do roteiro: 8 passos, verde = concluido, teal = atual */}
-      <ol className="flex shrink-0 items-center gap-1 px-1" aria-label={t('roteiro')}>
-        {SECOES_FICHA.map((id, i) => {
-          const ativa = id === secaoAtiva
-          const feita = estado[id] === 'concluida'
-          return (
-            <li key={id} className="flex flex-1 items-center gap-1">
-              <button
-                type="button"
-                onClick={() => onSecao(id)}
-                title={`${i + 1}. ${tSecoes(id)} — ${feita ? t('concluida') : t('pendente')}`}
-                aria-current={ativa ? 'step' : undefined}
-                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition ${
-                  ativa
-                    ? 'bg-teal-400 text-slate-900 ring-2 ring-teal-200/60'
-                    : feita
-                      ? 'bg-emerald-500 text-white'
-                      : 'border border-slate-500 text-slate-400 hover:border-teal-300'
-                }`}
-              >
-                {feita && !ativa ? '✓' : i + 1}
-              </button>
-              {i < SECOES_FICHA.length - 1 && <span className={`h-0.5 flex-1 rounded ${feita ? 'bg-emerald-500/60' : 'bg-white/10'}`} />}
-            </li>
-          )
-        })}
-        <li className="ml-1 flex shrink-0 gap-1">
-          <button
-            type="button"
-            onClick={() => onSecao(secaoVizinha(secaoAtiva, -1))}
-            disabled={indice <= 0}
-            title={t('secaoAnterior')}
-            aria-label={t('secaoAnterior')}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-xs text-slate-300 hover:border-brand hover:text-brand-300 disabled:opacity-30"
-          >
-            ▲
-          </button>
-          <button
-            type="button"
-            onClick={() => onSecao(secaoVizinha(secaoAtiva, 1))}
-            disabled={indice >= SECOES_FICHA.length - 1}
-            title={t('proximaSecao')}
-            aria-label={t('proximaSecao')}
-            className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border bg-base-surface2 text-xs text-slate-300 hover:border-brand hover:text-brand-300 disabled:opacity-30"
-          >
-            ▼
-          </button>
-        </li>
-      </ol>
-
-      <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
-        <Secao {...p('dados')}>
-          <PainelDadosSobrepostos form={form} onChange={onChange} statusFicha={statusFicha} palavrasChave={secaoAtiva === 'dados'} />
+      <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 pr-1 pt-1">
+        <Secao {...p('dados')} simples>
+          <PainelDadosSobrepostos
+            form={form}
+            onChange={onChange}
+            etapa={secaoAtiva === 'dados' ? etapaAtiva : undefined}
+            onEtapa={ativarPorClique}
+          />
         </Secao>
 
         {/* Achados = marcacoes da imagem (a imagem de marcacao abre sozinha
-            quando esta secao fica em destaque - ver curadoria/page.tsx) */}
+            quando este item fica em destaque - ver curadoria/page.tsx) */}
         <Secao
           {...p('achados')}
           extra={
@@ -356,11 +317,11 @@ export default function ColunaFichaCuradoria({
             </button>
           }
         >
-          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={secaoAtiva === 'achados'} />
+          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>
-          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={secaoAtiva === 'erro_tecnico'} />
+          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} />
         </Secao>
 
         <Secao {...p('descricao')}>
@@ -387,7 +348,7 @@ export default function ColunaFichaCuradoria({
           </p>
         )}
         {rascunhoSalvo && <p className="text-sm text-emerald-400">{tFicha('rascunhoSalvo')}</p>}
-        {/* espaco no fim: a ultima secao tambem consegue rolar ate o topo */}
+        {/* espaco no fim: o ultimo item tambem consegue rolar ate o topo */}
         <div className="h-[40vh]" aria-hidden="true" />
       </div>
     </div>

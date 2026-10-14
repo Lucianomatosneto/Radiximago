@@ -56,3 +56,66 @@ export function secaoVizinha(atual: SecaoFicha, passo: 1 | -1): SecaoFicha {
   const j = Math.min(SECOES_FICHA.length - 1, Math.max(0, i + passo))
   return SECOES_FICHA[j]
 }
+
+// ETAPAS DO HOLOFOTE (um item da ficha por vez).
+//
+// Dentro das secoes, o holofote anda ITEM POR ITEM: a "Dados da imagem" se
+// divide em 6 itens (anonimizacao, tipo, idade, genero, dentes, qualidade)
+// e cada outra secao e um item so. O holofote:
+// - comeca SEMPRE em "Anonimização validada" a cada imagem nova;
+// - SO muda quando o curador aperta Tab ou ↓ (proximo) / Shift+Tab ou ↑
+//   (anterior) - falar ou clicar num valor NAO muda o item sozinho;
+// - diz a voz onde a fala entra: com "Idade" em destaque, falar "35"
+//   preenche a idade (ver `etapa` em vozCuradoria.ts).
+// Os demais itens ficam quase apagados, para o curador nao se confundir.
+export type EtapaFicha =
+  | 'anonimizacao'
+  | 'tipo'
+  | 'idade'
+  | 'genero'
+  | 'dentes'
+  | 'qualidade'
+  | 'achados'
+  | 'erro_tecnico'
+  | 'descricao'
+  | 'observacoes'
+
+export const ETAPAS_FICHA: EtapaFicha[] = [
+  'anonimizacao',
+  'tipo',
+  'idade',
+  'genero',
+  'dentes',
+  'qualidade',
+  'achados',
+  'erro_tecnico',
+  'descricao',
+  'observacoes',
+]
+
+export const ETAPA_INICIAL: EtapaFicha = 'anonimizacao'
+
+/** Secao da coluna onde cada item fica. */
+export const SECAO_DA_ETAPA: Record<EtapaFicha, SecaoFicha> = {
+  anonimizacao: 'dados',
+  tipo: 'dados',
+  idade: 'dados',
+  genero: 'dados',
+  dentes: 'dados',
+  qualidade: 'dados',
+  achados: 'achados',
+  erro_tecnico: 'erro_tecnico',
+  descricao: 'descricao',
+  observacoes: 'observacoes',
+}
+
+/** Primeiro item de uma secao (ex.: "ir para a secao" da conferencia). */
+export function primeiraEtapa(secao: SecaoFicha): EtapaFicha {
+  return ETAPAS_FICHA.find((e) => SECAO_DA_ETAPA[e] === secao) ?? ETAPA_INICIAL
+}
+
+export function etapaVizinha(atual: EtapaFicha, passo: 1 | -1): EtapaFicha {
+  const i = ETAPAS_FICHA.indexOf(atual)
+  const j = Math.min(ETAPAS_FICHA.length - 1, Math.max(0, i + passo))
+  return ETAPAS_FICHA[j]
+}

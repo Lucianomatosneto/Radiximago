@@ -1,14 +1,16 @@
 'use client'
 
 import { useTranslations } from 'next-intl'
-import StatusBadge from '../StatusBadge'
+import type { ReactNode } from 'react'
 import type { FormularioFicha } from './FichaCuradoriaForm'
+import type { EtapaFicha } from '../../lib/secoesCuradoria'
 
-// DADOS DA IMAGEM (secao 1 da ficha). Cada campo mostra a sua PALAVRA-CHAVE
-// de voz (🎤) quando a secao esta em destaque - o curador fala a palavra e
-// o valor, e o sistema sabe exatamente qual campo preencher:
+// DADOS DA IMAGEM (secao 1 da ficha), um ITEM por vez no holofote: so o
+// item em destaque (`etapa`) aparece aceso, com a sua PALAVRA-CHAVE de voz
+// (🎤); os outros ficam quase apagados. Com o item em destaque basta falar
+// o valor ("35" na Idade); a palavra-guia continua valendo em qualquer item:
 //   anonimização: "ok" / "anonimizada"   tipo: "pan", "in", "pe", "o", "tomografia"
-//   idade: "idade 35"                     sexo: "m" / "f" (ou masculino/feminino)
+//   idade: "idade 35"                     gênero: "m" / "f" (ou masculino/feminino)
 //   dentes: "dentes 36 e 37"              qualidade: "qualidade boa"
 // Dentes sem a etapa de quadrante: odontograma unico (notacao FDI), um
 // clique liga/desliga o dente.
@@ -35,25 +37,63 @@ export function PalavraChave({ texto, visivel }: { texto: string; visivel: boole
   )
 }
 
+/** Um item da secao "Dados": aceso quando esta no holofote, quase apagado
+ * quando nao. Clicar nele leva o holofote para ele. */
+function Item({
+  etapa,
+  ativa,
+  apagado,
+  onAtivar,
+  children,
+}: {
+  etapa: EtapaFicha
+  ativa: boolean
+  /** outro item da secao esta no holofote */
+  apagado: boolean
+  onAtivar?: (etapa: EtapaFicha) => void
+  children: ReactNode
+}) {
+  return (
+    <div
+      data-etapa={etapa}
+      aria-current={ativa ? 'step' : undefined}
+      onMouseDown={() => !ativa && onAtivar?.(etapa)}
+      className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
+        ativa
+          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)]'
+          : apagado
+            ? 'opacity-[.18] saturate-0 hover:opacity-50'
+            : ''
+      }`}
+    >
+      {/* item apagado: o primeiro clique so acende (nao muda o valor) */}
+      <div className={ativa || !onAtivar ? '' : 'pointer-events-none'}>{children}</div>
+    </div>
+  )
+}
+
 export default function PainelDadosSobrepostos({
   form,
   onChange,
-  statusFicha,
-  palavrasChave = false,
+  etapa,
+  onEtapa,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
-  statusFicha: string
-  /** mostra as palavras-chave de voz (secao em destaque) */
-  palavrasChave?: boolean
+  /** item no holofote (undefined = todos acesos, sem palavras-chave) */
+  etapa?: EtapaFicha
+  /** clique num item leva o holofote para ele */
+  onEtapa?: (etapa: EtapaFicha) => void
   // compatibilidade com usos antigos (ignorados)
+  statusFicha?: string
+  palavrasChave?: boolean
   embutido?: boolean
   marcacaoAtiva?: boolean
   onAlternarMarcacao?: () => void
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
-  const pk = palavrasChave
+  const pk = (e: EtapaFicha) => etapa === e
 
   function alternarDente(d: number) {
     const dentes = form.dentes.includes(d) ? form.dentes.filter((x) => x !== d) : [...form.dentes, d].sort((a, b) => a - b)
@@ -81,82 +121,79 @@ export default function PainelDadosSobrepostos({
     </div>
   )
 
+  const item = (e: EtapaFicha, filhos: ReactNode) => (
+    <Item etapa={e} ativa={!!etapa && etapa === e} apagado={!!etapa && etapa !== e} onAtivar={onEtapa}>
+      {filhos}
+    </Item>
+  )
+
   return (
-    <div className="flex w-full flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-xs font-medium text-slate-400">{t('status')}</span>
-        <StatusBadge status={statusFicha} />
-      </div>
+    <div className="flex w-full flex-col gap-1.5">
+      {item(
+        'anonimizacao',
+        <label className="flex items-center gap-2 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            checked={form.anonimizacao_validada}
+            onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
+            className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
+          />
+          {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
+          <PalavraChave texto={t('chaveAnonimizacao')} visivel={pk('anonimizacao')} />
+        </label>
+      )}
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
-        <input
-          type="checkbox"
-          checked={form.anonimizacao_validada}
-          onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
-          className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
-        />
-        {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
-        <PalavraChave texto={t('chaveAnonimizacao')} visivel={pk} />
-      </label>
+      {item(
+        'tipo',
+        <>
+          <p className={`${campoLabel} mb-1.5`}>
+            {t('tipoRadiografia')} <span className="text-status-danger">*</span>
+            <PalavraChave texto={t('chaveTipo')} visivel={pk('tipo')} />
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {OPCOES_TIPO_RADIOGRAFIA.map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => onChange({ ...form, tipo_radiografia: valor })}
+                className={`${botaoOpcao} ${
+                  form.tipo_radiografia === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+                }`}
+              >
+                {tOpcoes(`tipoRadiografia.${valor}`)}
+                {pk('tipo') && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{ATALHO_TIPO[valor]}”</span>}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-      <div className="border-t border-base-border pt-2.5">
-        <p className={`${campoLabel} mb-1.5`}>
-          {t('tipoRadiografia')} <span className="text-status-danger">*</span>
-          <PalavraChave texto={t('chaveTipo')} visivel={pk} />
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {OPCOES_TIPO_RADIOGRAFIA.map((valor) => (
-            <button
-              key={valor}
-              type="button"
-              onClick={() => onChange({ ...form, tipo_radiografia: valor })}
-              className={`${botaoOpcao} ${
-                form.tipo_radiografia === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
-              }`}
-            >
-              {tOpcoes(`tipoRadiografia.${valor}`)}
-              {pk && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{ATALHO_TIPO[valor]}”</span>}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-3 border-t border-base-border pt-2.5 sm:grid-cols-2">
-        <div>
+      {item(
+        'idade',
+        <>
           <p className={`${campoLabel} mb-1.5`}>
             {t('idade')}
-            <PalavraChave texto={t('chaveIdade')} visivel={pk} />
+            <PalavraChave texto={t('chaveIdade')} visivel={pk('idade')} />
           </p>
-          <div className="flex items-center gap-1.5">
-            <input
-              type="number"
-              min={0}
-              max={120}
-              value={form.idade_min}
-              onChange={(e) => {
-                const v = e.target.value
-                // um valor so = idade exata (min = max); "até" vira faixa
-                onChange({ ...form, idade_min: v, idade_max: form.idade_max === '' || form.idade_max === form.idade_min ? v : form.idade_max })
-              }}
-              placeholder={t('anos')}
-              className={campoInput}
-            />
-            <span className="text-xs text-slate-500">{t('ate')}</span>
-            <input
-              type="number"
-              min={0}
-              max={120}
-              value={form.idade_max === form.idade_min ? '' : form.idade_max}
-              onChange={(e) => onChange({ ...form, idade_max: e.target.value || form.idade_min })}
-              placeholder={t('opcional')}
-              className={campoInput}
-            />
-          </div>
-        </div>
-        <div>
+          {/* caixa unica: a idade vale como idade exata (min = max) */}
+          <input
+            type="number"
+            min={0}
+            max={120}
+            value={form.idade_min}
+            onChange={(e) => onChange({ ...form, idade_min: e.target.value, idade_max: e.target.value })}
+            aria-label={t('idade')}
+            className={`${campoInput} max-w-[8rem]`}
+          />
+        </>
+      )}
+
+      {item(
+        'genero',
+        <>
           <p className={`${campoLabel} mb-1.5`}>
             {t('sexo')} <span className="text-status-danger">*</span>
-            <PalavraChave texto={t('chaveSexo')} visivel={pk} />
+            <PalavraChave texto={t('chaveSexo')} visivel={pk('genero')} />
           </p>
           <div className="flex flex-wrap gap-1.5">
             {OPCOES_GENERO.map((valor) => (
@@ -167,46 +204,52 @@ export default function PainelDadosSobrepostos({
                 className={`${botaoOpcao} ${form.genero === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'}`}
               >
                 {tOpcoes(`genero.${valor}`)}
-                {pk && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{valor === 'masculino' ? 'm' : 'f'}”</span>}
+                {pk('genero') && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{valor === 'masculino' ? 'm' : 'f'}”</span>}
               </button>
             ))}
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
-      <div className="border-t border-base-border pt-2.5">
-        <p className={`${campoLabel} mb-1.5`}>
-          {t('dentes')}
-          <PalavraChave texto={t('chaveDentes')} visivel={pk} />
-          {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
-        </p>
-        <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
-          {linhaDentes(ARCADA_SUPERIOR)}
-          <div className="border-t border-white/10" />
-          {linhaDentes(ARCADA_INFERIOR)}
-        </div>
-      </div>
+      {item(
+        'dentes',
+        <>
+          <p className={`${campoLabel} mb-1.5`}>
+            {t('dentes')}
+            <PalavraChave texto={t('chaveDentes')} visivel={pk('dentes')} />
+            {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
+          </p>
+          <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
+            {linhaDentes(ARCADA_SUPERIOR)}
+            <div className="border-t border-white/10" />
+            {linhaDentes(ARCADA_INFERIOR)}
+          </div>
+        </>
+      )}
 
-      <div className="border-t border-base-border pt-2.5">
-        <p className={`${campoLabel} mb-1.5`}>
-          {t('qualidadeTecnica')}
-          <PalavraChave texto={t('chaveQualidade')} visivel={pk} />
-        </p>
-        <div className="grid grid-cols-4 gap-1.5">
-          {OPCOES_QUALIDADE_TECNICA.map((valor) => (
-            <button
-              key={valor}
-              type="button"
-              onClick={() => onChange({ ...form, qualidade_tecnica: valor })}
-              className={`${botaoOpcao} px-1 ${
-                form.qualidade_tecnica === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
-              }`}
-            >
-              {tOpcoes(`qualidadeTecnica.${valor}`)}
-            </button>
-          ))}
-        </div>
-      </div>
+      {item(
+        'qualidade',
+        <>
+          <p className={`${campoLabel} mb-1.5`}>
+            {t('qualidadeTecnica')}
+            <PalavraChave texto={t('chaveQualidade')} visivel={pk('qualidade')} />
+          </p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {OPCOES_QUALIDADE_TECNICA.map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                onClick={() => onChange({ ...form, qualidade_tecnica: valor })}
+                className={`${botaoOpcao} px-1 ${
+                  form.qualidade_tecnica === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+                }`}
+              >
+                {tOpcoes(`qualidadeTecnica.${valor}`)}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   )
 }

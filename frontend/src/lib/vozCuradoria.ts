@@ -29,7 +29,7 @@
 
 import type { Marcacao } from './marcacoes'
 import { CATEGORIAS_ALTERACOES } from './alteracoesObservadas'
-import { SECOES_TEXTO, type SecaoFicha } from './secoesCuradoria'
+import { SECAO_DA_ETAPA, SECOES_TEXTO, type EtapaFicha, type SecaoFicha } from './secoesCuradoria'
 import { adicionarAchado, comAchados, type AchadoFicha } from './achadosFicha'
 import { errosParaTipo, rotuloErro } from './errosTecnicos'
 
@@ -109,6 +109,9 @@ export type ComandoVoz = 'desfazer' | 'salvar' | 'proxima_secao' | 'secao_anteri
 export interface OpcoesInterpretar {
   /** secao em destaque na coluna da ficha (destino da fala sem palavra-guia) */
   secaoAtiva?: SecaoFicha
+  /** item em destaque (holofote): a fala sem palavra-guia vai para ele -
+   * com "Idade" em destaque, "35" vira "idade 35" */
+  etapa?: EtapaFicha
   /** frases que o curador ensinou a valer como uma alteracao da lista */
   frasesAprendidas?: { frase: string; alteracao: string }[]
   /** macros (frases prontas) da equipe */
@@ -475,6 +478,16 @@ function limparLivre(texto: string): string {
   return texto.replace(/^[\s:,.;-]+|[\s:,;-]+$/g, '').trim()
 }
 
+const CONFIRMA_ANONIMIZACAO = ['ok', 'sim', 'anonimizada', 'anonimizado', 'validada', 'validado', 'confirmada', 'confirmado', 'conferida', 'conferido']
+/** palavra-guia acrescentada a fala quando o item esta em destaque */
+const GUIA_DA_ETAPA: Partial<Record<EtapaFicha, string>> = {
+  tipo: 'tipo',
+  idade: 'idade',
+  genero: 'sexo',
+  dentes: 'dentes',
+  qualidade: 'qualidade',
+}
+
 export function interpretar(
   textoFalado: string,
   fichaInicial: FichaVoz,
@@ -496,10 +509,19 @@ export function interpretar(
 
   // "sem alterações" / "imagem normal" (a fala inteira): imagem normal
   const falaInteira = tokens.filter((t) => !t.pontuacao).map((t) => t.n).join(' ')
+  // holofote num item: a secao dele vale como secao ativa
+  const etapa = opcoes.etapa
+  if (etapa && !opcoes.secaoAtiva) opcoes = { ...opcoes, secaoAtiva: SECAO_DA_ETAPA[etapa] }
+  // "Anonimização" em destaque: "ok" / "anonimizada" / "sim" confirma
+  if (etapa === 'anonimizacao' && CONFIRMA_ANONIMIZACAO.includes(falaInteira)) {
+    ficha = { ...ficha, anonimizacao_validada: true }
+    alteracoes.push({ campo: 'anonimizacao', descricao: 'Anonimização validada' })
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
   // atalhos de uma palavra (fala inteira), validos com "Dados" em destaque
   // ou sem secao: "ok" (anonimizacao), "m"/"f" (sexo), "pan"/"in"/"pe"/"o"
   if (!opcoes.secaoAtiva || opcoes.secaoAtiva === 'dados') {
-    if (['ok', 'anonimizada', 'anonimizado'].includes(falaInteira)) {
+    if (['ok', 'anonimizada', 'anonimizado'].includes(falaInteira) && (!etapa || etapa === 'anonimizacao')) {
       ficha = { ...ficha, anonimizacao_validada: true }
       alteracoes.push({ campo: 'anonimizacao', descricao: 'Anonimização validada' })
       return { ficha, alteracoes, naoReconhecidos, comandos }
@@ -516,6 +538,13 @@ export function interpretar(
       alteracoes.push({ campo: 'tipo_radiografia', descricao: `Tipo: ${tc.rotulo}` })
       return { ficha, alteracoes, naoReconhecidos, comandos }
     }
+  }
+  // item de "Dados" em destaque: a fala sem palavra-guia ganha a palavra-guia
+  // do item ("35" -> "idade 35", "36 e 37" -> "dentes 36 e 37")
+  const guiaEtapa = etapa ? GUIA_DA_ETAPA[etapa] : undefined
+  if (guiaEtapa && tokens.length && !casarGuia(tokens, 0)) {
+    texto = `${guiaEtapa} ${texto}`
+    tokens = tokenizar(texto)
   }
   // "sem erro técnico" (fala inteira) = nada a registrar no erro tecnico
   if (['sem erro tecnico', 'sem erros tecnicos', 'nenhum erro tecnico', 'nenhum erro', 'sem erro'].includes(falaInteira)) {
@@ -1177,7 +1206,7 @@ export function interpretar(
     }
 
     // "Dados" em destaque: "ok" confirma a anonimizacao
-    if (opcoes.secaoAtiva === 'dados' && tok.n === 'ok') {
+    if (opcoes.secaoAtiva === 'dados' && (!etapa || etapa === 'anonimizacao') && tok.n === 'ok') {
       fecharPendente()
       ficha = { ...ficha, anonimizacao_validada: true }
       anotar('anonimizacao', 'Anonimização validada')

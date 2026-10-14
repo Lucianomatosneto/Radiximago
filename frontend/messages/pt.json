@@ -632,7 +632,7 @@
       "faixaEtaria": "Faixa etária",
       "idadeMin": "mín.",
       "idadeMax": "máx.",
-      "sexo": "Sexo",
+      "sexo": "Gênero",
       "dentes": "Dentes (notação FDI)",
       "qualidadeTecnica": "Qualidade técnica",
       "selecione": "Selecione",
@@ -644,11 +644,11 @@
       "ate": "até",
       "opcional": "(opcional)",
       "chaveAnonimizacao": "ok / anonimizada",
-      "chaveTipo": "tipo",
-      "chaveIdade": "idade 35",
-      "chaveSexo": "sexo m / f",
-      "chaveDentes": "dentes 36 e 37",
-      "chaveQualidade": "qualidade boa"
+      "chaveTipo": "pan · in · pe · o · tomo",
+      "chaveIdade": "35",
+      "chaveSexo": "m / f",
+      "chaveDentes": "36 e 37",
+      "chaveQualidade": "boa"
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Dente não identificado",
@@ -822,7 +822,7 @@
       "titulo": "Ficha de curadoria",
       "secaoAnterior": "Seção anterior (↑)",
       "proximaSecao": "Próxima seção (↓)",
-      "ajudaTeclas": "↑ ↓ trocam a seção em destaque",
+      "ajudaTeclas": "Fale o valor do item aceso e aperte Tab (ou ↓) para ir ao próximo; Shift+Tab (ou ↑) volta.",
       "semMarcacoes": "Nenhuma marcação nesta imagem.",
       "abrirMarcacao": "Abrir marcação",
       "fecharMarcacao": "Fechar marcação",
@@ -836,7 +836,9 @@
       "roteiro": "Roteiro da curadoria",
       "nadaRegistrar": "Nada a registrar nesta seção",
       "nadaRegistrado": "Revisada — nada a registrar",
-      "irProxima": "Próxima: {secao}"
+      "irProxima": "Próxima: {secao}",
+      "proximoItem": "Próximo: {item}",
+      "lembreteTeclas": "Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -1007,6 +1009,18 @@
       "semTipo": "Escolha o tipo de exame em Dados da imagem para ver só os erros possíveis.",
       "chave": "fale o nome do erro • “sem erro técnico”",
       "foraDoTipo": "Marcado, mas não vale para este tipo de exame:"
+    },
+    "etapas": {
+      "anonimizacao": "Anonimização validada",
+      "tipo": "Tipo de radiografia",
+      "idade": "Idade",
+      "genero": "Gênero",
+      "dentes": "Dentes",
+      "qualidade": "Qualidade técnica",
+      "achados": "Achados",
+      "erro_tecnico": "Erro técnico",
+      "descricao": "Descrição didática",
+      "observacoes": "Observações internas"
     }
   },
   "SegundaOpiniaoPage": {

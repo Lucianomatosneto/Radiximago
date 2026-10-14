@@ -123,4 +123,18 @@ caso('sem erro tecnico vira nada a registrar', 'sem erro técnico', r => r.coman
 caso('ok no comeco da frase com dados ativa', 'ok, pan, sexo f, idade 42', r => r.ficha.anonimizacao_validada === true && r.ficha.tipo_radiografia === 'panoramica' && r.ficha.genero === 'feminino', 'dados')
 caso('numero no comeco de cada frase vira marcacao', 'um lesão periapical no dente 36. dois cárie em dentina', r =>
   r.naoReconhecidos.length === 0 && (r.ficha.achados ?? []).length === 2 && (r.ficha.achados ?? [])[1].marcacoes.join() === 'b', 'achados')
+// holofote item por item (etapa): a fala sem palavra-guia vai para o item
+caso('etapa anonimizacao: sim', 'sim', r => r.ficha.anonimizacao_validada === true, undefined, { etapa: 'anonimizacao' })
+caso('etapa anonimizacao: anonimizada', 'anonimizada', r => r.ficha.anonimizacao_validada === true, undefined, { etapa: 'anonimizacao' })
+caso('etapa tipo: panorâmica', 'panorâmica', r => r.ficha.tipo_radiografia === 'panoramica', undefined, { etapa: 'tipo' })
+caso('etapa tipo: in', 'in', r => r.ficha.tipo_radiografia === 'interproximal', undefined, { etapa: 'tipo' })
+caso('etapa idade: so o numero', '35', r => r.ficha.idade_min === '35' && r.ficha.idade_max === '35', undefined, { etapa: 'idade' })
+caso('etapa idade: 35 anos', '35 anos', r => r.ficha.idade_min === '35', undefined, { etapa: 'idade' })
+caso('etapa genero: feminino', 'feminino', r => r.ficha.genero === 'feminino', undefined, { etapa: 'genero' })
+caso('etapa genero: m', 'm', r => r.ficha.genero === 'masculino', undefined, { etapa: 'genero' })
+caso('etapa dentes: so os numeros', '36 e 37', r => r.ficha.dentes.join() === '36,37', undefined, { etapa: 'dentes' })
+caso('etapa qualidade: boa', 'boa', r => r.ficha.qualidade_tecnica === 'boa', undefined, { etapa: 'qualidade' })
+caso('etapa qualidade: ok nao anonimiza', 'ok', r => r.ficha.anonimizacao_validada !== true, undefined, { etapa: 'qualidade' })
+caso('etapa idade: palavra-guia de outro campo continua valendo', 'sexo f', r => r.ficha.genero === 'feminino' && r.ficha.idade_min === '', undefined, { etapa: 'idade' })
+caso('etapa descricao: texto livre', 'imagem para estudo', r => r.ficha.descricao_didatica === 'Imagem para estudo', undefined, { etapa: 'descricao' })
 process.exit(falhas ? 1 : 0)

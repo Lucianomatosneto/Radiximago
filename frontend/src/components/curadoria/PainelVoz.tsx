@@ -12,7 +12,7 @@ import {
   type Sugestao,
   type TermoVoz,
 } from '../../lib/vozCuradoria'
-import { SECAO_DO_CAMPO, secaoVizinha, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { SECAO_DA_ETAPA, etapaVizinha, type EtapaFicha } from '../../lib/secoesCuradoria'
 
 // CURADORIA POR VOZ (topo da coluna da ficha; flutua no canto so no modo
 // "ampliar imagem", quando a coluna fica escondida).
@@ -49,8 +49,8 @@ export default function PainelVoz({
   onAplicar,
   onSalvar,
   embutido = false,
-  secaoAtiva,
-  onSecao,
+  etapaAtiva,
+  onEtapa,
   onDestacar,
   macros = [],
   frasesAprendidas = [],
@@ -65,10 +65,11 @@ export default function PainelVoz({
   onSalvar: () => void
   /** dentro da coluna da ficha (sem posicao fixa na tela) */
   embutido?: boolean
-  /** secao em destaque na coluna: destino da fala sem palavra-guia */
-  secaoAtiva?: SecaoFicha
-  /** pede para a coluna destacar/rolar ate uma secao */
-  onSecao?: (secao: SecaoFicha) => void
+  /** item no holofote: destino da fala sem palavra-guia. O holofote NAO
+   * muda sozinho depois de preencher - so com Tab/↓ ou "próximo campo". */
+  etapaAtiva?: EtapaFicha
+  /** "próximo campo" / "campo anterior" falados */
+  onEtapa?: (etapa: EtapaFicha) => void
   /** faz piscar as secoes que acabaram de receber dados */
   onDestacar?: (campos: CampoVoz[]) => void
   macros?: MacroVoz[]
@@ -81,7 +82,7 @@ export default function PainelVoz({
   onNadaRegistrar?: () => void
 }) {
   const t = useTranslations('Voz')
-  const tSecoes = useTranslations('Curadoria.secoes')
+  const tEtapas = useTranslations('Curadoria.etapas')
   const [aberto, setAberto] = useState(false)
   const [disponivel, setDisponivel] = useState<boolean | null>(null)
   const [gravando, setGravando] = useState(false)
@@ -99,8 +100,8 @@ export default function PainelVoz({
   const formRef = useRef(form)
   formRef.current = form
   // valores atuais para o processamento que termina depois da gravacao
-  const opcoesRef = useRef({ secaoAtiva, macros, frasesAprendidas, vocabulario })
-  opcoesRef.current = { secaoAtiva, macros, frasesAprendidas, vocabulario }
+  const opcoesRef = useRef({ etapaAtiva, macros, frasesAprendidas, vocabulario })
+  opcoesRef.current = { etapaAtiva, macros, frasesAprendidas, vocabulario }
   const gravadorRef = useRef<MediaRecorder | null>(null)
   const pedacosRef = useRef<Blob[]>([])
   const relogioRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -165,13 +166,11 @@ export default function PainelVoz({
     setAviso('')
     const o = opcoesRef.current
     const r = interpretar(texto, formRef.current, o.vocabulario, {
-      secaoAtiva: o.secaoAtiva,
+      secaoAtiva: o.etapaAtiva ? SECAO_DA_ETAPA[o.etapaAtiva] : undefined,
+      etapa: o.etapaAtiva,
       macros: o.macros,
       frasesAprendidas: o.frasesAprendidas,
     })
-    // a coluna rola ate a secao que recebeu o ultimo dado
-    const ultima = r.alteracoes.length ? SECAO_DO_CAMPO[r.alteracoes[r.alteracoes.length - 1].campo] : undefined
-    if (ultima && onSecao) onSecao(ultima)
     if (r.alteracoes.length) {
       aplicar({ ...formRef.current, ...r.ficha }, r.alteracoes.map((a) => a.campo))
       setPreenchidos((p) => [...r.alteracoes.map((a) => ({ ...a, id: ++contadorRef.current })).reverse(), ...p].slice(0, 30))
@@ -186,8 +185,8 @@ export default function PainelVoz({
       if (c === 'salvar') onSalvar()
       if (c === 'desfazer') desfazer()
       if (c === 'nada_a_registrar') onNadaRegistrar?.()
-      if ((c === 'proxima_secao' || c === 'secao_anterior') && onSecao && o.secaoAtiva) {
-        onSecao(secaoVizinha(o.secaoAtiva, c === 'proxima_secao' ? 1 : -1))
+      if ((c === 'proxima_secao' || c === 'secao_anterior') && onEtapa && o.etapaAtiva) {
+        onEtapa(etapaVizinha(o.etapaAtiva, c === 'proxima_secao' ? 1 : -1))
       }
     }
     if (!r.alteracoes.length && !r.naoReconhecidos.length && !r.comandos.length) setErro(t('nadaEntendido'))
@@ -298,7 +297,6 @@ export default function PainelVoz({
     const nomes = { descricao_didatica: t('campoDescricao'), achados_detalhe: t('campoAchados'), observacoes_internas: t('campoObservacoes') }
     registrar(campo, `${nomes[campo]}: ${valor}`)
     setDuvidas((n) => n.filter((x) => x.id !== item.id))
-    onSecao?.(SECAO_DO_CAMPO[campo])
   }
 
   async function aceitarSugestao(item: Duvida, sug: Sugestao) {
@@ -306,7 +304,6 @@ export default function PainelVoz({
     aplicar({ ...formRef.current, ...sug.aplicar(formRef.current) }, [campo])
     registrar(campo, sug.rotulo)
     setDuvidas((n) => n.filter((x) => x.id !== item.id))
-    if (SECAO_DO_CAMPO[campo]) onSecao?.(SECAO_DO_CAMPO[campo])
     // "Lembrar": ensina a frase ouvida para as proximas vezes
     if (item.lembrar && ensinavel(sug) && sug.destino) {
       try {
@@ -352,9 +349,9 @@ export default function PainelVoz({
         <p className="truncate text-xs font-semibold text-ink">
           {gravando ? `${t('gravando')} ${minutos}` : transcrevendo ? t('transcrevendo') : t('titulo')}
         </p>
-        {secaoAtiva && (
+        {etapaAtiva && (
           <p className="text-[11px] text-slate-400">
-            {t('destino')} <span className="font-semibold text-teal-200">{tSecoes(secaoAtiva)}</span>
+            {t('destino')} <span className="font-semibold text-teal-200">{tEtapas(etapaAtiva)}</span>
           </p>
         )}
         {erro ? (

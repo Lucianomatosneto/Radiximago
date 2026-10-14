@@ -10,11 +10,11 @@ import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/Paine
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
 import ColunaFichaCuradoria from '../../components/curadoria/ColunaFichaCuradoria'
 import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
-import { SECAO_DO_CAMPO, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECAO_DO_CAMPO, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
 import { achadosDaApi, achadosParaApi, comAchados, marcacoesSincronizadas } from '../../lib/achadosFicha'
-import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo } from '../../lib/progressoFicha'
+import { SECOES_OPCIONAIS, estadoSecoes, temConteudo } from '../../lib/progressoFicha'
 import { SECOES_FICHA } from '../../lib/secoesCuradoria'
 import GuiaLaudo, { guiaJaVisto } from '../../components/curadoria/GuiaLaudo'
 import MenuMacros from '../../components/curadoria/MenuMacros'
@@ -176,12 +176,14 @@ export default function CuradoriaPage() {
   // mesmo clique - ver comentario dentro de alternarTelaCheia.
   const telaCheiaEmAndamentoRef = useRef(false)
   const [modoAjustado, setModoAjustado] = useState(false)
-  // LAYOUT EM COLUNA: imagem a esquerda (mesmo tamanho de antes) e, a
+  // LAYOUT EM COLUNA: imagem e miniaturas na metade esquerda e, na metade
   // direita, TODAS as secoes da ficha numa coluna com rolagem
-  // (ColunaFichaCuradoria.tsx). `secaoAtiva` e a secao em destaque - setas
-  // ↑/↓, botoes ▲/▼ e a curadoria por voz usam ela. Cada imagem nova
-  // comeca de novo em "Dados da imagem".
-  const [secaoAtiva, setSecaoAtiva] = useState<SecaoFicha>('dados')
+  // (ColunaFichaCuradoria.tsx). `etapaAtiva` e o ITEM no holofote: so muda
+  // com Tab/↓ (proximo) e Shift+Tab/↑ (anterior), e a voz sem palavra-guia
+  // preenche ele. Cada imagem nova comeca em "Anonimização validada".
+  const [etapaAtiva, setEtapaAtiva] = useState<EtapaFicha>(ETAPA_INICIAL)
+  const secaoAtiva: SecaoFicha = SECAO_DA_ETAPA[etapaAtiva]
+  const irParaSecao = useCallback((secao: SecaoFicha) => setEtapaAtiva(primeiraEtapa(secao)), [])
   // RECURSOS DE LAUDO PROFISSIONAL (ver PainelVoz, MenuMacros e
   // lib/conferenciaFicha.ts): macros da equipe, frases ensinadas a voz,
   // brilho nas secoes recem-preenchidas, duvidas pendentes da voz e a
@@ -635,7 +637,7 @@ export default function CuradoriaPage() {
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
-    setSecaoAtiva('dados')
+    setEtapaAtiva(ETAPA_INICIAL)
     setMarcacaoAberta(false)
     setRevisadas([])
     if (ficha.status === 'segunda_opiniao') {
@@ -763,7 +765,7 @@ export default function CuradoriaPage() {
     setModoAjustado(false)
     setIndiceAtual(null)
     setSegundaOpiniaoReview(null)
-    setSecaoAtiva('dados')
+    setEtapaAtiva(ETAPA_INICIAL)
     setMarcacaoAberta(false)
     setRevisadas([])
     if (autenticado) carregarFila()
@@ -963,27 +965,18 @@ export default function CuradoriaPage() {
     if (temFicha && !guiaJaVisto()) setGuiaAberto(true)
   }, [temFicha])
 
-  // "Nada a registrar" (botao ou voz): marca/desmarca a secao opcional e,
-  // ao marcar, leva a proxima secao pendente
+  // "Nada a registrar" (botao ou voz): marca/desmarca a secao opcional.
+  // O holofote NAO anda sozinho - o curador passa adiante com Tab/↓.
   function nadaARegistrar(secao: SecaoFicha) {
     if (!SECOES_OPCIONAIS.includes(secao) || temConteudo(secao, form)) return
-    const marcando = !revisadas.includes(secao)
-    const novas = marcando ? [...revisadas, secao] : revisadas.filter((s) => s !== secao)
-    setRevisadas(novas)
-    if (marcando) {
-      const proxima = proximaPendente(estadoSecoes(form, novas), secao)
-      if (proxima) setSecaoAtiva(proxima)
-    }
+    setRevisadas(revisadas.includes(secao) ? revisadas.filter((s) => s !== secao) : [...revisadas, secao])
   }
 
-  // "Abrir marcação": a imagem para marcacao abre GRANDE no lugar do
-  // visualizador (que vira miniatura); fechar devolve o visualizador.
+  // "Abrir marcação": a imagem para marcacao ocupa o quadro do
+  // visualizador; fechar devolve o visualizador.
   function alternarMarcacao() {
     setMarcacaoAberta((v) => !v)
-    setSecaoAtiva('achados')
-  }
-  function fecharMarcacao() {
-    setMarcacaoAberta(false)
+    setEtapaAtiva('achados')
   }
 
   // voz: aplica o que foi entendido e salva como rascunho (origem: voz)
@@ -998,8 +991,6 @@ export default function CuradoriaPage() {
     const r = aplicarMacro(form, macro)
     setForm(r.ficha)
     destacarCampos(r.alteracoes.map((a) => a.campo))
-    const ultima = r.alteracoes.length ? SECAO_DO_CAMPO[r.alteracoes[r.alteracoes.length - 1].campo] : undefined
-    if (ultima) setSecaoAtiva(ultima)
   }
 
   // "Salvar esta ficha como macro" (texto, alteracoes, tipo e qualidade)
@@ -1212,82 +1203,69 @@ export default function CuradoriaPage() {
             e a pagina inteira fica em tela cheia. */}
         <div
           ref={visualizadorRef}
-          className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
+          className="flex min-h-0 min-w-0 flex-1 flex-col"
         >
-          {/* Barra superior + fila horizontal agrupadas SEM gap entre elas
-              (flex-col padrao, sem "gap-*") - pedido explicito pra que o
-              topo das miniaturas da fila encoste na borda inferior da
-              barra ("Imagem X de Y"). O gap-3 do container pai (acima)
-              continua valendo em relacao aos outros irmaos (linha de
-              imagens, ficha), so esse par aqui fica colado. */}
-          <div className="flex shrink-0 flex-col">
-            {fichaAtiva && (
-              <BarraSuperiorCuradoria
-                posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
-                totalFila={totalPendentes}
-                podeAnterior={podeAnterior}
-                podeProxima={podeProxima}
-                onAnterior={irParaAnterior}
-                onProxima={irParaProxima}
-                onSalvar={aoClicarSalvar}
-                onAprovar={pedirAprovacao}
-                onDescartar={() => abrirModalMotivo('descartar')}
-                onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
-                salvando={salvandoRascunho}
-                aprovando={aprovando}
-                extra={badgeReviewsRespondidas}
-              />
-            )}
-
-            {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
-                e o visualizador, por pedido explicito. Sempre visivel (nao
-                so quando fichaAtiva existe) - e o mecanismo de selecionar a
-                primeira imagem em primeiro lugar (a LISTA em si e leve, so
-                texto - o que e pesado sao os fetches de preview de cada
-                miniatura, represados por permitirCarregarMiniaturas). */}
-            <FilaCuradoriaHorizontal
-              fila={fila}
-              carregando={carregandoFila}
-              erro={erroFila}
-              criandoId={criandoId}
-              ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
-              // So libera os fetches de preview das miniaturas depois que a
-              // imagem principal (OHIF) E o painel de marcacao terminam de
-              // carregar de verdade - ver imagemPrincipalPronta acima. O
-              // `!!fichaAtiva` continua aqui porque imagemPrincipalPronta
-              // sozinho comeca TRUE antes de qualquer ficha existir (nenhum
-              // dos dois sinais tem nada pendente pra esperar ainda) - sem
-              // essa parte, as miniaturas ficariam livres pra carregar antes
-              // ate da 1a imagem abrir automaticamente. So usar `!!fichaAtiva`
-              // sozinho (como antes) tambem nao bastava: isso so mede se a
-              // FICHA (metadado) chegou, nao se as IMAGENS ja carregaram - e
-              // como fichaAtiva fica true pra sempre a partir da 1a imagem, a
-              // fila so ficava protegida nessa primeira vez; a partir da 2a
-              // imagem (Proxima/Anterior/clique na fila) ela nunca mais era
-              // travada de novo.
-              permitirCarregarMiniaturas={!!fichaAtiva && imagemPrincipalPronta}
-              onSelecionar={(imagem) => abrirImagem(imagem)}
+          {/* Barra superior ("Imagem X de Y", Salvar, Aprovar...) em toda a
+              largura. Logo abaixo, a tela se divide em DUAS METADES:
+              - ESQUERDA: a fila de miniaturas (colada na barra) e a imagem;
+              - DIREITA: a ficha de curadoria inteira, do topo (onde antes
+                passavam as miniaturas) ate o fim da tela.
+              No modo "ampliar imagem" (ficha escondida) a esquerda ocupa tudo. */}
+          {fichaAtiva && (
+            <BarraSuperiorCuradoria
+              posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
+              totalFila={totalPendentes}
+              podeAnterior={podeAnterior}
+              podeProxima={podeProxima}
+              onAnterior={irParaAnterior}
+              onProxima={irParaProxima}
+              onSalvar={aoClicarSalvar}
+              onAprovar={pedirAprovacao}
+              onDescartar={() => abrirModalMotivo('descartar')}
+              onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
+              salvando={salvandoRascunho}
+              aprovando={aprovando}
+              extra={badgeReviewsRespondidas}
             />
-          </div>
+          )}
 
-          {/* LINHA PRINCIPAL - imagem a ESQUERDA (mesmo tamanho de antes:
-              flex-[2] contra a coluna de 440px) e, a DIREITA, a coluna com
-              TODAS as secoes da ficha (ColunaFichaCuradoria.tsx), com
-              rolagem propria e uma secao em destaque (setas ↑/↓, ▲/▼ e
-              voz). Substitui o antigo carrossel de 5 telas + a faixa
-              "Registro de curadoria" embaixo. No modo "ampliar imagem" a
-              coluna some e a imagem ocupa a largura toda.
-
-              "Abrir marcação": a imagem para marcacao ocupa o lugar grande
-              da esquerda e o visualizador vira miniatura no canto (clicar
-              nela fecha). O MarcadorAchado fica sempre montado (escondido)
-              para a imagem de marcacao ir carregando junto com a principal. */}
           <div className="relative flex min-h-0 flex-1 gap-3">
-            {/* Imagem com METADE da largura da tela, a esquerda (altura
-                igual a de antes - a linha ocupa o espaco abaixo da fila de
-                miniaturas); a outra metade e da ficha. No modo "ampliar
-                imagem" (ficha escondida) a imagem volta a ocupar tudo. */}
-            <div className={`relative flex min-h-0 min-w-0 gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
+            <div className={`flex min-h-0 min-w-0 flex-col gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
+              {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
+                  e o visualizador, por pedido explicito. Sempre visivel (nao
+                  so quando fichaAtiva existe) - e o mecanismo de selecionar a
+                  primeira imagem em primeiro lugar (a LISTA em si e leve, so
+                  texto - o que e pesado sao os fetches de preview de cada
+                  miniatura, represados por permitirCarregarMiniaturas). */}
+              <FilaCuradoriaHorizontal
+                fila={fila}
+                carregando={carregandoFila}
+                erro={erroFila}
+                criandoId={criandoId}
+                ativoOrthancReferenceId={fichaAtiva?.orthancReferenceId}
+                // So libera os fetches de preview das miniaturas depois que a
+                // imagem principal (OHIF) E o painel de marcacao terminam de
+                // carregar de verdade - ver imagemPrincipalPronta acima. O
+                // `!!fichaAtiva` continua aqui porque imagemPrincipalPronta
+                // sozinho comeca TRUE antes de qualquer ficha existir (nenhum
+                // dos dois sinais tem nada pendente pra esperar ainda) - sem
+                // essa parte, as miniaturas ficariam livres pra carregar antes
+                // ate da 1a imagem abrir automaticamente. So usar `!!fichaAtiva`
+                // sozinho (como antes) tambem nao bastava: isso so mede se a
+                // FICHA (metadado) chegou, nao se as IMAGENS ja carregaram - e
+                // como fichaAtiva fica true pra sempre a partir da 1a imagem, a
+                // fila so ficava protegida nessa primeira vez; a partir da 2a
+                // imagem (Proxima/Anterior/clique na fila) ela nunca mais era
+                // travada de novo.
+                permitirCarregarMiniaturas={!!fichaAtiva && imagemPrincipalPronta}
+                onSelecionar={(imagem) => abrirImagem(imagem)}
+              />
+
+              {/* Imagem (visualizador OHIF) sem o cabecalho de botoes por cima;
+                  "Abrir marcação": a imagem para marcacao ocupa o mesmo quadro.
+                  O MarcadorAchado fica sempre montado (escondido) para a
+                  imagem de marcacao ir carregando junto com a principal. */}
+              <div className="relative flex min-h-0 min-w-0 flex-1 gap-3">
               <div
                 className={`flex min-h-0 min-w-0 ${
                   // marcacao aberta: o visualizador fica INVISIVEL por baixo
@@ -1316,6 +1294,7 @@ export default function CuradoriaPage() {
                   marcacaoAtiva={marcacaoAberta}
                   onAlternarMarcacao={alternarMarcacao}
                   dadosNaColuna
+                  semCabecalho={fichaVisivel}
                 />
               </div>
 
@@ -1327,16 +1306,6 @@ export default function CuradoriaPage() {
                       : 'hidden'
                   }
                 >
-                  <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
-                    <h2 className="text-sm font-semibold text-ink">{t('painelLateral.imagemParaMarcacao')}</h2>
-                    <button
-                      type="button"
-                      onClick={fecharMarcacao}
-                      className="rounded-full border border-base-border bg-base-surface2 px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                    >
-                      ⇄ {t('foco.voltarVisualizador')}
-                    </button>
-                  </div>
                   <div className="min-h-0 flex-1">
                     <MarcadorAchado
                       orthancReferenceId={fichaAtiva.orthancReferenceId}
@@ -1356,9 +1325,10 @@ export default function CuradoriaPage() {
                 </section>
               )}
             </div>
+            </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className="flex min-h-0 min-w-0 flex-1">
+              <aside className="flex min-h-0 min-w-0 flex-1 pt-2">
                 <ColunaFichaCuradoria
                   form={form}
                   onChange={setForm}
@@ -1366,8 +1336,8 @@ export default function CuradoriaPage() {
                   curationId={fichaAtiva.curationId}
                   erro={erroFormulario}
                   rascunhoSalvo={rascunhoSalvo}
-                  secaoAtiva={secaoAtiva}
-                  onSecao={setSecaoAtiva}
+                  etapaAtiva={etapaAtiva}
+                  onEtapa={setEtapaAtiva}
                   marcacaoAberta={marcacaoAberta}
                   onAlternarMarcacao={alternarMarcacao}
                   teclasAtivas={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto}
@@ -1383,8 +1353,8 @@ export default function CuradoriaPage() {
                       form={form}
                       onAplicar={aplicarVoz}
                       onSalvar={() => salvarRascunho({ origemVoz: true })}
-                      secaoAtiva={secaoAtiva}
-                      onSecao={setSecaoAtiva}
+                      etapaAtiva={etapaAtiva}
+                      onEtapa={setEtapaAtiva}
                       onDestacar={destacarCampos}
                       macros={macros}
                       frasesAprendidas={frasesAprendidas}
@@ -1433,7 +1403,7 @@ export default function CuradoriaPage() {
               onIr={(secao) => {
                 setConferenciaAberta(false)
                 setModoAjustado(false)
-                setSecaoAtiva(secao)
+                irParaSecao(secao)
               }}
             />
             <div className="mt-4 flex justify-end gap-2">

@@ -632,7 +632,7 @@
       "faixaEtaria": "Age range",
       "idadeMin": "min.",
       "idadeMax": "max.",
-      "sexo": "Sex",
+      "sexo": "Gender",
       "dentes": "Teeth (FDI notation)",
       "qualidadeTecnica": "Technical quality",
       "selecione": "Select",
@@ -644,11 +644,11 @@
       "ate": "to",
       "opcional": "(optional)",
       "chaveAnonimizacao": "ok / anonymized",
-      "chaveTipo": "type",
-      "chaveIdade": "age 35",
-      "chaveSexo": "sex m / f",
-      "chaveDentes": "teeth 36 and 37",
-      "chaveQualidade": "quality good"
+      "chaveTipo": "pan · in · pe · o · tomo",
+      "chaveIdade": "35",
+      "chaveSexo": "m / f",
+      "chaveDentes": "36 and 37",
+      "chaveQualidade": "good"
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Tooth not identified",
@@ -822,7 +822,7 @@
       "titulo": "Curation record",
       "secaoAnterior": "Previous section (↑)",
       "proximaSecao": "Next section (↓)",
-      "ajudaTeclas": "↑ ↓ change the highlighted section",
+      "ajudaTeclas": "Say the value of the lit item and press Tab (or ↓) to go to the next one; Shift+Tab (or ↑) goes back.",
       "semMarcacoes": "No markings on this image.",
       "abrirMarcacao": "Open marking",
       "fecharMarcacao": "Close marking",
@@ -836,7 +836,9 @@
       "roteiro": "Curation checklist",
       "nadaRegistrar": "Nothing to record here",
       "nadaRegistrado": "Reviewed — nothing to record",
-      "irProxima": "Next: {secao}"
+      "irProxima": "Next: {secao}",
+      "proximoItem": "Next: {item}",
+      "lembreteTeclas": "Tab or ↓ next item · Shift+Tab or ↑ previous"
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {
@@ -1007,6 +1009,18 @@
       "semTipo": "Choose the exam type in Image data to see only the possible errors.",
       "chave": "say the error name • “no technical error”",
       "foraDoTipo": "Marked but not valid for this exam type:"
+    },
+    "etapas": {
+      "anonimizacao": "Anonymization validated",
+      "tipo": "Radiograph type",
+      "idade": "Age",
+      "genero": "Gender",
+      "dentes": "Teeth",
+      "qualidade": "Technical quality",
+      "achados": "Findings",
+      "erro_tecnico": "Technical error",
+      "descricao": "Teaching description",
+      "observacoes": "Internal notes"
     }
   },
   "SegundaOpiniaoPage": {

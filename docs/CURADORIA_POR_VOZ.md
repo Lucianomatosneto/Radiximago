@@ -99,6 +99,31 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 - **Achados = marcações**: a imagem de marcação abre sozinha nesta seção; cada marcação (1, 2, 3…) vira um achado (tipo + dente + região). Voz: "um lesão periapical no dente 36. dois cárie em dentina". Achado falado sem número vai para a próxima marcação sem achado. Apagar a marcação apaga o achado. Sem lesões: "Imagem sem alterações". A seção "Achados detalhados" saiu (texto antigo continua visível se existir).
 - **Erro técnico**: lista de 30 erros (`lib/errosTecnicos.ts`; enum `TipoErroTecnico`), mostrando só os possíveis para o tipo de exame — intraorais (gerais), panorâmica (gerais sem corte de cone + específicos) e TCFC (específicos). Salvos junto com a ficha (`PATCH /curation/{id}` → `erros_tecnicos`). Voz: nome do erro; "sem erro técnico" = nada a registrar.
 
+## 3.6 Holofote item por item (Tab / seta para baixo)
+
+- Tela dividida em duas metades: à **esquerda**, a fila de miniaturas e a
+  imagem (sem a barra de botões "Marcar imagem / Ampliar / Voltar" por cima);
+  à **direita**, a ficha de curadoria inteira, do topo até o fim da tela.
+- O holofote anda **um item por vez**, nesta ordem: Anonimização validada →
+  Tipo de radiografia → Idade → Gênero → Dentes → Qualidade técnica →
+  Achados → Erro técnico → Descrição didática → Observações internas
+  (`ETAPAS_FICHA` em `lib/secoesCuradoria.ts`).
+- Cada imagem nova começa **sempre** em "Anonimização validada".
+- O holofote **só muda** quando o curador aperta **Tab** ou **↓** (próximo) ou
+  **Shift+Tab** ou **↑** (anterior). Falar, clicar num valor ou "Nada a
+  registrar" **não** mudam o item sozinhos — o curador fala, confere e passa.
+- Só o item aceso aparece nítido; os outros ficam quase apagados. Clicar num
+  item apagado apenas o acende (o primeiro clique não altera valores).
+- Com o item aceso basta falar o **valor**: "ok"/"anonimizada"/"sim"
+  (anonimização), "pan"/"panorâmica" (tipo), "35" (idade), "m"/"feminino"
+  (gênero), "36 e 37" (dentes), "boa" (qualidade). As palavras-guia
+  ("idade 35", "sexo f"...) continuam valendo em qualquer item.
+- Idade agora é uma caixa única (idade exata); "Sexo" passou a se chamar
+  "Gênero"; a seção Dados não mostra mais status, "Pendente" nem "?"; os
+  números 1–5 da trilha foram removidos.
+- Observação: se o curador clicar dentro da imagem do OHIF (iframe), as teclas
+  vão para o visualizador; basta clicar na ficha para o Tab/↓ voltar a valer.
+
 ## 4. Segurança e LGPD
 
 - **Áudio não sai da máquina do Rádix** e não é gravado (fica só em memória durante a transcrição).
