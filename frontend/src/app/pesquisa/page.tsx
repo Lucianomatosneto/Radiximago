@@ -257,6 +257,8 @@ function PesquisaConteudo() {
 
   const [autenticado, setAutenticado] = useState(false)
   const [carregandoPagina, setCarregandoPagina] = useState(true)
+  // acesso rapido por tipo de exame: escondido atras de um icone medio
+  const [acessoRapidoAberto, setAcessoRapidoAberto] = useState(false)
 
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS)
   const [resultados, setResultados] = useState<ResultadoImagem[]>([])
@@ -564,8 +566,25 @@ function PesquisaConteudo() {
           ) : (
           <>
           <div className="mt-6">
-            <p className="mb-3 text-sm font-medium text-slate-300">{t('acessoRapidoTitulo')}</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {/* ACESSO RAPIDO por tipo de exame: as caixas (Periapical,
+                Panoramica...) ficam escondidas; um icone medio abre/fecha. */}
+            <button
+              type="button"
+              onClick={() => setAcessoRapidoAberto((v) => !v)}
+              aria-expanded={acessoRapidoAberto}
+              title={t('acessoRapidoTitulo')}
+              className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
+                acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface text-slate-200 hover:border-brand/60'
+              }`}
+            >
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/20 text-2xl" aria-hidden="true">
+                🦷
+              </span>
+              {t('acessoRapidoTitulo')}
+              <span className="text-xs text-slate-400" aria-hidden="true">{acessoRapidoAberto ? '▴' : '▾'}</span>
+            </button>
+            {acessoRapidoAberto && (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {/* Cada caixa com sua PROPRIA cor (../../lib/coresAchados) - Periapical
                   em teal, Panoramica em ciano, Interproximal em azul-claro e
                   Oclusal em indigo, pra ficarem facilmente distinguiveis entre si.
@@ -590,6 +609,7 @@ function PesquisaConteudo() {
                 </button>
               ))}
             </div>
+            )}
           </div>
 
           <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5" onKeyDown={setasNasListas}>
