@@ -320,7 +320,7 @@ export default function GradeCategoriasImagens({ contagens }: Props) {
 // Visual "vidro" dos cartoes: fundo translucido com desfoque (o mapa-mundi
 // aparece por tras), borda e brilho na cor da categoria (--cor) e entrada
 // em cascata. Fica aqui para nao depender do globals.css.
-const ESTILO_CARTOES = `
+export const ESTILO_CARTOES = `
 .cartao-categoria{
   background:linear-gradient(160deg, color-mix(in srgb, var(--cor) 9%, rgba(255,255,255,.7)), rgba(255,255,255,.5));
   border:1px solid color-mix(in srgb, var(--cor) 28%, rgba(15,23,42,.08));
@@ -349,3 +349,9 @@ const ESTILO_CARTOES = `
 @keyframes cartaoEntra{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion: reduce){.cartao-categoria{animation:none;transition:none}.cartao-categoria:hover{transform:none}}
 `
+
+/** Cor de destaque (mesma dos cartoes do Banco de imagens) de um tipo de
+ * radiografia ou achado - usada para dar o mesmo visual a outras telas. */
+export function corDestaqueCategoria(valor: string | null | undefined): string {
+  return CATEGORIAS.find((c) => c.valor === valor)?.destaque ?? '#14B8A6'
+}

@@ -1,15 +1,17 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
+import { ESTILO_CARTOES, corDestaqueCategoria } from '../../components/GradeCategoriasImagens'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
-import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
+import { corTextoAchado } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 interface ImagemSalva {
@@ -298,7 +300,7 @@ export default function MinhasImagensPage() {
                 <button
                   type="button"
                   onClick={alternarSelecionarTodas}
-                  className="flex items-center gap-2 rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300"
+                  className="flex items-center gap-2 rounded-lg border border-base-border bg-base-surface/40 px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300"
                 >
                   <input
                     type="checkbox"
@@ -328,7 +330,7 @@ export default function MinhasImagensPage() {
                         type="button"
                         onClick={enviarSelecionadasPorEmail}
                         disabled={enviandoLote}
-                        className="rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
+                        className="rounded-lg border border-base-border bg-base-surface/40 px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60"
                       >
                         {enviandoLote
                           ? t('enviando')
@@ -368,15 +370,18 @@ export default function MinhasImagensPage() {
             ) : (
               <div className={`grid gap-4 ${colunasGrade(itens.length)}`}>
                 {itens.map((imagem, indice) => (
+                  // mesmo visual "vidro" dos cartoes do Banco de imagens: fundo
+                  // translucido (o mapa aparece por tras) e brilho na cor do tipo
                   <div
                     key={imagem.curation_id}
-                    className={`flex flex-col rounded-2xl border bg-gradient-to-br p-4 ${corCartaoTipoRadiografia(imagem.tipo_radiografia)}`}
+                    style={{ '--cor': corDestaqueCategoria(imagem.tipo_radiografia), animationDelay: `${Math.min(indice, 12) * 45}ms` } as CSSProperties}
+                    className="cartao-categoria flex flex-col rounded-2xl p-4"
                   >
                     <div className="relative mb-3 overflow-hidden rounded-lg">
                       <MiniaturaImagem
                         curationId={imagem.curation_id}
                         alt={imagem.descricao_didatica ?? tVisualizador('imagemNumero', { numero: indice + 1 })}
-                        className="h-36 w-full bg-base-surface2 object-cover"
+                        className="aspect-square w-full bg-base-surface2 object-cover"
                       />
                       <span className="absolute left-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-xs font-semibold text-white">
                         {indice + 1}
@@ -408,11 +413,11 @@ export default function MinhasImagensPage() {
                       <p className="line-clamp-2 text-xs text-slate-400">{imagem.descricao_didatica}</p>
                     )}
 
-                    <div className="mt-4 flex flex-wrap gap-2">
+                    <div className="mt-auto flex gap-2 pt-3">
                       <button
                         type="button"
                         onClick={() => expandirImagem(imagem)}
-                        className="flex-1 rounded-lg border border-base-border px-3 py-2 text-center text-sm text-slate-200 hover:border-brand hover:text-brand-300"
+                        className="flex-1 whitespace-nowrap rounded-lg border border-base-border bg-base-surface/30 px-2 py-1.5 text-center text-xs text-slate-200 hover:border-brand hover:text-brand-300"
                       >
                         {t('expandir')}
                       </button>
@@ -420,7 +425,7 @@ export default function MinhasImagensPage() {
                         type="button"
                         onClick={() => remover(imagem.curation_id)}
                         disabled={removendo === imagem.curation_id}
-                        className="rounded-lg border border-base-border px-3 py-2 text-sm text-red-400 hover:border-red-500 disabled:opacity-50"
+                        className="whitespace-nowrap rounded-lg border border-base-border bg-base-surface/30 px-2 py-1.5 text-xs text-red-400 hover:border-red-500 disabled:opacity-50"
                       >
                         {removendo === imagem.curation_id ? '...' : t('remover')}
                       </button>
@@ -432,6 +437,8 @@ export default function MinhasImagensPage() {
           </div>
         </main>
       </div>
+
+      <style>{ESTILO_CARTOES}</style>
 
       {indiceVisualizador !== null && itensSelecionados.length > 0 && (
         <VisualizadorSequencial
