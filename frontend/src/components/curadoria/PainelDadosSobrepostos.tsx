@@ -60,7 +60,7 @@ function Item({
       onMouseDown={() => !ativa && onAtivar?.(etapa)}
       className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
         ativa
-          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)]'
+          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] [zoom:1.5]'
           : apagado
             ? 'opacity-[.18] saturate-0 hover:opacity-50'
             : ''

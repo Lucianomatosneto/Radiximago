@@ -84,7 +84,7 @@ function Secao({
       onMouseDown={() => !ativa && !simples && onAtivar()}
       className={`scroll-mt-2 rounded-xl border p-3 relative transition-[opacity,border-color,box-shadow] duration-200 ${
         holofote
-          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)]'
+          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] [zoom:1.5]'
           : ativa
             ? 'z-10 border-base-border bg-base-surface'
             : 'border-base-border bg-base-surface/70 opacity-[.18] saturate-0 hover:opacity-50'
@@ -343,7 +343,7 @@ export default function ColunaFichaCuradoria({
         {/* acoes da ficha no FIM de todas as caixas; o holofote chega aqui
             no passo "Aprovar" (Enter aprova) */}
         {acoesFinais && (
-          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10' : ''}`}>
+          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 [zoom:1.5]' : ''}`}>
             {acoesFinais}
           </div>
         )}

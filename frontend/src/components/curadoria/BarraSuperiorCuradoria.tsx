@@ -24,6 +24,7 @@ export default function BarraSuperiorCuradoria({
   extra,
   destacarAprovar = false,
   parte = 'tudo',
+  semDescartar = false,
 }: {
   posicaoAtual: number | null
   totalFila: number
@@ -47,6 +48,8 @@ export default function BarraSuperiorCuradoria({
    * Salvar/Aprovar/2a opiniao/Descartar (no FIM da ficha, depois da
    * ultima caixa de curadoria); 'tudo' = os dois juntos */
   parte?: 'tudo' | 'navegacao' | 'acoes'
+  /** sem o botao Descartar (na curadoria ele fica ao lado de Macros) */
+  semDescartar?: boolean
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
@@ -109,6 +112,7 @@ export default function BarraSuperiorCuradoria({
         >
           {t('solicitarSegundaOpiniao')}
         </button>
+{!semDescartar && (
         <button
           type="button"
           onClick={onDescartar}
@@ -116,6 +120,7 @@ export default function BarraSuperiorCuradoria({
         >
           {t('descartar')}
         </button>
+        )}
         {extra}
       </div>
       )}

@@ -130,7 +130,10 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
   aberto em todos os itens (`lib/escutaContinua.ts`) até o passo "Aprovar".
   Espaço de novo (ou o botão, ou Alt+V) pausa/retoma.
 - Caixa de voz enxuta: só o círculo do microfone (cor = estado) com
-  "Pressione espaço para áudio" embaixo; ao lado, "Como laudar" e "Macros".
+  "Pressione espaço para áudio" embaixo; ao lado, "Como laudar", "Macros",
+  "Descartar" e a navegação "← Imagem X de Y →" (sem caixa própria).
+- O item aceso pelo holofote fica **50% maior** (CSS `zoom: 1.5`) para
+  leitura mais fácil, sem passar da metade direita da tela.
   Erros e dúvidas da voz aparecem só quando existem. A barra "Ficha de
   curadoria / Faltam N / lembrete de teclas" foi removida.
 - O sistema percebe quando o curador fala e quando para (detecção de
@@ -156,7 +159,7 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 
 - **Passo final "Aprovar"**: depois de Observações internas (por voz
   "não"/"pronto" ou Tab), o holofote vai para o botão **Aprovar**, que fica
-  com Salvar, Segunda opinião e Descartar **no fim da ficha** (depois da
+  com Salvar e Segunda opinião **no fim da ficha** (depois da
   última caixa; no topo ficou só "← Imagem X de Y →"), o microfone **fecha** e **Enter** faz a aprovação final (passa
   pela conferência; só com avisos, o foco já fica em "Aprovar mesmo assim",
   então Enter de novo confirma). A imagem seguinte abre com o holofote em

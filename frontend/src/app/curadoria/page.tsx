@@ -1182,7 +1182,6 @@ export default function CuradoriaPage() {
       salvando={salvandoRascunho}
       aprovando={aprovando}
       extra={badgeReviewsRespondidas}
-      parte={fichaVisivel ? 'navegacao' : 'tudo'}
     />
   ) : null
   // acoes da ficha (Salvar/Aprovar/...) no fim da coluna, depois das caixas
@@ -1200,9 +1199,9 @@ export default function CuradoriaPage() {
       onSolicitarSegundaOpiniao={() => abrirModalMotivo('segunda_opiniao')}
       salvando={salvandoRascunho}
       aprovando={aprovando}
-      extra={badgeReviewsRespondidas}
       destacarAprovar={etapaAtiva === 'aprovar'}
       parte="acoes"
+      semDescartar
     />
   ) : null
 
@@ -1380,7 +1379,6 @@ export default function CuradoriaPage() {
 
             {fichaVisivel && fichaAtiva && (
               <aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-                {barraSuperior}
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
                   form={form}
@@ -1424,6 +1422,40 @@ export default function CuradoriaPage() {
                             📘 {t('comoLaudar')}
                           </button>
                           <MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />
+                          <button
+                            type="button"
+                            onClick={() => abrirModalMotivo('descartar')}
+                            className="rounded-full border border-red-800/60 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-950/40"
+                          >
+                            {t('barraSuperior.descartar')}
+                          </button>
+                          {/* navegacao entre imagens (sem caixa), ao lado de Descartar */}
+                          <span className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={irParaAnterior}
+                              disabled={!podeAnterior}
+                              aria-label={t('barraSuperior.imagemAnterior')}
+                              title={t('barraSuperior.imagemAnterior')}
+                              className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                              ←
+                            </button>
+                            <span className="whitespace-nowrap text-sm font-medium text-slate-300">
+                              {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={irParaProxima}
+                              disabled={!podeProxima}
+                              aria-label={t('barraSuperior.proximaImagem')}
+                              title={t('barraSuperior.proximaImagem')}
+                              className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
+                            >
+                              →
+                            </button>
+                          </span>
+                          {badgeReviewsRespondidas}
                         </>
                       }
                     />
