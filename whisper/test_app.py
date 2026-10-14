@@ -67,3 +67,13 @@ def test_modo_rapido_usa_beam_1(monkeypatch):
     r = cliente.post("/transcrever", files={"arquivo": ("a.webm", b"xx", "audio/webm")}, data={"rapido": "1"})
     assert r.status_code == 200
     assert falso.chamadas[0]["beam_size"] == 1
+
+
+def test_aquecer_carrega_o_modelo_uma_vez(monkeypatch):
+    criados = []
+    monkeypatch.setattr(servico, "_criar_modelo", lambda: criados.append(1) or ModeloFalso())
+    monkeypatch.setattr(servico, "_modelo", None)
+    cliente = TestClient(servico.app)
+    assert cliente.post("/aquecer").json() == {"carregado": True, "ja_estava": False}
+    assert cliente.post("/aquecer").json() == {"carregado": True, "ja_estava": True}
+    assert criados == [1]

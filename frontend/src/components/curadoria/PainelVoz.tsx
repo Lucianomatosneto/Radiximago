@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import {
+  escolherSugestaoPorVoz,
   interpretar,
   itemResolvidoPelaFala,
   type Alteracao,
@@ -104,12 +105,25 @@ export default function PainelVoz({
   const [ultimoTexto, setUltimoTexto] = useState('')
   const [preenchidos, setPreenchidos] = useState<Preenchido[]>([])
   const [duvidas, setDuvidas] = useState<Duvida[]>([])
+  const duvidasRef = useRef<Duvida[]>([])
+  duvidasRef.current = duvidas
   const [podeDesfazer, setPodeDesfazer] = useState(false)
   const [ajuda, setAjuda] = useState(false)
   const [vocabulario, setVocabulario] = useState<TermoVoz[]>([])
 
+  // Ficha mais atual para a voz. IMPORTANTE: tambem e atualizada NA HORA em
+  // aplicar()/desfazer() (nao so quando a tela redesenha). Na escuta
+  // continua varias falas podem ser aplicadas em sequencia antes de a tela
+  // redesenhar (ex.: a 1a transcricao demora e as seguintes chegam juntas);
+  // sem isso, cada fala partia da ficha ANTIGA e apagava o que a fala
+  // anterior tinha preenchido (anonimizacao, sexo, dentes "sumiam").
   const formRef = useRef(form)
-  formRef.current = form
+  const formAplicadoRef = useRef<FormularioFicha | null>(null)
+  if (formAplicadoRef.current && formAplicadoRef.current !== form) {
+    // a tela ja recebeu o que a voz aplicou (ou o curador mudou algo a mao)
+    formAplicadoRef.current = null
+  }
+  if (!formAplicadoRef.current) formRef.current = form
   // valores atuais para o processamento que termina depois da gravacao
   const opcoesRef = useRef({ etapaAtiva, macros, frasesAprendidas, vocabulario })
   opcoesRef.current = { etapaAtiva, macros, frasesAprendidas, vocabulario }
@@ -156,6 +170,8 @@ export default function PainelVoz({
     (novo: FormularioFicha, campos: CampoVoz[]) => {
       historicoRef.current = [...historicoRef.current.slice(-19), formRef.current]
       setPodeDesfazer(true)
+      formRef.current = novo
+      formAplicadoRef.current = novo
       onAplicar(novo)
       if (campos.length) onDestacar?.(campos)
     },
@@ -168,6 +184,8 @@ export default function PainelVoz({
     const anterior = h[h.length - 1]
     historicoRef.current = h.slice(0, -1)
     setPodeDesfazer(historicoRef.current.length > 0)
+    formRef.current = anterior
+    formAplicadoRef.current = anterior
     onAplicar(anterior)
     setAviso(t('desfeito'))
   }, [onAplicar, t])
@@ -191,6 +209,22 @@ export default function PainelVoz({
     const etapa = etapaRef.current
     // no passo "Aprovar" o microfone esta fechado: sobra de fala e ignorada
     if (etapa === 'aprovar') return
+    // havia uma duvida com opcoes na tela (ex.: "cárie" -> esmalte? dentina?):
+    // a fala pode ESCOLHER a opcao ("dentina", "dois") sem clicar
+    const pendente = duvidasRef.current[duvidasRef.current.length - 1]
+    if (pendente?.sugestoes.length) {
+      const escolha = escolherSugestaoPorVoz(texto, pendente.sugestoes.map((s) => s.rotulo))
+      if (escolha !== null) {
+        aceitarSugestao(pendente, pendente.sugestoes[escolha])
+        // escuta continua: achados todos ligados -> o holofote anda sozinho
+        if (continuo && etapa === 'achados' && onEtapa) {
+          const f = formRef.current
+          const ligadas = new Set((f.achados ?? []).flatMap((a) => a.marcacoes))
+          if (f.marcacoes.length && f.marcacoes.every((m) => ligadas.has(m.id))) irPara(etapaVizinha(etapa, 1))
+        }
+        return
+      }
+    }
     const r = interpretar(texto, formRef.current, o.vocabulario, {
       secaoAtiva: etapa ? SECAO_DA_ETAPA[etapa] : undefined,
       etapa,
@@ -198,14 +232,16 @@ export default function PainelVoz({
       frasesAprendidas: o.frasesAprendidas,
     })
     if (r.alteracoes.length) {
+      // retorno curto do que foi entendido (linha abaixo do microfone)
+      setAviso(`“${texto.replace(/[.!?]+$/, '')}” → ${r.alteracoes.map((a) => a.descricao).join(' · ')}`)
       aplicar({ ...formRef.current, ...r.ficha }, r.alteracoes.map((a) => a.campo))
       setPreenchidos((p) => [...r.alteracoes.map((a) => ({ ...a, id: ++contadorRef.current })).reverse(), ...p].slice(0, 30))
     }
     if (r.naoReconhecidos.length) {
-      setDuvidas((d) => [
-        ...d,
-        ...r.naoReconhecidos.map((x) => ({ ...x, id: ++contadorRef.current, lembrar: !!x.parecido && x.sugestoes.some(ensinavel) })),
-      ])
+      const novas = r.naoReconhecidos.map((x) => ({ ...x, id: ++contadorRef.current, lembrar: !!x.parecido && x.sugestoes.some(ensinavel) }))
+      // ref atualizada na hora: a fala seguinte ja pode responder a duvida
+      duvidasRef.current = [...duvidasRef.current, ...novas]
+      setDuvidas((d) => [...d, ...novas])
     }
     let navegou = false
     for (const c of r.comandos) {
@@ -303,6 +339,8 @@ export default function PainelVoz({
   const ligarEscuta = useCallback(async () => {
     if (escutaRef.current?.ativa) return
     setErro('')
+    // pede ao servico de voz que carregue o modelo JA (a 1a fala nao espera)
+    fetch(`${API}/voz/aquecer`, { method: 'POST', credentials: 'include' }).catch(() => {})
     const escuta = new EscutaContinua({ onTrecho: aoTrecho, onFalando: setFalando })
     escutaRef.current = escuta
     const falha = await escuta.iniciar()
@@ -438,6 +476,7 @@ export default function PainelVoz({
     aplicar({ ...formRef.current, [campo]: atual ? `${atual}${/[.!?;,]$/.test(atual) ? '' : ';'} ${valor}` : valor }, [campo])
     const nomes = { descricao_didatica: t('campoDescricao'), achados_detalhe: t('campoAchados'), observacoes_internas: t('campoObservacoes') }
     registrar(campo, `${nomes[campo]}: ${valor}`)
+    duvidasRef.current = duvidasRef.current.filter((x) => x.id !== item.id)
     setDuvidas((n) => n.filter((x) => x.id !== item.id))
   }
 
@@ -445,6 +484,7 @@ export default function PainelVoz({
     const campo: CampoVoz = sug.campo ?? 'alteracoes_observadas'
     aplicar({ ...formRef.current, ...sug.aplicar(formRef.current) }, [campo])
     registrar(campo, sug.rotulo)
+    duvidasRef.current = duvidasRef.current.filter((x) => x.id !== item.id)
     setDuvidas((n) => n.filter((x) => x.id !== item.id))
     // "Lembrar": ensina a frase ouvida para as proximas vezes
     if (item.lembrar && ensinavel(sug) && sug.destino) {
@@ -636,10 +676,17 @@ export default function PainelVoz({
           </div>
           {aoLado && <div className="flex flex-wrap items-center gap-2 pt-2">{aoLado}</div>}
         </div>
-        {(erro || disponivel === false) && (
+        {(erro || disponivel === false) ? (
           <p className="text-[11px] text-red-300" role="alert">
             {erro || t('indisponivel')}
           </p>
+        ) : (
+          // retorno da ultima fala: o curador ve o que a voz preencheu
+          aviso && (
+            <p className="truncate text-[11px] text-emerald-300" title={aviso} aria-live="polite">
+              ✓ {aviso}
+            </p>
+          )
         )}
         {duvidas.length > 0 && <div className="overflow-hidden rounded-xl border border-orange-300/50">{blocoDuvidas}</div>}
       </section>

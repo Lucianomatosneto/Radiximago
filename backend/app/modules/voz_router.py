@@ -67,6 +67,19 @@ def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
         return {"disponivel": False}
 
 
+@router.post("/aquecer")
+def aquecer_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
+    """O curador abriu o microfone: pede ao servico local que carregue o
+    modelo agora, para a 1a fala ja ser transcrita rapido. Sem audio e sem
+    dado pessoal - so um aviso. Falha aqui nao atrapalha a curadoria."""
+    try:
+        r = httpx.post(f"{settings.WHISPER_URL}/aquecer", timeout=120)
+        r.raise_for_status()
+        return {"disponivel": True, **r.json()}
+    except Exception:
+        return {"disponivel": False}
+
+
 @router.post("/transcrever")
 @limiter.limit("120/minute")
 def transcrever(

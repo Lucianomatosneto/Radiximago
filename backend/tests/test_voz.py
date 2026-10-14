@@ -80,3 +80,27 @@ def test_servico_de_voz_fora_do_ar(client, criar_usuario, monkeypatch):
     r = client.post("/voz/transcrever", files={"arquivo": ("a.webm", b"x", "audio/webm")}, headers=cabecalho_auth(token))
     assert r.status_code == 503
     assert client.get("/voz/saude", headers=cabecalho_auth(token)).json() == {"disponivel": False}
+
+
+def test_aquecer_voz_so_curadoria_e_tolera_servico_fora(client, criar_usuario, monkeypatch):
+    estudante = criar_usuario()
+    curador = criar_usuario(perfil=UserRole.curador)
+    t_est = obter_token(client, estudante.email)
+    t_cur = obter_token(client, curador.email)
+    assert client.post("/voz/aquecer", headers=cabecalho_auth(t_est)).status_code == 403
+
+    class Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"carregado": True, "ja_estava": False}
+
+    monkeypatch.setattr(voz_router.httpx, "post", lambda *a, **k: Resp())
+    assert client.post("/voz/aquecer", headers=cabecalho_auth(t_cur)).json()["carregado"] is True
+
+    def falha(*a, **k):
+        raise httpx.ConnectError("sem conexao")
+
+    monkeypatch.setattr(voz_router.httpx, "post", falha)
+    assert client.post("/voz/aquecer", headers=cabecalho_auth(t_cur)).json() == {"disponivel": False}

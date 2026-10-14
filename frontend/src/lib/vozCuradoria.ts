@@ -763,6 +763,19 @@ export function interpretar(
     if (n === 'carie' || n === 'caries') {
       for (const op of listaAlteracoes.filter((a) => a.valor.startsWith('carie'))) candidatos.push({ s: 0.9, sug: sugestaoAlteracao(op) })
     }
+    // fala incompleta que cabe em mais de um achado ("perda óssea" ->
+    // horizontal? vertical?; "reabsorção" -> externa? interna?): pergunta
+    // quais, e o curador responde falando a palavra que falta
+    const palavrasN = n.split(' ').filter((p) => p.length > 2)
+    if (palavrasN.length) {
+      for (const op of listaAlteracoes) {
+        const cabe = op.formas.some((f) => {
+          const pf = ` ${f} `
+          return palavrasN.every((p) => pf.includes(` ${p} `) || pf.includes(` ${p.replace(/s$/, '')} `))
+        })
+        if (cabe) candidatos.push({ s: 0.9, sug: sugestaoAlteracao(op) })
+      }
+    }
     const vistos = new Set<string>()
     return candidatos
       .sort((a, b) => b.s - a.s)
@@ -772,7 +785,12 @@ export function interpretar(
   }
   const sugestaoAlteracao = (op: Opcao): Sugestao => ({
     rotulo: `Achado: ${op.rotulo}`,
-    aplicar: (f) => adicionarAchado(f, { tipo: op.valor }),
+    // como na fala direta: vai para a proxima marcacao ainda sem achado
+    aplicar: (f) => {
+      const ligadas = new Set((f.achados ?? []).flatMap((a) => a.marcacoes))
+      const livre = f.marcacoes.find((m) => !ligadas.has(m.id))
+      return adicionarAchado(f, { tipo: op.valor, marcacoes: livre ? [livre.id] : [] })
+    },
     destino: { tipo: 'alteracao', valor: op.valor },
     campo: 'alteracoes_observadas',
   })
@@ -1319,3 +1337,31 @@ export function itemResolvidoPelaFala(etapa: EtapaFicha, r: ResultadoVoz): boole
   const campo = CAMPO_DA_ETAPA[etapa]
   return !!campo && r.alteracoes.some((a) => a.campo === campo)
 }
+
+// ---------------------------------------------------------------------------
+// RESPONDER A DUVIDA PELA VOZ: quando a fala foi ambigua (ex.: "cárie" ->
+// esmalte? dentina? próxima à polpa? secundária?), as opcoes aparecem na
+// tela e o curador escolhe FALANDO, sem clicar:
+// - o numero da opcao ("um", "dois", "2"...), ou
+// - a palavra que diferencia ("dentina", "horizontal", "secundária").
+// Devolve o indice da opcao escolhida, ou null se a fala nao escolhe
+// nenhuma opcao com seguranca (ai ela segue o caminho normal).
+const NUMEROS_OPCAO: Record<string, number> = {
+  '1': 0, um: 0, uma: 0, primeira: 0, primeiro: 0,
+  '2': 1, dois: 1, duas: 1, segunda: 1, segundo: 1,
+  '3': 2, tres: 2, terceira: 2, terceiro: 2,
+  '4': 3, quatro: 3, quarta: 3, quarto: 3,
+}
+const PALAVRAS_SEM_PESO = new Set(['a', 'o', 'e', 'de', 'da', 'do', 'em', 'na', 'no', 'a', 'opcao', 'numero', 'achado', 'termo', 'alteracao'])
+export function escolherSugestaoPorVoz(texto: string, rotulos: string[]): number | null {
+  const fala = normalizar(texto).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!fala || !rotulos.length) return null
+  const numero = NUMEROS_OPCAO[fala.replace(/^(opcao|numero) /, '')]
+  if (numero !== undefined) return numero < rotulos.length ? numero : null
+  const palavras = fala.split(' ').filter((p) => p.length > 1 && !PALAVRAS_SEM_PESO.has(p))
+  if (!palavras.length) return null
+  const rotulosN = rotulos.map((r) => ` ${normalizar(r).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim()} `)
+  const casam = rotulosN.map((r, i) => (palavras.every((p) => r.includes(` ${p} `) || r.includes(` ${p}`)) ? i : -1)).filter((i) => i >= 0)
+  return casam.length === 1 ? casam[0] : null
+}
+

@@ -17,6 +17,8 @@ Servico de transcricao de voz do Radix Imago (curadoria por voz).
 
 Endpoints:
 - GET  /saude       -> estado do servico (modelo carregado ou nao)
+- POST /aquecer     -> carrega o modelo JA (chamado quando o curador abre o
+                       microfone: a 1a fala nao espera o modelo carregar)
 - POST /transcrever -> multipart: arquivo (audio), prompt (opcional)
 """
 
@@ -92,6 +94,16 @@ threading.Thread(target=_vigia, daemon=True).start()
 @app.get("/saude")
 def saude():
     return {"modelo": MODELO, "carregado": _modelo is not None, "ocioso_s": OCIOSO_S}
+
+
+@app.post("/aquecer")
+def aquecer():
+    """Carrega o modelo antes da primeira fala. Sem isso, a 1a transcricao
+    demorava varios segundos (carga do modelo) e as falas seguintes chegavam
+    todas juntas no navegador."""
+    ja_estava = _modelo is not None
+    obter_modelo()
+    return {"carregado": True, "ja_estava": ja_estava}
 
 
 @app.post("/transcrever")

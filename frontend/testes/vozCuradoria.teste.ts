@@ -2,7 +2,7 @@
 // Rodar dentro da pasta frontend:  npx tsx testes/vozCuradoria.teste.ts
 
 import type { SecaoFicha } from '../src/lib/secoesCuradoria'
-import { aplicarMacro, interpretar, itemResolvidoPelaFala, type FichaVoz, type OpcoesInterpretar } from '../src/lib/vozCuradoria'
+import { aplicarMacro, escolherSugestaoPorVoz, interpretar, itemResolvidoPelaFala, type FichaVoz, type OpcoesInterpretar } from '../src/lib/vozCuradoria'
 const vazia: FichaVoz = { tipo_radiografia: 'panoramica', dentes: [], idade_min: '', idade_max: '', genero: '', marcacoes: [
   { id: 'a', tipo: 'oval', x: .1, y: .1, largura: .1, altura: .1 }, { id: 'b', tipo: 'seta', x1: 0, y1: 0, x2: .2, y2: .2 }],
   achados_detalhe: '', alteracoes_observadas: [], qualidade_tecnica: '', descricao_didatica: '', observacoes_internas: '', termos: [] }
@@ -156,4 +156,21 @@ caso('descricao: nao', 'não', r => r.comandos.join() === 'nada_a_registrar', un
 caso('observacoes: sem observacoes', 'sem observações', r => r.comandos.join() === 'nada_a_registrar', undefined, { etapa: 'observacoes' })
 caso('observacoes: nao', 'Não.', r => r.comandos.join() === 'nada_a_registrar', undefined, { etapa: 'observacoes' })
 caso('nao no meio da descricao e texto', 'não há lesão visível', r => r.comandos.length === 0 && r.ficha.descricao_didatica.length > 0, undefined, { etapa: 'descricao' })
+// responder a duvida pela voz (sem clicar)
+{
+  const rot = ['Achado: Cárie em esmalte', 'Achado: Cárie em dentina', 'Achado: Cárie próxima à polpa', 'Achado: Cárie secundária (sob restauração)']
+  const chk = (nome: string, v: boolean) => { if (!v) falhas++; console.log(v ? 'OK  ' : 'FALHA', nome) }
+  chk('duvida: "dentina" escolhe a 2a', escolherSugestaoPorVoz('Dentina.', rot) === 1)
+  chk('duvida: "dois" escolhe a 2a', escolherSugestaoPorVoz('Dois.', rot) === 1)
+  chk('duvida: "3" escolhe a 3a', escolherSugestaoPorVoz('3', rot) === 2)
+  chk('duvida: "próxima à polpa"', escolherSugestaoPorVoz('Próxima à polpa.', rot) === 2)
+  chk('duvida: "secundária"', escolherSugestaoPorVoz('secundária', rot) === 3)
+  chk('duvida: "cárie" nao escolhe (ambigua)', escolherSugestaoPorVoz('cárie', rot) === null)
+  chk('duvida: fala sem relacao nao escolhe', escolherSugestaoPorVoz('periapical', rot) === null)
+  chk('duvida: numero maior que as opcoes', escolherSugestaoPorVoz('cinco', rot) === null)
+  const r = interpretar('Cárie.', vazia, vocab, { etapa: 'achados' })
+  const sug = r.naoReconhecidos[0]?.sugestoes.find((s) => s.rotulo.includes('dentina'))
+  const f = sug ? sug.aplicar(vazia) : vazia
+  chk('sugestao escolhida liga a 1a marcacao livre', !!f.achados?.length && f.achados[0].marcacoes.join() === 'a')
+}
 process.exit(falhas ? 1 : 0)
