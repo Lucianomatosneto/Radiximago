@@ -574,7 +574,7 @@ function PesquisaConteudo() {
               aria-expanded={acessoRapidoAberto}
               title={t('acessoRapidoTitulo')}
               className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
-                acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface text-slate-200 hover:border-brand/60'
+                acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface/40 text-slate-200 hover:border-brand/60'
               }`}
             >
               <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/20 text-2xl" aria-hidden="true">
@@ -612,7 +612,7 @@ function PesquisaConteudo() {
             )}
           </div>
 
-          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5" onKeyDown={setasNasListas}>
+          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface/35 p-5" onKeyDown={setasNasListas}>
             <p className="text-sm font-semibold text-ink">🔎 {t('buscaAvancadaTitulo')}</p>
             <p className="mb-4 mt-0.5 text-xs text-slate-400">{t('buscaAvancadaSubtitulo')}</p>
 
@@ -1019,7 +1019,7 @@ function PesquisaConteudo() {
                     campo ajustavel pra digitar qualquer quantidade -
                     pedido explicito pra nao ficar preso so a esses 4
                     numeros fixos. */}
-                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface p-3">
+                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface/40 p-3">
                   <span className="text-xs font-medium text-slate-400">{t('selecaoLabel')}</span>
                   <button
                     type="button"
