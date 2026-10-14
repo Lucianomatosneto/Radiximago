@@ -377,6 +377,7 @@ export default function MinhasImagensPage() {
                   <div
                     key={imagem.curation_id}
                     style={{ '--cor': corDestaqueCategoria(imagem.tipo_radiografia), animationDelay: `${Math.min(indice, 12) * 45}ms` } as CSSProperties}
+                    data-cartao-imagem
                     className="cartao-categoria flex flex-col rounded-2xl p-4"
                   >
                     <div className="relative mb-3 overflow-hidden rounded-lg">
@@ -418,8 +419,9 @@ export default function MinhasImagensPage() {
                     {/* acoes so com icones: i (descricao), expandir e x (remover) */}
                     <div className="mt-auto flex items-center justify-end gap-1.5 pt-3">
                       {/* "i": a MESMA caixa de descricao dos resultados da Pesquisa
-                          avancada (abre ao clicar ou passar o mouse) */}
-                      <EtiquetaMarcacoes item={{ ...imagem, numero: indice + 1 }} flutuante embutido />
+                          avancada; abre ao clicar, AO LADO do cartao (sem cobrir
+                          a imagem) e pode ser arrastada */}
+                      <EtiquetaMarcacoes item={{ ...imagem, numero: indice + 1 }} flutuante janela embutido />
                       <button
                         type="button"
                         onClick={() => expandirImagem(imagem)}

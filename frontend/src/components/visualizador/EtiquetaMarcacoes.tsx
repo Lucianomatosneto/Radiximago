@@ -35,6 +35,7 @@ export default function EtiquetaMarcacoes({
   ampliado = false,
   onAmpliar,
   areaAmpliada,
+  janela = false,
 }: {
   item: ItemDescritivel
   className?: string
@@ -56,6 +57,10 @@ export default function EtiquetaMarcacoes({
   ampliado?: boolean
   onAmpliar?: (valor: boolean) => void
   areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
+  /** JANELA (ex.: Minhas imagens): o clique abre a caixa AO LADO do cartao
+   *  da imagem (elemento com data-cartao-imagem mais proximo), sem cobrir a
+   *  propria imagem; a caixa pode ser arrastada pela barra e fechada no x */
+  janela?: boolean
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
@@ -65,7 +70,27 @@ export default function EtiquetaMarcacoes({
   // continua abrindo ao passar o mouse.
   const [passando, setPassando] = useState(false)
   const [fixada, setFixada] = useState(false)
-  const aberta = fixada || (flutuante && passando) || ampliado
+  const aberta = fixada || (flutuante && !janela && passando) || ampliado
+  // posicao da janela (calculada so ao abrir; depois quem manda e o arraste)
+  const [posJanela, setPosJanela] = useState<{ left: number; top: number } | null>(null)
+  useEffect(() => {
+    if (!janela || !fixada) {
+      setPosJanela(null)
+      return
+    }
+    const LARG = 320
+    const ALT = 380
+    const ancora = (botaoRef.current?.closest('[data-cartao-imagem]') as HTMLElement | null) ?? botaoRef.current
+    const r = ancora?.getBoundingClientRect()
+    if (!r) return
+    // ao lado direito do cartao; sem espaco, ao lado esquerdo
+    let left = r.right + 10
+    if (left + LARG > window.innerWidth - 8) left = r.left - LARG - 10
+    left = Math.min(Math.max(8, left), window.innerWidth - LARG - 8)
+    const top = Math.min(Math.max(8, r.top), window.innerHeight - ALT - 8)
+    setPosJanela({ left, top })
+    setDesloc({ x: 0, y: 0 })
+  }, [janela, fixada])
   const botaoRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   // Deslocamento do quadro arrastado pela pessoa (para tirar de cima da
@@ -397,8 +422,51 @@ export default function EtiquetaMarcacoes({
           </div>,
           (typeof document !== 'undefined' && document.fullscreenElement) || document.body
         )}
+      {janela &&
+        fixada &&
+        posJanela &&
+        createPortal(
+          <div
+            ref={caixaRef}
+            role="dialog"
+            aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
+            style={{ left: posJanela.left, top: posJanela.top, transform: `translate(${desloc.x}px, ${desloc.y}px)` }}
+            className="fixed z-[300] flex max-h-[380px] w-80 flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+          >
+            {/* barra: arrastar a caixa para onde quiser + fechar */}
+            <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
+              <div
+                onPointerDown={iniciarArraste}
+                onPointerMove={moverArraste}
+                onPointerUp={terminarArraste}
+                onPointerCancel={terminarArraste}
+                onDoubleClick={() => setDesloc({ x: 0, y: 0 })}
+                title={t('arrastarQuadro')}
+                aria-label={t('arrastarQuadro')}
+                className="flex flex-1 cursor-grab touch-none select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80 hover:bg-teal-400/10 hover:text-teal-100 active:cursor-grabbing"
+              >
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" />
+                </svg>
+                <span className="truncate">{t('barraArrastar')}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setFixada(false)}
+                aria-label={t('fecharDescricao')}
+                title={t('fecharDescricao')}
+                className="flex shrink-0 items-center border-l border-teal-300/25 px-2.5 text-base leading-none text-teal-100/80 hover:bg-teal-400/15 hover:text-white"
+              >
+                ×
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-3">{conteudo}</div>
+          </div>,
+          document.body
+        )}
       {aberta &&
         flutuante &&
+        !janela &&
         pos &&
         createPortal(
           <div
