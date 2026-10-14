@@ -1281,7 +1281,10 @@ export default function CuradoriaPage() {
             <div className={`relative flex min-h-0 min-w-0 gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
               <div
                 className={`relative flex min-h-0 min-w-0 ${
-                  marcacaoGrande ? 'h-[240px] w-[300px] flex-none self-start' : 'flex-1'
+                  // marcacao aberta: o visualizador fica INVISIVEL por baixo
+                  // (continua montado - o OHIF nao recarrega) e a imagem de
+                  // marcacao ocupa exatamente o mesmo quadro
+                  marcacaoGrande ? 'pointer-events-none absolute inset-0 opacity-0' : 'flex-1'
                 }`}
               >
                 <PainelVisualizador
@@ -1302,29 +1305,13 @@ export default function CuradoriaPage() {
                   onAlternarMarcacao={alternarMarcacao}
                   dadosNaColuna
                 />
-                {/* Visualizador reduzido a miniatura (marcacao aberta): uma
-                    camada transparente por cima captura o clique e fecha a
-                    marcacao - o iframe continua montado, so menor. */}
-                {marcacaoGrande && (
-                  <button
-                    type="button"
-                    onClick={fecharMarcacao}
-                    className="group absolute inset-0 z-20 flex items-end justify-center rounded-2xl bg-black/10 p-3 transition hover:bg-black/0"
-                    aria-label={t('foco.voltarVisualizador')}
-                    title={t('foco.voltarVisualizador')}
-                  >
-                    <span className="rounded-full bg-black/75 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 transition group-hover:bg-brand">
-                      ⇄ {t('foco.voltarVisualizador')}
-                    </span>
-                  </button>
-                )}
               </div>
 
               {fichaAtiva && (
                 <section
                   className={
                     marcacaoGrande
-                      ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface p-3'
+                      ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-teal-400/60 bg-base-surface p-3'
                       : 'hidden'
                   }
                 >
@@ -1338,7 +1325,7 @@ export default function CuradoriaPage() {
                       ⇄ {t('foco.voltarVisualizador')}
                     </button>
                   </div>
-                  <div className="min-h-0 flex-1 px-6">
+                  <div className="min-h-0 flex-1">
                     <MarcadorAchado
                       orthancReferenceId={fichaAtiva.orthancReferenceId}
                       marcacoes={form.marcacoes}
