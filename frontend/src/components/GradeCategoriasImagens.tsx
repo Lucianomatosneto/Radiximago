@@ -332,7 +332,7 @@ export const ESTILO_CARTOES = `
 .dark .cartao-categoria{
   background:linear-gradient(160deg, color-mix(in srgb, var(--cor) 14%, rgba(7,11,16,.5)), rgba(7,11,16,.36));
   border-color:color-mix(in srgb, var(--cor) 30%, rgba(255,255,255,.07));
-  box-shadow:0 1px 0 rgba(255,255,255,.04) inset, 0 18px 40px -24px color-mix(in srgb, var(--cor) 70%, transparent);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 18px 40px -24px color-mix(in srgb, var(--cor) 38%, transparent);
 }
 .cartao-categoria:hover,.cartao-categoria:focus-visible{
   transform:translateY(-4px);

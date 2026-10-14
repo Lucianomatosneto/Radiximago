@@ -16,17 +16,17 @@ import type { ControleMapaMundi, IntensidadeFundo } from './motorMapaMundi'
 // para nao depender do globals.css.
 const ESTILO = `
 .fundo-mapa-mundi{background:
-  radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.38), transparent 70%),
-  linear-gradient(180deg,#000 0%,#02090C 40%,#03302D 78%,#0B5E58 100%);}
+  radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.16), transparent 70%),
+  linear-gradient(180deg,#000 0%,#02080A 40%,#03201F 78%,#063936 100%);}
 .fundo-mapa-vinheta{background:
   radial-gradient(120% 95% at 55% 45%, transparent 45%, rgba(0,0,0,.6) 100%),
   linear-gradient(180deg, rgba(0,0,0,.35), transparent 22%);}
-/* leitura (escuro): em vez de preto, um cinza-azulado (ardosia) medio -
-   preto absoluto com texto branco cansa a vista em leituras longas; aqui a
-   area de trabalho fica clara o bastante para ler sem esforco */
+/* leitura (escuro): grafite bem escuro e pouco saturado (nem preto
+   absoluto, nem o cinza-azulado medio de antes, que deixava a tela clara
+   demais e cansava a vista); o brilho turquesa no rodape ficou discreto */
 .fundo-mapa-mundi[data-intensidade="leitura"]{background:
-  radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.16), transparent 70%),
-  linear-gradient(180deg,#172129 0%,#18242C 45%,#19302F 80%,#1B3D38 100%);}
+  radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.06), transparent 70%),
+  linear-gradient(180deg,#0B1013 0%,#0C1215 45%,#0D1618 80%,#0F1C1C 100%);}
 .fundo-mapa-mundi[data-intensidade="leitura"] .fundo-mapa-vinheta{background:
   radial-gradient(120% 95% at 55% 45%, transparent 60%, rgba(0,0,0,.18) 100%);}
 .light .fundo-mapa-mundi:not([data-forcar-escuro]){background:

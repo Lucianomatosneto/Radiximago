@@ -106,23 +106,27 @@ export default function FundoAplicacao() {
 // (html[data-fundo]). Ficam aqui, num lugar so, para valer em todas as
 // telas sem precisar mexer em cada componente.
 const ESTILO_PADRAO = `
-/* 0. LEGIBILIDADE (vale para todas as telas com o mapa)
+/* 0. LEGIBILIDADE E CONFORTO VISUAL (vale para todas as telas com o mapa)
       - letra ~6% maior em todo o sistema (16px -> 17px de base);
-      - no tema escuro, textos secundarios bem mais claros e paineis um
-        pouco menos escuros: o contraste "texto x fundo" sobe de ~4:1 para
-        ~7-9:1 (nivel AAA da WCAG, recomendacao internacional de
-        acessibilidade), o que tira a sensacao de "forcar a vista";
+      - MODO NOTURNO "suave" (pedido de 2026-10: a tela escura estava clara
+        demais e cansava a vista): fundo e paineis mais escuros e com pouca
+        saturacao, e o texto principal deixa de ser branco puro (cinza-gelo
+        #dee4ec). Branco puro sobre fundo escuro "ofusca" e cria halo nas
+        letras (efeito halation); tons suaves reduzem o brilho total da
+        tela sem perder leitura. O contraste continua alto: texto principal
+        ~13:1 e o texto mais apagado ~5:1 (acima do minimo 4,5:1 da WCAG AA,
+        recomendacao internacional de acessibilidade);
       - no tema claro, os cinzas claros demais ficam um tom mais escuros. */
 html[data-fundo]{font-size:106.25%}
 html[data-fundo]:not(.light){
-  --color-base: 14 20 26;
-  --color-base-surface: 31 40 51;
-  --color-base-surface2: 40 51 64;
-  --color-base-border: 64 77 94;
-  --color-ink: 248 250 252;
-  --color-ink-2: 226 232 240;
-  --color-ink-3: 190 201 216;
-  --color-ink-4: 154 168 189;
+  --color-base: 11 15 19;
+  --color-base-surface: 21 27 34;
+  --color-base-surface2: 28 35 44;
+  --color-base-border: 44 54 67;
+  --color-ink: 222 228 236;
+  --color-ink-2: 196 205 217;
+  --color-ink-3: 156 168 186;
+  --color-ink-4: 128 142 162;
 }
 html.light[data-fundo]{
   --color-base-border: 212 219 229;
@@ -200,7 +204,7 @@ const ESTILO_COMPONENTES = `
   background:linear-gradient(100deg,#0f172a 0%,#0f766e 60%,#0d9488 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
-.dark .titulo-pagina{background-image:linear-gradient(100deg,#ffffff 0%,#e6fffa 45%,#5eead4 100%)}
+.dark .titulo-pagina{background-image:linear-gradient(100deg,#dee4ec 0%,#c9e9e3 45%,#4fd1bd 100%)}
 @media (min-width:640px){.titulo-pagina{font-size:2rem}}
 .titulo-pagina--grande{font-size:2.25rem}
 @media (min-width:640px){.titulo-pagina--grande{font-size:3rem}}

@@ -58,13 +58,15 @@ interface Paleta {
   alfaPonto: number
 }
 
+// tema escuro: pontos em cinza-gelo (nao branco puro) e mais apagados -
+// o mapa e so decoracao e nao deve brilhar mais que o conteudo
 const PALETA_ESCURA: Paleta = {
-  ponto: [214, 240, 250],
-  pontoForte: [255, 255, 255],
-  rota: [94, 234, 212],
-  pulso: [45, 212, 191],
+  ponto: [160, 186, 196],
+  pontoForte: [205, 228, 232],
+  rota: [74, 196, 180],
+  pulso: [45, 180, 165],
   estrelas: true,
-  alfaPonto: 0.62,
+  alfaPonto: 0.42,
 }
 
 const PALETA_CLARA: Paleta = {
