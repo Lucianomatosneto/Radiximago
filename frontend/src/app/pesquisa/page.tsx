@@ -11,12 +11,12 @@ import EtiquetaMarcacoes from '../../components/visualizador/EtiquetaMarcacoes'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
-import SeletorDentesQuadrante from '../../components/curadoria/SeletorDentesQuadrante'
+import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 import { TIPOS_ACHADO, REGIOES_ANATOMICAS, rotularTipoAchado } from '../../lib/achados'
-import { ERROS_TECNICOS, rotuloErro } from '../../lib/errosTecnicos'
+import { ERROS_TECNICOS, errosParaTipo, rotuloErro } from '../../lib/errosTecnicos'
 
 // `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
 // (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
@@ -346,6 +346,27 @@ function PesquisaConteudo() {
     setFiltros({ ...filtros, [campo]: valor })
   }
 
+  // tipo de exame trocado: um erro tecnico que nao existe para o novo tipo
+  // sai do filtro (a lista de erros mostra so os possiveis para o tipo)
+  useEffect(() => {
+    if (!filtros.tipo_radiografia || !filtros.erroTecnico) return
+    if (!errosParaTipo(filtros.tipo_radiografia).some((e) => e.valor === filtros.erroTecnico)) {
+      setFiltros((f) => ({ ...f, erroTecnico: '' }))
+    }
+  }, [filtros.tipo_radiografia, filtros.erroTecnico])
+
+  // TECLADO na busca avancada: Tab passa de caixa em caixa (padrao do
+  // navegador); dentro de uma caixa de lista, ← / → trocam a opcao.
+  function setasNasListas(e: React.KeyboardEvent<HTMLElement>) {
+    const alvo = e.target
+    if (!(alvo instanceof HTMLSelectElement) || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return
+    e.preventDefault()
+    const total = alvo.options.length
+    if (!total) return
+    alvo.selectedIndex = (alvo.selectedIndex + (e.key === 'ArrowRight' ? 1 : -1) + total) % total
+    alvo.dispatchEvent(new Event('change', { bubbles: true }))
+  }
+
   // Quantos filtros estao em uso (mostrado na barra recolhida).
   const totalFiltrosAtivos =
     (Object.keys(FILTROS_VAZIOS) as (keyof Filtros)[]).filter((chave) => {
@@ -571,7 +592,7 @@ function PesquisaConteudo() {
             </div>
           </div>
 
-          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5">
+          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface p-5" onKeyDown={setasNasListas}>
             <p className="text-sm font-semibold text-ink">🔎 {t('buscaAvancadaTitulo')}</p>
             <p className="mb-4 mt-0.5 text-xs text-slate-400">{t('buscaAvancadaSubtitulo')}</p>
 
@@ -622,7 +643,7 @@ function PesquisaConteudo() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
                 <label className={campoLabel}>{t('campoGenero')}</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2" onKeyDown={setasEntreBotoes}>
                   {[{ valor: '', chave: '' }, ...OPCOES_GENERO].map((o) => (
                     <button
                       key={o.valor || 'todos'}
@@ -636,21 +657,15 @@ function PesquisaConteudo() {
                 </div>
               </div>
 
-              {/* Fase 4: quadrante -> dentes, mesma regra da Curadoria (os
-                  numeros dos dentes so aparecem depois de escolhido um
-                  quadrante - secao 7/53 do pedido). Reaproveita o MESMO
-                  componente/lista FDI da Curadoria (SeletorDentesQuadrante,
-                  lib/dentesFdi.ts), sem duplicar nada. Quadrante SOZINHO
-                  (sem nenhum dente marcado) ja e um filtro valido por si so
-                  - por isso guarda o quadrante ativo em filtros.quadrante
-                  via onQuadranteChange, nao so os dentes marcados. */}
+              {/* DENTES: por dente ou por grupo (incisivos, caninos, pre-
+                  molares, molares, terceiros molares). Os antigos filtros
+                  Arcada, Lado e Quadrante sairam desta tela. */}
               <div className="col-span-2 rounded-lg border p-2.5" style={estiloCaixaFiltro(1)}>
                 <label className={campoLabel}>{t('campoDentes')}</label>
-                <SeletorDentesQuadrante
+                <SeletorDentesGrupos
                   key={chaveSeletorDentes}
                   dentesSelecionados={filtros.dentesSelecionados}
-                  onChange={(dentes) => setFiltros({ ...filtros, dentesSelecionados: dentes })}
-                  onQuadranteChange={(quadrante) => setFiltros((f) => ({ ...f, quadrante: quadrante ? String(quadrante) : '' }))}
+                  onChange={(dentes) => setFiltros((f) => ({ ...f, dentesSelecionados: dentes, quadrante: '' }))}
                 />
                 {/* Modo ANY/TODOS - so aparece com mais de 1 dente marcado
                     (pedido explicito, secao 14: "nao fazer o usuario
@@ -677,38 +692,6 @@ function PesquisaConteudo() {
                     </label>
                   </div>
                 )}
-              </div>
-
-              <div>
-                <label htmlFor="filtro-arcada" className={campoLabel}>{t('campoArcada')}</label>
-                <select
-                  id="filtro-arcada"
-                  value={filtros.arcada}
-                  onChange={(e) => atualizarFiltro('arcada', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(2)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {OPCOES_ARCADA.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirArcada(o.chave)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="filtro-lado" className={campoLabel}>{t('campoLado')}</label>
-                <select
-                  id="filtro-lado"
-                  value={filtros.lado}
-                  onChange={(e) => atualizarFiltro('lado', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(3)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoAmbos')}</option>
-                  {OPCOES_LADO.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirLado(o.chave)}</option>
-                  ))}
-                </select>
               </div>
 
               <div>
@@ -795,7 +778,9 @@ function PesquisaConteudo() {
                   style={estiloCaixaFiltro(0)}
                 >
                   <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {ERROS_TECNICOS.map(({ valor }) => (
+                  {/* so os erros possiveis para o tipo de exame escolhido
+                      (todos, se nenhum tipo foi escolhido) */}
+                  {(filtros.tipo_radiografia ? errosParaTipo(filtros.tipo_radiografia) : ERROS_TECNICOS).map(({ valor }) => (
                     <option className="bg-white text-slate-900" key={valor} value={valor}>
                       {rotuloErro(valor)}
                     </option>

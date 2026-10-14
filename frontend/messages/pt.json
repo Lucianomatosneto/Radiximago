@@ -287,7 +287,7 @@
     "buscaAvancadaSubtitulo": "Refine sua pesquisa utilizando os filtros abaixo.",
     "campoGenero": "Gênero",
     "campoTodos": "Todos",
-    "campoDentes": "Dentes (FDI)",
+    "campoDentes": "Dentes ou grupos de dentes (FDI)",
     "modoQualquerUm": "Qualquer um",
     "modoTodos": "Todos",
     "campoArcada": "Arcada",
@@ -382,7 +382,15 @@
     "campoTexto": "Buscar por palavras",
     "placeholderTexto": "Ex.: reabsorção, calcificação pulpar, nódulo...",
     "ajudaTexto": "Procura nos achados detalhados, na descrição didática e no \"Outro\" das marcações — ignora acentos, aceita plural, pequenos erros e sinônimos do vocabulário.",
-    "campoTermo": "Termo padronizado"
+    "campoTermo": "Termo padronizado",
+    "gruposDentes": {
+      "incisivos": "Incisivos",
+      "caninos": "Caninos",
+      "preMolares": "Pré-molares",
+      "molares": "Molares",
+      "terceirosMolares": "Terceiros molares",
+      "limpar": "Limpar dentes"
+    }
   },
   "AlteracoesObservadas": {
     "categorias": {

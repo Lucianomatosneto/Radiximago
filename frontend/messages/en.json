@@ -287,7 +287,7 @@
     "buscaAvancadaSubtitulo": "Refine your search using the filters below.",
     "campoGenero": "Gender",
     "campoTodos": "All",
-    "campoDentes": "Teeth (FDI)",
+    "campoDentes": "Teeth or tooth groups (FDI)",
     "modoQualquerUm": "Any",
     "modoTodos": "All",
     "campoArcada": "Arch",
@@ -382,7 +382,15 @@
     "campoTexto": "Search by words",
     "placeholderTexto": "E.g.: resorption, pulp calcification, nodule...",
     "ajudaTexto": "Searches detailed findings, the teaching description and the \"Other\" text of markings — ignores accents, accepts plurals, small typos and vocabulary synonyms.",
-    "campoTermo": "Standard term"
+    "campoTermo": "Standard term",
+    "gruposDentes": {
+      "incisivos": "Incisors",
+      "caninos": "Canines",
+      "preMolares": "Premolars",
+      "molares": "Molars",
+      "terceirosMolares": "Third molars",
+      "limpar": "Clear teeth"
+    }
   },
   "AlteracoesObservadas": {
     "categorias": {
