@@ -19,6 +19,8 @@ from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
 from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria, StatusRevisao
 
+from app.modules.vocabulario import CurationTermo
+from app.modules.achados import Achado
 from .common import _buscar_ficha
 from .router import router
 
@@ -388,9 +390,25 @@ def obter_ficha(
         "observacoes_internas": ficha.observacoes_internas,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
+        "termos": [
+            t for (t,) in db.query(CurationTermo.termo_id).filter(CurationTermo.curation_id == ficha.id).all()
+        ],
         "curador_id": ficha.curador_id,
         "criado_em": ficha.criado_em.isoformat() if ficha.criado_em else None,
         "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,
+        # secao unica "Achados" (ver ficha._sincronizar_achados)
+        "achados": [
+            {
+                "tipo": a.tipo,
+                "regiao_anatomica": a.regiao_anatomica,
+                "dentes": a.dentes or [],
+                "dente_nao_identificado": a.dente_nao_identificado,
+                "descricao": a.descricao,
+                "marcacoes": a.marcacoes or [],
+            }
+            for a in db.query(Achado).filter(Achado.curation_id == ficha.id).order_by(Achado.id).all()
+        ],
+        "sem_alteracoes": ficha.achado_principal == "normal",
     }
 
 

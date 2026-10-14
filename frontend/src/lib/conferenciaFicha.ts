@@ -30,6 +30,8 @@ export interface FichaConferencia {
   achados_detalhe: string
   descricao_didatica: string
   marcacoes: { achado?: string | null; achado_descricao?: string | null }[]
+  achados?: { tipo: string; dentes: number[]; regiao: string }[]
+  sem_alteracoes?: boolean
 }
 
 const DENTE_VALIDO = (d: number) => d >= 11 && d <= 48 && d % 10 >= 1 && d % 10 <= 8
@@ -79,7 +81,10 @@ export function conferirFicha(ficha: FichaConferencia, duvidasVoz = 0, secoesPen
   const descricao = normalizar(ficha.descricao_didatica)
   const dizNormal = FRASES_NORMAL.some((f) => descricao.includes(f))
   if (dizNormal && ficha.alteracoes_observadas.length > 0) add('aviso', 'contradicao', 'descricao')
-  if (!temAchado && !ficha.achados_detalhe.trim() && !dizNormal) add('aviso', 'semAchados', 'alteracoes')
+  if (!temAchado && !ficha.achados_detalhe.trim() && !dizNormal && !ficha.sem_alteracoes) add('aviso', 'semAchados', 'achados')
+  if (ficha.sem_alteracoes && (ficha.achados ?? []).length) add('aviso', 'contradicao', 'achados')
+  const semLocal = (ficha.achados ?? []).map((a, i) => (!a.dentes.length && !a.regiao ? i + 1 : 0)).filter(Boolean)
+  if (semLocal.length) add('aviso', 'achadoSemLocal', 'achados', { numeros: semLocal.join(', ') })
   if (!ficha.descricao_didatica.trim()) add('aviso', 'descricaoVazia', 'descricao')
 
   if (duvidasVoz > 0) add('aviso', 'duvidasVoz', 'dados', { quantidade: duvidasVoz })

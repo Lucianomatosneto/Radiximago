@@ -77,4 +77,20 @@ caso('palavra curta solta nao vira duvida de semelhanca', 'cisto', r => r.ficha.
 }
 caso('nada a registrar e comando mesmo com secao de texto ativa', 'nada a registrar', r =>
   r.comandos.join() === 'nada_a_registrar' && r.ficha.observacoes_internas === '', 'observacoes')
+// ---- secao unica Achados: achado + onde
+caso('achado com dente, regiao e marcacao', 'lesão periapical no dente 36, região periapical, marcação um', r => {
+  const a = r.ficha.achados ?? []
+  return a.length === 1 && a[0].tipo === 'lesao_periapical' && a[0].dentes.join() === '36' && a[0].regiao === 'regiao_periapical' &&
+    a[0].marcacoes.join() === 'a' && r.ficha.dentes.join() === '36' && r.ficha.alteracoes_observadas.join() === 'lesao_periapical'
+})
+caso('dois achados em sequencia com dentes', 'cárie em dentina no 37 e cálculo nos dentes 31 e 41', r => {
+  const a = r.ficha.achados ?? []
+  return a.length === 2 && a[0].dentes.join() === '37' && a[1].tipo === 'calculo_dentario' && a[1].dentes.join() === '31,41'
+})
+caso('mesmo tipo sem dente e completado depois', 'perda óssea horizontal. perda óssea horizontal no dente 46', r => {
+  const a = r.ficha.achados ?? []
+  return a.length === 1 && a[0].dentes.join() === '46'
+})
+caso('sem alteracoes marca imagem normal', 'Imagem sem alterações.', r => r.ficha.sem_alteracoes === true && r.alteracoes.length === 1)
+caso('dente depois de achado nao vira descricao', 'alteração cisto na mandíbula', r => (r.ficha.achados ?? [])[0]?.regiao === 'mandibula')
 process.exit(falhas ? 1 : 0)

@@ -23,17 +23,12 @@ export interface FichaProgresso {
   descricao_didatica: string
   observacoes_internas: string
   marcacoes: { achado?: string | null; achado_descricao?: string | null }[]
+  achados?: { tipo: string }[]
+  sem_alteracoes?: boolean
 }
 
 /** secoes que aceitam "Nada a registrar" */
-export const SECOES_OPCIONAIS: SecaoFicha[] = [
-  'marcacoes',
-  'alteracoes',
-  'achados_detalhados',
-  'achados_dente',
-  'erro_tecnico',
-  'observacoes',
-]
+export const SECOES_OPCIONAIS: SecaoFicha[] = ['marcacoes', 'achados_detalhados', 'erro_tecnico', 'observacoes']
 
 export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
   switch (secao) {
@@ -50,8 +45,9 @@ export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
         f.marcacoes.length > 0 &&
         f.marcacoes.every((m) => !!m.achado && (m.achado !== 'outro' || !!(m.achado_descricao || '').trim()))
       )
-    case 'alteracoes':
-      return f.alteracoes_observadas.length > 0
+    case 'achados':
+      // pelo menos um achado OU "Imagem sem alterações" (nunca em branco)
+      return (f.achados ?? []).length > 0 || !!f.sem_alteracoes
     case 'achados_detalhados':
       return !!f.achados_detalhe.trim()
     case 'descricao':
@@ -59,8 +55,8 @@ export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
     case 'observacoes':
       return !!f.observacoes_internas.trim()
     default:
-      // achados por dente e erro tecnico ficam em paineis proprios (API
-      // separada): contam como concluidos quando declarados revisados
+      // erro tecnico fica em painel proprio (API separada): conta como
+      // concluido quando declarado revisado
       return false
   }
 }

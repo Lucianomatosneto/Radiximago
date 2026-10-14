@@ -3,8 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
-import PainelAchadosRadiografia from './PainelAchadosRadiografia'
-import PainelAchadosEstruturados from './PainelAchadosEstruturados'
+import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErroTecnico from './PainelErroTecnico'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import { corMarcacao, rotularAchadoMarcacao } from '../../lib/marcacoes'
@@ -385,8 +384,8 @@ export default function ColunaFichaCuradoria({
           )}
         </Secao>
 
-        <Secao {...p('alteracoes')}>
-          <PainelAchadosRadiografia form={form} onChange={onChange} pagina="todas" mostrarOutros={false} />
+        <Secao {...p('achados')}>
+          <PainelAchadosFicha form={form} onChange={onChange} />
         </Secao>
 
         <Secao {...p('achados_detalhados')}>
@@ -396,15 +395,6 @@ export default function ColunaFichaCuradoria({
             rows={3}
             className={campoTexto}
             placeholder={t('placeholderAchados')}
-          />
-        </Secao>
-
-        <Secao {...p('achados_dente')}>
-          <PainelAchadosEstruturados
-            curationId={curationId}
-            statusFicha={statusFicha}
-            dentesDaFicha={form.dentes}
-            marcacoesDaFicha={form.marcacoes}
           />
         </Secao>
 

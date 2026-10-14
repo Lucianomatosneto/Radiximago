@@ -12,9 +12,8 @@
 export type SecaoFicha =
   | 'dados'
   | 'marcacoes'
-  | 'alteracoes'
+  | 'achados'
   | 'achados_detalhados'
-  | 'achados_dente'
   | 'erro_tecnico'
   | 'descricao'
   | 'observacoes'
@@ -22,9 +21,10 @@ export type SecaoFicha =
 export const SECOES_FICHA: SecaoFicha[] = [
   'dados',
   'marcacoes',
-  'alteracoes',
+  // secao unica "Achados": substitui "Alterações observadas" + "Achados por
+  // dente/região" (um achado = um registro - ver lib/achadosFicha.ts)
+  'achados',
   'achados_detalhados',
-  'achados_dente',
   'erro_tecnico',
   'descricao',
   'observacoes',
@@ -46,7 +46,7 @@ export const SECAO_DO_CAMPO: Record<string, SecaoFicha> = {
   genero: 'dados',
   qualidade_tecnica: 'dados',
   marcacoes: 'marcacoes',
-  alteracoes_observadas: 'alteracoes',
+  alteracoes_observadas: 'achados',
   achados_detalhe: 'achados_detalhados',
   termos: 'achados_detalhados',
   descricao_didatica: 'descricao',

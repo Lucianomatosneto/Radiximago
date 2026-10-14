@@ -89,6 +89,21 @@ class CurationUpdate(BaseModel):
     descricao_didatica: Optional[str] = None
     observacoes_internas: Optional[str] = None
     anonimizacao_validada: Optional[bool] = None
+    # Termos do vocabulario controlado ligados a ficha (lista completa -
+    # substitui a anterior). Ver app/modules/vocabulario.py.
+    termos: Optional[List[int]] = None
+    # A edicao veio (no todo ou em parte) da curadoria por voz - so para
+    # registro na auditoria (dado de pesquisa); nao muda nenhum campo.
+    origem_voz: Optional[bool] = None
+    # SECAO UNICA "ACHADOS" (um achado = um registro: tipo + dentes + regiao
+    # + marcacoes). Quando enviado, substitui TODOS os achados estruturados
+    # da ficha; o resumo legado `alteracoes_observadas` e os `dentes` da
+    # ficha passam a ser DERIVADOS destes achados (ver ficha.py). Definido
+    # mais abaixo (AchadoCreate) - referencia adiada.
+    achados: Optional[List["AchadoCreate"]] = None
+    # "Imagem sem alteracoes" (radiografia normal) - guardado como
+    # achado_principal = "normal". So vale se a ficha nao tiver achados.
+    sem_alteracoes: Optional[bool] = None
 
 
 class CurationApprove(BaseModel):
@@ -190,3 +205,8 @@ class ErroTecnicoOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# resolve a referencia adiada de CurationUpdate.achados (AchadoCreate e
+# declarado depois de CurationUpdate neste arquivo)
+CurationUpdate.model_rebuild()

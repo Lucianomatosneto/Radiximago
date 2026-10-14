@@ -13,6 +13,7 @@ import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCur
 import { SECAO_DO_CAMPO, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
+import { achadosDaApi, achadosParaApi, marcacoesSincronizadas } from '../../lib/achadosFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, proximaPendente, temConteudo } from '../../lib/progressoFicha'
 import { SECOES_FICHA } from '../../lib/secoesCuradoria'
 import GuiaLaudo, { guiaJaVisto } from '../../components/curadoria/GuiaLaudo'
@@ -93,7 +94,12 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   if (form.idade_min !== '') payload.idade_min = Number(form.idade_min)
   if (form.idade_max !== '') payload.idade_max = Number(form.idade_max)
   if (form.genero !== '') payload.genero = form.genero
-  payload.marcacoes = form.marcacoes
+  // secao unica "Achados": as marcacoes ligadas a um achado recebem o
+  // rotulo dele; o backend deriva alteracoes_observadas e dentes
+  const marcacoes = marcacoesSincronizadas(form.marcacoes, form.achados)
+  payload.marcacoes = marcacoes
+  payload.achados = achadosParaApi(form.achados, marcacoes)
+  payload.sem_alteracoes = form.sem_alteracoes && form.achados.length === 0
   payload.termos = form.termos
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
   return payload
@@ -648,6 +654,8 @@ export default function CuradoriaPage() {
       observacoes_internas: ficha.observacoes_internas ?? '',
       anonimizacao_validada: ficha.anonimizacao_validada ?? false,
       termos: ficha.termos ?? [],
+      achados: achadosDaApi(ficha.achados, ficha.alteracoes_observadas),
+      sem_alteracoes: !!ficha.sem_alteracoes,
     })
   }
 

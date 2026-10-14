@@ -803,12 +803,11 @@
     "secoes": {
       "dados": "Dados da imagem",
       "marcacoes": "Marcações",
-      "alteracoes": "Alterações observadas",
       "achados_detalhados": "Achados detalhados",
-      "achados_dente": "Achados por dente/região",
       "erro_tecnico": "Erro técnico",
       "descricao": "Descrição didática",
-      "observacoes": "Observações internas"
+      "observacoes": "Observações internas",
+      "achados": "Achados"
     },
     "coluna": {
       "titulo": "Ficha de curadoria",
@@ -820,7 +819,7 @@
       "fecharMarcacao": "Fechar marcação",
       "marcacaoN": "Marcação {numero}",
       "semAchado": "sem achado",
-      "placeholderAchados": "Descreva achados que não estão na lista de alterações",
+      "placeholderAchados": "Descreva o que não está na lista padronizada de achados",
       "concluida": "Concluída",
       "pendente": "Pendente",
       "progresso": "{feitas} de {total} seções",
@@ -868,7 +867,8 @@
         "semAchados": "Nenhum achado registrado. Se a imagem é normal, diga isso na descrição.",
         "descricaoVazia": "Descrição didática vazia.",
         "duvidasVoz": "{quantidade} dúvida(s) da voz ainda não confirmada(s).",
-        "secaoPendente": "Seção {numero} não revisada. Se não houver o que registrar, use “Nada a registrar”."
+        "secaoPendente": "Seção {numero} não revisada. Se não houver o que registrar, use “Nada a registrar”.",
+        "achadoSemLocal": "Achado(s) {numeros} sem dente nem região."
       }
     },
     "ajudaSecoes": {
@@ -888,20 +888,10 @@
         "falar3": "três outro: calcificação pulpar",
         "dica": "Desenhe as marcações com o mouse (botão “Abrir marcação” ou tecla M). O número de cada marcação aparece na imagem; depois diga o número e o achado."
       },
-      "alteracoes": {
-        "falar1": "lesão periapical",
-        "falar2": "alteração perda óssea vertical e cálculo",
-        "falar3": "cárie em dentina",
-        "dica": "Pode falar várias de uma vez. “Cárie” sozinha abre uma dúvida perguntando qual tipo."
-      },
       "achados_detalhados": {
         "falar1": "reabsorção cervical na face distal",
         "falar2": "achados detalhados: … fim   (de qualquer seção)",
         "dica": "Com esta seção em destaque, tudo o que você falar (sem palavra-guia no começo) vira texto aqui, até dizer “fim”."
-      },
-      "achados_dente": {
-        "falar1": "nada a registrar   (se não houver)",
-        "dica": "Esta seção é preenchida com o mouse: escolha o dente, a região e o achado. Por voz, só “nada a registrar”."
       },
       "erro_tecnico": {
         "falar1": "nada a registrar   (se a técnica estiver adequada)",
@@ -917,6 +907,12 @@
         "falar1": "conferir com o professor responsável",
         "falar2": "nada a registrar",
         "dica": "Uso interno da equipe; não aparece para estudantes."
+      },
+      "achados": {
+        "falar1": "lesão periapical no dente 36, região periapical, marcação um",
+        "falar2": "cárie em dentina no 37 e cálculo nos dentes 31 e 41",
+        "falar3": "sem alterações   (imagem normal)",
+        "dica": "Cada achado vira uma linha com o QUE (tipo) e ONDE (dente, região, marcação). O que faltar fica em amarelo para completar. A lista resumida da imagem, usada na Pesquisa, é montada sozinha."
       }
     },
     "guia": {
@@ -932,7 +928,7 @@
       "passos": {
         "inicio": {
           "titulo": "Como funciona",
-          "texto": "A ficha tem 8 seções, sempre na mesma ordem. A seção em destaque (borda verde-azulada) é onde você está — e é para onde vai o que você falar. A trilha de bolinhas no topo mostra o que já foi concluído (✓ verde) e o que falta.",
+          "texto": "A ficha tem 7 seções, sempre na mesma ordem. A seção em destaque (borda verde-azulada) é onde você está — e é para onde vai o que você falar. A trilha de bolinhas no topo mostra o que já foi concluído (✓ verde) e o que falta.",
           "fazer1": "Clique no microfone (ou Alt+V), fale e clique de novo.",
           "fazer2": "Use ↓ ↑ (ou ▼ ▲) para passar de seção. Clique no “?” de cada seção para ver exemplos do que falar.",
           "fazer3": "Se uma seção não tiver nada, clique “Nada a registrar” (ou fale). Assim nada fica esquecido em branco.",
@@ -954,49 +950,65 @@
           "falar1": "um cárie",
           "falar2": "dois outro: calcificação pulpar"
         },
-        "alteracoes": {
-          "titulo": "3. Alterações observadas",
-          "texto": "Marque na lista padronizada tudo o que você observa.",
-          "falar1": "lesão periapical e reabsorção radicular externa",
-          "falar2": "nada a registrar   (se a imagem for normal)"
-        },
         "achados_detalhados": {
           "titulo": "4. Achados detalhados",
           "texto": "O que não está na lista vai aqui, em texto livre.",
           "falar1": "reabsorção cervical na face distal do 36",
           "dica": "Achados repetidos aqui podem virar termos oficiais na tela Vocabulário."
         },
-        "achados_dente": {
-          "titulo": "5. Achados por dente/região",
-          "texto": "Detalhe, com o mouse, o achado de cada dente ou região.",
-          "falar1": "nada a registrar"
-        },
         "erro_tecnico": {
-          "titulo": "6. Erro técnico",
+          "titulo": "5. Erro técnico",
           "texto": "Registre se houve erro técnico (posicionamento, exposição, processamento). Isso também é material didático!",
           "falar1": "nada a registrar"
         },
         "descricao": {
-          "titulo": "7. Descrição didática",
+          "titulo": "6. Descrição didática",
           "texto": "O texto que o estudante vai ler. Explique o que a imagem ensina.",
           "falar1": "(fale direto) Radiografia periapical mostrando…",
           "falar2": "macro periapical normal",
           "dica": "Use macros (⚡) para descrições que se repetem; depois só ajuste."
         },
         "observacoes": {
-          "titulo": "8. Observações internas",
+          "titulo": "7. Observações internas",
           "texto": "Recados para a equipe (não aparecem para estudantes).",
           "falar1": "conferir com o professor responsável",
           "falar2": "nada a registrar"
         },
         "aprovar": {
           "titulo": "Aprovar",
-          "texto": "Quando as 8 seções estiverem ✓, clique em Aprovar. O sistema faz uma conferência automática: itens obrigatórios impedem a aprovação; avisos podem ser revistos ou aprovados mesmo assim.",
+          "texto": "Quando as 7 seções estiverem ✓, clique em Aprovar. O sistema faz uma conferência automática: itens obrigatórios impedem a aprovação; avisos podem ser revistos ou aprovados mesmo assim.",
           "fazer1": "Confira a lista que aparecer e use “ir para a seção” para corrigir.",
           "fazer2": "Depois de aprovar, a próxima imagem abre já no passo 1.",
           "falar1": "salvar   (salva o rascunho; aprovar é sempre com o mouse)"
+        },
+        "achados": {
+          "titulo": "3. Achados",
+          "texto": "Registre cada achado uma única vez: o que é (lista padronizada) e onde está (dente, região e marcação). Se a imagem for normal, use “Imagem sem alterações”.",
+          "fazer1": "Digite parte do nome no campo 🔎 (ex.: “periap”) e aperte Enter.",
+          "fazer2": "Complete dente, região e ligue a marcação (⭕) — o que faltar aparece em amarelo.",
+          "falar1": "lesão periapical no dente 36, região periapical, marcação um",
+          "falar2": "sem alterações",
+          "dica": "A Pesquisa encontra “lesão periapical no dente 36” com precisão porque o achado guarda o dente junto."
         }
       }
+    },
+    "achadosFicha": {
+      "normal": "Imagem sem alterações (normal)",
+      "normalMarcado": "Imagem sem alterações",
+      "normalBloqueado": "Há achados registrados: remova-os para marcar a imagem como normal.",
+      "adicionar": "Adicionar achado",
+      "adicionarPlaceholder": "Adicionar achado: digite (ex.: “periap”) ou fale…",
+      "vazio": "Nenhum achado ainda. Adicione acima ou marque “Imagem sem alterações”.",
+      "remover": "Remover achado",
+      "dente": "Dente",
+      "removerDente": "Remover dente {dente}",
+      "adicionarDente": "Adicionar dente",
+      "denteQual": "dente?",
+      "regiao": "Região",
+      "regiaoQual": "região?",
+      "ligarMarcacao": "Ligar a marcação {numero}",
+      "desligarMarcacao": "Desligar a marcação {numero}",
+      "resumo": "Resumo automático da imagem (usado pela Pesquisa):"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1580,8 +1592,8 @@
     "nadaOuvido": "Nenhuma fala foi detectada. Tente de novo, mais perto do microfone.",
     "nadaEntendido": "Nada foi reconhecido nesse trecho.",
     "ajudaTitulo": "Como falar",
-    "ajuda1": "Valores soltos: “periapical”, “masculino”, “lesão periapical”.",
-    "ajuda2": "Com palavra-guia: “qualidade boa”, “dente 36 e 37”, “idade de 30 a 40”, “alteração perda óssea vertical”.",
+    "ajuda1": "Achados com o lugar: “lesão periapical no dente 36, região periapical, marcação um”. Imagem normal: “sem alterações”.",
+    "ajuda2": "Com palavra-guia: “qualidade boa”, “dente 36 e 37”, “idade de 30 a 40”.",
     "ajuda3": "Marcações: “marcação dois cárie” ou “marcação dois outro: calcificação pulpar”.",
     "ajuda4": "Outro: “achado outro: reabsorção cervical” (vai para Achados detalhados).",
     "ajuda5": "Texto corrido: “descrição: …”, “achados detalhados: …”, “observações internas: …” — termina com “fim”.",

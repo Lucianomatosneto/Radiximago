@@ -78,6 +78,18 @@ Backend: `app/modules/macros.py`, `macros_router.py`, migração `a8c3e5f1b7d2`.
 - Imagem nova: a coluna volta ao passo 1 (topo) e o roteiro recomeça.
 - **📘 Como laudar**: guia passo a passo (o que fazer, o que falar, dicas) que abre sozinho na primeira vez neste navegador e depois pelo botão (`GuiaLaudo.tsx`).
 
+## 3.4 Seção única "Achados" (um achado = um registro)
+
+Substitui o checklist de 26 caixinhas "Alterações observadas" e a seção "Achados por dente/região". A ficha passou de 8 para 7 seções.
+
+- Cada achado é uma linha: **tipo** (mesma lista padronizada de 26 itens) + **dentes** + **região anatômica** + **marcações** (M1, M2…). O que faltar aparece em amarelo.
+- **Imagem sem alterações**: um clique (guardado como `achado_principal = "normal"`); bloqueado quando há achados.
+- Voz: "lesão periapical no dente 36, região periapical, marcação um"; "cárie em dentina no 37 e cálculo nos dentes 31 e 41"; "sem alterações".
+- **Compatibilidade com a Pesquisa**: ao salvar, o backend (`curation/ficha.py::_sincronizar_achados`) substitui os achados estruturados da ficha e **deriva** `alteracoes_observadas` (tipos) e soma os dentes dos achados aos `dentes` da ficha. Buscas antigas continuam iguais; "achado + dente/região" passa a valer para todas as fichas novas.
+- Fichas antigas (só com o checklist): ao abrir, cada alteração vira uma linha sem dente/região — nada se perde.
+- Marcação ligada a um achado recebe o rótulo/cor equivalente (`lib/achadosFicha.ts::marcacoesSincronizadas`).
+- Base: laudo estruturado (RSNA RadReport; DICOM SR TID 1500) e normalização de dados.
+
 ## 4. Segurança e LGPD
 
 - **Áudio não sai da máquina do Rádix** e não é gravado (fica só em memória durante a transcrição).

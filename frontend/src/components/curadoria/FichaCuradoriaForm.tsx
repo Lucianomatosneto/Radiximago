@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl'
 import type { Marcacao } from '../../lib/marcacoes'
+import type { AchadoFicha } from '../../lib/achadosFicha'
 
 // Tipo de radiografia, faixa etária, sexo, dentes (notação FDI) e
 // qualidade técnica saíram de aqui e foram para a caixa sobreposta no
@@ -26,6 +27,13 @@ export interface FormularioFicha {
   descricao_didatica: string
   observacoes_internas: string
   anonimizacao_validada: boolean
+  // termos do vocabulario controlado ligados a ficha (ver /vocabulario)
+  termos: number[]
+  // secao unica "Achados" (lib/achadosFicha.ts); alteracoes_observadas
+  // acima e o resumo DERIVADO destes achados
+  achados: AchadoFicha[]
+  // "Imagem sem alterações" (radiografia normal)
+  sem_alteracoes: boolean
 }
 
 export const FORM_VAZIO: FormularioFicha = {
@@ -41,6 +49,9 @@ export const FORM_VAZIO: FormularioFicha = {
   descricao_didatica: '',
   observacoes_internas: '',
   anonimizacao_validada: false,
+  termos: [],
+  achados: [],
+  sem_alteracoes: false,
 }
 
 const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'

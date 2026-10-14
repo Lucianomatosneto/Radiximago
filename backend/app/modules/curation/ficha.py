@@ -8,6 +8,9 @@ from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
+from app.modules.vocabulario import CurationTermo, TermoVocabulario
+from app.modules.achados import Achado, TipoAchado
+from app.modules.curations import AlteracaoObservada
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico, _valor
 from .router import router
@@ -113,6 +116,51 @@ def criar_curadoria(
 # ---------------------------------------------------------------------
 # PATCH /curation/{curation_id}  -> edita os campos de classificacao
 # ---------------------------------------------------------------------
+ALTERACOES_LEGADAS = {a.value for a in AlteracaoObservada}
+
+
+def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id: int) -> None:
+    """
+    Secao unica "Achados": substitui os achados estruturados da ficha pela
+    lista recebida (o frontend sempre manda o estado completo) e DERIVA os
+    campos legados, para a Pesquisa avancada continuar funcionando igual:
+    - alteracoes_observadas = tipos dos achados (sem repetir);
+    - dentes da ficha = dentes que ja estavam + os dentes dos achados.
+    Validacao identica a das rotas /curation/{id}/achados (dentes FDI,
+    "outro" exige descricao).
+    """
+    from .achados import _normalizar_dentes, _validar_outros  # evita import circular
+
+    novos = []
+    for item in achados:
+        dentes = _normalizar_dentes(item.dentes, item.dente_nao_identificado)
+        _validar_outros(item.tipo.value, item.descricao)
+        novos.append(Achado(
+            curation_id=ficha.id,
+            tipo=item.tipo.value,
+            regiao_anatomica=item.regiao_anatomica.value if item.regiao_anatomica else None,
+            dentes=dentes,
+            dente_nao_identificado=item.dente_nao_identificado,
+            descricao=item.descricao,
+            marcacoes=[m.model_dump(mode="json") for m in (item.marcacoes or [])],
+        ))
+
+    db.query(Achado).filter(Achado.curation_id == ficha.id).delete(synchronize_session=False)
+    for a in novos:
+        db.add(a)
+
+    tipos = list(dict.fromkeys(a.tipo for a in novos if a.tipo in ALTERACOES_LEGADAS))
+    ficha.alteracoes_observadas = tipos
+    dentes_achados = {d for a in novos for d in (a.dentes or [])}
+    ficha.dentes = sorted(set(ficha.dentes or []) | dentes_achados)
+    if novos and ficha.achado_principal == "normal":
+        ficha.achado_principal = None
+    _registrar_historico(
+        db, ficha.id, usuario_id, "achados_atualizados",
+        ficha.status, ficha.status, f"{len(novos)} achado(s) registrado(s) na secao Achados.",
+    )
+
+
 @router.patch("/{curation_id}")
 def editar_curadoria(
     curation_id: int,
@@ -187,6 +235,43 @@ def editar_curadoria(
         ficha.observacoes_internas = dados.observacoes_internas
     if dados.anonimizacao_validada is not None:
         ficha.anonimizacao_validada = dados.anonimizacao_validada
+    if dados.termos is not None:
+        ids_validos = {
+            t for (t,) in db.query(TermoVocabulario.id).filter(TermoVocabulario.id.in_(set(dados.termos))).all()
+        }
+        invalidos = sorted(set(dados.termos) - ids_validos)
+        if invalidos:
+            raise HTTPException(status_code=422, detail=f"Termos do vocabulário inexistentes: {invalidos}")
+        atuais = {
+            c.termo_id: c for c in db.query(CurationTermo).filter(CurationTermo.curation_id == ficha.id).all()
+        }
+        for termo_id, ligacao in atuais.items():
+            if termo_id not in ids_validos:
+                db.delete(ligacao)
+        for termo_id in ids_validos - set(atuais):
+            db.add(CurationTermo(curation_id=ficha.id, termo_id=termo_id, vinculado_por_id=usuario.id))
+    if dados.achados is not None:
+        _sincronizar_achados(db, ficha, dados.achados, usuario.id)
+    if dados.sem_alteracoes is not None:
+        tem_achados = (
+            len(dados.achados) > 0
+            if dados.achados is not None
+            else db.query(Achado.id).filter(Achado.curation_id == ficha.id).first() is not None
+        )
+        if dados.sem_alteracoes:
+            if tem_achados:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Uma imagem com achados registrados não pode ser marcada como 'sem alterações'.",
+                )
+            ficha.achado_principal = "normal"
+        elif ficha.achado_principal == "normal":
+            ficha.achado_principal = None
+    if dados.origem_voz:
+        _registrar_auditoria(
+            db, usuario.id, "preenchimento_por_voz", ficha.id, "sucesso",
+            f"Ficha {ficha.id} editada com apoio da curadoria por voz.",
+        )
 
     _registrar_historico(
         db, ficha.id, usuario.id, "edicao",

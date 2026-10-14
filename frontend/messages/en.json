@@ -803,12 +803,11 @@
     "secoes": {
       "dados": "Image data",
       "marcacoes": "Markings",
-      "alteracoes": "Observed changes",
       "achados_detalhados": "Detailed findings",
-      "achados_dente": "Findings by tooth/region",
       "erro_tecnico": "Technical error",
       "descricao": "Teaching description",
-      "observacoes": "Internal notes"
+      "observacoes": "Internal notes",
+      "achados": "Findings"
     },
     "coluna": {
       "titulo": "Curation record",
@@ -820,7 +819,7 @@
       "fecharMarcacao": "Close marking",
       "marcacaoN": "Marking {numero}",
       "semAchado": "no finding",
-      "placeholderAchados": "Describe findings not in the list of changes",
+      "placeholderAchados": "Describe what is not in the standard findings list",
       "concluida": "Done",
       "pendente": "Pending",
       "progresso": "{feitas} of {total} sections",
@@ -868,7 +867,8 @@
         "semAchados": "No finding recorded. If the image is normal, say so in the description.",
         "descricaoVazia": "Teaching description is empty.",
         "duvidasVoz": "{quantidade} voice doubt(s) not yet confirmed.",
-        "secaoPendente": "Section {numero} not reviewed. If there is nothing to record, use “Nothing to record”."
+        "secaoPendente": "Section {numero} not reviewed. If there is nothing to record, use “Nothing to record”.",
+        "achadoSemLocal": "Finding(s) {numeros} without tooth or region."
       }
     },
     "ajudaSecoes": {
@@ -888,20 +888,10 @@
         "falar3": "three other: pulp calcification",
         "dica": "Draw markings with the mouse (“Open marking” or key M). Each marking shows its number; then say the number and the finding."
       },
-      "alteracoes": {
-        "falar1": "periapical lesion",
-        "falar2": "change vertical bone loss and calculus",
-        "falar3": "dentin caries",
-        "dica": "You can say several at once. “Caries” alone opens a doubt asking which type."
-      },
       "achados_detalhados": {
         "falar1": "cervical resorption on the distal surface",
         "falar2": "detailed findings: … end (from any section)",
         "dica": "With this section highlighted, anything you say (without a guide word at the start) becomes text here, until you say “end”."
-      },
-      "achados_dente": {
-        "falar1": "nothing to record (if none)",
-        "dica": "This section is filled with the mouse: pick tooth, region and finding. By voice, only “nothing to record”."
       },
       "erro_tecnico": {
         "falar1": "nothing to record (if technique is adequate)",
@@ -917,6 +907,12 @@
         "falar1": "check with the supervising professor",
         "falar2": "nothing to record",
         "dica": "Internal team use; not shown to students."
+      },
+      "achados": {
+        "falar1": "periapical lesion on tooth 36, periapical region, marking one",
+        "falar2": "dentin caries on 37 and calculus on teeth 31 and 41",
+        "falar3": "no changes (normal image)",
+        "dica": "Each finding becomes a row with WHAT (type) and WHERE (tooth, region, marking). Missing parts show in yellow. The image summary used by Search is built automatically."
       }
     },
     "guia": {
@@ -932,7 +928,7 @@
       "passos": {
         "inicio": {
           "titulo": "How it works",
-          "texto": "The record has 8 sections, always in the same order. The highlighted section is where you are — and where your speech goes. The dot trail shows what is done (green ✓) and what is left.",
+          "texto": "The record has 7 sections, always in the same order. The highlighted section is where you are — and where your speech goes. The dot trail shows what is done (green ✓) and what is left.",
           "fazer1": "Click the mic (or Alt+V), speak and click again.",
           "fazer2": "Use ↓ ↑ (or ▼ ▲) to move between sections. Click each section’s “?” for examples.",
           "fazer3": "If a section has nothing, click (or say) “Nothing to record”. Nothing is left blank by accident.",
@@ -954,49 +950,65 @@
           "falar1": "one caries",
           "falar2": "two other: pulp calcification"
         },
-        "alteracoes": {
-          "titulo": "3. Observed changes",
-          "texto": "Tick in the standard list everything you see.",
-          "falar1": "periapical lesion and external root resorption",
-          "falar2": "nothing to record (if normal)"
-        },
         "achados_detalhados": {
           "titulo": "4. Detailed findings",
           "texto": "Anything not in the list goes here as free text.",
           "falar1": "cervical resorption on the distal of 36",
           "dica": "Findings repeated here can become official terms in the Vocabulary screen."
         },
-        "achados_dente": {
-          "titulo": "5. Findings by tooth/region",
-          "texto": "Detail, with the mouse, the finding for each tooth or region.",
-          "falar1": "nothing to record"
-        },
         "erro_tecnico": {
-          "titulo": "6. Technical error",
+          "titulo": "5. Technical error",
           "texto": "Record any technical error (positioning, exposure, processing). That is teaching material too!",
           "falar1": "nothing to record"
         },
         "descricao": {
-          "titulo": "7. Teaching description",
+          "titulo": "6. Teaching description",
           "texto": "The text students will read. Explain what the image teaches.",
           "falar1": "(just speak) Periapical radiograph showing…",
           "falar2": "macro normal periapical",
           "dica": "Use macros (⚡) for repeated descriptions; then adjust."
         },
         "observacoes": {
-          "titulo": "8. Internal notes",
+          "titulo": "7. Internal notes",
           "texto": "Notes for the team (not shown to students).",
           "falar1": "check with the supervising professor",
           "falar2": "nothing to record"
         },
         "aprovar": {
           "titulo": "Approve",
-          "texto": "When all 8 sections are ✓, click Approve. An automatic check runs: required items block approval; warnings can be reviewed or approved anyway.",
+          "texto": "When all 7 sections are ✓, click Approve. An automatic check runs: required items block approval; warnings can be reviewed or approved anyway.",
           "fazer1": "Check the list shown and use “go to section” to fix.",
           "fazer2": "After approving, the next image opens at step 1.",
           "falar1": "save (saves the draft; approving is always with the mouse)"
+        },
+        "achados": {
+          "titulo": "3. Findings",
+          "texto": "Record each finding once: what it is (standard list) and where it is (tooth, region, marking). If the image is normal, use “No changes”.",
+          "fazer1": "Type part of the name in the 🔎 field (e.g. “periap”) and press Enter.",
+          "fazer2": "Fill in tooth, region and link the marking (⭕) — missing parts show in yellow.",
+          "falar1": "periapical lesion on tooth 36, periapical region, marking one",
+          "falar2": "no changes",
+          "dica": "Search finds “periapical lesion on tooth 36” precisely because the finding stores the tooth with it."
         }
       }
+    },
+    "achadosFicha": {
+      "normal": "No changes (normal image)",
+      "normalMarcado": "No changes",
+      "normalBloqueado": "There are findings: remove them to mark the image as normal.",
+      "adicionar": "Add finding",
+      "adicionarPlaceholder": "Add finding: type (e.g. “periap”) or speak…",
+      "vazio": "No findings yet. Add above or mark “No changes”.",
+      "remover": "Remove finding",
+      "dente": "Tooth",
+      "removerDente": "Remove tooth {dente}",
+      "adicionarDente": "Add tooth",
+      "denteQual": "tooth?",
+      "regiao": "Region",
+      "regiaoQual": "region?",
+      "ligarMarcacao": "Link marking {numero}",
+      "desligarMarcacao": "Unlink marking {numero}",
+      "resumo": "Automatic image summary (used by Search):"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1580,8 +1592,8 @@
     "nadaOuvido": "No speech detected. Try again closer to the microphone.",
     "nadaEntendido": "Nothing was recognized in this clip.",
     "ajudaTitulo": "How to speak (Portuguese)",
-    "ajuda1": "Plain values: “periapical”, “masculino”, “lesão periapical”.",
-    "ajuda2": "With a guide word: “qualidade boa”, “dente 36 e 37”, “idade de 30 a 40”, “alteração perda óssea vertical”.",
+    "ajuda1": "Findings with location: “periapical lesion on tooth 36, periapical region, marking one”. Normal image: “no changes”.",
+    "ajuda2": "With guide word: “quality good”, “tooth 36 and 37”, “age 30 to 40”.",
     "ajuda3": "Markings: “marcação dois cárie” or “marcação dois outro: calcificação pulpar”.",
     "ajuda4": "Other: “achado outro: reabsorção cervical” (goes to Detailed findings).",
     "ajuda5": "Running text: “descrição: …”, “achados detalhados: …”, “observações internas: …” — ends with “fim”.",

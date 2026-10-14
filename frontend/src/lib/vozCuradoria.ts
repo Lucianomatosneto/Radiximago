@@ -30,6 +30,7 @@
 import type { Marcacao } from './marcacoes'
 import { CATEGORIAS_ALTERACOES } from './alteracoesObservadas'
 import { SECOES_TEXTO, type SecaoFicha } from './secoesCuradoria'
+import { adicionarAchado, type AchadoFicha } from './achadosFicha'
 
 export interface FichaVoz {
   tipo_radiografia: string
@@ -44,6 +45,9 @@ export interface FichaVoz {
   descricao_didatica: string
   observacoes_internas: string
   termos: number[]
+  /** secao unica "Achados" (lib/achadosFicha.ts) */
+  achados?: AchadoFicha[]
+  sem_alteracoes?: boolean
 }
 
 export interface TermoVoz {
@@ -143,8 +147,10 @@ export function aplicarMacro<F extends FichaVoz>(ficha: F, macro: MacroVoz): { f
   }
   const novas = (c.alteracoes_observadas || []).filter((a) => !novo.alteracoes_observadas.includes(a))
   if (novas.length) {
-    novo.alteracoes_observadas = [...novo.alteracoes_observadas, ...novas]
-    alteracoes.push({ campo: 'alteracoes_observadas', descricao: `${rotulo}: ${novas.length} alteração(ões)` })
+    let comNovas: F = novo
+    for (const tipo of novas) comNovas = adicionarAchado(comNovas, { tipo })
+    Object.assign(novo, comNovas)
+    alteracoes.push({ campo: 'alteracoes_observadas', descricao: `${rotulo}: ${novas.length} achado(s)` })
   }
   if (c.tipo_radiografia) {
     novo.tipo_radiografia = c.tipo_radiografia
@@ -297,6 +303,27 @@ export const ALTERACOES: Opcao[] = CATEGORIAS_ALTERACOES.flatMap((c) =>
   }))
 )
 
+// regioes anatomicas faladas -> valor do backend (RegiaoAnatomica) e rotulo
+const REGIOES_FALADAS: [string, string, string][] = [
+  ['regiao periapical', 'regiao_periapical', 'região periapical'],
+  ['regiao apical', 'regiao_periapical', 'região periapical'],
+  ['periapice', 'regiao_periapical', 'região periapical'],
+  ['coroa', 'coroa', 'coroa'],
+  ['regiao coronaria', 'coroa', 'coroa'],
+  ['raiz', 'raiz', 'raiz'],
+  ['regiao radicular', 'raiz', 'raiz'],
+  ['periodonto', 'periodonto', 'periodonto'],
+  ['osso alveolar', 'osso_alveolar', 'osso alveolar'],
+  ['crista alveolar', 'osso_alveolar', 'osso alveolar'],
+  ['canal mandibular', 'canal_mandibular', 'canal mandibular'],
+  ['seio maxilar', 'seio_maxilar', 'seio maxilar'],
+  ['atm', 'atm', 'ATM'],
+  ['articulacao temporomandibular', 'atm', 'ATM'],
+  ['maxila', 'maxila', 'maxila'],
+  ['mandibula', 'mandibula', 'mandíbula'],
+  ['palato', 'palato', 'palato'],
+].map(([f, v, r]) => [f, v, r] as [string, string, string])
+
 // palavras-guia (formas normalizadas, a mais longa primeiro)
 type Guia =
   | 'descricao' | 'continuar_descricao' | 'achados' | 'observacoes'
@@ -438,6 +465,18 @@ export function interpretar(
   let texto = textoFalado
   let tokens = tokenizar(texto)
 
+  // "sem alterações" / "imagem normal" (a fala inteira): imagem normal
+  const falaInteira = tokens.filter((t) => !t.pontuacao).map((t) => t.n).join(' ')
+  if (['sem alteracoes', 'sem alteracao', 'imagem sem alteracoes', 'imagem normal', 'radiografia normal', 'radiografia sem alteracoes'].includes(falaInteira)) {
+    if ((ficha.achados ?? []).length) {
+      naoReconhecidos.push({ texto: textoFalado, sugestoes: [] })
+    } else {
+      ficha = { ...ficha, sem_alteracoes: true }
+      alteracoes.push({ campo: 'alteracoes_observadas', descricao: 'Imagem sem alterações' })
+    }
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
+
   // Marcações em destaque: "dois cárie" vale como "marcação dois cárie"
   if (opcoes.secaoAtiva === 'marcacoes' && tokens.length && !casarGuia(tokens, 0) && lerNumero(tokens, 0)) {
     texto = `marcação ${texto}`
@@ -467,11 +506,73 @@ export function interpretar(
   const anotar = (campo: CampoVoz, descricao: string, aproximada = false) =>
     alteracoes.push({ campo, descricao, aproximada })
 
-  const aplicarAlteracao = (op: Opcao, aproximada = false) => {
-    if (!ficha.alteracoes_observadas.includes(op.valor)) {
-      ficha.alteracoes_observadas = [...ficha.alteracoes_observadas, op.valor]
+  // Achado falado + ONDE (logo em seguida, na mesma frase):
+  // "lesão periapical no dente 36, região periapical, marcação um".
+  // Devolve quantas palavras de "onde" foram lidas.
+  const aplicarAlteracao = (op: Opcao, inicioContexto = -1): number => {
+    const ctx = inicioContexto >= 0 ? lerContexto(inicioContexto) : { dentes: [] as number[], regiao: '', marcacoes: [] as string[], marcacoesNum: [] as number[], n: 0 }
+    ficha = adicionarAchado(ficha as FichaVoz & { marcacoes: Marcacao[] }, { tipo: op.valor, dentes: ctx.dentes, regiao: ctx.regiao, marcacoes: ctx.marcacoes })
+    const onde = [
+      ctx.dentes.length ? `dente ${ctx.dentes.join(', ')}` : '',
+      ctx.regiao ? (REGIOES_FALADAS.find((r) => r[1] === ctx.regiao)?.[2] ?? ctx.regiao) : '',
+      ctx.marcacoes.length ? `marcação ${ctx.marcacoesNum.join(', ')}` : '',
+    ].filter(Boolean).join(' • ')
+    anotar('alteracoes_observadas', `Achado: ${op.rotulo}${onde ? ` (${onde})` : ''}`)
+    return ctx.n
+  }
+  // "onde" de um achado: dentes, regiao e marcacao (em qualquer ordem)
+  const lerContexto = (inicio: number) => {
+    const res = { dentes: [] as number[], regiao: '', marcacoes: [] as string[], marcacoesNum: [] as number[], n: 0 }
+    let k = inicio
+    let ultimoUtil = inicio
+    const LIGA = new Set(['no', 'na', 'nos', 'nas', 'em', 'do', 'da', 'de', 'dos', 'das', 'e', ','])
+    while (k < tokens.length) {
+      const t = tokens[k]
+      if (t.pontuacao && t.n !== ',') break
+      if (LIGA.has(t.n)) {
+        k++
+        continue
+      }
+      const g = casarGuia(tokens, k)
+      if (g && g[0] === 'dentes') {
+        const [ds, prox] = lerDentes(pularPontuacaoEVazias(k + g[1]))
+        if (!ds.length) break
+        res.dentes.push(...ds)
+        k = ultimoUtil = prox
+        continue
+      }
+      if (g && g[0] === 'marcacao') {
+        const num = lerNumero(tokens, pularPontuacaoEVazias(k + g[1]))
+        const alvo = num ? ficha.marcacoes[num[0] - 1] : undefined
+        if (!num || !alvo) break
+        res.marcacoes.push(alvo.id)
+        res.marcacoesNum.push(num[0])
+        k = ultimoUtil = pularPontuacaoEVazias(k + g[1]) + num[1]
+        continue
+      }
+      // "no 36" (numero FDI direto depois de no/na)
+      const anterior = tokens[k - 1]?.n
+      if (anterior && ['no', 'na', 'nos', 'nas'].includes(anterior) && lerNumero(tokens, k)) {
+        const [ds, prox] = lerDentes(k)
+        if (ds.length) {
+          res.dentes.push(...ds)
+          k = ultimoUtil = prox
+          continue
+        }
+      }
+      const r = REGIOES_FALADAS.map(([forma, valor]) => ({ n: casarFrase(tokens, k, forma), valor }))
+        .filter((x) => x.n)
+        .sort((a, b) => b.n - a.n)[0]
+      if (r) {
+        res.regiao = r.valor
+        k = ultimoUtil = k + r.n
+        continue
+      }
+      break
     }
-    anotar('alteracoes_observadas', `Alteração: ${op.rotulo}`, aproximada)
+    res.dentes = Array.from(new Set(res.dentes)).sort((a, b) => a - b)
+    res.n = ultimoUtil - inicio
+    return res
   }
   const aplicarTermo = (op: Opcao & { id?: number }, aproximada = false) => {
     const id = Number(op.valor)
@@ -531,8 +632,8 @@ export function interpretar(
       .map((c) => c.sug)
   }
   const sugestaoAlteracao = (op: Opcao): Sugestao => ({
-    rotulo: `Alteração: ${op.rotulo}`,
-    aplicar: (f) => ({ ...f, alteracoes_observadas: f.alteracoes_observadas.includes(op.valor) ? f.alteracoes_observadas : [...f.alteracoes_observadas, op.valor] }),
+    rotulo: `Achado: ${op.rotulo}`,
+    aplicar: (f) => adicionarAchado(f, { tipo: op.valor }),
     destino: { tipo: 'alteracao', valor: op.valor },
     campo: 'alteracoes_observadas',
   })
@@ -762,8 +863,8 @@ export function interpretar(
             continue
           }
           if (c) {
-            aplicarAlteracao(c.op)
             k += c.n
+            k += aplicarAlteracao(c.op, k)
             algum = true
             continue
           }
@@ -796,8 +897,8 @@ export function interpretar(
               continue
             }
             if (ca) {
-              aplicarAlteracao(ca.op)
               i = k + ca.n
+              i += aplicarAlteracao(ca.op, i)
               continue
             }
           }
@@ -959,7 +1060,7 @@ export function interpretar(
     if (maior) {
       fecharPendente()
       if (maior.k === 't') aplicarTermo(ct!.op as Opcao & { id: number })
-      else if (maior.k === 'a') aplicarAlteracao(ca!.op)
+      else if (maior.k === 'a') i += aplicarAlteracao(ca!.op, i + maior.n)
       else if (maior.k === 'p') {
         ficha.tipo_radiografia = ctp!.op.valor
         anotar('tipo_radiografia', `Tipo: ${ctp!.op.rotulo}`)
