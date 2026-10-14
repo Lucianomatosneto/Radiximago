@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
 import { obterSessaoAtual } from '../lib/sessao'
+import CentralAjuda from './ajuda/CentralAjuda'
 
 const ICONE_PERFIL: Record<string, string> = {
   administrador: '⚙️',
@@ -40,6 +41,7 @@ export default function Topbar() {
   const [perfil, setPerfil] = useState('')
   const [fotoPerfilUrl, setFotoPerfilUrl] = useState('')
   const [menuAberto, setMenuAberto] = useState(false)
+  const [ajudaAberta, setAjudaAberta] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const [modalPerfilAberto, setModalPerfilAberto] = useState(false)
@@ -183,12 +185,17 @@ export default function Topbar() {
       <div className="flex items-center gap-6">
         <ThemeToggle />
 
+        {/* Central de ajuda: busca por qualquer recurso do sistema */}
         <button
           type="button"
+          onClick={() => setAjudaAberta(true)}
+          aria-haspopup="dialog"
+          aria-expanded={ajudaAberta}
           className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-ink"
         >
           <span aria-hidden="true">❓</span> {t('ajuda')}
         </button>
+        <CentralAjuda aberta={ajudaAberta} onFechar={() => setAjudaAberta(false)} perfil={perfil || null} />
 
         <div className="relative" ref={menuRef}>
           <button

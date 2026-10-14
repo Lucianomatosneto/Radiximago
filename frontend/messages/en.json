@@ -1690,5 +1690,31 @@
     "frasesSubtitulo": "When a curator confirms a doubt with “Remember”, the heard phrase starts to count as the chosen change.",
     "nenhumaFrase": "No learned phrases yet.",
     "esquecer": "Forget"
+  },
+  "Ajuda": {
+    "titulo": "Help center",
+    "subtitulo": "Search any Rádix feature and see how to use it.",
+    "placeholder": "What do you want to do? E.g.: delete note",
+    "exemplos": "Examples: advanced search, print, remove image, share, teeth.",
+    "resultados": "{total, plural, one {1 result} other {# results}}",
+    "nadaEncontrado": "We found no help for that.",
+    "nadaEncontradoDica": "Try other words (e.g. \"note\", \"print\", \"my images\") or clear the search to see every topic.",
+    "nestaTela": "On this screen",
+    "dica": "Tip",
+    "irParaTela": "Go to the screen",
+    "fechar": "Close help",
+    "rodape": "The search runs in your browser: what you type here is not sent to any server.",
+    "categorias": {
+      "primeirosPassos": "Getting started",
+      "pesquisa": "Search and image bank",
+      "visualizador": "Viewer",
+      "minhasImagens": "My images",
+      "anotacoes": "Notes",
+      "compartilhar": "Share and e-mail",
+      "impressao": "Print and download",
+      "curadoria": "Curation",
+      "administracao": "Administration",
+      "conta": "Your account"
+    }
   }
 }

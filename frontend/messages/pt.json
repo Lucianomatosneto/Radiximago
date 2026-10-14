@@ -1690,5 +1690,31 @@
     "frasesSubtitulo": "Quando o curador confirma uma dúvida com “Lembrar”, a frase ouvida passa a valer como a alteração escolhida.",
     "nenhumaFrase": "Nenhuma frase aprendida ainda.",
     "esquecer": "Esquecer"
+  },
+  "Ajuda": {
+    "titulo": "Central de ajuda",
+    "subtitulo": "Pesquise qualquer recurso do Rádix e veja como usar.",
+    "placeholder": "O que você quer fazer? Ex.: apagar anotação",
+    "exemplos": "Exemplos: busca avançada, imprimir, apagar imagem, compartilhar, dentes.",
+    "resultados": "{total, plural, one {1 resultado} other {# resultados}}",
+    "nadaEncontrado": "Não encontramos ajuda para isso.",
+    "nadaEncontradoDica": "Tente outras palavras (ex.: \"anotação\", \"imprimir\", \"minhas imagens\") ou apague a busca para ver todos os assuntos.",
+    "nestaTela": "Nesta tela",
+    "dica": "Dica",
+    "irParaTela": "Ir para a tela",
+    "fechar": "Fechar a ajuda",
+    "rodape": "A busca roda no seu navegador: o que você digita aqui não é enviado a nenhum servidor.",
+    "categorias": {
+      "primeirosPassos": "Primeiros passos",
+      "pesquisa": "Pesquisa e banco de imagens",
+      "visualizador": "Visualizador",
+      "minhasImagens": "Minhas imagens",
+      "anotacoes": "Anotações",
+      "compartilhar": "Compartilhar e e-mail",
+      "impressao": "Imprimir e baixar",
+      "curadoria": "Curadoria",
+      "administracao": "Administração",
+      "conta": "Sua conta"
+    }
   }
 }
