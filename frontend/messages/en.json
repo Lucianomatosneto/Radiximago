@@ -575,7 +575,12 @@
       "privada": "Only you can see your notes",
       "erroVazio": "Write something before saving.",
       "erroSalvar": "Could not save the note.",
-      "erroExcluir": "Could not delete the note."
+      "erroExcluir": "Could not delete the note.",
+      "apagar": "Delete",
+      "apagarCurto": "Delete?",
+      "confirmarApagar": "Click again to delete",
+      "apagarTodas": "Delete all",
+      "confirmarApagarTodas": "Click again to delete all"
     }
   },
   "Curadoria": {

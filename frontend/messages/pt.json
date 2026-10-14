@@ -575,7 +575,12 @@
       "privada": "Só você vê suas anotações",
       "erroVazio": "Escreva algo antes de salvar.",
       "erroSalvar": "Não foi possível salvar a anotação.",
-      "erroExcluir": "Não foi possível excluir a anotação."
+      "erroExcluir": "Não foi possível excluir a anotação.",
+      "apagar": "Apagar",
+      "apagarCurto": "Apagar?",
+      "confirmarApagar": "Clique de novo para apagar",
+      "apagarTodas": "Apagar todas",
+      "confirmarApagarTodas": "Clique de novo para apagar todas"
     }
   },
   "Curadoria": {

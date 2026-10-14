@@ -29,6 +29,15 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
   const [editando, setEditando] = useState<number | null>(null)
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState('')
+  // apagar pede CONFIRMACAO com um segundo clique (sem janela do navegador):
+  // o 1o clique deixa o botao vermelho escrito "Apagar?"; o 2o apaga.
+  // Depois de 4 s sem confirmar, volta ao normal. 'todas' = apagar todas.
+  const [confirmando, setConfirmando] = useState<number | 'todas' | null>(null)
+  useEffect(() => {
+    if (confirmando === null) return
+    const id = setTimeout(() => setConfirmando(null), 4000)
+    return () => clearTimeout(id)
+  }, [confirmando])
   const campoRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
@@ -112,6 +121,17 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
     }
   }
 
+  /** 1o clique pede confirmacao; 2o clique apaga */
+  function pedirApagar(alvo: number | 'todas') {
+    if (confirmando !== alvo) {
+      setConfirmando(alvo)
+      return
+    }
+    setConfirmando(null)
+    if (alvo === 'todas') notas.forEach((n) => remover(n.id))
+    else remover(alvo)
+  }
+
   function editar(nota: Nota) {
     setEditando(nota.id)
     setTexto(nota.texto)
@@ -165,18 +185,37 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
               >
                 {nota.texto}
               </button>
+              {/* APAGAR sempre visivel (nao so ao passar o mouse): o estudante
+                  pode tirar anotacoes provisorias antes de imprimir */}
               <button
                 type="button"
-                onClick={() => remover(nota.id)}
-                title={t('excluir')}
-                aria-label={t('excluir')}
-                className="shrink-0 text-xs text-slate-500 opacity-0 hover:text-red-400 focus:opacity-100 group-hover:opacity-100"
+                onClick={() => pedirApagar(nota.id)}
+                title={confirmando === nota.id ? t('confirmarApagar') : t('excluir')}
+                aria-label={confirmando === nota.id ? t('confirmarApagar') : t('excluir')}
+                className={`flex h-5 shrink-0 items-center justify-center gap-1 rounded px-1 text-[10px] font-semibold ${
+                  confirmando === nota.id ? 'bg-red-500/90 text-white' : 'text-slate-400 hover:bg-red-500/15 hover:text-red-300'
+                }`}
               >
-                ✕
+                <IconeLixeira />
+                {confirmando === nota.id && <span>{t('apagarCurto')}</span>}
               </button>
             </li>
           ))}
         </ul>
+      )}
+      {notas.length > 1 && !aberta && (
+        <div className="mt-1 flex justify-end">
+          <button
+            type="button"
+            onClick={() => pedirApagar('todas')}
+            className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold ${
+              confirmando === 'todas' ? 'bg-red-500/90 text-white' : 'text-slate-400 hover:bg-red-500/15 hover:text-red-300'
+            }`}
+          >
+            <IconeLixeira />
+            {confirmando === 'todas' ? t('confirmarApagarTodas') : t('apagarTodas')}
+          </button>
+        </div>
       )}
 
       {aberta && (
@@ -205,6 +244,18 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-[10px] text-slate-500">{t('privada')}</span>
             <div className="flex gap-1.5">
+              {editando !== null && (
+                <button
+                  type="button"
+                  onClick={() => pedirApagar(editando)}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs ${
+                    confirmando === editando ? 'bg-red-500/90 font-semibold text-white' : 'text-red-300 hover:bg-red-500/15'
+                  }`}
+                >
+                  <IconeLixeira />
+                  {confirmando === editando ? t('apagarCurto') : t('apagar')}
+                </button>
+              )}
               <button type="button" onClick={cancelar} className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/10">
                 {t('cancelar')}
               </button>
@@ -222,5 +273,13 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
       )}
       {!aberta && erro && <p className="mt-1 text-xs text-red-400">{erro}</p>}
     </div>
+  )
+}
+
+function IconeLixeira() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+    </svg>
   )
 }
