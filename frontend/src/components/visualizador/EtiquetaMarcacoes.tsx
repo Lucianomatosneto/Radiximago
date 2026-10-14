@@ -287,8 +287,12 @@ export default function EtiquetaMarcacoes({
       {/* anotacoes pessoais (so no quadro que recebe clique; o modo
           flutuante e so leitura) - escrever deixa o quadro fixo aberto */}
       {compartilhamento && !flutuante && <AnotacoesCompartilhadas compartilhamento={compartilhamento} />}
-      {curationId !== undefined && !flutuante && (
-        <NotasVisualizador curationId={curationId} onAbrir={() => setFixada(true)} />
+      {/* na JANELA (Minhas imagens) as anotacoes tambem aparecem; clicar
+          dentro delas nao fecha a janela (data-sem-fechar) */}
+      {curationId !== undefined && (!flutuante || janela) && (
+        <div data-sem-fechar>
+          <NotasVisualizador curationId={curationId} onAbrir={() => setFixada(true)} />
+        </div>
       )}
       {curationId !== undefined && !flutuante && (
         <CompartilharImagem curationId={curationId} onAbrir={() => setFixada(true)} />
@@ -447,7 +451,7 @@ export default function EtiquetaMarcacoes({
             role="dialog"
             aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
             style={{ left: posJanela.left, top: posJanela.top, transform: `translate(${desloc.x}px, ${desloc.y}px)` }}
-            className="fixed z-[300] flex max-h-[380px] w-80 flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+            className="fixed z-[300] flex max-h-[70vh] w-80 flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
           >
             {/* barra: arrastar a caixa para onde quiser + fechar */}
             <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
@@ -483,7 +487,12 @@ export default function EtiquetaMarcacoes({
                 ×
               </button>
             </div>
-            <div className="min-h-0 flex-1 cursor-pointer overflow-y-auto p-3" onClick={() => setFixada(false)}>
+            <div className="min-h-0 flex-1 cursor-pointer overflow-y-auto p-3" onClick={(e) => {
+                // um clique fecha - menos nas anotacoes (escrever, editar, excluir)
+                if ((e.target as HTMLElement).closest('[data-sem-fechar]')) return
+                setFixada(false)
+              }}
+            >
               {conteudo}
             </div>
           </div>,

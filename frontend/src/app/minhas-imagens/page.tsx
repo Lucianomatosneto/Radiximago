@@ -429,7 +429,7 @@ export default function MinhasImagensPage() {
                       {/* "i": a MESMA caixa de descricao dos resultados da Pesquisa
                           avancada; abre ao clicar, AO LADO do cartao (sem cobrir
                           a imagem) e pode ser arrastada */}
-                      <EtiquetaMarcacoes item={{ ...imagem, numero: indice + 1 }} flutuante janela embutido />
+                      <EtiquetaMarcacoes item={{ ...imagem, numero: indice + 1 }} curationId={imagem.curation_id} flutuante janela embutido />
                       <button
                         type="button"
                         onClick={() => expandirImagem(imagem)}
