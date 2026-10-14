@@ -1079,8 +1079,14 @@
     "erroEnviarEmail": "Couldn't send the images by email.",
     "semImagensPrefixo": "You haven't saved any images yet. Save images from the",
     "linkPesquisaAvancada": "Advanced search",
-    "expandir": "⛶ Expand",
-    "remover": "Remove"
+    "expandir": "Expand",
+    "remover": "Remove",
+    "info": "Image description",
+    "infoTipo": "Type",
+    "infoDentes": "Teeth",
+    "infoAchados": "Findings",
+    "infoDescricao": "Description",
+    "infoErros": "Technical error"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",

@@ -1079,8 +1079,14 @@
     "erroEnviarEmail": "Não foi possível enviar as imagens por e-mail.",
     "semImagensPrefixo": "Você ainda não salvou nenhuma imagem. Salve imagens na tela de",
     "linkPesquisaAvancada": "Pesquisa avançada",
-    "expandir": "⛶ Expandir",
-    "remover": "Remover"
+    "expandir": "Expandir",
+    "remover": "Remover",
+    "info": "Descrição da imagem",
+    "infoTipo": "Tipo",
+    "infoDentes": "Dentes",
+    "infoAchados": "Achados",
+    "infoDescricao": "Descrição",
+    "infoErros": "Erro técnico"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",

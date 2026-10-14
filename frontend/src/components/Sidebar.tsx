@@ -39,6 +39,12 @@ const COR_CYAN = 'from-cyan-100 to-cyan-50 border-cyan-300 text-cyan-700 dark:fr
 const COR_TEAL = 'from-teal-100 to-teal-50 border-teal-300 text-teal-700 dark:from-teal-600/30 dark:to-teal-900/10 dark:border-teal-700/40 dark:text-teal-300'
 const COR_EMERALD = 'from-emerald-100 to-emerald-50 border-emerald-300 text-emerald-700 dark:from-emerald-600/30 dark:to-emerald-900/10 dark:border-emerald-700/40 dark:text-emerald-300'
 const COR_GREEN = 'from-green-100 to-green-50 border-green-300 text-green-700 dark:from-green-600/30 dark:to-green-900/10 dark:border-green-700/40 dark:text-green-300'
+const COR_LIME = 'from-lime-100 to-lime-50 border-lime-300 text-lime-700 dark:from-lime-600/30 dark:to-lime-900/10 dark:border-lime-700/40 dark:text-lime-300'
+// As cores sao distribuidas pela POSICAO de cada item VISIVEL (o menu muda
+// conforme o perfil): assim itens vizinhos nunca ficam com a mesma cor e
+// todo perfil ve a faixa inteira azul -> verde (o estudante, com poucos
+// itens, nao fica so com tons de azul).
+const PALETA_MENU = [COR_BLUE, COR_SKY, COR_CYAN, COR_TEAL, COR_EMERALD, COR_GREEN, COR_LIME]
 
 const ITENS_MENU: ItemMenu[] = [
   { chave: 'inicio', href: '/dashboard', ativo: true, cor: COR_BLUE },
@@ -161,7 +167,14 @@ export default function Sidebar() {
         </div>
 
         <nav className="mt-3 flex flex-col gap-1 px-3">
-          {itensVisiveis.map((item) => {
+          {itensVisiveis.map((item, posicao) => {
+            // menu curto (ate 7 itens, ex.: estudante): cores espalhadas pela
+            // faixa inteira; menu longo: a faixa se repete em sequencia
+            const n = itensVisiveis.length
+            const cor =
+              n > 1 && n <= PALETA_MENU.length
+                ? PALETA_MENU[Math.round((posicao * (PALETA_MENU.length - 1)) / (n - 1))]
+                : PALETA_MENU[posicao % PALETA_MENU.length]
             if (!item.ativo) {
               return (
                 <span
@@ -184,7 +197,7 @@ export default function Sidebar() {
                 href={item.href}
                 aria-current={estaAtivo ? 'page' : undefined}
                 onClick={item.chave === 'curadoria' ? aoClicarCuradoria : undefined}
-                className={`rounded-lg border bg-gradient-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${item.cor} ${
+                className={`rounded-lg border bg-gradient-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${cor} ${
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
               >

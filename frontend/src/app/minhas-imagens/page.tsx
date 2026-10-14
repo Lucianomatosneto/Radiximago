@@ -13,6 +13,7 @@ import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { rotuloErro } from '../../lib/errosTecnicos'
 
 interface ImagemSalva {
   curation_id: number
@@ -26,6 +27,7 @@ interface ImagemSalva {
   viewer_url: string | null
   qualidade_tecnica?: string | null
   dentes?: number[] | null
+  erros_tecnicos?: string[]
 }
 
 // Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
@@ -102,6 +104,16 @@ export default function MinhasImagensPage() {
   const [enviandoLote, setEnviandoLote] = useState(false)
   const [mensagemLote, setMensagemLote] = useState('')
   const [infoSeries, setInfoSeries] = useState<Record<number, boolean>>({})
+  // "i" de cada cartao: mostra a descricao da imagem por cima da miniatura
+  const [infoAberta, setInfoAberta] = useState<number | null>(null)
+  const tAlteracoes = useTranslations('AlteracoesObservadas.itens')
+  const rotularAlteracao = (v: string) => {
+    try {
+      return tAlteracoes(v)
+    } catch {
+      return v
+    }
+  }
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -395,6 +407,33 @@ export default function MinhasImagensPage() {
                           className="h-4 w-4 accent-brand"
                         />
                       </label>
+                      {/* "i": descricao da imagem por cima da miniatura (so os
+                          itens preenchidos); clique de novo ou nela fecha */}
+                      {infoAberta === imagem.curation_id && (
+                        <div
+                          role="dialog"
+                          aria-label={t('info')}
+                          onClick={() => setInfoAberta(null)}
+                          className="absolute inset-0 z-10 cursor-pointer space-y-1 overflow-y-auto bg-black/85 p-3 text-xs leading-snug text-slate-200 backdrop-blur-sm"
+                        >
+                          <p><span className="text-slate-400">{t('infoTipo')}:</span> {rotularTipo(imagem.tipo_radiografia)}</p>
+                          {imagem.dentes && imagem.dentes.length > 0 && (
+                            <p><span className="text-slate-400">{t('infoDentes')}:</span> {imagem.dentes.join(', ')}</p>
+                          )}
+                          {imagem.alteracoes_observadas && imagem.alteracoes_observadas.length > 0 ? (
+                            <p><span className="text-slate-400">{t('infoAchados')}:</span> {imagem.alteracoes_observadas.map(rotularAlteracao).join(', ')}</p>
+                          ) : imagem.achado_principal ? (
+                            <p><span className="text-slate-400">{t('infoAchados')}:</span> {rotularAchado(imagem.achado_principal)}</p>
+                          ) : null}
+                          {imagem.achados_detalhe?.trim() && <p>{imagem.achados_detalhe}</p>}
+                          {imagem.descricao_didatica?.trim() && (
+                            <p><span className="text-slate-400">{t('infoDescricao')}:</span> {imagem.descricao_didatica}</p>
+                          )}
+                          {imagem.erros_tecnicos && imagem.erros_tecnicos.length > 0 && (
+                            <p><span className="text-slate-400">{t('infoErros')}:</span> {imagem.erros_tecnicos.map(rotuloErro).join(', ')}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <span className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full bg-brand/10 px-2.5 py-1 text-xs font-medium text-brand-300">
@@ -413,21 +452,40 @@ export default function MinhasImagensPage() {
                       <p className="line-clamp-2 text-xs text-slate-400">{imagem.descricao_didatica}</p>
                     )}
 
-                    <div className="mt-auto flex gap-2 pt-3">
+                    {/* acoes so com icones: i (descricao), expandir e x (remover) */}
+                    <div className="mt-auto flex items-center justify-end gap-1.5 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setInfoAberta((v) => (v === imagem.curation_id ? null : imagem.curation_id))}
+                        aria-pressed={infoAberta === imagem.curation_id}
+                        title={t('info')}
+                        aria-label={t('info')}
+                        className={`flex h-8 w-8 items-center justify-center rounded-full border font-serif text-sm font-bold italic ${
+                          infoAberta === imagem.curation_id ? 'border-brand bg-brand/20 text-brand-300' : 'border-base-border bg-base-surface/30 text-slate-200 hover:border-brand hover:text-brand-300'
+                        }`}
+                      >
+                        i
+                      </button>
                       <button
                         type="button"
                         onClick={() => expandirImagem(imagem)}
-                        className="flex-1 whitespace-nowrap rounded-lg border border-base-border bg-base-surface/30 px-2 py-1.5 text-center text-xs text-slate-200 hover:border-brand hover:text-brand-300"
+                        title={t('expandir')}
+                        aria-label={t('expandir')}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-base-border bg-base-surface/30 text-slate-200 hover:border-brand hover:text-brand-300"
                       >
-                        {t('expandir')}
+                        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
+                        </svg>
                       </button>
                       <button
                         type="button"
                         onClick={() => remover(imagem.curation_id)}
                         disabled={removendo === imagem.curation_id}
-                        className="whitespace-nowrap rounded-lg border border-base-border bg-base-surface/30 px-2 py-1.5 text-xs text-red-400 hover:border-red-500 disabled:opacity-50"
+                        title={t('remover')}
+                        aria-label={t('remover')}
+                        className="flex h-8 w-8 items-center justify-center rounded-full border border-base-border bg-base-surface/30 text-lg leading-none text-red-400 hover:border-red-500 disabled:opacity-50"
                       >
-                        {removendo === imagem.curation_id ? '...' : t('remover')}
+                        {removendo === imagem.curation_id ? '…' : '×'}
                       </button>
                     </div>
                   </div>
