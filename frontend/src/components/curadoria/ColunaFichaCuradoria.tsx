@@ -247,7 +247,8 @@ export default function ColunaFichaCuradoria({
       <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
         <h2 className="text-sm font-bold text-ink" title={t('ajudaTeclas')}>{t('titulo')}</h2>
         <span title={t('progresso', { feitas: concluidas, total: SECOES_FICHA.length })} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${concluidas === SECOES_FICHA.length ? 'bg-emerald-500/20 text-emerald-200' : 'bg-white/5 text-slate-300'}`}>
-          {concluidas}/{SECOES_FICHA.length}
+          {/* quantos itens AINDA FALTAM concluir (nao quantos ja foram) */}
+          {concluidas === SECOES_FICHA.length ? `✓ ${t('tudoConcluido')}` : t('faltam', { n: SECOES_FICHA.length - concluidas })}
         </span>
         <span className="text-[11px] text-slate-400">{t('lembreteTeclas')}</span>
         {onAbrirGuia && (

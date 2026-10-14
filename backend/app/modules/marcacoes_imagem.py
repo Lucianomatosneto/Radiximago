@@ -171,8 +171,9 @@ def _geometria(marcacao: dict[str, Any], para_pixel, escala: float) -> dict[str,
 
 
 def _desenhar_forma(desenho: "ImageDraw.ImageDraw", geo: dict[str, Any], cor: tuple[int, int, int], escala: float) -> None:
-    halo = max(3, round(5 * escala))
-    traco = max(2, round(2.5 * escala))
+    # tracos finos (metade do padrao antigo): nao cobrem as estruturas
+    halo = max(2, round(2.5 * escala))
+    traco = max(1, round(1.25 * escala))
     if "seta" in geo:
         a, b = geo["seta"]
         desenho.line([a, b], fill=HALO, width=halo)
@@ -200,8 +201,8 @@ def _desenhar_selos(
     except TypeError:  # Pillow antigo, sem tamanho na fonte padrao
         fonte = ImageFont.load_default()
     for numero, ancora, selo, cor in selos:
-        desenho.line([ancora, selo], fill=HALO, width=max(2, round(3.5 * escala)))
-        desenho.line([ancora, selo], fill=(*cor, 255), width=max(1, round(1.5 * escala)))
+        desenho.line([ancora, selo], fill=HALO, width=max(2, round(1.75 * escala)))
+        desenho.line([ancora, selo], fill=(*cor, 255), width=max(1, round(0.75 * escala)))
         cx, cy = selo
         desenho.ellipse(
             [cx - raio, cy - raio, cx + raio, cy + raio],

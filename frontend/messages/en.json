@@ -838,7 +838,9 @@
       "nadaRegistrado": "Reviewed — nothing to record",
       "irProxima": "Next: {secao}",
       "proximoItem": "Next: {item}",
-      "lembreteTeclas": "Enter speaks · Tab or ↓ next item · Shift+Tab or ↑ previous"
+      "lembreteTeclas": "Enter speaks · Tab or ↓ next item · Shift+Tab or ↑ previous",
+      "faltam": "{n} left",
+      "tudoConcluido": "All done"
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {

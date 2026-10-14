@@ -469,15 +469,15 @@ window.config = {
   function desenharMarcacao(svg, g, m, n, forte, apagada) {
     var c = cor(m);
     var grupo = el('g', { opacity: apagada ? '0.25' : '1' }, svg);
-    var larguraHalo = forte ? '7' : '5', larguraTraco = forte ? '3.5' : '2.5';
+    var larguraHalo = forte ? '3.5' : '2.5', larguraTraco = forte ? '1.75' : '1.25'; // tracos finos: nao cobrem estruturas
     el('path', { d: g.caminho, fill: 'none', stroke: HALO, 'stroke-width': larguraHalo, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
     if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: HALO, 'stroke-width': larguraHalo, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
     var traco = { d: g.caminho, stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', fill: 'none' };
     if (!g.seta) { traco.fill = c; traco['fill-opacity'] = '0.06'; }
     el('path', traco, grupo);
     if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
-    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: HALO, 'stroke-width': '3.5', 'stroke-linecap': 'round' }, grupo);
-    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: c, 'stroke-width': '1.5', 'stroke-linecap': 'round' }, grupo);
+    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: HALO, 'stroke-width': '1.75', 'stroke-linecap': 'round' }, grupo);
+    el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: c, 'stroke-width': '0.75', 'stroke-linecap': 'round' }, grupo);
     el('circle', { cx: g.selo[0], cy: g.selo[1], r: forte ? '12' : '11', fill: c, stroke: '#0b1220', 'stroke-width': '2' }, grupo);
     var tx = el('text', { x: g.selo[0], y: g.selo[1], 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': '12', 'font-weight': '800', 'font-family': 'Inter, Arial, sans-serif', fill: '#000000' }, grupo);
     tx.textContent = String(n);

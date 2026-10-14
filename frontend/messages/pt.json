@@ -838,7 +838,9 @@
       "nadaRegistrado": "Revisada — nada a registrar",
       "irProxima": "Próxima: {secao}",
       "proximoItem": "Próximo: {item}",
-      "lembreteTeclas": "Enter fala · Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior"
+      "lembreteTeclas": "Enter fala · Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior",
+      "faltam": "Faltam {n}",
+      "tudoConcluido": "Tudo concluído"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {

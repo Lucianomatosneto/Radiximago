@@ -149,20 +149,20 @@ export default function CamadaMarcacoes({
             const apagada = ativo !== null && !forte
             return (
               <g key={marcacoes[i].id ?? i} style={{ opacity: apagada ? 0.25 : 1, transition: 'opacity .18s ease' }}>
-                <path d={g.caminho} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={forte ? 7 : 5} strokeLinejoin="round" strokeLinecap="round" />
-                {g.seta && <path d={g.seta.ponta} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={forte ? 7 : 5} strokeLinejoin="round" strokeLinecap="round" />}
+                <path d={g.caminho} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={forte ? 3.5 : 2.5} strokeLinejoin="round" strokeLinecap="round" />
+                {g.seta && <path d={g.seta.ponta} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={forte ? 3.5 : 2.5} strokeLinejoin="round" strokeLinecap="round" />}
                 <path
                   d={g.caminho}
                   fill={g.seta ? 'none' : cor}
                   fillOpacity={g.seta ? undefined : 0.06}
                   stroke={cor}
-                  strokeWidth={forte ? 3.5 : 2.5}
+                  strokeWidth={forte ? 1.75 : 1.25}
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
-                {g.seta && <path d={g.seta.ponta} fill="none" stroke={cor} strokeWidth={forte ? 3.5 : 2.5} strokeLinejoin="round" strokeLinecap="round" />}
-                <line x1={g.ancora[0]} y1={g.ancora[1]} x2={g.selo[0]} y2={g.selo[1]} stroke="rgba(0,0,0,0.6)" strokeWidth={3.5} strokeLinecap="round" />
-                <line x1={g.ancora[0]} y1={g.ancora[1]} x2={g.selo[0]} y2={g.selo[1]} stroke={cor} strokeWidth={1.5} strokeLinecap="round" />
+                {g.seta && <path d={g.seta.ponta} fill="none" stroke={cor} strokeWidth={forte ? 1.75 : 1.25} strokeLinejoin="round" strokeLinecap="round" />}
+                <line x1={g.ancora[0]} y1={g.ancora[1]} x2={g.selo[0]} y2={g.selo[1]} stroke="rgba(0,0,0,0.6)" strokeWidth={1.75} strokeLinecap="round" />
+                <line x1={g.ancora[0]} y1={g.ancora[1]} x2={g.selo[0]} y2={g.selo[1]} stroke={cor} strokeWidth={0.75} strokeLinecap="round" />
                 <circle cx={g.selo[0]} cy={g.selo[1]} r={forte ? 12 : 11} fill={cor} stroke="#0b1220" strokeWidth={2} />
                 <text
                   x={g.selo[0]}
