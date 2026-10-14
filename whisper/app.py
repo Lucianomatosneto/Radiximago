@@ -95,7 +95,7 @@ def saude():
 
 
 @app.post("/transcrever")
-def transcrever(arquivo: UploadFile = File(...), prompt: str = Form(default="")):
+def transcrever(arquivo: UploadFile = File(...), prompt: str = Form(default=""), rapido: str = Form(default="0")):
     conteudo = arquivo.file.read(TAMANHO_MAXIMO + 1)
     if not conteudo:
         raise HTTPException(status_code=400, detail="Áudio vazio.")
@@ -109,7 +109,10 @@ def transcrever(arquivo: UploadFile = File(...), prompt: str = Form(default=""))
             io.BytesIO(conteudo),
             language="pt",
             task="transcribe",
-            beam_size=5,
+            # trecho curto da escuta continua ("ok", "pan", "35"): busca
+            # gulosa (beam 1) - bem mais rapida e com a mesma precisao para
+            # falas de poucas palavras; textos longos continuam com beam 5
+            beam_size=1 if rapido == "1" else 5,
             vad_filter=True,  # ignora silencios (respiracao, pausas)
             # vocabulario do Radix como "dica" para o reconhecimento
             initial_prompt=prompt[:800] or None,

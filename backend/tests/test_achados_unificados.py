@@ -92,3 +92,22 @@ def test_erros_tecnicos_na_ficha_e_tomografia(client, criar_usuario, criar_ficha
     assert client.patch(f"/curation/{ficha.id}", headers=h, json={"erros_tecnicos": ["inventado"]}).status_code == 422
     db.query(ErroTecnico).filter(ErroTecnico.curation_id == ficha.id).delete()
     db.commit()
+
+
+def test_estudante_ve_erro_tecnico_so_quando_registrado(client, criar_usuario, criar_ficha, db):
+    from app.modules.achados import ErroTecnico
+    curador = criar_usuario(perfil=UserRole.curador)
+    h = cabecalho_auth(obter_token(client, curador.email))
+    com_erro = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+    sem_erro = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+    for ficha, erros in ((com_erro, ["imagem_fantasma", "rotacao_cabeca"]), (sem_erro, [])):
+        client.patch(f"/curation/{ficha.id}", headers=h, json={
+            "tipo_radiografia": "panoramica", "anonimizacao_validada": True, "erros_tecnicos": erros,
+        })
+        assert client.post(f"/curation/{ficha.id}/approve", headers=h, json={"anonimizacao_validada": True}).status_code == 200
+
+    itens = {i["curation_id"]: i for i in client.get("/search", headers=h, params={"limit": 200}).json()["itens"]}
+    assert itens[com_erro.id]["erros_tecnicos"] == ["imagem_fantasma", "rotacao_cabeca"]
+    assert itens[sem_erro.id]["erros_tecnicos"] == []
+    db.query(ErroTecnico).filter(ErroTecnico.curation_id == com_erro.id).delete()
+    db.commit()

@@ -478,6 +478,14 @@ function limparLivre(texto: string): string {
   return texto.replace(/^[\s:,.;-]+|[\s:,;-]+$/g, '').trim()
 }
 
+const FALAS_PROXIMO = ['proximo', 'proxima', 'proximo item', 'proximo campo', 'pronto', 'seguinte', 'avancar', 'avanca', 'pula', 'pular']
+const FALAS_ANTERIOR = ['voltar', 'volta', 'anterior', 'item anterior', 'campo anterior']
+const NEGATIVAS = ['nao', 'nenhum', 'nenhuma', 'nada', 'negativo', 'nao tem', 'nao ha']
+const NADA_NA_ETAPA: Partial<Record<EtapaFicha, string[]>> = {
+  erro_tecnico: [...NEGATIVAS, 'sem erro', 'sem erros', 'sem erro tecnico', 'sem erros tecnicos'],
+  descricao: [...NEGATIVAS, 'sem descricao', 'sem descricao didatica'],
+  observacoes: [...NEGATIVAS, 'sem observacao', 'sem observacoes', 'sem observacoes internas'],
+}
 const CONFIRMA_ANONIMIZACAO = ['ok', 'sim', 'anonimizada', 'anonimizado', 'validada', 'validado', 'confirmada', 'confirmado', 'conferida', 'conferido']
 /** palavra-guia acrescentada a fala quando o item esta em destaque */
 const GUIA_DA_ETAPA: Partial<Record<EtapaFicha, string>> = {
@@ -545,6 +553,23 @@ export function interpretar(
   if (guiaEtapa && tokens.length && !casarGuia(tokens, 0)) {
     texto = `${guiaEtapa} ${texto}`
     tokens = tokenizar(texto)
+  }
+  // navegacao falada (fala inteira): "próximo" / "pronto" passa ao proximo
+  // item; "voltar" volta. So a fala INTEIRA - "próximo ao dente 36" numa
+  // descricao continua sendo texto.
+  if (FALAS_PROXIMO.includes(falaInteira)) {
+    comandos.push('proxima_secao')
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
+  if (FALAS_ANTERIOR.includes(falaInteira)) {
+    comandos.push('secao_anterior')
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
+  // item opcional em destaque + "não" (ou "sem descrição", "sem
+  // observações"...) = nada a registrar naquele item
+  if (etapa && NADA_NA_ETAPA[etapa]?.includes(falaInteira)) {
+    comandos.push('nada_a_registrar')
+    return { ficha, alteracoes, naoReconhecidos, comandos }
   }
   // "sem erro técnico" (fala inteira) = nada a registrar no erro tecnico
   if (['sem erro tecnico', 'sem erros tecnicos', 'nenhum erro tecnico', 'nenhum erro', 'sem erro'].includes(falaInteira)) {
@@ -1262,4 +1287,35 @@ export function interpretar(
   fecharPendente()
 
   return { ficha, alteracoes, naoReconhecidos, comandos }
+}
+
+// ---------------------------------------------------------------------------
+// HOLOFOTE AUTOMATICO (escuta continua): depois de cada fala, o holofote
+// passa SOZINHO ao proximo item quando o item atual ficou resolvido:
+// - itens de valor unico (anonimizacao, tipo, idade, genero, dentes,
+//   qualidade): assim que a fala preencheu aquele item;
+// - achados: quando TODAS as marcacoes tem achado (ou "sem alterações");
+// - erro tecnico: quando um erro foi registrado ou "sem erro técnico";
+// - descricao e observacoes (texto livre, pode ter varias frases): so com
+//   "próximo"/"pronto" (ou Tab) - o curador decide quando terminou.
+const CAMPO_DA_ETAPA: Partial<Record<EtapaFicha, CampoVoz>> = {
+  anonimizacao: 'anonimizacao',
+  tipo: 'tipo_radiografia',
+  idade: 'idade',
+  genero: 'genero',
+  dentes: 'dentes',
+  qualidade: 'qualidade_tecnica',
+  erro_tecnico: 'erros_tecnicos',
+}
+
+export function itemResolvidoPelaFala(etapa: EtapaFicha, r: ResultadoVoz): boolean {
+  if (r.comandos.includes('nada_a_registrar')) return true
+  if (etapa === 'achados') {
+    if (r.ficha.sem_alteracoes) return true
+    if (!r.alteracoes.length || !r.ficha.marcacoes.length) return false
+    const ligadas = new Set((r.ficha.achados ?? []).flatMap((a) => a.marcacoes))
+    return r.ficha.marcacoes.every((m) => ligadas.has(m.id))
+  }
+  const campo = CAMPO_DA_ETAPA[etapa]
+  return !!campo && r.alteracoes.some((a) => a.campo === campo)
 }

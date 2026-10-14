@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
+from app.modules.achados import erros_por_ficha
 from app.modules.auth import obter_usuario_atual
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
@@ -94,6 +95,7 @@ def listar_imagens_salvas(
         .all()
     )
 
+    erros = erros_por_ficha(db, [r[1].id for r in resultados])
     itens = []
     for salva, ficha, ref in resultados:
         if ref.study_instance_uid:
@@ -113,6 +115,7 @@ def listar_imagens_salvas(
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,
+            "erros_tecnicos": erros.get(ficha.id, []),
             "viewer_url": viewer_url,
             "salvo_em": salva.criado_em.isoformat() if salva.criado_em else None,
         })

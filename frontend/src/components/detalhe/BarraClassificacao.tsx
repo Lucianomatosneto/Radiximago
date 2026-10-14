@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
+import { rotuloErro } from '../../lib/errosTecnicos'
 import { corTextoAchado, COR_TEXTO_TIPO_RADIOGRAFIA, COR_TEXTO_QUALIDADE_TECNICA, COR_TEXTO_DENTES } from '../../lib/coresAchados'
 
 // Faixa compacta com a classificacao da imagem, sempre abaixo do
@@ -52,6 +53,7 @@ export default function BarraClassificacao({
   descricaoDidatica,
   achadoPrincipal,
   ocultarClassificacao,
+  errosTecnicos,
 }: {
   tipo: string
   qualidade: string
@@ -65,6 +67,8 @@ export default function BarraClassificacao({
    * coluna sobreposta ao visualizador (ver segunda-opiniao/page.tsx), pra
    * nao duplicar a mesma informacao duas vezes na tela. */
   ocultarClassificacao?: boolean
+  /** erros tecnicos registrados pelo curador (so aparece se houver) */
+  errosTecnicos?: string[] | null
 }) {
   const t = useTranslations('Visualizador.classificacao')
   const tAlteracoes = useTranslations('AlteracoesObservadas.itens')
@@ -115,14 +119,27 @@ export default function BarraClassificacao({
         )}
       </CampoEmDestaque>
 
-      <p className="line-clamp-2 text-ink">
-        <span className={`font-medium ${corAchado}`}>{t('achadosDetalhados')}</span>
-        {achadosDetalhe || '—'}
-      </p>
-      <p className="line-clamp-2 text-ink">
-        <span className={`font-medium ${corAchado}`}>{t('descricao')}</span>
-        {descricaoDidatica || '—'}
-      </p>
+      {/* itens SEM conteudo nao aparecem (nem com "—"): o curador pode
+          declarar "sem descrição"/"sem erro técnico", e o estudante so ve
+          o que de fato foi registrado */}
+      {achadosDetalhe?.trim() && (
+        <p className="line-clamp-2 text-ink">
+          <span className={`font-medium ${corAchado}`}>{t('achadosDetalhados')}</span>
+          {achadosDetalhe}
+        </p>
+      )}
+      {descricaoDidatica?.trim() && (
+        <p className="line-clamp-2 text-ink">
+          <span className={`font-medium ${corAchado}`}>{t('descricao')}</span>
+          {descricaoDidatica}
+        </p>
+      )}
+      {errosTecnicos && errosTecnicos.length > 0 && (
+        <p className="text-ink">
+          <span className="font-medium text-rose-300">{t('errosTecnicos')}</span>
+          {errosTecnicos.map(rotuloErro).join(', ')}
+        </p>
+      )}
     </div>
   )
 }

@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { alternarNoCursor, tamanhoCursor, trocarOpcao } from '../../lib/opcoesTeclado'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
@@ -53,6 +54,7 @@ function Secao({
   estado,
   rodape,
   simples = false,
+  anotacaoVazio,
   children,
 }: {
   id: SecaoFicha
@@ -69,6 +71,8 @@ function Secao({
   rodape?: ReactNode
   /** sem "?" e sem selo Pendente/Concluída (secao "Dados") */
   simples?: boolean
+  /** "Sem observações" etc. quando declarada sem conteudo */
+  anotacaoVazio?: string
   children: ReactNode
 }) {
   const t = useTranslations('Curadoria.coluna')
@@ -93,6 +97,13 @@ function Secao({
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
         {!simples && <AjudaSecao secao={id} />}
         {estado === 'concluida' && <span className="text-xs font-bold text-emerald-400" title={t('concluida')}>✓</span>}
+        {/* "não" / "sem observações": fica anotado aqui (so para a equipe -
+            o estudante simplesmente nao ve o item vazio) */}
+        {anotacaoVazio && (
+          <span className="rounded-full border border-emerald-400/40 bg-emerald-500/10 px-2 py-px text-[11px] font-semibold text-emerald-200">
+            {anotacaoVazio}
+          </span>
+        )}
         {extra && <div className="ml-auto">{extra}</div>}
       </header>
       {/* secao apagada: o primeiro clique so acende (nao muda valores); em
@@ -150,7 +161,11 @@ export default function ColunaFichaCuradoria({
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
   const concluidas = SECOES_FICHA.filter((s) => estado[s] === 'concluida').length
-  const secaoAtiva = SECAO_DA_ETAPA[etapaAtiva]
+  // holofote no botao Aprovar (barra superior): nenhuma secao fica acesa
+  const secaoAtiva: SecaoFicha | null = etapaAtiva === 'aprovar' ? null : SECAO_DA_ETAPA[etapaAtiva]
+  // cursor das setas ←/→ nos itens de varias escolhas (dentes, erros)
+  const [cursor, setCursor] = useState(0)
+  useEffect(() => setCursor(0), [etapaAtiva])
   const rolagemRef = useRef<HTMLDivElement>(null)
   const tSecoes = useTranslations('Curadoria.secoes')
   // clique num item so acende (sem pular a rolagem); teclas rolam ate ele
@@ -181,10 +196,40 @@ export default function ColunaFichaCuradoria({
   // dentro de campos de texto continuam movendo o cursor/numero.
   const etapaRef = useRef(etapaAtiva)
   etapaRef.current = etapaAtiva
+  const formRef = useRef(form)
+  formRef.current = form
+  const cursorRef = useRef(cursor)
+  cursorRef.current = cursor
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
   useEffect(() => {
     if (!teclasAtivas) return
     function aoTeclar(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return
+      // ←/→ (e espaco): escolhem as opcoes DENTRO do item aceso
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === ' ') && !e.shiftKey && !emCampoDeTexto()) {
+        const etapa = etapaRef.current
+        const f = formRef.current
+        const total = tamanhoCursor(etapa, f)
+        if (e.key === ' ') {
+          const novo = total ? alternarNoCursor(etapa, f, cursorRef.current) : null
+          if (!novo) return
+          e.preventDefault()
+          onChangeRef.current(novo)
+          return
+        }
+        const lado = e.key === 'ArrowRight' ? 1 : -1
+        if (total) {
+          e.preventDefault()
+          setCursor((c) => (c + lado + total) % total)
+          return
+        }
+        const novo = trocarOpcao(etapa, f, lado)
+        if (!novo) return
+        e.preventDefault()
+        onChangeRef.current(novo)
+        return
+      }
       let passo: 1 | -1 | 0 = 0
       if (e.key === 'Tab') passo = e.shiftKey ? -1 : 1
       else if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.shiftKey && !emCampoDeTexto()) passo = e.key === 'ArrowDown' ? 1 : -1
@@ -216,6 +261,7 @@ export default function ColunaFichaCuradoria({
     piscando: destaques[id],
     estado: estado[id],
     rodape: rodape(id),
+    anotacaoVazio: revisadas.includes(id) && !temConteudo(id, form) && t.has(`semConteudo.${id}`) ? t(`semConteudo.${id}`) : undefined,
   })
 
   // rodape da secao ativa: so "Nada a registrar" (opcionais, sem
@@ -271,6 +317,7 @@ export default function ColunaFichaCuradoria({
             onChange={onChange}
             etapa={secaoAtiva === 'dados' ? etapaAtiva : undefined}
             onEtapa={ativarPorClique}
+            cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
           />
         </Secao>
 
@@ -296,7 +343,7 @@ export default function ColunaFichaCuradoria({
         </Secao>
 
         <Secao {...p('erro_tecnico')}>
-          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} />
+          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined} />
         </Secao>
 
         <Secao {...p('descricao')}>

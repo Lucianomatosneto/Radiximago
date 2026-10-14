@@ -43,8 +43,18 @@ def test_transcreve_repassando_ao_servico_local(client, criar_usuario, db, monke
     assert r.json()["texto"] == "Periapical, dente 36."
     assert enviado["url"].endswith("/transcrever")
     assert "Periapical" in enviado["data"]["prompt"]
+    assert enviado["data"]["rapido"] == "0"
+    # escuta continua: trecho curto pede o modo rapido ao Whisper
+    r = client.post(
+        "/voz/transcrever",
+        files={"arquivo": ("trecho.webm", b"audio-falso", "audio/webm")},
+        data={"rapido": "true"},
+        headers=cabecalho_auth(token),
+    )
+    assert r.status_code == 200, r.text
+    assert enviado["data"]["rapido"] == "1"
     auditoria = db.query(AuditLog).filter(AuditLog.usuario_id == curador.id, AuditLog.acao == "transcricao_voz").all()
-    assert len(auditoria) == 1 and "Periapical" not in (auditoria[0].detalhes or "")
+    assert len(auditoria) == 2 and "Periapical" not in (auditoria[0].detalhes or "")
 
 
 def test_voz_so_para_curadoria_e_valida_arquivo(client, criar_usuario, monkeypatch):

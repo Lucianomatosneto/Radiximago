@@ -28,6 +28,7 @@ def test_transcreve_e_carrega_sob_demanda(monkeypatch):
     assert r.status_code == 200
     assert r.json()["texto"] == "Periapical, qualidade boa, dente 36."
     assert falso.chamadas[0]["language"] == "pt" and falso.chamadas[0]["initial_prompt"] == "periapical"
+    assert falso.chamadas[0]["beam_size"] == 5  # texto normal: busca completa
     cliente.post("/transcrever", files={"arquivo": ("a.webm", b"yyyy", "audio/webm")})
     assert criados == [1]  # carregou uma vez so
     assert cliente.get("/saude").json()["carregado"] is True
@@ -56,3 +57,13 @@ def test_audio_invalido(monkeypatch):
     monkeypatch.setattr(servico, "_modelo", Quebra())
     cliente = TestClient(servico.app)
     assert cliente.post("/transcrever", files={"arquivo": ("a.webm", b"zz", "audio/webm")}).status_code == 422
+
+
+def test_modo_rapido_usa_beam_1(monkeypatch):
+    falso = ModeloFalso()
+    monkeypatch.setattr(servico, "_criar_modelo", lambda: falso)
+    monkeypatch.setattr(servico, "_modelo", None)
+    cliente = TestClient(servico.app)
+    r = cliente.post("/transcrever", files={"arquivo": ("a.webm", b"xx", "audio/webm")}, data={"rapido": "1"})
+    assert r.status_code == 200
+    assert falso.chamadas[0]["beam_size"] == 1

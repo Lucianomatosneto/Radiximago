@@ -2,7 +2,7 @@
 // Rodar dentro da pasta frontend:  npx tsx testes/vozCuradoria.teste.ts
 
 import type { SecaoFicha } from '../src/lib/secoesCuradoria'
-import { aplicarMacro, interpretar, type FichaVoz, type OpcoesInterpretar } from '../src/lib/vozCuradoria'
+import { aplicarMacro, interpretar, itemResolvidoPelaFala, type FichaVoz, type OpcoesInterpretar } from '../src/lib/vozCuradoria'
 const vazia: FichaVoz = { tipo_radiografia: 'panoramica', dentes: [], idade_min: '', idade_max: '', genero: '', marcacoes: [
   { id: 'a', tipo: 'oval', x: .1, y: .1, largura: .1, altura: .1 }, { id: 'b', tipo: 'seta', x1: 0, y1: 0, x2: .2, y2: .2 }],
   achados_detalhe: '', alteracoes_observadas: [], qualidade_tecnica: '', descricao_didatica: '', observacoes_internas: '', termos: [] }
@@ -137,4 +137,23 @@ caso('etapa qualidade: boa', 'boa', r => r.ficha.qualidade_tecnica === 'boa', un
 caso('etapa qualidade: ok nao anonimiza', 'ok', r => r.ficha.anonimizacao_validada !== true, undefined, { etapa: 'qualidade' })
 caso('etapa idade: palavra-guia de outro campo continua valendo', 'sexo f', r => r.ficha.genero === 'feminino' && r.ficha.idade_min === '', undefined, { etapa: 'idade' })
 caso('etapa descricao: texto livre', 'imagem para estudo', r => r.ficha.descricao_didatica === 'Imagem para estudo', undefined, { etapa: 'descricao' })
+// escuta continua: navegacao falada e avanco automatico do holofote
+caso('proximo vira comando', 'Próximo.', r => r.comandos.join() === 'proxima_secao' && r.alteracoes.length === 0, undefined, { etapa: 'dentes' })
+caso('pronto vira comando', 'pronto', r => r.comandos.join() === 'proxima_secao', undefined, { etapa: 'descricao' })
+caso('voltar vira comando', 'voltar', r => r.comandos.join() === 'secao_anterior', undefined, { etapa: 'idade' })
+caso('proximo ao dente na descricao e texto', 'lesão próximo ao dente 36', r => r.comandos.length === 0 && r.ficha.descricao_didatica.length > 0, undefined, { etapa: 'descricao' })
+caso('avanca: ok na anonimizacao', 'OK.', r => itemResolvidoPelaFala('anonimizacao', r), undefined, { etapa: 'anonimizacao' })
+caso('avanca: idade preenchida', '42', r => itemResolvidoPelaFala('idade', r), undefined, { etapa: 'idade' })
+caso('nao avanca: fala de outro item', 'sexo f', r => !itemResolvidoPelaFala('idade', r), undefined, { etapa: 'idade' })
+caso('nao avanca: achados com marcacao sem achado', 'um lesão periapical', r => !itemResolvidoPelaFala('achados', r), undefined, { etapa: 'achados' })
+caso('avanca: todas as marcacoes com achado', 'um lesão periapical. dois cárie em dentina', r => itemResolvidoPelaFala('achados', r), undefined, { etapa: 'achados' })
+caso('avanca: erro tecnico registrado', 'imagem fantasma', r => itemResolvidoPelaFala('erro_tecnico', r), undefined, { etapa: 'erro_tecnico' })
+caso('avanca: sem erro tecnico', 'sem erro técnico', r => itemResolvidoPelaFala('erro_tecnico', r), undefined, { etapa: 'erro_tecnico' })
+caso('nao avanca: descricao (texto livre)', 'imagem para estudo', r => !itemResolvidoPelaFala('descricao', r), undefined, { etapa: 'descricao' })
+caso('erro tecnico: nao', 'Não.', r => r.comandos.join() === 'nada_a_registrar' && itemResolvidoPelaFala('erro_tecnico', r), undefined, { etapa: 'erro_tecnico' })
+caso('descricao: sem descricao', 'Sem descrição.', r => r.comandos.join() === 'nada_a_registrar' && r.ficha.descricao_didatica === '', undefined, { etapa: 'descricao' })
+caso('descricao: nao', 'não', r => r.comandos.join() === 'nada_a_registrar', undefined, { etapa: 'descricao' })
+caso('observacoes: sem observacoes', 'sem observações', r => r.comandos.join() === 'nada_a_registrar', undefined, { etapa: 'observacoes' })
+caso('observacoes: nao', 'Não.', r => r.comandos.join() === 'nada_a_registrar', undefined, { etapa: 'observacoes' })
+caso('nao no meio da descricao e texto', 'não há lesão visível', r => r.comandos.length === 0 && r.ficha.descricao_didatica.length > 0, undefined, { etapa: 'descricao' })
 process.exit(falhas ? 1 : 0)

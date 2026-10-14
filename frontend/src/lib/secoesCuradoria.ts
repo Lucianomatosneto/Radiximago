@@ -79,6 +79,9 @@ export type EtapaFicha =
   | 'erro_tecnico'
   | 'descricao'
   | 'observacoes'
+  // ultimo passo: o holofote vai para o botao APROVAR da barra superior; o
+  // microfone fecha e Enter faz a aprovacao final
+  | 'aprovar'
 
 export const ETAPAS_FICHA: EtapaFicha[] = [
   'anonimizacao',
@@ -91,6 +94,7 @@ export const ETAPAS_FICHA: EtapaFicha[] = [
   'erro_tecnico',
   'descricao',
   'observacoes',
+  'aprovar',
 ]
 
 export const ETAPA_INICIAL: EtapaFicha = 'anonimizacao'
@@ -107,6 +111,8 @@ export const SECAO_DA_ETAPA: Record<EtapaFicha, SecaoFicha> = {
   erro_tecnico: 'erro_tecnico',
   descricao: 'descricao',
   observacoes: 'observacoes',
+  // nao e uma secao da ficha: a coluna nao destaca nada (ver ColunaFicha)
+  aprovar: 'observacoes',
 }
 
 /** Primeiro item de uma secao (ex.: "ir para a secao" da conferencia). */

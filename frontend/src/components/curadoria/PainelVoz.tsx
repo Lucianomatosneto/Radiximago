@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import {
   interpretar,
+  itemResolvidoPelaFala,
   type Alteracao,
   type CampoVoz,
   type MacroVoz,
@@ -12,7 +13,8 @@ import {
   type Sugestao,
   type TermoVoz,
 } from '../../lib/vozCuradoria'
-import { SECAO_DA_ETAPA, etapaVizinha, type EtapaFicha } from '../../lib/secoesCuradoria'
+import { ETAPAS_FICHA, SECAO_DA_ETAPA, etapaVizinha, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
+import { EscutaContinua } from '../../lib/escutaContinua'
 
 // CURADORIA POR VOZ (topo da coluna da ficha; flutua no canto so no modo
 // "ampliar imagem", quando a coluna fica escondida).
@@ -57,7 +59,7 @@ export default function PainelVoz({
   onAprendeu,
   onDuvidas,
   onNadaRegistrar,
-  teclaEnter = false,
+  continuo = false,
 }: {
   fichaId: number
   form: FormularioFicha
@@ -80,10 +82,12 @@ export default function PainelVoz({
   /** informa quantas duvidas estao pendentes (conferencia antes de aprovar) */
   onDuvidas?: (quantidade: number) => void
   /** fala "nada a registrar": marca a secao em destaque como revisada */
-  onNadaRegistrar?: () => void
-  /** ENTER liga/desliga o microfone para o item no holofote (desligar
-   * quando houver janela/modal aberto) */
-  teclaEnter?: boolean
+  onNadaRegistrar?: (secao?: SecaoFicha) => void
+  /** ESCUTA CONTINUA: o microfone abre no inicio da curadoria e fica
+   * aberto; cada fala (separada por uma pausa curta) preenche o item do
+   * holofote, que passa sozinho ao proximo (ver lib/escutaContinua.ts e
+   * itemResolvidoPelaFala em lib/vozCuradoria.ts) */
+  continuo?: boolean
 }) {
   const t = useTranslations('Voz')
   const tEtapas = useTranslations('Curadoria.etapas')
@@ -165,17 +169,28 @@ export default function PainelVoz({
     setAviso(t('desfeito'))
   }, [onAplicar, t])
 
-  // item no holofote QUANDO a gravacao comecou: o que foi dito vai para ele,
-  // mesmo que o curador aperte Tab antes de a transcricao terminar
-  const etapaGravacaoRef = useRef<EtapaFicha | undefined>(undefined)
+  // item no holofote usado para interpretar a proxima fala. E atualizado NA
+  // HORA quando o holofote anda (sem esperar a tela redesenhar): com o
+  // curador falando rapido, a fala seguinte ja vai para o item certo.
+  const etapaRef = useRef<EtapaFicha | undefined>(etapaAtiva)
+  useEffect(() => {
+    etapaRef.current = etapaAtiva
+  }, [etapaAtiva])
+  function irPara(etapa: EtapaFicha) {
+    etapaRef.current = etapa
+    onEtapa?.(etapa)
+  }
 
   function processarTexto(texto: string) {
     setUltimoTexto(texto)
     setAviso('')
-    const o = { ...opcoesRef.current, etapaAtiva: etapaGravacaoRef.current ?? opcoesRef.current.etapaAtiva }
+    const o = opcoesRef.current
+    const etapa = etapaRef.current
+    // no passo "Aprovar" o microfone esta fechado: sobra de fala e ignorada
+    if (etapa === 'aprovar') return
     const r = interpretar(texto, formRef.current, o.vocabulario, {
-      secaoAtiva: o.etapaAtiva ? SECAO_DA_ETAPA[o.etapaAtiva] : undefined,
-      etapa: o.etapaAtiva,
+      secaoAtiva: etapa ? SECAO_DA_ETAPA[etapa] : undefined,
+      etapa,
       macros: o.macros,
       frasesAprendidas: o.frasesAprendidas,
     })
@@ -189,23 +204,29 @@ export default function PainelVoz({
         ...r.naoReconhecidos.map((x) => ({ ...x, id: ++contadorRef.current, lembrar: !!x.parecido && x.sugestoes.some(ensinavel) })),
       ])
     }
+    let navegou = false
     for (const c of r.comandos) {
       if (c === 'salvar') onSalvar()
       if (c === 'desfazer') desfazer()
-      if (c === 'nada_a_registrar') onNadaRegistrar?.()
-      if ((c === 'proxima_secao' || c === 'secao_anterior') && onEtapa && o.etapaAtiva) {
-        onEtapa(etapaVizinha(o.etapaAtiva, c === 'proxima_secao' ? 1 : -1))
+      if (c === 'nada_a_registrar') onNadaRegistrar?.(etapa ? SECAO_DA_ETAPA[etapa] : undefined)
+      if ((c === 'proxima_secao' || c === 'secao_anterior') && onEtapa && etapa) {
+        irPara(etapaVizinha(etapa, c === 'proxima_secao' ? 1 : -1))
+        navegou = true
       }
+    }
+    // escuta continua: item resolvido -> o holofote passa ao proximo sozinho
+    if (continuo && !navegou && etapa && onEtapa && etapa !== ETAPAS_FICHA[ETAPAS_FICHA.length - 1] && itemResolvidoPelaFala(etapa, r)) {
+      irPara(etapaVizinha(etapa, 1))
     }
     if (!r.alteracoes.length && !r.naoReconhecidos.length && !r.comandos.length) setErro(t('nadaEntendido'))
   }
 
-  async function enviar(blob: Blob) {
-    setTranscrevendo(true)
-    setErro('')
+  /** manda o audio ao Whisper local e devolve o texto (ou null) */
+  async function transcrever(blob: Blob, rapido: boolean): Promise<string | null> {
     try {
       const dados = new FormData()
       dados.append('arquivo', blob, blob.type.includes('mp4') ? 'trecho.mp4' : 'trecho.webm')
+      if (rapido) dados.append('rapido', '1')
       const r = await fetch(`${API}/voz/transcrever`, { method: 'POST', credentials: 'include', body: dados })
       if (!r.ok) {
         let detalhe = t('erroTranscrever')
@@ -216,21 +237,121 @@ export default function PainelVoz({
           // sem corpo legivel
         }
         setErro(r.status === 429 ? t('erroMuitos') : detalhe)
-        return
+        return null
       }
       const j = await r.json()
-      const texto = (j.texto ?? '').trim()
-      if (!texto) {
-        setErro(t('nadaOuvido'))
-        return
-      }
-      processarTexto(texto)
+      return (j.texto ?? '').trim() || null
     } catch {
       setErro(t('erroTranscrever'))
+      return null
+    }
+  }
+
+  async function enviar(blob: Blob) {
+    setTranscrevendo(true)
+    setErro('')
+    try {
+      const texto = await transcrever(blob, false)
+      if (texto) processarTexto(texto)
     } finally {
       setTranscrevendo(false)
     }
   }
+
+  // ---------------------------------------------------- escuta continua
+  // Cada trecho e transcrito assim que chega (em paralelo, para ser rapido),
+  // mas os textos sao APLICADOS na ordem em que foram falados (fila), para o
+  // holofote andar na sequencia certa: "ok" -> "pan" -> "35" -> "f"...
+  const [escutando, setEscutando] = useState(false)
+  const [falando, setFalando] = useState(false)
+  const [naFila, setNaFila] = useState(0)
+  const escutaRef = useRef<EscutaContinua | null>(null)
+  const filaRef = useRef<Promise<void>>(Promise.resolve())
+  const fichaIdRef = useRef(fichaId)
+  fichaIdRef.current = fichaId
+  const processarRef = useRef(processarTexto)
+  processarRef.current = processarTexto
+  const transcreverRef = useRef(transcrever)
+  transcreverRef.current = transcrever
+
+  const aoTrecho = useCallback((audio: Blob) => {
+    const ficha = fichaIdRef.current
+    setNaFila((n) => n + 1)
+    const texto = transcreverRef.current(audio, true)
+    filaRef.current = filaRef.current.then(async () => {
+      try {
+        const t = await texto
+        // imagem trocada enquanto transcrevia: a fala era da imagem anterior
+        if (t && ficha === fichaIdRef.current) processarRef.current(t)
+      } finally {
+        setNaFila((n) => n - 1)
+      }
+    })
+  }, [])
+
+  // `iniciada`: o curador ja apertou Enter (o microfone foi aberto uma vez).
+  // Dali em diante o microfone fica aberto em todos os itens e FECHA no
+  // passo "Aprovar" (o curador confere e aprova com Enter); na imagem
+  // seguinte (holofote de volta na anonimizacao) ele reabre sozinho.
+  // `pausaManual`: o curador pausou pelo botao ou Alt+V.
+  const [iniciada, setIniciada] = useState(false)
+  const [pausaManual, setPausaManual] = useState(false)
+
+  const ligarEscuta = useCallback(async () => {
+    if (escutaRef.current?.ativa) return
+    setErro('')
+    const escuta = new EscutaContinua({ onTrecho: aoTrecho, onFalando: setFalando })
+    escutaRef.current = escuta
+    const falha = await escuta.iniciar()
+    if (falha) {
+      setErro(t(falha))
+      escutaRef.current = null
+      return
+    }
+    setIniciada(true)
+  }, [aoTrecho, t])
+
+  // abre/fecha conforme o passo: fechado no "Aprovar" e na pausa manual
+  useEffect(() => {
+    const escuta = escutaRef.current
+    if (!iniciada || !escuta?.ativa) return
+    const aberto = !pausaManual && etapaAtiva !== 'aprovar'
+    escuta.pausar(!aberto)
+    setEscutando(aberto)
+    if (!aberto) setFalando(false)
+  }, [iniciada, pausaManual, etapaAtiva])
+
+  function alternarEscuta() {
+    if (!escutaRef.current) ligarEscuta()
+    else setPausaManual((p) => !p)
+  }
+
+  // ENTER inicia a curadoria (so a primeira vez: abre o microfone). Nao
+  // interfere com Enter em campos, botoes ou janelas, nem no "Aprovar".
+  useEffect(() => {
+    if (!continuo || !disponivel || iniciada) return
+    function tecla(e: KeyboardEvent) {
+      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+      if (escutaRef.current || etapaRef.current === 'aprovar') return
+      const alvo = document.activeElement
+      if (
+        alvo instanceof HTMLElement &&
+        (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(alvo.tagName) || alvo.isContentEditable || alvo.closest('[role="dialog"]'))
+      )
+        return
+      e.preventDefault()
+      ligarEscuta()
+    }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [continuo, disponivel, iniciada, ligarEscuta])
+  useEffect(
+    () => () => {
+      escutaRef.current?.parar()
+      escutaRef.current = null
+    },
+    []
+  )
 
   async function iniciar() {
     setErro('')
@@ -252,7 +373,6 @@ export default function PainelVoz({
         if (blob.size > 0) enviar(blob)
       }
       gravador.start()
-      etapaGravacaoRef.current = opcoesRef.current.etapaAtiva
       gravadorRef.current = gravador
       setGravando(true)
       if (!embutido) setAberto(true)
@@ -273,40 +393,10 @@ export default function PainelVoz({
     setGravando(false)
   }
 
-  const alternar = () => (gravando ? parar() : iniciar())
-
-  // holofote mudou de item (Tab/↓) com o microfone aberto: fecha o trecho -
-  // o que foi falado vai para o item em que a gravacao comecou
-  const gravandoRef = useRef(gravando)
-  gravandoRef.current = gravando
-  useEffect(() => {
-    if (gravandoRef.current) parar()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [etapaAtiva])
-
-  // ENTER = abre o microfone no item em destaque; ENTER de novo = fecha e
-  // preenche. Um trecho por item (o microfone nao fica aberto a ficha
-  // inteira). Dentro de campos de texto o Enter continua normal.
-  const podeEnterRef = useRef({ transcrevendo, disponivel })
-  podeEnterRef.current = { transcrevendo, disponivel }
-  useEffect(() => {
-    if (!teclaEnter) return
-    function tecla(e: KeyboardEvent) {
-      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
-      const alvo = document.activeElement
-      if (
-        alvo instanceof HTMLElement &&
-        (alvo.tagName === 'TEXTAREA' || alvo.tagName === 'INPUT' || alvo.tagName === 'SELECT' || alvo.isContentEditable)
-      )
-        return
-      e.preventDefault()
-      const { transcrevendo: ocupado, disponivel: ok } = podeEnterRef.current
-      if (ocupado || ok === false) return
-      alternarRef.current()
-    }
-    document.addEventListener('keydown', tecla)
-    return () => document.removeEventListener('keydown', tecla)
-  }, [teclaEnter])
+  const alternar = () => {
+    if (continuo) return alternarEscuta()
+    return gravando ? parar() : iniciar()
+  }
 
   // atalho Alt+V (liga/desliga o microfone)
   const alternarRef = useRef(alternar)
@@ -373,14 +463,22 @@ export default function PainelVoz({
     <button
       type="button"
       onClick={alternar}
-      disabled={transcrevendo || disponivel === false}
-      aria-pressed={gravando}
-      title={gravando ? t('parar') : t('falar')}
+      disabled={(!continuo && transcrevendo) || disponivel === false}
+      aria-pressed={continuo ? escutando : gravando}
+      title={continuo ? (escutando ? t('pausarEscuta') : t('retomarEscuta')) : gravando ? t('parar') : t('falar')}
       className={`flex shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-40 ${grande ? 'h-12 w-12' : 'h-9 w-9'} ${
-        gravando ? 'animate-pulse border-red-400 bg-red-500/80 text-white' : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
+        continuo
+          ? escutando
+            ? falando
+              ? 'scale-110 border-emerald-300 bg-emerald-500 text-white shadow-[0_0_18px_rgba(52,211,153,.7)]'
+              : 'border-emerald-400 bg-emerald-500/25 text-emerald-100'
+            : 'border-slate-400 bg-slate-500/20 text-slate-300'
+          : gravando
+            ? 'animate-pulse border-red-400 bg-red-500/80 text-white'
+            : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
       }`}
     >
-      {gravando ? <span className="h-3 w-3 rounded-sm bg-white" /> : <IconeMicrofone className={grande ? 'h-5 w-5' : 'h-4 w-4'} />}
+      {!continuo && gravando ? <span className="h-3 w-3 rounded-sm bg-white" /> : <IconeMicrofone className={grande ? 'h-5 w-5' : 'h-4 w-4'} />}
     </button>
   )
 
@@ -389,17 +487,18 @@ export default function PainelVoz({
       {botaoMicrofone(false)}
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-semibold text-ink">
-          {gravando ? `${t('gravando')} ${minutos}` : transcrevendo ? t('transcrevendo') : t('titulo')}
+          {continuo
+            ? `${escutando ? (falando ? t('ouvindoFala') : t('escutando')) : !escutaRef.current ? t('enterIniciar') : etapaAtiva === 'aprovar' ? t('pausadoAprovar') : t('pausado')}${naFila > 0 ? ` · ${t('transcrevendo')}` : ''}`
+            : gravando
+              ? `${t('gravando')} ${minutos}`
+              : transcrevendo
+                ? t('transcrevendo')
+                : t('titulo')}
         </p>
         {etapaAtiva && (
           <p className="text-[11px] text-slate-400">
             {t('destino')} <span className="font-semibold text-teal-200">{tEtapas(etapaAtiva)}</span>
-            {teclaEnter && (
-              <span className="ml-2 text-slate-500">
-                <kbd className="rounded border border-white/20 px-1 font-mono text-[10px] text-slate-300">Enter</kbd>{' '}
-                {gravando ? t('enterParar') : t('enterFalar')}
-              </span>
-            )}
+
           </p>
         )}
         {erro ? (

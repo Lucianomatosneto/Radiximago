@@ -33,6 +33,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 
 from app.core.config import settings
+from app.modules.achados import erros_por_ficha
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules.anotacoes import AnotacaoImagem
@@ -230,6 +231,7 @@ def listar_recebidas(
         )
         contagem = {(u, c): n for u, c, n in linhas}
 
+    erros = erros_por_ficha(db, [r[1].id for r in resultados])
     itens = []
     for comp, ficha, ref, remetente in resultados:
         viewer_url = (
@@ -253,6 +255,7 @@ def listar_recebidas(
             "marcacoes": ficha.marcacoes,
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "descricao_didatica": ficha.descricao_didatica,
+            "erros_tecnicos": erros.get(ficha.id, []),
             "viewer_url": viewer_url,
         })
     return {"quantidade": len(itens), "itens": itens}

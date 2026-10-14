@@ -21,6 +21,7 @@ export default function BarraSuperiorCuradoria({
   salvando,
   aprovando,
   extra,
+  destacarAprovar = false,
 }: {
   posicaoAtual: number | null
   totalFila: number
@@ -38,6 +39,8 @@ export default function BarraSuperiorCuradoria({
    * "Aguardando sua decisao") - o estado/logica continua todo em
    * curadoria/page.tsx, essa barra so reserva o espaco visual. */
   extra?: ReactNode
+  /** holofote no Aprovar (ultimo passo da ficha): botao aceso + "Enter" */
+  destacarAprovar?: boolean
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
@@ -83,9 +86,12 @@ export default function BarraSuperiorCuradoria({
           type="button"
           onClick={onAprovar}
           disabled={aprovando || salvando}
-          className="flex items-center gap-1.5 rounded-lg bg-brand hover:bg-brand-hover px-3 py-1.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+          className={`flex items-center gap-1.5 rounded-lg bg-brand hover:bg-brand-hover px-3 py-1.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50 ${
+            destacarAprovar ? 'relative z-10 scale-110 ring-4 ring-teal-300 shadow-[0_0_28px_rgba(45,212,191,.8)]' : ''
+          }`}
         >
           {aprovando ? t('aprovando') : t('aprovar')}
+          {destacarAprovar && <kbd className="rounded border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
         </button>
         <button
           type="button"

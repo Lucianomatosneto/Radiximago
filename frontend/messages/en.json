@@ -466,7 +466,8 @@
       "alteracoesObservadas": "Observed changes",
       "nenhumaAlteracao": "No changes recorded.",
       "achadosDetalhados": "Detailed findings: ",
-      "descricao": "Description: "
+      "descricao": "Description: ",
+      "errosTecnicos": "Technical error: "
     },
     "marcacao": {
       "mostrarEstaImagem": "Show curator's marking for this image",
@@ -822,7 +823,7 @@
       "titulo": "Curation record",
       "secaoAnterior": "Previous section (↑)",
       "proximaSecao": "Next section (↓)",
-      "ajudaTeclas": "Press Enter to open the microphone on the lit item, speak, and Enter again to fill it; Tab (or ↓) goes to the next item; Shift+Tab (or ↑) goes back.",
+      "ajudaTeclas": "The microphone stays open: say the value of the lit item and the highlight moves on by itself. Description and notes: say \"pronto\" when done.",
       "semMarcacoes": "No markings on this image.",
       "abrirMarcacao": "Open marking",
       "fecharMarcacao": "Close marking",
@@ -838,9 +839,14 @@
       "nadaRegistrado": "Reviewed — nothing to record",
       "irProxima": "Next: {secao}",
       "proximoItem": "Next: {item}",
-      "lembreteTeclas": "Enter speaks · Tab or ↓ next item · Shift+Tab or ↑ previous",
+      "lembreteTeclas": "Speak or use ←/→ · Tab or ↓ next item · ↑ back · at the end, Enter approves",
       "faltam": "{n} left",
-      "tudoConcluido": "All done"
+      "tudoConcluido": "All done",
+      "semConteudo": {
+        "erro_tecnico": "No technical error",
+        "descricao": "No description",
+        "observacoes": "No notes"
+      }
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {
@@ -1022,7 +1028,8 @@
       "achados": "Findings",
       "erro_tecnico": "Technical error",
       "descricao": "Teaching description",
-      "observacoes": "Internal notes"
+      "observacoes": "Internal notes",
+      "aprovar": "Approve (Enter)"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1620,8 +1627,13 @@
     "duvidas": "Doubts ({quantidade}) — confirm before they enter the record",
     "lembrar": "Remember this correction (teach the system)",
     "ajuda9": "Macros: “macro normal periapical” applies the saved template (⚡ Macros menu).",
-    "enterFalar": "to speak",
-    "enterParar": "to stop and fill"
+    "escutando": "🎙️ Microphone open — say the lit item",
+    "ouvindoFala": "🎙️ Listening…",
+    "pausado": "Microphone paused (Alt+V reopens)",
+    "pausarEscuta": "Pause microphone (Alt+V)",
+    "retomarEscuta": "Open microphone (Alt+V)",
+    "enterIniciar": "⏎ Press Enter to start curation (opens the microphone)",
+    "pausadoAprovar": "Microphone closed — press Enter to approve"
   },
   "Macros": {
     "tituloPrefixo": "Curation",

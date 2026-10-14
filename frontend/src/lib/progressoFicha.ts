@@ -29,7 +29,9 @@ export interface FichaProgresso {
 }
 
 /** secoes que aceitam "Nada a registrar" */
-export const SECOES_OPCIONAIS: SecaoFicha[] = ['erro_tecnico', 'observacoes']
+// opcionais: o curador pode declarar "nada a registrar" (falando "não",
+// "sem descrição", "sem observações"...); o estudante nao ve o item vazio
+export const SECOES_OPCIONAIS: SecaoFicha[] = ['erro_tecnico', 'descricao', 'observacoes']
 
 export function temConteudo(secao: SecaoFicha, f: FichaProgresso): boolean {
   switch (secao) {

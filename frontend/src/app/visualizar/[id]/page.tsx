@@ -37,6 +37,7 @@ interface ImagemDidatica {
   marcacoes: Marcacao[]
   qualidade_tecnica: string | null
   descricao_didatica: string | null
+  erros_tecnicos?: string[]
   viewer_url: string | null
 }
 
@@ -296,6 +297,7 @@ export default function VisualizarImagemPage({ params }: { params: { id: string 
                     alteracoesObservadas={imagem.alteracoes_observadas}
                     achadosDetalhe={imagem.achados_detalhe}
                     descricaoDidatica={imagem.descricao_didatica}
+                    errosTecnicos={imagem.erros_tecnicos}
                     achadoPrincipal={imagem.achado_principal}
                   />
 

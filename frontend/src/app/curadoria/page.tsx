@@ -967,9 +967,12 @@ export default function CuradoriaPage() {
 
   // "Nada a registrar" (botao ou voz): marca/desmarca a secao opcional.
   // O holofote NAO anda sozinho - o curador passa adiante com Tab/↓.
-  function nadaARegistrar(secao: SecaoFicha) {
+  // `marcar` (voz): so marca - falar "não" duas vezes nao desmarca.
+  function nadaARegistrar(secao: SecaoFicha, marcar = false) {
     if (!SECOES_OPCIONAIS.includes(secao) || temConteudo(secao, form)) return
-    setRevisadas(revisadas.includes(secao) ? revisadas.filter((s) => s !== secao) : [...revisadas, secao])
+    setRevisadas((atuais) =>
+      atuais.includes(secao) ? (marcar ? atuais : atuais.filter((s) => s !== secao)) : [...atuais, secao]
+    )
   }
 
   // "Abrir marcação": a imagem para marcacao ocupa o quadro do
@@ -1020,6 +1023,23 @@ export default function CuradoriaPage() {
     }
   }
 
+  // HOLOFOTE NO "APROVAR" (ultimo passo): Enter faz a aprovacao final
+  // (passando pela conferencia automatica, como o clique no botao)
+  const pedirAprovacaoRef = useRef<() => void>(() => {})
+  const teclasLivres = !modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto
+  useEffect(() => {
+    if (etapaAtiva !== 'aprovar' || !teclasLivres) return
+    function tecla(e: KeyboardEvent) {
+      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+      const alvo = document.activeElement
+      if (alvo instanceof HTMLElement && (['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName) || alvo.isContentEditable)) return
+      e.preventDefault()
+      pedirAprovacaoRef.current()
+    }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [etapaAtiva, teclasLivres])
+
   // Aprovar passa antes pela conferencia automatica
   function pedirAprovacao() {
     if (conferencia.length > 0) {
@@ -1027,7 +1047,8 @@ export default function CuradoriaPage() {
       return
     }
     aprovar()
-  }
+  }  pedirAprovacaoRef.current = pedirAprovacao
+
 
   if (carregando) {
     return (
@@ -1161,6 +1182,7 @@ export default function CuradoriaPage() {
       salvando={salvandoRascunho}
       aprovando={aprovando}
       extra={badgeReviewsRespondidas}
+      destacarAprovar={etapaAtiva === 'aprovar'}
     />
   ) : null
 
@@ -1366,8 +1388,8 @@ export default function CuradoriaPage() {
                       frasesAprendidas={frasesAprendidas}
                       onAprendeu={carregarRecursosLaudo}
                       onDuvidas={setDuvidasVoz}
-                      onNadaRegistrar={() => nadaARegistrar(secaoAtiva)}
-                      teclaEnter={!modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto}
+                      onNadaRegistrar={(secao) => nadaARegistrar(secao ?? secaoAtiva, true)}
+                      continuo
                     />
                   }
                 />
@@ -1415,9 +1437,12 @@ export default function CuradoriaPage() {
               }}
             />
             <div className="mt-4 flex justify-end gap-2">
+              {/* foco inicial: com so AVISOS, "Aprovar mesmo assim" (o curador
+                  le os avisos e confirma com outro Enter); com BLOQUEIO,
+                  "Voltar" */}
               <button
                 type="button"
-                autoFocus
+                autoFocus={conferencia.some((c) => c.nivel === 'bloqueio')}
                 onClick={() => setConferenciaAberta(false)}
                 className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-200 hover:border-brand"
               >
@@ -1425,6 +1450,7 @@ export default function CuradoriaPage() {
               </button>
               <button
                 type="button"
+                autoFocus={!conferencia.some((c) => c.nivel === 'bloqueio')}
                 disabled={conferencia.some((c) => c.nivel === 'bloqueio') || aprovando}
                 onClick={() => {
                   setConferenciaAberta(false)

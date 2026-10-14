@@ -37,7 +37,7 @@ from app.modules.curations import (
     StatusCuradoria,
     DENTES_PERMANENTES,
 )
-from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico
+from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico, erros_por_ficha
 
 from app.modules.busca_texto import condicao_busca_texto, condicao_termo
 
@@ -361,6 +361,7 @@ def pesquisar_imagens(
     total = consulta.count()
     resultados = consulta.offset(skip).limit(limit).all()
 
+    erros = erros_por_ficha(db, [r[0].id for r in resultados])
     itens = []
     for ficha, ref in resultados:
         if ref.study_instance_uid:
@@ -381,6 +382,7 @@ def pesquisar_imagens(
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,
+            "erros_tecnicos": erros.get(ficha.id, []),
             "origem": ref.origem,
             "viewer_url": viewer_url,
         })

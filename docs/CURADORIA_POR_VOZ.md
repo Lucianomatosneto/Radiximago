@@ -124,13 +124,51 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 - Observação: se o curador clicar dentro da imagem do OHIF (iframe), as teclas
   vão para o visualizador; basta clicar na ficha para o Tab/↓ voltar a valer.
 
-## 3.7 Microfone por item (Enter) e tela em metades
+## 3.7 Escuta contínua (microfone aberto a curadoria toda) e tela em metades
 
-- **Enter** abre o microfone no item aceso pelo holofote; **Enter** de novo
-  fecha e preenche aquele item. O microfone não fica mais aberto a ficha
-  inteira: é um trecho curto por item. Se o curador apertar Tab com o
-  microfone aberto, o trecho é encerrado e vai para o item em que a gravação
-  começou. Dentro de campos de texto o Enter continua normal.
+- O curador aperta **Enter** para iniciar a curadoria: o microfone abre e
+  fica aberto em todos os itens (`lib/escutaContinua.ts`) até o passo
+  "Aprovar". O botão do microfone ou Alt+V pausam/retomam.
+- O sistema percebe quando o curador fala e quando para (detecção de
+  atividade de voz — "VAD"): mede o volume ~25 vezes por segundo e compara
+  com o ruído de fundo da sala. Cada fala separada por uma pausa curta
+  (~0,55 s) vira um trecho, transcrito pelo Whisper local em **modo rápido**
+  (busca gulosa, beam 1). Trechos só com ruído são descartados no navegador.
+- Os trechos são transcritos em paralelo, mas aplicados **na ordem em que
+  foram falados**; o holofote é atualizado na hora, então a fala seguinte já
+  vai para o item certo, mesmo com o curador falando rápido.
+- **O holofote anda sozinho** quando o item foi resolvido pela fala
+  (`itemResolvidoPelaFala`): anonimização, tipo, idade, gênero, dentes e
+  qualidade assim que preenchidos; Achados quando todas as marcações têm
+  achado (ou "sem alterações"); Erro técnico quando um erro é registrado ou
+  "sem erro técnico". Descrição e observações (texto livre) só avançam com
+  "pronto"/"próximo".
+- Comandos falados (a fala inteira): "próximo", "pronto", "seguinte",
+  "pula" → próximo item; "voltar", "anterior" → item anterior. Tab/↓ e
+  Shift+Tab/↑ continuam valendo.
+- O botão do microfone (ou Alt+V) pausa/retoma a escuta. Verde = aberto;
+  verde forte = ouvindo uma fala; cinza = pausado.
+- Limite do servidor: 120 trechos por minuto por usuário.
+
+- **Passo final "Aprovar"**: depois de Observações internas (por voz
+  "não"/"pronto" ou Tab), o holofote vai para o botão **Aprovar** da barra
+  superior, o microfone **fecha** e **Enter** faz a aprovação final (passa
+  pela conferência; só com avisos, o foco já fica em "Aprovar mesmo assim",
+  então Enter de novo confirma). A imagem seguinte abre com o holofote em
+  "Anonimização validada" e o microfone **reabre sozinho**.
+- **Setas ←/→ dentro do item aceso** (`lib/opcoesTeclado.ts`): anonimização
+  marca/desmarca; tipo, gênero e qualidade trocam a opção; em dentes e erro
+  técnico as setas andam um cursor (contorno amarelo) e a **barra de espaço**
+  marca/desmarca.
+
+- Itens opcionais aceitam resposta negativa (a fala inteira): **"não"**,
+  "nenhum", "nada" — e também "sem erro técnico", "sem descrição", "sem
+  observações". O item fica anotado na ficha ("Sem observações") e conta
+  como concluído. Descrição didática passou a ser opcional.
+- O que o **estudante** vê: "Descrição", "Achados detalhados" e "Erro
+  técnico" só aparecem quando o curador registrou algo (nada de "—" vazio).
+  Observações internas nunca aparecem para o estudante. A Pesquisa, Minhas
+  imagens e Compartilhadas passaram a receber `erros_tecnicos` da API.
 - Achados: clicar em "Abrir marcação", marcar as lesões (numeradas) e, com
   Achados aceso, Enter → "um lesão periapical. dois cárie em dentina" → Enter.
 - Metade **esquerda**: miniaturas (5 por vez, setas ‹ › trocam o grupo) e a

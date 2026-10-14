@@ -466,7 +466,8 @@
       "alteracoesObservadas": "Alterações observadas",
       "nenhumaAlteracao": "Nenhuma alteração registrada.",
       "achadosDetalhados": "Achados detalhados: ",
-      "descricao": "Descrição: "
+      "descricao": "Descrição: ",
+      "errosTecnicos": "Erro técnico: "
     },
     "marcacao": {
       "mostrarEstaImagem": "Mostrar marcação do curador para esta imagem",
@@ -822,7 +823,7 @@
       "titulo": "Ficha de curadoria",
       "secaoAnterior": "Seção anterior (↑)",
       "proximaSecao": "Próxima seção (↓)",
-      "ajudaTeclas": "Aperte Enter para abrir o microfone no item aceso, fale, e Enter de novo para preencher; Tab (ou ↓) vai ao próximo item; Shift+Tab (ou ↑) volta.",
+      "ajudaTeclas": "O microfone fica aberto: fale o valor do item aceso e o destaque passa sozinho ao próximo. Descrição e observações: diga \"pronto\" ao terminar.",
       "semMarcacoes": "Nenhuma marcação nesta imagem.",
       "abrirMarcacao": "Abrir marcação",
       "fecharMarcacao": "Fechar marcação",
@@ -838,9 +839,14 @@
       "nadaRegistrado": "Revisada — nada a registrar",
       "irProxima": "Próxima: {secao}",
       "proximoItem": "Próximo: {item}",
-      "lembreteTeclas": "Enter fala · Tab ou ↓ próximo item · Shift+Tab ou ↑ anterior",
+      "lembreteTeclas": "Fale ou use ←/→ · Tab ou ↓ próximo item · ↑ volta · no fim, Enter aprova",
       "faltam": "Faltam {n}",
-      "tudoConcluido": "Tudo concluído"
+      "tudoConcluido": "Tudo concluído",
+      "semConteudo": {
+        "erro_tecnico": "Sem erro técnico",
+        "descricao": "Sem descrição",
+        "observacoes": "Sem observações"
+      }
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -1022,7 +1028,8 @@
       "achados": "Achados",
       "erro_tecnico": "Erro técnico",
       "descricao": "Descrição didática",
-      "observacoes": "Observações internas"
+      "observacoes": "Observações internas",
+      "aprovar": "Aprovar (Enter)"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1620,8 +1627,13 @@
     "duvidas": "Dúvidas ({quantidade}) — confirme antes de entrar na ficha",
     "lembrar": "Lembrar esta correção (ensinar o sistema)",
     "ajuda9": "Macros: “macro periapical normal” aplica a frase pronta cadastrada (menu ⚡ Macros).",
-    "enterFalar": "para falar",
-    "enterParar": "para encerrar e preencher"
+    "escutando": "🎙️ Microfone aberto — fale o item aceso",
+    "ouvindoFala": "🎙️ Ouvindo…",
+    "pausado": "Microfone pausado (Alt+V reabre)",
+    "pausarEscuta": "Pausar microfone (Alt+V)",
+    "retomarEscuta": "Abrir microfone (Alt+V)",
+    "enterIniciar": "⏎ Pressione Enter para iniciar a curadoria (abre o microfone)",
+    "pausadoAprovar": "Microfone fechado — aperte Enter para aprovar"
   },
   "Macros": {
     "tituloPrefixo": "Macros da",

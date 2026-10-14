@@ -11,12 +11,13 @@ O texto e interpretado NO NAVEGADOR (regras fixas, frontend/src/lib/vozCuradoria
 e so vira dado da ficha quando o curador salva (PATCH /curation/{id} com
 origem_voz=true - fica na auditoria como "preenchimento_por_voz").
 
-So curadores (e administrador/suporte) usam; limite de 30 trechos por
-minuto. A auditoria registra cada transcricao (duracao), nunca o audio.
+So curadores (e administrador/suporte) usam; limite de 120 trechos por
+minuto (na escuta continua cada item da ficha e um trecho curto, e curador
+experiente fala varios por minuto). A auditoria registra cada transcricao (duracao), nunca o audio.
 """
 
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -67,10 +68,11 @@ def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
 
 
 @router.post("/transcrever")
-@limiter.limit("30/minute")
+@limiter.limit("120/minute")
 def transcrever(
     request: Request,
     arquivo: UploadFile = File(...),
+    rapido: bool = Form(default=False),
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
@@ -87,7 +89,8 @@ def transcrever(
         resposta = httpx.post(
             f"{settings.WHISPER_URL}/transcrever",
             files={"arquivo": (arquivo.filename or "audio.webm", conteudo, tipo or "audio/webm")},
-            data={"prompt": _prompt(db)},
+            # rapido: trecho curto da escuta continua (decodificacao mais leve)
+            data={"prompt": _prompt(db), "rapido": "1" if rapido else "0"},
             timeout=180,
         )
     except httpx.HTTPError:

@@ -27,6 +27,7 @@ export interface ItemSequencia {
   curation_id: number
   numero: number
   descricao_didatica: string | null
+  erros_tecnicos?: string[]
   tipo_radiografia: string | null
   viewer_url: string | null
   achados_detalhe?: string | null
@@ -976,6 +977,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
                 alteracoesObservadas={atual.alteracoes_observadas}
                 achadosDetalhe={atual.achados_detalhe}
                 descricaoDidatica={atual.descricao_didatica}
+                errosTecnicos={atual.erros_tecnicos}
                 achadoPrincipal={atual.achado_principal}
               />
               <MarcacaoAchado

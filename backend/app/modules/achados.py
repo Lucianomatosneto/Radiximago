@@ -230,3 +230,25 @@ class ErroTecnico(Base):
     descricao = Column(Text, nullable=True)
 
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+
+def erros_por_ficha(db, curation_ids) -> dict[int, list[str]]:
+    """Erros tecnicos de varias fichas numa consulta so ({curation_id: [tipos]}).
+
+    Usado nas telas de estudo (Pesquisa, Minhas imagens, Compartilhadas): o
+    erro tecnico SO aparece para o estudante quando o curador registrou
+    algum - lista vazia = a linha "Erro técnico" nem aparece.
+    """
+    ids = list({i for i in curation_ids if i is not None})
+    if not ids:
+        return {}
+    resultado: dict[int, list[str]] = {}
+    linhas = (
+        db.query(ErroTecnico.curation_id, ErroTecnico.tipo)
+        .filter(ErroTecnico.curation_id.in_(ids))
+        .order_by(ErroTecnico.id)
+        .all()
+    )
+    for curation_id, tipo in linhas:
+        resultado.setdefault(curation_id, []).append(tipo)
+    return resultado

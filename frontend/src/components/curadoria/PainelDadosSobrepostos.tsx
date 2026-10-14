@@ -77,6 +77,7 @@ export default function PainelDadosSobrepostos({
   onChange,
   etapa,
   onEtapa,
+  cursorDente,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -84,6 +85,8 @@ export default function PainelDadosSobrepostos({
   etapa?: EtapaFicha
   /** clique num item leva o holofote para ele */
   onEtapa?: (etapa: EtapaFicha) => void
+  /** posicao do cursor das setas ←/→ no odontograma (0..31) */
+  cursorDente?: number
   // compatibilidade com usos antigos (ignorados)
   statusFicha?: string
   palavrasChave?: boolean
@@ -100,6 +103,7 @@ export default function PainelDadosSobrepostos({
     onChange({ ...form, dentes })
   }
 
+  const denteNoCursor = cursorDente !== undefined ? [...ARCADA_SUPERIOR, ...ARCADA_INFERIOR][cursorDente] : undefined
   const linhaDentes = (lista: number[]) => (
     <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-0.5">
       {lista.map((d, i) => {
@@ -110,7 +114,7 @@ export default function PainelDadosSobrepostos({
             type="button"
             onClick={() => alternarDente(d)}
             aria-pressed={marcado}
-            className={`rounded py-1 text-[11px] font-semibold transition-colors ${i === 8 ? 'ml-1' : ''} ${
+            className={`rounded py-1 text-[11px] font-semibold transition-colors ${i === 8 ? 'ml-1' : ''} ${d === denteNoCursor ? 'ring-2 ring-amber-300' : ''} ${
               marcado ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
             }`}
           >
