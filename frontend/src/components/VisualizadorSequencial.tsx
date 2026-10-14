@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import MiniaturaImagem from './MiniaturaImagem'
-import BarraClassificacao from './detalhe/BarraClassificacao'
-import MarcacaoAchado from './detalhe/MarcacaoAchado'
 import ImagemPrincipalMarcada from './detalhe/ImagemPrincipalMarcada'
 import AnotacoesImagem from './detalhe/AnotacoesImagem'
 import Logo from './Logo'
@@ -180,7 +178,6 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
   const [seriesDoItem, setSeriesDoItem] = useState<number | null>(null)
   const [indiceSerie, setIndiceSerie] = useState(0)
   // painel "Detalhes" (classificacao completa + marcacao), fechado por padrao
-  const [detalhesAbertos, setDetalhesAbertos] = useState(false)
   // MARCACOES DO CURADOR: quais imagens (curation_id) estao com a marcacao
   // ligada. Cada imagem liga/desliga pelo seu proprio selo; o botao do topo
   // (ou a tecla K) liga/desliga todas. A escolha de cada imagem continua
@@ -960,58 +957,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar 
         })}
       </div>
 
-      {/* Barra de acoes compacta (uma linha). A classificacao completa e a
-          marcacao do curador ficam em "Detalhes", que abre por cima da
-          imagem so quando a pessoa pede. */}
+      {/* Barra de acoes compacta (uma linha). O antigo botao "Detalhes" saiu:
+          as informacoes da imagem ja aparecem no "i" sobre a propria imagem. */}
       <div className="relative z-40 border-t border-base-border bg-base/80 px-4 py-1.5 backdrop-blur-md sm:px-6">
-        {detalhesAbertos && (
-          <div className="absolute inset-x-0 bottom-full max-h-[60vh] overflow-y-auto border-t border-base-border bg-base-surface/95 px-4 pb-4 pt-2 shadow-2xl backdrop-blur-md sm:px-6">
-            <div className="mx-auto max-w-4xl">
-              <p className="text-xs font-semibold text-teal-200">
-                {t('imagemNumero', { numero: atual.numero })}
-              </p>
-              <BarraClassificacao
-                tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, atual.tipo_radiografia, traduzirTipoRadiografia)}
-                qualidade={rotular(OPCOES_QUALIDADE_TECNICA, atual.qualidade_tecnica, traduzirQualidadeTecnica)}
-                dentes={atual.dentes}
-                alteracoesObservadas={atual.alteracoes_observadas}
-                achadosDetalhe={atual.achados_detalhe}
-                descricaoDidatica={atual.descricao_didatica}
-                errosTecnicos={atual.erros_tecnicos}
-                achadoPrincipal={atual.achado_principal}
-              />
-              <MarcacaoAchado
-                curationId={atual.curation_id}
-                marcacoes={marcacoes}
-                comImagem={false}
-                mostrar={mostrarMarcacao}
-                onMostrarChange={(v: boolean) => alternarMarcacaoDe(atual.curation_id, v)}
-                mostrarTodas={todasMarcacoesLigadas}
-                onMostrarTodasChange={(v: boolean) => alternarTodasMarcacoes(v)}
-              />
-              {atual.viewer_url && (
-                <p className="mt-3 text-xs text-slate-400">
-                  {t('instrucaoRolagem')}
-                  {seriesValidas.length > 1 && t('instrucaoSeries')}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
-
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setDetalhesAbertos((v) => !v)}
-              aria-expanded={detalhesAbertos}
-              className={`${CLASSE_BOTAO_COMPACTO} ${detalhesAbertos ? 'border-teal-400/70 text-teal-200' : ''}`}
-            >
-              {detalhesAbertos ? `▾ ${t('ocultarDetalhes')}` : `▴ ${t('detalhes')}`}
-              {marcacaoDisponivel && (
-                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-400 align-middle" title={t('temMarcacao')} />
-              )}
-            </button>
             {mensagem && <span className="truncate text-xs text-emerald-400">{mensagem}</span>}
             {erro && (
               <span className="truncate text-xs text-red-400" role="alert">
