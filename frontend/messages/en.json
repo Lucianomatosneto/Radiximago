@@ -1030,7 +1030,8 @@
       "descricao": "Teaching description",
       "observacoes": "Internal notes",
       "aprovar": "Approve (Enter)"
-    }
+    },
+    "comoLaudar": "How to report"
   },
   "SegundaOpiniaoPage": {
     "titulo": "Second opinion",
@@ -1633,7 +1634,8 @@
     "pausarEscuta": "Pause microphone (Alt+V)",
     "retomarEscuta": "Open microphone (Alt+V)",
     "enterIniciar": "⏎ Press Enter to start curation (opens the microphone)",
-    "pausadoAprovar": "Microphone closed — press Enter to approve"
+    "pausadoAprovar": "Microphone closed — press Enter to approve",
+    "espacoAudio": "Press space for audio"
   },
   "Macros": {
     "tituloPrefixo": "Curation",

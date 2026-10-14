@@ -126,9 +126,13 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 
 ## 3.7 Escuta contínua (microfone aberto a curadoria toda) e tela em metades
 
-- O curador aperta **Enter** para iniciar a curadoria: o microfone abre e
-  fica aberto em todos os itens (`lib/escutaContinua.ts`) até o passo
-  "Aprovar". O botão do microfone ou Alt+V pausam/retomam.
+- O curador aperta a **barra de espaço** para abrir o microfone: ele fica
+  aberto em todos os itens (`lib/escutaContinua.ts`) até o passo "Aprovar".
+  Espaço de novo (ou o botão, ou Alt+V) pausa/retoma.
+- Caixa de voz enxuta: só o círculo do microfone (cor = estado) com
+  "Pressione espaço para áudio" embaixo; ao lado, "Como laudar" e "Macros".
+  Erros e dúvidas da voz aparecem só quando existem. A barra "Ficha de
+  curadoria / Faltam N / lembrete de teclas" foi removida.
 - O sistema percebe quando o curador fala e quando para (detecção de
   atividade de voz — "VAD"): mede o volume ~25 vezes por segundo e compara
   com o ruído de fundo da sala. Cada fala separada por uma pausa curta
@@ -158,8 +162,8 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
   "Anonimização validada" e o microfone **reabre sozinho**.
 - **Setas ←/→ dentro do item aceso** (`lib/opcoesTeclado.ts`): anonimização
   marca/desmarca; tipo, gênero e qualidade trocam a opção; em dentes e erro
-  técnico as setas andam um cursor (contorno amarelo) e a **barra de espaço**
-  marca/desmarca.
+  técnico as setas andam um cursor (contorno amarelo) e **Enter** marca/
+  desmarca (curadoria manual, sem áudio).
 
 - Itens opcionais aceitam resposta negativa (a fala inteira): **"não"**,
   "nenhum", "nada" — e também "sem erro técnico", "sem descrição", "sem

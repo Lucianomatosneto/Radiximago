@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import {
@@ -60,6 +60,7 @@ export default function PainelVoz({
   onDuvidas,
   onNadaRegistrar,
   continuo = false,
+  aoLado,
 }: {
   fichaId: number
   form: FormularioFicha
@@ -88,6 +89,8 @@ export default function PainelVoz({
    * holofote, que passa sozinho ao proximo (ver lib/escutaContinua.ts e
    * itemResolvidoPelaFala em lib/vozCuradoria.ts) */
   continuo?: boolean
+  /** botoes ao lado do microfone (Como laudar, Macros) - modo embutido */
+  aoLado?: ReactNode
 }) {
   const t = useTranslations('Voz')
   const tEtapas = useTranslations('Curadoria.etapas')
@@ -326,25 +329,32 @@ export default function PainelVoz({
     else setPausaManual((p) => !p)
   }
 
-  // ENTER inicia a curadoria (so a primeira vez: abre o microfone). Nao
-  // interfere com Enter em campos, botoes ou janelas, nem no "Aprovar".
+  // BARRA DE ESPACO = microfone: a primeira vez abre (inicia a curadoria
+  // por voz); depois pausa/retoma. Nao vale no passo "Aprovar" (microfone
+  // fechado), em campos de texto nem em janelas. O Enter fica para marcar
+  // opcoes na curadoria manual (ver ColunaFichaCuradoria).
+  const iniciadaRef = useRef(iniciada)
+  iniciadaRef.current = iniciada
   useEffect(() => {
-    if (!continuo || !disponivel || iniciada) return
+    if (!continuo || !disponivel) return
     function tecla(e: KeyboardEvent) {
-      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
-      if (escutaRef.current || etapaRef.current === 'aprovar') return
+      if (e.key !== ' ' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+      if (etapaRef.current === 'aprovar') return
       const alvo = document.activeElement
       if (
         alvo instanceof HTMLElement &&
-        (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(alvo.tagName) || alvo.isContentEditable || alvo.closest('[role="dialog"]'))
+        (['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName) || alvo.isContentEditable || alvo.closest('[role="dialog"]'))
       )
         return
       e.preventDefault()
-      ligarEscuta()
+      // um botao focado nao deve ser "clicado" pelo espaco
+      if (alvo instanceof HTMLElement && alvo.tagName === 'BUTTON') alvo.blur()
+      if (!escutaRef.current) ligarEscuta()
+      else setPausaManual((p) => !p)
     }
     document.addEventListener('keydown', tecla)
     return () => document.removeEventListener('keydown', tecla)
-  }, [continuo, disponivel, iniciada, ligarEscuta])
+  }, [continuo, disponivel, ligarEscuta])
   useEffect(
     () => () => {
       escutaRef.current?.parar()
@@ -614,18 +624,24 @@ export default function PainelVoz({
   )
 
   if (embutido) {
+    // so o CIRCULO do microfone (cor = estado) com "Pressione espaço para
+    // áudio" embaixo; ao lado, os botoes extras (Como laudar, Macros). Erro
+    // e duvidas da voz aparecem so quando existem.
     return (
-      <section
-        className={`overflow-hidden rounded-xl border bg-base-surface ${
-          duvidas.length ? 'border-orange-300/50' : 'border-teal-300/40'
-        } ${disponivel === false ? 'opacity-90' : ''}`}
-        aria-label={t('titulo')}
-        onKeyDown={(e) => e.stopPropagation()}
-      >
-        {barra}
-        {disponivel === false && !aberto && <p className="px-2 pb-1.5 text-[11px] text-red-300">{t('indisponivel')}</p>}
-        {blocoDuvidas}
-        {blocoAberto}
+      <section aria-label={t('titulo')} onKeyDown={(e) => e.stopPropagation()} className="relative z-20 space-y-2">
+        <div className="flex items-start gap-3">
+          <div className="flex w-28 shrink-0 flex-col items-center gap-1">
+            {botaoMicrofone(true)}
+            <p className="text-center text-[11px] leading-tight text-slate-400">{t('espacoAudio')}</p>
+          </div>
+          {aoLado && <div className="flex flex-wrap items-center gap-2 pt-2">{aoLado}</div>}
+        </div>
+        {(erro || disponivel === false) && (
+          <p className="text-[11px] text-red-300" role="alert">
+            {erro || t('indisponivel')}
+          </p>
+        )}
+        {duvidas.length > 0 && <div className="overflow-hidden rounded-xl border border-orange-300/50">{blocoDuvidas}</div>}
       </section>
     )
   }

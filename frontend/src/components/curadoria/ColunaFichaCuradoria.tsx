@@ -127,10 +127,8 @@ export default function ColunaFichaCuradoria({
   topo,
   teclasAtivas = true,
   destaques = {},
-  acoesBarra,
   revisadas = [],
   onNadaRegistrar,
-  onAbrirGuia,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -149,18 +147,13 @@ export default function ColunaFichaCuradoria({
   teclasAtivas?: boolean
   /** secoes que acabaram de receber dados (valor = marca de tempo) */
   destaques?: Partial<Record<SecaoFicha, number>>
-  /** botoes extras na barra do titulo (menu de macros) */
-  acoesBarra?: ReactNode
   /** secoes opcionais declaradas "Nada a registrar" nesta ficha */
   revisadas?: SecaoFicha[]
   /** marca/desmarca "Nada a registrar" numa secao */
   onNadaRegistrar?: (secao: SecaoFicha) => void
-  /** abre o guia "Como laudar" */
-  onAbrirGuia?: () => void
 }) {
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
-  const concluidas = SECOES_FICHA.filter((s) => estado[s] === 'concluida').length
   // holofote no botao Aprovar (barra superior): nenhuma secao fica acesa
   const secaoAtiva: SecaoFicha | null = etapaAtiva === 'aprovar' ? null : SECAO_DA_ETAPA[etapaAtiva]
   // cursor das setas ←/→ nos itens de varias escolhas (dentes, erros)
@@ -206,12 +199,13 @@ export default function ColunaFichaCuradoria({
     if (!teclasAtivas) return
     function aoTeclar(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return
-      // ←/→ (e espaco): escolhem as opcoes DENTRO do item aceso
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === ' ') && !e.shiftKey && !emCampoDeTexto()) {
+      // ←/→ escolhem as opcoes DENTRO do item aceso; Enter marca/desmarca a
+      // opcao do cursor (dentes, erros) - curadoria manual, sem audio
+      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Enter') && !e.shiftKey && !emCampoDeTexto()) {
         const etapa = etapaRef.current
         const f = formRef.current
         const total = tamanhoCursor(etapa, f)
-        if (e.key === ' ') {
+        if (e.key === 'Enter') {
           const novo = total ? alternarNoCursor(etapa, f, cursorRef.current) : null
           if (!novo) return
           e.preventDefault()
@@ -288,27 +282,6 @@ export default function ColunaFichaCuradoria({
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-2">
       {topo && <div className="shrink-0">{topo}</div>}
-
-      {/* barra com o titulo, o progresso e o lembrete das teclas */}
-      <div className="relative z-20 flex shrink-0 flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface px-3 py-1.5">
-        <h2 className="text-sm font-bold text-ink" title={t('ajudaTeclas')}>{t('titulo')}</h2>
-        <span title={t('progresso', { feitas: concluidas, total: SECOES_FICHA.length })} className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${concluidas === SECOES_FICHA.length ? 'bg-emerald-500/20 text-emerald-200' : 'bg-white/5 text-slate-300'}`}>
-          {/* quantos itens AINDA FALTAM concluir (nao quantos ja foram) */}
-          {concluidas === SECOES_FICHA.length ? `✓ ${t('tudoConcluido')}` : t('faltam', { n: SECOES_FICHA.length - concluidas })}
-        </span>
-        <span className="text-[11px] text-slate-400">{t('lembreteTeclas')}</span>
-        {onAbrirGuia && (
-          <button
-            type="button"
-            onClick={onAbrirGuia}
-            title={t('comoLaudar')}
-            className="rounded-full border border-sky-300/50 bg-sky-400/10 px-2.5 py-1 text-xs font-semibold text-sky-100 hover:bg-sky-400/20"
-          >
-            📘 {t('comoLaudar')}
-          </button>
-        )}
-        {acoesBarra}
-      </div>
 
       <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 pr-1 pt-1">
         <Secao {...p('dados')} simples>

@@ -1377,8 +1377,6 @@ export default function CuradoriaPage() {
                   destaques={destaques}
                   revisadas={revisadas}
                   onNadaRegistrar={nadaARegistrar}
-                  onAbrirGuia={() => setGuiaAberto(true)}
-                  acoesBarra={<MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />}
                   topo={
                     <PainelVoz
                       embutido
@@ -1395,6 +1393,18 @@ export default function CuradoriaPage() {
                       onDuvidas={setDuvidasVoz}
                       onNadaRegistrar={(secao) => nadaARegistrar(secao ?? secaoAtiva, true)}
                       continuo
+                      aoLado={
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setGuiaAberto(true)}
+                            className="rounded-full border border-sky-300/50 bg-sky-400/10 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-400/20"
+                          >
+                            📘 {t('comoLaudar')}
+                          </button>
+                          <MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />
+                        </>
+                      }
                     />
                   }
                 />
