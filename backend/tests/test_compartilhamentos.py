@@ -229,3 +229,32 @@ def test_destinatario_apaga_recado_so_da_propria_visao(client, criar_usuario, cr
     client.post(f"{url}/ocultar", json={"mensagem": True}, headers=cabecalho_auth(t_dest))
     client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "veja de novo"}, headers=cabecalho_auth(t_rem))
     assert client.get(url, headers=cabecalho_auth(t_dest)).json()["mensagem"] == "veja de novo"
+
+
+def test_responder_a_quem_enviou_sem_email(client, criar_usuario, criar_ficha, db):
+    remetente = criar_usuario()
+    destinatario = criar_usuario()
+    terceiro = criar_usuario()
+    t_rem = obter_token(client, remetente.email)
+    t_dest = obter_token(client, destinatario.email)
+    t_ter = obter_token(client, terceiro.email)
+    ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
+    client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "favor avaliar"}, headers=cabecalho_auth(t_rem))
+    comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
+    _anotar(client, t_dest, ficha.id, "Avaliei: lesao periapical")
+
+    # vazio nao vale; terceiro nao responde pelo outro
+    assert client.post(f"/shares/recebidas/{comp_id}/responder", json={"mensagem": "  "}, headers=cabecalho_auth(t_dest)).status_code == 422
+    assert client.post(f"/shares/recebidas/{comp_id}/responder", json={"mensagem": "oi"}, headers=cabecalho_auth(t_ter)).status_code == 404
+
+    r = client.post(f"/shares/recebidas/{comp_id}/responder", json={"mensagem": "Avaliado, veja minha nota"}, headers=cabecalho_auth(t_dest))
+    assert r.status_code == 200
+
+    # quem enviou recebe a resposta em "Compartilhadas comigo", com as anotacoes de quem respondeu
+    recebidas = client.get("/shares/recebidas", headers=cabecalho_auth(t_rem)).json()["itens"]
+    assert len(recebidas) == 1
+    resp = recebidas[0]
+    assert resp["curation_id"] == ficha.id and resp["mensagem"] == "Avaliado, veja minha nota" and resp["novo"] is True
+    notas = client.get(f"/shares/recebidas/{resp['id']}/anotacoes", headers=cabecalho_auth(t_rem)).json()["itens"]
+    assert [n["texto"] for n in notas] == ["Avaliei: lesao periapical"]
+    assert db.query(AuditLog).filter(AuditLog.acao == "resposta_compartilhamento").count() == 1

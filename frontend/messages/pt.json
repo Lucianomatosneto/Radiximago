@@ -1559,7 +1559,14 @@
     "apagarSoParaVoce": "Apagar tira só da sua visão (não dá para editar); quem escreveu continua com o texto.",
     "mostrarApagadas": "Mostrar {quantidade, plural, one {a apagada} other {as # apagadas}}",
     "erroApagar": "Não foi possível atualizar as anotações.",
-    "apagarRecadoParaMim": "Apagar este recado só para você"
+    "apagarRecadoParaMim": "Apagar este recado só para você",
+    "responderA": "Responder a {nome}",
+    "placeholderResposta": "Escreva sua resposta...",
+    "enviarResposta": "Enviar",
+    "respostaExplicacao": "Vai com a imagem e as suas anotações.",
+    "respostaEnviada": "Resposta enviada para {nome}.",
+    "erroRespostaVazia": "Escreva a resposta antes de enviar.",
+    "erroResponder": "Não foi possível enviar a resposta."
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Compartilhadas",

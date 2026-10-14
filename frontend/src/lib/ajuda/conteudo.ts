@@ -800,6 +800,35 @@ export const TOPICOS_AJUDA: TopicoAjuda[] = [
     },
   },
 
+  {
+    id: 'responderCompartilhamento',
+    categoria: 'compartilhar',
+    rotas: ['/compartilhadas-comigo'],
+    link: '/compartilhadas-comigo',
+    pt: {
+      titulo: 'Responder a quem compartilhou uma imagem comigo',
+      resumo: 'Botão de seta no cartão (ou "Responder a…" na janela do "i"), sem digitar e-mail.',
+      passos: [
+        'Em "Compartilhadas comigo", clique no botão de seta (↩) do cartão, ou abra o "i" e use "Responder a <nome>".',
+        'Escreva a resposta e clique em "Enviar" (ou Ctrl+Enter).',
+        'A imagem volta para quem enviou, com a sua resposta como recado e as suas anotações.',
+        'A pessoa recebe em "Compartilhadas comigo", marcada como nova, e pode responder de volta.',
+      ],
+      palavras: 'responder resposta retornar devolver mensagem recado conversar professor colega quem enviou remetente email',
+    },
+    en: {
+      titulo: 'Reply to someone who shared an image with me',
+      resumo: 'Arrow button on the card (or "Reply to…" in the "i" window), no e-mail needed.',
+      passos: [
+        'In "Shared with me", click the arrow button (↩) on the card, or open the "i" and use "Reply to <name>".',
+        'Write the reply and click "Send" (or Ctrl+Enter).',
+        'The image goes back to the sender, with your reply as the message and your notes.',
+        'They get it in "Shared with me", marked as new, and can reply back.',
+      ],
+      palavras: 'reply answer return message colleague teacher sender email',
+    },
+  },
+
   // ───────────── CURADORIA (curador / administrador) ─────────────
   {
     id: 'curadoria',

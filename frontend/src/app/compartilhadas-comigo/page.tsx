@@ -9,6 +9,7 @@ import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import VisualizadorSequencial, { type ItemSequencia } from '../../components/VisualizadorSequencial'
 import EtiquetaMarcacoes from '../../components/visualizador/EtiquetaMarcacoes'
+import ResponderCompartilhamento from '../../components/compartilhar/ResponderCompartilhamento'
 import { ESTILO_CARTOES, corDestaqueCategoria } from '../../components/GradeCategoriasImagens'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corTextoAchado } from '../../lib/coresAchados'
@@ -22,7 +23,9 @@ import { obterSessaoAtual } from '../../lib/sessao'
 // com icones - "i" (descricao + anotacoes de quem compartilhou, numa janela
 // AO LADO do cartao, que pode ser arrastada), expandir (imagem na metade
 // esquerda e descricao na direita) e x (tirar da lista). As anotacoes
-// recebidas podem ser "apagadas" so da visao de quem recebeu.
+// recebidas podem ser "apagadas" so da visao de quem recebeu. O botao de
+// responder (seta) devolve a imagem a quem enviou com a resposta, sem
+// precisar digitar o e-mail.
 
 interface Recebida {
   id: number
@@ -267,7 +270,7 @@ export default function CompartilhadasComigoPage() {
                     </p>
 
                     {/* acoes so com icones: i (descricao + anotacoes), expandir e x */}
-                    <div className="mt-auto flex items-center justify-end gap-1.5 pt-3">
+                    <div className="relative mt-auto flex items-center justify-end gap-1.5 pt-3">
                       <EtiquetaMarcacoes
                         item={{ ...item, numero: indice + 1 }}
                         curationId={item.curation_id}
@@ -276,6 +279,7 @@ export default function CompartilhadasComigoPage() {
                         janela
                         embutido
                       />
+                      <ResponderCompartilhamento compartilhamentoId={item.id} remetenteNome={item.remetente_nome} icone />
                       <button
                         type="button"
                         onClick={() => setExpandida(indice)}

@@ -1559,7 +1559,14 @@
     "apagarSoParaVoce": "Deleting only removes it from your view (it cannot be edited); the author keeps the text.",
     "mostrarApagadas": "Show {quantidade, plural, one {the deleted one} other {the # deleted}}",
     "erroApagar": "Could not update the notes.",
-    "apagarRecadoParaMim": "Delete this message for you only"
+    "apagarRecadoParaMim": "Delete this message for you only",
+    "responderA": "Reply to {nome}",
+    "placeholderResposta": "Write your reply...",
+    "enviarResposta": "Send",
+    "respostaExplicacao": "Goes with the image and your notes.",
+    "respostaEnviada": "Reply sent to {nome}.",
+    "erroRespostaVazia": "Write the reply before sending.",
+    "erroResponder": "Could not send the reply."
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Shared",

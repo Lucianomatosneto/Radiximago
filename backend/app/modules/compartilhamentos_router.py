@@ -12,6 +12,7 @@ Endpoints (sempre em cima do usuario logado):
 - GET    /shares/recebidas/{id}/anotacoes       -> anotacoes ATUAIS do remetente (so leitura)
 - POST   /shares/recebidas/{id}/anotacoes/ocultar   -> "apaga" anotacoes (ou o recado) do remetente SO da minha visao
 - POST   /shares/recebidas/{id}/anotacoes/reexibir  -> volta a mostrar todas
+- POST   /shares/recebidas/{id}/responder       -> responde a quem enviou (sem digitar e-mail)
 
 Seguranca / LGPD:
 - RESPOSTA NEUTRA: o POST responde sempre a mesma mensagem, exista ou nao
@@ -129,11 +130,21 @@ def compartilhar(
         db.commit()
         return _resposta_neutra()
 
+    _gravar_compartilhamento(db, usuario.id, destinatario.id, curation_id, mensagem)
+    _auditar(db, usuario.id, "compartilhamento_imagem", curation_id, f"destinatario_id={destinatario.id}")
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+    return _resposta_neutra()
+
+
+def _gravar_compartilhamento(db: Session, remetente_id: int, destinatario_id: int, curation_id: int, mensagem: Optional[str]) -> None:
     existente = (
         db.query(CompartilhamentoImagem)
         .filter(
-            CompartilhamentoImagem.remetente_id == usuario.id,
-            CompartilhamentoImagem.destinatario_id == destinatario.id,
+            CompartilhamentoImagem.remetente_id == remetente_id,
+            CompartilhamentoImagem.destinatario_id == destinatario_id,
             CompartilhamentoImagem.curation_id == curation_id,
         )
         .first()
@@ -146,17 +157,43 @@ def compartilhar(
         existente.visto_em = None
     else:
         db.add(CompartilhamentoImagem(
-            remetente_id=usuario.id,
-            destinatario_id=destinatario.id,
+            remetente_id=remetente_id,
+            destinatario_id=destinatario_id,
             curation_id=curation_id,
             mensagem=mensagem,
         ))
-    _auditar(db, usuario.id, "compartilhamento_imagem", curation_id, f"destinatario_id={destinatario.id}")
+
+
+class ResponderEntrada(BaseModel):
+    mensagem: str = Field(min_length=1, max_length=500)
+
+
+@router.post("/recebidas/{compartilhamento_id}/responder")
+@limiter.limit("20/minute")
+def responder(
+    request: Request,
+    compartilhamento_id: int,
+    dados: ResponderEntrada,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Responder a quem enviou, SEM digitar e-mail: a mesma imagem volta
+    para o remetente, com a resposta como recado (e as anotacoes de quem
+    responde). Ele recebe em "Compartilhadas comigo" como nova."""
+    comp, ficha, _, remetente = _compartilhamento_recebido(db, usuario, compartilhamento_id)
+    mensagem = dados.mensagem.strip()
+    if not mensagem:
+        raise HTTPException(status_code=422, detail="Escreva a resposta.")
+    if remetente.bloqueado:
+        raise HTTPException(status_code=404, detail="Compartilhamento não encontrado.")
+    _gravar_compartilhamento(db, usuario.id, remetente.id, ficha.id, mensagem)
+    _auditar(db, usuario.id, "resposta_compartilhamento", ficha.id, f"destinatario_id={remetente.id}")
     try:
         db.commit()
     except IntegrityError:
         db.rollback()
-    return _resposta_neutra()
+        raise HTTPException(status_code=409, detail="Tente de novo.")
+    return {"mensagem": f"Resposta enviada para {remetente.nome}."}
 
 
 @router.get("/enviadas")

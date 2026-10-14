@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import ResponderCompartilhamento from './ResponderCompartilhamento'
 
 // Para quem RECEBEU a imagem: o recado e as anotacoes ATUAIS de quem
 // compartilhou (o servidor so devolve se o compartilhamento ainda existir e
@@ -177,6 +178,8 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
           )}
         </div>
       </div>
+      {/* responder a quem enviou, sem digitar e-mail */}
+      <ResponderCompartilhamento compartilhamentoId={compartilhamento.id} remetenteNome={compartilhamento.remetente_nome} />
     </div>
   )
 }
