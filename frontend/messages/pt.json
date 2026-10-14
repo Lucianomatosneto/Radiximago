@@ -390,7 +390,8 @@
       "molares": "Molares",
       "terceirosMolares": "Terceiros molares",
       "limpar": "Limpar dentes"
-    }
+    },
+    "campoIdade": "Idade"
   },
   "AlteracoesObservadas": {
     "categorias": {

@@ -390,7 +390,8 @@
       "molares": "Molars",
       "terceirosMolares": "Third molars",
       "limpar": "Clear teeth"
-    }
+    },
+    "campoIdade": "Age"
   },
   "AlteracoesObservadas": {
     "categorias": {

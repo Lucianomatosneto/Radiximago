@@ -565,26 +565,32 @@ function PesquisaConteudo() {
             </div>
           ) : (
           <>
-          <div className="mt-6">
-            {/* ACESSO RAPIDO por tipo de exame: as caixas (Periapical,
-                Panoramica...) ficam escondidas; um icone medio abre/fecha. */}
-            <button
-              type="button"
-              onClick={() => setAcessoRapidoAberto((v) => !v)}
-              aria-expanded={acessoRapidoAberto}
-              title={t('acessoRapidoTitulo')}
-              className={`flex items-center gap-3 rounded-2xl border px-4 py-2.5 text-sm font-medium transition ${
-                acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface/40 text-slate-200 hover:border-brand/60'
-              }`}
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-500/20 text-2xl" aria-hidden="true">
-                🦷
-              </span>
-              {t('acessoRapidoTitulo')}
-              <span className="text-xs text-slate-400" aria-hidden="true">{acessoRapidoAberto ? '▴' : '▾'}</span>
-            </button>
+          <section className="mt-4 rounded-2xl border border-base-border bg-base-surface/35 p-4" onKeyDown={setasNasListas}>
+            {/* titulo da busca e, NO FIM DA MESMA LINHA, o icone "Acesso
+                rapido por tipo de exame" (as caixas de tipo abrem logo abaixo) */}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-base font-semibold text-ink">
+                🔎 {t('buscaAvancadaTitulo')}
+                <span className="ml-2 text-xs font-normal text-slate-400">{t('buscaAvancadaSubtitulo')}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setAcessoRapidoAberto((v) => !v)}
+                aria-expanded={acessoRapidoAberto}
+                title={t('acessoRapidoTitulo')}
+                className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
+                  acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface/40 text-slate-200 hover:border-brand/60'
+                }`}
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/20 text-xl" aria-hidden="true">
+                  🦷
+                </span>
+                {t('acessoRapidoTitulo')}
+                <span className="text-xs text-slate-400" aria-hidden="true">{acessoRapidoAberto ? '▴' : '▾'}</span>
+              </button>
+            </div>
             {acessoRapidoAberto && (
-            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
               {/* Cada caixa com sua PROPRIA cor (../../lib/coresAchados) - Periapical
                   em teal, Panoramica em ciano, Interproximal em azul-claro e
                   Oclusal em indigo, pra ficarem facilmente distinguiveis entre si.
@@ -598,11 +604,11 @@ function PesquisaConteudo() {
                     setFiltros(novos)
                     pesquisar(novos)
                   }}
-                  className={`flex flex-col items-center gap-2 rounded-2xl border bg-gradient-to-br p-5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
+                  className={`flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-br px-2 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
                     filtros.tipo_radiografia === o.valor ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                   }`}
                 >
-                  <span className="text-2xl" aria-hidden="true">
+                  <span className="text-xl" aria-hidden="true">
                     🦷
                   </span>
                   {traduzirTipoRadiografia(o.chave)}
@@ -610,18 +616,13 @@ function PesquisaConteudo() {
               ))}
             </div>
             )}
-          </div>
-
-          <section className="mt-6 rounded-2xl border border-base-border bg-base-surface/35 p-5" onKeyDown={setasNasListas}>
-            <p className="text-sm font-semibold text-ink">🔎 {t('buscaAvancadaTitulo')}</p>
-            <p className="mb-4 mt-0.5 text-xs text-slate-400">{t('buscaAvancadaSubtitulo')}</p>
 
             {/* BUSCA POR PALAVRAS: procura nos textos livres da ficha
                 (achados detalhados, descricao didatica e o "Outro" das
                 marcacoes), sem diferenca de acento/maiusculas, no plural e
                 com pequenos erros de digitacao - e por sinonimos do
                 vocabulario. Combina com todos os outros filtros. */}
-            <div className="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-3">
+            <div className="mb-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <label htmlFor="filtro-texto" className={campoLabel}>{t('campoTexto')}</label>
                 <input
@@ -634,10 +635,10 @@ function PesquisaConteudo() {
                   }}
                   maxLength={150}
                   placeholder={t('placeholderTexto')}
+                  title={t('ajudaTexto')}
                   className={campoInput}
                   style={estiloCaixaFiltro(2)}
                 />
-                <p className="mt-1 text-[11px] text-slate-500">{t('ajudaTexto')}</p>
               </div>
               {termosVocabulario.length > 0 && (
                 <div>
@@ -856,30 +857,34 @@ function PesquisaConteudo() {
                 </select>
               </div>
 
+              {/* idade: minima e maxima na mesma caixa (economiza uma linha) */}
               <div>
-                <label className={campoLabel}>{t('campoIdadeMin')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={120}
-                  value={filtros.idade_min}
-                  onChange={(e) => atualizarFiltro('idade_min', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(9)}
-                />
-              </div>
-
-              <div>
-                <label className={campoLabel}>{t('campoIdadeMax')}</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={120}
-                  value={filtros.idade_max}
-                  onChange={(e) => atualizarFiltro('idade_max', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(10)}
-                />
+                <label className={campoLabel}>{t('campoIdade')}</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={filtros.idade_min}
+                    onChange={(e) => atualizarFiltro('idade_min', e.target.value)}
+                    placeholder={t('campoIdadeMin')}
+                    aria-label={t('campoIdadeMin')}
+                    className={campoInput}
+                    style={estiloCaixaFiltro(9)}
+                  />
+                  <span className="text-xs text-slate-400">–</span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={120}
+                    value={filtros.idade_max}
+                    onChange={(e) => atualizarFiltro('idade_max', e.target.value)}
+                    placeholder={t('campoIdadeMax')}
+                    aria-label={t('campoIdadeMax')}
+                    className={campoInput}
+                    style={estiloCaixaFiltro(10)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -924,7 +929,7 @@ function PesquisaConteudo() {
               </div>
             )}
 
-            <div className="mt-5 flex items-center gap-3">
+            <div className="mt-4 flex items-center gap-3">
               <button
                 type="button"
                 onClick={() => pesquisar()}
@@ -953,7 +958,7 @@ function PesquisaConteudo() {
 
           <div className="mt-6">
             {!jaPesquisou ? (
-              <p className="py-12 text-center text-slate-500">
+              <p className="py-4 text-center text-slate-500">
                 {t('dicaUseFiltros')}
               </p>
             ) : pesquisando ? (
