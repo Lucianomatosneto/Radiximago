@@ -76,7 +76,8 @@ export default function SeletorDentesGrupos({
 
   return (
     <div onKeyDown={setasEntreBotoes} className="space-y-2">
-      <div className="flex flex-wrap gap-1.5">
+      {/* grupos em colunas iguais (alinhados com o odontograma abaixo) */}
+      <div className="grid grid-cols-[1fr_1fr_1.2fr_1fr_1.55fr] gap-1.5">
         {GRUPOS_DENTES.map((g) => {
           const ativo = g.dentes.every(marcado)
           return (
@@ -85,7 +86,7 @@ export default function SeletorDentesGrupos({
               type="button"
               onClick={() => alternarGrupo(g.dentes)}
               aria-pressed={ativo}
-              className={`rounded-full border px-2.5 py-1 text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${
+              className={`whitespace-nowrap rounded-full border px-1 py-1 text-center text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${
                 ativo ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
@@ -93,21 +94,23 @@ export default function SeletorDentesGrupos({
             </button>
           )
         })}
-        {dentesSelecionados.length > 0 && (
-          <button
-            type="button"
-            onClick={() => onChange([])}
-            className="rounded-full px-2 py-1 text-xs text-slate-400 outline-none hover:text-red-300 focus-visible:ring-2 focus-visible:ring-amber-300"
-          >
-            {t('limpar')}
-          </button>
-        )}
       </div>
       <div className="space-y-1 rounded-lg border border-white/10 bg-black/10 p-1.5">
         {linha(ARCADA_SUPERIOR)}
         <div className="border-t border-white/10" />
         {linha(ARCADA_INFERIOR)}
       </div>
+      {dentesSelecionados.length > 0 && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => onChange([])}
+            className="rounded px-1 text-xs text-slate-400 outline-none hover:text-red-300 focus-visible:ring-2 focus-visible:ring-amber-300"
+          >
+            {t('limpar')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

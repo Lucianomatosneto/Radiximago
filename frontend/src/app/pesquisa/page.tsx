@@ -681,38 +681,42 @@ function PesquisaConteudo() {
               {/* DENTES: por dente ou por grupo (incisivos, caninos, pre-
                   molares, molares, terceiros molares). Os antigos filtros
                   Arcada, Lado e Quadrante sairam desta tela. */}
-              <div className="col-span-2 rounded-lg border p-2.5" style={estiloCaixaFiltro(1)}>
+              {/* rotulo FORA da caixa, na mesma altura dos rotulos vizinhos
+                  (Genero, Tipo de exame) - a caixa fica alinhada com elas */}
+              <div className="col-span-2">
                 <label className={campoLabel}>{t('campoDentes')}</label>
-                <SeletorDentesGrupos
-                  key={chaveSeletorDentes}
-                  dentesSelecionados={filtros.dentesSelecionados}
-                  onChange={(dentes) => setFiltros((f) => ({ ...f, dentesSelecionados: dentes, quadrante: '' }))}
-                />
-                {/* Modo ANY/TODOS - so aparece com mais de 1 dente marcado
-                    (pedido explicito, secao 14: "nao fazer o usuario
-                    selecionar um modo quando houver apenas um dente"). */}
-                {filtros.dentesSelecionados.length > 1 && (
-                  <div className="mt-2 flex items-center gap-3 text-xs text-slate-300">
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="modo_dentes"
-                        checked={filtros.modoDentes === 'qualquer_um'}
-                        onChange={() => setFiltros({ ...filtros, modoDentes: 'qualquer_um' })}
-                      />
-                      {t('modoQualquerUm')}
-                    </label>
-                    <label className="flex items-center gap-1.5">
-                      <input
-                        type="radio"
-                        name="modo_dentes"
-                        checked={filtros.modoDentes === 'todos'}
-                        onChange={() => setFiltros({ ...filtros, modoDentes: 'todos' })}
-                      />
-                      {t('modoTodos')}
-                    </label>
-                  </div>
-                )}
+                <div className="rounded-lg border p-2.5" style={estiloCaixaFiltro(1)}>
+                  <SeletorDentesGrupos
+                    key={chaveSeletorDentes}
+                    dentesSelecionados={filtros.dentesSelecionados}
+                    onChange={(dentes) => setFiltros((f) => ({ ...f, dentesSelecionados: dentes, quadrante: '' }))}
+                  />
+                  {/* Modo ANY/TODOS - so aparece com mais de 1 dente marcado
+                      (pedido explicito, secao 14: "nao fazer o usuario
+                      selecionar um modo quando houver apenas um dente"). */}
+                  {filtros.dentesSelecionados.length > 1 && (
+                    <div className="mt-2 flex items-center gap-3 text-xs text-slate-300">
+                      <label className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="modo_dentes"
+                          checked={filtros.modoDentes === 'qualquer_um'}
+                          onChange={() => setFiltros({ ...filtros, modoDentes: 'qualquer_um' })}
+                        />
+                        {t('modoQualquerUm')}
+                      </label>
+                      <label className="flex items-center gap-1.5">
+                        <input
+                          type="radio"
+                          name="modo_dentes"
+                          checked={filtros.modoDentes === 'todos'}
+                          onChange={() => setFiltros({ ...filtros, modoDentes: 'todos' })}
+                        />
+                        {t('modoTodos')}
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
