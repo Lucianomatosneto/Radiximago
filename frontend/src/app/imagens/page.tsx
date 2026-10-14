@@ -9,11 +9,12 @@ import StatusBadge from '../../components/StatusBadge'
 import DashboardCard from '../../components/DashboardCard'
 import { obterSessaoAtual } from '../../lib/sessao'
 
-// Status de curadoria que ainda NAO chegaram a uma decisao final - conta
-// como "aguardando curadoria" tanto quem nem tem ficha ainda (null) quanto
-// quem ja tem ficha mas segue em algum ponto do fluxo (em analise, em
-// segunda opiniao). So aprovada/descartada saem dessa contagem.
-const STATUS_AGUARDANDO = ['pendente', 'em_analise', 'segunda_opiniao', 'baixa_qualidade']
+// "Aguardando curadoria" = sem ficha (null) + pendente + em analise - a
+// MESMA regra do Inicio e do Painel administrativo (contagem unica do
+// backend, admin_router.contar_imagens_por_situacao), para os numeros
+// baterem em todas as telas. Segunda opiniao, descartada e baixa qualidade
+// tem contagem propria.
+const STATUS_AGUARDANDO = ['pendente', 'em_analise']
 
 // Quem pode ver esta pagina e enviar imagens novas - tem que bater com
 // PERFIS_ENVIO_IMAGENS do backend (auth.py) e com o item de menu

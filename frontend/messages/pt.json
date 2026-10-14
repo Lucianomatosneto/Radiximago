@@ -1863,5 +1863,19 @@
       "administracao": "Administração",
       "conta": "Sua conta"
     }
+  },
+  "ResumoImagens": {
+    "titulo": "Resumo das imagens",
+    "total": "Total de imagens",
+    "totalDetalhe": "imagens ativas no sistema",
+    "aguardando": "Aguardando curadoria",
+    "aguardandoDetalhe": "{semFicha} sem ficha · {pendente} pendentes · {emAnalise} em análise",
+    "aprovadas": "Aprovadas",
+    "segundaOpiniao": "Aguardando segunda opinião",
+    "descartadas": "Descartadas",
+    "baixaQualidade": "Baixa qualidade",
+    "conferencia": "Conferência: {partes} = {total}",
+    "naoConfere": "a soma não confere com o total",
+    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total"
   }
 }

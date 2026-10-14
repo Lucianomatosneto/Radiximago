@@ -1863,5 +1863,19 @@
       "administracao": "Administration",
       "conta": "Your account"
     }
+  },
+  "ResumoImagens": {
+    "titulo": "Image summary",
+    "total": "Total images",
+    "totalDetalhe": "active images in the system",
+    "aguardando": "Awaiting curation",
+    "aguardandoDetalhe": "{semFicha} without form · {pendente} pending · {emAnalise} in review",
+    "aprovadas": "Approved",
+    "segundaOpiniao": "Awaiting second opinion",
+    "descartadas": "Discarded",
+    "baixaQualidade": "Low quality",
+    "conferencia": "Check: {partes} = {total}",
+    "naoConfere": "the sum does not match the total",
+    "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted"
   }
 }

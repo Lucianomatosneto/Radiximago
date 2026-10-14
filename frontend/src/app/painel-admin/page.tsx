@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
+import ResumoImagens, { type ContagemImagens } from '../../components/ResumoImagens'
 import {
   CORES_STATUS,
   ResultadoChecagem,
@@ -33,6 +34,7 @@ interface StatsResponse {
   total_imagens_orthanc: number
   usuarios_ativos: number
   por_status: Record<string, number>
+  imagens: ContagemImagens
 }
 
 interface AlertaLogin {
@@ -177,34 +179,13 @@ export default function PainelAdminPage() {
           )}
 
           {stats && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-              <DashboardCard
-                label={t('totalImagens')}
-                valor={stats.total_imagens_orthanc}
-                cor="teal"
-              />
-              <DashboardCard
-                label={t('aguardandoCuradoria')}
-                valor={stats.por_status.pendente ?? 0}
-                cor="amber"
-              />
-              <DashboardCard
-                label={t('emAnalise')}
-                valor={stats.por_status.em_analise ?? 0}
-                cor="blue"
-              />
-              <DashboardCard
-                label={t('curadasLiberadas')}
-                valor={stats.por_status.aprovada ?? 0}
-                cor="green"
-              />
-              <DashboardCard
-                label={t('descartadas')}
-                valor={stats.por_status.descartada ?? 0}
-                cor="red"
-              />
-              <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="purple" />
-            </div>
+            <>
+              {/* mesma contagem do Inicio: total = soma exata das situacoes */}
+              <ResumoImagens imagens={stats.imagens} />
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="purple" />
+              </div>
+            </>
           )}
 
           <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">

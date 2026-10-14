@@ -37,6 +37,44 @@ def _contar_por(db, coluna):
     return {(valor if valor is not None else "nao_informado"): total for valor, total in linhas}
 
 
+# Situacoes de uma imagem ATIVA, sem sobreposicao: cada imagem cai em
+# exatamente UMA delas, entao a soma de todas = total de imagens ativas.
+SITUACOES_IMAGEM = ("sem_ficha", "pendente", "em_analise", "segunda_opiniao", "aprovada", "descartada", "baixa_qualidade")
+
+
+def contar_imagens_por_situacao(db: Session) -> dict:
+    """CONTAGEM UNICA de imagens, usada por todos os paineis (Inicio, Painel
+    administrativo, Relatorios) para que os numeros sempre batam:
+
+    - conta IMAGENS ativas (orthanc_references.ativo), nao fichas;
+    - imagem sem ficha = "sem_ficha" (esta na fila da Curadoria);
+    - "aguardando_curadoria" = sem_ficha + pendente + em_analise;
+    - total = soma de todas as situacoes (conferido aqui mesmo);
+    - imagens desativadas ficam fora do total e sao informadas a parte.
+    Cada imagem tem no maximo uma ficha (regra garantida ao criar a ficha).
+    """
+    linhas = (
+        db.query(Curation.status, func.count(OrthancReference.id))
+        .select_from(OrthancReference)
+        .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
+        .filter(OrthancReference.ativo.is_(True))
+        .group_by(Curation.status)
+        .all()
+    )
+    por_situacao = {s: 0 for s in SITUACOES_IMAGEM}
+    for status, total in linhas:
+        chave = status if status is not None else "sem_ficha"
+        por_situacao[chave] = por_situacao.get(chave, 0) + total
+    total = sum(por_situacao.values())
+    desativadas = db.query(func.count(OrthancReference.id)).filter(OrthancReference.ativo.is_(False)).scalar() or 0
+    return {
+        "total": total,
+        "aguardando_curadoria": por_situacao["sem_ficha"] + por_situacao["pendente"] + por_situacao["em_analise"],
+        "por_situacao": por_situacao,
+        "desativadas": desativadas,
+    }
+
+
 @router.get("/stats")
 def obter_indicadores(
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
@@ -47,7 +85,8 @@ def obter_indicadores(
     Relatórios. Sao contagens agregadas (sem PII individual), por isso
     tambem liberado pra curador - nao so admin/suporte.
     """
-    total_imagens = db.query(func.count(OrthancReference.id)).scalar()
+    imagens = contar_imagens_por_situacao(db)
+    total_imagens = imagens["total"]
     total_fichas = db.query(func.count(Curation.id)).scalar()
     usuarios_ativos = (
         db.query(func.count(User.id))
@@ -64,16 +103,10 @@ def obter_indicadores(
         .filter(User.perfil == UserRole.estudante, User.ativo == True, User.bloqueado == False)
         .scalar()
     )
-    aguardando_laudo = (
-        db.query(func.count(Curation.id))
-        .filter(Curation.status.in_([StatusCuradoria.PENDENTE.value, StatusCuradoria.EM_ANALISE.value]))
-        .scalar()
-    )
-    divergencias_abertas = (
-        db.query(func.count(Curation.id))
-        .filter(Curation.status == StatusCuradoria.SEGUNDA_OPINIAO.value)
-        .scalar()
-    )
+    # mesmos numeros da contagem unica (imagens ativas) - antes vinham de
+    # consultas separadas sobre fichas e nao batiam com o total
+    aguardando_laudo = imagens["aguardando_curadoria"]
+    divergencias_abertas = imagens["por_situacao"]["segunda_opiniao"]
 
     # Atividade recente: ultimas fichas movimentadas. Sem dado de paciente
     # (removido na ingestao, conforme LGPD) - mostra o que de fato existe:
@@ -87,7 +120,9 @@ def obter_indicadores(
     )
 
     return {
+        # total de imagens ATIVAS = soma exata de imagens.por_situacao
         "total_imagens_orthanc": total_imagens,
+        "imagens": imagens,
         "total_fichas_curadoria": total_fichas,
         "usuarios_ativos": usuarios_ativos,
         "usuarios_bloqueados": usuarios_bloqueados,

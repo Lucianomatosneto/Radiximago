@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
+import ResumoImagens, { type ContagemImagens } from '../../components/ResumoImagens'
 import StatusBadge from '../../components/StatusBadge'
 import { obterSessaoAtual } from '../../lib/sessao'
 
@@ -27,6 +28,7 @@ interface StatsResponse {
   divergencias_abertas: number
   atividade_recente: AtividadeRecente[]
   por_status: Record<string, number>
+  imagens: ContagemImagens
 }
 
 // Chaves de traducao (namespace Dashboard.tiposRadiografia) - mesmos valores
@@ -130,15 +132,12 @@ export default function DashboardPage() {
             {t('resumoDeHoje', { data: dataDeHoje })}
           </p>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <DashboardCard label={t('totalImagens')} valor={stats.total_imagens_orthanc} cor="teal" />
-            <DashboardCard label={t('aguardandoCuradoria')} valor={stats.aguardando_laudo} cor="amber" />
-            <DashboardCard label={t('aprovadas')} valor={stats.por_status.aprovada ?? 0} cor="green" />
-            <DashboardCard label={t('aguardandoSegundaOpiniao')} valor={stats.divergencias_abertas} cor="purple" />
-            <DashboardCard label={t('descartadas')} valor={stats.por_status.descartada ?? 0} cor="red" />
+          {/* numeros das imagens: total = soma exata das situacoes */}
+          <div className="mt-6">
+            <ResumoImagens imagens={stats.imagens} />
           </div>
 
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="blue" />
           </div>
 
