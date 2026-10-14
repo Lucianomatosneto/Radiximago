@@ -91,6 +91,22 @@ export default function EtiquetaMarcacoes({
     setPosJanela({ left, top })
     setDesloc({ x: 0, y: 0 })
   }, [janela, fixada])
+
+  // JANELA: um clique fecha, assim como um clique abriu - clique na propria
+  // caixa ou em qualquer lugar fora dela (o "i" ja alterna sozinho). Arrastar
+  // pela barra so move a caixa.
+  useEffect(() => {
+    if (!janela || !fixada) return
+    function aoClicarFora(e: PointerEvent) {
+      const alvo = e.target as Node
+      if (caixaRef.current?.contains(alvo) || botaoRef.current?.contains(alvo)) return
+      setFixada(false)
+    }
+    document.addEventListener('pointerdown', aoClicarFora, true)
+    return () => document.removeEventListener('pointerdown', aoClicarFora, true)
+  }, [janela, fixada])
+  // barra da janela: clique sem arrastar tambem fecha
+  const inicioCliqueBarra = useRef<{ x: number; y: number } | null>(null)
   const botaoRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null)
   // Deslocamento do quadro arrastado pela pessoa (para tirar de cima da
@@ -436,11 +452,18 @@ export default function EtiquetaMarcacoes({
             {/* barra: arrastar a caixa para onde quiser + fechar */}
             <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
               <div
-                onPointerDown={iniciarArraste}
+                onPointerDown={(e) => {
+                  inicioCliqueBarra.current = { x: e.clientX, y: e.clientY }
+                  iniciarArraste(e)
+                }}
                 onPointerMove={moverArraste}
-                onPointerUp={terminarArraste}
+                onPointerUp={(e) => {
+                  terminarArraste(e)
+                  const i = inicioCliqueBarra.current
+                  inicioCliqueBarra.current = null
+                  if (i && Math.abs(e.clientX - i.x) < 4 && Math.abs(e.clientY - i.y) < 4) setFixada(false)
+                }}
                 onPointerCancel={terminarArraste}
-                onDoubleClick={() => setDesloc({ x: 0, y: 0 })}
                 title={t('arrastarQuadro')}
                 aria-label={t('arrastarQuadro')}
                 className="flex flex-1 cursor-grab touch-none select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80 hover:bg-teal-400/10 hover:text-teal-100 active:cursor-grabbing"
@@ -460,7 +483,9 @@ export default function EtiquetaMarcacoes({
                 ×
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto p-3">{conteudo}</div>
+            <div className="min-h-0 flex-1 cursor-pointer overflow-y-auto p-3" onClick={() => setFixada(false)}>
+              {conteudo}
+            </div>
           </div>,
           document.body
         )}
