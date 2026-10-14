@@ -31,14 +31,16 @@ const ITENS: ItemGaleria[] = [
   { arquivo: 'cao', chaveTitulo: 'cao', chaveArea: 'areaFauna', cor: '#EAB308' },
 ]
 
-function Cartao({ item, numero, decorativo }: { item: ItemGaleria; numero: number; decorativo: boolean }) {
+function Cartao({ item, numero, decorativo, compacta }: { item: ItemGaleria; numero: number; decorativo: boolean; compacta: boolean }) {
   const t = useTranslations('Inicio.galeria')
   const tArea = useTranslations('Login')
   const titulo = t(`itens.${item.chaveTitulo}` as Parameters<typeof t>[0])
 
   return (
     <figure
-      className="galeria-cartao group relative aspect-video w-[300px] shrink-0 overflow-hidden rounded-2xl sm:w-[420px] lg:w-[500px]"
+      className={`galeria-cartao group relative aspect-video shrink-0 overflow-hidden rounded-2xl ${
+        compacta ? 'w-[240px] sm:w-[300px] lg:w-[340px]' : 'w-[300px] sm:w-[420px] lg:w-[500px]'
+      }`}
       style={{ ['--cor' as string]: item.cor }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -68,7 +70,7 @@ function Cartao({ item, numero, decorativo }: { item: ItemGaleria; numero: numbe
   )
 }
 
-function Faixa({ indices, sentido, duracao }: { indices: number[]; sentido: 'esquerda' | 'direita'; duracao: number }) {
+function Faixa({ indices, sentido, duracao, compacta }: { indices: number[]; sentido: 'esquerda' | 'direita'; duracao: number; compacta: boolean }) {
   // A lista e repetida duas vezes: quando a primeira copia sai inteira da
   // tela, a segunda esta exatamente no lugar dela - o "loop" fica invisivel.
   return (
@@ -80,7 +82,7 @@ function Faixa({ indices, sentido, duracao }: { indices: number[]; sentido: 'esq
         {[0, 1].map((copia) => (
           <div key={copia} className="flex gap-5" aria-hidden={copia === 1 ? true : undefined}>
             {indices.map((i) => (
-              <Cartao key={`${copia}-${i}`} item={ITENS[i]} numero={i + 1} decorativo={copia === 1} />
+              <Cartao key={`${copia}-${i}`} item={ITENS[i]} numero={i + 1} decorativo={copia === 1} compacta={compacta} />
             ))}
           </div>
         ))}
@@ -89,13 +91,20 @@ function Faixa({ indices, sentido, duracao }: { indices: number[]; sentido: 'esq
   )
 }
 
-export default function GaleriaRolante() {
+// `compacta`: cartoes menores e sem o titulo da secao - para caber na
+// PRIMEIRA tela (logo abaixo da chamada principal), sem precisar rolar.
+export default function GaleriaRolante({ compacta = false }: { compacta?: boolean }) {
   const t = useTranslations('Inicio.galeria')
   const tLogin = useTranslations('Login')
 
   return (
     // Sai da coluna central e ocupa a largura inteira da janela
-    <section aria-labelledby="galeria-titulo" className="relative left-1/2 w-screen -translate-x-1/2 py-8">
+    <section
+      aria-labelledby={compacta ? undefined : 'galeria-titulo'}
+      aria-label={compacta ? t('titulo') : undefined}
+      className={`relative left-1/2 w-screen -translate-x-1/2 ${compacta ? 'py-2' : 'py-8'}`}
+    >
+      {!compacta && (
       <div className="texto-legivel mx-auto mb-7 flex max-w-5xl flex-col gap-1 px-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[.22em] text-teal-700 dark:text-teal-300">{t('rotulo')}</p>
@@ -105,10 +114,11 @@ export default function GaleriaRolante() {
         </div>
         <p className="max-w-sm text-sm text-slate-400 sm:text-right">{t('subtitulo')}</p>
       </div>
+      )}
 
-      <Faixa indices={[0, 1, 2, 3, 4, 5, 6]} sentido="esquerda" duracao={75} />
+      <Faixa indices={[0, 1, 2, 3, 4, 5, 6]} sentido="esquerda" duracao={compacta ? 60 : 75} compacta={compacta} />
 
-      <p className="mx-auto mt-6 flex max-w-5xl px-6 text-xs text-slate-400">
+      <p className={`mx-auto flex max-w-5xl px-6 text-xs text-slate-400 ${compacta ? 'mt-3 justify-center' : 'mt-6'}`}>
         <span className="painel-vidro inline-flex items-center gap-2 rounded-full px-3.5 py-1.5">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
           <path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z" />

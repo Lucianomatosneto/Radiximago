@@ -35,6 +35,14 @@
       "auditoria": {
         "titulo": "Auditoria completa",
         "descricao": "Rastreabilidade de cada ação realizada na plataforma."
+      },
+      "voz": {
+        "titulo": "Curadoria por voz",
+        "descricao": "O curador fala e a ficha se preenche: transcrição local, sem enviar áudio para fora."
+      },
+      "anotacoes": {
+        "titulo": "Anotações e compartilhamento",
+        "descricao": "Anotações privadas, enviadas a colegas com um clique, com resposta direta."
       }
     },
     "galeria": {
@@ -52,7 +60,101 @@
         "cao": "Cão"
       }
     },
-    "chamada": "Curadoria, pesquisa e ensino com imagens anonimizadas, organizadas por especialistas e em conformidade com a LGPD."
+    "chamada": "Curadoria, pesquisa e ensino com radiografias odontológicas anonimizadas, organizadas por especialistas e em conformidade com a LGPD.",
+    "selo": "Plataforma acadêmica · PPGINFOS · UFSC",
+    "verComoFunciona": "Ver como funciona",
+    "confianca": {
+      "lgpd": "Conforme a LGPD",
+      "anonimizado": "100% anonimizado",
+      "auditoria": "Auditoria de cada ação",
+      "local": "Voz processada no próprio servidor"
+    },
+    "pilares": {
+      "rotulo": "Em números",
+      "itens": {
+        "tipos": {
+          "valor": "5",
+          "texto": "tipos de exame: periapical, interproximal, oclusal, panorâmica e tomografia"
+        },
+        "perfis": {
+          "valor": "6",
+          "texto": "perfis de acesso, cada um vendo só o que precisa"
+        },
+        "anonimo": {
+          "valor": "2",
+          "texto": "idiomas: português e inglês"
+        },
+        "rastreio": {
+          "valor": "4",
+          "texto": "etapas do envio ao estudo, todas registradas na auditoria"
+        }
+      }
+    },
+    "comoFunciona": {
+      "rotulo": "Como funciona",
+      "titulo": "Da radiografia ao material de estudo, em quatro etapas",
+      "passos": {
+        "envio": {
+          "titulo": "Envio",
+          "texto": "A imagem DICOM chega pelo equipamento da UFSC ou por envio autorizado."
+        },
+        "anonimizacao": {
+          "titulo": "Anonimização",
+          "texto": "Nome, documentos e dados pessoais são removidos automaticamente."
+        },
+        "curadoria": {
+          "titulo": "Curadoria",
+          "texto": "Especialistas classificam e descrevem a imagem, com teclado, voz e segunda opinião."
+        },
+        "ensino": {
+          "titulo": "Ensino e pesquisa",
+          "texto": "Estudantes e pesquisadores buscam, anotam, comparam e compartilham."
+        }
+      }
+    },
+    "recursosRotulo": "Recursos",
+    "recursosTitulo": "Tudo o que o ensino com imagens precisa, num só lugar",
+    "publico": {
+      "rotulo": "Para quem",
+      "titulo": "Feito para cada pessoa do ensino com imagens",
+      "itens": {
+        "estudante": {
+          "titulo": "Estudantes",
+          "texto": "Encontram casos reais por dente, achado ou erro técnico, anotam e revisam quando quiserem."
+        },
+        "professor": {
+          "titulo": "Professores",
+          "texto": "Montam aulas com imagens curadas, enviam casos e trocam anotações com a turma."
+        },
+        "curador": {
+          "titulo": "Curadores",
+          "texto": "Classificam com rapidez pelo teclado ou pela voz, com macros e segunda opinião."
+        },
+        "pesquisador": {
+          "titulo": "Pesquisadores",
+          "texto": "Acessam um acervo padronizado, com vocabulário controlado e rastreabilidade."
+        }
+      }
+    },
+    "seguranca": {
+      "rotulo": "Segurança e privacidade",
+      "titulo": "Privacidade desde a origem",
+      "texto": "O Rádix Imago foi desenhado para uso acadêmico com dados de saúde: a proteção vem antes da funcionalidade.",
+      "itens": {
+        "anonimizacao": "Anonimização automática antes de a imagem ficar disponível",
+        "perfis": "Acesso por perfil: cada usuário vê apenas o que precisa",
+        "auditoria": "Registro de quem fez o quê e quando (auditoria)",
+        "voz": "Áudio da curadoria transcrito no próprio servidor e não guardado",
+        "privadas": "Anotações pessoais privadas; compartilhar é sempre uma escolha",
+        "naoDiagnostico": "Uso exclusivo para ensino e pesquisa; não se destina a diagnóstico"
+      }
+    },
+    "ctaFinal": {
+      "titulo": "Pronto para estudar com imagens de qualidade?",
+      "texto": "Solicite seu acesso. Um administrador revisa o pedido e libera o perfil adequado.",
+      "botao": "Solicitar acesso"
+    },
+    "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC)."
   },
   "Login": {
     "tituloDestaque1": "Base inteligente de imagens",

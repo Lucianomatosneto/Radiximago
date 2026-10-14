@@ -35,6 +35,14 @@
       "auditoria": {
         "titulo": "Full audit trail",
         "descricao": "Traceability of every action performed on the platform."
+      },
+      "voz": {
+        "titulo": "Voice curation",
+        "descricao": "The curator speaks and the form fills itself: local transcription, no audio sent outside."
+      },
+      "anotacoes": {
+        "titulo": "Notes and sharing",
+        "descricao": "Private notes, sent to colleagues in one click, with direct replies."
       }
     },
     "galeria": {
@@ -52,7 +60,101 @@
         "cao": "Dog"
       }
     },
-    "chamada": "Curation, research and teaching with anonymized images, organized by specialists and compliant with Brazil’s LGPD."
+    "chamada": "Curation, research and teaching with anonymized dental radiographs, organized by specialists and compliant with Brazil's LGPD.",
+    "selo": "Academic platform · PPGINFOS · UFSC",
+    "verComoFunciona": "See how it works",
+    "confianca": {
+      "lgpd": "LGPD compliant",
+      "anonimizado": "100% anonymized",
+      "auditoria": "Every action audited",
+      "local": "Voice processed on our own server"
+    },
+    "pilares": {
+      "rotulo": "By the numbers",
+      "itens": {
+        "tipos": {
+          "valor": "5",
+          "texto": "exam types: periapical, bitewing, occlusal, panoramic and CT"
+        },
+        "perfis": {
+          "valor": "6",
+          "texto": "access profiles, each seeing only what it needs"
+        },
+        "anonimo": {
+          "valor": "2",
+          "texto": "languages: Portuguese and English"
+        },
+        "rastreio": {
+          "valor": "4",
+          "texto": "steps from upload to study, all recorded in the audit trail"
+        }
+      }
+    },
+    "comoFunciona": {
+      "rotulo": "How it works",
+      "titulo": "From radiograph to study material, in four steps",
+      "passos": {
+        "envio": {
+          "titulo": "Upload",
+          "texto": "The DICOM image arrives from UFSC equipment or an authorized upload."
+        },
+        "anonimizacao": {
+          "titulo": "Anonymization",
+          "texto": "Name, documents and personal data are removed automatically."
+        },
+        "curadoria": {
+          "titulo": "Curation",
+          "texto": "Specialists classify and describe the image, by keyboard, voice and second opinion."
+        },
+        "ensino": {
+          "titulo": "Teaching and research",
+          "texto": "Students and researchers search, annotate, compare and share."
+        }
+      }
+    },
+    "recursosRotulo": "Features",
+    "recursosTitulo": "Everything image-based teaching needs, in one place",
+    "publico": {
+      "rotulo": "Who it is for",
+      "titulo": "Built for everyone in image-based teaching",
+      "itens": {
+        "estudante": {
+          "titulo": "Students",
+          "texto": "Find real cases by tooth, finding or technical error, annotate and review anytime."
+        },
+        "professor": {
+          "titulo": "Teachers",
+          "texto": "Build lessons with curated images, send cases and exchange notes with the class."
+        },
+        "curador": {
+          "titulo": "Curators",
+          "texto": "Classify quickly by keyboard or voice, with macros and second opinion."
+        },
+        "pesquisador": {
+          "titulo": "Researchers",
+          "texto": "Access a standardized collection, with controlled vocabulary and traceability."
+        }
+      }
+    },
+    "seguranca": {
+      "rotulo": "Security and privacy",
+      "titulo": "Privacy from the source",
+      "texto": "Rádix Imago was designed for academic use of health data: protection comes before features.",
+      "itens": {
+        "anonimizacao": "Automatic anonymization before the image becomes available",
+        "perfis": "Profile-based access: each user sees only what they need",
+        "auditoria": "Record of who did what and when (audit trail)",
+        "voz": "Curation audio transcribed on our own server and never stored",
+        "privadas": "Personal notes are private; sharing is always a choice",
+        "naoDiagnostico": "For teaching and research only; not intended for diagnosis"
+      }
+    },
+    "ctaFinal": {
+      "titulo": "Ready to study with quality images?",
+      "texto": "Request your access. An administrator reviews the request and grants the right profile.",
+      "botao": "Request access"
+    },
+    "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC)."
   },
   "Login": {
     "tituloDestaque1": "Smart image platform",
