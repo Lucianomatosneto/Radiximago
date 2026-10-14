@@ -1262,6 +1262,11 @@ export default function CuradoriaPage() {
                   primeira imagem em primeiro lugar (a LISTA em si e leve, so
                   texto - o que e pesado sao os fetches de preview de cada
                   miniatura, represados por permitirCarregarMiniaturas). */}
+              {/* Miniaturas: so aparecem enquanto nenhuma imagem esta aberta
+                  (servem para escolher a primeira). Durante a curadoria ficam
+                  escondidas - a navegacao e pelas setas ←/→ da barra
+                  "Imagem X de Y" e pela aprovacao, que abre a proxima. */}
+              {!(fichaVisivel && fichaAtiva) && (
               <FilaCuradoriaHorizontal
                 fila={fila}
                 carregando={carregandoFila}
@@ -1284,8 +1289,8 @@ export default function CuradoriaPage() {
                 // travada de novo.
                 permitirCarregarMiniaturas={!!fichaAtiva && imagemPrincipalPronta}
                 onSelecionar={(imagem) => abrirImagem(imagem)}
-                porVez={fichaVisivel && fichaAtiva ? 5 : undefined}
               />
+              )}
 
               {/* Imagem (visualizador OHIF) sem o cabecalho de botoes por cima;
                   "Abrir marcação": a imagem para marcacao ocupa o mesmo quadro.
