@@ -57,6 +57,37 @@ def _prompt(db: Session) -> str:
     return (PROMPT_BASE + (" " + extras + "." if extras else ""))[:800]
 
 
+# ESCUTA CONTINUA: cada trecho e UMA fala curta para o item em destaque
+# ("ok", "feminino", "boa"). Para palavras isoladas, o prompt longo com todo
+# o vocabulario atrapalha o Whisper (ele tende a "continuar" o prompt ou a
+# devolver nada). Por isso o trecho curto leva como dica so as palavras
+# ESPERADAS naquele item - o reconhecimento fica bem mais certeiro.
+DICAS_ETAPA = {
+    "anonimizacao": "Ok. Anonimizada. Sim. Validada.",
+    "tipo": "Periapical. Panorâmica. Interproximal. Oclusal. Tomografia.",
+    "idade": "Idade: 8 anos. 35 anos. Sessenta anos. De 30 a 40 anos.",
+    "genero": "Masculino. Feminino.",
+    "dentes": "Dente 11. Dentes 36 e 37. 46, 47 e 48. Trinta e seis.",
+    "qualidade": "Ótima. Boa. Regular. Insatisfatória.",
+    "achados": (
+        "Cárie. Dentina. Esmalte. Próxima à polpa. Secundária. Perda óssea horizontal. Perda óssea vertical. "
+        "Lesão periapical. Cálculo dentário. Reabsorção radicular. Tratamento endodôntico. Restauração. "
+        "Coroa protética. Dente incluso. Cisto. Sem alterações. Normal."
+    ),
+    "erro_tecnico": (
+        "Não. Sem erro técnico. Corte de cone. Alongamento. Encurtamento. Subexposição. Superexposição. "
+        "Sobreposição. Movimento. Posicionamento."
+    ),
+    # fala curta quando o item ainda nao e certo (o curador falou de novo
+    # antes de a fala anterior ser processada): palavras curtas de todos os itens
+    "curto": (
+        "Ok. Anonimizada. Periapical. Panorâmica. Interproximal. Oclusal. 35 anos. Masculino. Feminino. "
+        "Dentes 36 e 37. Ótima. Boa. Regular. Insatisfatória. Cárie. Dentina. Perda óssea horizontal. "
+        "Não. Sem erro técnico. Próximo."
+    ),
+}
+
+
 @router.get("/saude")
 def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
     try:
@@ -86,6 +117,7 @@ def transcrever(
     request: Request,
     arquivo: UploadFile = File(...),
     rapido: bool = Form(default=False),
+    etapa: str = Form(default=""),
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
@@ -103,7 +135,12 @@ def transcrever(
             f"{settings.WHISPER_URL}/transcrever",
             files={"arquivo": (arquivo.filename or "audio.webm", conteudo, tipo or "audio/webm")},
             # rapido: trecho curto da escuta continua (decodificacao mais leve)
-            data={"prompt": _prompt(db), "rapido": "1" if rapido else "0"},
+            data={
+                # trecho curto com item em destaque: dica so com as palavras
+                # esperadas; texto livre (descricao, observacoes): vocabulario todo
+                "prompt": DICAS_ETAPA[etapa] if rapido and etapa in DICAS_ETAPA else _prompt(db),
+                "rapido": "1" if rapido else "0",
+            },
             timeout=180,
         )
     except httpx.HTTPError:

@@ -102,6 +102,9 @@ export default function PainelVoz({
   const [transcrevendo, setTranscrevendo] = useState(false)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  // o reconhecimento devolveu um trecho sem palavras (ruido, respiracao,
+  // fala muito baixa ou cortada) - aviso discreto, some na proxima fala
+  const [avisoVazio, setAvisoVazio] = useState(false)
   const [ultimoTexto, setUltimoTexto] = useState('')
   const [preenchidos, setPreenchidos] = useState<Preenchido[]>([])
   const [duvidas, setDuvidas] = useState<Duvida[]>([])
@@ -205,6 +208,7 @@ export default function PainelVoz({
   function processarTexto(texto: string) {
     setUltimoTexto(texto)
     setAviso('')
+    setAvisoVazio(false)
     const o = opcoesRef.current
     const etapa = etapaRef.current
     // no passo "Aprovar" o microfone esta fechado: sobra de fala e ignorada
@@ -257,15 +261,20 @@ export default function PainelVoz({
     if (continuo && !navegou && etapa && onEtapa && etapa !== ETAPAS_FICHA[ETAPAS_FICHA.length - 1] && itemResolvidoPelaFala(etapa, r)) {
       irPara(etapaVizinha(etapa, 1))
     }
-    if (!r.alteracoes.length && !r.naoReconhecidos.length && !r.comandos.length) setErro(t('nadaEntendido'))
+    // mostra O QUE foi ouvido quando nada foi entendido (ajuda a perceber
+    // ruido, fala cortada ou palavra trocada pelo reconhecimento)
+    if (!r.alteracoes.length && !r.naoReconhecidos.length && !r.comandos.length) setErro(t('naoEntendi', { texto: texto.trim() }))
   }
 
   /** manda o audio ao Whisper local e devolve o texto (ou null) */
-  async function transcrever(blob: Blob, rapido: boolean): Promise<string | null> {
+  async function transcrever(blob: Blob, rapido: boolean, etapaDica?: string): Promise<string | null> {
     try {
       const dados = new FormData()
       dados.append('arquivo', blob, blob.type.includes('mp4') ? 'trecho.mp4' : 'trecho.webm')
       if (rapido) dados.append('rapido', '1')
+      // item esperado: o servidor manda ao Whisper so as palavras daquele
+      // item como dica (reconhecimento bem mais certeiro em falas curtas)
+      if (etapaDica) dados.append('etapa', etapaDica)
       const r = await fetch(`${API}/voz/transcrever`, { method: 'POST', credentials: 'include', body: dados })
       if (!r.ok) {
         let detalhe = t('erroTranscrever')
@@ -279,7 +288,8 @@ export default function PainelVoz({
         return null
       }
       const j = await r.json()
-      return (j.texto ?? '').trim() || null
+      // '' = o reconhecimento nao achou palavras; null = erro
+      return (j.texto ?? '').trim()
     } catch {
       setErro(t('erroTranscrever'))
       return null
@@ -292,6 +302,7 @@ export default function PainelVoz({
     try {
       const texto = await transcrever(blob, false)
       if (texto) processarTexto(texto)
+      else if (texto === '') setErro(t('nadaOuvido'))
     } finally {
       setTranscrevendo(false)
     }
@@ -313,16 +324,23 @@ export default function PainelVoz({
   const transcreverRef = useRef(transcrever)
   transcreverRef.current = transcrever
 
+  const pendentesRef = useRef(0)
   const aoTrecho = useCallback((audio: Blob) => {
     const ficha = fichaIdRef.current
     setNaFila((n) => n + 1)
-    const texto = transcreverRef.current(audio, true)
+    // dica para o Whisper: o item em destaque (se nenhuma fala anterior ainda
+    // esta sendo processada, ele e certo); senao, palavras curtas de todos
+    const dica = pendentesRef.current === 0 ? etapaRef.current : 'curto'
+    pendentesRef.current += 1
+    const texto = transcreverRef.current(audio, true, dica)
     filaRef.current = filaRef.current.then(async () => {
       try {
         const t = await texto
         // imagem trocada enquanto transcrevia: a fala era da imagem anterior
         if (t && ficha === fichaIdRef.current) processarRef.current(t)
+        else if (t === '' && ficha === fichaIdRef.current) setAvisoVazio(true)
       } finally {
+        pendentesRef.current -= 1
         setNaFila((n) => n - 1)
       }
     })
@@ -682,10 +700,12 @@ export default function PainelVoz({
           </p>
         ) : (
           // retorno da ultima fala: o curador ve o que a voz preencheu
-          aviso && (
+          aviso ? (
             <p className="truncate text-[11px] text-emerald-300" title={aviso} aria-live="polite">
               ✓ {aviso}
             </p>
+          ) : (
+            avisoVazio && <p className="text-[11px] text-slate-400">{t('nadaOuvido')}</p>
           )
         )}
         {duvidas.length > 0 && <div className="overflow-hidden rounded-xl border border-orange-300/50">{blocoDuvidas}</div>}

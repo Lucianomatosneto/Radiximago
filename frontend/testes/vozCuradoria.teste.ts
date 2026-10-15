@@ -173,4 +173,20 @@ caso('nao no meio da descricao e texto', 'não há lesão visível', r => r.coma
   const f = sug ? sug.aplicar(vazia) : vazia
   chk('sugestao escolhida liga a 1a marcacao livre', !!f.achados?.length && f.achados[0].marcacoes.join() === 'a')
 }
+// falas curtas como o reconhecimento costuma escrever
+{
+  const base = { ...vazia, anonimizacao_validada: false } as typeof vazia
+  const chk = (nome: string, v: boolean) => { if (!v) falhas++; console.log(v ? 'OK  ' : 'FALHA', nome) }
+  const e = (texto: string, etapa: string) => interpretar(texto, base, vocab, { etapa: etapa as never })
+  chk('anonimizacao: "Okay."', e('Okay.', 'anonimizacao').ficha.anonimizacao_validada === true)
+  chk('anonimizacao: "Ok, anonimizada."', e('Ok, anonimizada.', 'anonimizacao').ficha.anonimizacao_validada === true)
+  chk('anonimizacao: "Certo."', e('Certo.', 'anonimizacao').ficha.anonimizacao_validada === true)
+  chk('tipo: "Pão."', e('Pão.', 'tipo').ficha.tipo_radiografia === 'panoramica')
+  chk('genero: "Feminina."', e('Feminina.', 'genero').ficha.genero === 'feminino')
+  chk('qualidade: "Bom."', e('Bom.', 'qualidade').ficha.qualidade_tecnica === 'boa')
+  chk('qualidade: "Ótimo."', e('Ótimo.', 'qualidade').ficha.qualidade_tecnica === 'otima')
+  chk('dentes: "3637."', e('3637.', 'dentes').ficha.dentes.join() === '36,37')
+  chk('dentes: "36-37."', e('36-37.', 'dentes').ficha.dentes.join() === '36,37')
+  chk('dentes: "36, 37 e 38."', e('36, 37 e 38.', 'dentes').ficha.dentes.join() === '36,37,38')
+}
 process.exit(falhas ? 1 : 0)

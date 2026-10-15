@@ -1802,7 +1802,8 @@
     "retomarEscuta": "Abrir microfone (Alt+V)",
     "enterIniciar": "⏎ Pressione Enter para iniciar a curadoria (abre o microfone)",
     "pausadoAprovar": "Microfone fechado — aperte Enter para aprovar",
-    "espacoAudio": "Pressione espaço para áudio"
+    "espacoAudio": "Pressione espaço para áudio",
+    "naoEntendi": "Não entendi: “{texto}”. Fale de novo a opção."
   },
   "Macros": {
     "tituloPrefixo": "Macros da",

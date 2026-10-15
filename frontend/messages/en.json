@@ -1802,7 +1802,8 @@
     "retomarEscuta": "Open microphone (Alt+V)",
     "enterIniciar": "⏎ Press Enter to start curation (opens the microphone)",
     "pausadoAprovar": "Microphone closed — press Enter to approve",
-    "espacoAudio": "Press space for audio"
+    "espacoAudio": "Press space for audio",
+    "naoEntendi": "I did not understand: “{texto}”. Say the option again."
   },
   "Macros": {
     "tituloPrefixo": "Curation",

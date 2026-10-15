@@ -261,14 +261,14 @@ const TIPOS_CURTOS: Opcao[] = [
   { valor: 'tomografia', rotulo: 'Tomografia (TCFC)', formas: ['tc', 'tomo'] },
 ]
 const QUALIDADES: Opcao[] = [
-  { valor: 'otima', rotulo: 'Ótima', formas: ['otima', 'excelente'] },
-  { valor: 'boa', rotulo: 'Boa', formas: ['boa'] },
+  { valor: 'otima', rotulo: 'Ótima', formas: ['otima', 'otimo', 'excelente'] },
+  { valor: 'boa', rotulo: 'Boa', formas: ['boa', 'bom', 'boas'] },
   { valor: 'regular', rotulo: 'Regular', formas: ['regular', 'media'] },
   { valor: 'insatisfatoria', rotulo: 'Insatisfatória', formas: ['insatisfatoria', 'ruim', 'inadequada'] },
 ]
 const GENEROS: Opcao[] = [
-  { valor: 'masculino', rotulo: 'Masculino', formas: ['masculino', 'homem'] },
-  { valor: 'feminino', rotulo: 'Feminino', formas: ['feminino', 'mulher'] },
+  { valor: 'masculino', rotulo: 'Masculino', formas: ['masculino', 'masculina', 'homem'] },
+  { valor: 'feminino', rotulo: 'Feminino', formas: ['feminino', 'feminina', 'mulher'] },
 ]
 // atalhos de sexo (so depois de "sexo" ou como fala inteira): m / f
 const GENEROS_CURTOS: Opcao[] = [
@@ -486,7 +486,11 @@ const NADA_NA_ETAPA: Partial<Record<EtapaFicha, string[]>> = {
   descricao: [...NEGATIVAS, 'sem descricao', 'sem descricao didatica'],
   observacoes: [...NEGATIVAS, 'sem observacao', 'sem observacoes', 'sem observacoes internas'],
 }
-const CONFIRMA_ANONIMIZACAO = ['ok', 'sim', 'anonimizada', 'anonimizado', 'validada', 'validado', 'confirmada', 'confirmado', 'conferida', 'conferido']
+const CONFIRMA_ANONIMIZACAO = [
+  'ok', 'okay', 'oquei', 'oque', 'ok ok', 'sim', 'certo', 'confirmo', 'confirma', 'pode', 'pode ser',
+  'anonimizada', 'anonimizado', 'anonimizacao', 'anonimizacao validada', 'anonimizada ok', 'ok anonimizada',
+  'validada', 'validado', 'confirmada', 'confirmado', 'conferida', 'conferido',
+]
 /** palavra-guia acrescentada a fala quando o item esta em destaque */
 const GUIA_DA_ETAPA: Partial<Record<EtapaFicha, string>> = {
   tipo: 'tipo',
@@ -545,6 +549,23 @@ export function interpretar(
       ficha = { ...ficha, tipo_radiografia: tc.valor }
       alteracoes.push({ campo: 'tipo_radiografia', descricao: `Tipo: ${tc.rotulo}` })
       return { ficha, alteracoes, naoReconhecidos, comandos }
+    }
+  }
+  // jeitos comuns de o reconhecimento escrever falas curtas
+  if (etapa === 'tipo' && ['pao', 'pam', 'pa'].includes(falaInteira)) {
+    ficha = { ...ficha, tipo_radiografia: 'panoramica' }
+    alteracoes.push({ campo: 'tipo_radiografia', descricao: 'Tipo: Panorâmica' })
+    return { ficha, alteracoes, naoReconhecidos, comandos }
+  }
+  if (etapa === 'dentes') {
+    // "3637" / "36-37" -> "36 e 37" (numeros de dentes grudados)
+    const separado = texto.replace(/\b(\d{4,8})\b/g, (m) => {
+      const pares = m.match(/\d\d/g) ?? []
+      return m.length % 2 === 0 && pares.every((p) => DENTE_VALIDO(Number(p))) ? pares.join(' e ') : m
+    }).replace(/\b(\d\d)\s*[-–/]\s*(\d\d)\b/g, '$1 e $2')
+    if (separado !== texto) {
+      texto = separado
+      tokens = tokenizar(texto)
     }
   }
   // item de "Dados" em destaque: a fala sem palavra-guia ganha a palavra-guia

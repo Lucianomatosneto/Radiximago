@@ -91,6 +91,24 @@ def _vigia():
 threading.Thread(target=_vigia, daemon=True).start()
 
 
+# Frases que o Whisper "inventa" em trechos curtos, com ruido ou silencio
+# (vem dos videos legendados usados no treino dele). Nao sao fala do curador.
+ALUCINACOES = {
+    "obrigado", "obrigada", "obrigado por assistir", "obrigada por assistir", "tchau", "tchau tchau",
+    "legendas pela comunidade amara org", "legenda adriana zanotto", "e ai", "ate a proxima", "ate mais",
+    "inscreva se no canal", "musica", "risos", "aplausos",
+}
+
+
+def eh_alucinacao(texto: str) -> bool:
+    import unicodedata
+
+    t = unicodedata.normalize("NFD", texto.lower())
+    t = "".join(c for c in t if unicodedata.category(c) != "Mn")
+    t = " ".join("".join(c if c.isalnum() else " " for c in t).split())
+    return t in ALUCINACOES
+
+
 @app.get("/saude")
 def saude():
     return {"modelo": MODELO, "carregado": _modelo is not None, "ocioso_s": OCIOSO_S}
@@ -125,7 +143,10 @@ def transcrever(arquivo: UploadFile = File(...), prompt: str = Form(default=""),
             # gulosa (beam 1) - bem mais rapida e com a mesma precisao para
             # falas de poucas palavras; textos longos continuam com beam 5
             beam_size=1 if rapido == "1" else 5,
-            vad_filter=True,  # ignora silencios (respiracao, pausas)
+            # trecho curto: o navegador JA separou a fala (deteccao de voz
+            # propria), e o filtro de silencio do Whisper as vezes apagava a
+            # palavra inteira ("ok", "boa") - entao so vale para texto longo
+            vad_filter=rapido != "1",
             # vocabulario do Radix como "dica" para o reconhecimento
             initial_prompt=prompt[:800] or None,
             condition_on_previous_text=False,
@@ -133,6 +154,8 @@ def transcrever(arquivo: UploadFile = File(...), prompt: str = Form(default=""),
         if getattr(info, "duration", 0) and info.duration > DURACAO_MAXIMA_S:
             raise HTTPException(status_code=413, detail="Áudio muito longo (máximo de 2 minutos por vez).")
         texto = " ".join(s.text.strip() for s in segmentos).strip()
+        if eh_alucinacao(texto):
+            texto = ""
     except HTTPException:
         raise
     except Exception as erro:  # audio corrompido/formato desconhecido
