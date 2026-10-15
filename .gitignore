@@ -257,6 +257,15 @@ dicom_teste/
 dicom-teste/
 backend/dicom_teste/
 
+# NENHUMA imagem DICOM entra no Git, em pasta nenhuma (LGPD - imagens de
+# pacientes). Em 10/2026 quatro arquivos _tmp_*.dcm exportados do Orthanc
+# local foram parar em backend/tests/ por engano e tiveram de ser apagados
+# do historico. Arquivos temporarios _tmp_* tambem ficam de fora.
+*.dcm
+*.DCM
+*.dicom
+_tmp_*
+
 # Pasta temporaria usada pela Claude (bridge do dispositivo nao consegue
 # apagar arquivos remotamente, so mover) - pode ser excluida com seguranca
 _to_delete/
