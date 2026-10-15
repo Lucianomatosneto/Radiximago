@@ -17,7 +17,8 @@
 # origem especifica (nao pode ser "*" junto com credentials de qualquer
 # forma, mas so isso nao bastava).
 #
-# O Authorization e injetado AQUI (pelo proxy), nao pelo app-config.js do
+# O Authorization e injetado AQUI (pelo proxy) - e SO depois da portaria
+# abaixo aprovar o pedido -, nao pelo app-config.js do
 # OHIF: no ohif/app v3.9.2, o cliente QIDO/WADO (extensions/default/src/
 # DicomWebDataSource/index.js) monta os headers via
 # userAuthenticationService.getAuthorizationHeader() - o campo
@@ -36,8 +37,27 @@ map $http_origin $cors_origin {
     "~^http://127\.0\.0\.1:3001$" $http_origin;
 }
 
+# PORTARIA (OWASP ASVS 5.0 - V8.2.2/V8.3.1): antes de repassar QUALQUER
+# pedido ao Orthanc, o Nginx pergunta ao backend do Radix se quem esta
+# pedindo pode ver aquela imagem (auth_request). O navegador manda junto o
+# cookie de login do Radix (o OHIF usa withCredentials). Sem login: 401;
+# sem permissao: 403; so com 2xx o pedido segue (e so entao a senha do
+# Orthanc e acrescentada). Regras: backend/app/core/acesso_imagens.py.
+# Antes disso, qualquer pessoa que alcancasse a porta 8042 via (e podia
+# apagar) todas as imagens, sem login.
+
 server {
     listen 80;
+
+    # consulta interna ao backend (o navegador nao consegue chamar direto)
+    location = /_radix_autorizar {
+        internal;
+        proxy_pass http://radix-api:8000/visualizador/autorizar;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header X-Original-URI $request_uri;
+        proxy_set_header X-Original-Method $request_method;
+    }
 
     location / {
         if ($request_method = OPTIONS) {
@@ -55,6 +75,9 @@ server {
         add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
         add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type, Accept' always;
         add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+        # o preflight (OPTIONS, acima) responde antes desta checagem
+        auth_request /_radix_autorizar;
 
         proxy_pass http://radix-orthanc:8042;
         # $host remove a porta da requisicao original - o Orthanc usa esse

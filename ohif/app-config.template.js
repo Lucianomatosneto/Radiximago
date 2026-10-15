@@ -48,9 +48,14 @@ window.config = {
     configuration: {
     friendlyName: 'Radix Imago - Orthanc',
     name: 'orthanc',
-    wadoUriRoot: 'http://localhost:8042/wado',
-    qidoRoot: 'http://localhost:8042/dicom-web',
-    wadoRoot: 'http://localhost:8042/dicom-web',
+    // MESMA ORIGEM do OHIF (porta 3001): o nginx do OHIF repassa /dicom-web
+    // e /wado ao proxy do Orthanc (ohif/radix-dicomweb.conf). Assim o
+    // navegador manda o cookie de login do Radix junto e a portaria das
+    // imagens decide quem ve o que. (O OHIF 3.9.2 NAO manda cookie para
+    // outra porta - withCredentials fica desligado no dicomweb-client.)
+    wadoUriRoot: window.location.origin + '/wado',
+    qidoRoot: window.location.origin + '/dicom-web',
+    wadoRoot: window.location.origin + '/dicom-web',
     qidoSupportsIncludeField: false,
     supportsReject: false,
     imageRendering: 'wadors',
@@ -60,9 +65,10 @@ window.config = {
     supportsWildcard: true,
     staticWado: false,
     singlepart: 'bulkdata,video',
-    requestOptions: {
-    auth: '__ORTHANC_AUTH_BASIC__'
-    }
+    // SEM senha aqui: este arquivo e entregue a qualquer navegador. A senha
+    // do Orthanc fica so no proxy (porta 8042), que antes consulta o login
+    // do Radix (ver orthanc/cors-proxy.conf.template). O OHIF v3.9.2 nem
+    // lia este campo; ele so expunha a senha (OWASP ASVS 13.3.2).
     }
     }
     ],

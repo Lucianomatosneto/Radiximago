@@ -25,6 +25,7 @@ from app.modules.compartilhamentos_router import router as compartilhamentos_rou
 from app.modules.vocabulario_router import router as vocabulario_router
 from app.modules.voz_router import router as voz_router
 from app.modules.macros_router import router_frases, router_macros
+from app.modules.visualizador_router import router as visualizador_router
 
 from app.core.sessao import renovar_sessao
 
@@ -71,6 +72,7 @@ app.include_router(vocabulario_router)
 app.include_router(voz_router)
 app.include_router(router_macros)
 app.include_router(router_frases)
+app.include_router(visualizador_router)
 
 @app.get("/health")
 async def health():

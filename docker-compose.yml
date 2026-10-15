@@ -76,8 +76,10 @@ services:
       - '8042:80'
     environment:
       - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
+    # radix-api: a portaria das imagens (auth_request) consulta o backend
     depends_on:
       - radix-orthanc
+      - radix-api
     # cors-proxy.conf.template e montado num caminho separado (nao direto
     # em conf.d, e NAO em /etc/nginx/templates/ - esse diretorio e
     # auto-processado via envsubst pelo entrypoint padrao da imagem nginx,
@@ -121,11 +123,13 @@ services:
     restart: unless-stopped
     ports:
       - '3001:80'
-    environment:
-      - ORTHANC_PASSWORD=${ORTHANC_PASSWORD}
+    # SEM ORTHANC_PASSWORD (out/2026): o app-config.js vai para qualquer
+    # navegador e nao pode conter senha (OWASP ASVS 13.3.2). As imagens sao
+    # pedidas aqui mesmo (/dicom-web) e repassadas ao radix-orthanc-cors, que
+    # confere o login do Radix (ohif/radix-dicomweb.conf).
     # app-config.js e estatico (o nginx da imagem so serve, nao processa
     # variaveis de ambiente). O arquivo do repo e montado so como TEMPLATE
-    # (ro, caminho separado, com o placeholder __ORTHANC_AUTH_BASIC__), nunca
+    # (ro, caminho separado; desde out/2026 SEM senha nenhuma dentro), nunca
     # direto no caminho servido. No boot, geramos o app-config.js de verdade
     # dentro da camada gravavel do container (nunca no host, senao a senha
     # real acabaria gravada de volta no arquivo versionado) e encadeamos
@@ -169,15 +173,16 @@ services:
       - /bin/sh
       - -c
       - |
-        AUTH_BASIC="admin:$$ORTHANC_PASSWORD"
-        sed "s|__ORTHANC_AUTH_BASIC__|$$AUTH_BASIC|g" /usr/src/app-config.template.js | tr -d '\r' > /usr/share/nginx/html/app-config.js
+        tr -d '\r' < /usr/src/app-config.template.js > /usr/share/nginx/html/app-config.js
         envsubst '$${PORT}' < /usr/src/default.conf.template > /etc/nginx/conf.d/default.conf
         sed -i '/^server {/a\  location = /app-config.js { root /usr/share/nginx/html; add_header Cache-Control "no-store"; }' /etc/nginx/conf.d/default.conf
+        sed -i '/^server {/a\  include /etc/nginx/radix-dicomweb.conf;' /etc/nginx/conf.d/default.conf
         exec nginx -g 'daemon off;'
       - sh
     command: ['nginx', '-g', 'daemon off;']
     depends_on:
       - radix-orthanc
+      - radix-orthanc-cors
     networks:
       - radix-network
     # ./ohif/index.html NAO e mais montado aqui: era so pra remover uma
@@ -190,6 +195,7 @@ services:
     # o carregamento dos bundles.
     volumes:
       - ./ohif/app-config.template.js:/usr/src/app-config.template.js:ro
+      - ./ohif/radix-dicomweb.conf:/etc/nginx/radix-dicomweb.conf:ro
 
   # --- Backend FastAPI ---
   radix-api:
