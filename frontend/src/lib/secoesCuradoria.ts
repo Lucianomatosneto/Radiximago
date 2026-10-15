@@ -63,8 +63,10 @@ export function secaoVizinha(atual: SecaoFicha, passo: 1 | -1): SecaoFicha {
 // divide em 6 itens (anonimizacao, tipo, idade, genero, dentes, qualidade)
 // e cada outra secao e um item so. O holofote:
 // - comeca SEMPRE em "Anonimização validada" a cada imagem nova;
-// - SO muda quando o curador aperta Tab ou ↓ (proximo) / Shift+Tab ou ↑
-//   (anterior) - falar ou clicar num valor NAO muda o item sozinho;
+// - muda com Tab ou ↓ (proximo) / Shift+Tab ou ↑ (anterior);
+// - ENTER (ou clicar a opcao) confirma o item e ja passa ao proximo (ver
+//   confirmarComEnter em opcoesTeclado.ts); na voz, a fala que resolve o
+//   item tambem passa adiante (PainelVoz);
 // - diz a voz onde a fala entra: com "Idade" em destaque, falar "35"
 //   preenche a idade (ver `etapa` em vozCuradoria.ts).
 // Os demais itens ficam quase apagados, para o curador nao se confundir.

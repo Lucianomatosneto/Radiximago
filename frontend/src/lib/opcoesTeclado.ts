@@ -5,6 +5,8 @@
 // - Anonimizacao: ←/→ marcam/desmarcam a caixa.
 // - Itens de VARIAS escolhas (dentes, erros tecnicos): ←/→ andam um
 //   "cursor" pelas opcoes e a BARRA DE ESPACO marca/desmarca a do cursor.
+// - ENTER confirma e o holofote JA VAI para o proximo item (ver
+//   confirmarComEnter); nos itens de varias escolhas, Enter marca/desmarca.
 // ↑/↓ e Tab continuam passando de um item para outro.
 
 import type { FormularioFicha } from '../components/curadoria/FichaCuradoriaForm'
@@ -68,4 +70,39 @@ export function alternarNoCursor(etapa: EtapaFicha, form: FormularioFicha, curso
     }
   }
   return null
+}
+
+/** ENTER no item aceso (curadoria so pelo teclado, sem audio):
+ * - Anonimizacao: valida (se ainda nao estiver) e ja passa ao proximo item.
+ * - Tipo, sexo, qualidade: confirma a opcao escolhida com ←/→ e passa ao
+ *   proximo item (sem opcao escolhida, Enter nao faz nada).
+ * - Idade: confirma o numero digitado e passa ao proximo item.
+ * - Dentes, erros tecnicos (varias escolhas): marca/desmarca a opcao do
+ *   cursor e FICA no item (para marcar outras); ↓ ou Tab passam adiante.
+ * Devolve o formulario alterado (ou null se nada muda) e se o holofote
+ * deve andar; null = Enter nao faz nada neste item. */
+export function confirmarComEnter(
+  etapa: EtapaFicha,
+  form: FormularioFicha,
+  cursor: number
+): { form: FormularioFicha | null; avancar: boolean } | null {
+  switch (etapa) {
+    case 'anonimizacao':
+      return { form: form.anonimizacao_validada ? null : { ...form, anonimizacao_validada: true }, avancar: true }
+    case 'tipo':
+      return form.tipo_radiografia ? { form: null, avancar: true } : null
+    case 'genero':
+      return form.genero ? { form: null, avancar: true } : null
+    case 'qualidade':
+      return form.qualidade_tecnica ? { form: null, avancar: true } : null
+    case 'idade':
+      return { form: null, avancar: true }
+    case 'dentes':
+    case 'erro_tecnico': {
+      const novo = alternarNoCursor(etapa, form, cursor)
+      return novo ? { form: novo, avancar: false } : null
+    }
+    default:
+      return null
+  }
 }

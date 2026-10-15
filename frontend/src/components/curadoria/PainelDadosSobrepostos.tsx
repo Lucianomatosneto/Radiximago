@@ -77,6 +77,7 @@ export default function PainelDadosSobrepostos({
   onChange,
   etapa,
   onEtapa,
+  onEscolhido,
   cursorDente,
 }: {
   form: FormularioFicha
@@ -85,6 +86,8 @@ export default function PainelDadosSobrepostos({
   etapa?: EtapaFicha
   /** clique num item leva o holofote para ele */
   onEtapa?: (etapa: EtapaFicha) => void
+  /** opcao escolhida no item aceso (clique): o holofote passa adiante */
+  onEscolhido?: (etapa: EtapaFicha) => void
   /** posicao do cursor das setas ←/→ no odontograma (0..31) */
   cursorDente?: number
   // compatibilidade com usos antigos (ignorados)
@@ -97,6 +100,10 @@ export default function PainelDadosSobrepostos({
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const pk = (e: EtapaFicha) => etapa === e
+  // so avanca se o clique foi no item que esta com o holofote
+  const escolhido = (e: EtapaFicha) => {
+    if (etapa === e) onEscolhido?.(e)
+  }
 
   function alternarDente(d: number) {
     const dentes = form.dentes.includes(d) ? form.dentes.filter((x) => x !== d) : [...form.dentes, d].sort((a, b) => a - b)
@@ -139,7 +146,10 @@ export default function PainelDadosSobrepostos({
           <input
             type="checkbox"
             checked={form.anonimizacao_validada}
-            onChange={(e) => onChange({ ...form, anonimizacao_validada: e.target.checked })}
+            onChange={(e) => {
+              onChange({ ...form, anonimizacao_validada: e.target.checked })
+              if (e.target.checked) escolhido('anonimizacao')
+            }}
             className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
           />
           {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
@@ -159,7 +169,10 @@ export default function PainelDadosSobrepostos({
               <button
                 key={valor}
                 type="button"
-                onClick={() => onChange({ ...form, tipo_radiografia: valor })}
+                onClick={() => {
+                  onChange({ ...form, tipo_radiografia: valor })
+                  escolhido('tipo')
+                }}
                 className={`${botaoOpcao} ${
                   form.tipo_radiografia === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}
@@ -187,6 +200,7 @@ export default function PainelDadosSobrepostos({
             value={form.idade_min}
             onChange={(e) => onChange({ ...form, idade_min: e.target.value, idade_max: e.target.value })}
             aria-label={t('idade')}
+            data-campo-idade
             className={`${campoInput} max-w-[8rem]`}
           />
         </>
@@ -204,7 +218,10 @@ export default function PainelDadosSobrepostos({
               <button
                 key={valor}
                 type="button"
-                onClick={() => onChange({ ...form, genero: valor })}
+                onClick={() => {
+                  onChange({ ...form, genero: valor })
+                  escolhido('genero')
+                }}
                 className={`${botaoOpcao} ${form.genero === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'}`}
               >
                 {tOpcoes(`genero.${valor}`)}
@@ -243,7 +260,10 @@ export default function PainelDadosSobrepostos({
               <button
                 key={valor}
                 type="button"
-                onClick={() => onChange({ ...form, qualidade_tecnica: valor })}
+                onClick={() => {
+                  onChange({ ...form, qualidade_tecnica: valor })
+                  escolhido('qualidade')
+                }}
                 className={`${botaoOpcao} px-1 ${
                   form.qualidade_tecnica === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}

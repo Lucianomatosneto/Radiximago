@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { alternarNoCursor, tamanhoCursor, trocarOpcao } from '../../lib/opcoesTeclado'
+import { confirmarComEnter, tamanhoCursor, trocarOpcao } from '../../lib/opcoesTeclado'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
@@ -202,20 +202,44 @@ export default function ColunaFichaCuradoria({
     if (!teclasAtivas) return
     function aoTeclar(e: KeyboardEvent) {
       if (e.ctrlKey || e.metaKey || e.altKey) return
-      // ←/→ escolhem as opcoes DENTRO do item aceso; Enter marca/desmarca a
-      // opcao do cursor (dentes, erros) - curadoria manual, sem audio
+      const etapaAgora = etapaRef.current
+      // IDADE acesa: digitar um numero ja escreve na caixa da idade (sem
+      // precisar clicar nela); Enter dentro dela confirma e passa adiante
+      if (etapaAgora === 'idade' && !e.shiftKey) {
+        const caixa = document.querySelector<HTMLInputElement>('[data-campo-idade]')
+        if (/^[0-9]$/.test(e.key) && !emCampoDeTexto() && caixa) {
+          e.preventDefault()
+          caixa.focus()
+          onChangeRef.current({ ...formRef.current, idade_min: e.key, idade_max: e.key })
+          return
+        }
+        if (e.key === 'Enter' && document.activeElement === caixa) {
+          e.preventDefault()
+          caixa?.blur()
+          onEtapa(etapaVizinha(etapaAgora, 1))
+          return
+        }
+      }
+      // ←/→ escolhem as opcoes DENTRO do item aceso; ENTER confirma e o
+      // holofote ja vai para o proximo item (nos itens de varias escolhas -
+      // dentes, erros - Enter marca/desmarca a opcao do cursor e fica)
       if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Enter') && !e.shiftKey && !emCampoDeTexto()) {
         const etapa = etapaRef.current
         const f = formRef.current
         const total = tamanhoCursor(etapa, f)
         if (e.key === 'Enter') {
-          const novo = total ? alternarNoCursor(etapa, f, cursorRef.current) : null
-          if (!novo) return
+          if (e.repeat) return
+          const r = confirmarComEnter(etapa, f, cursorRef.current)
+          if (!r) return
           e.preventDefault()
-          onChangeRef.current(novo)
+          // um botao focado nao deve ser "clicado" de novo pelo Enter
+          const ativo = document.activeElement
+          if (ativo instanceof HTMLElement && ativo.tagName === 'BUTTON') ativo.blur()
+          if (r.form) onChangeRef.current(r.form)
+          if (r.avancar) onEtapa(etapaVizinha(etapa, 1))
           return
         }
-        const lado = e.key === 'ArrowRight' ? 1 : -1
+      const lado = e.key === 'ArrowRight' ? 1 : -1
         if (total) {
           e.preventDefault()
           setCursor((c) => (c + lado + total) % total)
@@ -293,6 +317,9 @@ export default function ColunaFichaCuradoria({
             onChange={onChange}
             etapa={secaoAtiva === 'dados' ? etapaAtiva : undefined}
             onEtapa={ativarPorClique}
+            // clicar a opcao do item aceso (ou validar a anonimizacao) ja
+            // leva o holofote ao proximo item, como o Enter
+            onEscolhido={(e) => onEtapa(etapaVizinha(e, 1))}
             cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
           />
         </Secao>
