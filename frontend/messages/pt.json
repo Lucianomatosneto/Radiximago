@@ -1777,6 +1777,8 @@
     "semSuporte": "Este navegador não permite gravar áudio.",
     "semPermissao": "Sem acesso ao microfone. Permita o uso do microfone para este site.",
     "erroTranscrever": "Não foi possível transcrever o áudio.",
+    "sessaoExpirada": "Sua sessão expirou e o microfone foi pausado. O que você já preencheu continua aqui.",
+    "entrarDeNovo": "Entrar de novo (abre outra aba), depois volte e aperte espaço.",
     "erroMuitos": "Muitos trechos seguidos. Aguarde um minuto.",
     "nadaOuvido": "Nenhuma fala foi detectada. Tente de novo, mais perto do microfone.",
     "nadaEntendido": "Nada foi reconhecido nesse trecho.",

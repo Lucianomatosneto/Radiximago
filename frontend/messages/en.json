@@ -1777,6 +1777,8 @@
     "semSuporte": "This browser cannot record audio.",
     "semPermissao": "No microphone access. Allow microphone use for this site.",
     "erroTranscrever": "Could not transcribe the audio.",
+    "sessaoExpirada": "Your session expired and the microphone was paused. What you filled in is still here.",
+    "entrarDeNovo": "Sign in again (opens another tab), then come back and press space.",
     "erroMuitos": "Too many clips in a row. Wait a minute.",
     "nadaOuvido": "No speech detected. Try again closer to the microphone.",
     "nadaEntendido": "Nothing was recognized in this clip.",

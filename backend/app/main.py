@@ -26,6 +26,8 @@ from app.modules.vocabulario_router import router as vocabulario_router
 from app.modules.voz_router import router as voz_router
 from app.modules.macros_router import router_frases, router_macros
 
+from app.core.sessao import renovar_sessao
+
 app = FastAPI(
     title="Radix Imago API",
     description="Plataforma para curadoria e pesquisa de imagens radiograficas odontologicas",
@@ -45,6 +47,9 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
+
+# sessao renovada enquanto o usuario esta usando (ver app/core/sessao.py)
+app.middleware("http")(renovar_sessao)
 
 # Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
 # POST /users/me/avatar). Sem autenticacao: sao imagens publicas por

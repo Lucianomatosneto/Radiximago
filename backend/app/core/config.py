@@ -10,6 +10,9 @@ class Settings(BaseSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 60
+    # sessao renovada enquanto o usuario usa o sistema, mas no maximo por
+    # este tempo depois do login (ver app/core/sessao.py - OWASP ASVS 3.3.2)
+    SESSAO_MAXIMA_HORAS: int = 12
     # Orthanc - servidor DICOM
     ORTHANC_URL: str = "http://radix-orthanc:8042"
     ORTHANC_USERNAME: str = "admin"

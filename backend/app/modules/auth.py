@@ -9,6 +9,9 @@ from pydantic import BaseModel, EmailStr
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import limiter
+import time
+
+from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
 from app.core.email import (
     enviar_email_confirmacao_cadastro,
@@ -41,20 +44,11 @@ def _resumo_token(token: str) -> str:
 # False). samesite="lax": cobre o caso de uso daqui (frontend e backend em
 # portas diferentes do mesmo host/"site" registravel) sem abrir mao da
 # protecao contra CSRF que "none" removeria.
-NOME_COOKIE_TOKEN = "access_token"
-COOKIE_SECURE = settings.ENVIRONMENT == "production"
+# (definidos em app/core/sessao.py, que tambem renova a sessao em uso)
 
 
 def _definir_cookie_token(response: Response, token: str) -> None:
-    response.set_cookie(
-        key=NOME_COOKIE_TOKEN,
-        value=token,
-        httponly=True,
-        secure=COOKIE_SECURE,
-        samesite="lax",
-        max_age=settings.JWT_EXPIRE_MINUTES * 60,
-        path="/",
-    )
+    definir_cookie_token(response, token)
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -107,7 +101,7 @@ def login(
         ))
         db.commit()
         raise HTTPException(status_code=403, detail="Usuário inativo")
-    token = criar_token_acesso({"sub": str(usuario.id), "perfil": usuario.perfil})
+    token = criar_token_acesso({"sub": str(usuario.id), "perfil": usuario.perfil, "inicio": int(time.time())})
     db.add(AuditLog(
         usuario_id=usuario.id, acao="login", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",
@@ -133,7 +127,7 @@ def obter_token(request: Request, token_header: str | None = Depends(oauth2_sche
     return request.cookies.get(NOME_COOKIE_TOKEN) or token_header
 
 
-def obter_usuario_atual(token: str | None = Depends(obter_token), db: Session = Depends(get_db)):
+def obter_usuario_atual(request: Request, token: str | None = Depends(obter_token), db: Session = Depends(get_db)):
     if not token:
         raise HTTPException(status_code=401, detail="Não autenticado")
     payload = decodificar_token(token)
@@ -142,6 +136,9 @@ def obter_usuario_atual(token: str | None = Depends(obter_token), db: Session = 
     usuario = db.query(User).filter(User.id == int(payload.get("sub"))).first()
     if not usuario or usuario.bloqueado or not usuario.ativo or usuario.excluido:
         raise HTTPException(status_code=401, detail="Acesso negado")
+    # usuario conferido no banco: a resposta pode renovar a sessao
+    # (app/core/sessao.py - quem esta trabalhando nao e deslogado no meio)
+    request.state.usuario_sessao = (usuario.id, usuario.perfil.value if hasattr(usuario.perfil, "value") else str(usuario.perfil))
     return usuario
 
 # Registro central de quais perfis podem acessar cada area do sistema -

@@ -101,6 +101,8 @@ export default function PainelVoz({
   const [segundos, setSegundos] = useState(0)
   const [transcrevendo, setTranscrevendo] = useState(false)
   const [erro, setErro] = useState('')
+  // login expirou: aviso com link para entrar de novo em outra aba
+  const [sessaoExpirada, setSessaoExpirada] = useState(false)
   const [aviso, setAviso] = useState('')
   // o reconhecimento devolveu um trecho sem palavras (ruido, respiracao,
   // fala muito baixa ou cortada) - aviso discreto, some na proxima fala
@@ -276,6 +278,14 @@ export default function PainelVoz({
       // item como dica (reconhecimento bem mais certeiro em falas curtas)
       if (etapaDica) dados.append('etapa', etapaDica)
       const r = await fetch(`${API}/voz/transcrever`, { method: 'POST', credentials: 'include', body: dados })
+      if (r.status === 401) {
+        // sessao expirou (muito tempo parado ou limite de horas desde o
+        // login): pausa o microfone e explica - entrar de novo em OUTRA aba
+        // mantem tudo o que ja foi preenchido nesta ficha
+        setSessaoExpirada(true)
+        setPausaManual(true)
+        return null
+      }
       if (!r.ok) {
         let detalhe = t('erroTranscrever')
         try {
@@ -287,6 +297,7 @@ export default function PainelVoz({
         setErro(r.status === 429 ? t('erroMuitos') : detalhe)
         return null
       }
+      setSessaoExpirada(false)
       const j = await r.json()
       // '' = o reconhecimento nao achou palavras; null = erro
       return (j.texto ?? '').trim()
@@ -569,6 +580,14 @@ export default function PainelVoz({
 
           </p>
         )}
+        {sessaoExpirada && (
+          <p className="text-[11px] leading-snug text-amber-300" role="alert">
+            {t('sessaoExpirada')}{' '}
+            <a href="/login" target="_blank" rel="noopener" className="font-semibold underline hover:text-amber-200">
+              {t('entrarDeNovo')}
+            </a>
+          </p>
+        )}
         {erro ? (
           <p className="truncate text-[11px] text-red-400" title={erro}>{erro}</p>
         ) : aviso ? (
@@ -694,6 +713,14 @@ export default function PainelVoz({
           </div>
           {aoLado && <div className="flex flex-wrap items-center gap-2 pt-2">{aoLado}</div>}
         </div>
+        {sessaoExpirada && (
+          <p className="text-[11px] leading-snug text-amber-300" role="alert">
+            {t('sessaoExpirada')}{' '}
+            <a href="/login" target="_blank" rel="noopener" className="font-semibold underline hover:text-amber-200">
+              {t('entrarDeNovo')}
+            </a>
+          </p>
+        )}
         {(erro || disponivel === false) ? (
           <p className="text-[11px] text-red-300" role="alert">
             {erro || t('indisponivel')}
