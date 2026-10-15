@@ -1,11 +1,11 @@
 faster-whisper==1.0.3
 ctranslate2==4.3.1
 huggingface-hub==0.24.6
-requests==2.32.3
+requests==2.34.2
 tokenizers==0.19.1
 onnxruntime==1.18.1
 av==12.3.0
 numpy==1.26.4
-fastapi==0.110.0
-uvicorn[standard]==0.29.0
-python-multipart==0.0.9
+fastapi==0.143.2
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
