@@ -73,9 +73,13 @@ export default function EtiquetaMarcacoes({
   const aberta = fixada || (flutuante && !janela && passando) || ampliado
   // posicao da janela (calculada so ao abrir; depois quem manda e o arraste)
   const [posJanela, setPosJanela] = useState<{ left: number; top: number } | null>(null)
+  // JANELA AMPLIADA: a caixa cresce (larga e alta, no meio da tela) para ler
+  // a descricao e escrever anotacoes com conforto; o mesmo botao restaura
+  const [janelaGrande, setJanelaGrande] = useState(false)
   useEffect(() => {
     if (!janela || !fixada) {
       setPosJanela(null)
+      setJanelaGrande(false)
       return
     }
     const LARG = 320
@@ -450,8 +454,22 @@ export default function EtiquetaMarcacoes({
             ref={caixaRef}
             role="dialog"
             aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
-            style={{ left: posJanela.left, top: posJanela.top, transform: `translate(${desloc.x}px, ${desloc.y}px)` }}
-            className="fixed z-[300] flex max-h-[70vh] w-80 flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+            style={
+              janelaGrande
+                ? {
+                    left: Math.max(16, (window.innerWidth - Math.min(736, window.innerWidth - 32)) / 2),
+                    top: Math.max(16, window.innerHeight * 0.07),
+                    width: Math.min(736, window.innerWidth - 32),
+                    transform: `translate(${desloc.x}px, ${desloc.y}px)`,
+                  }
+                : { left: posJanela.left, top: posJanela.top, transform: `translate(${desloc.x}px, ${desloc.y}px)` }
+            }
+            // dentro de um cartao que e link (Pesquisa): cliques na caixa
+            // nao podem abrir a imagem
+            onClick={(e) => e.stopPropagation()}
+            className={`fixed z-[300] flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md ${
+              janelaGrande ? 'max-h-[86vh] text-[13px]' : 'max-h-[70vh] w-80'
+            }`}
           >
             {/* barra: arrastar a caixa para onde quiser + fechar */}
             <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
@@ -479,6 +497,27 @@ export default function EtiquetaMarcacoes({
               </div>
               <button
                 type="button"
+                onClick={() => {
+                  setJanelaGrande((v) => !v)
+                  setDesloc({ x: 0, y: 0 })
+                }}
+                title={janelaGrande ? t('restaurarQuadro') : t('ampliarQuadro')}
+                aria-label={janelaGrande ? t('restaurarQuadro') : t('ampliarQuadro')}
+                aria-pressed={janelaGrande}
+                className="flex shrink-0 items-center border-l border-teal-300/25 px-2 text-teal-100/80 hover:bg-teal-400/15 hover:text-teal-100"
+              >
+                {janelaGrande ? (
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" />
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+                  </svg>
+                )}
+              </button>
+              <button
+                type="button"
                 onClick={() => setFixada(false)}
                 aria-label={t('fecharDescricao')}
                 title={t('fecharDescricao')}
@@ -487,9 +526,9 @@ export default function EtiquetaMarcacoes({
                 ×
               </button>
             </div>
-            <div className="min-h-0 flex-1 cursor-pointer overflow-y-auto p-3" onClick={(e) => {
+            <div className={`min-h-0 flex-1 overflow-y-auto ${janelaGrande ? 'p-4' : 'cursor-pointer p-3'}`} onClick={(e) => {
                 // um clique fecha - menos nas anotacoes (escrever, editar, excluir)
-                if ((e.target as HTMLElement).closest('[data-sem-fechar]')) return
+                if ((e.target as HTMLElement).closest('[data-sem-fechar]') || janelaGrande) return
                 setFixada(false)
               }}
             >

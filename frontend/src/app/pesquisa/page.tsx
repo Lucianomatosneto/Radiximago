@@ -1083,6 +1083,7 @@ function PesquisaConteudo() {
                       key={imagem.curation_id}
                       href={`/visualizar/${imagem.curation_id}`}
                       onMouseEnter={(e) => ajustarOrigemAmpliacao(e.currentTarget)}
+                      data-cartao-imagem
                       className="group relative flex flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface transition duration-200 hover:z-30 hover:scale-[1.7] hover:border-brand/60 hover:shadow-2xl hover:delay-150 motion-reduce:hover:scale-100"
                     >
                       <div className="relative aspect-square overflow-hidden">
@@ -1094,11 +1095,14 @@ function PesquisaConteudo() {
                         <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-semibold text-white">
                           {indice + 1}
                         </span>
-                        {/* Selo "i": ao passar o mouse mostra a descricao da curadoria
-                            (continua funcionando com o cartao ampliado em 70%) */}
+                        {/* Selo "i": a MESMA caixa de descricao de Minhas imagens e
+                            Compartilhadas comigo - abre no clique, ao lado do cartao,
+                            pode ser arrastada, ampliada e tem as anotacoes pessoais */}
                         <EtiquetaMarcacoes
                           item={{ ...imagem, numero: indice + 1 }}
+                          curationId={imagem.curation_id}
                           flutuante
+                          janela
                           className="bottom-1.5 right-1.5"
                         />
                         <label

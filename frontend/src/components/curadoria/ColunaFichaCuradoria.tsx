@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { confirmarComEnter, tamanhoCursor, trocarOpcao } from '../../lib/opcoesTeclado'
 import { useTranslations } from 'next-intl'
 import PainelDadosSobrepostos from './PainelDadosSobrepostos'
@@ -34,10 +34,12 @@ const campoTexto =
 
 function emCampoDeTexto(): boolean {
   const alvo = document.activeElement
-  return (
-    alvo instanceof HTMLElement &&
-    (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable)
-  )
+  if (!(alvo instanceof HTMLElement)) return false
+  // caixa de marcar (ex.: "Anonimização validada" clicada com o mouse) e
+  // botoes NAO sao campos de texto: com o foco neles, setas e Enter
+  // continuam valendo para o item aceso
+  if (alvo instanceof HTMLInputElement && ['checkbox', 'radio', 'button', 'submit', 'reset'].includes(alvo.type)) return false
+  return alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable
 }
 
 // Uma secao da coluna. Fica FORA do componente principal de proposito: um
@@ -198,6 +200,35 @@ export default function ColunaFichaCuradoria({
   cursorRef.current = cursor
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+
+  // O curador mudou de item pelo TECLADO ou CLIQUE (nao pela voz): ao chegar
+  // em "Descrição didática" ou "Observações internas" a caixa de texto ja
+  // fica pronta para escrever; nos outros itens, o foco sai de caixas e
+  // botoes (senao setas/Enter ficariam presos neles). Pela voz o foco nao
+  // muda (a barra de espaco continua pausando o microfone).
+  const mudancaLocalRef = useRef(false)
+  const onEtapaRef = useRef(onEtapa)
+  onEtapaRef.current = onEtapa
+  const irPara = useCallback((etapa: EtapaFicha) => {
+    mudancaLocalRef.current = true
+    onEtapaRef.current(etapa)
+  }, [])
+  useEffect(() => {
+    if (!mudancaLocalRef.current) return
+    mudancaLocalRef.current = false
+    const caixa = document.querySelector<HTMLTextAreaElement>(`[data-campo-texto="${etapaAtiva}"]`)
+    if (caixa) {
+      // espera a rolagem ate o item comecar, para o foco nao "pular" a tela
+      const id = window.setTimeout(() => {
+        caixa.focus({ preventScroll: true })
+        const fim = caixa.value.length
+        caixa.setSelectionRange(fim, fim)
+      }, 60)
+      return () => window.clearTimeout(id)
+    }
+    const ativo = document.activeElement
+    if (ativo instanceof HTMLElement && rolagemRef.current?.contains(ativo) && ativo.tagName !== 'TEXTAREA' && etapaAtiva !== 'idade') ativo.blur()
+  }, [etapaAtiva])
   useEffect(() => {
     if (!teclasAtivas) return
     function aoTeclar(e: KeyboardEvent) {
@@ -216,7 +247,7 @@ export default function ColunaFichaCuradoria({
         if (e.key === 'Enter' && document.activeElement === caixa) {
           e.preventDefault()
           caixa?.blur()
-          onEtapa(etapaVizinha(etapaAgora, 1))
+          irPara(etapaVizinha(etapaAgora, 1))
           return
         }
       }
@@ -236,7 +267,7 @@ export default function ColunaFichaCuradoria({
           const ativo = document.activeElement
           if (ativo instanceof HTMLElement && ativo.tagName === 'BUTTON') ativo.blur()
           if (r.form) onChangeRef.current(r.form)
-          if (r.avancar) onEtapa(etapaVizinha(etapa, 1))
+          if (r.avancar) irPara(etapaVizinha(etapa, 1))
           return
         }
       const lado = e.key === 'ArrowRight' ? 1 : -1
@@ -259,17 +290,17 @@ export default function ColunaFichaCuradoria({
       // o foco sai do campo do item anterior (senao ↑/↓ ficariam presos nele)
       const ativo = document.activeElement
       if (ativo instanceof HTMLElement) ativo.blur()
-      onEtapa(etapaVizinha(etapaRef.current, passo))
+      irPara(etapaVizinha(etapaRef.current, passo))
     }
     document.addEventListener('keydown', aoTeclar)
     return () => document.removeEventListener('keydown', aoTeclar)
-  }, [teclasAtivas, onEtapa])
+  }, [teclasAtivas, irPara])
 
   const tFicha = useTranslations('Curadoria.ficha')
 
   function ativarPorClique(etapa: EtapaFicha) {
     porCliqueRef.current = true
-    onEtapa(etapa)
+    irPara(etapa)
   }
 
   // propriedades comuns de cada secao
@@ -319,7 +350,7 @@ export default function ColunaFichaCuradoria({
             onEtapa={ativarPorClique}
             // clicar a opcao do item aceso (ou validar a anonimizacao) ja
             // leva o holofote ao proximo item, como o Enter
-            onEscolhido={(e) => onEtapa(etapaVizinha(e, 1))}
+            onEscolhido={(e) => irPara(etapaVizinha(e, 1))}
             cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
           />
         </Secao>
@@ -353,6 +384,7 @@ export default function ColunaFichaCuradoria({
           <textarea
             value={form.descricao_didatica}
             onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
+            data-campo-texto="descricao"
             rows={4}
             className={campoTexto}
           />
@@ -362,6 +394,7 @@ export default function ColunaFichaCuradoria({
           <textarea
             value={form.observacoes_internas}
             onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
+            data-campo-texto="observacoes"
             rows={3}
             className={campoTexto}
           />
