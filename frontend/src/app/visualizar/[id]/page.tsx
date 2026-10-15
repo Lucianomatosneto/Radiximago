@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { use, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../../components/Sidebar'
@@ -41,9 +41,10 @@ interface ImagemDidatica {
   viewer_url: string | null
 }
 
-export default function VisualizarImagemPage({ params }: { params: { id: string } }) {
+// Next 15: o "params" da pagina chega como Promise - React.use() le o valor
+export default function VisualizarImagemPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const curationId = Number(params.id)
+  const curationId = Number(use(params).id)
   const t = useTranslations('VisualizarImagem')
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')

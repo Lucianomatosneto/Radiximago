@@ -8,6 +8,7 @@
 // Fonte das legendas: pilha de sistema com peso 600 (aproxima Inter
 // SemiBold sem depender de um fetch externo de fonte).
 
+import type { JSX } from 'react'
 import { useTranslations } from 'next-intl'
 
 interface Modalidade {

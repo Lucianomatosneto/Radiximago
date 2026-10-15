@@ -1,3 +1,4 @@
+import type { JSX } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import Logo from '../../components/Logo'

@@ -18,11 +18,12 @@ import { COOKIE_IDIOMA, IDIOMA_PADRAO, ehIdiomaSuportado, type Idioma } from './
 //    sensivel, de localizacao, e exigiria um aviso de privacidade).
 // 3) Se nenhum idioma do navegador bater com um dos que oferecemos
 //    (hoje: portugues e ingles), usa portugues como padrao.
-function detectarIdioma(): Idioma {
-  const cookieIdioma = cookies().get(COOKIE_IDIOMA)?.value
+// (Next 15: cookies() e headers() passaram a ser assincronas - por isso o await)
+async function detectarIdioma(): Promise<Idioma> {
+  const cookieIdioma = (await cookies()).get(COOKIE_IDIOMA)?.value
   if (ehIdiomaSuportado(cookieIdioma)) return cookieIdioma
 
-  const aceitaIdioma = headers().get('accept-language') ?? ''
+  const aceitaIdioma = (await headers()).get('accept-language') ?? ''
   for (const item of aceitaIdioma.split(',')) {
     // Cada item vem como "pt-BR;q=0.9" - pegamos so o codigo de 2 letras
     // antes do "-" ou ";" (ex.: "pt-BR" -> "pt", "en-US" -> "en").
@@ -34,7 +35,7 @@ function detectarIdioma(): Idioma {
 }
 
 export default getRequestConfig(async () => {
-  const locale = detectarIdioma()
+  const locale = await detectarIdioma()
   const messages = (await import(`../../messages/${locale}.json`)).default
   return { locale, messages }
 })
