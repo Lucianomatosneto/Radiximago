@@ -60,7 +60,8 @@ def token_renovado(payload: dict, usuario_id: int, perfil: str, agora: float | N
         inicio = agora  # token antigo (anterior a esta regra)
     if agora - inicio >= settings.SESSAO_MAXIMA_HORAS * 3600:
         return None  # limite absoluto: precisa entrar de novo
-    return criar_token_acesso({"sub": str(usuario_id), "perfil": perfil, "inicio": int(inicio)})
+    # mesma sessao (jti): renovar nao abre sessao nova nem reabre uma fechada
+    return criar_token_acesso({"sub": str(usuario_id), "perfil": perfil, "inicio": int(inicio), "jti": payload.get("jti")})
 
 
 async def renovar_sessao(request: Request, call_next):

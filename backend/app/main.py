@@ -27,6 +27,7 @@ from app.modules.voz_router import router as voz_router
 from app.modules.macros_router import router_frases, router_macros
 from app.modules.visualizador_router import router as visualizador_router
 
+from app.core.cabecalhos import sem_cache_em_dados
 from app.core.sessao import renovar_sessao
 
 app = FastAPI(
@@ -51,6 +52,8 @@ app.add_middleware(SlowAPIMiddleware)
 
 # sessao renovada enquanto o usuario esta usando (ver app/core/sessao.py)
 app.middleware("http")(renovar_sessao)
+# dados em JSON nunca ficam no cache do navegador (ver app/core/cabecalhos.py)
+app.middleware("http")(sem_cache_em_dados)
 
 # Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
 # POST /users/me/avatar). Sem autenticacao: sao imagens publicas por

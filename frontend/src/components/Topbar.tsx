@@ -79,7 +79,9 @@ export default function Topbar() {
       // mesmo se a chamada falhar (rede fora, etc.), ainda manda pro login -
       // o cookie so continua valido ate expirar, mas a UI nao deve travar
     }
-    router.push('/login')
+    // recarrega a pagina inteira (nao so troca de tela): descarta da memoria
+    // do navegador tudo o que foi carregado com o login (OWASP ASVS 14.3.1)
+    window.location.replace('/login')
   }
 
   function abrirModalPerfil() {

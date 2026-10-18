@@ -13,6 +13,7 @@ import time
 
 from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
+from app.core.politica_senha import problema_na_senha
 from app.core.email import (
     enviar_email_confirmacao_cadastro,
     enviar_email_redefinicao_senha,
@@ -21,6 +22,7 @@ from app.core.email import (
 from app.modules.users import User, UserRole
 from app.modules.access_requests import AccessRequest, IntencaoPerfil, StatusSolicitacaoAcesso
 from app.modules.audit_logs import AuditLog
+from app.modules.sessoes import abrir_sessao, encerrar_sessao, encerrar_sessoes_do_usuario, sessao_aberta
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
@@ -101,7 +103,16 @@ def login(
         ))
         db.commit()
         raise HTTPException(status_code=403, detail="Usuário inativo")
-    token = criar_token_acesso({"sub": str(usuario.id), "perfil": usuario.perfil, "inicio": int(time.time())})
+    # Sessao revogavel (app/modules/sessoes.py): o login anterior DESTE
+    # navegador (cookie recebido) e encerrado e uma sessao nova e aberta -
+    # o token carrega o identificador dela ("jti"). OWASP ASVS 7.2.4.
+    anterior = decodificar_token(request.cookies.get(NOME_COOKIE_TOKEN) or "")
+    if anterior:
+        encerrar_sessao(db, anterior.get("jti"), "novo_login")
+    jti = abrir_sessao(db, usuario.id)
+    token = criar_token_acesso({
+        "sub": str(usuario.id), "perfil": usuario.perfil, "inicio": int(time.time()), "jti": jti,
+    })
     db.add(AuditLog(
         usuario_id=usuario.id, acao="login", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",
@@ -136,6 +147,11 @@ def obter_usuario_atual(request: Request, token: str | None = Depends(obter_toke
     usuario = db.query(User).filter(User.id == int(payload.get("sub"))).first()
     if not usuario or usuario.bloqueado or not usuario.ativo or usuario.excluido:
         raise HTTPException(status_code=401, detail="Acesso negado")
+    # a sessao do token precisa continuar ABERTA (saiu, entrou de novo ou
+    # trocou a senha -> fechada). Tokens antigos, sem "jti", nao valem mais.
+    if not sessao_aberta(db, payload.get("jti"), usuario.id):
+        raise HTTPException(status_code=401, detail="Sessão encerrada. Entre novamente.")
+    request.state.sessao_jti = payload.get("jti")
     # usuario conferido no banco: a resposta pode renovar a sessao
     # (app/core/sessao.py - quem esta trabalhando nao e deslogado no meio)
     request.state.usuario_sessao = (usuario.id, usuario.perfil.value if hasattr(usuario.perfil, "value") else str(usuario.perfil))
@@ -183,6 +199,7 @@ def meu_perfil(usuario: User = Depends(obter_usuario_atual)):
 
 @router.post("/logout")
 def logout(
+    request: Request,
     response: Response,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
@@ -193,7 +210,13 @@ def logout(
     stateless (sem lista de revogacao) - se alguem tiver guardado o valor
     do token por fora do cookie, ele so perde validade quando expirar.
     """
+    # fecha a sessao no servidor: uma copia do token deixa de valer na hora
+    # (OWASP ASVS 7.4.1) - antes o logout so apagava o cookie
+    encerrar_sessao(db, getattr(request.state, "sessao_jti", None), "logout")
     response.delete_cookie(key=NOME_COOKIE_TOKEN, path="/", samesite="lax", secure=COOKIE_SECURE)
+    # pede ao navegador que descarte o que guardou em cache desta origem
+    # (OWASP ASVS 14.3.1); as preferencias locais (tema) sao mantidas
+    response.headers["Clear-Site-Data"] = '"cache"'
     db.add(AuditLog(
         usuario_id=usuario.id, acao="logout", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",
@@ -207,6 +230,7 @@ class TrocarSenha(BaseModel):
 
 @router.post("/change-password")
 def trocar_senha_propria(
+    request: Request,
     dados: TrocarSenha,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
@@ -220,13 +244,19 @@ def trocar_senha_propria(
         db.commit()
         raise HTTPException(status_code=401, detail="Senha atual incorreta.")
 
-    if len(dados.nova_senha) < 8:
-        raise HTTPException(status_code=422, detail="A nova senha deve ter ao menos 8 caracteres.")
+    problema = problema_na_senha(dados.nova_senha, usuario.email, usuario.nome)
+    if problema:
+        raise HTTPException(status_code=422, detail=problema)
 
     usuario.senha_hash = gerar_hash_senha(dados.nova_senha)
+    # senha nova: os OUTROS aparelhos precisam entrar de novo; este continua
+    # (OWASP ASVS 7.4.3)
+    fechadas = encerrar_sessoes_do_usuario(
+        db, usuario.id, "troca_senha", exceto_jti=getattr(request.state, "sessao_jti", None)
+    )
     db.add(AuditLog(
         usuario_id=usuario.id, acao="troca_senha", entidade="user", entidade_id=usuario.id,
-        resultado="sucesso",
+        resultado="sucesso", detalhes=f"Outras sessoes encerradas: {fechadas}.",
     ))
     db.commit()
     return {"mensagem": "Senha alterada com sucesso."}
@@ -261,7 +291,11 @@ def solicitar_redefinicao_senha(
     if not usuario or not usuario.ativo or usuario.bloqueado:
         return mensagem_generica
 
-    usuario.reset_token = secrets.token_urlsafe(32)
+    # o codigo vai no link do e-mail; no banco fica so o RESUMO (SHA-256),
+    # como ja acontece na confirmacao de e-mail (OWASP ASVS 6.4.1): quem
+    # ler o banco nao consegue usar o link
+    codigo_reset = secrets.token_urlsafe(32)
+    usuario.reset_token = _resumo_token(codigo_reset)
     usuario.reset_token_expira_em = datetime.now(timezone.utc) + timedelta(minutes=RESET_TOKEN_VALIDADE_MINUTOS)
     db.add(AuditLog(
         usuario_id=usuario.id, acao="solicitacao_redefinicao_senha", entidade="user",
@@ -269,7 +303,7 @@ def solicitar_redefinicao_senha(
     ))
     db.commit()
 
-    link_reset = f"{settings.FRONTEND_URL}/redefinir-senha?token={usuario.reset_token}"
+    link_reset = f"{settings.FRONTEND_URL}/redefinir-senha?token={codigo_reset}"
     idioma_email = dados.idioma if dados.idioma == "en" else "pt"
     enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset, idioma=idioma_email)
 
@@ -289,18 +323,21 @@ def redefinir_senha(
     db: Session = Depends(get_db),
 ):
     """Conclui a redefinicao de senha a partir do token recebido por e-mail."""
-    if len(dados.nova_senha) < 8:
-        raise HTTPException(status_code=422, detail="A nova senha deve ter ao menos 8 caracteres.")
-
-    usuario = db.query(User).filter(User.reset_token == dados.token).first()
+    usuario = db.query(User).filter(User.reset_token == _resumo_token(dados.token)).first()
     if not usuario or not usuario.reset_token_expira_em:
         raise HTTPException(status_code=400, detail="Link de redefinição inválido ou já utilizado.")
     if usuario.reset_token_expira_em < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Link de redefinição expirado. Solicite um novo.")
+    problema = problema_na_senha(dados.nova_senha, usuario.email, usuario.nome)
+    if problema:
+        raise HTTPException(status_code=422, detail=problema)
 
     usuario.senha_hash = gerar_hash_senha(dados.nova_senha)
     usuario.reset_token = None
     usuario.reset_token_expira_em = None
+    # quem esqueceu a senha pode ter perdido o controle da conta: TODAS as
+    # sessoes abertas sao fechadas (OWASP ASVS 7.4.3)
+    encerrar_sessoes_do_usuario(db, usuario.id, "redefinicao_senha")
     db.add(AuditLog(
         usuario_id=usuario.id, acao="redefinicao_senha", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",
@@ -336,8 +373,9 @@ def solicitar_acesso(
     (/auth/confirm-email). Sempre devolve a mesma mensagem generica, mesmo
     se o e-mail ja tiver conta ou pedido - nao revela isso a quem preenche.
     """
-    if len(dados.senha) < 8:
-        raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
+    problema = problema_na_senha(dados.senha, dados.email, dados.nome)
+    if problema:
+        raise HTTPException(status_code=422, detail=problema)
 
     mensagem_generica = {
         "mensagem": (

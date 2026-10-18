@@ -19,6 +19,10 @@ function traduzirErroBackend(detalhe: string | undefined, t: ReturnType<typeof u
   switch (detalhe) {
     case 'A senha deve ter ao menos 8 caracteres.':
       return t('erroSenhaCurta')
+    case 'Essa senha é muito comum ou fácil de adivinhar. Escolha outra (dica: uma frase curta).':
+      return t('erroSenhaComum')
+    case 'A senha pode ter no máximo 64 caracteres (letras acentuadas e símbolos especiais ocupam mais espaço).':
+      return t('erroSenhaLonga')
     default:
       return t('erroEnviarGenerico')
   }

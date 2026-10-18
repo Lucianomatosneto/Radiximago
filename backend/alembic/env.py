@@ -9,9 +9,17 @@ from app.modules.curations import Curation, CurationHistory, CurationReview
 from app.modules.audit_logs import AuditLog
 from app.modules.achados import Achado, ErroTecnico
 
+from app.core.config import settings
+
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Endereco e senha do banco vem do .env (DATABASE_URL), o mesmo usado pelo
+# backend - nunca do alembic.ini, que vai para o Git (OWASP ASVS 13.3.1).
+# "%" e duplicado porque o configparser do alembic trata "%" como especial
+# (senhas com caracteres codificados, ex.: %40, quebrariam sem isso).
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL.replace("%", "%%"))
 
 target_metadata = Base.metadata
 

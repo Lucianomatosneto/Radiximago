@@ -111,8 +111,10 @@ def test_admin_aprova_solicitacao_cria_conta_utilizavel(
         assert solicitacao.status == StatusSolicitacaoAcesso.aprovada
     finally:
         from app.modules.audit_logs import AuditLog
+        from app.modules.sessoes import SessaoUsuario
 
         db.query(AuditLog).filter(AuditLog.usuario_id == novo_usuario_id).delete()
+        db.query(SessaoUsuario).filter(SessaoUsuario.usuario_id == novo_usuario_id).delete()
         db.query(User).filter(User.id == novo_usuario_id).delete()
         db.commit()
 

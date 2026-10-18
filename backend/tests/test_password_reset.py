@@ -7,6 +7,7 @@ expiracao.
 from datetime import datetime, timedelta, timezone
 
 import app.modules.auth as auth_module
+from app.modules.auth import _resumo_token
 from app.modules.users import UserRole
 from tests.conftest import SENHA_TESTE, obter_token
 
@@ -44,7 +45,7 @@ def test_forgot_password_usuario_bloqueado_nao_gera_token(client, criar_usuario,
 
 def test_reset_password_com_token_valido(client, criar_usuario, db):
     usuario = criar_usuario(perfil=UserRole.estudante)
-    usuario.reset_token = "token-de-teste-valido"
+    usuario.reset_token = _resumo_token("token-de-teste-valido")  # no banco fica so o resumo
     usuario.reset_token_expira_em = datetime.now(timezone.utc) + timedelta(minutes=30)
     db.commit()
 
@@ -77,7 +78,7 @@ def test_reset_password_com_token_inexistente(client):
 
 def test_reset_password_com_token_expirado(client, criar_usuario, db):
     usuario = criar_usuario(perfil=UserRole.estudante)
-    usuario.reset_token = "token-de-teste-expirado"
+    usuario.reset_token = _resumo_token("token-de-teste-expirado")  # no banco fica so o resumo
     usuario.reset_token_expira_em = datetime.now(timezone.utc) - timedelta(minutes=1)
     db.commit()
 
@@ -91,7 +92,7 @@ def test_reset_password_com_token_expirado(client, criar_usuario, db):
 
 def test_reset_password_com_senha_curta(client, criar_usuario, db):
     usuario = criar_usuario(perfil=UserRole.estudante)
-    usuario.reset_token = "token-de-teste-senha-curta"
+    usuario.reset_token = _resumo_token("token-de-teste-senha-curta")  # no banco fica so o resumo
     usuario.reset_token_expira_em = datetime.now(timezone.utc) + timedelta(minutes=30)
     db.commit()
 
@@ -150,3 +151,39 @@ def test_forgot_password_idioma_invalido_cai_para_pt(client, criar_usuario, monk
 
     assert resposta.status_code == 200
     assert chamadas == ["pt"]
+
+
+def _link_capturado(client, monkeypatch, email):
+    """Faz o pedido de "esqueci a senha" e devolve o codigo que iria no e-mail."""
+    links = []
+    monkeypatch.setattr(
+        auth_module, "enviar_email_redefinicao_senha",
+        lambda destinatario, nome, link_reset, idioma="pt": links.append(link_reset),
+    )
+    assert client.post("/auth/forgot-password", json={"email": email}).status_code == 200
+    return links[0].split("token=", 1)[1]
+
+
+def test_codigo_do_link_nao_fica_guardado_no_banco(client, criar_usuario, db, monkeypatch):
+    """ASVS 6.4.1: o banco guarda so o resumo; o proprio valor guardado nao serve como link."""
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    codigo = _link_capturado(client, monkeypatch, usuario.email)
+    db.refresh(usuario)
+    assert usuario.reset_token != codigo
+    assert usuario.reset_token == _resumo_token(codigo)
+    # quem copiar o valor do banco nao consegue redefinir a senha
+    r = client.post("/auth/reset-password", json={"token": usuario.reset_token, "nova_senha": "frase longa da curadoria"})
+    assert r.status_code == 400
+    # o link do e-mail funciona uma vez
+    r = client.post("/auth/reset-password", json={"token": codigo, "nova_senha": "frase longa da curadoria"})
+    assert r.status_code == 200
+    r = client.post("/auth/reset-password", json={"token": codigo, "nova_senha": "outra frase longa aqui"})
+    assert r.status_code == 400
+
+
+def test_redefinicao_recusa_senha_comum(client, criar_usuario, db, monkeypatch):
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    codigo = _link_capturado(client, monkeypatch, usuario.email)
+    r = client.post("/auth/reset-password", json={"token": codigo, "nova_senha": "password123"})
+    assert r.status_code == 422
+    assert "comum" in r.json()["detail"]

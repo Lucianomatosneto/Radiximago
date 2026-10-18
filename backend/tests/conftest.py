@@ -30,6 +30,7 @@ from app.modules.anotacoes import AnotacaoImagem
 from app.modules.macros import FraseAprendida, MacroCuradoria
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.audit_logs import AuditLog
+from app.modules.sessoes import SessaoUsuario
 from app.modules.access_requests import AccessRequest, IntencaoPerfil
 
 SENHA_TESTE = "TesteSuite123!"
@@ -109,6 +110,7 @@ def criar_usuario(db):
         db.query(AnotacaoImagem).filter(AnotacaoImagem.usuario_id == usuario_id).delete()
         db.query(SavedImage).filter(SavedImage.user_id == usuario_id).delete()
         db.query(AuditLog).filter(AuditLog.usuario_id == usuario_id).delete()
+        db.query(SessaoUsuario).filter(SessaoUsuario.usuario_id == usuario_id).delete()
         db.query(CurationHistory).filter(CurationHistory.usuario_id == usuario_id).delete()
         db.query(CurationReview).filter(CurationReview.solicitante_id == usuario_id).delete()
         db.query(CurationReview).filter(CurationReview.revisor_id == usuario_id).delete()

@@ -151,7 +151,9 @@ export default function Sidebar() {
     } catch {
       // segue pro login mesmo se a chamada falhar - nao trava a UI
     }
-    router.push('/login')
+    // recarrega a pagina inteira: descarta da memoria do navegador o que foi
+    // carregado com o login (OWASP ASVS 14.3.1)
+    window.location.replace('/login')
   }
 
   // Antes do perfil carregar (1o render, GET /auth/me ainda em voo), nao

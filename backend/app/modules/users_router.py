@@ -8,6 +8,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
+from app.core.politica_senha import problema_na_senha
 from app.core.email import enviar_email_acesso_aprovado, enviar_email_acesso_rejeitado
 from app.modules.users import User, UserRole
 from app.modules.auth import exigir_perfis, obter_usuario_atual, PERFIS_ADMIN
@@ -354,8 +355,9 @@ def criar_usuario(
     db: Session = Depends(get_db),
     usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN))
 ):
-    if len(dados.senha) < 8:
-        raise HTTPException(status_code=422, detail="A senha deve ter ao menos 8 caracteres.")
+    problema = problema_na_senha(dados.senha, dados.email, dados.nome)
+    if problema:
+        raise HTTPException(status_code=422, detail=problema)
     existente = db.query(User).filter(User.email == dados.email, User.excluido.is_(False)).first()
     if existente:
         raise HTTPException(status_code=400, detail="Email já cadastrado")

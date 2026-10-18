@@ -8,7 +8,9 @@ import time
 
 from app.core.config import settings
 from app.core.security import criar_token_acesso, decodificar_token
+from app.core.database import SessionLocal
 from app.core.sessao import NOME_COOKIE_TOKEN, token_renovado
+from app.modules.sessoes import abrir_sessao
 from app.modules.users import UserRole
 from tests.conftest import SENHA_TESTE
 
@@ -16,9 +18,14 @@ from tests.conftest import SENHA_TESTE
 def _token(usuario, faltando_s: float, inicio_ha_s: float) -> str:
     agora = time.time()
     validade_min = settings.JWT_EXPIRE_MINUTES
+    # cada token precisa de uma sessao aberta (app/modules/sessoes.py)
+    db = SessionLocal()
+    jti = abrir_sessao(db, usuario.id)
+    db.commit()
+    db.close()
     # criar_token_acesso usa "exp" = agora + validade; ajusta para faltar X s
     return criar_token_acesso(
-        {"sub": str(usuario.id), "perfil": usuario.perfil.value, "inicio": int(agora - inicio_ha_s)},
+        {"sub": str(usuario.id), "perfil": usuario.perfil.value, "inicio": int(agora - inicio_ha_s), "jti": jti},
         expira_em=max(1, int(faltando_s // 60)) if faltando_s < validade_min * 60 else validade_min,
     )
 
