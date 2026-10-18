@@ -202,6 +202,7 @@ export default function PainelAchadosRadiografia({
         <div>
           <label className={campoLabel}>{t('outrosAchados')}</label>
           <textarea
+            maxLength={8000}
             value={form.achados_detalhe}
             onChange={(e) => onChange({ ...form, achados_detalhe: e.target.value })}
             rows={3}

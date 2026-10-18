@@ -2,9 +2,10 @@
 
 import { Suspense, useState, FormEvent } from 'react'
 import { useTranslations } from 'next-intl'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
+import { useCodigoDoLink } from '../../lib/codigoDoLink'
 
 // Mapa das mensagens conhecidas que o backend devolve pra esse fluxo
 // (auth.py: reset-password) - traduzidas aqui em vez de mostrar o texto
@@ -34,8 +35,8 @@ function traduzirErroBackend(detalhe: string | undefined, t: ReturnType<typeof u
 function RedefinirSenhaForm() {
   const t = useTranslations('RedefinirSenha')
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get('token') ?? ''
+  // codigo do link do e-mail (lido do endereco e apagado dele - ver lib/codigoDoLink.ts)
+  const { codigo: token, lido } = useCodigoDoLink()
 
   const [concluido, setConcluido] = useState(false)
   const [erro, setErro] = useState('')
@@ -100,7 +101,7 @@ function RedefinirSenhaForm() {
         <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
           {t('sucessoMensagem')}
         </div>
-      ) : !token ? (
+      ) : !lido ? null : !token ? (
         <div className="space-y-5">
           <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
             {t('linkInvalidoMensagem')}

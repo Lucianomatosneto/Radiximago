@@ -218,6 +218,7 @@ export default function PainelErroTecnico({
           <div>
             <label className={campoLabel}>{t('descricao')}</label>
             <textarea
+              maxLength={2000}
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={2}

@@ -385,6 +385,7 @@ export default function PainelAchadosEstruturados({
               {t('descricao')} {form.tipo === 'outro' && <span className="text-status-danger">*</span>}
             </label>
             <textarea
+              maxLength={2000}
               value={form.descricao}
               onChange={(e) => setForm({ ...form, descricao: e.target.value })}
               rows={2}

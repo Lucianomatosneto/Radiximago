@@ -1,10 +1,10 @@
 'use client'
 
-import { Suspense, useState, FormEvent } from 'react'
+import { Suspense, useEffect, useState, FormEvent } from 'react'
 import { useTranslations } from 'next-intl'
-import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
+import { useCodigoDoLink } from '../../lib/codigoDoLink'
 
 // ETAPA 2 do cadastro: a pessoa chega aqui pelo link recebido por e-mail e
 // digita a MESMA senha que definiu no formulario de "Solicitar acesso".
@@ -34,9 +34,13 @@ function interpretarErro(detalhe: string | undefined): { chave: string; fimDoLin
 
 function ConfirmarEmailForm() {
   const t = useTranslations('ConfirmarEmail')
-  const token = useSearchParams().get('token') ?? ''
+  // codigo do link do e-mail (lido do endereco e apagado dele - ver lib/codigoDoLink.ts)
+  const { codigo: token, lido } = useCodigoDoLink()
 
-  const [situacao, setSituacao] = useState<Situacao>(token ? 'formulario' : 'linkInvalido')
+  const [situacao, setSituacao] = useState<Situacao>('formulario')
+  useEffect(() => {
+    if (lido && !token) setSituacao('linkInvalido')
+  }, [lido, token])
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
 
@@ -79,7 +83,7 @@ function ConfirmarEmailForm() {
         <p className="mt-1.5 text-sm leading-relaxed text-slate-400">{t('subtitulo')}</p>
       </div>
 
-      {situacao === 'confirmado' ? (
+      {!lido ? null : situacao === 'confirmado' ? (
         <div className="space-y-5">
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300" role="status">
             {t('sucessoMensagem')}

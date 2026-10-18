@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import limiter
@@ -14,6 +14,7 @@ import time
 from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
 from app.core.politica_senha import problema_na_senha
+from app.core.limites import Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
     enviar_email_confirmacao_cadastro,
     enviar_email_redefinicao_senha,
@@ -225,8 +226,8 @@ def logout(
     return {"mensagem": "Logout registrado com sucesso."}
 
 class TrocarSenha(BaseModel):
-    senha_atual: str
-    nova_senha: str
+    senha_atual: Senha
+    nova_senha: Senha
 
 @router.post("/change-password")
 def trocar_senha_propria(
@@ -263,13 +264,13 @@ def trocar_senha_propria(
 
 
 class SolicitarRedefinicao(BaseModel):
-    email: EmailStr
+    email: Email
     # Idioma da tela que fez o pedido (ver frontend/src/i18n/config.ts) -
     # so usado pra escolher o template do e-mail (PT/EN); nao tem efeito
     # nenhum sobre token/expiracao/seguranca. "pt" se omitido ou invalido,
     # sem 422 - o formulario de "esqueci a senha" nao deve falhar por causa
     # de um campo puramente cosmetico.
-    idioma: str | None = None
+    idioma: str | None = Field(default=None, max_length=10)
 
 
 @router.post("/forgot-password")
@@ -303,7 +304,10 @@ def solicitar_redefinicao_senha(
     ))
     db.commit()
 
-    link_reset = f"{settings.FRONTEND_URL}/redefinir-senha?token={codigo_reset}"
+    # codigo depois do "#": essa parte do endereco nao sai do navegador (nao
+    # chega a servidores, logs ou proxies) - OWASP ASVS 14.2.1; ver
+    # frontend/src/lib/codigoDoLink.ts
+    link_reset = f"{settings.FRONTEND_URL}/redefinir-senha#token={codigo_reset}"
     idioma_email = dados.idioma if dados.idioma == "en" else "pt"
     enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset, idioma=idioma_email)
 
@@ -311,8 +315,8 @@ def solicitar_redefinicao_senha(
 
 
 class RedefinirSenha(BaseModel):
-    token: str
-    nova_senha: str
+    token: Codigo
+    nova_senha: Senha
 
 
 @router.post("/reset-password")
@@ -347,16 +351,16 @@ def redefinir_senha(
 
 
 class SolicitarAcesso(BaseModel):
-    nome: str
-    email: EmailStr
-    senha: str
-    instituicao: str | None = None
+    nome: Nome
+    email: Email
+    senha: Senha
+    instituicao: Instituicao | None = None
     # Sem valor padrao: a escolha e obrigatoria no formulario publico. O
     # admin decide o UserRole real concedido na aprovacao (pode honrar
     # essa escolha ou restringir a "estudante") - ver AprovarSolicitacao
     # em users_router.py.
     perfil_solicitado: IntencaoPerfil
-    motivo: str | None = None
+    motivo: TextoMedio | None = None
 
 
 @router.post("/request-access", status_code=201)
@@ -430,15 +434,15 @@ def solicitar_acesso(
     ))
     db.commit()
 
-    link = f"{settings.FRONTEND_URL}/confirmar-email?token={token}"
+    link = f"{settings.FRONTEND_URL}/confirmar-email#token={token}"
     enviar_email_confirmacao_cadastro(dados.email, dados.nome, link, CONFIRMACAO_VALIDADE_HORAS)
 
     return mensagem_generica
 
 
 class ConfirmarEmail(BaseModel):
-    token: str
-    senha: str
+    token: Codigo
+    senha: Senha
 
 
 @router.post("/confirm-email")

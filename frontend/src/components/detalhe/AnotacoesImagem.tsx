@@ -662,6 +662,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           </div>
 
           <textarea
+            maxLength={2000}
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             autoFocus

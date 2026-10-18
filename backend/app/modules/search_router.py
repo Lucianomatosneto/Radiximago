@@ -184,8 +184,8 @@ def pesquisar_imagens(
         "qualquer_um", description="Como combinar 'dentes': qualquer_um (OR) ou todos (AND)"
     ),
     quadrante: Optional[int] = Query(None, ge=1, le=4, description="1-4 - equivale a filtrar pelos dentes daquele quadrante"),
-    arcada: Optional[str] = Query(None, description="'superior' ou 'inferior'"),
-    lado: Optional[str] = Query(None, description="'direito' ou 'esquerdo'"),
+    arcada: Optional[str] = Query(None, max_length=20, description="'superior' ou 'inferior'"),
+    lado: Optional[str] = Query(None, max_length=20, description="'direito' ou 'esquerdo'"),
     achado_principal: Optional[AchadoPrincipal] = Query(None),
     achado: Optional[TipoAchado] = Query(
         None, description="Achado/condicao - busca hibrida (legado + estruturado), ou so estruturado se combinado com dentes/regiao_anatomica"

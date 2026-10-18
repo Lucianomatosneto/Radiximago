@@ -117,7 +117,7 @@ def transcrever(
     request: Request,
     arquivo: UploadFile = File(...),
     rapido: bool = Form(default=False),
-    etapa: str = Form(default=""),
+    etapa: str = Form(default="", max_length=40),
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):

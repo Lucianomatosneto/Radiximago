@@ -9,6 +9,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.core.politica_senha import problema_na_senha
+from app.core.limites import Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import enviar_email_acesso_aprovado, enviar_email_acesso_rejeitado
 from app.modules.users import User, UserRole
 from app.modules.auth import exigir_perfis, obter_usuario_atual, PERFIS_ADMIN
@@ -54,11 +55,11 @@ def _remover_arquivo_avatar(foto_url: Optional[str]) -> None:
         pass
 
 class UsuarioCriar(BaseModel):
-    nome: str
-    email: EmailStr
-    senha: str
+    nome: Nome
+    email: Email
+    senha: Senha
     perfil: UserRole = UserRole.estudante
-    instituicao: Optional[str] = None
+    instituicao: Optional[Instituicao] = None
 
 class UsuarioResposta(BaseModel):
     id: int
@@ -75,8 +76,8 @@ class UsuarioResposta(BaseModel):
         from_attributes = True
 
 class UsuarioAtualizar(BaseModel):
-    nome: Optional[str] = None
-    instituicao: Optional[str] = None
+    nome: Optional[Nome] = None
+    instituicao: Optional[Instituicao] = None
 
 
 class UsuarioExcluidoResposta(BaseModel):
@@ -106,7 +107,7 @@ class SolicitacaoAcessoResposta(BaseModel):
 
 
 class RejeitarSolicitacao(BaseModel):
-    motivo: str
+    motivo: TextoMedio
 
 
 class AprovarSolicitacao(BaseModel):

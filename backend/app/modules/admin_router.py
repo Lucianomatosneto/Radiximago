@@ -151,8 +151,8 @@ def obter_indicadores(
 @router.get("/audit-logs")
 def consultar_auditoria(
     usuario_id: Optional[int] = Query(None, description="Filtrar por id de usuario"),
-    acao: Optional[str] = Query(None, description="Filtrar por acao (ex.: aprovacao)"),
-    resultado: Optional[str] = Query(None, description="sucesso, negado ou erro"),
+    acao: Optional[str] = Query(None, max_length=60, description="Filtrar por acao (ex.: aprovacao)"),
+    resultado: Optional[str] = Query(None, max_length=20, description="sucesso, negado ou erro"),
     data_de: Optional[datetime] = Query(None, description="A partir desta data/hora (ISO)"),
     data_ate: Optional[datetime] = Query(None, description="Ate esta data/hora (ISO)"),
     skip: int = Query(0, ge=0),

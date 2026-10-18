@@ -5,6 +5,11 @@ from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
+from app.core.limites import (
+    MAX_ACHADOS, MAX_ALTERACOES, MAX_DENTES, MAX_ERROS_TECNICOS, MAX_MARCACOES, MAX_TERMOS,
+    TextoCurto, TextoLongo, TextoMedio,
+)
+
 from app.modules.curations import (
     Modalidade,
     TipoRadiografia,
@@ -29,7 +34,7 @@ class Marcacao(BaseModel):
     oval/retangulo usam x,y (canto superior esquerdo) + largura/altura.
     seta usa x1,y1 (cauda) + x2,y2 (ponta).
     """
-    id: str
+    id: str = Field(max_length=64)
     tipo: Literal["oval", "retangulo", "seta"]
     x: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     y: Optional[float] = Field(default=None, ge=0.0, le=1.0)
@@ -48,22 +53,22 @@ class Marcacao(BaseModel):
     # generico "Outro" no tooltip, quando preenchido. Sem validacao cruzada
     # com `achado` de proposito (mesmo padrao tolerante ja usado em outros
     # campos de texto livre da ficha, ex.: parecer_revisor).
-    achado_descricao: Optional[str] = None
+    achado_descricao: Optional[TextoCurto] = None
 
 
 class CurationCreate(BaseModel):
     tipo_radiografia: TipoRadiografia
-    dentes: Optional[List[int]] = None
+    dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     idade_min: Optional[int] = None
     idade_max: Optional[int] = None
     genero: Optional[Genero] = None
     achado_principal: Optional[AchadoPrincipal] = None
-    achados_detalhe: Optional[str] = None
-    alteracoes_observadas: Optional[List[AlteracaoObservada]] = None
+    achados_detalhe: Optional[TextoLongo] = None
+    alteracoes_observadas: Optional[List[AlteracaoObservada]] = Field(default=None, max_length=MAX_ALTERACOES)
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
-    descricao_didatica: Optional[str] = None
-    observacoes_internas: Optional[str] = None
+    descricao_didatica: Optional[TextoLongo] = None
+    observacoes_internas: Optional[TextoLongo] = None
 
 
 class CurationUpdate(BaseModel):
@@ -74,24 +79,24 @@ class CurationUpdate(BaseModel):
     """
     modalidade: Optional[Modalidade] = None
     tipo_radiografia: Optional[TipoRadiografia] = None
-    dentes: Optional[List[int]] = None
+    dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     idade_min: Optional[int] = None
     idade_max: Optional[int] = None
     genero: Optional[Genero] = None
     achado_principal: Optional[AchadoPrincipal] = None
     # Lista completa das marcacoes da ficha - quando enviado, substitui a
     # lista inteira (o frontend sempre manda o estado atual completo).
-    marcacoes: Optional[List[Marcacao]] = None
-    achados_detalhe: Optional[str] = None
-    alteracoes_observadas: Optional[List[AlteracaoObservada]] = None
+    marcacoes: Optional[List[Marcacao]] = Field(default=None, max_length=MAX_MARCACOES)
+    achados_detalhe: Optional[TextoLongo] = None
+    alteracoes_observadas: Optional[List[AlteracaoObservada]] = Field(default=None, max_length=MAX_ALTERACOES)
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
-    descricao_didatica: Optional[str] = None
-    observacoes_internas: Optional[str] = None
+    descricao_didatica: Optional[TextoLongo] = None
+    observacoes_internas: Optional[TextoLongo] = None
     anonimizacao_validada: Optional[bool] = None
     # Termos do vocabulario controlado ligados a ficha (lista completa -
     # substitui a anterior). Ver app/modules/vocabulario.py.
-    termos: Optional[List[int]] = None
+    termos: Optional[List[int]] = Field(default=None, max_length=MAX_TERMOS)
     # A edicao veio (no todo ou em parte) da curadoria por voz - so para
     # registro na auditoria (dado de pesquisa); nao muda nenhum campo.
     origem_voz: Optional[bool] = None
@@ -100,26 +105,26 @@ class CurationUpdate(BaseModel):
     # da ficha; o resumo legado `alteracoes_observadas` e os `dentes` da
     # ficha passam a ser DERIVADOS destes achados (ver ficha.py). Definido
     # mais abaixo (AchadoCreate) - referencia adiada.
-    achados: Optional[List["AchadoCreate"]] = None
+    achados: Optional[List["AchadoCreate"]] = Field(default=None, max_length=MAX_ACHADOS)
     # "Imagem sem alteracoes" (radiografia normal) - guardado como
     # achado_principal = "normal". So vale se a ficha nao tiver achados.
     sem_alteracoes: Optional[bool] = None
     # Erros tecnicos da imagem (lista completa - substitui os anteriores).
-    erros_tecnicos: Optional[List[TipoErroTecnico]] = None
+    erros_tecnicos: Optional[List[TipoErroTecnico]] = Field(default=None, max_length=MAX_ERROS_TECNICOS)
 
 
 class CurationApprove(BaseModel):
     anonimizacao_validada: bool
-    observacoes: Optional[str] = None
+    observacoes: Optional[TextoMedio] = None
 
 
 class CurationDiscard(BaseModel):
-    motivo: str
+    motivo: TextoMedio
 
 
 class ReviewRequest(BaseModel):
-    motivo: str
-    primeiro_parecer: Optional[str] = None
+    motivo: TextoMedio
+    primeiro_parecer: Optional[TextoMedio] = None
 
 
 class ReviewRespond(BaseModel):
@@ -127,17 +132,17 @@ class ReviewRespond(BaseModel):
     # botoes "Concordar com o curador" / "Discordar" - sem campo de texto
     # livre obrigatorio. Continua aceitando um parecer escrito se um dia a
     # tela voltar a coletar um (nao remove a capacidade da API).
-    parecer_revisor: Optional[str] = None
-    concordancia: str  # "concorda" ou "discorda"
+    parecer_revisor: Optional[TextoMedio] = None
+    concordancia: str = Field(max_length=20)  # "concorda" ou "discorda"
     decisao_final: Optional[DecisaoRevisao] = None
-    observacoes: Optional[str] = None
+    observacoes: Optional[TextoMedio] = None
 
 
 class AplicarDecisaoRevisao(BaseModel):
     decisao: DecisaoFinalRevisao
     anonimizacao_validada: Optional[bool] = None  # obrigatorio de fato so se decisao == aprovar
-    motivo: Optional[str] = None                   # obrigatorio de fato so se decisao == descartar
-    observacoes: Optional[str] = None
+    motivo: Optional[TextoMedio] = None            # obrigatorio de fato so se decisao == descartar
+    observacoes: Optional[TextoMedio] = None
 
 
 # ---------------------------------------------------------------------
@@ -151,25 +156,25 @@ class AchadoCreate(BaseModel):
     # (duplicata removida, ordenado) na camada de rota, nao aqui, pra poder
     # cruzar com `dente_nao_identificado` (que so o endpoint tem acesso aos
     # dois valores juntos no momento da validacao).
-    dentes: Optional[List[int]] = None
+    dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     dente_nao_identificado: bool = False
-    descricao: Optional[str] = None
+    descricao: Optional[TextoMedio] = None
     # Mesmo formato geometrico ja usado em Curation.marcacoes - reaproveita
     # `Marcacao` (acima) sem inventar um novo formato. Os subcampos
     # achado/achado_descricao de Marcacao ficam sem uso aqui de proposito
     # (a classificacao do achado ja e o proprio registro, nao mais um
     # atributo por forma).
-    marcacoes: Optional[List[Marcacao]] = None
+    marcacoes: Optional[List[Marcacao]] = Field(default=None, max_length=MAX_MARCACOES)
 
 
 class AchadoUpdate(BaseModel):
     """Atualizacao parcial - so os campos enviados sao alterados."""
     tipo: Optional[TipoAchado] = None
     regiao_anatomica: Optional[RegiaoAnatomica] = None
-    dentes: Optional[List[int]] = None
+    dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     dente_nao_identificado: Optional[bool] = None
-    descricao: Optional[str] = None
-    marcacoes: Optional[List[Marcacao]] = None
+    descricao: Optional[TextoMedio] = None
+    marcacoes: Optional[List[Marcacao]] = Field(default=None, max_length=MAX_MARCACOES)
 
 
 class AchadoOut(BaseModel):
@@ -190,12 +195,12 @@ class AchadoOut(BaseModel):
 
 class ErroTecnicoCreate(BaseModel):
     tipo: TipoErroTecnico
-    descricao: Optional[str] = None
+    descricao: Optional[TextoMedio] = None
 
 
 class ErroTecnicoUpdate(BaseModel):
     tipo: Optional[TipoErroTecnico] = None
-    descricao: Optional[str] = None
+    descricao: Optional[TextoMedio] = None
 
 
 class ErroTecnicoOut(BaseModel):

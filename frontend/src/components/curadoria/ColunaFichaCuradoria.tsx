@@ -382,6 +382,7 @@ export default function ColunaFichaCuradoria({
 
         <Secao {...p('descricao')}>
           <textarea
+            maxLength={8000}
             value={form.descricao_didatica}
             onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
             data-campo-texto="descricao"
@@ -392,6 +393,7 @@ export default function ColunaFichaCuradoria({
 
         <Secao {...p('observacoes')}>
           <textarea
+            maxLength={8000}
             value={form.observacoes_internas}
             onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
             data-campo-texto="observacoes"

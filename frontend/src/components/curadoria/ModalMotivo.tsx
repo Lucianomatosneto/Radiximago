@@ -39,6 +39,7 @@ export default function ModalMotivo({
         </h2>
         <label className={campoLabel}>{t('motivo')}</label>
         <textarea
+          maxLength={2000}
           value={motivoTexto}
           onChange={(e) => onMotivoChange(e.target.value)}
           rows={4}

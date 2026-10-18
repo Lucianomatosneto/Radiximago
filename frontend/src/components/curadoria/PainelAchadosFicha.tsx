@@ -244,6 +244,7 @@ export default function PainelAchadosFicha({
         <div>
           <p className="mb-1 text-[11px] text-slate-500">{t('textoAntigo')}</p>
           <textarea
+            maxLength={8000}
             value={form.achados_detalhe}
             onChange={(e) => onChange({ ...form, achados_detalhe: e.target.value })}
             rows={2}

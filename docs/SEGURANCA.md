@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.3 — 18/10/2026 |
+| Versão do documento | 1.4 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1; apoia 5.1.1 |
@@ -24,7 +24,7 @@
 
 O acervo atual é composto por imagens obtidas na internet, sem identificação. **Antes de receber imagens de pacientes**, devem estar resolvidos: aprovação no Comitê de Ética (CEP), remoção de texto gravado nos pixels e revisão dos campos DICOM mantidos (ver `claude/auditoria/resultados_testes_dicom.md`).
 
-## 2. Regras de validação de entrada (ASVS 2.1.1)
+## 2. Regras de validação de entrada (ASVS 2.1.1 e 2.2.1)
 
 **Princípio:** toda validação que importa é feita **no servidor** (FastAPI/Pydantic). A validação nas telas é só conforto para o usuário. Valor fora da regra → resposta **422** e nada é gravado.
 
@@ -37,7 +37,7 @@ O acervo atual é composto por imagens obtidas na internet, sem identificação.
 | Coordenadas das marcações | entre 0 e 1 (proporção da imagem) | `curation/schemas.py` |
 | Paginação | `skip ≥ 0`; `limit` de 1 a 200 | `search_router.py` |
 | E-mail | formato válido (`EmailStr`) | `auth.py` |
-| Senha | mínimo de 8 caracteres; sem regra de composição | `auth.py`, `users_router.py` |
+| Senha | política única (seção 3.3) | `politica_senha.py` |
 | Anotação | 1 a 2000 caracteres | `anotacoes_router.py` |
 | Recado de compartilhamento | 1 a 500 caracteres | `compartilhamentos_router.py` |
 | Termo do vocabulário | 2 a 150 caracteres | `vocabulario_router.py` |
@@ -45,9 +45,32 @@ O acervo atual é composto por imagens obtidas na internet, sem identificação.
 | Achado "Outro" | exige descrição não vazia | `curation/achados.py` |
 | Busca textual | caracteres curinga (`%`, `_`) tratados como texto | `busca_texto.py` |
 
-**Lacuna conhecida (ASVS 2.2.1, em correção):** descrição didática e observações internas da ficha ainda **não têm limite de tamanho** no servidor.
+### 2.1 Tamanhos máximos (ASVS 2.2.1)
+Definidos num só lugar, `app/core/limites.py`, e repetidos nas caixas de texto das telas (`maxLength`) para o usuário não perder texto ao salvar.
 
-**Testes que comprovam:** `test_fdi_invalido_e_rejeitado`, `test_busca_fdi_invalido_e_rejeitado`, `test_outro_sem_descricao_e_rejeitado`, auditoria T-VAL-01/02 (15/10/2026).
+| Campo | Máximo |
+|---|---|
+| Descrição didática, achados detalhados, observações internas | 8 000 caracteres (as macros geram até 4 000) |
+| Motivo de descarte/revisão, pareceres, observações, descrição de achado e de erro técnico | 2 000 |
+| "Outro" de uma marcação | 500 |
+| Nome / e-mail / instituição | 150 / 150 / 200 (= colunas do banco; antes, nome maior dava erro 500) |
+| Senha recebida | 256 (a política de senha é mais estrita) |
+| Código de link | 200 |
+| Listas da ficha | dentes 52, marcações 200, achados 100, termos 200, erros técnicos 50, alterações 50 |
+
+Testes: `tests/test_limites_entrada.py`.
+
+### 2.2 Dados sensíveis fora dos endereços (ASVS 14.2.1)
+- O crachá de login vai **só em cookie**, nunca no endereço.
+- Os links dos e-mails ("esqueci a senha" e confirmação de cadastro) levam o código **depois do `#`** (`/redefinir-senha#token=...`). Essa parte do endereço não sai do navegador: não chega ao servidor nem a registros de servidores e proxies. A tela lê o código e o **apaga da barra de endereço** na hora (`frontend/src/lib/codigoDoLink.ts`). Links antigos com `?token=` continuam aceitos e também são apagados.
+- Os códigos são de uso único, expiram e ficam no banco só como resumo (seção 3.2).
+
+### 2.3 A API devolve só o necessário (ASVS 15.3.1)
+- Nenhuma resposta traz resumo de senha, códigos de link ou o identificador interno da sessão.
+- Estudante, professor e pesquisador não recebem as **observações internas** da ficha nem o e-mail de outros usuários; a ficha completa é só para a curadoria.
+- Comprovação automática: `tests/test_exposicao_de_dados.py` percorre **todas** as rotas de leitura do contrato da API com cada perfil e procura esses dados. Tem controle positivo: o teste falha se não encontrar a ficha, para provar que a varredura enxergou os dados.
+
+**Testes que comprovam (validação):** `test_fdi_invalido_e_rejeitado`, `test_busca_fdi_invalido_e_rejeitado`, `test_outro_sem_descricao_e_rejeitado`, auditoria T-VAL-01/02 (15/10/2026).
 
 ## 3. Autenticação e defesas contra força bruta (ASVS 6.1.1 e 6.3.1)
 
@@ -193,3 +216,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.1 | 18/10/2026 | Política de senha (seção 3.3) e código de redefinição guardado só como resumo |
 | 1.2 | 18/10/2026 | Segredos fora do `alembic.ini` (seção 9.1) e risco aceito da senha no histórico do Git |
 | 1.3 | 18/10/2026 | Proteção no navegador: conferência de origem e cabeçalhos (seção 5.1) |
+| 1.4 | 18/10/2026 | Tamanhos máximos (2.1), códigos fora dos endereços (2.2) e exposição de dados (2.3) |
