@@ -12,6 +12,8 @@ import pytest
 
 from app.modules import auth as modulo_auth
 from app.modules.access_requests import AccessRequest
+from sqlalchemy import text
+
 from app.modules.audit_logs import AuditLog
 from app.modules.users import UserRole
 from tests.conftest import cabecalho_auth, obter_token
@@ -38,6 +40,8 @@ def email_novo(db):
     yield email
     ids = [p.id for p in db.query(AccessRequest).filter(AccessRequest.email == email).all()]
     if ids:
+        # auditoria protegida (ASVS 16.4.2): so a limpeza do teste desliga os gatilhos
+        db.execute(text("SET LOCAL session_replication_role = replica"))
         db.query(AuditLog).filter(
             AuditLog.entidade == "access_request", AuditLog.entidade_id.in_(ids)
         ).delete(synchronize_session=False)

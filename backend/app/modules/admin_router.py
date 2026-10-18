@@ -13,7 +13,7 @@ from typing import Optional
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import func
+from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -191,6 +191,8 @@ def consultar_auditoria(
             "resultado": r.resultado,
             "detalhes": r.detalhes,
             "criado_em": r.criado_em.isoformat() if r.criado_em else None,
+            "ip": r.ip,
+            "rota": r.rota,
         }
         for r in registros
     ]
@@ -201,6 +203,44 @@ def consultar_auditoria(
         "limit": limit,
         "quantidade_retornada": len(itens),
         "itens": itens,
+    }
+
+
+@router.get("/audit-logs/integridade")
+def verificar_integridade_auditoria(
+    a_partir_de_id: Optional[int] = Query(None, ge=1, description="Conferir so a partir deste registro (padrao: todos)"),
+    db: Session = Depends(get_db),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """
+    Confere o lacre encadeado de TODOS os registros de auditoria (OWASP ASVS
+    16.4.2). Cada registro tem um resumo SHA-256 do proprio conteudo somado
+    ao lacre do registro anterior: se alguem alterar ou apagar um registro
+    antigo direto no banco, a corrente quebra dali em diante.
+    Resposta: integro (sim/nao), quantos foram conferidos e o primeiro
+    registro com problema.
+    """
+    linhas = db.execute(text("""
+        SELECT id, lacre,
+               radix_lacre_auditoria(lag(lacre) OVER (ORDER BY id), a) AS esperado
+        FROM audit_logs a WHERE id >= :inicio ORDER BY id
+    """), {"inicio": a_partir_de_id or 0}).all()
+    # o registro mais antigo que ainda existe serve de ancora (os anteriores
+    # podem ter sido apagados legitimamente ao vencer o prazo de guarda)
+    problemas = [l.id for i, l in enumerate(linhas) if i > 0 and l.lacre != l.esperado]
+    sem_lacre = [l.id for l in linhas if not l.lacre]
+    integro = not problemas and not sem_lacre
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="verificacao_integridade_auditoria", entidade="audit_log",
+        resultado="sucesso" if integro else "erro",
+        detalhes=f"conferidos={len(linhas)} problemas={len(problemas) + len(sem_lacre)}",
+    ))
+    db.commit()
+    return {
+        "integro": integro,
+        "registros_conferidos": len(linhas),
+        "primeiro_problema_id": (problemas + sem_lacre or [None])[0],
+        "quantidade_com_problema": len(problemas) + len(sem_lacre),
     }
 
 

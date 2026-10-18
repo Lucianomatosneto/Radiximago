@@ -32,15 +32,24 @@ from app.modules.visualizador_router import router as visualizador_router
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
 from app.modules.anonimizacao_automatica import vigiar_chegadas
+from app.modules.retencao import limpeza_diaria
+from app.core.registro_json import configurar_registros
+from app.core.registro_seguranca import registrar_eventos_de_seguranca
+
+configurar_registros()  # saida em JSON (app/core/registro_json.py - ASVS 16.2.4)
 
 @asynccontextmanager
 async def ciclo_de_vida(app: FastAPI):
     """Tarefas que rodam junto com o servidor enquanto ele estiver ligado."""
-    vigia = asyncio.create_task(vigiar_chegadas())  # ver app/modules/anonimizacao_automatica.py
+    tarefas = [
+        asyncio.create_task(vigiar_chegadas()),  # ver app/modules/anonimizacao_automatica.py
+        asyncio.create_task(limpeza_diaria()),   # prazos de guarda - app/modules/retencao.py
+    ]
     try:
         yield
     finally:
-        vigia.cancel()
+        for tarefa in tarefas:
+            tarefa.cancel()
 
 
 app = FastAPI(
@@ -72,6 +81,10 @@ app.middleware("http")(sem_cache_em_dados)
 # alteram dados e poe os cabecalhos de protecao em todas as respostas,
 # inclusive nas de erro (ver app/core/cabecalhos.py)
 app.middleware("http")(protecao_de_navegador)
+# registrado por ULTIMO de todos = roda PRIMEIRO: guarda ip/rota do pedido para
+# a auditoria e registra acesso negado, excesso, origem recusada, dado
+# recusado e erro inesperado (ver app/core/registro_seguranca.py)
+app.middleware("http")(registrar_eventos_de_seguranca)
 
 # Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
 # POST /users/me/avatar). Sem autenticacao: sao imagens publicas por

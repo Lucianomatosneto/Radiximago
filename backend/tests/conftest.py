@@ -16,6 +16,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 import pytest
+from sqlalchemy import text
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -109,6 +110,9 @@ def criar_usuario(db):
         ).delete(synchronize_session=False)
         db.query(AnotacaoImagem).filter(AnotacaoImagem.usuario_id == usuario_id).delete()
         db.query(SavedImage).filter(SavedImage.user_id == usuario_id).delete()
+        # a auditoria e protegida contra apagamento (gatilho, ASVS 16.4.2): so a
+        # LIMPEZA DOS TESTES desliga os gatilhos, e so nesta transacao
+        db.execute(text("SET LOCAL session_replication_role = replica"))
         db.query(AuditLog).filter(AuditLog.usuario_id == usuario_id).delete()
         db.query(SessaoUsuario).filter(SessaoUsuario.usuario_id == usuario_id).delete()
         db.query(CurationHistory).filter(CurationHistory.usuario_id == usuario_id).delete()

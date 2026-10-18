@@ -38,7 +38,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
 | Vocabulário, macros, frases de voz | `termos_vocabulario`, `sinonimos_termo`, `macros_curadoria`, `frases_aprendidas_voz` | N1 | permanente |
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
-| Registros de auditoria | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | permanente (definir prazo na implantação) |
+| Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
 | Cópias de segurança | `./backups` no servidor (Postgres e Orthanc), diárias, 14 mais recentes | igual à origem (até N3) | 14 dias; **sem criptografia e sem cópia fora do servidor** (pendente) |
 
 ## 3. Requisitos de proteção por nível (ASVS 14.1.2)
@@ -98,7 +98,6 @@ Perfis (`backend/app/modules/auth.py`):
 | Informação sobre compartilhamento | não há compartilhamento com terceiros; o e-mail sai pelo servidor SMTP configurado |
 
 **Pendências registradas:**
-- prazo de retenção dos registros de auditoria;
 - criptografia e cópia externa dos backups;
 - termo de uso e privacidade para os usuários;
 - análise de risco de reidentificação (orientador/CEP).

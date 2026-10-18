@@ -43,3 +43,27 @@ class AuditLog(Base):
     detalhes = Column(Text, nullable=True)
 
     criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    # De onde veio o pedido (ASVS 16.2.1) - preenchidos automaticamente a
+    # partir do pedido em andamento (app/core/contexto_pedido.py). Vazios
+    # quando a acao e do proprio sistema (ex.: anonimizacao automatica).
+    ip = Column(String(45), nullable=True)
+    rota = Column(String(200), nullable=True)
+    # Lacre encadeado (ASVS 16.4.2): calculado PELO BANCO (gatilho da
+    # migracao a4c8e2f6b1d9) - a aplicacao nunca preenche nem altera.
+    lacre = Column(String(64), nullable=True)
+
+# Preenche ip/rota de todo registro novo com os dados do pedido em andamento,
+# sem precisar mexer nos mais de 50 lugares que gravam auditoria.
+from sqlalchemy import event  # noqa: E402
+
+from app.core.contexto_pedido import pedido_atual  # noqa: E402
+
+
+@event.listens_for(AuditLog, "before_insert")
+def _origem_do_pedido(mapper, conexao, registro):  # noqa: ARG001
+    dados = pedido_atual.get()
+    if dados:
+        if registro.ip is None:
+            registro.ip = dados.get("ip")
+        if registro.rota is None:
+            registro.rota = dados.get("rota")

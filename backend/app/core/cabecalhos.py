@@ -68,6 +68,7 @@ def origem_recusada(request: Request) -> bool:
 
 async def protecao_de_navegador(request: Request, call_next):
     if origem_recusada(request):
+        request.state.origem_recusada = True  # o registro de seguranca grava "origem_recusada"
         resposta = JSONResponse(
             status_code=403,
             content={"detail": "Pedido recusado: origem não autorizada."},

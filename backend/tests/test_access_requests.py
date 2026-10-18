@@ -4,6 +4,8 @@ aprovar (cria a conta de verdade) ou rejeitar. Sempre responde com
 mensagem generica, sem revelar se o e-mail ja tem conta/pedido.
 """
 
+from sqlalchemy import text
+
 import uuid
 
 from app.modules.access_requests import AccessRequest, IntencaoPerfil, StatusSolicitacaoAcesso
@@ -113,6 +115,9 @@ def test_admin_aprova_solicitacao_cria_conta_utilizavel(
         from app.modules.audit_logs import AuditLog
         from app.modules.sessoes import SessaoUsuario
 
+        # a auditoria e protegida contra apagamento (gatilho, ASVS 16.4.2): so a
+        # LIMPEZA DOS TESTES desliga os gatilhos, e so nesta transacao
+        db.execute(text("SET LOCAL session_replication_role = replica"))
         db.query(AuditLog).filter(AuditLog.usuario_id == novo_usuario_id).delete()
         db.query(SessaoUsuario).filter(SessaoUsuario.usuario_id == novo_usuario_id).delete()
         db.query(User).filter(User.id == novo_usuario_id).delete()

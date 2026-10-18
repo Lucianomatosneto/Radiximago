@@ -1,8 +1,19 @@
+# Registros (logs) de todos os containers: formato padrao do Docker com
+# tamanho LIMITADO - no maximo 5 arquivos de 10 MB por servico, os mais
+# antigos sao descartados automaticamente (OWASP ASVS 16.2.3 e 14.2.4 -
+# docs/REGISTROS.md). Sem isso, a saida crescia sem limite no disco.
+x-registros: &registros
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '5'
+
 services:
   # --- Banco de dados PostgreSQL ---
   radix-postgres:
     image: postgres:16
     container_name: radix-postgres
+    logging: *registros
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
@@ -25,6 +36,7 @@ services:
   radix-backup:
     image: postgres:16-alpine
     container_name: radix-backup
+    logging: *registros
     restart: unless-stopped
     environment:
       PGHOST: radix-postgres
@@ -47,6 +59,7 @@ services:
   radix-orthanc:
     image: orthancteam/orthanc:latest
     container_name: radix-orthanc
+    logging: *registros
     restart: unless-stopped
     ports:
       # 8042 NAO e mais exposto direto ao host - o navegador passa pelo
@@ -71,6 +84,7 @@ services:
   radix-orthanc-cors:
     image: nginx:alpine
     container_name: radix-orthanc-cors
+    logging: *registros
     restart: unless-stopped
     ports:
       - '8042:80'
@@ -120,6 +134,7 @@ services:
     # E ja no pipeline moderno (0 ocorrencias de ADD_SERVER/activeServer).
     image: ohif/app:v3.9.2
     container_name: radix-ohif
+    logging: *registros
     restart: unless-stopped
     ports:
       - '3001:80'
@@ -203,6 +218,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: radix-api
+    logging: *registros
     restart: unless-stopped
     ports:
       - '8000:8000'
@@ -233,6 +249,7 @@ services:
       args:
         MODELO: small
     container_name: radix-whisper
+    logging: *registros
     restart: unless-stopped
     environment:
       - RADIX_WHISPER_OCIOSO_S=600
@@ -248,6 +265,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: radix-frontend
+    logging: *registros
     restart: unless-stopped
     ports:
       - '3000:3000'

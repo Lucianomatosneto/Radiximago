@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.0 — 18/10/2026 |
+| Versão do documento | 1.1 — 18/10/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -12,10 +12,10 @@
 
 | Registro | Onde | O que contém | Quem acessa | Retenção |
 |---|---|---|---|---|
-| **Auditoria** | tabela `audit_logs` (PostgreSQL) | quando (`criado_em`, com fuso), quem (`usuario_id`; vazio = o próprio sistema), o quê (`acao`, `entidade`, `entidade_id`), resultado (`sucesso`, `negado`, `erro`), detalhes | **administrador**, pela tela de auditoria (`GET /admin/audit-logs`, só leitura) | indefinida (**definir na implantação**) |
+| **Auditoria** | tabela `audit_logs` (PostgreSQL) | quando (`criado_em`, com fuso), quem (`usuario_id`; vazio = o próprio sistema), **de onde** (`ip`, `rota`), o quê (`acao`, `entidade`, `entidade_id`), resultado (`sucesso`, `negado`, `erro`), detalhes e **lacre** encadeado | **administrador**, pela tela de auditoria (`GET /admin/audit-logs`, só leitura) | **5 anos**, apagados automaticamente depois disso (`app/modules/retencao.py`; mesmo prazo de guarda de dados de pesquisa da Res. CNS 466/2012) |
 | Histórico das fichas | tabela `curation_history` | mudanças de estado com justificativa | curadoria | permanente (pesquisa) |
 | Sessões | tabela `sessoes_usuario` | início, fim e motivo do encerramento | o sistema | 30 dias após encerradas |
-| Saída da API | saída padrão do container `radix-api` (`docker compose logs radix-api`) | endereço de rede, método, caminho e código de cada pedido (registro de acesso do uvicorn); erros inesperados com detalhes técnicos | quem administra o servidor | **sem rotação configurada** (pendente) |
+| Saída da API | saída padrão do container `radix-api` (`docker compose logs radix-api`) | em **JSON**, uma linha por evento (`app/core/registro_json.py`): horário UTC, nível, origem e mensagem. Inclui endereço de rede, método, caminho e código de cada pedido (uvicorn) e erros inesperados com o rastro técnico | quem administra o servidor | **até 5 arquivos de 10 MB por serviço** (`x-registros` no `docker-compose.yml`); os mais antigos são descartados |
 | Portaria e visualizador (nginx) | saída de `radix-orthanc-cors` e `radix-ohif` | endereço de rede, caminho (inclui UIDs de estudo **anonimizados**), código | quem administra o servidor | idem |
 | Orthanc | saída de `radix-orthanc` | recebimentos DICOM, erros | quem administra o servidor | idem |
 | Serviço de voz | saída de `radix-whisper` | carga do modelo, tempo, tipo do erro. **Não registra o que foi falado** | quem administra o servidor | idem |
@@ -28,6 +28,7 @@
 | Autenticação | `login`, `falha_login`, `logout`, `troca_senha`, `falha_troca_senha`, `solicitacao_redefinicao_senha`, `redefinicao_senha` |
 | Cadastro | `solicitacao_acesso_registrada`, `confirmacao_email_solicitacao`, `falha_confirmacao_email`, `aprovacao_solicitacao_acesso`, `rejeicao_solicitacao_acesso` |
 | Usuários | `criacao_usuario`, `edicao_usuario`, `bloqueio_usuario`, `exclusao_usuario`, `atualizacao_foto_perfil`, `remocao_foto_perfil` |
+| Segurança (automáticos, `app/core/registro_seguranca.py`) | `acesso_negado`, `origem_recusada`, `limite_excedido`, `entrada_recusada`, `erro_inesperado`, `verificacao_integridade_auditoria` |
 | Imagens | `upload_imagem`, `upload_sem_preambulo_dicom`, `importacao_orthanc`, `anonimizacao_automatica`, `acesso_imagem_negado` |
 | Curadoria | `edicao_curadoria`, `preenchimento_por_voz`, `aprovacao` (com o resultado da verificação de texto na imagem), `descarte`, `solicitacao_segunda_opiniao`, `resposta_segunda_opiniao`, `aprovacao_pos_segunda_opiniao`, `descarte_pos_segunda_opiniao` |
 | Achados e erros técnicos | `criacao_achado`, `edicao_achado`, `exclusao_achado`, `criacao_erro_tecnico`, `edicao_erro_tecnico`, `exclusao_erro_tecnico` |
@@ -55,21 +56,26 @@ Isso é comprovado por:
 - `falha_login` com e-mail não cadastrado guarda o **e-mail digitado**, que serve para detectar ataques. É dado pessoal (N2, `DADOS_E_PRIVACIDADE.md`).
 - Em **desenvolvimento**, sem servidor de e-mail, o corpo do e-mail aparece na saída da API, para testes. Em produção, não.
 
-## 4. Lacunas conhecidas (grupo 2 do plano do Nível 2)
+## 4. Proteções dos registros (grupo 2 do Nível 2, 18/10/2026)
 
-| Item ASVS | Lacuna |
-|---|---|
-| 16.2.1 | a auditoria não guarda **de onde** veio o pedido (endereço de rede) |
-| 16.3.2 | acesso negado por perfil (403) não é registrado, exceto nas imagens |
-| 16.3.3 | pedidos barrados por excesso (429), validação ou origem não autorizada não são registrados |
-| 16.3.4 | erros inesperados ficam só na saída do container, sem visão central |
-| 16.2.4 | saída dos containers em texto livre, sem formato estruturado |
-| 16.4.2 | quem tem acesso direto ao banco pode alterar a tabela de auditoria |
-| 16.4.3 | registros no mesmo servidor e banco da aplicação (implantação) |
-| 14.2.4 | prazo de retenção da auditoria e rotação da saída dos containers não definidos |
+| Item ASVS | Como é atendido | Comprovação |
+|---|---|---|
+| 16.2.1 — quando, onde, quem, o quê | todo registro de auditoria ganha `ip` e `rota` automaticamente, a partir do pedido em andamento (`app/core/contexto_pedido.py`) | `test_16_2_1_registro_guarda_ip_e_rota` |
+| 16.3.2 — acesso negado | resposta 403 → `acesso_negado`, com usuário e rota; as imagens já tinham `acesso_imagem_negado` | `test_16_3_2_acesso_negado_por_perfil_e_registrado` |
+| 16.3.3 — tentativas de burlar controles | 429 → `limite_excedido`; pedido de outro site → `origem_recusada`; dado recusado (422) → `entrada_recusada`. **Freio:** o mesmo evento, do mesmo endereço e na mesma rota, é gravado no máximo **1 vez por minuto**, para que um ataque não lote o banco | `test_16_3_3_...` (2 testes) |
+| 16.3.4 — erros inesperados | erro 500 → `erro_inesperado` na auditoria (visível ao administrador). O rastro técnico vai só para a saída do servidor; o usuário vê mensagem genérica | `test_16_3_4_...` |
+| 16.2.4 — formato legível por ferramentas | auditoria em colunas (consultável) e saída dos containers em JSON | `test_16_2_4_saida_do_servidor_em_json` |
+| 16.2.3 — só nos destinos documentados | tabela `audit_logs` + saída dos containers com tamanho limitado (seção 1) | este documento |
+| 16.4.2 — proteção contra alteração | **(a)** o banco **recusa** alterar qualquer registro e só deixa apagar os que passaram do prazo de guarda (gatilho `radix_auditoria_protegida`); **(b)** cada registro tem um **lacre** (SHA-256 do conteúdo + lacre do anterior), calculado **pelo banco**. Se alguém com superusuário desligar a proteção e mudar um registro, a corrente quebra e `GET /admin/audit-logs/integridade` aponta qual | `test_16_4_2_...` (2 testes, inclusive adulteração simulada) |
+| 14.2.4 — retenção | auditoria por 5 anos; sessões por 30 dias; saída dos containers limitada a 50 MB por serviço | `test_14_2_4_prazo_de_guarda_igual_no_codigo_e_no_banco` |
+
+**Ainda pendente (implantação):**
+- **16.4.3:** enviar os registros para um sistema **separado** do servidor do Radix. Hoje ficam no mesmo banco e no mesmo disco; o lacre detecta adulteração, mas não impede quem controla o servidor inteiro;
+- **13.2.2:** a aplicação usar um usuário do banco **sem** permissão de superusuário. Hoje ela poderia, em tese, desligar os gatilhos, e o lacre denunciaria.
 
 ## 5. Histórico
 
 | Versão | Data | Alteração |
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
+| 1.1 | 18/10/2026 | Grupo 2: ip/rota, eventos de segurança, lacre e proteção, JSON, retenção |

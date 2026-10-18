@@ -64,15 +64,19 @@ def test_toda_acao_de_auditoria_do_codigo_esta_no_inventario_de_registros():
             if not isinstance(no, ast.Call):
                 continue
             funcao = getattr(no.func, "id", getattr(no.func, "attr", ""))
-            if funcao not in ("AuditLog", "_auditar", "_registrar_auditoria", "_registrar_historico"):
+            if funcao not in ("AuditLog", "_auditar", "_registrar_auditoria", "_registrar_historico", "_registrar_evento"):
                 continue
             for kw in no.keywords:
                 if kw.arg == "acao" and isinstance(kw.value, ast.Constant):
                     acoes.add(kw.value.value)
             # funcoes auxiliares: (db, usuario_id, acao, ...) - a acao e o 3o argumento
-            if funcao != "AuditLog" and len(no.args) >= 3 and isinstance(no.args[2], ast.Constant) \
-                    and isinstance(no.args[2].value, str):
-                acoes.add(no.args[2].value)
+            posicao = 0 if funcao == "_registrar_evento" else 2  # onde fica a acao nos argumentos
+            if funcao != "AuditLog" and len(no.args) > posicao and isinstance(no.args[posicao], ast.Constant) \
+                    and isinstance(no.args[posicao].value, str):
+                acoes.add(no.args[posicao].value)
+    # acoes escolhidas em tempo de execucao pelo registro de seguranca
+    from app.core.registro_seguranca import ACOES_REGISTRADAS
+    acoes.update(ACOES_REGISTRADAS)
     doc = _doc("REGISTROS.md")
     faltando = sorted(a for a in acoes if f"`{a}`" not in doc)
     assert not faltando, f"acoes de auditoria sem documentacao: {faltando}"
