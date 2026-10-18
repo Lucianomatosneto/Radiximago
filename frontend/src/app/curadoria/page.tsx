@@ -8,6 +8,7 @@ import Logo from '../../components/Logo'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
+import AvisoTextoNaImagem from '../../components/curadoria/AvisoTextoNaImagem'
 import ColunaFichaCuradoria from '../../components/curadoria/ColunaFichaCuradoria'
 import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECAO_DO_CAMPO, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
@@ -143,6 +144,11 @@ export default function CuradoriaPage() {
   const autoAbriuPrimeiraRef = useRef(false)
 
   const [fichaAtiva, setFichaAtiva] = useState<FichaAtiva | null>(null)
+  // verificacao de texto gravado na imagem (ver AvisoTextoNaImagem)
+  const [textoNaImagem, setTextoNaImagem] = useState<{ situacao: string | null; regioes: number | null }>({
+    situacao: 'sem_texto',
+    regioes: null,
+  })
   const [statusFicha, setStatusFicha] = useState('em_analise')
   const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
@@ -635,6 +641,7 @@ export default function CuradoriaPage() {
     }
     const ficha = await resposta.json()
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
+    setTextoNaImagem({ situacao: ficha.texto_na_imagem ?? null, regioes: ficha.texto_regioes ?? null })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
     setEtapaAtiva(ETAPA_INICIAL)
@@ -1273,6 +1280,9 @@ export default function CuradoriaPage() {
               No modo "ampliar imagem" (ficha escondida) a barra volta para
               cima e a esquerda ocupa a largura toda. */}
           {fichaAtiva && !fichaVisivel && barraSuperior}
+          {fichaAtiva && !fichaVisivel && (
+            <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} />
+          )}
           <div className="relative flex min-h-0 flex-1 gap-3">
             <div className={`flex min-h-0 min-w-0 flex-col gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
               {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
@@ -1379,6 +1389,7 @@ export default function CuradoriaPage() {
 
             {fichaVisivel && fichaAtiva && (
               <aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+                <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
                   form={form}

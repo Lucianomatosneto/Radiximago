@@ -1166,7 +1166,13 @@
       "observacoes": "Internal notes",
       "aprovar": "Approve (Enter)"
     },
-    "comoLaudar": "How to report"
+    "comoLaudar": "How to report",
+    "textoNaImagem": {
+      "titulo": "Check the image before validating.",
+      "tarjado": "Text was found written on the image and was automatically covered with a black bar ({regioes} areas). Make sure no name, date or number is left and that the bar did not cover important anatomy.",
+      "naoVerificado": "It was not possible to automatically check whether there is text written on the image. Look carefully for names, dates or numbers before checking “Anonymization validated”.",
+      "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”."
+    }
   },
   "SegundaOpiniaoPage": {
     "titulo": "Second opinion",

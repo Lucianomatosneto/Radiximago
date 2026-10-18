@@ -39,6 +39,12 @@ class OrthancReference(Base):
     # nao preserva a metadata de origem do original depois da anonimizacao.
     # So imagens recebidas a partir de agora tem a origem detectada de verdade.
     origem = Column(String(10), nullable=False, default="externa", server_default=text("'externa'"))
+    # Verificacao de texto gravado nos pixels (app/modules/texto_na_imagem.py):
+    # "sem_texto", "tarjado" ou "nao_verificado". Vazio (NULL) = imagem
+    # recebida antes de a verificacao existir (18/10/2026) - o curador deve
+    # conferir a imagem com atencao, como em "nao_verificado".
+    texto_na_imagem = Column(String(20), nullable=True)
+    texto_regioes = Column(Integer, nullable=True)  # quantas tarjas foram aplicadas
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
     curations = relationship("Curation", back_populates="orthanc_reference")

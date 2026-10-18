@@ -1,5 +1,7 @@
-﻿import logging
+﻿import asyncio
+import logging
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,8 +31,20 @@ from app.modules.visualizador_router import router as visualizador_router
 
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
+from app.modules.anonimizacao_automatica import vigiar_chegadas
+
+@asynccontextmanager
+async def ciclo_de_vida(app: FastAPI):
+    """Tarefas que rodam junto com o servidor enquanto ele estiver ligado."""
+    vigia = asyncio.create_task(vigiar_chegadas())  # ver app/modules/anonimizacao_automatica.py
+    try:
+        yield
+    finally:
+        vigia.cancel()
+
 
 app = FastAPI(
+    lifespan=ciclo_de_vida,
     title="Radix Imago API",
     description="Plataforma para curadoria e pesquisa de imagens radiograficas odontologicas",
     version="1.0.0"

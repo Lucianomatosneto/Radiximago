@@ -390,6 +390,11 @@ def obter_ficha(
         "observacoes_internas": ficha.observacoes_internas,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
+        # verificacao de texto gravado nos pixels (texto_na_imagem.py) - a tela
+        # mostra um aviso ao lado de "Anonimizacao validada" quando o curador
+        # precisa conferir a imagem com atencao
+        "texto_na_imagem": ficha.orthanc_reference.texto_na_imagem if ficha.orthanc_reference else None,
+        "texto_regioes": ficha.orthanc_reference.texto_regioes if ficha.orthanc_reference else None,
         "termos": [
             t for (t,) in db.query(CurationTermo.termo_id).filter(CurationTermo.curation_id == ficha.id).all()
         ],

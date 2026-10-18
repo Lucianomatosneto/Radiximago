@@ -109,70 +109,87 @@ def obter_tags_simplificadas_instancia(orthanc_id: str) -> dict:
     return resposta.json()
 
 
-# O perfil padrao do Orthanc (DICOM PS3.15 Table E.1-1) remove/substitui os
-# dados pessoais exigidos pela LGPD, mas TAMBEM uma serie de metadados
-# tecnicos e demograficos que nao identificam ninguem sozinhos - o KEEP
-# abaixo restaura o que nao precisa sair. Lista descoberta testando
-# empiricamente o antes/depois do perfil padrao num arquivo real (nao ha
-# combinacao documentada de flags no Orthanc que va direto pro minimo sem
-# passar pelo perfil completo primeiro).
+# REGRAS DE ANONIMIZACAO (revisadas em 18/10/2026 apos a auditoria
+# TST-DICOM-02; decisoes do responsavel - ver docs/SEGURANCA.md, secao 6.1).
 #
-# Sexo, idade e data do exame (Study/Series) ficam de proposito - sao
-# contexto pedagogico util pro fluxo de curadoria (a propria ficha de
-# curadoria ja pede idade/genero manualmente) e, sozinhos, nao identificam
-# um paciente. O que sai continua sendo nome, ID, data de nascimento,
-# medicos, instituicao e numero de serie do aparelho (ver
-# verificar_anonimizacao.py, mantido consistente com esta lista).
-_CAMPOS_A_PRESERVAR = [
-    "AcquisitionDate",
-    "AcquisitionTime",
-    "ContentDate",
-    "ContentTime",
-    "ContributingEquipmentSequence",
-    "InstanceCreationDate",
-    "InstanceCreationTime",
-    "PatientAge",
-    "PatientSex",
-    "PerformedProcedureStepStartDate",
-    "PerformedProcedureStepStartTime",
-    "SeriesDate",
-    "SeriesTime",
+# Base: perfil padrao do DICOM (PS3.15 Tabela E.1-1, "Basic Application
+# Level Confidentiality Profile"), aplicado pelo Orthanc: tira nome, IDs,
+# nascimento, endereco, telefone, medicos, instituicao, aparelho, textos
+# livres, tags privadas e a sequencia de equipamento
+# (ContributingEquipmentSequence), e gera UIDs novos.
+#
+# Ajustes do Radix, porque data + hora + idade + sexo, juntos, podem
+# reidentificar alguem num grupo pequeno (ex.: clinica-escola):
+# - SEXO: mantido (contexto pedagogico; sozinho nao identifica);
+# - IDADE: mantida em anos, mas 90 anos ou mais vira "090Y" (= "90 ou mais"),
+#   regra usada internacionalmente (HIPAA Safe Harbor) porque idades muito
+#   altas sao raras;
+# - DATAS: so o ANO fica (a data vira 1o de janeiro do mesmo ano);
+# - HORAS: apagadas (o perfil padrao ja as remove; nao as restauramos).
+# O metodo usado fica registrado no proprio arquivo (DeidentificationMethod).
+_CAMPOS_A_PRESERVAR = ["PatientSex", "PatientAge"]
+# Removidos EXPLICITAMENTE: o perfil padrao do Orthanc (testado na 1.12.2)
+# NAO remove a sequencia de equipamento, que traz instituicao, estacao e
+# numero de serie do aparelho (auditoria TST-DICOM-02, reteste 18/10/2026).
+_CAMPOS_A_REMOVER = ["ContributingEquipmentSequence"]
+_DATAS_SO_ANO = [
     "StudyDate",
-    "StudyTime",
+    "SeriesDate",
+    "AcquisitionDate",
+    "ContentDate",
+    "InstanceCreationDate",
+    "PerformedProcedureStepStartDate",
 ]
+IDADE_LIMITE_AGRUPAMENTO = 90
+METODO_ANONIMIZACAO = "Radix: PS3.15 basico, datas=ano, sem horas, idade 90+ agrupada"  # max. 64
 
 
-def anonimizar_instancia(orthanc_id: str) -> dict:
+def regras_de_anonimizacao(tags_originais: dict) -> dict:
     """
-    Manda o Orthanc anonimizar uma instancia usando o perfil padrao do DICOM
-    (PS3.15 Basic Application Level Confidentiality Profile), mas com um
-    Keep explicito pra restaurar o que o perfil padrao remove sem ser dado
-    pessoal (ver _CAMPOS_A_PRESERVAR) - decisao deliberada: so sai o que a
-    LGPD exige de verdade (nome, ID, data de nascimento, medicos,
-    instituicao, numero de serie do aparelho, accession number); sexo,
-    idade e datas do exame ficam. Os UIDs (Study/Series/SOP) sao
-    regenerados pra impedir correlacionar de volta ao original entre
-    sistemas.
+    Monta o pedido de anonimizacao para o Orthanc a partir das tags da
+    imagem ORIGINAL (funcao pura - testada em tests/test_anonimizacao_regras.py).
+    Devolve {"Keep": [...], "Replace": {...}, "Remove": [...]}.
+    """
+    manter = list(_CAMPOS_A_PRESERVAR)
+    substituir: dict[str, str] = {"DeidentificationMethod": METODO_ANONIMIZACAO}
 
-    Ao contrario do endpoint equivalente em studies/series/patients (que
-    grava o resultado direto no Orthanc e devolve um JSON com o ID), no
-    nivel de instancia o Orthanc devolve o ARQUIVO DICOM ANONIMIZADO CRU
-    (Content-Type: application/dicom) no corpo da resposta - confirmado
-    testando direto (content-type e os bytes batem com um DICOM valido,
-    "DICM" no offset 128). Por isso fazemos o upload desses bytes nos
-    mesmos, via enviar_instancia, pra ter uma instancia de verdade gravada
-    com um ID.
+    for tag in _DATAS_SO_ANO:
+        valor = str(tags_originais.get(tag) or "").strip()
+        if len(valor) >= 4 and valor[:4].isdigit():
+            substituir[tag] = f"{valor[:4]}0101"
+
+    idade = str(tags_originais.get("PatientAge") or "").strip().upper()
+    if len(idade) == 4 and idade[:3].isdigit() and idade[3] == "Y" and int(idade[:3]) >= IDADE_LIMITE_AGRUPAMENTO:
+        manter.remove("PatientAge")
+        substituir["PatientAge"] = f"{IDADE_LIMITE_AGRUPAMENTO:03d}Y"
+
+    return {"Keep": manter, "Replace": substituir, "Remove": list(_CAMPOS_A_REMOVER)}
+
+
+def anonimizar_instancia(orthanc_id: str):
+    """
+    Anonimiza uma instancia em duas etapas e grava a versao final no Orthanc:
+    1) METADADOS: o Orthanc aplica o perfil padrao com as regras acima
+       (regras_de_anonimizacao) e devolve o arquivo anonimizado (no nivel
+       de instancia ele devolve o ARQUIVO DICOM cru, nao um ID);
+    2) PIXELS: texto gravado na propria imagem e procurado e tarjado
+       (app/modules/texto_na_imagem.py), sem sair do servidor.
+    Depois o arquivo final e enviado ao Orthanc (enviar_instancia).
 
     Parametro:
         orthanc_id: o identificador interno do Orthanc da instancia original.
 
-    Retorna: o dicionario de resposta do Orthanc pro upload (inclui "ID").
+    Retorna: (resposta do Orthanc ao upload - inclui "ID", ResultadoTexto).
     """
+    from app.modules.texto_na_imagem import tarjar_texto
+
+    regras = regras_de_anonimizacao(obter_tags_simplificadas_instancia(orthanc_id))
     url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/anonymize"
-    corpo = {"Synchronous": True, "Keep": _CAMPOS_A_PRESERVAR}
+    corpo = {"Synchronous": True, **regras}
     resposta = _client.post(url, json=corpo, timeout=60.0)
     resposta.raise_for_status()
-    return enviar_instancia(resposta.content)
+    arquivo, resultado_texto = tarjar_texto(resposta.content)
+    return enviar_instancia(arquivo), resultado_texto
 
 
 def excluir_instancia(orthanc_id: str) -> None:

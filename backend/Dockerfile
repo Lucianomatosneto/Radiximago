@@ -1,5 +1,11 @@
 FROM python:3.11-slim
 WORKDIR /app
+# Tesseract (OCR, "leitor de texto"): procura texto gravado nos pixels das
+# radiografias para tarja-lo (app/modules/texto_na_imagem.py). Roda dentro
+# do servidor - nenhuma imagem sai para servico externo.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends tesseract-ocr \
+    && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .

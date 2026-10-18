@@ -41,6 +41,10 @@ class Settings(BaseSettings):
 
     # Ambiente
     ENVIRONMENT: str = "development"
+    # Intervalo (segundos) da anonimizacao automatica das imagens que chegam
+    # do aparelho pela porta 4242 (app/modules/anonimizacao_automatica.py).
+    # 0 desliga.
+    ANONIMIZACAO_AUTOMATICA_SEGUNDOS: int = 60
     
     class Config:
         env_file = ".env"

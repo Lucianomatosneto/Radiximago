@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.4 — 18/10/2026 |
+| Versão do documento | 1.5 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1; apoia 5.1.1 |
@@ -179,6 +179,34 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 | Foto de perfil | JPG, PNG, WebP | 5 MB | conteúdo real conferido pela assinatura do arquivo; nome gerado pelo servidor |
 | Áudio da curadoria por voz | áudio | 10 MB | não é gravado em disco; só o texto volta |
 
+## 6.1 Anonimização das imagens DICOM (LGPD; auditoria TST-DICOM-01 a 03)
+
+Toda imagem passa pela mesma função, `_registrar_referencia_se_nova` (`app/modules/images_router.py`), tanto no envio manual quanto na chegada pelo aparelho:
+
+1. **Metadados** (`regras_de_anonimizacao` em `app/modules/orthanc_client.py`). A base é o perfil padrão DICOM PS3.15 aplicado pelo Orthanc. Por cima dele, as regras do Radix, decididas pelo responsável em 18/10/2026:
+
+| Dado | Regra | Motivo |
+|---|---|---|
+| Nome, IDs, nascimento, endereço, telefone, médicos, instituição, aparelho, textos livres, tags privadas | removidos (perfil padrão) | identificam direta ou indiretamente |
+| Sequência de equipamento (`ContributingEquipmentSequence`) | **removida explicitamente** | o perfil do Orthanc 1.12.2 **não** a remove; traz clínica e número de série |
+| Datas do exame | só o **ano** (vira 01/01/AAAA) | data exata + idade + sexo pode reidentificar em grupo pequeno |
+| Horas | removidas | idem |
+| Idade | mantida em anos; **90 ou mais vira "090Y"** | valor didático; idades muito altas são raras (regra HIPAA Safe Harbor) |
+| Sexo | mantido | valor didático; sozinho não identifica |
+| UIDs | gerados novos | impede ligar de volta ao original |
+| Método usado | gravado em `DeidentificationMethod` | rastreabilidade |
+
+2. **Texto gravado nos pixels** (`app/modules/texto_na_imagem.py`). O Tesseract (OCR que roda no próprio servidor) procura texto na imagem e o cobre com tarja preta. O resultado fica na imagem (`texto_na_imagem`: `sem_texto`, `tarjado` ou `nao_verificado`), e a tela de curadoria mostra um aviso ao lado de "Anonimização validada".
+   - Filtros contra falso texto: confiança ≥ 60% (≥ 80% para palavras de 2 a 3 caracteres) e altura típica de texto impresso.
+   - Imagens com vários quadros, em formato não suportado ou sem OCR disponível ficam como `nao_verificado` e não são alteradas.
+   - **Limite:** o OCR reduz o risco, não o elimina. Texto pequeno, inclinado ou com pouco contraste pode escapar, e uma tarja pode cobrir uma área pequena de anatomia. Por isso a aprovação continua exigindo "Anonimização validada" marcada pelo curador, e a auditoria registra o resultado da verificação.
+
+3. **O original identificável é apagado** logo após a anonimização.
+
+4. **Chegada pelo aparelho (porta 4242):** a anonimização é **automática**, a cada `ANONIMIZACAO_AUTOMATICA_SEGUNDOS` (padrão 60). Antes dependia de alguém clicar em "Sincronizar". Cada imagem tratada fica na auditoria (`anonimizacao_automatica`).
+
+Testes: `tests/test_anonimizacao_regras.py`. Teste de ponta a ponta com Orthanc real em `claude/auditoria/resultados_testes_dicom.md`.
+
 ## 7. Correção de componentes vulneráveis (ASVS 15.1.1)
 
 **Verificação:** `pip-audit -r backend/requirements.txt`, `pip-audit -r whisper/requirements.txt` e `npm audit --omit=dev` (pasta `frontend`) — **mensalmente** e **antes de cada entrega**.
@@ -217,3 +245,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.2 | 18/10/2026 | Segredos fora do `alembic.ini` (seção 9.1) e risco aceito da senha no histórico do Git |
 | 1.3 | 18/10/2026 | Proteção no navegador: conferência de origem e cabeçalhos (seção 5.1) |
 | 1.4 | 18/10/2026 | Tamanhos máximos (2.1), códigos fora dos endereços (2.2) e exposição de dados (2.3) |
+| 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |

@@ -112,9 +112,13 @@ def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, 
         status_anterior, StatusCuradoria.APROVADA.value,
         (observacoes or "Ficha aprovada.") + origem,
     )
+    ref = getattr(ficha, "orthanc_reference", None)
+    situacao_texto = (ref.texto_na_imagem if ref else None) or "nao_verificado (imagem anterior a verificacao)"
+    regioes = f", {ref.texto_regioes} tarjas" if ref and ref.texto_regioes else ""
     _registrar_auditoria(
         db, usuario.id, acao, ficha.id, "sucesso",
-        f"Ficha aprovada por usuario {usuario.id}.{origem}",
+        f"Ficha aprovada por usuario {usuario.id}. Texto na imagem: {situacao_texto}{regioes}; "
+        f"anonimizacao conferida pelo curador.{origem}",
     )
 
 

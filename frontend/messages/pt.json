@@ -1166,7 +1166,13 @@
       "observacoes": "Observações internas",
       "aprovar": "Aprovar (Enter)"
     },
-    "comoLaudar": "Como laudar"
+    "comoLaudar": "Como laudar",
+    "textoNaImagem": {
+      "titulo": "Confira a imagem antes de validar.",
+      "tarjado": "Foi encontrado texto escrito na imagem, e ele foi coberto automaticamente com tarja preta ({regioes} trechos). Verifique se não sobrou nenhum nome, data ou número e se a tarja não cobriu anatomia importante.",
+      "naoVerificado": "Não foi possível verificar automaticamente se há texto escrito na imagem. Procure com atenção nome, data ou número antes de marcar “Anonimização validada”.",
+      "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”."
+    }
   },
   "SegundaOpiniaoPage": {
     "titulo": "Segunda opinião",
