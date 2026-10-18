@@ -56,6 +56,10 @@ def _extrair_uids(detalhes: dict, tags_simplificadas: dict) -> dict:
     }
 
 
+# Assinaturas (primeiros bytes) de arquivos compactados: zip, rar, 7z.
+_ASSINATURAS_COMPACTADOS = {b"PK\x03\x04", b"PK\x05\x06", b"Rar!", b"7z\xbc\xaf"}
+
+
 def _anonimizar_e_excluir_original(orthanc_id_original: str):
     """
     Manda o Orthanc anonimizar a instancia (perfil padrao DICOM PS3.15) e
@@ -340,13 +344,25 @@ def upload_imagem(
     conteudo = bytes(partes)
     del partes  # libera o bytearray imediatamente, nao esperar o fim da funcao
 
+    # Arquivos compactados sao recusados ANTES de chegar ao Orthanc: o
+    # Orthanc abre .zip sozinho e importaria tudo que estiver dentro (sem
+    # limite de tamanho descompactado nem de quantidade - "bomba de
+    # compactacao"). OWASP ASVS 5.2.3; achado da auditoria de 18/10/2026.
+    if conteudo[:4] in _ASSINATURAS_COMPACTADOS or conteudo[:2] == b"\x1f\x8b":
+        raise HTTPException(status_code=422, detail="Arquivos compactados (.zip, .rar, .7z, .gz) nao sao aceitos. Envie o arquivo DICOM.")
+
     preambulo_ausente = False
     try:
         pydicom.dcmread(io.BytesIO(conteudo))
     except InvalidDicomError:
         try:
-            pydicom.dcmread(io.BytesIO(conteudo), force=True)
+            ds = pydicom.dcmread(io.BytesIO(conteudo), force=True)
         except Exception:
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+        # sem o cabecalho "DICM", o modo tolerante do pydicom aceita quase
+        # qualquer coisa: so segue se houver os identificadores minimos de
+        # uma imagem DICOM de verdade
+        if not getattr(ds, "SOPClassUID", None) or not getattr(ds, "SOPInstanceUID", None):
             raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
         preambulo_ausente = True
     except Exception:
