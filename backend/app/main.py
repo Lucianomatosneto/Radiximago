@@ -27,7 +27,7 @@ from app.modules.voz_router import router as voz_router
 from app.modules.macros_router import router_frases, router_macros
 from app.modules.visualizador_router import router as visualizador_router
 
-from app.core.cabecalhos import sem_cache_em_dados
+from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
 
 app = FastAPI(
@@ -38,7 +38,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ORIGENS_PERMITIDAS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,6 +54,10 @@ app.add_middleware(SlowAPIMiddleware)
 app.middleware("http")(renovar_sessao)
 # dados em JSON nunca ficam no cache do navegador (ver app/core/cabecalhos.py)
 app.middleware("http")(sem_cache_em_dados)
+# registrado por ULTIMO = roda PRIMEIRO: confere a origem dos pedidos que
+# alteram dados e poe os cabecalhos de protecao em todas as respostas,
+# inclusive nas de erro (ver app/core/cabecalhos.py)
+app.middleware("http")(protecao_de_navegador)
 
 # Arquivos enviados pelos usuarios (hoje so fotos de perfil - ver
 # POST /users/me/avatar). Sem autenticacao: sao imagens publicas por

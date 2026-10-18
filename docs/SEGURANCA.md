@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.2 — 18/10/2026 |
+| Versão do documento | 1.3 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1; apoia 5.1.1 |
@@ -134,6 +134,21 @@ Fonte única: constantes `PERFIS_ADMIN`, `PERFIS_IMAGENS`, `PERFIS_CURADORIA`, `
 
 Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_compartilhamentos.py`, `test_achados_api.py` (IDOR), `test_search_golden_rule.py`.
 
+## 5.1 Proteção no navegador (ASVS 3.2.1, 3.4.4–3.4.6, 3.5.1, 3.5.2)
+
+**Pedidos que alteram dados** (POST, PUT, PATCH, DELETE) vindos de um navegador só são aceitos se a origem for a tela do Radix (`ORIGENS_PERMITIDAS` em `app/core/cabecalhos.py`, a mesma lista do CORS). Outro site → **403**, mesmo que o usuário esteja logado e mesmo com formulário HTML simples. Isso protege contra CSRF (falsificação de pedido entre sites). Pedidos sem navegador (scripts, testes, o servidor do Next.js) não trazem origem e seguem a regra normal de login.
+
+| Cabeçalho | API (`app/core/cabecalhos.py`) | Telas (`frontend/next.config.mjs`) | Para quê |
+|---|---|---|---|
+| `X-Content-Type-Options` | `nosniff` | `nosniff` | o navegador não "adivinha" o tipo: foto enviada nunca vira página ou script |
+| `Referrer-Policy` | `no-referrer` | `same-origin` | endereços internos não vazam para outros sites |
+| `X-Frame-Options` + `frame-ancestors` | `DENY` / `'none'` | `DENY` / `'none'` | nenhum site embute o Radix em moldura (*clickjacking*). O Radix continua mostrando o OHIF em moldura |
+| `Content-Security-Policy` | `default-src 'none'` em JSON e imagens; `sandbox` em `/uploads` | só `frame-ancestors` | conteúdo da API nunca executa nada, mesmo aberto direto no navegador |
+
+- Exceção: a documentação interativa da API (`/docs`) não recebe a CSP restrita, porque usa scripts. Deve ser desligada no servidor de produção.
+- Pendente (L2): CSP completa nas telas (3.4.3) e cabeçalhos no OHIF (porta 3001) e no proxy do Orthanc (porta 8042).
+- Testes: `tests/test_protecao_navegador.py`.
+
 ## 6. Arquivos enviados (apoia ASVS 5.1.1)
 | Envio | Tipos aceitos | Tamanho máximo | Validação |
 |---|---|---|---|
@@ -177,3 +192,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.0 | 15/10/2026 | Criação, a partir da auditoria OWASP ASVS 5.0 (pasta `claude/auditoria/` do projeto) |
 | 1.1 | 18/10/2026 | Política de senha (seção 3.3) e código de redefinição guardado só como resumo |
 | 1.2 | 18/10/2026 | Segredos fora do `alembic.ini` (seção 9.1) e risco aceito da senha no histórico do Git |
+| 1.3 | 18/10/2026 | Proteção no navegador: conferência de origem e cabeçalhos (seção 5.1) |
