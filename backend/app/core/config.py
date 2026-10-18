@@ -1,5 +1,13 @@
-from pydantic_settings import BaseSettings
+import warnings
 from typing import Optional
+
+from pydantic import model_validator
+from pydantic_settings import BaseSettings
+
+# Tamanho minimo da chave do JWT (HS256): 32 bytes = 256 bits (OWASP ASVS
+# 11.2.3; RFC 7518 3.2). Gerar com:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+JWT_CHAVE_MIN_BYTES = 32
 
 class Settings(BaseSettings):
     # Banco de dados
@@ -46,6 +54,19 @@ class Settings(BaseSettings):
     # 0 desliga.
     ANONIMIZACAO_AUTOMATICA_SEGUNDOS: int = 60
     
+    @model_validator(mode="after")
+    def _chave_jwt_forte(self):
+        """Producao NAO liga com chave curta; em desenvolvimento so avisa (docs/CRIPTOGRAFIA.md)."""
+        if len(self.JWT_SECRET_KEY.encode("utf-8")) < JWT_CHAVE_MIN_BYTES:
+            mensagem = (
+                f"JWT_SECRET_KEY tem menos de {JWT_CHAVE_MIN_BYTES} bytes (256 bits). Gere uma nova com: "
+                'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+            if self.ENVIRONMENT == "production":
+                raise ValueError(mensagem)
+            warnings.warn(mensagem, stacklevel=2)
+        return self
+
     class Config:
         env_file = ".env"
         case_sensitive = True

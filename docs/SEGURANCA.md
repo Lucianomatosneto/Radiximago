@@ -2,11 +2,22 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.5 — 18/10/2026 |
+| Versão do documento | 1.6 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
-| Atende diretamente | ASVS 2.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1; apoia 5.1.1 |
+| Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
 | Revisão | A cada mudança que afete autenticação, autorização, arquivos ou dependências, e no mínimo a cada 6 meses |
+
+**Documentos complementares** (mesma pasta `docs/`):
+
+| Documento | Assunto | ASVS |
+|---|---|---|
+| `DADOS_E_PRIVACIDADE.md` | inventário e classificação dos dados (LGPD), proteção por nível, acesso por campo | 14.1.1, 14.1.2, 8.1.2 |
+| `REGRAS_DE_NEGOCIO.md` | consistência entre campos, fluxo da ficha, limites, funções pesadas | 2.1.2, 2.1.3, 2.3.2, 15.1.3 |
+| `CRIPTOGRAFIA.md` | inventário criptográfico, política de chaves e segredos, agilidade | 11.1.1, 11.1.2, 11.2.2 |
+| `COMUNICACOES.md` | todas as conexões entre as partes do sistema | 13.1.1 |
+| `REGISTROS.md` | inventário dos registros (logs) | 16.1.1 |
+| `sbom/radix-imago-sbom.cdx.json` | lista de componentes (CycloneDX 1.5), gerada por `scripts/gerar_sbom.py` | 15.1.2 |
 
 > Este documento descreve **as regras que o sistema aplica**. Cada regra cita onde ela está implementada e qual teste automatizado a comprova. Divergência entre este texto e o código é um defeito a corrigir.
 
@@ -172,12 +183,15 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 - Pendente (L2): CSP completa nas telas (3.4.3) e cabeçalhos no OHIF (porta 3001) e no proxy do Orthanc (porta 8042).
 - Testes: `tests/test_protecao_navegador.py`.
 
-## 6. Arquivos enviados (apoia ASVS 5.1.1)
-| Envio | Tipos aceitos | Tamanho máximo | Validação |
-|---|---|---|---|
-| Imagem DICOM | DICOM | 50 MB (`MAX_UPLOAD_SIZE_MB`) | leitura pelo `pydicom`; anonimização automática; original apagado |
-| Foto de perfil | JPG, PNG, WebP | 5 MB | conteúdo real conferido pela assinatura do arquivo; nome gerado pelo servidor |
-| Áudio da curadoria por voz | áudio | 10 MB | não é gravado em disco; só o texto volta |
+## 6. Arquivos enviados (ASVS 5.1.1)
+| Envio | Quem | Tipos aceitos | Extensão esperada | Tamanho máximo | Tamanho descompactado | Validação e destino |
+|---|---|---|---|---|---|---|
+| Imagem DICOM (tela) | administrador, suporte, curador, professor | DICOM (Part 10; sem cabeçalho "DICM" só se tiver SOPClassUID e SOPInstanceUID) | `.dcm` ou sem extensão (a extensão **não** decide; o conteúdo decide) | 50 MB (`MAX_UPLOAD_SIZE_MB`) | **arquivos compactados (.zip, .rar, .7z, .gz) são recusados** antes do Orthanc. A imagem DICOM comprimida (JPEG) só é descompactada na memória para o OCR; não há limite explícito de dimensões (risco baixo, limitado pelos 50 MB) | lido pelo `pydicom`; anonimizado; texto tarjado; original apagado |
+| Imagem DICOM (aparelho, porta 4242) | equipamento na rede | DICOM | — | o que o Orthanc aceitar | o Orthanc não descompacta nada no protocolo DICOM | anonimizada automaticamente em até 60 s |
+| Foto de perfil | o próprio usuário | JPG, PNG, WebP | qualquer (o nome enviado é ignorado; o servidor gera nome e extensão) | 5 MB | não se aplica | conteúdo real conferido pela assinatura do arquivo; servida com `nosniff` e CSP `sandbox` |
+| Áudio da curadoria por voz | curadoria | áudio do navegador | — | 10 MB | não se aplica | só na memória; vira texto e é descartado |
+
+Arquivo fora da regra → **422**, e nada é gravado. Arquivo malicioso disfarçado de imagem é recusado pela assinatura (`T-UPL-03`, auditoria de 15/10). Antivírus: **não há** (ASVS 5.4.3, decisão pendente do grupo 6).
 
 ## 6.1 Anonimização das imagens DICOM (LGPD; auditoria TST-DICOM-01 a 03)
 
@@ -246,3 +260,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.3 | 18/10/2026 | Proteção no navegador: conferência de origem e cabeçalhos (seção 5.1) |
 | 1.4 | 18/10/2026 | Tamanhos máximos (2.1), códigos fora dos endereços (2.2) e exposição de dados (2.3) |
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
+| 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |

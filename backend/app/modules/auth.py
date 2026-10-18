@@ -12,7 +12,7 @@ from app.core.rate_limit import limiter
 import time
 
 from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
-from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha
+from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha, senha_precisa_atualizar
 from app.core.politica_senha import problema_na_senha
 from app.core.limites import Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
@@ -114,6 +114,10 @@ def login(
     token = criar_token_acesso({
         "sub": str(usuario.id), "perfil": usuario.perfil, "inicio": int(time.time()), "jti": jti,
     })
+    # senha guardada em padrao antigo (algoritmo/custo): regrava no padrao
+    # atual agora que a senha correta foi digitada (ASVS 11.2.2)
+    if senha_precisa_atualizar(usuario.senha_hash):
+        usuario.senha_hash = gerar_hash_senha(form_data.password)
     db.add(AuditLog(
         usuario_id=usuario.id, acao="login", entidade="user", entidade_id=usuario.id,
         resultado="sucesso",

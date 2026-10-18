@@ -382,3 +382,39 @@ def test_16_5_3_falha_na_anonimizacao_nao_registra_imagem_e_apaga_original(monke
         images_router._registrar_referencia_se_nova(db, oid)
     assert apagados == [oid]
     assert db.query(OrthancReference).filter(OrthancReference.orthanc_id == oid).count() == 0
+
+
+# ------------------------------------------------ reforcos de 18/10 (grupo 1)
+def test_11_2_3_chave_curta_impede_producao_de_ligar(monkeypatch):
+    """Antes so se testava a biblioteca; agora a CONFIGURACAO e conferida."""
+    from app.core.config import JWT_CHAVE_MIN_BYTES, Settings
+    base = {"DATABASE_URL": "postgresql://x/y", "ORTHANC_PASSWORD": "x"}
+    with pytest.raises(Exception):
+        Settings(JWT_SECRET_KEY="curta", ENVIRONMENT="production", **base)
+    with pytest.warns(UserWarning):
+        Settings(JWT_SECRET_KEY="curta", ENVIRONMENT="development", **base)
+    ok = Settings(JWT_SECRET_KEY="k" * JWT_CHAVE_MIN_BYTES, ENVIRONMENT="production", **base)
+    assert ok.JWT_SECRET_KEY
+
+
+def test_16_2_5_sem_smtp_em_producao_o_codigo_do_link_nao_vai_para_o_registro(monkeypatch, caplog):
+    from app.core import email as modulo_email
+    monkeypatch.setattr(modulo_email.settings, "SMTP_HOST", "")
+    monkeypatch.setattr(modulo_email.settings, "ENVIRONMENT", "production")
+    with caplog.at_level("INFO"):
+        modulo_email.enviar_email("a@b.c", "Redefinir senha", "<a href='x#token=CODIGO-SECRETO'>link</a>")
+    assert "CODIGO-SECRETO" not in caplog.text and "NAO enviado" in caplog.text
+
+
+def test_11_2_2_senha_em_padrao_antigo_e_regravada_no_login(client, criar_usuario, db):
+    """Agilidade criptografica: resumo com custo antigo vira o padrao atual no proximo login."""
+    from passlib.hash import bcrypt as bcrypt_hash
+    from tests.conftest import SENHA_TESTE
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    usuario.senha_hash = bcrypt_hash.using(rounds=4).hash(SENHA_TESTE)
+    db.commit()
+    client.cookies.clear()
+    assert client.post("/auth/login", data={"username": usuario.email, "password": SENHA_TESTE}).status_code == 200
+    db.refresh(usuario)
+    assert int(usuario.senha_hash.split("$")[2]) >= 12
+    client.cookies.clear()

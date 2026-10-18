@@ -1,0 +1,90 @@
+# Radix Imago — Regras de negócio, limites e funções pesadas
+
+| Campo | Valor |
+|---|---|
+| Versão do documento | 1.0 — 18/10/2026 |
+| Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.3.2 e 15.1.3 |
+| Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `app/core/limites.py`, `docker-compose.yml` |
+
+Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar, mas não decide. Quando uma regra é violada, a resposta é **422** (dado inválido), **409** (estado não permite) ou **429** (excesso de pedidos), e **nada é gravado pela metade**. Um pedido inteiro é uma única transação no banco, comprovada por `test_2_3_3_operacao_invalida_nao_grava_nada_pela_metade`.
+
+## 1. Consistência entre campos (ASVS 2.1.2)
+
+| Regra | Onde |
+|---|---|
+| `idade_min` ≤ `idade_max`; as duas entre 0 e 120 | `curation/ficha.py` |
+| Dentes só na numeração FDI de permanentes (11–18, 21–28, 31–38, 41–48), sem repetição | `curation/ficha.py`, `curation/achados.py` |
+| Achado com "dente não identificado" **não pode** informar dentes | `curation/achados.py` |
+| Achado do tipo "Outro" **exige** descrição | `curation/achados.py` |
+| Imagem com achados registrados **não pode** ser marcada como "sem alterações" | `curation/ficha.py` |
+| Os resumos `dentes` e `alteracoes_observadas` da ficha **são calculados** a partir dos achados (o usuário não os define em separado) | `curation/ficha.py` (`_sincronizar_achados`) |
+| Termos do vocabulário ligados à ficha precisam existir | `curation/ficha.py` |
+| Uma imagem tem **no máximo uma** ficha; imagem desativada não recebe ficha | `curation/ficha.py` |
+| Limites de tamanho de textos e listas | `app/core/limites.py` (ver `SEGURANCA.md`, seção 2.1) |
+
+## 2. Fluxo da ficha (estados permitidos)
+
+```
+pendente ─┐
+          ├─(editar)→ em_analise ─┬─ aprovar ──→ aprovada   (final)
+          │                       ├─ descartar → descartada (final)
+          │                       └─ pedir 2ª opinião → segunda_opiniao ─┬─ aprovar → aprovada
+          │                                                              └─ descartar → descartada
+```
+
+| Regra | Onde |
+|---|---|
+| Só se edita ficha **pendente** ou **em análise** | `curation/common.py` (`STATUS_EDITAVEIS`) |
+| **Aprovar exige "anonimização validada"** marcada pelo curador (LGPD) | `curation/common.py` (`_executar_aprovacao`) |
+| Descartar exige justificativa | `curation/common.py` |
+| Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
+| Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
+| Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
+
+**Outras regras de negócio:**
+- Pedido de acesso: o e-mail precisa ser confirmado antes de o administrador analisar. O link vale 24 h e é invalidado após 5 senhas erradas.
+- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe pode esconder anotações e recados só da própria visão, sem apagar os dados de quem enviou.
+- Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
+
+## 3. Limites por usuário e globais (ASVS 2.1.3 e 2.3.2)
+
+| Função | Limite | Por quem | Onde |
+|---|---|---|---|
+| Login | 5 por minuto | endereço de rede | `auth.py` |
+| Esqueci a senha | 3 por minuto | endereço de rede | `auth.py` |
+| Redefinir senha | 10 por minuto | endereço de rede | `auth.py` |
+| Pedir acesso | 5 por minuto | endereço de rede | `auth.py` |
+| Confirmar e-mail | 10 por minuto; 5 senhas erradas invalidam o link | endereço de rede / pedido | `auth.py` |
+| Compartilhar / responder | 20 por minuto | endereço de rede | `compartilhamentos_router.py` |
+| Transcrição de voz | 120 trechos por minuto; áudio de até 10 MB | endereço de rede | `voz_router.py` |
+| Envio de DICOM | 50 MB por arquivo; compactados recusados | por pedido | `images_router.py` |
+| Foto de perfil | 5 MB; JPG/PNG/WebP | por pedido | `users_router.py` |
+| Busca | até 200 resultados por página | por pedido | `search_router.py` |
+| Sessão | 60 min de inatividade; 12 h no máximo | por sessão | `app/core/sessao.py` |
+
+**Lacunas conhecidas** (grupo 4 do plano do Nível 2; ainda não corrigidas):
+- envio de imagens por e-mail, individual e **em lote**, **sem limite** de quantidade nem de frequência;
+- downloads em `.zip` sem limite de frequência;
+- demais rotas sem limite de frequência por usuário.
+
+## 4. Funções pesadas e como evitar indisponibilidade (ASVS 15.1.3)
+
+| Função | Por que pesa | Proteção atual | Lacuna |
+|---|---|---|---|
+| Transcrição de voz (Whisper) | modelo de IA, CPU e memória | serviço separado com teto de 1,6 GB de RAM e 4 CPUs; 120 trechos/min; o modelo é descarregado após 10 min parado | — |
+| Anonimização + OCR do texto na imagem | leitura completa da imagem (cerca de 1 a 10 s por imagem) | 1 imagem por envio; 50 MB por arquivo; chegada pelo aparelho em ciclos de 60 s | envio sem limite de frequência |
+| Download `.zip` de uma série (vários cortes) | monta o arquivo na memória | só fichas aprovadas | sem limite de frequência nem de tamanho total |
+| E-mail com imagens (individual e lote) | renderiza imagens e envia por SMTP | — | **sem limite** (prioridade do grupo 4) |
+| Sincronizar com o Orthanc | percorre todo o acervo | só administrador/suporte | — |
+| Busca com texto livre | consulta com `ILIKE` | texto até 150 caracteres; 200 por página | — |
+
+**Conduta em caso de sobrecarga:**
+- o Whisper fora do ar não derruba a API: a curadoria segue sem voz;
+- o Orthanc fora do ar não derruba a API (`test_16_5_2`);
+- o administrador pode bloquear um usuário abusivo na hora.
+
+## 5. Histórico
+
+| Versão | Data | Alteração |
+|---|---|---|
+| 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |

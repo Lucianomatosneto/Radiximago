@@ -9,11 +9,27 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Agilidade criptografica (OWASP ASVS 11.2.2 - docs/CRIPTOGRAFIA.md): a lista
+# de esquemas e o custo minimo ficam AQUI. Para trocar de algoritmo (ex.:
+# Argon2), basta pô-lo na frente da lista; senhas antigas continuam
+# entrando e sao regravadas no novo padrao no proximo login
+# (senha_precisa_atualizar). O mesmo vale se o custo minimo subir.
+BCRYPT_CUSTO = 12
+pwd_context = CryptContext(
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__default_rounds=BCRYPT_CUSTO,
+    bcrypt__min_rounds=BCRYPT_CUSTO,
+)
 
 
 def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
     return pwd_context.verify(senha_plana, senha_hash)
+
+
+def senha_precisa_atualizar(senha_hash: str) -> bool:
+    """True se o resumo da senha usa algoritmo ou custo antigos (regravar no login)."""
+    return pwd_context.needs_update(senha_hash)
 
 
 def gerar_hash_senha(senha: str) -> str:

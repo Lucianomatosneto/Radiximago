@@ -33,8 +33,14 @@ def enviar_email(
         lista_anexos.append((anexo_bytes, anexo_nome or "imagem.png"))
 
     if not settings.SMTP_HOST:
+        if settings.ENVIRONMENT == "production":
+            # o corpo pode ter link com codigo de uso unico (redefinicao de
+            # senha, confirmacao): em producao ele NUNCA vai para o registro
+            # (OWASP ASVS 16.2.5 - docs/REGISTROS.md)
+            logger.error("SMTP_HOST nao configurado em producao - e-mail NAO enviado (assunto=%r).", assunto)
+            return
         logger.info(
-            "SMTP_HOST nao configurado - e-mail NAO enviado de verdade. "
+            "SMTP_HOST nao configurado - e-mail NAO enviado de verdade (so desenvolvimento). "
             "Destinatario=%s Assunto=%r Corpo=%s Anexos=%s",
             destinatario, assunto, corpo_html, [nome for _, nome in lista_anexos],
         )

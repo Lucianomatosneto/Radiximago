@@ -1,0 +1,5852 @@
+{
+ "bomFormat": "CycloneDX",
+ "specVersion": "1.5",
+ "version": 1,
+ "serialNumber": "urn:uuid:a651ece2-82af-4cdf-a333-92eab5ce1416",
+ "metadata": {
+  "timestamp": "2026-10-18T20:09:10+00:00",
+  "component": {
+   "type": "application",
+   "name": "Radix Imago",
+   "version": "redesign-ui"
+  },
+  "properties": [
+   {
+    "name": "radix:servicos-externos-em-imagens-docker",
+    "value": "postgres:16, orthancteam/orthanc:latest, nginx:alpine, ohif/app:v3.9.2 (ver docker-compose.yml)"
+   }
+  ]
+ },
+ "components": [
+  {
+   "type": "library",
+   "name": "fastapi",
+   "version": "0.143.2",
+   "purl": "pkg:pypi/fastapi@0.143.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/fastapi@0.143.2|backend"
+  },
+  {
+   "type": "library",
+   "name": "uvicorn",
+   "version": "0.54.0",
+   "purl": "pkg:pypi/uvicorn@0.54.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/uvicorn@0.54.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "SQLAlchemy",
+   "version": "2.0.28",
+   "purl": "pkg:pypi/sqlalchemy@2.0.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/sqlalchemy@2.0.28|backend"
+  },
+  {
+   "type": "library",
+   "name": "alembic",
+   "version": "1.13.1",
+   "purl": "pkg:pypi/alembic@1.13.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/alembic@1.13.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "psycopg2-binary",
+   "version": "2.9.9",
+   "purl": "pkg:pypi/psycopg2-binary@2.9.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/psycopg2-binary@2.9.9|backend"
+  },
+  {
+   "type": "library",
+   "name": "PyJWT",
+   "version": "2.15.1",
+   "purl": "pkg:pypi/pyjwt@2.15.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pyjwt@2.15.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "passlib",
+   "version": "1.7.4",
+   "purl": "pkg:pypi/passlib@1.7.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/passlib@1.7.4|backend"
+  },
+  {
+   "type": "library",
+   "name": "python-multipart",
+   "version": "0.0.32",
+   "purl": "pkg:pypi/python-multipart@0.0.32",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/python-multipart@0.0.32|backend"
+  },
+  {
+   "type": "library",
+   "name": "httpx",
+   "version": "0.27.0",
+   "purl": "pkg:pypi/httpx@0.27.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httpx@0.27.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "python-dotenv",
+   "version": "1.2.4",
+   "purl": "pkg:pypi/python-dotenv@1.2.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/python-dotenv@1.2.4|backend"
+  },
+  {
+   "type": "library",
+   "name": "anthropic",
+   "version": "0.25.0",
+   "purl": "pkg:pypi/anthropic@0.25.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/anthropic@0.25.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "pydantic-settings",
+   "version": "2.14.2",
+   "purl": "pkg:pypi/pydantic-settings@2.14.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydantic-settings@2.14.2|backend"
+  },
+  {
+   "type": "library",
+   "name": "pydicom",
+   "version": "3.0.2",
+   "purl": "pkg:pypi/pydicom@3.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydicom@3.0.2|backend"
+  },
+  {
+   "type": "library",
+   "name": "pillow",
+   "version": "12.3.0",
+   "purl": "pkg:pypi/pillow@12.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pillow@12.3.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "email_validator",
+   "version": "2.1.1",
+   "purl": "pkg:pypi/email-validator@2.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/email-validator@2.1.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "bcrypt",
+   "version": "4.0.1",
+   "purl": "pkg:pypi/bcrypt@4.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/bcrypt@4.0.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "slowapi",
+   "version": "0.1.9",
+   "purl": "pkg:pypi/slowapi@0.1.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/slowapi@0.1.9|backend"
+  },
+  {
+   "type": "library",
+   "name": "pytest",
+   "version": "9.1.1",
+   "purl": "pkg:pypi/pytest@9.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pytest@9.1.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "numpy",
+   "version": "2.4.6",
+   "purl": "pkg:pypi/numpy@2.4.6",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/numpy@2.4.6|backend"
+  },
+  {
+   "type": "library",
+   "name": "pytesseract",
+   "version": "0.3.13",
+   "purl": "pkg:pypi/pytesseract@0.3.13",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pytesseract@0.3.13|backend"
+  },
+  {
+   "type": "library",
+   "name": "pylibjpeg",
+   "version": "2.1.0",
+   "purl": "pkg:pypi/pylibjpeg@2.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pylibjpeg@2.1.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "pylibjpeg-libjpeg",
+   "version": "2.4.0",
+   "purl": "pkg:pypi/pylibjpeg-libjpeg@2.4.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pylibjpeg-libjpeg@2.4.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "pylibjpeg-openjpeg",
+   "version": "2.6.0",
+   "purl": "pkg:pypi/pylibjpeg-openjpeg@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pylibjpeg-openjpeg@2.6.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "httpcore",
+   "version": "1.0.9",
+   "purl": "pkg:pypi/httpcore@1.0.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httpcore@1.0.9|backend"
+  },
+  {
+   "type": "library",
+   "name": "annotated-doc",
+   "version": "0.0.5",
+   "purl": "pkg:pypi/annotated-doc@0.0.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/annotated-doc@0.0.5|backend"
+  },
+  {
+   "type": "library",
+   "name": "anyio",
+   "version": "4.15.1",
+   "purl": "pkg:pypi/anyio@4.15.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/anyio@4.15.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "click",
+   "version": "8.5.0",
+   "purl": "pkg:pypi/click@8.5.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/click@8.5.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "distro",
+   "version": "1.9.0",
+   "purl": "pkg:pypi/distro@1.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/distro@1.9.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "dnspython",
+   "version": "2.9.0",
+   "purl": "pkg:pypi/dnspython@2.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/dnspython@2.9.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "greenlet",
+   "version": "3.5.6",
+   "purl": "pkg:pypi/greenlet@3.5.6",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/greenlet@3.5.6|backend"
+  },
+  {
+   "type": "library",
+   "name": "h11",
+   "version": "0.16.0",
+   "purl": "pkg:pypi/h11@0.16.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/h11@0.16.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "httptools",
+   "version": "0.9.0",
+   "purl": "pkg:pypi/httptools@0.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httptools@0.9.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "idna",
+   "version": "3.20",
+   "purl": "pkg:pypi/idna@3.20",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/idna@3.20|backend"
+  },
+  {
+   "type": "library",
+   "name": "iniconfig",
+   "version": "2.3.1",
+   "purl": "pkg:pypi/iniconfig@2.3.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/iniconfig@2.3.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "limits",
+   "version": "5.8.0",
+   "purl": "pkg:pypi/limits@5.8.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/limits@5.8.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "opentelemetry-api",
+   "version": "1.45.1",
+   "purl": "pkg:pypi/opentelemetry-api@1.45.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/opentelemetry-api@1.45.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "packaging",
+   "version": "26.3",
+   "purl": "pkg:pypi/packaging@26.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/packaging@26.3|backend"
+  },
+  {
+   "type": "library",
+   "name": "pluggy",
+   "version": "1.7.0",
+   "purl": "pkg:pypi/pluggy@1.7.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pluggy@1.7.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "pydantic",
+   "version": "2.14.1",
+   "purl": "pkg:pypi/pydantic@2.14.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydantic@2.14.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "pydantic_core",
+   "version": "2.50.1",
+   "purl": "pkg:pypi/pydantic-core@2.50.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydantic-core@2.50.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "Pygments",
+   "version": "2.21.0",
+   "purl": "pkg:pypi/pygments@2.21.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pygments@2.21.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "PyYAML",
+   "version": "6.0.3",
+   "purl": "pkg:pypi/pyyaml@6.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pyyaml@6.0.3|backend"
+  },
+  {
+   "type": "library",
+   "name": "starlette",
+   "version": "1.9.0",
+   "purl": "pkg:pypi/starlette@1.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/starlette@1.9.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "tokenizers",
+   "version": "0.23.3",
+   "purl": "pkg:pypi/tokenizers@0.23.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/tokenizers@0.23.3|backend"
+  },
+  {
+   "type": "library",
+   "name": "typing_extensions",
+   "version": "4.16.0",
+   "purl": "pkg:pypi/typing-extensions@4.16.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/typing-extensions@4.16.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "typing-inspection",
+   "version": "0.4.4",
+   "purl": "pkg:pypi/typing-inspection@0.4.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/typing-inspection@0.4.4|backend"
+  },
+  {
+   "type": "library",
+   "name": "uvloop",
+   "version": "0.23.0",
+   "purl": "pkg:pypi/uvloop@0.23.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/uvloop@0.23.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "watchfiles",
+   "version": "1.3.0",
+   "purl": "pkg:pypi/watchfiles@1.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/watchfiles@1.3.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "websockets",
+   "version": "17.2",
+   "purl": "pkg:pypi/websockets@17.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/websockets@17.2|backend"
+  },
+  {
+   "type": "library",
+   "name": "certifi",
+   "version": "2026.10.18",
+   "purl": "pkg:pypi/certifi@2026.10.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/certifi@2026.10.18|backend"
+  },
+  {
+   "type": "library",
+   "name": "Mako",
+   "version": "1.4.3",
+   "purl": "pkg:pypi/mako@1.4.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/mako@1.4.3|backend"
+  },
+  {
+   "type": "library",
+   "name": "sniffio",
+   "version": "1.3.1",
+   "purl": "pkg:pypi/sniffio@1.3.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/sniffio@1.3.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "annotated-types",
+   "version": "0.8.0",
+   "purl": "pkg:pypi/annotated-types@0.8.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/annotated-types@0.8.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "Deprecated",
+   "version": "1.3.1",
+   "purl": "pkg:pypi/deprecated@1.3.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/deprecated@1.3.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "huggingface_hub",
+   "version": "2.2.0",
+   "purl": "pkg:pypi/huggingface-hub@2.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/huggingface-hub@2.2.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "MarkupSafe",
+   "version": "3.0.4",
+   "purl": "pkg:pypi/markupsafe@3.0.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/markupsafe@3.0.4|backend"
+  },
+  {
+   "type": "library",
+   "name": "filelock",
+   "version": "4.2.2",
+   "purl": "pkg:pypi/filelock@4.2.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/filelock@4.2.2|backend"
+  },
+  {
+   "type": "library",
+   "name": "fsspec",
+   "version": "2026.9.0",
+   "purl": "pkg:pypi/fsspec@2026.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/fsspec@2026.9.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "hf-xet",
+   "version": "1.7.0",
+   "purl": "pkg:pypi/hf-xet@1.7.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/hf-xet@1.7.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "httpx2",
+   "version": "2.14.0",
+   "purl": "pkg:pypi/httpx2@2.14.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httpx2@2.14.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "httpcore2",
+   "version": "2.14.0",
+   "purl": "pkg:pypi/httpcore2@2.14.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httpcore2@2.14.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "tqdm",
+   "version": "4.70.1",
+   "purl": "pkg:pypi/tqdm@4.70.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/tqdm@4.70.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "wrapt",
+   "version": "2.5.1",
+   "purl": "pkg:pypi/wrapt@2.5.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/wrapt@2.5.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "truststore",
+   "version": "0.10.5",
+   "purl": "pkg:pypi/truststore@0.10.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/truststore@0.10.5|backend"
+  },
+  {
+   "type": "library",
+   "name": "faster-whisper",
+   "version": "1.0.3",
+   "purl": "pkg:pypi/faster-whisper@1.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/faster-whisper@1.0.3|voz"
+  },
+  {
+   "type": "library",
+   "name": "ctranslate2",
+   "version": "4.3.1",
+   "purl": "pkg:pypi/ctranslate2@4.3.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/ctranslate2@4.3.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "huggingface-hub",
+   "version": "0.24.6",
+   "purl": "pkg:pypi/huggingface-hub@0.24.6",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/huggingface-hub@0.24.6|voz"
+  },
+  {
+   "type": "library",
+   "name": "requests",
+   "version": "2.34.2",
+   "purl": "pkg:pypi/requests@2.34.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/requests@2.34.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "tokenizers",
+   "version": "0.19.1",
+   "purl": "pkg:pypi/tokenizers@0.19.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/tokenizers@0.19.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "onnxruntime",
+   "version": "1.18.1",
+   "purl": "pkg:pypi/onnxruntime@1.18.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/onnxruntime@1.18.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "av",
+   "version": "12.3.0",
+   "purl": "pkg:pypi/av@12.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/av@12.3.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "numpy",
+   "version": "1.26.4",
+   "purl": "pkg:pypi/numpy@1.26.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/numpy@1.26.4|voz"
+  },
+  {
+   "type": "library",
+   "name": "fastapi",
+   "version": "0.143.2",
+   "purl": "pkg:pypi/fastapi@0.143.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/fastapi@0.143.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "uvicorn",
+   "version": "0.54.0",
+   "purl": "pkg:pypi/uvicorn@0.54.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/uvicorn@0.54.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "python-multipart",
+   "version": "0.0.32",
+   "purl": "pkg:pypi/python-multipart@0.0.32",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/python-multipart@0.0.32|voz"
+  },
+  {
+   "type": "library",
+   "name": "annotated-doc",
+   "version": "0.0.5",
+   "purl": "pkg:pypi/annotated-doc@0.0.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/annotated-doc@0.0.5|voz"
+  },
+  {
+   "type": "library",
+   "name": "certifi",
+   "version": "2026.10.18",
+   "purl": "pkg:pypi/certifi@2026.10.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/certifi@2026.10.18|voz"
+  },
+  {
+   "type": "library",
+   "name": "charset-normalizer",
+   "version": "3.5.2",
+   "purl": "pkg:pypi/charset-normalizer@3.5.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/charset-normalizer@3.5.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "click",
+   "version": "8.5.0",
+   "purl": "pkg:pypi/click@8.5.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/click@8.5.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "fsspec",
+   "version": "2026.9.0",
+   "purl": "pkg:pypi/fsspec@2026.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/fsspec@2026.9.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "h11",
+   "version": "0.16.0",
+   "purl": "pkg:pypi/h11@0.16.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/h11@0.16.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "httptools",
+   "version": "0.9.0",
+   "purl": "pkg:pypi/httptools@0.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/httptools@0.9.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "idna",
+   "version": "3.20",
+   "purl": "pkg:pypi/idna@3.20",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/idna@3.20|voz"
+  },
+  {
+   "type": "library",
+   "name": "opentelemetry-api",
+   "version": "1.45.1",
+   "purl": "pkg:pypi/opentelemetry-api@1.45.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/opentelemetry-api@1.45.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "packaging",
+   "version": "26.3",
+   "purl": "pkg:pypi/packaging@26.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/packaging@26.3|voz"
+  },
+  {
+   "type": "library",
+   "name": "pydantic",
+   "version": "2.14.1",
+   "purl": "pkg:pypi/pydantic@2.14.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydantic@2.14.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "pydantic_core",
+   "version": "2.50.1",
+   "purl": "pkg:pypi/pydantic-core@2.50.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pydantic-core@2.50.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "python-dotenv",
+   "version": "1.2.4",
+   "purl": "pkg:pypi/python-dotenv@1.2.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/python-dotenv@1.2.4|voz"
+  },
+  {
+   "type": "library",
+   "name": "PyYAML",
+   "version": "6.0.3",
+   "purl": "pkg:pypi/pyyaml@6.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pyyaml@6.0.3|voz"
+  },
+  {
+   "type": "library",
+   "name": "starlette",
+   "version": "1.9.0",
+   "purl": "pkg:pypi/starlette@1.9.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/starlette@1.9.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "tqdm",
+   "version": "4.70.1",
+   "purl": "pkg:pypi/tqdm@4.70.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/tqdm@4.70.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "typing_extensions",
+   "version": "4.16.0",
+   "purl": "pkg:pypi/typing-extensions@4.16.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/typing-extensions@4.16.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "typing-inspection",
+   "version": "0.4.4",
+   "purl": "pkg:pypi/typing-inspection@0.4.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/typing-inspection@0.4.4|voz"
+  },
+  {
+   "type": "library",
+   "name": "urllib3",
+   "version": "2.8.0",
+   "purl": "pkg:pypi/urllib3@2.8.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/urllib3@2.8.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "uvloop",
+   "version": "0.23.0",
+   "purl": "pkg:pypi/uvloop@0.23.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/uvloop@0.23.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "watchfiles",
+   "version": "1.3.0",
+   "purl": "pkg:pypi/watchfiles@1.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/watchfiles@1.3.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "websockets",
+   "version": "17.2",
+   "purl": "pkg:pypi/websockets@17.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/websockets@17.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "coloredlogs",
+   "version": "15.0.1",
+   "purl": "pkg:pypi/coloredlogs@15.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/coloredlogs@15.0.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "filelock",
+   "version": "4.2.2",
+   "purl": "pkg:pypi/filelock@4.2.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/filelock@4.2.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "flatbuffers",
+   "version": "25.12.19",
+   "purl": "pkg:pypi/flatbuffers@25.12.19",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/flatbuffers@25.12.19|voz"
+  },
+  {
+   "type": "library",
+   "name": "protobuf",
+   "version": "7.36.2",
+   "purl": "pkg:pypi/protobuf@7.36.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/protobuf@7.36.2|voz"
+  },
+  {
+   "type": "library",
+   "name": "setuptools",
+   "version": "84.0.0",
+   "purl": "pkg:pypi/setuptools@84.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/setuptools@84.0.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "sympy",
+   "version": "1.14.0",
+   "purl": "pkg:pypi/sympy@1.14.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/sympy@1.14.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "annotated-types",
+   "version": "0.8.0",
+   "purl": "pkg:pypi/annotated-types@0.8.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/annotated-types@0.8.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "anyio",
+   "version": "4.15.1",
+   "purl": "pkg:pypi/anyio@4.15.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/anyio@4.15.1|voz"
+  },
+  {
+   "type": "library",
+   "name": "humanfriendly",
+   "version": "10.0",
+   "purl": "pkg:pypi/humanfriendly@10.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/humanfriendly@10.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "mpmath",
+   "version": "1.3.0",
+   "purl": "pkg:pypi/mpmath@1.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "voz"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/mpmath@1.3.0|voz"
+  },
+  {
+   "type": "library",
+   "name": "@alloc/quick-lru",
+   "version": "5.3.0",
+   "purl": "pkg:npm/%40alloc/quick-lru@5.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40alloc/quick-lru@5.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@dimforge/rapier3d-compat",
+   "version": "0.12.0",
+   "purl": "pkg:npm/%40dimforge/rapier3d-compat@0.12.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40dimforge/rapier3d-compat@0.12.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@eloqnt/config",
+   "version": "0.1.1",
+   "purl": "pkg:npm/%40eloqnt/config@0.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40eloqnt/config@0.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@eloqnt/format-json",
+   "version": "0.1.0",
+   "purl": "pkg:npm/%40eloqnt/format-json@0.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40eloqnt/format-json@0.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@eloqnt/format-po",
+   "version": "0.1.1",
+   "purl": "pkg:npm/%40eloqnt/format-po@0.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40eloqnt/format-po@0.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@emnapi/runtime",
+   "version": "1.11.3",
+   "purl": "pkg:npm/%40emnapi/runtime@1.11.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40emnapi/runtime@1.11.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/fast-memoize",
+   "version": "3.1.7",
+   "purl": "pkg:npm/%40formatjs/fast-memoize@3.1.7",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/fast-memoize@3.1.7|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/icu-messageformat-parser",
+   "version": "3.5.21",
+   "purl": "pkg:npm/%40formatjs/icu-messageformat-parser@3.5.21",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/icu-messageformat-parser@3.5.21|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/icu-skeleton-parser",
+   "version": "2.1.12",
+   "purl": "pkg:npm/%40formatjs/icu-skeleton-parser@2.1.12",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/icu-skeleton-parser@2.1.12|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/intl-localematcher",
+   "version": "0.8.14",
+   "purl": "pkg:npm/%40formatjs/intl-localematcher@0.8.14",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/intl-localematcher@0.8.14|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/colour",
+   "version": "1.1.0",
+   "purl": "pkg:npm/%40img/colour@1.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/colour@1.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-darwin-arm64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-darwin-arm64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-darwin-arm64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-darwin-x64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-darwin-x64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-darwin-x64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-freebsd-wasm32",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-freebsd-wasm32@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-freebsd-wasm32@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-darwin-arm64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-darwin-arm64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-darwin-arm64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-darwin-x64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-darwin-x64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-darwin-x64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-arm",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-arm@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-arm@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-arm64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-arm64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-arm64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-ppc64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-ppc64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-ppc64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-riscv64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-riscv64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-riscv64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-s390x",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-s390x@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-s390x@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linux-x64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linux-x64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linux-x64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linuxmusl-arm64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linuxmusl-arm64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linuxmusl-arm64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-libvips-linuxmusl-x64",
+   "version": "1.3.4",
+   "purl": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-libvips-linuxmusl-x64@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-arm",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-arm@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-arm@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-arm64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-arm64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-arm64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-ppc64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-ppc64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-ppc64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-riscv64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-riscv64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-riscv64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-s390x",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-s390x@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-s390x@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linux-x64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linux-x64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linux-x64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linuxmusl-arm64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linuxmusl-arm64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linuxmusl-arm64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-linuxmusl-x64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-linuxmusl-x64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-linuxmusl-x64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-wasm32",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-wasm32@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-wasm32@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-webcontainers-wasm32",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-webcontainers-wasm32@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-webcontainers-wasm32@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-win32-arm64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-win32-arm64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-win32-arm64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-win32-ia32",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-win32-ia32@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-win32-ia32@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@img/sharp-win32-x64",
+   "version": "0.35.5",
+   "purl": "pkg:npm/%40img/sharp-win32-x64@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40img/sharp-win32-x64@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@jridgewell/gen-mapping",
+   "version": "0.3.13",
+   "purl": "pkg:npm/%40jridgewell/gen-mapping@0.3.13",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40jridgewell/gen-mapping@0.3.13|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@jridgewell/resolve-uri",
+   "version": "3.1.2",
+   "purl": "pkg:npm/%40jridgewell/resolve-uri@3.1.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40jridgewell/resolve-uri@3.1.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@jridgewell/sourcemap-codec",
+   "version": "1.6.0",
+   "purl": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40jridgewell/sourcemap-codec@1.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@jridgewell/trace-mapping",
+   "version": "0.3.31",
+   "purl": "pkg:npm/%40jridgewell/trace-mapping@0.3.31",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40jridgewell/trace-mapping@0.3.31|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/env",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/env@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/env@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-darwin-arm64",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-darwin-arm64@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-darwin-arm64@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-darwin-x64",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-darwin-x64@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-darwin-x64@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-linux-arm64-gnu",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-linux-arm64-gnu@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-linux-arm64-gnu@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-linux-arm64-musl",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-linux-arm64-musl@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-linux-arm64-musl@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-linux-x64-gnu",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-linux-x64-gnu@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-linux-x64-gnu@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-linux-x64-musl",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-linux-x64-musl@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-linux-x64-musl@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-win32-arm64-msvc",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-win32-arm64-msvc@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-win32-arm64-msvc@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@next/swc-win32-x64-msvc",
+   "version": "15.5.28",
+   "purl": "pkg:npm/%40next/swc-win32-x64-msvc@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40next/swc-win32-x64-msvc@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@nodelib/fs.scandir",
+   "version": "2.1.5",
+   "purl": "pkg:npm/%40nodelib/fs.scandir@2.1.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40nodelib/fs.scandir@2.1.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@nodelib/fs.stat",
+   "version": "2.0.5",
+   "purl": "pkg:npm/%40nodelib/fs.stat@2.0.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40nodelib/fs.stat@2.0.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@nodelib/fs.walk",
+   "version": "1.2.8",
+   "purl": "pkg:npm/%40nodelib/fs.walk@1.2.8",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40nodelib/fs.walk@1.2.8|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-android-arm64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-android-arm64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-android-arm64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-darwin-arm64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-darwin-arm64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-darwin-arm64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-darwin-x64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-darwin-x64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-darwin-x64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-freebsd-x64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-freebsd-x64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-freebsd-x64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-arm-glibc",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-arm-glibc@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-arm-glibc@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-arm-musl",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-arm-musl@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-arm-musl@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-arm64-glibc",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-arm64-glibc@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-arm64-glibc@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-arm64-musl",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-arm64-musl@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-arm64-musl@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-x64-glibc",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-x64-glibc@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-x64-glibc@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-linux-x64-musl",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-linux-x64-musl@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-linux-x64-musl@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-win32-arm64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-win32-arm64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-win32-arm64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@parcel/watcher-win32-x64",
+   "version": "2.6.0",
+   "purl": "pkg:npm/%40parcel/watcher-win32-x64@2.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40parcel/watcher-win32-x64@2.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@schummar/icu-type-parser",
+   "version": "1.21.5",
+   "purl": "pkg:npm/%40schummar/icu-type-parser@1.21.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40schummar/icu-type-parser@1.21.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-darwin-arm64",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-darwin-arm64@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-darwin-arm64@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-darwin-x64",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-darwin-x64@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-darwin-x64@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-arm-gnueabihf",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-arm-gnueabihf@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-arm-gnueabihf@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-arm64-gnu",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-arm64-gnu@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-arm64-gnu@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-arm64-musl",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-arm64-musl@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-arm64-musl@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-ppc64-gnu",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-ppc64-gnu@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-ppc64-gnu@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-s390x-gnu",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-s390x-gnu@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-s390x-gnu@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-x64-gnu",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-x64-gnu@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-x64-gnu@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-linux-x64-musl",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-linux-x64-musl@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-linux-x64-musl@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-win32-arm64-msvc",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-win32-arm64-msvc@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-win32-arm64-msvc@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-win32-ia32-msvc",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-win32-ia32-msvc@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-win32-ia32-msvc@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core-win32-x64-msvc",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core-win32-x64-msvc@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core-win32-x64-msvc@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/counter",
+   "version": "0.1.3",
+   "purl": "pkg:npm/%40swc/counter@0.1.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/counter@0.1.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/helpers",
+   "version": "0.5.15",
+   "purl": "pkg:npm/%40swc/helpers@0.5.15",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/helpers@0.5.15|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/types",
+   "version": "0.1.28",
+   "purl": "pkg:npm/%40swc/types@0.1.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/types@0.1.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@tweenjs/tween.js",
+   "version": "23.1.3",
+   "purl": "pkg:npm/%40tweenjs/tween.js@23.1.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40tweenjs/tween.js@23.1.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/node",
+   "version": "26.1.0",
+   "purl": "pkg:npm/%40types/node@26.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/node@26.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/react",
+   "version": "19.3.0",
+   "purl": "pkg:npm/%40types/react@19.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/react@19.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/react-dom",
+   "version": "19.3.0",
+   "purl": "pkg:npm/%40types/react-dom@19.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/react-dom@19.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/stats.js",
+   "version": "0.17.4",
+   "purl": "pkg:npm/%40types/stats.js@0.17.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/stats.js@0.17.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/three",
+   "version": "0.186.0",
+   "purl": "pkg:npm/%40types/three@0.186.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/three@0.186.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@types/webxr",
+   "version": "0.5.24",
+   "purl": "pkg:npm/%40types/webxr@0.5.24",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40types/webxr@0.5.24|frontend"
+  },
+  {
+   "type": "library",
+   "name": "any-promise",
+   "version": "1.3.0",
+   "purl": "pkg:npm/any-promise@1.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/any-promise@1.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "anymatch",
+   "version": "3.1.3",
+   "purl": "pkg:npm/anymatch@3.1.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/anymatch@3.1.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "picomatch",
+   "version": "2.3.2",
+   "purl": "pkg:npm/picomatch@2.3.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/picomatch@2.3.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "arg",
+   "version": "5.0.2",
+   "purl": "pkg:npm/arg@5.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/arg@5.0.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "autoprefixer",
+   "version": "10.6.1",
+   "purl": "pkg:npm/autoprefixer@10.6.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/autoprefixer@10.6.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "baseline-browser-mapping",
+   "version": "2.11.28",
+   "purl": "pkg:npm/baseline-browser-mapping@2.11.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/baseline-browser-mapping@2.11.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "binary-extensions",
+   "version": "2.3.0",
+   "purl": "pkg:npm/binary-extensions@2.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/binary-extensions@2.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "braces",
+   "version": "3.0.3",
+   "purl": "pkg:npm/braces@3.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/braces@3.0.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "browserslist",
+   "version": "4.29.3",
+   "purl": "pkg:npm/browserslist@4.29.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/browserslist@4.29.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "camelcase-css",
+   "version": "2.0.1",
+   "purl": "pkg:npm/camelcase-css@2.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/camelcase-css@2.0.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "caniuse-lite",
+   "version": "1.0.30001816",
+   "purl": "pkg:npm/caniuse-lite@1.0.30001816",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/caniuse-lite@1.0.30001816|frontend"
+  },
+  {
+   "type": "library",
+   "name": "chokidar",
+   "version": "3.6.0",
+   "purl": "pkg:npm/chokidar@3.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/chokidar@3.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "glob-parent",
+   "version": "5.1.2",
+   "purl": "pkg:npm/glob-parent@5.1.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/glob-parent@5.1.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "client-only",
+   "version": "0.0.1",
+   "purl": "pkg:npm/client-only@0.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/client-only@0.0.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "commander",
+   "version": "4.1.1",
+   "purl": "pkg:npm/commander@4.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/commander@4.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "content-type",
+   "version": "2.1.0",
+   "purl": "pkg:npm/content-type@2.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/content-type@2.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "cssesc",
+   "version": "3.0.0",
+   "purl": "pkg:npm/cssesc@3.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/cssesc@3.0.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "csstype",
+   "version": "3.2.3",
+   "purl": "pkg:npm/csstype@3.2.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/csstype@3.2.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "detect-libc",
+   "version": "2.1.2",
+   "purl": "pkg:npm/detect-libc@2.1.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/detect-libc@2.1.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "didyoumean",
+   "version": "1.2.2",
+   "purl": "pkg:npm/didyoumean@1.2.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/didyoumean@1.2.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "dlv",
+   "version": "1.1.3",
+   "purl": "pkg:npm/dlv@1.1.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/dlv@1.1.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "electron-to-chromium",
+   "version": "1.5.456",
+   "purl": "pkg:npm/electron-to-chromium@1.5.456",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/electron-to-chromium@1.5.456|frontend"
+  },
+  {
+   "type": "library",
+   "name": "es-errors",
+   "version": "1.3.0",
+   "purl": "pkg:npm/es-errors@1.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/es-errors@1.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "escalade",
+   "version": "3.2.0",
+   "purl": "pkg:npm/escalade@3.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/escalade@3.2.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fast-glob",
+   "version": "3.3.3",
+   "purl": "pkg:npm/fast-glob@3.3.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fast-glob@3.3.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fastq",
+   "version": "1.20.3",
+   "purl": "pkg:npm/fastq@1.20.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fastq@1.20.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fdir",
+   "version": "6.5.0",
+   "purl": "pkg:npm/fdir@6.5.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fdir@6.5.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fflate",
+   "version": "0.8.3",
+   "purl": "pkg:npm/fflate@0.8.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fflate@0.8.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fill-range",
+   "version": "7.1.1",
+   "purl": "pkg:npm/fill-range@7.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fill-range@7.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fraction.js",
+   "version": "5.3.4",
+   "purl": "pkg:npm/fraction.js@5.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fraction.js@5.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "fsevents",
+   "version": "2.3.3",
+   "purl": "pkg:npm/fsevents@2.3.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/fsevents@2.3.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "function-bind",
+   "version": "1.1.2",
+   "purl": "pkg:npm/function-bind@1.1.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/function-bind@1.1.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "glob-parent",
+   "version": "6.0.2",
+   "purl": "pkg:npm/glob-parent@6.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/glob-parent@6.0.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "hasown",
+   "version": "2.0.4",
+   "purl": "pkg:npm/hasown@2.0.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/hasown@2.0.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "icu-minify",
+   "version": "4.14.9",
+   "purl": "pkg:npm/icu-minify@4.14.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/icu-minify@4.14.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "intl-messageformat",
+   "version": "11.2.15",
+   "purl": "pkg:npm/intl-messageformat@11.2.15",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/intl-messageformat@11.2.15|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/icu-messageformat-parser",
+   "version": "3.5.18",
+   "purl": "pkg:npm/%40formatjs/icu-messageformat-parser@3.5.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/icu-messageformat-parser@3.5.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@formatjs/icu-skeleton-parser",
+   "version": "2.1.11",
+   "purl": "pkg:npm/%40formatjs/icu-skeleton-parser@2.1.11",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40formatjs/icu-skeleton-parser@2.1.11|frontend"
+  },
+  {
+   "type": "library",
+   "name": "is-binary-path",
+   "version": "2.1.0",
+   "purl": "pkg:npm/is-binary-path@2.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/is-binary-path@2.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "is-core-module",
+   "version": "2.17.0",
+   "purl": "pkg:npm/is-core-module@2.17.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/is-core-module@2.17.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "is-extglob",
+   "version": "2.1.1",
+   "purl": "pkg:npm/is-extglob@2.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/is-extglob@2.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "is-glob",
+   "version": "4.0.3",
+   "purl": "pkg:npm/is-glob@4.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/is-glob@4.0.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "is-number",
+   "version": "7.0.0",
+   "purl": "pkg:npm/is-number@7.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/is-number@7.0.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "jiti",
+   "version": "1.21.7",
+   "purl": "pkg:npm/jiti@1.21.7",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/jiti@1.21.7|frontend"
+  },
+  {
+   "type": "library",
+   "name": "lilconfig",
+   "version": "3.1.3",
+   "purl": "pkg:npm/lilconfig@3.1.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/lilconfig@3.1.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "lines-and-columns",
+   "version": "1.2.4",
+   "purl": "pkg:npm/lines-and-columns@1.2.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/lines-and-columns@1.2.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "merge2",
+   "version": "1.4.1",
+   "purl": "pkg:npm/merge2@1.4.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/merge2@1.4.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "meshoptimizer",
+   "version": "1.1.1",
+   "purl": "pkg:npm/meshoptimizer@1.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/meshoptimizer@1.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "micromatch",
+   "version": "4.0.8",
+   "purl": "pkg:npm/micromatch@4.0.8",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/micromatch@4.0.8|frontend"
+  },
+  {
+   "type": "library",
+   "name": "mz",
+   "version": "2.7.0",
+   "purl": "pkg:npm/mz@2.7.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/mz@2.7.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "nanoid",
+   "version": "3.3.20",
+   "purl": "pkg:npm/nanoid@3.3.20",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/nanoid@3.3.20|frontend"
+  },
+  {
+   "type": "library",
+   "name": "negotiator",
+   "version": "1.1.0",
+   "purl": "pkg:npm/negotiator@1.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/negotiator@1.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "next",
+   "version": "15.5.28",
+   "purl": "pkg:npm/next@15.5.28",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/next@15.5.28|frontend"
+  },
+  {
+   "type": "library",
+   "name": "next-intl",
+   "version": "4.14.9",
+   "purl": "pkg:npm/next-intl@4.14.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/next-intl@4.14.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "next-intl-swc-plugin-extractor",
+   "version": "4.14.9",
+   "purl": "pkg:npm/next-intl-swc-plugin-extractor@4.14.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/next-intl-swc-plugin-extractor@4.14.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/core",
+   "version": "1.16.18",
+   "purl": "pkg:npm/%40swc/core@1.16.18",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/core@1.16.18|frontend"
+  },
+  {
+   "type": "library",
+   "name": "@swc/helpers",
+   "version": "0.5.23",
+   "purl": "pkg:npm/%40swc/helpers@0.5.23",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/%40swc/helpers@0.5.23|frontend"
+  },
+  {
+   "type": "library",
+   "name": "node-addon-api",
+   "version": "7.1.1",
+   "purl": "pkg:npm/node-addon-api@7.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/node-addon-api@7.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "node-releases",
+   "version": "2.0.59",
+   "purl": "pkg:npm/node-releases@2.0.59",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/node-releases@2.0.59|frontend"
+  },
+  {
+   "type": "library",
+   "name": "normalize-path",
+   "version": "3.0.0",
+   "purl": "pkg:npm/normalize-path@3.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/normalize-path@3.0.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "object-assign",
+   "version": "4.1.1",
+   "purl": "pkg:npm/object-assign@4.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/object-assign@4.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "object-hash",
+   "version": "3.0.0",
+   "purl": "pkg:npm/object-hash@3.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/object-hash@3.0.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "path-parse",
+   "version": "1.0.7",
+   "purl": "pkg:npm/path-parse@1.0.7",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/path-parse@1.0.7|frontend"
+  },
+  {
+   "type": "library",
+   "name": "picocolors",
+   "version": "1.1.1",
+   "purl": "pkg:npm/picocolors@1.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/picocolors@1.1.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "picomatch",
+   "version": "4.0.7",
+   "purl": "pkg:npm/picomatch@4.0.7",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/picomatch@4.0.7|frontend"
+  },
+  {
+   "type": "library",
+   "name": "pirates",
+   "version": "4.0.7",
+   "purl": "pkg:npm/pirates@4.0.7",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/pirates@4.0.7|frontend"
+  },
+  {
+   "type": "library",
+   "name": "po-parser",
+   "version": "2.2.0",
+   "purl": "pkg:npm/po-parser@2.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/po-parser@2.2.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss",
+   "version": "8.5.30",
+   "purl": "pkg:npm/postcss@8.5.30",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss@8.5.30|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-import",
+   "version": "15.1.0",
+   "purl": "pkg:npm/postcss-import@15.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-import@15.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-js",
+   "version": "4.1.0",
+   "purl": "pkg:npm/postcss-js@4.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-js@4.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-load-config",
+   "version": "6.0.1",
+   "purl": "pkg:npm/postcss-load-config@6.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-load-config@6.0.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-nested",
+   "version": "6.2.0",
+   "purl": "pkg:npm/postcss-nested@6.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-nested@6.2.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-selector-parser",
+   "version": "6.1.4",
+   "purl": "pkg:npm/postcss-selector-parser@6.1.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-selector-parser@6.1.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "postcss-value-parser",
+   "version": "4.2.0",
+   "purl": "pkg:npm/postcss-value-parser@4.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/postcss-value-parser@4.2.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "queue-microtask",
+   "version": "1.2.3",
+   "purl": "pkg:npm/queue-microtask@1.2.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/queue-microtask@1.2.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "react",
+   "version": "19.2.9",
+   "purl": "pkg:npm/react@19.2.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/react@19.2.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "react-dom",
+   "version": "19.2.9",
+   "purl": "pkg:npm/react-dom@19.2.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/react-dom@19.2.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "read-cache",
+   "version": "1.0.2",
+   "purl": "pkg:npm/read-cache@1.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/read-cache@1.0.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "readdirp",
+   "version": "3.6.0",
+   "purl": "pkg:npm/readdirp@3.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/readdirp@3.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "resolve",
+   "version": "1.22.13",
+   "purl": "pkg:npm/resolve@1.22.13",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/resolve@1.22.13|frontend"
+  },
+  {
+   "type": "library",
+   "name": "reusify",
+   "version": "1.1.0",
+   "purl": "pkg:npm/reusify@1.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/reusify@1.1.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "run-parallel",
+   "version": "1.2.0",
+   "purl": "pkg:npm/run-parallel@1.2.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/run-parallel@1.2.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "scheduler",
+   "version": "0.27.0",
+   "purl": "pkg:npm/scheduler@0.27.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/scheduler@0.27.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "semver",
+   "version": "7.8.5",
+   "purl": "pkg:npm/semver@7.8.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/semver@7.8.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "sharp",
+   "version": "0.35.5",
+   "purl": "pkg:npm/sharp@0.35.5",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/sharp@0.35.5|frontend"
+  },
+  {
+   "type": "library",
+   "name": "source-map-js",
+   "version": "1.2.2",
+   "purl": "pkg:npm/source-map-js@1.2.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/source-map-js@1.2.2|frontend"
+  },
+  {
+   "type": "library",
+   "name": "styled-jsx",
+   "version": "5.1.6",
+   "purl": "pkg:npm/styled-jsx@5.1.6",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/styled-jsx@5.1.6|frontend"
+  },
+  {
+   "type": "library",
+   "name": "sucrase",
+   "version": "3.35.1",
+   "purl": "pkg:npm/sucrase@3.35.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/sucrase@3.35.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "supports-preserve-symlinks-flag",
+   "version": "1.0.0",
+   "purl": "pkg:npm/supports-preserve-symlinks-flag@1.0.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/supports-preserve-symlinks-flag@1.0.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "tailwindcss",
+   "version": "3.4.19",
+   "purl": "pkg:npm/tailwindcss@3.4.19",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/tailwindcss@3.4.19|frontend"
+  },
+  {
+   "type": "library",
+   "name": "thenify",
+   "version": "3.3.1",
+   "purl": "pkg:npm/thenify@3.3.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/thenify@3.3.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "thenify-all",
+   "version": "1.6.0",
+   "purl": "pkg:npm/thenify-all@1.6.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/thenify-all@1.6.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "three",
+   "version": "0.186.1",
+   "purl": "pkg:npm/three@0.186.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/three@0.186.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "tinyglobby",
+   "version": "0.2.17",
+   "purl": "pkg:npm/tinyglobby@0.2.17",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/tinyglobby@0.2.17|frontend"
+  },
+  {
+   "type": "library",
+   "name": "to-regex-range",
+   "version": "5.0.1",
+   "purl": "pkg:npm/to-regex-range@5.0.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/to-regex-range@5.0.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "ts-interface-checker",
+   "version": "0.1.13",
+   "purl": "pkg:npm/ts-interface-checker@0.1.13",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/ts-interface-checker@0.1.13|frontend"
+  },
+  {
+   "type": "library",
+   "name": "tslib",
+   "version": "2.8.1",
+   "purl": "pkg:npm/tslib@2.8.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/tslib@2.8.1|frontend"
+  },
+  {
+   "type": "library",
+   "name": "typescript",
+   "version": "6.0.3",
+   "purl": "pkg:npm/typescript@6.0.3",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/typescript@6.0.3|frontend"
+  },
+  {
+   "type": "library",
+   "name": "undici-types",
+   "version": "8.3.0",
+   "purl": "pkg:npm/undici-types@8.3.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/undici-types@8.3.0|frontend"
+  },
+  {
+   "type": "library",
+   "name": "update-browserslist-db",
+   "version": "1.3.4",
+   "purl": "pkg:npm/update-browserslist-db@1.3.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/update-browserslist-db@1.3.4|frontend"
+  },
+  {
+   "type": "library",
+   "name": "use-intl",
+   "version": "4.14.9",
+   "purl": "pkg:npm/use-intl@4.14.9",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/use-intl@4.14.9|frontend"
+  },
+  {
+   "type": "library",
+   "name": "util-deprecate",
+   "version": "1.0.2",
+   "purl": "pkg:npm/util-deprecate@1.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "so-montagem"
+    }
+   ],
+   "bom-ref": "pkg:npm/util-deprecate@1.0.2|frontend"
+  }
+ ]
+}
