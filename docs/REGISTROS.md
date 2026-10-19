@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.1 — 18/10/2026 |
+| Versão do documento | 1.2 — 19/10/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -25,7 +25,8 @@
 
 | Grupo | Ações (`acao`) |
 |---|---|
-| Autenticação | `login`, `falha_login`, `logout`, `troca_senha`, `falha_troca_senha`, `solicitacao_redefinicao_senha`, `redefinicao_senha` |
+| Autenticação | `login` (com "com segundo fator" nos detalhes quando houve código), `falha_login`, `logout`, `troca_senha`, `falha_troca_senha`, `solicitacao_redefinicao_senha`, `redefinicao_senha` |
+| Login em duas etapas | `falha_segundo_fator`, `segundo_fator_ativado`, `segundo_fator_desativado`, `codigo_recuperacao_usado`, `novos_codigos_recuperacao`, `segundo_fator_redefinido_pelo_admin`, `segundo_fator_redefinido_pelo_servidor` (roteiro `redefinir_segundo_fator.py`) |
 | Sessões | `encerramento_sessao_pelo_usuario`, `encerramento_outras_sessoes` ("Meus acessos"), `encerramento_sessoes_pelo_admin`, `encerramento_sessoes_de_todos` |
 | Cadastro | `solicitacao_acesso_registrada`, `confirmacao_email_solicitacao`, `falha_confirmacao_email`, `aprovacao_solicitacao_acesso`, `rejeicao_solicitacao_acesso` |
 | Usuários | `criacao_usuario`, `edicao_usuario`, `bloqueio_usuario`, `exclusao_usuario`, `atualizacao_foto_perfil`, `remocao_foto_perfil` |
@@ -46,6 +47,7 @@ A lista acima é conferida automaticamente com o código (`tests/test_documentac
 - códigos de link;
 - cookie de sessão;
 - `jti`;
+- segredo do aplicativo autenticador, códigos de 6 números e códigos de recuperação;
 - conteúdo do `.env`.
 
 Isso é comprovado por:
@@ -80,3 +82,4 @@ Isso é comprovado por:
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Grupo 2: ip/rota, eventos de segurança, lacre e proteção, JSON, retenção |
+| 1.2 | 19/10/2026 | Ações do login em duas etapas |

@@ -103,6 +103,7 @@ function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFe
 
 export default function UsuariosPage() {
   const t = useTranslations('Usuarios')
+  const tSF = useTranslations('SegundoFator')
   const tComum = useTranslations('Comum')
   const idioma = useLocale()
   const router = useRouter()
@@ -253,6 +254,32 @@ export default function UsuariosPage() {
       )
     } catch {
       setAvisoAcessos(t('erroEncerrarAcessos'))
+    }
+  }
+
+  // Redefinir o login em duas etapas (pessoa perdeu o celular E os codigos
+  // de recuperacao): apaga o cadastro do aplicativo e encerra os acessos;
+  // no proximo login ela cadastra de novo. Exige confirmar a identidade antes.
+  async function redefinirSegundoFator(usuario: Usuario) {
+    if (!autenticado || !window.confirm(tSF('confirmarRedefinir', { nome: usuario.nome }))) return
+    setAvisoAcessos('')
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/redefinir-segundo-fator`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        const dados = await response.json().catch(() => ({}))
+        setAvisoAcessos(typeof dados?.detail === 'string' ? dados.detail : tSF('erroGenerico'))
+        return
+      }
+      setAvisoAcessos(tSF('redefinido', { nome: usuario.nome }))
+    } catch {
+      setAvisoAcessos(tSF('erroGenerico'))
     }
   }
 
@@ -769,6 +796,13 @@ export default function UsuariosPage() {
                             className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-amber-500 hover:text-amber-300"
                           >
                             {t('encerrarAcessos')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => redefinirSegundoFator(usuario)}
+                            className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-amber-500 hover:text-amber-300"
+                          >
+                            {tSF('redefinir')}
                           </button>
                           <button
                             type="button"

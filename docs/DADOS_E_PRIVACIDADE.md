@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.1 — 18/10/2026 |
+| Versão do documento | 1.2 — 19/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -28,7 +28,8 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | DICOM original identificável | Orthanc, **por segundos ou minutos**: apagado logo após a anonimização; imagens do aparelho são anonimizadas em até `ANONIMIZACAO_AUTOMATICA_SEGUNDOS` (60 s) | N4 | não é retido |
 | DICOM anonimizado | Orthanc (volume `orthanc_data`); referência em `orthanc_references` | N0/N1 | enquanto houver uso acadêmico; desativação lógica (`ativo=false`) |
 | Usuário: nome, e-mail, instituição, perfil, foto | `users`; foto em `backend/uploads/avatars` (nome gerado pelo servidor) | N2 | conta excluída fica marcada (`excluido`), sem apagar o histórico |
-| Resumo da senha | `users.senha_hash` (bcrypt, custo 12) | N3 | substituído a cada troca |
+| Resumo da senha | `users.senha_hash` (Argon2id; as anteriores a 19/10/2026 em bcrypt, custo 12, até o próximo login) | N3 | substituído a cada troca |
+| Login em duas etapas: segredo do aplicativo, último código aceito, resumos dos códigos de recuperação | `users.totp_segredo_cifrado` (**cifrado**), `totp_ultimo_passo`, `codigos_recuperacao` (só resumo SHA-256) | N3 | apagados ao desligar ou redefinir |
 | Código de redefinição de senha | `users.reset_token` — **só o resumo SHA-256** | N3 | 60 min, uso único |
 | Pedido de acesso (nome, e-mail, instituição, motivo, resumo da senha) | `access_requests` — código de confirmação só como resumo SHA-256 | N2/N3 | mantido como histórico da decisão |
 | Sessões (`jti`, início, fim, motivo, endereço de rede, **resumo** do aparelho — ex.: "Chrome · Windows" —, último uso) | `sessoes_usuario`; o texto completo do navegador **não** é guardado (minimização) | N3 (`jti`) / N2 (origem) | apagadas 30 dias após encerradas |
@@ -47,7 +48,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 |---|---|---|---|---|---|
 | Quem acessa | ninguém pela aplicação | ninguém lê o valor; só o sistema confere | o próprio usuário e o administrador | perfis da curadoria (e o dono, nas anotações e nos recados) | todos os logados |
 | Criptografia em trânsito | rede interna; **HTTPS na implantação** (risco aceito) | idem | idem | idem | idem |
-| Guardado como | não é guardado | resumo (bcrypt/SHA-256) ou só no `.env` | texto no banco | texto no banco | texto no banco |
+| Guardado como | não é guardado | resumo (Argon2id/SHA-256), cifrado (segredo do aplicativo) ou só no `.env` | texto no banco | texto no banco | texto no banco |
 | Cache do navegador | — | cookie `HttpOnly` | `no-store` | `no-store` | `no-store`; imagens com cache próprio |
 | Pode ir para registro (log) | nunca | nunca | só o necessário (e-mail em falha de login) | não | não |
 | Pode sair do sistema | nunca | nunca | e-mail transacional ao próprio dono | não | sim: download e e-mail, pelo próprio usuário |
@@ -129,3 +130,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Acesso por campo na escrita (seção 4.1, ASVS 8.2.3) |
+| 1.2 | 19/10/2026 | Senhas em Argon2id; dados do login em duas etapas |

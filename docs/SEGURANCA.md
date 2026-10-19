@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.8 — 18/10/2026 |
+| Versão do documento | 1.9 — 19/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -27,7 +27,7 @@
 
 | Dado | Exemplo | Proteção |
 |---|---|---|
-| Conta do usuário | nome, e-mail, perfil, senha (só o hash bcrypt) | login obrigatório; só administrador gerencia contas |
+| Conta do usuário | nome, e-mail, perfil, senha (só o resumo Argon2id), segredo do login em duas etapas (cifrado) | login obrigatório; só administrador gerencia contas |
 | Imagens DICOM | radiografias odontológicas | anonimização automática no envio; acesso pela portaria das imagens (seção 5) |
 | Ficha de curadoria | achados, descrição didática, observações internas | estudante não vê observações internas; só fichas aprovadas aparecem na busca |
 | Anotações pessoais | texto livre do usuário | só o dono vê/edita; compartilhamento explícito |
@@ -112,28 +112,57 @@ Implementação: biblioteca `slowapi` (`@limiter.limit` em cada rota) e um "vigi
 
 ### 3.2 Outras defesas
 - Mensagem **igual** para e-mail inexistente e senha errada ("Email ou senha incorretos"); "esqueci a senha" sempre responde a mesma frase (não revela quais e-mails existem).
-- Senhas guardadas só como hash **bcrypt**.
+- Senhas guardadas só como resumo **Argon2id** (as anteriores a 19/10/2026, em bcrypt, são convertidas no próximo login).
 - Todas as falhas de login são registradas na auditoria (`falha_login`), o que permite ao administrador identificar ataques.
 - Conta suspeita pode ser **bloqueada** pelo administrador; o bloqueio vale na hora.
 - Código de redefinição: aleatório (256 bits), validade de 60 minutos, uso único; no banco fica **só o resumo SHA-256** do código (ASVS 6.4.1), como na confirmação de e-mail.
 - Não existem contas padrão; o primeiro administrador é criado por `criar_admin.py`, que pede a senha no terminal.
 
-### 3.3 Política de senha (ASVS 6.2.1, 6.2.4, 6.2.5, 6.2.8)
+### 3.3 Política de senha (ASVS 6.2.1, 6.2.4, 6.2.5, 6.2.8, 6.2.9, 6.2.12)
 Uma única função (`app/core/politica_senha.py`) decide se uma senha **nova** pode ser usada, em todas as entradas: cadastro público, troca da própria senha, redefinição ("esqueci") e criação de conta pelo administrador.
 
 | Regra | Valor | Justificativa |
 |---|---|---|
 | Tamanho mínimo | 8 caracteres | ASVS 6.2.1 |
-| Tamanho máximo | 64 caracteres **e** 72 bytes | o bcrypt só lê 72 bytes; acima disso o fim da senha seria ignorado sem aviso (ASVS 6.2.8). Letras acentuadas ocupam 2 bytes |
+| Tamanho máximo | 128 caracteres, com qualquer acento ou símbolo | ASVS 6.2.9 pede ao menos 64. O Argon2id lê a senha **inteira** (ASVS 6.2.8); antes, com bcrypt, o limite era 64 caracteres e 72 bytes |
 | Senhas comuns | recusadas (11.663 senhas, ignorando maiúsculas) | ASVS 6.2.4 pede ao menos as 3 000 mais comuns |
+| Senhas **vazadas** | recusadas: as 100 mil senhas mais frequentes em vazamentos (base Have I Been Pwned, lista do NCSC do Reino Unido); ficam as 46.476 com 8 caracteres ou mais | ASVS 6.2.12. Checagem **local**: nada sai do servidor (decisão de 19/10/2026) |
 | Contexto | recusa senha igual ao e-mail, à parte antes do "@" ou ao nome | ASVS 6.2.11 |
 | Composição | **não** exige maiúscula/número/símbolo | ASVS 6.2.5: regras de composição levam a senhas previsíveis; incentiva-se frase curta |
 
 - Lista: `app/core/senhas_comuns.txt` — lista "passwords" do zxcvbn 4.5.0 (licença MIT), filtrada para 8 a 64 caracteres, mais senhas comuns no Brasil e palavras do contexto (Radix, UFSC, odontologia, perfis). Fica dentro do sistema: **nenhuma senha é enviada a serviço externo**.
-- Senhas já cadastradas continuam valendo; a regra se aplica na próxima troca. Uma senha antiga com mais de 72 bytes continua entrando como antes (risco residual baixo, registrado).
+- Lista de vazadas: `app/core/senhas_vazadas.txt` (SecLists, licença MIT, `100k-most-used-passwords-NCSC.txt`, baixada em 19/10/2026).
+- Senhas já cadastradas continuam valendo; a regra se aplica na próxima troca.
 - Testes: `tests/test_politica_senha.py`, `tests/test_password_reset.py`.
 
-**Melhorias planejadas:** bloqueio progressivo por conta; autenticação em dois fatores para curador/administrador.
+### 3.4 Login em duas etapas (ASVS 6.3.3; decisão de 19/10/2026)
+
+| Perfil | Situação |
+|---|---|
+| Administrador, suporte, curador | **obrigatório**: no 1º login depois da atualização, a pessoa cadastra um aplicativo autenticador (Google ou Microsoft Authenticator) lendo um QR code |
+| Professor, pesquisador, estudante | **opcional**: liga e desliga em "Meus acessos" (desligar exige senha **e** código) |
+
+Como funciona:
+1. **Senha certa** → em vez da sessão, a pessoa recebe um "vale" de 5 minutos, que **não abre nada** no sistema;
+2. **código do aplicativo** (6 números, troca a cada 30 s) → a sessão é aberta.
+
+Proteções:
+- cada código vale **uma vez**;
+- cada "vale" aceita no máximo **5 tentativas** e é usado uma vez só;
+- as rotas têm limite de 10 pedidos por minuto;
+- quem já tem aplicativo cadastrado **não** cadastra outro só com a senha (impede o invasor de trocar o celular);
+- o segredo do aplicativo fica **cifrado** no banco (`CRIPTOGRAFIA.md`).
+
+**Celular perdido:**
+- **8 códigos de recuperação** de uso único, mostrados uma vez no cadastro. Podem ser gerados de novo em "Meus acessos";
+- sem eles, o **administrador** usa "Redefinir 2 etapas" na tela Usuários, depois de confirmar a identidade da pessoa por outro meio;
+- se quem perdeu foi o próprio administrador, existe um roteiro no servidor: `docker compose exec radix-api python redefinir_segundo_fator.py`.
+
+**Limite declarado:** como é **parcial** (estudantes, professores e pesquisadores podem entrar só com a senha), o item 6.3.3 continua **reprovado** na matriz. A escolha foi do responsável, para não exigir celular de estudantes, que só veem imagens já anonimizadas e aprovadas.
+
+Testes: `tests/test_segundo_fator.py` (11 testes).
+
+**Melhoria planejada:** bloqueio progressivo por conta.
 
 ## 4. Sessão (ASVS 7.1.1 e 7.1.2)
 
@@ -211,7 +240,7 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 
 **Nome do arquivo nas respostas (ASVS 5.4.1):** toda resposta de arquivo (miniatura, ZIP, foto de perfil) leva `Content-Disposition` com um nome **gerado pelo servidor** (`radix-imago-12.png`), nunca o nome enviado pelo usuário. Só letras sem acento, números, `.`, `-` e `_` entram no cabeçalho (`disposicao_de_arquivo` em `app/core/cabecalhos.py`). Comprovado por análise do código (toda `Response(content=...)` define o nome) e por teste (`test_5_4_1_...`).
 
-Arquivo fora da regra → **422**, e nada é gravado. Arquivo malicioso disfarçado de imagem é recusado pela assinatura (`T-UPL-03`, auditoria de 15/10). Antivírus: **não há** (ASVS 5.4.3, decisão pendente do grupo 6).
+Arquivo fora da regra → **422**, e nada é gravado. Arquivo malicioso disfarçado de imagem é recusado pela assinatura (`T-UPL-03`, auditoria de 15/10). Antivírus: **não há** por enquanto (ASVS 5.4.3, risco aceito em 19/10/2026 até a implantação, seção 9).
 
 ## 6.1 Anonimização das imagens DICOM (LGPD; auditoria TST-DICOM-01 a 03)
 
@@ -264,6 +293,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | Data | Decisão | Risco aceito | Condição para encerrar |
 |---|---|---|---|
 | 15/10/2026 | HTTPS/TLS será implementado na fase final (servidor externo) | tráfego sem criptografia enquanto o uso for local e sem dados de pacientes | configurar TLS e retestar ASVS 3.3.1, 3.4.1 e V12 na implantação |
+| 19/10/2026 | **Antivírus (ASVS 5.4.3) só no servidor da implantação**: o ClamAV (antivírus livre) consome 1 a 1,5 GB de memória, que o computador de desenvolvimento não tem sobrando | por enquanto, arquivos enviados não passam por antivírus. Risco reduzido: o DICOM é lido e **regravado** pela anonimização (o arquivo original é apagado), compactados são recusados, e a foto de perfil é conferida pela assinatura e servida sem execução (`sandbox`) | instalar o ClamAV como serviço próprio no servidor, examinar todo envio antes do Orthanc e retestar 5.4.3 |
 | 18/10/2026 | Senha do banco de dados local ficou no histórico do Git (`alembic.ini`, corrigido no código em 18/10). Troca da senha adiada para a implantação | repositório **privado**, sem outros colaboradores; banco só no computador do responsável | **criar o banco do servidor externo com senha nova e forte** (nunca a antiga); trocar antes se alguém novo receber acesso ao repositório ou se ele ficar público |
 
 ### 9.1 Onde ficam os segredos (ASVS 13.3.1)
@@ -282,4 +312,5 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.9 | 19/10/2026 | Grupo 6: Argon2id e senhas de até 128 caracteres, lista de senhas vazadas (3.3), login em duas etapas (3.4), antivírus como risco aceito até a implantação (9) |
 | 1.8 | 18/10/2026 | Grupo 4: CSP completa nas telas (5.1), nome de arquivo definido pelo servidor (6), chave do serviço de voz (9.1); limites em `REGRAS_DE_NEGOCIO.md` |

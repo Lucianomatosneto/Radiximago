@@ -12,7 +12,7 @@ from app.core.database import SessionLocal
 from app.core.sessao import NOME_COOKIE_TOKEN, token_renovado
 from app.modules.sessoes import abrir_sessao
 from app.modules.users import UserRole
-from tests.conftest import SENHA_TESTE
+from tests.conftest import SENHA_TESTE, completar_segundo_fator
 
 
 def _token(usuario, faltando_s: float, inicio_ha_s: float) -> str:
@@ -41,6 +41,7 @@ def test_login_novo_nao_renova_a_cada_pedido(client, criar_usuario):
     usuario = criar_usuario(perfil=UserRole.curador)
     client.cookies.clear()
     r = client.post("/auth/login", data={"username": usuario.email, "password": SENHA_TESTE})
+    r = completar_segundo_fator(client, usuario.email, r)  # curador: login em duas etapas
     assert r.status_code == 200
     assert isinstance(decodificar_token(_cookie_renovado(r))["inicio"], int)
     r = client.get("/auth/me")

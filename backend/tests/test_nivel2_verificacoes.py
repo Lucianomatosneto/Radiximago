@@ -207,11 +207,11 @@ def test_7_4_4_botao_sair_em_todas_as_telas_logadas():
 
 
 # ---------------------------------------------------------------- V11 criptografia
-def test_11_4_2_e_11_2_1_senhas_com_bcrypt_custo_12_ou_mais():
+def test_11_4_2_e_11_2_1_senhas_com_argon2id_parametros_owasp():
+    """Desde 19/10/2026: Argon2id com o minimo da OWASP (19 MiB, 2 passadas, 1 linha)."""
     h = gerar_hash_senha("frase qualquer de teste")
-    assert h.startswith("$2b$")
-    assert int(h.split("$")[2]) >= 12
-    assert pwd_context.identify(h) == "bcrypt"
+    assert h.startswith("$argon2id$v=19$m=19456,t=2,p=1$")
+    assert pwd_context.identify(h) == "argon2"
 
 
 def test_11_4_3_e_11_5_1_codigos_aleatorios_fortes_e_resumo_sha256():
@@ -436,5 +436,5 @@ def test_11_2_2_senha_em_padrao_antigo_e_regravada_no_login(client, criar_usuari
     client.cookies.clear()
     assert client.post("/auth/login", data={"username": usuario.email, "password": SENHA_TESTE}).status_code == 200
     db.refresh(usuario)
-    assert int(usuario.senha_hash.split("$")[2]) >= 12
+    assert usuario.senha_hash.startswith("$argon2id$")  # bcrypt antigo regravado no padrao atual
     client.cookies.clear()

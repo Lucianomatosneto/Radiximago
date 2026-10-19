@@ -57,14 +57,15 @@ def test_limites_anti_abuso_documentados_sao_os_do_codigo():
 
 def test_prazos_e_custos_documentados_sao_os_do_codigo():
     from app.core.config import JWT_CHAVE_MIN_BYTES, settings
-    from app.core.security import BCRYPT_CUSTO
+    from app.core.security import ARGON2_MEMORIA_KIB, ARGON2_PASSADAS, BCRYPT_CUSTO
     from app.modules.auth import CONFIRMACAO_VALIDADE_HORAS, RESET_TOKEN_VALIDADE_MINUTOS
     from app.modules.sessoes import DIAS_GUARDAR_SESSOES
 
     dados, cripto = _doc("DADOS_E_PRIVACIDADE.md"), _doc("CRIPTOGRAFIA.md")
     assert f"{RESET_TOKEN_VALIDADE_MINUTOS} min" in dados
     assert f"{DIAS_GUARDAR_SESSOES} dias" in dados
-    assert f"bcrypt, custo {BCRYPT_CUSTO}" in dados and f"custo {BCRYPT_CUSTO}" in cripto
+    assert "Argon2id" in dados and f"custo {BCRYPT_CUSTO}" in cripto
+    assert f"{ARGON2_MEMORIA_KIB} KiB" in cripto and f"{ARGON2_PASSADAS} passadas" in cripto
     assert f"{JWT_CHAVE_MIN_BYTES} bytes" in cripto
     assert f"{CONFIRMACAO_VALIDADE_HORAS} h" in _doc("REGRAS_DE_NEGOCIO.md")
     assert f"{settings.MAX_UPLOAD_SIZE_MB} MB" in _doc("SEGURANCA.md")

@@ -9,6 +9,24 @@ import SeletorIdioma from '../../components/SeletorIdioma'
 import { regiaoDe } from '../../lib/regiaoGeografica'
 import CenaLogin from '../../components/login/CenaLogin'
 import type { ControleCena } from '../../components/login/motorCenaLogin'
+import {
+  CadastroAplicativo,
+  CampoCodigo,
+  CodigosRecuperacao,
+  type DadosCadastro,
+} from '../../components/segundoFator/PartesSegundoFator'
+
+// Login em duas etapas (backend app/modules/mfa.py): depois da senha certa,
+// perfis com poder (administrador, suporte, curadoria) - e quem ligou por
+// opcao - recebem um "desafio" em vez da sessao:
+// - "codigo": digitar o codigo do aplicativo (ou um de recuperacao);
+// - "cadastro": 1o acesso, cadastrar o aplicativo pelo QR code.
+interface EtapaSegundoFator {
+  tipo: 'codigo' | 'cadastro'
+  desafio: string
+}
+
+const API = process.env.NEXT_PUBLIC_API_URL
 
 // Tela de entrada do RÁDIX IMAGO - layout "Monolito" (aprovado em 07/10/2026):
 // titulo grande e formulario minimalista a esquerda; a direita, globo
@@ -68,6 +86,87 @@ export default function LoginPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const tSF = useTranslations('SegundoFator')
+  const [etapa, setEtapa] = useState<EtapaSegundoFator | null>(null)
+  const [cadastro, setCadastro] = useState<DadosCadastro | null>(null)
+  const [codigo, setCodigo] = useState('')
+  const [codigosRecuperacao, setCodigosRecuperacao] = useState<string[] | null>(null)
+  const [perfilFinal, setPerfilFinal] = useState('')
+
+  function irParaInicio(perfil: string) {
+    // Admin continua indo pro dashboard com os indicadores; os demais
+    // perfis vao direto pro banco de imagens, que passou a ser a tela
+    // inicial deles.
+    router.push(perfil === 'administrador' ? '/dashboard' : '/banco-imagens')
+  }
+
+  function voltarAoInicio(mensagem = '') {
+    setEtapa(null)
+    setCadastro(null)
+    setCodigo('')
+    setErro(mensagem)
+  }
+
+  async function iniciarCadastro(desafio: string) {
+    const r = await fetch(`${API}/auth/login/cadastro-mfa/iniciar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ desafio }),
+      credentials: 'include',
+    })
+    if (r.status === 401) {
+      voltarAoInicio(tSF('erroExpirado'))
+      return
+    }
+    if (!r.ok) {
+      voltarAoInicio(tSF('erroGenerico'))
+      return
+    }
+    setCadastro(await r.json())
+  }
+
+  async function enviarCodigo(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!etapa || carregando || !codigo.trim()) return
+    setErro('')
+    setCarregando(true)
+    try {
+      const caminho = etapa.tipo === 'cadastro' ? '/auth/login/cadastro-mfa/confirmar' : '/auth/login/segundo-fator'
+      const r = await fetch(`${API}${caminho}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ desafio: etapa.desafio, codigo: codigo.trim() }),
+        credentials: 'include',
+      })
+      if (r.status === 401) {
+        const dados = await r.json().catch(() => ({}))
+        // desafio vencido/esgotado: volta para a senha; codigo errado: tenta de novo
+        if (typeof dados?.detail === 'string' && dados.detail.startsWith('Etapa expirada')) {
+          voltarAoInicio(tSF('erroExpirado'))
+        } else {
+          setErro(tSF('erroCodigo'))
+          setCodigo('')
+        }
+        return
+      }
+      if (!r.ok) {
+        setErro(tSF('erroGenerico'))
+        return
+      }
+      const dados = await r.json()
+      if (Array.isArray(dados.codigos_recuperacao)) {
+        // 1o cadastro: mostra os codigos de recuperacao UMA vez antes de entrar
+        setPerfilFinal(dados.perfil)
+        setCodigosRecuperacao(dados.codigos_recuperacao)
+        return
+      }
+      irParaInicio(dados.perfil)
+    } catch {
+      setErro(tSF('erroGenerico'))
+    } finally {
+      setCarregando(false)
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -108,10 +207,13 @@ export default function LoginPage() {
       }
 
       const dados = await response.json()
-      // Admin continua indo pro dashboard com os indicadores; os demais
-      // perfis vao direto pro banco de imagens, que passou a ser a tela
-      // inicial deles.
-      router.push(dados.perfil === 'administrador' ? '/dashboard' : '/banco-imagens')
+      if (dados.segundo_fator === 'codigo' || dados.segundo_fator === 'cadastro') {
+        setEtapa({ tipo: dados.segundo_fator, desafio: dados.desafio })
+        setCodigo('')
+        if (dados.segundo_fator === 'cadastro') await iniciarCadastro(dados.desafio)
+        return
+      }
+      irParaInicio(dados.perfil)
     } catch {
       setErro(t('erroGenerico'))
     } finally {
@@ -147,7 +249,7 @@ export default function LoginPage() {
         {/* coluna esquerda: titulo, acesso e caracteristicas */}
         <section
           aria-label={t('acessoSistema')}
-          className="flex flex-col lg:fixed lg:bottom-9 lg:left-0 lg:top-12 lg:w-[640px] lg:justify-center lg:px-[clamp(40px,6vw,96px)]"
+          className="flex flex-col lg:fixed lg:bottom-9 lg:left-0 lg:top-12 lg:w-[640px] lg:justify-[safe_center] lg:overflow-y-auto lg:px-[clamp(40px,6vw,96px)]"
         >
           <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.035em] lg:text-[clamp(38px,3.6vw,58px)]" style={sombraTexto}>
             {t('tituloDestaque1')}
@@ -156,61 +258,94 @@ export default function LoginPage() {
 
           <div className="mt-[42vh] lg:hidden" aria-hidden="true" />
 
-          <form onSubmit={handleSubmit} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10">
-            <div className="flex justify-end text-[13px]">
-              <Link href="/solicitar-acesso" className="text-blue-400 hover:text-blue-300 hover:underline" style={sombraTexto}>
-                {t('primeiroAcesso')}
-              </Link>
+          {codigosRecuperacao ? (
+            <div className="mt-8 max-w-[430px] lg:mt-10">
+              <CodigosRecuperacao codigos={codigosRecuperacao} aoContinuar={() => irParaInicio(perfilFinal)} variante="escura" />
             </div>
-            <div className="-mt-3">
-              <label htmlFor="email" className="block text-[13px] font-medium text-slate-200" style={sombraTexto}>{t('email')}</label>
-              <input id="email" name="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} placeholder={t('emailPlaceholder')} />
-            </div>
-            <div>
-              <label htmlFor="senha" className="block text-[13px] font-medium text-slate-200" style={sombraTexto}>{t('senha')}</label>
-              <div className="relative">
-                <input id="senha" name="senha" type={mostrarSenha ? 'text' : 'password'} autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} className={`${campo} pr-10`} placeholder="••••••••" />
+          ) : etapa ? (
+            <form onSubmit={enviarCodigo} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10" style={sombraTexto}>
+              <p className="text-lg font-semibold text-white">
+                {etapa.tipo === 'cadastro' ? tSF('tituloCadastro') : tSF('tituloCodigo')}
+              </p>
+              {etapa.tipo === 'cadastro' ? (
+                cadastro && <CadastroAplicativo dados={cadastro} explicacao={tSF('explicacaoCadastro')} variante="escura" />
+              ) : (
+                <p className="text-sm text-white/90">{tSF('explicacaoCodigo')}</p>
+              )}
+              <CampoCodigo valor={codigo} aoMudar={setCodigo} aceitaRecuperacao={etapa.tipo === 'codigo'} variante="escura" />
+              {erro && (
+                <p className="rounded-md bg-red-950/70 px-3 py-2 text-sm text-red-200" role="alert">{erro}</p>
+              )}
+              <div className="flex items-center gap-3">
                 <button
-                  type="button"
-                  onClick={() => setMostrarSenha((v) => !v)}
-                  className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300"
-                  aria-label={mostrarSenha ? t('ocultarSenha') : t('mostrarSenha')}
+                  type="submit"
+                  disabled={carregando || !codigo.trim()}
+                  className="min-w-[160px] rounded-full bg-blue-600 px-7 py-3 text-[15px] font-semibold text-white hover:bg-blue-500 disabled:opacity-60"
                 >
-                  {mostrarSenha ? (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-                      <path d="M9.9 4.2A9.8 9.8 0 0 1 12 4c5 0 9 5 9 8a12 12 0 0 1-2.2 3M6.1 6.1C3.8 7.6 2.3 10 2.3 12c0 0 4 8 9.7 8a9 9 0 0 0 3.3-.6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
-                      <path d="M2.3 12S6 5 12 5s9.7 7 9.7 7-3.7 7-9.7 7-9.7-7-9.7-7Z" stroke="currentColor" strokeWidth={1.8} />
-                      <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth={1.8} />
-                    </svg>
-                  )}
+                  {carregando ? tSF('confirmando') : tSF('confirmar')}
+                </button>
+                <button type="button" onClick={() => voltarAoInicio()} className="text-sm text-white/80 hover:text-white">
+                  {tSF('voltar')}
                 </button>
               </div>
-            </div>
-            <div className="flex justify-end text-[13px]">
-              <Link href="/esqueci-senha" className="text-blue-400 hover:text-blue-300 hover:underline" style={sombraTexto}>{t('esqueciSenha')}</Link>
-            </div>
-
-            {erro && (
-              <p className="rounded-md bg-red-950/70 px-3 py-2 text-sm text-red-200" role="alert">{erro}</p>
-            )}
-
-            <button
-              type="submit"
-              disabled={carregando}
-              className="group mt-1 flex min-w-[200px] items-center justify-center gap-2 self-start rounded-full bg-blue-600 px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:opacity-60"
-            >
-              {carregando ? t('entrando') : t('entrar')}
-              {!carregando && (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true">
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
+            </form>
+          ) : (
+          <form onSubmit={handleSubmit} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10">
+              <div className="flex justify-end text-[13px]">
+                <Link href="/solicitar-acesso" className="text-blue-400 hover:text-blue-300 hover:underline" style={sombraTexto}>
+                  {t('primeiroAcesso')}
+                </Link>
+              </div>
+              <div className="-mt-3">
+                <label htmlFor="email" className="block text-[13px] font-medium text-slate-200" style={sombraTexto}>{t('email')}</label>
+                <input id="email" name="email" type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} className={campo} placeholder={t('emailPlaceholder')} />
+              </div>
+              <div>
+                <label htmlFor="senha" className="block text-[13px] font-medium text-slate-200" style={sombraTexto}>{t('senha')}</label>
+                <div className="relative">
+                  <input id="senha" name="senha" type={mostrarSenha ? 'text' : 'password'} autoComplete="current-password" value={senha} onChange={(e) => setSenha(e.target.value)} className={`${campo} pr-10`} placeholder="••••••••" />
+                  <button
+                    type="button"
+                    onClick={() => setMostrarSenha((v) => !v)}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300"
+                    aria-label={mostrarSenha ? t('ocultarSenha') : t('mostrarSenha')}
+                  >
+                    {mostrarSenha ? (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                        <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+                        <path d="M9.9 4.2A9.8 9.8 0 0 1 12 4c5 0 9 5 9 8a12 12 0 0 1-2.2 3M6.1 6.1C3.8 7.6 2.3 10 2.3 12c0 0 4 8 9.7 8a9 9 0 0 0 3.3-.6" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4" aria-hidden="true">
+                        <path d="M2.3 12S6 5 12 5s9.7 7 9.7 7-3.7 7-9.7 7-9.7-7-9.7-7Z" stroke="currentColor" strokeWidth={1.8} />
+                        <circle cx="12" cy="12" r="2.5" stroke="currentColor" strokeWidth={1.8} />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end text-[13px]">
+                <Link href="/esqueci-senha" className="text-blue-400 hover:text-blue-300 hover:underline" style={sombraTexto}>{t('esqueciSenha')}</Link>
+              </div>
+  
+              {erro && (
+                <p className="rounded-md bg-red-950/70 px-3 py-2 text-sm text-red-200" role="alert">{erro}</p>
               )}
-            </button>
-          </form>
+  
+              <button
+                type="submit"
+                disabled={carregando}
+                className="group mt-1 flex min-w-[200px] items-center justify-center gap-2 self-start rounded-full bg-blue-600 px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:opacity-60"
+              >
+                {carregando ? t('entrando') : t('entrar')}
+                {!carregando && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true">
+                    <path d="M5 12h14M13 6l6 6-6 6" />
+                  </svg>
+                )}
+              </button>
+            </form>
+          )}
 
           <ul className="mt-10 flex max-w-[460px] flex-wrap gap-x-6 gap-y-2 text-[13.5px] text-slate-200" aria-label={t('apresentacao')} style={sombraTexto}>
             <li className="flex items-center gap-2.5"><Icone tipo="escudo" />{t('caracteristicaAnonimizadas')}</li>

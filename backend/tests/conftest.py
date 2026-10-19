@@ -261,8 +261,44 @@ def criar_solicitacao_acesso(db):
     db.commit()
 
 
+def codigo_atual_do_usuario(email: str) -> str:
+    """Codigo do aplicativo autenticador da conta (o teste faz o papel do celular).
+    Zera o "ultimo codigo usado" para o mesmo codigo valer em logins seguidos."""
+    import pyotp
+
+    from app.modules import mfa
+
+    sessao = SessionLocal()
+    try:
+        usuario = sessao.query(User).filter(User.email == email, User.excluido.is_(False)).first()
+        usuario.totp_ultimo_passo = None
+        sessao.commit()
+        return pyotp.TOTP(mfa.decifrar(usuario.totp_segredo_cifrado)).now()
+    finally:
+        sessao.close()
+
+
+def completar_segundo_fator(client: TestClient, email: str, resposta):
+    """Login em duas etapas (app/modules/mfa.py): perfis com poder recebem um
+    desafio em vez da sessao. Aqui o teste cadastra o aplicativo (1o login)
+    ou digita o codigo, como a pessoa faria na tela."""
+    import pyotp
+
+    dados = resposta.json()
+    if "segundo_fator" not in dados:
+        return resposta
+    if dados["segundo_fator"] == "cadastro":
+        cadastro = client.post("/auth/login/cadastro-mfa/iniciar", json={"desafio": dados["desafio"]})
+        assert cadastro.status_code == 200, cadastro.text
+        codigo = pyotp.TOTP(cadastro.json()["segredo"]).now()
+        return client.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": dados["desafio"], "codigo": codigo})
+    return client.post("/auth/login/segundo-fator", json={"desafio": dados["desafio"], "codigo": codigo_atual_do_usuario(email)})
+
+
 def obter_token(client: TestClient, email: str, senha: str = SENHA_TESTE) -> str:
     resposta = client.post("/auth/login", data={"username": email, "password": senha})
+    assert resposta.status_code == 200, resposta.text
+    resposta = completar_segundo_fator(client, email, resposta)
     assert resposta.status_code == 200, resposta.text
     # /auth/login tambem seta um cookie httpOnly (ver auth.py) - o TestClient
     # persiste cookies entre chamadas como um navegador de verdade, e

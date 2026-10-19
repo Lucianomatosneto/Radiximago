@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
+import SecaoSegundoFator from '../../components/segundoFator/SecaoSegundoFator'
 
 interface Acesso {
   id: string
@@ -171,6 +172,8 @@ export default function MeusAcessosPage() {
             </button>
           )}
           <p className="mt-6 max-w-2xl text-xs text-slate-500">{t('dica')}</p>
+          {/* login em duas etapas (ASVS 6.3.3) */}
+          <SecaoSegundoFator />
         </main>
       </div>
     </div>

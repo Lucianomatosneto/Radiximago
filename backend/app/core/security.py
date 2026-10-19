@@ -10,15 +10,28 @@ from passlib.context import CryptContext
 from app.core.config import settings
 
 # Agilidade criptografica (OWASP ASVS 11.2.2 - docs/CRIPTOGRAFIA.md): a lista
-# de esquemas e o custo minimo ficam AQUI. Para trocar de algoritmo (ex.:
-# Argon2), basta pô-lo na frente da lista; senhas antigas continuam
-# entrando e sao regravadas no novo padrao no proximo login
-# (senha_precisa_atualizar). O mesmo vale se o custo minimo subir.
-BCRYPT_CUSTO = 12
+# de esquemas e os custos ficam AQUI. O PRIMEIRO esquema da lista e o usado
+# para senhas novas; os demais so servem para conferir senhas antigas, que
+# sao regravadas no padrao novo no proximo login (senha_precisa_atualizar).
+#
+# Desde 19/10/2026 (grupo 6 do Nivel 2): Argon2id, o algoritmo recomendado
+# pela OWASP (Password Storage Cheat Sheet). Diferente do bcrypt, ele le a
+# senha INTEIRA - o bcrypt so lia os primeiros 72 bytes, o que limitava
+# senhas longas com acentos (ASVS 6.2.9). Parametros = minimo recomendado
+# pela OWASP (19 MiB de memoria, 2 passadas, 1 linha de execucao): cada
+# conferencia custa memoria, o que encarece ataques com placas de video,
+# sem pesar no servidor (alguns centesimos de segundo por login).
+ARGON2_MEMORIA_KIB = 19456
+ARGON2_PASSADAS = 2
+ARGON2_PARALELISMO = 1
+BCRYPT_CUSTO = 12  # so para conferir as senhas antigas (ainda em bcrypt)
 pwd_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-    bcrypt__default_rounds=BCRYPT_CUSTO,
+    schemes=["argon2", "bcrypt"],
+    deprecated=["bcrypt"],
+    argon2__type="ID",
+    argon2__memory_cost=ARGON2_MEMORIA_KIB,
+    argon2__time_cost=ARGON2_PASSADAS,
+    argon2__parallelism=ARGON2_PARALELISMO,
     bcrypt__min_rounds=BCRYPT_CUSTO,
 )
 
@@ -66,3 +79,32 @@ def decodificar_token(token: str) -> Optional[dict]:
     except jwt.PyJWTError:
         return None
     return dados if dados.get("tipo") == TIPO_TOKEN_SESSAO else None
+
+
+# Desafio do LOGIN EM DUAS ETAPAS (app/modules/mfa.py): depois da senha
+# certa, quem precisa do segundo fator recebe este "vale" curto em vez da
+# sessao. Ele NAO abre nada no sistema - decodificar_token recusa porque o
+# tipo e outro - e so serve para trocar pelo codigo do aplicativo.
+TIPO_TOKEN_DESAFIO_MFA = "mfa_desafio"
+DESAFIO_MFA_MINUTOS = 5
+
+
+def criar_desafio_mfa(usuario_id: int, identificador: str) -> str:
+    expiracao = datetime.now(timezone.utc) + timedelta(minutes=DESAFIO_MFA_MINUTOS)
+    return jwt.encode(
+        {"sub": str(usuario_id), "jti": identificador, "exp": expiracao,
+         "iss": EMISSOR_TOKEN, "aud": PUBLICO_TOKEN, "tipo": TIPO_TOKEN_DESAFIO_MFA},
+        settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+def decodificar_desafio_mfa(token: str) -> Optional[dict]:
+    try:
+        dados = jwt.decode(
+            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM],
+            audience=PUBLICO_TOKEN, issuer=EMISSOR_TOKEN,
+            options={"require": ["exp", "iss", "aud", "sub", "jti"]},
+        )
+    except jwt.PyJWTError:
+        return None
+    return dados if dados.get("tipo") == TIPO_TOKEN_DESAFIO_MFA else None

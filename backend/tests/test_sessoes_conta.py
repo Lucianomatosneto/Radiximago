@@ -20,7 +20,7 @@ from app.core.sessao import NOME_COOKIE_TOKEN
 from app.main import app
 from app.modules.sessoes import resumo_do_aparelho
 from app.modules.users import UserRole
-from tests.conftest import SENHA_TESTE, cabecalho_auth
+from tests.conftest import SENHA_TESTE, cabecalho_auth, completar_segundo_fator
 
 CHROME_WINDOWS = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0 Safari/537.36"
 FIREFOX_ANDROID = "Mozilla/5.0 (Android 14; Mobile; rv:131.0) Gecko/131.0 Firefox/131.0"
@@ -30,6 +30,7 @@ def _entrar(email: str, navegador: str) -> TestClient:
     """Um 'aparelho': cliente proprio, com seu navegador e seu cookie."""
     aparelho = TestClient(app, headers={"User-Agent": navegador})
     r = aparelho.post("/auth/login", data={"username": email, "password": SENHA_TESTE})
+    r = completar_segundo_fator(aparelho, email, r)  # perfis com poder: login em duas etapas
     assert r.status_code == 200, r.text
     return aparelho
 

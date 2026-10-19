@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
@@ -14,7 +14,10 @@ from app.core.rate_limit import limiter
 import time
 
 from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
-from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha, senha_precisa_atualizar
+from app.core.security import (
+    criar_desafio_mfa, criar_token_acesso, decodificar_token, gerar_hash_senha, senha_precisa_atualizar, verificar_senha,
+)
+from app.modules import mfa
 from app.core.politica_senha import problema_na_senha
 from app.core.limites import EMAIL_MAX, SENHA_MAX, Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
@@ -68,7 +71,15 @@ class TokenResposta(BaseModel):
     nome: str
     foto_perfil_url: str | None = None
 
-@router.post("/login", response_model=TokenResposta)
+
+class DesafioSegundoFator(BaseModel):
+    """Senha certa, mas falta o segundo fator: "codigo" (digitar o codigo
+    do aplicativo) ou "cadastro" (perfil exige e o aplicativo ainda nao foi
+    cadastrado). Nenhuma sessao e aberta nesta etapa."""
+    segundo_fator: Literal["codigo", "cadastro"]
+    desafio: str
+
+@router.post("/login", response_model=TokenResposta | DesafioSegundoFator)
 @limiter.limit("5/minute")
 def login(
     request: Request,
@@ -114,6 +125,26 @@ def login(
         ))
         db.commit()
         raise HTTPException(status_code=403, detail="Usuário inativo")
+    # senha guardada em padrao antigo (algoritmo/custo): regrava no padrao
+    # atual agora que a senha correta foi digitada (ASVS 11.2.2)
+    if senha_precisa_atualizar(usuario.senha_hash):
+        usuario.senha_hash = gerar_hash_senha(form_data.password)
+    # LOGIN EM DUAS ETAPAS (app/modules/mfa.py, ASVS 6.3.3): a senha certa
+    # ainda NAO abre a sessao - devolve um "vale" de 5 min para trocar pelo
+    # codigo do aplicativo (ou para cadastrar o aplicativo, se o perfil
+    # exige e a pessoa ainda nao cadastrou).
+    if mfa.precisa_segundo_fator(usuario):
+        db.commit()
+        etapa = "codigo" if usuario.totp_ativo else "cadastro"
+        return {
+            "segundo_fator": etapa,
+            "desafio": criar_desafio_mfa(usuario.id, mfa.novo_identificador_desafio()),
+        }
+    return concluir_login(request, response, db, usuario)
+
+
+def concluir_login(request: Request, response: Response, db: Session, usuario: User, detalhes: str | None = None) -> dict:
+    """Abre a sessao (senha - e, se for o caso, segundo fator - ja conferidos)."""
     # Sessao revogavel (app/modules/sessoes.py): o login anterior DESTE
     # navegador (cookie recebido) e encerrado e uma sessao nova e aberta -
     # o token carrega o identificador dela ("jti"). OWASP ASVS 7.2.4.
@@ -124,13 +155,9 @@ def login(
     token = criar_token_acesso({
         "sub": str(usuario.id), "perfil": usuario.perfil, "inicio": int(time.time()), "jti": jti,
     })
-    # senha guardada em padrao antigo (algoritmo/custo): regrava no padrao
-    # atual agora que a senha correta foi digitada (ASVS 11.2.2)
-    if senha_precisa_atualizar(usuario.senha_hash):
-        usuario.senha_hash = gerar_hash_senha(form_data.password)
     db.add(AuditLog(
         usuario_id=usuario.id, acao="login", entidade="user", entidade_id=usuario.id,
-        resultado="sucesso",
+        resultado="sucesso", detalhes=detalhes,
     ))
     db.commit()
     # Cookie httpOnly (migracao de localStorage) - a resposta JSON abaixo

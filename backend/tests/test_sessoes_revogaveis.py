@@ -17,12 +17,13 @@ from app.main import app
 from app.modules.auth import _resumo_token
 from app.modules.sessoes import SessaoUsuario
 from app.modules.users import UserRole
-from tests.conftest import SENHA_TESTE, cabecalho_auth
+from tests.conftest import SENHA_TESTE, cabecalho_auth, completar_segundo_fator
 
 
 def _entrar(cliente: TestClient, email: str, senha: str = SENHA_TESTE) -> str:
     """Login como um navegador: o cookie fica guardado no cliente."""
     r = cliente.post("/auth/login", data={"username": email, "password": senha})
+    r = completar_segundo_fator(cliente, email, r)  # perfis com poder: login em duas etapas
     assert r.status_code == 200, r.text
     return cliente.cookies.get(NOME_COOKIE_TOKEN)
 

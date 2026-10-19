@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum, ForeignKey
+from sqlalchemy import JSON, BigInteger, Column, Integer, String, Boolean, DateTime, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -48,3 +48,16 @@ class User(Base):
     # pedido).
     reset_token = Column(String(255), unique=True, index=True, nullable=True)
     reset_token_expira_em = Column(DateTime(timezone=True), nullable=True)
+
+    # Login em duas etapas (OWASP ASVS 6.3.3 - app/modules/mfa.py):
+    # - totp_segredo_cifrado: segredo do aplicativo autenticador, CIFRADO
+    #   (Fernet/AES; chave derivada da JWT_SECRET_KEY). Preenchido ja no
+    #   inicio do cadastro; so vale depois de confirmado (totp_ativo);
+    # - totp_ultimo_passo: ultimo codigo aceito (janela de 30 s) - o mesmo
+    #   codigo nao entra duas vezes (ASVS 6.5.1);
+    # - codigos_recuperacao: resumos SHA-256 dos codigos de uso unico para
+    #   quando o celular nao estiver a mao (ASVS 6.5.x).
+    totp_segredo_cifrado = Column(String(300), nullable=True)
+    totp_ativo = Column(Boolean, nullable=False, default=False, server_default="false")
+    totp_ultimo_passo = Column(BigInteger, nullable=True)
+    codigos_recuperacao = Column(JSON, nullable=True)

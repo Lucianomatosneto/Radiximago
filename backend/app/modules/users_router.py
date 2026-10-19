@@ -405,6 +405,38 @@ def encerrar_sessoes_de_usuario(
     return {"encerradas": fechadas}
 
 
+@router.post("/{user_id}/redefinir-segundo-fator")
+def redefinir_segundo_fator(
+    user_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """
+    A pessoa perdeu o celular E os codigos de recuperacao: o administrador
+    apaga o cadastro do aplicativo dela (OWASP ASVS 6.4.x - recuperacao com
+    intervencao de outra pessoa). Todos os acessos dela sao encerrados; no
+    proximo login, se o perfil exige, ela cadastra o aplicativo de novo.
+    Antes de usar, confirme a identidade da pessoa por outro meio (ex.:
+    pessoalmente ou pelo e-mail institucional).
+    """
+    from app.modules import mfa
+    from app.modules.sessoes import encerrar_sessoes_do_usuario
+
+    usuario = db.query(User).filter(User.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    if usuario.id == usuario_atual.id:
+        raise HTTPException(status_code=409, detail="Use o roteiro do servidor para redefinir o seu próprio segundo fator.")
+    mfa.desligar(usuario)
+    fechadas = encerrar_sessoes_do_usuario(db, usuario.id, "segundo_fator_redefinido")
+    db.add(AuditLog(
+        usuario_id=usuario_atual.id, acao="segundo_fator_redefinido_pelo_admin", entidade="user",
+        entidade_id=usuario.id, resultado="sucesso", detalhes=f"Sessoes encerradas: {fechadas}.",
+    ))
+    db.commit()
+    return {"mensagem": "Segundo fator redefinido. A pessoa cadastra o aplicativo de novo no próximo login."}
+
+
 @router.patch("/{user_id}/block")
 def bloquear_usuario(
     user_id: int,

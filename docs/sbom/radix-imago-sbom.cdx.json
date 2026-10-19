@@ -2,9 +2,9 @@
  "bomFormat": "CycloneDX",
  "specVersion": "1.5",
  "version": 1,
- "serialNumber": "urn:uuid:a651ece2-82af-4cdf-a333-92eab5ce1416",
+ "serialNumber": "urn:uuid:35a53326-4092-4a44-937d-04439dadae11",
  "metadata": {
-  "timestamp": "2026-10-18T20:09:10+00:00",
+  "timestamp": "2026-10-19T18:48:17+00:00",
   "component": {
    "type": "application",
    "name": "Radix Imago",
@@ -136,6 +136,74 @@
     }
    ],
    "bom-ref": "pkg:pypi/passlib@1.7.4|backend"
+  },
+  {
+   "type": "library",
+   "name": "argon2-cffi",
+   "version": "25.1.0",
+   "purl": "pkg:pypi/argon2-cffi@25.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/argon2-cffi@25.1.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "PyOTP",
+   "version": "2.10.0",
+   "purl": "pkg:pypi/pyotp@2.10.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/pyotp@2.10.0|backend"
+  },
+  {
+   "type": "library",
+   "name": "segno",
+   "version": "1.6.6",
+   "purl": "pkg:pypi/segno@1.6.6",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/segno@1.6.6|backend"
+  },
+  {
+   "type": "library",
+   "name": "cryptography",
+   "version": "50.0.2",
+   "purl": "pkg:pypi/cryptography@50.0.2",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/cryptography@50.0.2|backend"
   },
   {
    "type": "library",
@@ -459,6 +527,23 @@
     }
    ],
    "bom-ref": "pkg:pypi/anyio@4.15.1|backend"
+  },
+  {
+   "type": "library",
+   "name": "cffi",
+   "version": "2.1.1",
+   "purl": "pkg:pypi/cffi@2.1.1",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/cffi@2.1.1|backend"
   },
   {
    "type": "library",
@@ -837,8 +922,8 @@
   {
    "type": "library",
    "name": "websockets",
-   "version": "17.2",
-   "purl": "pkg:pypi/websockets@17.2",
+   "version": "17.3",
+   "purl": "pkg:pypi/websockets@17.3",
    "properties": [
     {
      "name": "radix:parte",
@@ -849,7 +934,24 @@
      "value": "indireta"
     }
    ],
-   "bom-ref": "pkg:pypi/websockets@17.2|backend"
+   "bom-ref": "pkg:pypi/websockets@17.3|backend"
+  },
+  {
+   "type": "library",
+   "name": "argon2-cffi-bindings",
+   "version": "26.1.0",
+   "purl": "pkg:pypi/argon2-cffi-bindings@26.1.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/argon2-cffi-bindings@26.1.0|backend"
   },
   {
    "type": "library",
@@ -972,9 +1074,9 @@
   },
   {
    "type": "library",
-   "name": "filelock",
-   "version": "4.2.2",
-   "purl": "pkg:pypi/filelock@4.2.2",
+   "name": "pycparser",
+   "version": "3.11",
+   "purl": "pkg:pypi/pycparser@3.11",
    "properties": [
     {
      "name": "radix:parte",
@@ -985,7 +1087,24 @@
      "value": "indireta"
     }
    ],
-   "bom-ref": "pkg:pypi/filelock@4.2.2|backend"
+   "bom-ref": "pkg:pypi/pycparser@3.11|backend"
+  },
+  {
+   "type": "library",
+   "name": "filelock",
+   "version": "4.2.4",
+   "purl": "pkg:pypi/filelock@4.2.4",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "backend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "indireta"
+    }
+   ],
+   "bom-ref": "pkg:pypi/filelock@4.2.4|backend"
   },
   {
    "type": "library",
@@ -1653,8 +1772,8 @@
   {
    "type": "library",
    "name": "websockets",
-   "version": "17.2",
-   "purl": "pkg:pypi/websockets@17.2",
+   "version": "17.3",
+   "purl": "pkg:pypi/websockets@17.3",
    "properties": [
     {
      "name": "radix:parte",
@@ -1665,7 +1784,7 @@
      "value": "indireta"
     }
    ],
-   "bom-ref": "pkg:pypi/websockets@17.2|voz"
+   "bom-ref": "pkg:pypi/websockets@17.3|voz"
   },
   {
    "type": "library",
@@ -1687,8 +1806,8 @@
   {
    "type": "library",
    "name": "filelock",
-   "version": "4.2.2",
-   "purl": "pkg:pypi/filelock@4.2.2",
+   "version": "4.2.4",
+   "purl": "pkg:pypi/filelock@4.2.4",
    "properties": [
     {
      "name": "radix:parte",
@@ -1699,7 +1818,7 @@
      "value": "indireta"
     }
    ],
-   "bom-ref": "pkg:pypi/filelock@4.2.2|voz"
+   "bom-ref": "pkg:pypi/filelock@4.2.4|voz"
   },
   {
    "type": "library",
