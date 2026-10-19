@@ -66,8 +66,12 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'configuracoes', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
 ]
 
-export default function Sidebar() {
+// `recolhivel`: a tela pede o menu RECOLHIDO (uma faixa fina com o botao
+// "☰"), para sobrar espaco para o conteudo (ex.: grade de imagens da
+// Pesquisa). O botao abre o menu inteiro e outro clique recolhe de novo.
+export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean } = {}) {
   const t = useTranslations('Sidebar')
+  const [recolhido, setRecolhido] = useState(recolhivel)
   const router = useRouter()
   const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
@@ -161,11 +165,41 @@ export default function Sidebar() {
   // acesso.
   const itensVisiveis = ITENS_MENU.filter((item) => !item.perfis || (perfil !== null && item.perfis.includes(perfil)))
 
+  const botaoRecolher = recolhivel && (
+    <button
+      type="button"
+      onClick={() => setRecolhido((v) => !v)}
+      aria-expanded={!recolhido}
+      title={recolhido ? t('abrirMenu') : t('recolherMenu')}
+      aria-label={recolhido ? t('abrirMenu') : t('recolherMenu')}
+      className="flex h-9 w-9 items-center justify-center rounded-lg border border-base-border text-slate-300 transition hover:border-brand hover:text-brand-300"
+    >
+      {recolhido ? (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M15 6l-6 6 6 6" />
+        </svg>
+      )}
+    </button>
+  )
+
+  if (recolhivel && recolhido) {
+    return (
+      <aside className="flex h-screen w-14 shrink-0 flex-col items-center border-r border-base-border bg-base py-4">
+        {botaoRecolher}
+      </aside>
+    )
+  }
+
   return (
-    <aside className="flex h-screen w-64 flex-col justify-between border-r border-base-border bg-base">
+    <aside className="flex h-screen w-64 shrink-0 flex-col justify-between border-r border-base-border bg-base">
       <div>
-        <div className="border-b border-base-border px-6 py-6">
+        <div className="flex items-center justify-between border-b border-base-border px-6 py-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('navegacao')}</p>
+          {botaoRecolher}
         </div>
 
         <nav className="mt-3 flex flex-col gap-1 px-3">

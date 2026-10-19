@@ -381,6 +381,7 @@ def pesquisar_imagens(
     resultados = consulta.offset(skip).limit(limit).all()
 
     erros = erros_por_ficha(db, [r[0].id for r in resultados])
+    marcacoes_dos_achados = _marcacoes_dos_achados(db, [r[0].id for r in resultados])
     itens = []
     for ficha, ref in resultados:
         if ref.study_instance_uid:
@@ -398,6 +399,9 @@ def pesquisar_imagens(
             "achados_detalhe": ficha.achados_detalhe,
             "alteracoes_observadas": ficha.alteracoes_observadas,
             "marcacoes": ficha.marcacoes,
+            # todas as marcacoes do curador: as da ficha + as desenhadas em
+            # cada achado (secao "Achados") - numero mostrado na grade
+            "total_marcacoes": len(ficha.marcacoes or []) + marcacoes_dos_achados.get(ficha.id, 0),
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,
@@ -415,25 +419,43 @@ def pesquisar_imagens(
     }
 
 
-# Maior lado da miniatura das grades de escolha. O cartao da Pesquisa tem
-# cerca de 300 px e dobra ao usar a lupa: 400 px fica nitido o bastante e
-# pesa uma fracao do original (radiografias tem milhares de pixels por lado).
-MINIATURA_PX = 400
+def _marcacoes_dos_achados(db: Session, curation_ids: list[int]) -> dict[int, int]:
+    """Quantas marcacoes foram desenhadas nos achados de cada ficha (uma consulta so)."""
+    if not curation_ids:
+        return {}
+    totais: dict[int, int] = {}
+    for curation_id, marcacoes in db.query(Achado.curation_id, Achado.marcacoes).filter(Achado.curation_id.in_(curation_ids)):
+        totais[curation_id] = totais.get(curation_id, 0) + len(marcacoes or [])
+    return totais
 
 
-def reduzir_para_miniatura(conteudo_png: bytes) -> tuple[bytes, str]:
+# Versoes reduzidas para as grades de escolha (Pesquisa): (maior lado em
+# pixels, qualidade JPEG). A imagem ali so serve para ESCOLHER; ver em
+# detalhe e na tela do visualizador (resolucao completa).
+# - miniatura: o cartao (~300 px na tela); 40% menor que a versao anterior
+#   (400 px), a pedido do responsavel, para a grade carregar mais rapido;
+# - ampliada: quando a pessoa usa a lupa (o cartao dobra de tamanho).
+TAMANHOS_REDUZIDOS: dict[str, tuple[int, int]] = {
+    "miniatura": (240, 70),
+    "ampliada": (400, 82),
+}
+MINIATURA_PX = TAMANHOS_REDUZIDOS["miniatura"][0]
+
+
+def reduzir_para_miniatura(conteudo_png: bytes, tamanho: tuple[int, int] = TAMANHOS_REDUZIDOS["miniatura"]) -> tuple[bytes, str]:
     """Reduz a imagem (mantendo a proporcao) e devolve (JPEG leve, tipo).
     Imagem que ja e pequena volta como esta (reduzir nao ganharia nada)."""
     from PIL import Image
 
+    lado, qualidade = tamanho
     with Image.open(io.BytesIO(conteudo_png)) as imagem:
-        if max(imagem.size) <= MINIATURA_PX:
+        if max(imagem.size) <= lado:
             return conteudo_png, "image/png"
-        imagem.thumbnail((MINIATURA_PX, MINIATURA_PX))
+        imagem.thumbnail((lado, lado))
         if imagem.mode not in ("L", "RGB"):
             imagem = imagem.convert("RGB")
         saida = io.BytesIO()
-        imagem.save(saida, format="JPEG", quality=82, optimize=True)
+        imagem.save(saida, format="JPEG", quality=qualidade, optimize=True)
     return saida.getvalue(), "image/jpeg"
 
 
@@ -606,11 +628,11 @@ def obter_preview(
             "mudanca nenhuma."
         ),
     ),
-    tamanho: Literal["original", "miniatura"] = Query(
+    tamanho: Literal["original", "miniatura", "ampliada"] = Query(
         "original",
         description=(
-            "'miniatura': versao reduzida (ate MINIATURA_PX no maior lado, JPEG) para "
-            "as grades de escolha (Pesquisa) - carrega muito mais rapido. "
+            "'miniatura': versao bem reduzida (ate 240 px, JPEG) para as grades de "
+            "escolha (Pesquisa); 'ampliada': ate 400 px, para a lupa da grade; "
             "'original': resolucao completa (visualizador, download)."
         ),
     ),
@@ -631,14 +653,14 @@ def obter_preview(
     )
     if com_marcacao:
         conteudo = desenhar_marcacoes_na_imagem(conteudo, ficha.marcacoes)
-    if tamanho == "miniatura":
-        reduzida, tipo = reduzir_para_miniatura(conteudo)
+    if tamanho != "original":
+        reduzida, tipo = reduzir_para_miniatura(conteudo, TAMANHOS_REDUZIDOS[tamanho])
         extensao = "jpg" if tipo == "image/jpeg" else "png"
         return Response(
             content=reduzida,
             media_type=tipo,
             headers={
-                "Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}-miniatura.{extensao}"),
+                "Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}-{tamanho}.{extensao}"),
                 # a mesma miniatura volta da memoria do navegador ao voltar a
                 # Pesquisa (so neste navegador; imagem anonimizada e aprovada)
                 "Cache-Control": "private, max-age=600",

@@ -18,20 +18,24 @@ import { useTranslations } from 'next-intl'
 // Por isso o fetch so dispara quando a miniatura entra na area visivel
 // (mesmo padrao de lazy load ja usado em MiniaturaFila).
 //
-// `miniatura`: pede a versao REDUZIDA (ate 400 px, JPEG leve - ver
-// MINIATURA_PX em backend/app/modules/search_router.py). Para grades em que
-// a imagem so serve para ESCOLHER (Pesquisa); quem precisa ver a imagem em
-// detalhe (visualizador) continua recebendo a resolucao completa.
+// `tamanho`: 'miniatura' (ate 240 px) e 'ampliada' (ate 400 px) sao versoes
+// REDUZIDAS e leves (TAMANHOS_REDUZIDOS em backend/app/modules/search_router.py)
+// para grades em que a imagem so serve para ESCOLHER (Pesquisa); quem
+// precisa ver a imagem em detalhe recebe a resolucao completa ('original').
+// `transparenteAoCarregar`: enquanto carrega (ou se falhar) nao desenha nada -
+// para uma versao maior que aparece POR CIMA da menor ja carregada.
 export default function MiniaturaImagem({
   curationId,
   alt,
   className,
-  miniatura = false,
+  tamanho = 'original',
+  transparenteAoCarregar = false,
 }: {
   curationId: number
   alt: string
   className?: string
-  miniatura?: boolean
+  tamanho?: 'original' | 'miniatura' | 'ampliada'
+  transparenteAoCarregar?: boolean
 }) {
   const t = useTranslations('MiniaturaImagem')
   const [src, setSrc] = useState('')
@@ -74,7 +78,7 @@ export default function MiniaturaImagem({
 
     async function carregar() {
       try {
-        const sufixo = miniatura ? '?tamanho=miniatura' : ''
+        const sufixo = tamanho === 'original' ? '' : `?tamanho=${tamanho}`
         const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/preview${sufixo}`, {
           credentials: 'include',
         })
@@ -95,7 +99,11 @@ export default function MiniaturaImagem({
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
-  }, [visivel, curationId, miniatura])
+  }, [visivel, curationId, tamanho])
+
+  if (transparenteAoCarregar && (erro || !src)) {
+    return <div ref={placeholderRef} className={className} style={{ background: 'transparent' }} />
+  }
 
   if (erro) {
     return (

@@ -1,13 +1,13 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
-import EtiquetaMarcacoes from '../../components/visualizador/EtiquetaMarcacoes'
+import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
@@ -187,6 +187,8 @@ interface ResultadoImagem {
   achados_detalhe: string | null
   alteracoes_observadas: string[] | null
   marcacoes: Marcacao[]
+  /** marcacoes da ficha + as desenhadas nos achados (calculado pela API) */
+  total_marcacoes?: number
   qualidade_tecnica: string | null
   dificuldade: string | null
   origem: string | null
@@ -236,8 +238,19 @@ function PesquisaConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Pesquisa')
-  // cartao da grade ampliado pela lupa (so um por vez)
+  const tMarcacoes = useTranslations('Visualizador.marcacoes')
+  const descrever = useDescricaoCuradoria()
+  // cartao da grade ampliado pela lupa (so um por vez) e os que ja tem a
+  // versao maior carregada
   const [cartaoAmpliado, setCartaoAmpliado] = useState<number | null>(null)
+  const [ampliadasCarregadas, setAmpliadasCarregadas] = useState<number[]>([])
+  // informacoes da imagem: aberta pelo mouse no "i" ou fixada por clique
+  const [infoPassando, setInfoPassando] = useState<number | null>(null)
+  const [infoFixadas, setInfoFixadas] = useState<number[]>([])
+  // lado (px) de cada quadrado da grade: 5 por linha e 2 linhas inteiras na tela
+  const areaPrincipalRef = useRef<HTMLElement | null>(null)
+  const gradeRef = useRef<HTMLDivElement | null>(null)
+  const [ladoCartao, setLadoCartao] = useState<number | null>(null)
   const tComum = useTranslations('Comum')
   // Reaproveita os MESMOS rotulos de regiao anatomica/erro tecnico ja
   // criados na Fase 3 pra Curadoria (Curadoria.achadosEstruturados/
@@ -275,6 +288,43 @@ function PesquisaConteudo() {
   const [erro, setErro] = useState('')
   const [selecionados, setSelecionados] = useState<number[]>([])
   const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
+
+  // Tamanho dos quadrados da grade: 5 por linha e DUAS linhas inteiras na
+  // area que sobra abaixo do cabecalho (o menor entre "cabe na largura" e
+  // "cabe na altura"). Recalcula quando a janela muda, quando o menu
+  // lateral abre/recolhe e quando a barra de cima muda de altura.
+  // Telas estreitas (celular) usam a grade responsiva normal.
+  const temSelecao = selecionados.length > 0
+  useEffect(() => {
+    const area = areaPrincipalRef.current
+    const grade = gradeRef.current
+    if (!area || !grade || !grade.parentElement) return
+    const caixa = grade.parentElement
+    function ajustarGrade() {
+      if (!area || !grade) return
+      if (window.innerWidth < 768) {
+        setLadoCartao(null)
+        return
+      }
+      const VAO = 12 // gap-3
+      const FOLGA_EMBAIXO = 24 // espaco do pb-2 da grade + py-3 da area
+      // a pagina rola inteira (nao so a area): altura da janela menos onde a
+      // grade comeca, medido desde o topo da pagina
+      const topo = grade.getBoundingClientRect().top + window.scrollY
+      const porLargura = Math.floor((caixa.clientWidth - 4 * VAO) / 5)
+      const porAltura = Math.floor((window.innerHeight - topo - FOLGA_EMBAIXO - VAO) / 2)
+      setLadoCartao(Math.max(120, Math.min(porLargura, porAltura)))
+    }
+    ajustarGrade()
+    const observador = new ResizeObserver(ajustarGrade)
+    observador.observe(area)
+    observador.observe(caixa)
+    window.addEventListener('resize', ajustarGrade)
+    return () => {
+      observador.disconnect()
+      window.removeEventListener('resize', ajustarGrade)
+    }
+  }, [resultados.length, filtrosRecolhidos, temSelecao])
   // Selecao em lote: numero ajustavel (nao so 10/15/20 fixos - o curador
   // pode digitar qualquer quantidade) usado tanto pelos atalhos rapidos
   // quanto pelo botao "Selecionar mais". Cada clique adiciona as proximas
@@ -526,16 +576,20 @@ function PesquisaConteudo() {
 
   return (
     <div className="flex min-h-screen bg-base">
-      <Sidebar />
+      {/* menu recolhido: sobra espaco para a grade de imagens */}
+      <Sidebar recolhivel />
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="titulo-pagina tela-entra">
+        <main ref={areaPrincipalRef} className={`flex-1 overflow-y-auto ${filtrosRecolhidos ? 'px-6 py-3' : 'p-6'}`}>
+          {/* Com resultados na tela (busca recolhida) o cabecalho fica numa
+              linha so e menor: sobra altura para as duas linhas de imagens
+              aparecerem inteiras. */}
+          <h1 className={filtrosRecolhidos ? 'text-xl font-bold text-ink' : 'titulo-pagina tela-entra'}>
             {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
           </h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className={`mt-1 text-sm text-slate-400 ${filtrosRecolhidos ? 'hidden' : ''}`}>
             {t('subtitulo')}
             {totalDisponivel !== null && (
               <>
@@ -549,11 +603,11 @@ function PesquisaConteudo() {
           {filtrosRecolhidos ? (
             // Busca recolhida: so uma barra fina com o botao de voltar, para
             // as imagens encontradas ocuparem a tela.
-            <div className="mt-4 flex flex-wrap items-center gap-3">
+            <div className="mt-2 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={voltarBuscaAvancada}
-                className="flex items-center gap-2 rounded-lg border border-teal-400/50 bg-teal-400/10 px-4 py-2 text-sm font-medium text-teal-200 transition hover:bg-teal-400/20"
+                className="flex items-center gap-2 rounded-lg border border-teal-400/50 bg-teal-400/10 px-3 py-1.5 text-sm font-medium text-teal-200 transition hover:bg-teal-400/20"
               >
                 <span aria-hidden="true">←</span> 🔎 {t('voltarBuscaAvancada')}
               </button>
@@ -965,7 +1019,7 @@ function PesquisaConteudo() {
           </>
           )}
 
-          <div className="mt-6">
+          <div className={filtrosRecolhidos ? 'mt-2' : 'mt-6'}>
             {!jaPesquisou ? (
               <p className="py-4 text-center text-slate-500">
                 {t('dicaUseFiltros')}
@@ -978,7 +1032,7 @@ function PesquisaConteudo() {
               </p>
             ) : (
               <>
-                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-slate-400">
                     <span className="rounded-full bg-brand/10 px-2.5 py-1 text-brand-300">
                       {totalResultados} {totalResultados === 1 ? t('imagemEncontradaSingular') : t('imagensEncontradasPlural')}
@@ -1033,12 +1087,12 @@ function PesquisaConteudo() {
                     campo ajustavel pra digitar qualquer quantidade -
                     pedido explicito pra nao ficar preso so a esses 4
                     numeros fixos. */}
-                <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface/40 p-3">
+                <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface/40 px-3 py-1.5">
                   <span className="text-xs font-medium text-slate-400">{t('selecaoLabel')}</span>
                   <button
                     type="button"
                     onClick={selecionarTodas}
-                    className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                    className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                   >
                     {t('selecionarTodas', { quantidade: resultados.length })}
                   </button>
@@ -1047,7 +1101,7 @@ function PesquisaConteudo() {
                       key={n}
                       type="button"
                       onClick={() => selecionarMais(n)}
-                      className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                      className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                     >
                       +{n}
                     </button>
@@ -1059,12 +1113,12 @@ function PesquisaConteudo() {
                       max={resultados.length}
                       value={quantidadeLote}
                       onChange={(e) => setQuantidadeLote(Number(e.target.value))}
-                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1.5 text-xs text-slate-100 outline-none focus:border-brand"
+                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-xs text-slate-100 outline-none focus:border-brand"
                     />
                     <button
                       type="button"
                       onClick={() => selecionarMais(quantidadeLote)}
-                      className="rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+                      className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
                     >
                       {t('selecionarMaisBotao')}
                     </button>
@@ -1073,30 +1127,39 @@ function PesquisaConteudo() {
                     <button
                       type="button"
                       onClick={limparSelecao}
-                      className="ml-auto rounded-full border border-base-border px-3 py-1.5 text-xs text-slate-400 hover:border-status-danger hover:text-status-danger"
+                      className="ml-auto rounded-full border border-base-border px-3 py-1 text-xs text-slate-400 hover:border-status-danger hover:text-status-danger"
                     >
                       {t('limparSelecao')}
                     </button>
                   )}
                 </div>
 
-                {/* Grade de resultados: CINCO imagens por linha (em telas largas,
-                    duas linhas cabem na tela). Cada cartao mostra a imagem em
-                    versao REDUZIDA (carrega rapido; aqui a imagem so serve para
-                    escolher) e, nos cantos:
-                    - em cima, a direita: caixa de selecao (Salvar/Imprimir/Visualizar);
-                    - embaixo, a direita: numero de marcacoes do curador (se houver),
-                      o "i" (mouse em cima mostra a descricao; um clique fixa, outro
-                      esconde) e a LUPA (mouse em cima dobra o tamanho da imagem;
-                      tirou o mouse da imagem, ela volta).
-                    Passar o mouse na imagem em si NAO amplia mais: os icones
-                    ficavam no meio da imagem ampliada. Ao ampliar, os icones vao
-                    junto para o canto e mantem o tamanho (escala inversa). */}
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                {/* Grade de resultados: CINCO imagens por linha e DUAS linhas
+                    inteiras na tela (o tamanho do quadrado e calculado pela
+                    altura e largura que sobram - ver ajustarGrade; as demais
+                    linhas aparecem rolando). Cada quadrado mostra so a imagem,
+                    em versao REDUZIDA (carrega rapido: aqui ela so serve para
+                    escolher), e nos cantos:
+                    - em cima, a direita: caixa de selecao;
+                    - embaixo, a direita: numero de marcacoes do curador, o "i"
+                      e a lupa.
+                    "i": mouse em cima mostra as informacoes DENTRO do proprio
+                    quadrado, cobrindo a imagem; um clique fixa, outro esconde.
+                    Lupa: mouse em cima dobra o quadrado e carrega a versao
+                    maior (400 px); tirou o mouse do quadrado, volta. Os icones
+                    acompanham o canto e mantem o tamanho (escala inversa). */}
+                <div
+                  ref={gradeRef}
+                  className="grid grid-cols-2 justify-center gap-3 pb-2 sm:grid-cols-3 md:grid-cols-5"
+                  style={ladoCartao ? { gridTemplateColumns: `repeat(5, ${ladoCartao}px)` } : undefined}
+                >
                   {resultados.map((imagem, indice) => {
                     const marcada = selecionados.includes(imagem.curation_id)
                     const ampliado = cartaoAmpliado === imagem.curation_id
-                    const totalMarcacoes = (imagem.marcacoes ?? []).length
+                    const infoAberta = infoFixadas.includes(imagem.curation_id) || infoPassando === imagem.curation_id
+                    const infoFixada = infoFixadas.includes(imagem.curation_id)
+                    const totalMarcacoes = imagem.total_marcacoes ?? (imagem.marcacoes ?? []).length
+                    const linhasInfo = infoAberta ? descrever({ ...imagem, numero: indice + 1 }) : []
                     return (
                       <div key={imagem.curation_id} className="relative aspect-square">
                         <div
@@ -1111,15 +1174,51 @@ function PesquisaConteudo() {
                           <Link
                             href={`/visualizar/${imagem.curation_id}`}
                             aria-label={t('imagemNumero', { numero: indice + 1 })}
-                            className="block h-full w-full overflow-hidden rounded-lg"
+                            className="relative block h-full w-full overflow-hidden rounded-lg"
                           >
                             <MiniaturaImagem
                               curationId={imagem.curation_id}
-                              miniatura
+                              tamanho="miniatura"
                               alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
                               className="h-full w-full bg-black object-contain"
                             />
+                            {/* versao maior (lupa): carregada na 1a vez que a lupa e usada
+                                e mantida por cima enquanto ampliado */}
+                            {ampliadasCarregadas.includes(imagem.curation_id) && (
+                              <MiniaturaImagem
+                                curationId={imagem.curation_id}
+                                tamanho="ampliada"
+                                transparenteAoCarregar
+                                alt=""
+                                className={`absolute inset-0 h-full w-full object-contain transition-opacity ${ampliado ? 'opacity-100' : 'opacity-0'}`}
+                              />
+                            )}
                           </Link>
+
+                          {/* informacoes da imagem: cobrem o quadrado inteiro, do mesmo tamanho */}
+                          {infoAberta && (
+                            <div
+                              role="tooltip"
+                              className="absolute inset-0 z-10 overflow-y-auto rounded-lg border border-teal-300/50 bg-base-surface/95 p-2 pb-8 text-left text-[11px] leading-snug shadow-xl backdrop-blur"
+                            >
+                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-teal-200">
+                                {tMarcacoes('tituloImagem', { numero: indice + 1 })}
+                              </p>
+                              {linhasInfo.length === 0 ? (
+                                <p className="italic text-slate-400">{tMarcacoes('semDescricao')}</p>
+                              ) : (
+                                <dl className="space-y-0.5">
+                                  {linhasInfo.map((l) => (
+                                    <div key={l.rotulo}>
+                                      <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
+                                      <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
+                                    </div>
+                                  ))}
+                                </dl>
+                              )}
+                            </div>
+                          )}
+
                           <label
                             className={`absolute right-1 top-1 z-20 flex h-5 w-5 origin-top-right cursor-pointer items-center justify-center rounded-md bg-black/70 transition-transform duration-200 ${
                               ampliado ? 'scale-50' : ''
@@ -1138,37 +1237,67 @@ function PesquisaConteudo() {
                               ampliado ? 'scale-50' : ''
                             }`}
                           >
-                            {totalMarcacoes > 0 && (
-                              <span
-                                title={t('marcacoesNaImagem', { total: totalMarcacoes })}
-                                aria-label={t('marcacoesNaImagem', { total: totalMarcacoes })}
-                                className="flex items-center gap-0.5 rounded-full border border-amber-500/70 bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 backdrop-blur dark:border-amber-300/60 dark:bg-black/70 dark:text-amber-200"
-                              >
-                                {/* alfinete de marcacao */}
-                                <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                                  <path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z" />
-                                  <circle cx="12" cy="11" r="2" />
-                                </svg>
-                                {totalMarcacoes}
-                              </span>
-                            )}
-                            <EtiquetaMarcacoes
-                              item={{ ...imagem, numero: indice + 1 }}
-                              curationId={imagem.curation_id}
-                              flutuante
-                              embutido
-                              mostrarContagem={false}
-                            />
+                            <span
+                              title={t('marcacoesNaImagem', { total: totalMarcacoes })}
+                              aria-label={t('marcacoesNaImagem', { total: totalMarcacoes })}
+                              className={`flex items-center gap-0.5 rounded-full border bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur dark:bg-black/70 ${
+                                totalMarcacoes > 0
+                                  ? 'border-amber-500/70 text-amber-800 dark:border-amber-300/60 dark:text-amber-200'
+                                  : 'border-slate-400/50 text-slate-500 dark:border-slate-500/50 dark:text-slate-400'
+                              }`}
+                            >
+                              {/* alfinete de marcacao */}
+                              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                <path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z" />
+                                <circle cx="12" cy="11" r="2" />
+                              </svg>
+                              {totalMarcacoes}
+                            </span>
+                            <button
+                              type="button"
+                              onMouseEnter={() => setInfoPassando(imagem.curation_id)}
+                              onMouseLeave={() => setInfoPassando((v) => (v === imagem.curation_id ? null : v))}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                // um clique fixa; outro esconde na hora (mesmo com o mouse em cima)
+                                setInfoFixadas((lista) =>
+                                  lista.includes(imagem.curation_id)
+                                    ? lista.filter((id) => id !== imagem.curation_id)
+                                    : [...lista, imagem.curation_id]
+                                )
+                                if (infoFixada) setInfoPassando(null)
+                              }}
+                              aria-pressed={infoFixada}
+                              aria-expanded={infoAberta}
+                              title={infoFixada ? tMarcacoes('fecharDescricao') : tMarcacoes('abrirDescricao')}
+                              aria-label={infoFixada ? tMarcacoes('fecharDescricao') : tMarcacoes('abrirDescricao')}
+                              className={`flex items-center rounded-full border bg-white/90 px-1.5 py-0.5 backdrop-blur dark:bg-black/70 ${
+                                infoFixada
+                                  ? 'border-teal-500 text-teal-700 ring-2 ring-teal-300/70 dark:border-teal-300 dark:text-teal-100'
+                                  : 'border-teal-600/50 text-teal-800 hover:border-teal-600 dark:border-teal-300/50 dark:text-teal-100 dark:hover:border-teal-300'
+                              }`}
+                            >
+                              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                <circle cx="12" cy="12" r="9" />
+                                <path d="M12 11v6M12 7.5v.5" strokeLinecap="round" />
+                              </svg>
+                            </button>
                             <button
                               type="button"
                               onMouseEnter={(e) => {
                                 const cartao = e.currentTarget.closest('[data-cartao-imagem]') as HTMLElement | null
                                 if (cartao) ajustarOrigemAmpliacao(cartao)
                                 setCartaoAmpliado(imagem.curation_id)
+                                setAmpliadasCarregadas((lista) =>
+                                  lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
+                                )
                               }}
                               onClick={(e) => {
                                 // toque (celular): um toque amplia, outro volta
                                 e.preventDefault()
+                                setAmpliadasCarregadas((lista) =>
+                                  lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
+                                )
                                 setCartaoAmpliado(ampliado ? null : imagem.curation_id)
                               }}
                               title={t('ampliarImagem')}

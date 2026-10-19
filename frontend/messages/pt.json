@@ -255,7 +255,9 @@
       "vocabulario": "Vocabulário",
       "macros": "Macros"
     },
-    "novasCompartilhadas": "{quantidade} novas"
+    "novasCompartilhadas": "{quantidade} novas",
+    "abrirMenu": "Abrir o menu de navegação",
+    "recolherMenu": "Recolher o menu de navegação"
   },
   "Topbar": {
     "ajuda": "Ajuda",
