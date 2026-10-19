@@ -281,7 +281,8 @@
       "estudante": "Estudante",
       "pesquisador": "Pesquisador",
       "suporte": "Suporte"
-    }
+    },
+    "meusAcessos": "Meus acessos (aparelhos conectados)"
   },
   "StatusCuradoria": {
     "pendente": "Pendente",
@@ -1543,7 +1544,15 @@
       "estudante": "Estudante",
       "pesquisador": "Pesquisador",
       "suporte": "Suporte"
-    }
+    },
+    "encerrarAcessos": "Encerrar acessos",
+    "encerrarAcessosDica": "Desconecta esta pessoa de todos os aparelhos. A conta continua ativa: ela só precisa entrar de novo.",
+    "encerrarAcessosTodos": "Encerrar acessos de todos",
+    "encerrarAcessosTodosDica": "Desconecta todos os usuários (menos você). Use em caso de incidente de segurança.",
+    "confirmarEncerrarTodos": "Desconectar TODOS os usuários (menos você)? Todos precisarão entrar de novo.",
+    "acessosEncerrados": "{quantidade, plural, =0 {{nome} não tinha acessos abertos.} one {1 acesso de {nome} encerrado.} other {# acessos de {nome} encerrados.}}",
+    "acessosTodosEncerrados": "{quantidade, plural, =0 {Nenhum outro acesso estava aberto.} one {1 acesso encerrado. A pessoa precisará entrar de novo.} other {# acessos encerrados. Todos precisarão entrar de novo.}}",
+    "erroEncerrarAcessos": "Não foi possível encerrar os acessos. Tente de novo."
   },
   "Configuracoes": {
     "titulo": "Configurações",
@@ -1890,5 +1899,19 @@
     "conferencia": "Conferência: {partes} = {total}",
     "naoConfere": "a soma não confere com o total",
     "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total"
+  },
+  "MeusAcessos": {
+    "titulo": "Meus acessos",
+    "explicacao": "Aparelhos onde a sua conta está aberta agora. Se não reconhecer algum, encerre-o e troque a sua senha.",
+    "esteAparelho": "este aparelho",
+    "aparelhoDesconhecido": "Aparelho desconhecido",
+    "detalhes": "Endereço de rede {ip} · entrou em {entrou} · último uso {uso}",
+    "encerrar": "Encerrar",
+    "encerrarOutros": "{quantidade, plural, one {Encerrar o outro acesso} other {Encerrar os outros # acessos}}",
+    "encerrado": "Acesso encerrado.",
+    "outrosEncerrados": "Os outros acessos foram encerrados.",
+    "erroCarregar": "Não foi possível carregar os acessos.",
+    "erroEncerrar": "Não foi possível encerrar. Tente de novo.",
+    "dica": "Para sair deste aparelho, use o botão Sair. Trocar a senha também desconecta os outros aparelhos."
   }
 }

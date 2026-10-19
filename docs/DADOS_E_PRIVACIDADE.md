@@ -31,7 +31,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Resumo da senha | `users.senha_hash` (bcrypt, custo 12) | N3 | substituído a cada troca |
 | Código de redefinição de senha | `users.reset_token` — **só o resumo SHA-256** | N3 | 60 min, uso único |
 | Pedido de acesso (nome, e-mail, instituição, motivo, resumo da senha) | `access_requests` — código de confirmação só como resumo SHA-256 | N2/N3 | mantido como histórico da decisão |
-| Sessões (`jti`, início, fim, motivo) | `sessoes_usuario` | N3 | apagadas 30 dias após encerradas |
+| Sessões (`jti`, início, fim, motivo, endereço de rede, **resumo** do aparelho — ex.: "Chrome · Windows" —, último uso) | `sessoes_usuario`; o texto completo do navegador **não** é guardado (minimização) | N3 (`jti`) / N2 (origem) | apagadas 30 dias após encerradas |
 | Fichas, achados, erros técnicos, histórico, segunda opinião | `curations`, `achados`, `erros_tecnicos`, `curation_history`, `curation_reviews` | N0/N1 | permanente (rastreabilidade científica) |
 | Observações internas da ficha | `curations.observacoes_internas` | N1 | permanente |
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |

@@ -106,7 +106,7 @@ def _registrar_evento(acao: str, resultado: str, detalhes: str, usuario_id: int 
 
 async def registrar_eventos_de_seguranca(request: Request, call_next):
     ip, rota = _ip(request), f"{request.method} {request.url.path}"[:200]
-    marca = pedido_atual.set({"ip": ip, "rota": rota})
+    marca = pedido_atual.set({"ip": ip, "rota": rota, "navegador": request.headers.get("user-agent", "")[:300]})
     try:
         try:
             resposta = await call_next(request)

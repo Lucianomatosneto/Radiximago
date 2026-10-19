@@ -140,6 +140,7 @@ export default function UsuariosPage() {
   const [exclusao, setExclusao] = useState<Usuario | null>(null)
   const [excluindo, setExcluindo] = useState(false)
   const [erroExclusao, setErroExclusao] = useState('')
+  const [avisoAcessos, setAvisoAcessos] = useState('')
 
   const [mostrarExcluidos, setMostrarExcluidos] = useState(false)
   const [usuariosExcluidos, setUsuariosExcluidos] = useState<UsuarioExcluido[]>([])
@@ -222,6 +223,37 @@ export default function UsuariosPage() {
     setUsuarios((prev) =>
       prev.map((u) => (u.id === usuario.id ? { ...u, bloqueado: !u.bloqueado } : u))
     )
+  }
+
+  // Encerrar acessos (OWASP ASVS 7.4.5): derruba as sessoes abertas - a
+  // pessoa so precisa entrar de novo (para impedir o acesso, use Bloquear).
+  async function encerrarAcessos(usuario: Usuario | null) {
+    if (!autenticado) return
+    if (!usuario && !window.confirm(t('confirmarEncerrarTodos'))) return
+    setAvisoAcessos('')
+    const caminho = usuario ? `/users/${usuario.id}/encerrar-sessoes` : '/admin/sessoes/encerrar-todas'
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (response.status === 401) {
+        router.push('/login')
+        return
+      }
+      if (!response.ok) {
+        setAvisoAcessos(t('erroEncerrarAcessos'))
+        return
+      }
+      const dados = await response.json()
+      setAvisoAcessos(
+        usuario
+          ? t('acessosEncerrados', { quantidade: dados.encerradas ?? 0, nome: usuario.nome })
+          : t('acessosTodosEncerrados', { quantidade: dados.encerradas ?? 0 })
+      )
+    } catch {
+      setAvisoAcessos(t('erroEncerrarAcessos'))
+    }
   }
 
   function abrirExclusao(usuario: Usuario) {
@@ -487,9 +519,24 @@ export default function UsuariosPage() {
 
         <main className="flex-1 overflow-y-auto p-8">
           <h1 className="titulo-pagina tela-entra mb-1">{t('titulo')}</h1>
-          <p className="mb-6 text-sm text-slate-500">
-            {t('subtitulo')}
-          </p>
+          <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+            <p className="text-sm text-slate-500">
+              {t('subtitulo')}
+            </p>
+            <button
+              type="button"
+              onClick={() => encerrarAcessos(null)}
+              className="rounded-md border border-red-800/60 px-3 py-1.5 text-xs text-red-300 hover:bg-red-950/40"
+              title={t('encerrarAcessosTodosDica')}
+            >
+              {t('encerrarAcessosTodos')}
+            </button>
+          </div>
+          {avisoAcessos && (
+            <p className="-mt-3 mb-6 text-sm text-amber-300" role="status">
+              {avisoAcessos}
+            </p>
+          )}
 
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <DashboardCard label={t('cards.totalUsuarios')} valor={usuarios.length} cor="blue" />
@@ -714,6 +761,14 @@ export default function UsuariosPage() {
                             className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-red-500 hover:text-red-300"
                           >
                             {usuario.bloqueado ? t('ativar') : t('bloquear')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => encerrarAcessos(usuario)}
+                            title={t('encerrarAcessosDica')}
+                            className="rounded-md border border-slate-700 px-3 py-1 text-xs text-slate-300 hover:border-amber-500 hover:text-amber-300"
+                          >
+                            {t('encerrarAcessos')}
                           </button>
                           <button
                             type="button"

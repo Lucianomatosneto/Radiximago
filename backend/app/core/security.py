@@ -36,18 +36,33 @@ def gerar_hash_senha(senha: str) -> str:
     return pwd_context.hash(senha)
 
 
+# Quem emite, para quem e para que serve o token (OWASP ASVS 9.2.2 e 9.2.3):
+# um token so vale se foi emitido PELO Radix, PARA a API do Radix e for do
+# TIPO "sessao". Um token assinado com a mesma chave para outra finalidade
+# (ou de outro sistema que compartilhe a chave) e recusado.
+EMISSOR_TOKEN = "radix-imago"
+PUBLICO_TOKEN = "radix-imago-api"
+TIPO_TOKEN_SESSAO = "sessao"
+
+
 def criar_token_acesso(dados: dict, expira_em: Optional[int] = None) -> str:
     dados_token = dados.copy()
     minutos = expira_em or settings.JWT_EXPIRE_MINUTES
     expiracao = datetime.now(timezone.utc) + timedelta(minutes=minutos)
-    dados_token.update({"exp": expiracao})
+    dados_token.update({"exp": expiracao, "iss": EMISSOR_TOKEN, "aud": PUBLICO_TOKEN, "tipo": TIPO_TOKEN_SESSAO})
     return jwt.encode(dados_token, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
 def decodificar_token(token: str) -> Optional[dict]:
-    """Assinatura e validade (exp) conferidas; so o algoritmo configurado e
-    aceito (OWASP ASVS 9.1.1, 9.1.2, 9.2.1). Token invalido -> None."""
+    """Assinatura, validade (exp), emissor (iss), publico (aud) e tipo
+    conferidos; so o algoritmo configurado e aceito (OWASP ASVS 9.1.1,
+    9.1.2, 9.2.1, 9.2.2, 9.2.3). Token invalido -> None."""
     try:
-        return jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        dados = jwt.decode(
+            token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM],
+            audience=PUBLICO_TOKEN, issuer=EMISSOR_TOKEN,
+            options={"require": ["exp", "iss", "aud", "sub"]},
+        )
     except jwt.PyJWTError:
         return None
+    return dados if dados.get("tipo") == TIPO_TOKEN_SESSAO else None

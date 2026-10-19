@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.6 — 18/10/2026 |
+| Versão do documento | 1.7 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -137,6 +137,10 @@ Uma única função (`app/core/politica_senha.py`) decide se uma senha **nova** 
 | Trocar a senha | encerra as sessões dos **outros** aparelhos; o atual continua | ASVS 7.4.3 |
 | Redefinir a senha ("esqueci") | encerra **todas** as sessões | quem esqueceu pode ter perdido o controle da conta |
 | Conta bloqueada, inativa ou excluída | acesso recusado na hora, em qualquer sessão | ASVS 7.4.2 |
+| **Meus acessos** (menu do perfil) | o usuário vê cada acesso aberto (aparelho resumido, endereço de rede, início, último uso) e encerra um ou todos os outros; nunca os de outra pessoa | ASVS 7.5.2 |
+| Administrador | encerra todos os acessos de um usuário (tela Usuários) ou de **todos** (menos o dele) — ex.: incidente | ASVS 7.4.5 |
+| Dado que afeta a autenticação | só a senha pode mudar, e **exige a senha atual**; ninguém troca o e-mail de uma conta; não há MFA (decisão pendente, grupo 6) | ASVS 7.5.1 |
+| Crachá (JWT) | além de assinatura e validade, precisa dizer **quem emitiu** (`iss=radix-imago`), **para quem** (`aud=radix-imago-api`) e **para que** (`tipo=sessao`); faltando ou diferente → recusado | ASVS 9.2.2, 9.2.3 |
 
 Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/sessao.py`, `app/modules/auth.py`. Testes: `tests/test_sessao.py`, `tests/test_sessoes_revogaveis.py`.
 
@@ -261,3 +265,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.4 | 18/10/2026 | Tamanhos máximos (2.1), códigos fora dos endereços (2.2) e exposição de dados (2.3) |
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
+| 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |

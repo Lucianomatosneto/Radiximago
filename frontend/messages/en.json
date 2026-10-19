@@ -281,7 +281,8 @@
       "estudante": "Student",
       "pesquisador": "Researcher",
       "suporte": "Support"
-    }
+    },
+    "meusAcessos": "My sessions (connected devices)"
   },
   "StatusCuradoria": {
     "pendente": "Pending",
@@ -1543,7 +1544,15 @@
       "estudante": "Student",
       "pesquisador": "Researcher",
       "suporte": "Support"
-    }
+    },
+    "encerrarAcessos": "End sessions",
+    "encerrarAcessosDica": "Signs this person out of every device. The account stays active: they just need to sign in again.",
+    "encerrarAcessosTodos": "End everyone's sessions",
+    "encerrarAcessosTodosDica": "Signs out all users (except you). Use it in a security incident.",
+    "confirmarEncerrarTodos": "Sign out ALL users (except you)? Everyone will need to sign in again.",
+    "acessosEncerrados": "{quantidade, plural, =0 {{nome} had no open sessions.} one {1 session of {nome} ended.} other {# sessions of {nome} ended.}}",
+    "acessosTodosEncerrados": "{quantidade, plural, =0 {No other session was open.} one {1 session ended. That person will need to sign in again.} other {# sessions ended. Everyone will need to sign in again.}}",
+    "erroEncerrarAcessos": "Could not end the sessions. Please try again."
   },
   "Configuracoes": {
     "titulo": "Settings",
@@ -1890,5 +1899,19 @@
     "conferencia": "Check: {partes} = {total}",
     "naoConfere": "the sum does not match the total",
     "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted"
+  },
+  "MeusAcessos": {
+    "titulo": "My sessions",
+    "explicacao": "Devices where your account is signed in right now. If you do not recognize one, end it and change your password.",
+    "esteAparelho": "this device",
+    "aparelhoDesconhecido": "Unknown device",
+    "detalhes": "Network address {ip} · signed in {entrou} · last used {uso}",
+    "encerrar": "End",
+    "encerrarOutros": "{quantidade, plural, one {End the other session} other {End the other # sessions}}",
+    "encerrado": "Session ended.",
+    "outrosEncerrados": "The other sessions were ended.",
+    "erroCarregar": "Could not load your sessions.",
+    "erroEncerrar": "Could not end it. Please try again.",
+    "dica": "To leave this device, use Sign out. Changing your password also signs out the other devices."
   }
 }

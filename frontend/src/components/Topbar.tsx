@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
 import { obterSessaoAtual } from '../lib/sessao'
@@ -302,6 +303,13 @@ export default function Topbar() {
                     {t('removerFotoAtual')}
                   </button>
                 )}
+                <Link
+                  href="/meus-acessos"
+                  onClick={fecharModalPerfil}
+                  className="rounded-lg border border-base-border px-4 py-2 text-center text-sm text-slate-300 hover:border-brand hover:text-brand-300"
+                >
+                  {t('meusAcessos')}
+                </Link>
                 <button
                   type="button"
                   onClick={fecharModalPerfil}

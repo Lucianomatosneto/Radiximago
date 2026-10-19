@@ -26,6 +26,7 @@
 | Grupo | Ações (`acao`) |
 |---|---|
 | Autenticação | `login`, `falha_login`, `logout`, `troca_senha`, `falha_troca_senha`, `solicitacao_redefinicao_senha`, `redefinicao_senha` |
+| Sessões | `encerramento_sessao_pelo_usuario`, `encerramento_outras_sessoes` ("Meus acessos"), `encerramento_sessoes_pelo_admin`, `encerramento_sessoes_de_todos` |
 | Cadastro | `solicitacao_acesso_registrada`, `confirmacao_email_solicitacao`, `falha_confirmacao_email`, `aprovacao_solicitacao_acesso`, `rejeicao_solicitacao_acesso` |
 | Usuários | `criacao_usuario`, `edicao_usuario`, `bloqueio_usuario`, `exclusao_usuario`, `atualizacao_foto_perfil`, `remocao_foto_perfil` |
 | Segurança (automáticos, `app/core/registro_seguranca.py`) | `acesso_negado`, `origem_recusada`, `limite_excedido`, `entrada_recusada`, `erro_inesperado`, `verificacao_integridade_auditoria` |

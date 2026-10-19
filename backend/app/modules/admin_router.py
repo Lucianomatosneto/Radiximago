@@ -12,7 +12,7 @@ Fornece a "materia-prima" numerica para os paineis do frontend.
 from typing import Optional
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import text, func
 from sqlalchemy.orm import Session
 
@@ -242,6 +242,36 @@ def verificar_integridade_auditoria(
         "primeiro_problema_id": (problemas + sem_lacre or [None])[0],
         "quantidade_com_problema": len(problemas) + len(sem_lacre),
     }
+
+
+@router.post("/sessoes/encerrar-todas")
+def encerrar_sessoes_de_todos(
+    request: Request,
+    db: Session = Depends(get_db),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """
+    Encerra os acessos de TODOS os usuarios, menos o do proprio
+    administrador neste navegador (OWASP ASVS 7.4.5) - ex.: incidente de
+    seguranca. Todos precisam entrar de novo.
+    """
+    from app.modules.sessoes import SessaoUsuario
+    from datetime import datetime, timezone
+
+    consulta = db.query(SessaoUsuario).filter(SessaoUsuario.encerrada_em.is_(None))
+    atual = getattr(request.state, "sessao_jti", None)
+    if atual:
+        consulta = consulta.filter(SessaoUsuario.id != atual)
+    fechadas = consulta.update(
+        {SessaoUsuario.encerrada_em: datetime.now(timezone.utc), SessaoUsuario.motivo_encerramento: "administrador_todas"},
+        synchronize_session=False,
+    )
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="encerramento_sessoes_de_todos", entidade="sessao",
+        resultado="sucesso", detalhes=f"Sessoes encerradas: {fechadas}.",
+    ))
+    db.commit()
+    return {"encerradas": fechadas}
 
 
 @router.get("/settings")

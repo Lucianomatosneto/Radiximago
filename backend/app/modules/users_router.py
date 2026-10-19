@@ -379,6 +379,32 @@ def criar_usuario(
     db.refresh(novo)
     return novo
 
+@router.post("/{user_id}/encerrar-sessoes")
+def encerrar_sessoes_de_usuario(
+    user_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """
+    O administrador encerra TODOS os acessos abertos de um usuario (OWASP
+    ASVS 7.4.5) - ex.: suspeita de senha vazada. A pessoa continua com a
+    conta ativa e so precisa entrar de novo (para impedir o acesso, use
+    Bloquear).
+    """
+    from app.modules.sessoes import encerrar_sessoes_do_usuario
+
+    usuario = db.query(User).filter(User.id == user_id).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    fechadas = encerrar_sessoes_do_usuario(db, usuario.id, "pelo_administrador")
+    db.add(AuditLog(
+        usuario_id=usuario_atual.id, acao="encerramento_sessoes_pelo_admin", entidade="user",
+        entidade_id=usuario.id, resultado="sucesso", detalhes=f"Sessoes encerradas: {fechadas}.",
+    ))
+    db.commit()
+    return {"encerradas": fechadas}
+
+
 @router.patch("/{user_id}/block")
 def bloquear_usuario(
     user_id: int,

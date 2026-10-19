@@ -23,7 +23,10 @@ from app.core.email import (
 from app.modules.users import User, UserRole
 from app.modules.access_requests import AccessRequest, IntencaoPerfil, StatusSolicitacaoAcesso
 from app.modules.audit_logs import AuditLog
-from app.modules.sessoes import abrir_sessao, encerrar_sessao, encerrar_sessoes_do_usuario, sessao_aberta
+from app.modules.sessoes import (
+    abrir_sessao, encerrar_sessao, encerrar_sessoes_do_usuario, identificador_publico, registrar_uso,
+    sessao_aberta, sessoes_abertas,
+)
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
@@ -157,6 +160,7 @@ def obter_usuario_atual(request: Request, token: str | None = Depends(obter_toke
     if not sessao_aberta(db, payload.get("jti"), usuario.id):
         raise HTTPException(status_code=401, detail="Sessão encerrada. Entre novamente.")
     request.state.sessao_jti = payload.get("jti")
+    registrar_uso(db, payload.get("jti"))  # "ultimo uso" visto em Meus acessos (no maximo a cada 5 min)
     # usuario conferido no banco: a resposta pode renovar a sessao
     # (app/core/sessao.py - quem esta trabalhando nao e deslogado no meio)
     request.state.usuario_sessao = (usuario.id, usuario.perfil.value if hasattr(usuario.perfil, "value") else str(usuario.perfil))
@@ -519,3 +523,69 @@ def confirmar_email(
     return {
         "mensagem": "E-mail confirmado. Seu pedido foi enviado para análise do administrador."
     }
+
+
+# ---------------------------------------------------------------------------
+# Meus acessos (OWASP ASVS 7.5.2): o usuario ve onde a conta dele esta aberta
+# e encerra o que nao reconhece (ex.: esqueceu o login num computador da
+# clinica). A tela recebe so um RESUMO do identificador da sessao, nunca o
+# identificador em si.
+# ---------------------------------------------------------------------------
+@router.get("/sessoes")
+def listar_minhas_sessoes(
+    request: Request,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    atual = getattr(request.state, "sessao_jti", None)
+    return [
+        {
+            "id": identificador_publico(s.id),
+            "aparelho": s.aparelho,
+            "ip": s.ip,
+            "criada_em": s.criada_em.isoformat() if s.criada_em else None,
+            "ultimo_uso": s.ultimo_uso.isoformat() if s.ultimo_uso else None,
+            "atual": s.id == atual,
+        }
+        for s in sessoes_abertas(db, usuario.id)
+    ]
+
+
+@router.post("/sessoes/{identificador}/encerrar")
+def encerrar_minha_sessao(
+    identificador: str,
+    request: Request,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Encerra UMA sessao do proprio usuario (nunca de outra pessoa)."""
+    alvo = next((s for s in sessoes_abertas(db, usuario.id) if identificador_publico(s.id) == identificador), None)
+    if not alvo:
+        raise HTTPException(status_code=404, detail="Sessão não encontrada.")
+    if alvo.id == getattr(request.state, "sessao_jti", None):
+        raise HTTPException(status_code=409, detail="Para encerrar este acesso, use Sair.")
+    encerrar_sessao(db, alvo.id, "pelo_usuario")
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="encerramento_sessao_pelo_usuario", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso", detalhes=f"Sessao {identificador} ({alvo.aparelho or 'aparelho desconhecido'}).",
+    ))
+    db.commit()
+    return {"mensagem": "Acesso encerrado."}
+
+
+@router.post("/sessoes/encerrar-outras")
+def encerrar_minhas_outras_sessoes(
+    request: Request,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Encerra todos os acessos do proprio usuario, menos o deste navegador."""
+    fechadas = encerrar_sessoes_do_usuario(
+        db, usuario.id, "pelo_usuario", exceto_jti=getattr(request.state, "sessao_jti", None)
+    )
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="encerramento_outras_sessoes", entidade="user", entidade_id=usuario.id,
+        resultado="sucesso", detalhes=f"Sessoes encerradas: {fechadas}.",
+    ))
+    db.commit()
+    return {"encerradas": fechadas}
