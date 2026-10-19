@@ -13,7 +13,7 @@ import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impres
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
-import { corTextoAchado, corCartaoTipoRadiografia } from '../../lib/coresAchados'
+import { corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 import { TIPOS_ACHADO, REGIOES_ANATOMICAS, rotularTipoAchado } from '../../lib/achados'
 import { ERROS_TECNICOS, errosParaTipo, rotuloErro } from '../../lib/errosTecnicos'
@@ -204,7 +204,7 @@ function rotular(
   return opcao ? traduzir(opcao.chave) : valor
 }
 
-// Ao passar o mouse, o cartao do resultado cresce 70% (scale 1.7) por cima
+// Ao passar o mouse, o cartao do resultado DOBRA de tamanho (scale 2) por cima
 // dos vizinhos. Para nao "vazar" para fora da area da pagina (sumindo por
 // baixo do menu ou da borda), o ponto fixo da ampliacao muda conforme a
 // posicao do cartao: perto da borda esquerda ele cresce para a direita,
@@ -212,8 +212,9 @@ function rotular(
 function ajustarOrigemAmpliacao(cartao: HTMLElement) {
   const area = (cartao.closest('main') ?? document.body).getBoundingClientRect()
   const r = cartao.getBoundingClientRect()
-  const sobraX = r.width * 0.35 + 8
-  const sobraY = r.height * 0.35 + 8
+  // cresce metade da largura/altura para cada lado (scale 2)
+  const sobraX = r.width * 0.5 + 8
+  const sobraY = r.height * 0.5 + 8
   const topoVisivel = Math.max(area.top, 0)
   const baseVisivel = Math.min(area.bottom, window.innerHeight)
   const h = r.left - area.left < sobraX ? 'left' : area.right - r.right < sobraX ? 'right' : 'center'
@@ -1077,80 +1078,65 @@ function PesquisaConteudo() {
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 2xl:grid-cols-10">
-                  {resultados.map((imagem, indice) => (
-                    <Link
-                      key={imagem.curation_id}
-                      href={`/visualizar/${imagem.curation_id}`}
-                      onMouseEnter={(e) => ajustarOrigemAmpliacao(e.currentTarget)}
-                      data-cartao-imagem
-                      className="group relative flex flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface transition duration-200 hover:z-30 hover:scale-[1.7] hover:border-brand/60 hover:shadow-2xl hover:delay-150 motion-reduce:hover:scale-100"
-                    >
-                      <div className="relative aspect-square overflow-hidden">
-                        <MiniaturaImagem
-                          curationId={imagem.curation_id}
-                          alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
-                          className="h-full w-full bg-base-surface2 object-cover"
-                        />
-                        <span className="absolute left-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-[10px] font-semibold text-white">
-                          {indice + 1}
-                        </span>
-                        {/* Selo "i": a MESMA caixa de descricao de Minhas imagens e
-                            Compartilhadas comigo - abre no clique, ao lado do cartao,
-                            pode ser arrastada, ampliada e tem as anotacoes pessoais */}
+                {/* Grade de resultados: CINCO imagens por linha (em telas largas,
+                    duas linhas cabem na tela). Cada cartao mostra SO a imagem e um
+                    "i" pequeno no canto:
+                    - mouse na imagem -> ela dobra de tamanho; tirou o mouse, volta;
+                    - mouse no "i" -> mostra a descricao; um clique no "i" fixa a
+                      descricao e outro clique a esconde (EtiquetaMarcacoes, modo
+                      flutuante);
+                    - a caixinha de selecao (usada por Salvar/Imprimir/Visualizar)
+                      so aparece ao passar o mouse ou quando a imagem esta marcada,
+                      para nao poluir a miniatura. */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
+                  {resultados.map((imagem, indice) => {
+                    const marcada = selecionados.includes(imagem.curation_id)
+                    return (
+                      // O "i" fica FORA da parte que cresce: se ficasse dentro, ao
+                      // apontar para ele a imagem dobrava, o "i" saia de baixo do
+                      // mouse e a descricao fechava sozinha (achado no teste).
+                      <div key={imagem.curation_id} className="relative aspect-square">
+                        <Link
+                          href={`/visualizar/${imagem.curation_id}`}
+                          onMouseEnter={(e) => ajustarOrigemAmpliacao(e.currentTarget)}
+                          data-cartao-imagem
+                          aria-label={t('imagemNumero', { numero: indice + 1 })}
+                          className={`group absolute inset-0 block overflow-hidden rounded-lg border bg-black transition duration-200 hover:z-30 hover:scale-[2] hover:border-brand/60 hover:shadow-2xl hover:delay-150 motion-reduce:hover:scale-100 ${
+                            marcada ? 'border-brand ring-2 ring-brand/60' : 'border-base-border'
+                          }`}
+                        >
+                          <MiniaturaImagem
+                            curationId={imagem.curation_id}
+                            alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
+                            className="h-full w-full bg-black object-contain"
+                          />
+                          <label
+                            onClick={(e) => e.stopPropagation()}
+                            className={`absolute right-1 top-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-md bg-black/70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 ${
+                              marcada ? 'opacity-100' : 'opacity-0'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={marcada}
+                              onChange={() => alternarSelecao(imagem.curation_id)}
+                              onClick={(e) => e.stopPropagation()}
+                              aria-label={t('selecionarImagem', { numero: indice + 1 })}
+                              className="h-3.5 w-3.5 accent-brand"
+                            />
+                          </label>
+                        </Link>
+                        {/* "i" pequeno: passar o mouse mostra a descricao; clique fixa/esconde */}
                         <EtiquetaMarcacoes
                           item={{ ...imagem, numero: indice + 1 }}
                           curationId={imagem.curation_id}
                           flutuante
-                          janela
-                          className="bottom-1.5 right-1.5"
+                          mostrarContagem={false}
+                          className="bottom-1 right-1 !z-40 scale-90"
                         />
-                        <label
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-1.5 top-1.5 flex h-5 w-5 cursor-pointer items-center justify-center rounded-md bg-black/70"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selecionados.includes(imagem.curation_id)}
-                            onChange={() => alternarSelecao(imagem.curation_id)}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label={t('selecionarImagem', { numero: indice + 1 })}
-                            className="h-3.5 w-3.5 accent-brand"
-                          />
-                        </label>
                       </div>
-                      <div className="flex flex-col gap-1 p-2">
-                        <div className="flex flex-wrap items-center gap-1">
-                          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-brand/10 px-1.5 py-0.5 text-[10px] font-medium text-brand-300">
-                            {rotular(OPCOES_TIPO_RADIOGRAFIA, imagem.tipo_radiografia, traduzirTipoRadiografia)}
-                          </span>
-                          {/* Badge de origem: "ufsc" = veio direto do aparelho de raio-x
-                              (deteccao automatica no Orthanc), "externa" = upload manual. */}
-                          {imagem.origem && (
-                            <span
-                              className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
-                                imagem.origem === 'ufsc'
-                                  ? 'bg-emerald-500/10 text-emerald-300'
-                                  : 'bg-slate-500/10 text-slate-300'
-                              }`}
-                            >
-                              {rotular(OPCOES_ORIGEM, imagem.origem, traduzirOrigem)}
-                            </span>
-                          )}
-                        </div>
-                        {/* Titulo do resultado (achado principal) com a MESMA cor usada
-                            no card correspondente do Banco de imagens (../../lib/coresAchados) -
-                            assim o estudante ja reconhece visualmente o tipo de achado antes
-                            mesmo de abrir a imagem, igual acontece la. */}
-                        <span
-                          className={`truncate text-xs font-medium ${corTextoAchado(imagem.achado_principal)}`}
-                          title={rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal, traduzirAchadoPrincipal)}
-                        >
-                          {rotular(OPCOES_ACHADO_PRINCIPAL, imagem.achado_principal, traduzirAchadoPrincipal)}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
+                    )
+                  })}
                 </div>
               </>
             )}
