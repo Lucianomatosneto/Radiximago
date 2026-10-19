@@ -2,7 +2,9 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
@@ -14,7 +16,7 @@ import time
 from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
 from app.core.security import verificar_senha, criar_token_acesso, decodificar_token, gerar_hash_senha, senha_precisa_atualizar
 from app.core.politica_senha import problema_na_senha
-from app.core.limites import Codigo, Email, Instituicao, Nome, Senha, TextoMedio
+from app.core.limites import EMAIL_MAX, SENHA_MAX, Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
     enviar_email_confirmacao_cadastro,
     enviar_email_redefinicao_senha,
@@ -74,6 +76,11 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
+    # O formulario padrao de login (OAuth2) nao tem limite de tamanho: sem
+    # esta conferencia, um "e-mail" de varios megabytes ia parar inteiro na
+    # auditoria (falha_login guarda o e-mail digitado) - OWASP ASVS 1.3.3.
+    if len(form_data.username) > EMAIL_MAX or len(form_data.password) > SENHA_MAX:
+        raise HTTPException(status_code=422, detail="E-mail ou senha com tamanho inválido.")
     # Exclui usuarios excluidos (soft-delete) da busca - o e-mail pode ter
     # sido reaproveitado por uma conta nova, e essa e a que deve logar.
     usuario = db.query(User).filter(
@@ -553,7 +560,7 @@ def listar_minhas_sessoes(
 
 @router.post("/sessoes/{identificador}/encerrar")
 def encerrar_minha_sessao(
-    identificador: str,
+    identificador: Annotated[str, Path(max_length=64)],
     request: Request,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),

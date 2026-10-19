@@ -14,6 +14,9 @@ origem_voz=true - fica na auditoria como "preenchimento_por_voz").
 So curadores (e administrador/suporte) usam; limite de 120 trechos por
 minuto (na escuta continua cada item da ficha e um trecho curto, e curador
 experiente fala varios por minuto). A auditoria registra cada transcricao (duracao), nunca o audio.
+
+Toda chamada ao servico de voz leva a chave compartilhada (cabecalho
+X-Radix-Chave, OWASP ASVS 13.2.1): o servico recusa quem nao a tiver.
 """
 
 import httpx
@@ -44,6 +47,11 @@ PROMPT_BASE = (
     "dente incluso, supranumerário, agenesia, seio maxilar, corpo estranho. "
     "Marcação um: outro. Descrição: ... fim. Achados detalhados. Observações internas. Desfazer. Salvar."
 )
+
+
+def _cabecalhos() -> dict[str, str]:
+    """Autenticacao do backend perante o servico de voz (ASVS 13.2.1)."""
+    return {"X-Radix-Chave": settings.WHISPER_CHAVE}
 
 
 def _prompt(db: Session) -> str:
@@ -91,7 +99,7 @@ DICAS_ETAPA = {
 @router.get("/saude")
 def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
     try:
-        r = httpx.get(f"{settings.WHISPER_URL}/saude", timeout=5)
+        r = httpx.get(f"{settings.WHISPER_URL}/saude", headers=_cabecalhos(), timeout=5)
         r.raise_for_status()
         return {"disponivel": True, **r.json()}
     except Exception:
@@ -104,7 +112,7 @@ def aquecer_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
     modelo agora, para a 1a fala ja ser transcrita rapido. Sem audio e sem
     dado pessoal - so um aviso. Falha aqui nao atrapalha a curadoria."""
     try:
-        r = httpx.post(f"{settings.WHISPER_URL}/aquecer", timeout=120)
+        r = httpx.post(f"{settings.WHISPER_URL}/aquecer", headers=_cabecalhos(), timeout=120)
         r.raise_for_status()
         return {"disponivel": True, **r.json()}
     except Exception:
@@ -133,6 +141,7 @@ def transcrever(
     try:
         resposta = httpx.post(
             f"{settings.WHISPER_URL}/transcrever",
+            headers=_cabecalhos(),
             files={"arquivo": (arquivo.filename or "audio.webm", conteudo, tipo or "audio/webm")},
             # rapido: trecho curto da escuta continua (decodificacao mais leve)
             data={

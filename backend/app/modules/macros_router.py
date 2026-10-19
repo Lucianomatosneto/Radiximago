@@ -46,8 +46,9 @@ class ConteudoMacro(BaseModel):
     achados_detalhe: Optional[str] = Field(default=None, max_length=4000)
     observacoes_internas: Optional[str] = Field(default=None, max_length=4000)
     alteracoes_observadas: List[str] = Field(default_factory=list, max_length=30)
-    tipo_radiografia: Optional[str] = None
-    qualidade_tecnica: Optional[str] = None
+    # lista fechada conferida nos validadores abaixo; o tamanho so barra abuso
+    tipo_radiografia: Optional[str] = Field(default=None, max_length=40)
+    qualidade_tecnica: Optional[str] = Field(default=None, max_length=40)
 
     @field_validator("alteracoes_observadas")
     @classmethod

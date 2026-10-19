@@ -59,7 +59,7 @@ def _ip(request: Request) -> str:
     return request.client.host if request.client else "desconhecido"
 
 
-def _usuario_do_pedido(request: Request) -> int | None:
+def usuario_do_pedido(request: Request) -> int | None:
     """Quem fez o pedido, se estava logado (sem consultar o banco)."""
     from app.core.security import decodificar_token
     from app.core.sessao import NOME_COOKIE_TOKEN
@@ -115,14 +115,14 @@ async def registrar_eventos_de_seguranca(request: Request, call_next):
             # (logger.exception); o usuario recebe mensagem generica (16.5.1)
             logger.exception("Erro inesperado em %s", rota)
             await asyncio.to_thread(
-                _registrar_evento, "erro_inesperado", "erro", f"{rota} -> 500", _usuario_do_pedido(request)
+                _registrar_evento, "erro_inesperado", "erro", f"{rota} -> 500", usuario_do_pedido(request)
             )
             return JSONResponse(status_code=500, content={"detail": MENSAGEM_ERRO_GENERICA})
 
         status = resposta.status_code
         if status not in (403, 422, 429) or request.url.path.startswith(_ROTAS_COM_REGISTRO_PROPRIO):
             return resposta
-        usuario_id = _usuario_do_pedido(request)
+        usuario_id = usuario_do_pedido(request)
         if status == 403:
             acao = "origem_recusada" if getattr(request.state, "origem_recusada", False) else "acesso_negado"
         elif status == 429:

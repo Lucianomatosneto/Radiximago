@@ -8,6 +8,8 @@ from pydantic_settings import BaseSettings
 # 11.2.3; RFC 7518 3.2). Gerar com:
 #   python -c "import secrets; print(secrets.token_urlsafe(48))"
 JWT_CHAVE_MIN_BYTES = 32
+# chave do servico de voz (mesmo minimo do whisper/app.py)
+WHISPER_CHAVE_MIN_CARACTERES = 32
 
 class Settings(BaseSettings):
     # Banco de dados
@@ -33,6 +35,11 @@ class Settings(BaseSettings):
     OHIF_BASE_URL: str = "http://localhost:3001"
     # servico de transcricao de voz (container radix-whisper, rede interna)
     WHISPER_URL: str = "http://radix-whisper:9000"
+    # chave compartilhada com o servico de voz (cabecalho X-Radix-Chave -
+    # OWASP ASVS 13.2.1). O MESMO valor vai para o container radix-whisper
+    # pelo docker-compose.yml. Gerar com:
+    #   python -c "import secrets; print(secrets.token_hex(32))"
+    WHISPER_CHAVE: str = ""
     MAX_UPLOAD_SIZE_MB: int = 50
 
     # E-mail (SMTP) - usado pra redefinicao de senha. Se SMTP_HOST ficar
@@ -65,6 +72,11 @@ class Settings(BaseSettings):
             if self.ENVIRONMENT == "production":
                 raise ValueError(mensagem)
             warnings.warn(mensagem, stacklevel=2)
+        if self.ENVIRONMENT == "production" and len(self.WHISPER_CHAVE) < WHISPER_CHAVE_MIN_CARACTERES:
+            raise ValueError(
+                f"WHISPER_CHAVE ausente ou com menos de {WHISPER_CHAVE_MIN_CARACTERES} caracteres "
+                "(comunicacao com o servico de voz precisa ser autenticada - docs/COMUNICACOES.md)."
+            )
         return self
 
     class Config:

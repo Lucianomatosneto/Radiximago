@@ -31,6 +31,8 @@ dos pedidos que alteram dados.
    continuam passando - eles ja dependem do login normal.
 """
 
+import re
+
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -45,6 +47,24 @@ _ROTAS_DOCUMENTACAO = ("/docs", "/redoc", "/openapi.json")
 
 CSP_API = "default-src 'none'; frame-ancestors 'none'"
 CSP_ARQUIVOS_ENVIADOS = "default-src 'none'; frame-ancestors 'none'; sandbox"
+
+
+_FORA_DO_NOME = re.compile(r"[^A-Za-z0-9._-]")
+
+
+def disposicao_de_arquivo(nome: str, baixar: bool = False) -> str:
+    """Valor do cabecalho Content-Disposition (OWASP ASVS 5.4.1).
+
+    O nome e SEMPRE montado pelo servidor (ex.: "radix-imago-12.png") - o
+    nome que o usuario deu ao arquivo enviado nunca volta. Mesmo assim, so
+    letras sem acento, numeros, ponto, hifen e sublinhado passam: aspas ou
+    quebras de linha nao conseguem "quebrar" o cabecalho.
+    - baixar=True  -> "attachment": o navegador salva o arquivo;
+    - baixar=False -> "inline": o navegador mostra (miniaturas), e o nome
+      vale se a pessoa escolher "salvar imagem como".
+    """
+    seguro = _FORA_DO_NOME.sub("_", nome)[:100] or "arquivo"
+    return f'{"attachment" if baixar else "inline"}; filename="{seguro}"'
 
 
 async def sem_cache_em_dados(request: Request, call_next):
@@ -83,6 +103,8 @@ async def protecao_de_navegador(request: Request, call_next):
     eh_pagina = h.get("content-type", "").startswith("text/html")
     if caminho.startswith("/uploads/"):
         h["Content-Security-Policy"] = CSP_ARQUIVOS_ENVIADOS
+        if resposta.status_code == 200:
+            h.setdefault("Content-Disposition", disposicao_de_arquivo(caminho.rsplit("/", 1)[-1]))
     elif not eh_pagina and not caminho.startswith(_ROTAS_DOCUMENTACAO):
         h.setdefault("Content-Security-Policy", CSP_API)
     return resposta

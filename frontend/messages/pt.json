@@ -1219,7 +1219,8 @@
     "infoDentes": "Dentes",
     "infoAchados": "Achados",
     "infoDescricao": "Descrição",
-    "infoErros": "Erro técnico"
+    "infoErros": "Erro técnico",
+    "limiteLote": "Envie no máximo {maximo} imagens por e-mail. Desmarque algumas e tente de novo."
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",

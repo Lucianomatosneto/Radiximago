@@ -29,8 +29,8 @@ def test_transcreve_repassando_ao_servico_local(client, criar_usuario, db, monke
     token = obter_token(client, curador.email)
     enviado = {}
 
-    def post_falso(url, files=None, data=None, timeout=None):
-        enviado.update(url=url, files=files, data=data)
+    def post_falso(url, files=None, data=None, timeout=None, headers=None):
+        enviado.update(url=url, files=files, data=data, headers=headers)
         return RespostaFalsa(200, {"texto": "Periapical, dente 36.", "duracao_s": 2.5, "processamento_s": 1.1, "modelo": "small"})
 
     monkeypatch.setattr(voz_router.httpx, "post", post_falso)
@@ -42,6 +42,8 @@ def test_transcreve_repassando_ao_servico_local(client, criar_usuario, db, monke
     assert r.status_code == 200, r.text
     assert r.json()["texto"] == "Periapical, dente 36."
     assert enviado["url"].endswith("/transcrever")
+    # ASVS 13.2.1: o backend se autentica no servico de voz
+    assert enviado["headers"] == {"X-Radix-Chave": voz_router.settings.WHISPER_CHAVE}
     assert "Periapical" in enviado["data"]["prompt"]
     assert enviado["data"]["rapido"] == "0"
     # escuta continua: trecho curto pede o modo rapido ao Whisper

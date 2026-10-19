@@ -2,9 +2,9 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.0 — 18/10/2026 |
+| Versão do documento | 1.1 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
-| Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
+| Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
 
 O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiografias odontológicas **anonimizadas**. Não é sistema assistencial, não emite laudo e não substitui prontuário.
@@ -89,6 +89,27 @@ Perfis (`backend/app/modules/auth.py`):
 
 **Prova automática:** `tests/test_exposicao_de_dados.py`.
 
+### 4.1 Acesso por campo na escrita (ASVS 8.2.3)
+
+Cada pedido que grava dados aceita **só os campos daquela ação**. Campo a mais é ignorado; ele não chega ao banco. Por isso ninguém aprova uma ficha, troca o curador responsável, muda o próprio perfil ou bloqueia alguém mandando o campo "escondido" no pedido.
+
+Campos sensíveis (perfil, situação, dono, bloqueio, e-mail) só são aceitos nestas entradas:
+
+| Entrada | Campo | Quem envia |
+|---|---|---|
+| Pedido de acesso | e-mail; perfil **pretendido** (curador ou estudante; quem decide é o administrador) | público |
+| Esqueci a senha | e-mail | público |
+| Aprovar pedido de acesso | perfil concedido | administrador |
+| Criar usuário | e-mail, perfil | administrador |
+| Compartilhar imagem | e-mail do destinatário | quem compartilha |
+| Editar termo do vocabulário / macro | ativo | curadoria |
+
+A troca de **situação da ficha** acontece só pelas ações próprias (aprovar, descartar, segunda opinião), que conferem as regras de `REGRAS_DE_NEGOCIO.md`.
+
+**Prova automática:** `tests/test_nivel2_grupo4.py`, com dois tipos de teste:
+- `test_8_2_3_campos_sensiveis_so_entram_onde_foi_decidido` lê o contrato da API e **falha** se um campo sensível aparecer em qualquer outra entrada;
+- testes de ataque: curador mandando `status`/`curador_id`, estudante tentando se promover, administrador mandando `bloqueado`/`email` na edição. Nada disso é gravado.
+
 ## 5. Direitos do titular (LGPD art. 18) — situação atual
 
 | Direito | Como é atendido hoje |
@@ -107,3 +128,4 @@ Perfis (`backend/app/modules/auth.py`):
 | Versão | Data | Alteração |
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
+| 1.1 | 18/10/2026 | Acesso por campo na escrita (seção 4.1, ASVS 8.2.3) |

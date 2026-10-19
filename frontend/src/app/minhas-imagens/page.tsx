@@ -70,6 +70,9 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
+// Teto de imagens por e-mail (ASVS 2.3.2 - docs/REGRAS_DE_NEGOCIO.md, secao 3)
+const MAX_IMAGENS_EMAIL_LOTE = 10
+
 export default function MinhasImagensPage() {
   const router = useRouter()
   const t = useTranslations('MinhasImagens')
@@ -204,9 +207,15 @@ export default function MinhasImagensPage() {
 
   async function enviarSelecionadasPorEmail() {
     if (!autenticado || selecionados.length === 0) return
-    setEnviandoLote(true)
     setMensagemLote('')
     setErro('')
+    // mesmo teto do servidor (backend/app/core/rate_limit.py, MAX_IMAGENS_EMAIL_LOTE):
+    // avisa antes, em vez de mostrar um erro generico depois
+    if (selecionados.length > MAX_IMAGENS_EMAIL_LOTE) {
+      setErro(t('limiteLote', { maximo: MAX_IMAGENS_EMAIL_LOTE }))
+      return
+    }
+    setEnviandoLote(true)
     try {
       const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/send-email-lote`, {
         method: 'POST',

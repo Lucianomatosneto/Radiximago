@@ -11,6 +11,7 @@ from fastapi import Depends, HTTPException, Query, Response
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
@@ -288,7 +289,11 @@ def obter_preview_pendente(
         )
 
     conteudo = orthanc_client.obter_preview_instancia(imagem.orthanc_id)
-    return Response(content=conteudo, media_type="image/png")
+    return Response(
+        content=conteudo,
+        media_type="image/png",
+        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-imagem-{imagem.id}.png")},
+    )
 
 
 # ---------------------------------------------------------------------

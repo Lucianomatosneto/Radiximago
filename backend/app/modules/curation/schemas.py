@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from app.core.limites import (
     MAX_ACHADOS, MAX_ALTERACOES, MAX_DENTES, MAX_ERROS_TECNICOS, MAX_MARCACOES, MAX_TERMOS,
@@ -54,6 +54,17 @@ class Marcacao(BaseModel):
     # com `achado` de proposito (mesmo padrao tolerante ja usado em outros
     # campos de texto livre da ficha, ex.: parecer_revisor).
     achado_descricao: Optional[TextoCurto] = None
+
+    @model_validator(mode="after")
+    def _coordenadas_do_tipo(self):
+        """Combinacao coerente (OWASP ASVS 2.2.3): cada forma precisa das
+        proprias coordenadas - uma "seta" sem ponta ou um "oval" sem tamanho
+        seria gravado e depois desenhado errado (ou nem desenhado)."""
+        exigidas = ("x1", "y1", "x2", "y2") if self.tipo == "seta" else ("x", "y", "largura", "altura")
+        faltando = [c for c in exigidas if getattr(self, c) is None]
+        if faltando:
+            raise ValueError(f"Marcação '{self.tipo}' sem as coordenadas: {', '.join(faltando)}.")
+        return self
 
 
 class CurationCreate(BaseModel):

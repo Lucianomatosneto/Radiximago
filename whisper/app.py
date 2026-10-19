@@ -14,6 +14,11 @@ Servico de transcricao de voz do Radix Imago (curadoria por voz).
   transcricao e e descartado em seguida.
 - So responde dentro da rede interna do Docker (nao publica porta); quem
   conversa com ele e o backend (radix-api), que exige login de curador.
+- Toda chamada precisa da CHAVE compartilhada com o backend no cabecalho
+  X-Radix-Chave (OWASP ASVS 13.2.1 - comunicacao interna autenticada):
+  mesmo que outro programa entre na rede interna, sem a chave o servico
+  nao responde. Sem chave configurada (RADIX_WHISPER_CHAVE vazia), o
+  servico recusa tudo (503) em vez de ficar aberto.
 
 Endpoints:
 - GET  /saude       -> estado do servico (modelo carregado ou nao)
@@ -22,13 +27,14 @@ Endpoints:
 - POST /transcrever -> multipart: arquivo (audio), prompt (opcional)
 """
 
+import hmac
 import io
 import logging
 import os
 import threading
 import time
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("radix-whisper")
@@ -40,7 +46,33 @@ THREADS = int(os.getenv("RADIX_WHISPER_THREADS", "4"))
 TAMANHO_MAXIMO = 10 * 1024 * 1024  # 10 MB (~ varios minutos de audio comprimido)
 DURACAO_MAXIMA_S = 120
 
-app = FastAPI(title="Radix Imago - transcricao de voz", docs_url=None, redoc_url=None)
+# chave compartilhada com o backend (docker-compose: WHISPER_CHAVE do .env)
+CHAVE = os.getenv("RADIX_WHISPER_CHAVE", "")
+CHAVE_MIN_CARACTERES = 32
+if len(CHAVE) < CHAVE_MIN_CARACTERES:
+    log.error(
+        "RADIX_WHISPER_CHAVE ausente ou curta (minimo %d caracteres): o servico de voz vai recusar "
+        "todos os pedidos. Configure WHISPER_CHAVE no .env (ver docs/COMUNICACOES.md).",
+        CHAVE_MIN_CARACTERES,
+    )
+
+
+def exigir_chave(x_radix_chave: str = Header(default="")) -> None:
+    """So o backend do Radix (que conhece a chave) pode usar o servico."""
+    if len(CHAVE) < CHAVE_MIN_CARACTERES:
+        raise HTTPException(status_code=503, detail="Serviço de voz sem chave configurada.")
+    # compare_digest: comparacao em tempo constante (nao revela a chave aos poucos)
+    if not hmac.compare_digest(x_radix_chave.encode(), CHAVE.encode()):
+        raise HTTPException(status_code=401, detail="Chave do serviço de voz inválida.")
+
+
+app = FastAPI(
+    title="Radix Imago - transcricao de voz",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+    dependencies=[Depends(exigir_chave)],
+)
 
 _trava = threading.Lock()
 _modelo = None

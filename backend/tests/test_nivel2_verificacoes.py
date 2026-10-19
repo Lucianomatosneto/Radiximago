@@ -243,6 +243,26 @@ def test_13_2_1_api_se_autentica_no_orthanc():
     assert orthanc_client._client.auth is not None
 
 
+def test_13_2_1_api_se_autentica_no_servico_de_voz():
+    """Toda chamada ao Whisper leva a chave; o lado do servico e testado em whisper/test_app.py."""
+    voz = (BACKEND / "modules" / "voz_router.py").read_text(encoding="utf-8")
+    chamadas = re.findall(r"httpx\.(?:get|post)\(\s*f\"\{settings\.WHISPER_URL\}[^)]*?\)", voz, re.S)
+    assert len(chamadas) == 3, chamadas
+    assert all("headers=_cabecalhos()" in c for c in chamadas), chamadas
+    compose = BACKEND.parent.parent / "docker-compose.yml"
+    if compose.is_file():  # no container do backend o docker-compose.yml nao existe
+        assert "RADIX_WHISPER_CHAVE=${WHISPER_CHAVE" in compose.read_text(encoding="utf-8")
+
+
+def test_13_2_1_producao_nao_liga_sem_chave_do_servico_de_voz(monkeypatch):
+    from app.core.config import Settings
+
+    base = dict(DATABASE_URL="postgresql://x", JWT_SECRET_KEY="k" * 40, ORTHANC_PASSWORD="x", ENVIRONMENT="production")
+    with pytest.raises(ValueError, match="WHISPER_CHAVE"):
+        Settings(**base, WHISPER_CHAVE="curta")
+    assert Settings(**base, WHISPER_CHAVE="c" * 64).WHISPER_CHAVE == "c" * 64
+
+
 def test_15_3_2_chamadas_de_saida_nao_seguem_redirecionamento():
     assert orthanc_client._client.follow_redirects is False
     voz = (BACKEND / "modules" / "voz_router.py").read_text(encoding="utf-8")
@@ -388,8 +408,8 @@ def test_16_5_3_falha_na_anonimizacao_nao_registra_imagem_e_apaga_original(monke
 def test_11_2_3_chave_curta_impede_producao_de_ligar(monkeypatch):
     """Antes so se testava a biblioteca; agora a CONFIGURACAO e conferida."""
     from app.core.config import JWT_CHAVE_MIN_BYTES, Settings
-    base = {"DATABASE_URL": "postgresql://x/y", "ORTHANC_PASSWORD": "x"}
-    with pytest.raises(Exception):
+    base = {"DATABASE_URL": "postgresql://x/y", "ORTHANC_PASSWORD": "x", "WHISPER_CHAVE": "c" * 64}
+    with pytest.raises(ValueError, match="JWT_SECRET_KEY"):
         Settings(JWT_SECRET_KEY="curta", ENVIRONMENT="production", **base)
     with pytest.warns(UserWarning):
         Settings(JWT_SECRET_KEY="curta", ENVIRONMENT="development", **base)

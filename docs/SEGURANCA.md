@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.7 — 18/10/2026 |
+| Versão do documento | 1.8 — 18/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -13,9 +13,9 @@
 | Documento | Assunto | ASVS |
 |---|---|---|
 | `DADOS_E_PRIVACIDADE.md` | inventário e classificação dos dados (LGPD), proteção por nível, acesso por campo | 14.1.1, 14.1.2, 8.1.2 |
-| `REGRAS_DE_NEGOCIO.md` | consistência entre campos, fluxo da ficha, limites, funções pesadas | 2.1.2, 2.1.3, 2.3.2, 15.1.3 |
+| `REGRAS_DE_NEGOCIO.md` | consistência entre campos, fluxo da ficha, limites anti-abuso, funções pesadas | 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3, 15.2.2 |
 | `CRIPTOGRAFIA.md` | inventário criptográfico, política de chaves e segredos, agilidade | 11.1.1, 11.1.2, 11.2.2 |
-| `COMUNICACOES.md` | todas as conexões entre as partes do sistema | 13.1.1 |
+| `COMUNICACOES.md` | todas as conexões entre as partes do sistema | 13.1.1, 13.2.1 |
 | `REGISTROS.md` | inventário dos registros (logs) | 16.1.1 |
 | `sbom/radix-imago-sbom.cdx.json` | lista de componentes (CycloneDX 1.5), gerada por `scripts/gerar_sbom.py` | 15.1.2 |
 
@@ -71,6 +71,17 @@ Definidos num só lugar, `app/core/limites.py`, e repetidos nas caixas de texto 
 
 Testes: `tests/test_limites_entrada.py`.
 
+**Garantia geral (ASVS 1.3.3):** o teste `test_1_3_3_todo_texto_recebido_tem_tamanho_maximo` lê o contrato da API (OpenAPI) e falha se algum campo de texto ou lista recebido, no corpo, no endereço ou na consulta, não tiver limite ou lista fechada. Na primeira execução ele achou **4 lacunas**, todas corrigidas:
+- o formulário de login aceitava e-mail e senha de qualquer tamanho, e o e-mail digitado ia **inteiro** para a auditoria (`falha_login`); agora, acima de 150/256 caracteres → 422, antes de consultar o banco;
+- o identificador de acesso em "Meus acessos";
+- o filtro de situação dos pedidos de acesso;
+- dois campos das macros.
+
+Também neutralizados antes de **contextos perigosos**:
+- todo valor posto em link (`href`) dos e-mails passa por `escape`;
+- nomes de arquivo nos cabeçalhos HTTP só levam caracteres seguros (seção 6);
+- a busca trata `%` e `_` como texto.
+
 ### 2.2 Dados sensíveis fora dos endereços (ASVS 14.2.1)
 - O crachá de login vai **só em cookie**, nunca no endereço.
 - Os links dos e-mails ("esqueci a senha" e confirmação de cadastro) levam o código **depois do `#`** (`/redefinir-senha#token=...`). Essa parte do endereço não sai do navegador: não chega ao servidor nem a registros de servidores e proxies. A tela lê o código e o **apaga da barra de endereço** na hora (`frontend/src/lib/codigoDoLink.ts`). Links antigos com `?token=` continuam aceitos e também são apagados.
@@ -85,7 +96,7 @@ Testes: `tests/test_limites_entrada.py`.
 
 ## 3. Autenticação e defesas contra força bruta (ASVS 6.1.1 e 6.3.1)
 
-### 3.1 Limites de tentativas (por endereço de rede)
+### 3.1 Limites de tentativas (sem login: por endereço de rede; com login: por conta)
 | Função | Limite | Ao estourar |
 |---|---|---|
 | Login (`POST /auth/login`) | 5 por minuto | resposta 429 por 1 minuto |
@@ -95,8 +106,9 @@ Testes: `tests/test_limites_entrada.py`.
 | Confirmar e-mail do cadastro | 10 por minuto; o link é **invalidado** após 5 senhas erradas | 429 / link bloqueado |
 | Compartilhar imagem / responder | 20 por minuto | 429 |
 | Transcrição de voz | 120 por minuto | 429 |
+| Qualquer outra rota (limite geral) | 600 por minuto | 429 |
 
-Implementação: biblioteca `slowapi` (`@limiter.limit` em cada rota). Teste: `test_rate_limit_no_login`.
+Implementação: biblioteca `slowapi` (`@limiter.limit` em cada rota) e um "vigia" próprio para o limite geral (`app/core/rate_limit.py`). Os limites de e-mail, ZIP, envio de DICOM e sincronização, por hora, estão em `REGRAS_DE_NEGOCIO.md`, seção 3. Testes: `test_rate_limit_no_login`, `tests/test_anti_abuso.py`.
 
 ### 3.2 Outras defesas
 - Mensagem **igual** para e-mail inexistente e senha errada ("Email ou senha incorretos"); "esqueci a senha" sempre responde a mesma frase (não revela quais e-mails existem).
@@ -181,10 +193,12 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 | `X-Content-Type-Options` | `nosniff` | `nosniff` | o navegador não "adivinha" o tipo: foto enviada nunca vira página ou script |
 | `Referrer-Policy` | `no-referrer` | `same-origin` | endereços internos não vazam para outros sites |
 | `X-Frame-Options` + `frame-ancestors` | `DENY` / `'none'` | `DENY` / `'none'` | nenhum site embute o Radix em moldura (*clickjacking*). O Radix continua mostrando o OHIF em moldura |
-| `Content-Security-Policy` | `default-src 'none'` em JSON e imagens; `sandbox` em `/uploads` | só `frame-ancestors` | conteúdo da API nunca executa nada, mesmo aberto direto no navegador |
+| `Content-Security-Policy` | `default-src 'none'` em JSON e imagens; `sandbox` em `/uploads` | **lista fechada** (ASVS 3.4.3): só a própria tela, a API e o OHIF (em moldura); `object-src 'none'`, `base-uri 'none'`, `form-action 'self'` | conteúdo da API nunca executa nada; nas telas, script, moldura ou conexão para outro site é recusado pelo navegador |
 
 - Exceção: a documentação interativa da API (`/docs`) não recebe a CSP restrita, porque usa scripts. Deve ser desligada no servidor de produção.
-- Pendente (L2): CSP completa nas telas (3.4.3) e cabeçalhos no OHIF (porta 3001) e no proxy do Orthanc (porta 8042).
+- **Limite declarado da CSP das telas:** `'unsafe-inline'` em scripts e estilos continua permitido, porque o Next.js escreve pequenos scripts dentro da página e o tema é aplicado antes da primeira pintura. Tirá-lo exige "nonce" por resposta, exigência do Nível 3. `'unsafe-eval'` e `ws:` só existem em desenvolvimento (`npm run dev`).
+- **Comprovação em navegador real (18/10):** 12 telas visitadas com o administrador, inclusive o visualizador com o OHIF em moldura, e **nenhuma** recusa da política. Já script, `<object>`, moldura, `<base>` e conexão para um site de fora, inseridos à força na página, foram **todos recusados** pelo navegador.
+- Pendente (implantação): cabeçalhos no OHIF (porta 3001) e no proxy do Orthanc (porta 8042).
 - Testes: `tests/test_protecao_navegador.py`.
 
 ## 6. Arquivos enviados (ASVS 5.1.1)
@@ -194,6 +208,8 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 | Imagem DICOM (aparelho, porta 4242) | equipamento na rede | DICOM | — | o que o Orthanc aceitar | o Orthanc não descompacta nada no protocolo DICOM | anonimizada automaticamente em até 60 s |
 | Foto de perfil | o próprio usuário | JPG, PNG, WebP | qualquer (o nome enviado é ignorado; o servidor gera nome e extensão) | 5 MB | não se aplica | conteúdo real conferido pela assinatura do arquivo; servida com `nosniff` e CSP `sandbox` |
 | Áudio da curadoria por voz | curadoria | áudio do navegador | — | 10 MB | não se aplica | só na memória; vira texto e é descartado |
+
+**Nome do arquivo nas respostas (ASVS 5.4.1):** toda resposta de arquivo (miniatura, ZIP, foto de perfil) leva `Content-Disposition` com um nome **gerado pelo servidor** (`radix-imago-12.png`), nunca o nome enviado pelo usuário. Só letras sem acento, números, `.`, `-` e `_` entram no cabeçalho (`disposicao_de_arquivo` em `app/core/cabecalhos.py`). Comprovado por análise do código (toda `Response(content=...)` define o nome) e por teste (`test_5_4_1_...`).
 
 Arquivo fora da regra → **422**, e nada é gravado. Arquivo malicioso disfarçado de imagem é recusado pela assinatura (`T-UPL-03`, auditoria de 15/10). Antivírus: **não há** (ASVS 5.4.3, decisão pendente do grupo 6).
 
@@ -251,7 +267,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 18/10/2026 | Senha do banco de dados local ficou no histórico do Git (`alembic.ini`, corrigido no código em 18/10). Troca da senha adiada para a implantação | repositório **privado**, sem outros colaboradores; banco só no computador do responsável | **criar o banco do servidor externo com senha nova e forte** (nunca a antiga); trocar antes se alguém novo receber acesso ao repositório ou se ele ficar público |
 
 ### 9.1 Onde ficam os segredos (ASVS 13.3.1)
-- Senhas e chaves (banco, JWT, Orthanc, e-mail) ficam **só** no arquivo `.env`, que o `.gitignore` impede de ir para o Git. O modelo sem valores é o `.env.example`.
+- Senhas e chaves (banco, JWT, Orthanc, e-mail, serviço de voz) ficam **só** no arquivo `.env`, que o `.gitignore` impede de ir para o Git. O modelo sem valores é o `.env.example`.
 - `alembic/env.py` lê `DATABASE_URL` do `.env`; o `alembic.ini` não tem endereço nem senha.
 - Antes de cada entrega: `git grep -n -i "password\|senha\|secret"` para conferir que nenhum segredo entrou no código.
 
@@ -266,3 +282,4 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.8 | 18/10/2026 | Grupo 4: CSP completa nas telas (5.1), nome de arquivo definido pelo servidor (6), chave do serviço de voz (9.1); limites em `REGRAS_DE_NEGOCIO.md` |

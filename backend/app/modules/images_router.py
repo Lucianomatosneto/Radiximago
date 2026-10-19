@@ -21,12 +21,13 @@ import logging
 import httpx
 import pydicom
 from pydicom.errors import InvalidDicomError
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.config import settings
+from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
@@ -254,7 +255,9 @@ def listar_imagens(
 
 
 @router.post("/import-from-orthanc")
+@limiter.limit(LIMITE_IMPORTACAO_ORTHANC)
 def importar_do_orthanc(
+    request: Request,
     usuario: User = Depends(exigir_perfis(*PERFIS_IMAGENS)),
     db: Session = Depends(get_db),
 ):
@@ -310,7 +313,9 @@ def importar_do_orthanc(
 
 
 @router.post("/upload")
+@limiter.limit(LIMITE_UPLOAD_DICOM)
 def upload_imagem(
+    request: Request,
     arquivo: UploadFile = File(...),
     usuario: User = Depends(exigir_perfis(*PERFIS_ENVIO_IMAGENS)),
     db: Session = Depends(get_db),

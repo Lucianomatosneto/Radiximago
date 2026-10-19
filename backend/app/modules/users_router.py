@@ -2,7 +2,7 @@ import os
 import uuid
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -194,7 +194,7 @@ def remover_foto_perfil(
 # alcancar essas rotas.
 @router.get("/access-requests", response_model=list[SolicitacaoAcessoResposta])
 def listar_solicitacoes_acesso(
-    status_filtro: Optional[str] = "pendente",
+    status_filtro: Optional[str] = Query("pendente", max_length=30),
     db: Session = Depends(get_db),
     usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
 ):

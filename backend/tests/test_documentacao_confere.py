@@ -39,6 +39,22 @@ def test_limites_de_frequencia_documentados_sao_os_do_codigo():
         assert re.search(rf"\b{n} (por minuto|trechos por minuto)", doc), f"limite {n}/min nao documentado"
 
 
+def test_limites_anti_abuso_documentados_sao_os_do_codigo():
+    """Cada constante de app/core/rate_limit.py aparece em REGRAS_DE_NEGOCIO.md (grupo 4 do Nivel 2)."""
+    from app.core import rate_limit as rl
+
+    doc = _doc("REGRAS_DE_NEGOCIO.md")
+    unidades = {"minute": "por minuto", "hour": "por hora"}
+    for nome in dir(rl):
+        if nome.startswith("LIMITE_"):
+            numero, unidade = getattr(rl, nome).split("/")
+            assert re.search(rf"\b{numero} {unidades[unidade]}", doc), f"{nome} nao documentado"
+    for nome, texto in (("MAX_IMAGENS_EMAIL_LOTE", "imagens por e-mail"), ("MAX_CORTES_ZIP_PNG", "cortes"),
+                        ("MAX_ZIPS_SIMULTANEOS", "ao mesmo tempo")):
+        valor = f"{getattr(rl, nome):,}".replace(",", ".")
+        assert re.search(rf"\b{re.escape(valor)} {texto}", doc), f"{nome}={valor} nao documentado"
+
+
 def test_prazos_e_custos_documentados_sao_os_do_codigo():
     from app.core.config import JWT_CHAVE_MIN_BYTES, settings
     from app.core.security import BCRYPT_CUSTO

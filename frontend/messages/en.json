@@ -1219,7 +1219,8 @@
     "infoDentes": "Teeth",
     "infoAchados": "Findings",
     "infoDescricao": "Description",
-    "infoErros": "Technical error"
+    "infoErros": "Technical error",
+    "limiteLote": "Send at most {maximo} images per email. Unselect some and try again."
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",

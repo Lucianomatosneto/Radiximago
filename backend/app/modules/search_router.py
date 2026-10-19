@@ -14,14 +14,24 @@ import zipfile
 from typing import List, Literal, Optional
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from pydantic import BaseModel, Field
 from sqlalchemy import and_, exists, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.config import settings
 from app.core.email import enviar_email_imagem_pesquisa, enviar_email_imagens_pesquisa_lote
+from app.core.rate_limit import (
+    LIMITE_DOWNLOAD_ZIP,
+    LIMITE_EMAIL_IMAGEM,
+    LIMITE_EMAIL_LOTE,
+    MAX_CORTES_ZIP_PNG,
+    MAX_IMAGENS_EMAIL_LOTE,
+    VagaDeTrabalhoPesado,
+    limiter,
+)
 from app.modules.auth import obter_usuario_atual
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
@@ -131,11 +141,14 @@ def contagens_disponiveis(
 
 
 class EnvioLotePedido(BaseModel):
-    curation_ids: List[int]
+    # teto de anexos por e-mail (ASVS 2.3.2 - docs/REGRAS_DE_NEGOCIO.md)
+    curation_ids: List[int] = Field(max_length=MAX_IMAGENS_EMAIL_LOTE)
 
 
 @router.post("/send-email-lote")
+@limiter.limit(LIMITE_EMAIL_LOTE)
 def enviar_por_email_lote(
+    request: Request,
     pedido: EnvioLotePedido,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
@@ -152,7 +165,8 @@ def enviar_por_email_lote(
         raise HTTPException(status_code=400, detail="Selecione ao menos uma imagem.")
 
     itens = []
-    for curation_id in pedido.curation_ids:
+    # a mesma imagem marcada duas vezes vai uma vez so
+    for curation_id in dict.fromkeys(pedido.curation_ids):
         ficha = _buscar_ficha_aprovada(db, curation_id)
         _, instancias = _instancias_do_estudo_da_ficha(ficha)
         if len(instancias) > 1:
@@ -228,6 +242,11 @@ def pesquisar_imagens(
     existem no estruturado. Ver relatorio da Fase 4 para o raciocinio
     completo por tras dessa regra.
     """
+    # Combinacao incoerente (OWASP ASVS 2.2.3): faixa de idade invertida
+    # daria sempre "nenhum resultado" sem explicar o porque.
+    if idade_min is not None and idade_max is not None and idade_min > idade_max:
+        raise HTTPException(status_code=422, detail="A idade mínima não pode ser maior que a idade máxima.")
+
     # REGRA DE OURO: apenas fichas aprovadas.
     consulta = (
         db.query(Curation, OrthancReference)
@@ -481,7 +500,9 @@ def obter_series_do_estudo(
 
 
 @router.get("/{curation_id}/download/imagens.zip")
+@limiter.shared_limit(LIMITE_DOWNLOAD_ZIP, scope="download_zip")
 def baixar_zip_imagens(
+    request: Request,
     curation_id: int,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
@@ -493,9 +514,18 @@ def baixar_zip_imagens(
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
     _, instancias = _instancias_do_estudo_da_ficha(ficha)
+    if len(instancias) > MAX_CORTES_ZIP_PNG:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"Esta série tem {len(instancias)} cortes; o ZIP de imagens aceita até {MAX_CORTES_ZIP_PNG}. "
+                "Use o download em DICOM."
+            ),
+        )
 
     buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_arquivo:
+    # funcao pesada: no maximo MAX_ZIPS_SIMULTANEOS montagens ao mesmo tempo (ASVS 15.2.2)
+    with VagaDeTrabalhoPesado(), zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zip_arquivo:
         for indice, instancia_id in enumerate(instancias, start=1):
             conteudo = _chamar_orthanc(
                 "gerar uma das imagens do ZIP",
@@ -507,12 +537,14 @@ def baixar_zip_imagens(
     return Response(
         content=buffer.getvalue(),
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="radix-imago-{curation_id}-imagens.zip"'},
+        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-{curation_id}-imagens.zip", baixar=True)},
     )
 
 
 @router.get("/{curation_id}/download/dicom.zip")
+@limiter.shared_limit(LIMITE_DOWNLOAD_ZIP, scope="download_zip")
 def baixar_zip_dicom(
+    request: Request,
     curation_id: int,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
@@ -524,16 +556,17 @@ def baixar_zip_dicom(
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
     orthanc_study_id, _ = _instancias_do_estudo_da_ficha(ficha)
-    conteudo = _chamar_orthanc(
-        "gerar o ZIP com os arquivos DICOM",
-        orthanc_client.obter_arquivo_zip_estudo,
-        orthanc_study_id,
-    )
+    with VagaDeTrabalhoPesado():
+        conteudo = _chamar_orthanc(
+            "gerar o ZIP com os arquivos DICOM",
+            orthanc_client.obter_arquivo_zip_estudo,
+            orthanc_study_id,
+        )
 
     return Response(
         content=conteudo,
         media_type="application/zip",
-        headers={"Content-Disposition": f'attachment; filename="radix-imago-{curation_id}-dicom.zip"'},
+        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-{curation_id}-dicom.zip", baixar=True)},
     )
 
 
@@ -568,11 +601,17 @@ def obter_preview(
     )
     if com_marcacao:
         conteudo = desenhar_marcacoes_na_imagem(conteudo, ficha.marcacoes)
-    return Response(content=conteudo, media_type="image/png")
+    return Response(
+        content=conteudo,
+        media_type="image/png",
+        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}.png")},
+    )
 
 
 @router.post("/{curation_id}/send-email")
+@limiter.limit(LIMITE_EMAIL_IMAGEM)
 def enviar_por_email(
+    request: Request,
     curation_id: int,
     com_marcacao: bool = Query(
         False,

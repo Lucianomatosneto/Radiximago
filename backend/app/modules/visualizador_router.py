@@ -14,6 +14,11 @@ mas sem permissao para aquela imagem. As regras estao em
 app/core/acesso_imagens.py. Acessos NEGADOS a quem esta logado ficam na
 auditoria (acao "acesso_imagem_negado" - OWASP ASVS 16.3.2); os permitidos
 nao sao registrados um a um (cada imagem gera varios pedidos).
+
+Fora do limite geral de frequencia (app/core/rate_limit.py): o
+visualizador pede um corte por vez, e uma tomografia tem centenas - o
+limite cortaria a leitura no meio. A rota so responde "pode/nao pode",
+nao devolve imagem nem dado.
 """
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response

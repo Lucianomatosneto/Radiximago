@@ -74,7 +74,7 @@ def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str
         corpo_html = f"""
         <p>Hello, {escape(nome)}.</p>
         <p>We received a request to reset the password for your Radix Imago account.</p>
-        <p><a href="{link_reset}">Click here to set a new password</a></p>
+        <p><a href="{escape(link_reset, quote=True)}">Click here to set a new password</a></p>
         <p>This link expires in 1 hour. If you didn't request this, you can safely ignore this email.</p>
         """
     else:
@@ -82,7 +82,7 @@ def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str
         corpo_html = f"""
         <p>Olá, {escape(nome)}.</p>
         <p>Recebemos uma solicitação para redefinir a senha da sua conta no Rádix Imago.</p>
-        <p><a href="{link_reset}">Clique aqui para definir uma nova senha</a></p>
+        <p><a href="{escape(link_reset, quote=True)}">Clique aqui para definir uma nova senha</a></p>
         <p>Esse link expira em 1 hora. Se você não solicitou isso, pode ignorar este e-mail.</p>
         """
     enviar_email(destinatario, assunto, corpo_html)
@@ -120,7 +120,7 @@ def enviar_email_acesso_aprovado(destinatario: str, nome: str) -> None:
     <p>Olá, {escape(nome)}.</p>
     <p>Sua solicitação de acesso ao Rádix Imago foi aprovada. Você já pode entrar
     usando o e-mail e a senha que definiu na solicitação.</p>
-    <p><a href="{settings.FRONTEND_URL}/login">Acessar o Rádix Imago</a></p>
+    <p><a href="{escape(settings.FRONTEND_URL, quote=True)}/login">Acessar o Rádix Imago</a></p>
     """
     enviar_email(destinatario, "Acesso aprovado - Rádix Imago", corpo_html)
 

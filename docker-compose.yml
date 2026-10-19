@@ -254,6 +254,10 @@ services:
     environment:
       - RADIX_WHISPER_OCIOSO_S=600
       - RADIX_WHISPER_THREADS=4
+      # chave compartilhada com a API (a mesma WHISPER_CHAVE do .env, que a
+      # API le pelo env_file) - sem ela o servico recusa todos os pedidos
+      # (OWASP ASVS 13.2.1, docs/COMUNICACOES.md)
+      - RADIX_WHISPER_CHAVE=${WHISPER_CHAVE:-}
     mem_limit: 1600m
     cpus: 4
     networks:

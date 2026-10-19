@@ -6,12 +6,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.middleware import SlowAPIMiddleware
 from sqlalchemy import text
 from app.core.database import SessionLocal
-from app.core.rate_limit import limiter
+from app.core.rate_limit import limite_geral, limiter, resposta_limite_excedido
 from app.modules import orthanc_client
 
 logger = logging.getLogger(__name__)
@@ -67,16 +65,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Protecao contra forca bruta (ver app/core/rate_limit.py) - os limites em
-# si ficam decorados em cada rota sensivel (login, redefinicao de senha).
+# Limites de frequencia (ver app/core/rate_limit.py): um limite geral em
+# todas as rotas + limites proprios decorados nas rotas sensiveis/pesadas
+# (login, redefinicao de senha, e-mail, ZIP). Resposta 429 em portugues.
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
-app.add_middleware(SlowAPIMiddleware)
+app.add_exception_handler(RateLimitExceeded, resposta_limite_excedido)
 
 # sessao renovada enquanto o usuario esta usando (ver app/core/sessao.py)
 app.middleware("http")(renovar_sessao)
 # dados em JSON nunca ficam no cache do navegador (ver app/core/cabecalhos.py)
 app.middleware("http")(sem_cache_em_dados)
+# limite geral por conta em todas as rotas (ver app/core/rate_limit.py);
+# fica DENTRO da protecao de navegador, entao o 429 tambem sai com os
+# cabecalhos de protecao, e dentro do registro de seguranca (limite_excedido)
+app.middleware("http")(limite_geral)
 # registrado por ULTIMO = roda PRIMEIRO: confere a origem dos pedidos que
 # alteram dados e poe os cabecalhos de protecao em todas as respostas,
 # inclusive nas de erro (ver app/core/cabecalhos.py)
