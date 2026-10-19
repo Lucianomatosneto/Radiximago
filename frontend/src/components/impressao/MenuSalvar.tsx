@@ -60,7 +60,7 @@ function MenuBase({
         {icone} {rotulo} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
       </button>
       {aberto && (
-        <div className="absolute right-0 top-full z-[70] mt-2 w-80 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl">
+        <div className="absolute right-0 top-full z-70 mt-2 w-80 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl">
           {children}
         </div>
       )}
@@ -83,7 +83,7 @@ function Opcao({ onClick, disabled, children }: { onClick: () => void; disabled?
 
 function Progresso({ titulo, feitas, total, aviso }: { titulo: string; feitas: number; total: number; aviso?: string }) {
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm" role="status">
+    <div className="fixed inset-0 z-200 flex items-center justify-center bg-black/60 backdrop-blur-xs" role="status">
       <div className="w-80 rounded-2xl border border-base-border bg-base-surface p-5 text-center shadow-2xl">
         <p className="text-sm font-semibold text-ink">{titulo}</p>
         <p className="mt-1 text-xs text-slate-400">

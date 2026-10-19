@@ -257,7 +257,7 @@ export default function ImagensPage() {
               (direita), por pedido - usa o mesmo caminho de tons do
               Sidebar.tsx (blue -> sky -> cyan -> teal -> emerald), so que
               em ordem invertida da esquerda pra direita. */}
-          <section className="mb-6 rounded-xl border border-teal-700/40 bg-gradient-to-r from-emerald-950/50 via-teal-950/40 to-blue-950/50 p-4">
+          <section className="mb-6 rounded-xl border border-teal-700/40 bg-linear-to-r from-emerald-950/50 via-teal-950/40 to-blue-950/50 p-4">
             <h2 className="mb-1 text-sm font-semibold text-teal-300">{t('enviarTitulo')}</h2>
             <p className="mb-3 text-xs text-slate-500">
               {t('enviarDescricao')}
@@ -290,7 +290,7 @@ export default function ImagensPage() {
             <select
               value={filtroAnonimizacao}
               onChange={(e) => setFiltroAnonimizacao(e.target.value)}
-              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('filtroAnonimizacaoTodos')}</option>
               {OPCOES_ANONIMIZACAO.map((valor) => (
@@ -303,7 +303,7 @@ export default function ImagensPage() {
             <select
               value={filtroCuradoria}
               onChange={(e) => setFiltroCuradoria(e.target.value)}
-              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('filtroCuradoriaTodos')}</option>
               {OPCOES_CURADORIA.map((valor) => (

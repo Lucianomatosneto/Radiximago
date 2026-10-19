@@ -119,20 +119,20 @@ const ESTILO_PADRAO = `
       - no tema claro, os cinzas claros demais ficam um tom mais escuros. */
 html[data-fundo]{font-size:106.25%}
 html[data-fundo]:not(.light){
-  --color-base: 11 15 19;
-  --color-base-surface: 21 27 34;
-  --color-base-surface2: 28 35 44;
-  --color-base-border: 44 54 67;
-  --color-ink: 222 228 236;
-  --color-ink-2: 196 205 217;
-  --color-ink-3: 156 168 186;
-  --color-ink-4: 128 142 162;
+  --rgb-base: 11 15 19;
+  --rgb-base-surface: 21 27 34;
+  --rgb-base-surface2: 28 35 44;
+  --rgb-base-border: 44 54 67;
+  --rgb-ink: 222 228 236;
+  --rgb-ink-2: 196 205 217;
+  --rgb-ink-3: 156 168 186;
+  --rgb-ink-4: 128 142 162;
 }
 html.light[data-fundo]{
-  --color-base-border: 212 219 229;
-  --color-ink-2: 30 41 59;
-  --color-ink-3: 71 85 105;
-  --color-ink-4: 100 116 139;
+  --rgb-base-border: 212 219 229;
+  --rgb-ink-2: 30 41 59;
+  --rgb-ink-3: 71 85 105;
+  --rgb-ink-4: 100 116 139;
 }
 
 /* 1. Fundo da pagina transparente (o mapa aparece) - inclui as telas de "carregando" */
@@ -143,16 +143,16 @@ html[data-fundo] .h-screen.bg-base{background-color:transparent}
 html[data-fundo] aside.bg-base{position:sticky;top:0}
 html[data-fundo] header.bg-base{
   position:sticky;top:0;z-index:15;
-  background-color:rgb(var(--color-base) / .5);
+  background-color:rgb(var(--rgb-base) / .5);
   backdrop-filter:blur(8px) saturate(140%);-webkit-backdrop-filter:blur(8px) saturate(140%);
-  border-color:rgb(var(--color-base-border) / .6);
+  border-color:rgb(var(--rgb-base-border) / .6);
 }
 
 /* 2b. Halo na cor do fundo em volta das letras: o texto que fica direto
        sobre o mapa (subtitulos, mensagens de "nenhum item") "apaga" os
        pontos logo atras de cada letra. Dentro dos paineis o halo tem a
        mesma cor do painel, entao nao aparece. */
-html[data-fundo="leitura"] main{--halo:rgb(var(--color-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 5px var(--halo),0 0 8px var(--halo),0 0 12px var(--halo)}
+html[data-fundo="leitura"] main{--halo:rgb(var(--rgb-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 5px var(--halo),0 0 8px var(--halo),0 0 12px var(--halo)}
 html[data-fundo="leitura"] main .titulo-pagina,html[data-fundo="leitura"] main .titulo-pagina *{text-shadow:none}
 html[data-fundo="leitura"] main :is(button,a,input,select,textarea)[class*="bg-"]{text-shadow:none}
 
@@ -160,14 +160,14 @@ html[data-fundo="leitura"] main :is(button,a,input,select,textarea)[class*="bg-"
       opaco - o mapa so "respira" pelas bordas e nunca fica atras do texto
       com forca. No modo leitura, ainda mais opacos. */
 html[data-fundo] .bg-base-surface{
-  background-color:rgb(var(--color-base-surface) / .84);
+  background-color:rgb(var(--rgb-base-surface) / .84);
   backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);
 }
-html[data-fundo="leitura"] .bg-base-surface{background-color:rgb(var(--color-base-surface) / .92)}
+html[data-fundo="leitura"] .bg-base-surface{background-color:rgb(var(--rgb-base-surface) / .92)}
 /* cartoes e botoes com gradiente translucido (ex.: "dark:from-teal-600/30")
    ganham um fundo solido por baixo do gradiente - sem isso os pontos do
    mapa apareceriam atras do texto */
-html[data-fundo] .bg-gradient-to-br,html[data-fundo] .bg-gradient-to-r{background-color:rgb(var(--color-base-surface) / .9)}
+html[data-fundo] .bg-linear-to-br,html[data-fundo] .bg-linear-to-r{background-color:rgb(var(--rgb-base-surface) / .9)}
 /* avisos e caixas coloridas translucidas (ex.: "bg-yellow-500/10" com
    borda): o desfoque transforma os pontos do mapa num fundo liso por tras
    do texto, mantendo a cor do aviso */
@@ -199,9 +199,9 @@ html.light[data-fundo]:not([data-fundo-escuro]) :is(.text-blue-300,.text-blue-40
       categoria), mas em versoes menos saturadas e menos luminosas - todas
       ainda com contraste acima de 7:1 sobre os paineis (WCAG AAA). */
 html.dark[data-fundo]{
-  --color-brand: 46 88 178;
-  --color-brand-hover: 58 104 200;
-  --color-brand-300: 125 160 214;
+  --rgb-brand: 46 88 178;
+  --rgb-brand-hover: 58 104 200;
+  --rgb-brand-300: 125 160 214;
 }
 /* menu lateral e campos de formulario coloridos: mesma cor, mais apagada */
 html.dark[data-fundo] aside nav a{filter:saturate(.55) brightness(.88)}
@@ -236,7 +236,7 @@ const ESTILO_COMPONENTES = `
 @media (min-width:640px){.titulo-pagina{font-size:2rem}}
 .titulo-pagina--grande{font-size:2.25rem}
 @media (min-width:640px){.titulo-pagina--grande{font-size:3rem}}
-.texto-legivel{--halo:rgb(var(--color-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 6px var(--halo),0 0 10px var(--halo),0 0 16px var(--halo)}
+.texto-legivel{--halo:rgb(var(--rgb-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 6px var(--halo),0 0 10px var(--halo),0 0 16px var(--halo)}
 .dark .texto-legivel{--halo:rgba(0,0,0,.95)}
 .tela-entra{animation:telaEntra .6s cubic-bezier(.2,.8,.2,1) backwards}
 @keyframes telaEntra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}

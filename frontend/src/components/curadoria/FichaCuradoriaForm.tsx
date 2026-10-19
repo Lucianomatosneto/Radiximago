@@ -65,7 +65,7 @@ const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'
 // (pedido explicito pra NAO criar uma caixa adicional ao redor).
 //
 // COR SOLIDA (nao mais degrade azul->verde) - pedido explicito apos o
-// degrade `bg-gradient-to-r` (azul a esquerda, verde a direita) ficar
+// degrade `bg-linear-to-r` (azul a esquerda, verde a direita) ficar
 // visualmente MUITO diferente dependendo da largura da caixa: numa caixa
 // estreita (ex.: campo de Dentes, dentro do painel sobreposto de 280px) a
 // transicao azul->verde se comprime e o olho le como uma cor unica
@@ -78,7 +78,7 @@ const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'
 // estreita ja mostrava - usando ele como cor SOLIDA (nao degrade),
 // qualquer caixa fica identica visualmente, nao importa a largura.
 const campoInputDegrade =
-  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand'
 
 // Ficha de curadoria: agora so tem "Regiao anatomica" (Descricao
 // didatica, Observacoes internas - Qualidade tecnica saiu pra caixa

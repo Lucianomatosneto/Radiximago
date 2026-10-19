@@ -10,7 +10,7 @@ const campoLabel = 'mb-0.5 block text-xs font-medium text-slate-400'
 // aplicada em todas as caixas de texto desta tela (pedido explicito).
 // COR SOLIDA (nao degrade) - motivo no comentario acima.
 const campoInput =
-  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1 text-sm text-ink outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1 text-sm text-ink outline-hidden focus:border-brand'
 
 // ListaItens e GrupoAlteracoes vieram de FichaCuradoriaForm.tsx sem
 // mudanca de logica - so o layout ao redor mudou (ver comentario no
@@ -39,7 +39,7 @@ function ListaItens({
             type="checkbox"
             checked={selecionadas.includes(item.valor)}
             onChange={() => onAlternar(item.valor)}
-            className="h-3 w-3 flex-none rounded border-base-border bg-base-surface2 text-brand"
+            className="h-3 w-3 flex-none rounded-sm border-base-border bg-base-surface2 text-brand"
           />
           {traduzirItem(item.valor)}
         </label>

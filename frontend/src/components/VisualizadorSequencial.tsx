@@ -686,7 +686,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
               <path d="M4 20l4-4" />
             </svg>
             <span>{t('marcacoes.botao')}</span>
-            <kbd className="hidden rounded border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
+            <kbd className="hidden rounded-sm border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
           </button>
           {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} />}
           <ThemeToggle />
@@ -819,7 +819,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
                       />
                     )}
                     {/* etiqueta discreta no canto, como nos PACS */}
-                    <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
+                    <span className="pointer-events-none absolute left-2 top-2 rounded-sm bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
                     </span>
                     <SelosImagem {...propsSelos(item)} className="right-2 top-2" />
@@ -885,18 +885,18 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
             colado na borda. */}
         {urlComSerie && !emGrade && (
           <div
-            className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur ${
+            className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur-sm ${
               'left-3 sm:left-6'
             }`}
           >
             <span className="flex items-center gap-2">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-amber-400 text-sm font-bold text-black">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-amber-400 text-sm font-bold text-black">
                 R
               </span>
               {t('giraImagem')}
             </span>
             <span className="flex items-center gap-2">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-cyan-400 text-sm font-bold text-black">
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-cyan-400 text-sm font-bold text-black">
                 I
               </span>
               {t('inverteJanela')}
@@ -1087,7 +1087,7 @@ function SelosImagem({
           }}
           aria-pressed={ligada}
           title={ligada ? t('ocultarDaImagem') : t('mostrarDaImagem')}
-          className={`pointer-events-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold backdrop-blur transition ${
+          className={`pointer-events-auto flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold backdrop-blur-sm transition ${
             ligada
               ? 'border-amber-300 bg-amber-300/25 text-amber-100'
               : 'border-amber-300/60 bg-black/70 text-amber-200 hover:border-amber-300'
@@ -1112,7 +1112,7 @@ function SelosImagem({
           aria-pressed={!!holofote}
           title={holofote ? t('holofoteDesligar') : t('holofoteLigar')}
           aria-label={holofote ? t('holofoteDesligar') : t('holofoteLigar')}
-          className={`pointer-events-auto flex items-center rounded-full border px-1.5 py-0.5 backdrop-blur transition ${
+          className={`pointer-events-auto flex items-center rounded-full border px-1.5 py-0.5 backdrop-blur-sm transition ${
             holofote
               ? 'border-amber-300 bg-amber-300/25 text-amber-100'
               : 'border-amber-300/60 bg-black/70 text-amber-200 hover:border-amber-300'

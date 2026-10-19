@@ -176,12 +176,12 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
       {notas.length > 0 && (
         <ul className="mt-1 space-y-1">
           {notas.map((nota) => (
-            <li key={nota.id} className="group flex items-start gap-1.5 rounded px-1 py-0.5 hover:bg-white/5">
+            <li key={nota.id} className="group flex items-start gap-1.5 rounded-sm px-1 py-0.5 hover:bg-white/5">
               <button
                 type="button"
                 onClick={() => editar(nota)}
                 title={t('editar')}
-                className="min-w-0 flex-1 whitespace-pre-line break-words text-left text-xs leading-snug text-ink"
+                className="min-w-0 flex-1 whitespace-pre-line wrap-break-word text-left text-xs leading-snug text-ink"
               >
                 {nota.texto}
               </button>
@@ -233,7 +233,7 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
               rows={4}
               placeholder={t('placeholder')}
               aria-label={t('placeholder')}
-              className="w-full resize-y rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 pb-4 text-xs leading-snug text-ink outline-none placeholder:text-slate-500 focus:border-teal-300"
+              className="w-full resize-y rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 pb-4 text-xs leading-snug text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
             />
             {/* marca discreta no canto da caixa de texto */}
             <span className="pointer-events-none absolute bottom-1.5 right-5 select-none text-[7px] leading-none text-slate-400/50" aria-hidden="true">

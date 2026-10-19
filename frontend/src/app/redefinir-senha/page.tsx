@@ -108,7 +108,7 @@ function RedefinirSenhaForm() {
           </div>
           <Link
             href="/esqueci-senha"
-            className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
+            className="block w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
           >
             {t('solicitarNovoLink')}
           </Link>
@@ -124,7 +124,7 @@ function RedefinirSenhaForm() {
               name="nova_senha"
               type="password"
               autoFocus
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
               placeholder="••••••••"
             />
           </div>
@@ -137,7 +137,7 @@ function RedefinirSenhaForm() {
               id="confirmar_senha"
               name="confirmar_senha"
               type="password"
-              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
               placeholder="••••••••"
             />
           </div>
@@ -151,7 +151,7 @@ function RedefinirSenhaForm() {
           <button
             type="submit"
             disabled={carregando}
-            className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
+            className="w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
           >
             {carregando ? t('salvando') : t('redefinirSenha')}
           </button>

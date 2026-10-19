@@ -65,7 +65,7 @@ export default function MarcacaoAchado({
             checked={mostrar}
             onChange={(evento) => definirMostrar(evento.target.checked)}
             disabled={estaImagemDesabilitado}
-            className="h-4 w-4 rounded border-base-border"
+            className="h-4 w-4 rounded-sm border-base-border"
           />
           {t('mostrarEstaImagem')}
         </label>
@@ -75,7 +75,7 @@ export default function MarcacaoAchado({
               type="checkbox"
               checked={!!mostrarTodas}
               onChange={(evento) => onMostrarTodasChange(evento.target.checked)}
-              className="h-4 w-4 rounded border-base-border"
+              className="h-4 w-4 rounded-sm border-base-border"
             />
             {t('mostrarTodasImagens')}
           </label>

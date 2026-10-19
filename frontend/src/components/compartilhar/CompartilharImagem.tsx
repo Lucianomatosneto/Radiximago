@@ -154,7 +154,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
             aria-label={t('placeholderEmail')}
             autoComplete="off"
             maxLength={150}
-            className="w-full rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-none placeholder:text-slate-500 focus:border-teal-300"
+            className="w-full rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
             autoFocus
           />
           <textarea
@@ -164,7 +164,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
             aria-label={t('placeholderMensagem')}
             maxLength={500}
             rows={2}
-            className="w-full resize-y rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-none placeholder:text-slate-500 focus:border-teal-300"
+            className="w-full resize-y rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
           />
           <p className="text-[10px] leading-snug text-slate-500">{t('explicacao')}</p>
           <div className="flex justify-end gap-1.5">
@@ -205,7 +205,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
                   // sem acesso a area de transferencia: o link continua visivel para copiar
                 }
               }}
-              className="shrink-0 rounded border border-teal-300/40 px-1.5 py-0.5 text-[10px] text-teal-100 hover:bg-teal-300/10"
+              className="shrink-0 rounded-sm border border-teal-300/40 px-1.5 py-0.5 text-[10px] text-teal-100 hover:bg-teal-300/10"
             >
               {copiado ? t('linkCopiado') : t('copiarLink')}
             </button>

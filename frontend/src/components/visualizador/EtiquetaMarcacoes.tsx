@@ -351,7 +351,7 @@ export default function EtiquetaMarcacoes({
         title={fixada ? t('fecharDescricao') : t('abrirDescricao')}
         aria-expanded={aberta}
         aria-label={t('etiquetaAria', { total: totalMarcacoes })}
-        className={`flex items-center gap-1 rounded-full border bg-white/90 px-2 py-0.5 text-[11px] font-semibold backdrop-blur dark:bg-black/70 ${
+        className={`flex items-center gap-1 rounded-full border bg-white/90 px-2 py-0.5 text-[11px] font-semibold backdrop-blur-sm dark:bg-black/70 ${
           fixada ? 'ring-2 ring-teal-300/70 ' : ''
         }${
           mostrarContagem && totalMarcacoes > 0
@@ -434,7 +434,7 @@ export default function EtiquetaMarcacoes({
             role="dialog"
             aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
             style={{ left: retAmp.left, top: retAmp.top, width: retAmp.width, height: retAmp.height }}
-            className="fixed z-[250] flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+            className="fixed z-250 flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
           >
             <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
               <div className="flex flex-1 select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80">
@@ -467,7 +467,7 @@ export default function EtiquetaMarcacoes({
             // dentro de um cartao que e link (Pesquisa): cliques na caixa
             // nao podem abrir a imagem
             onClick={(e) => e.stopPropagation()}
-            className={`fixed z-[300] flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md ${
+            className={`fixed z-300 flex flex-col overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md ${
               janelaGrande ? 'max-h-[86vh] text-[13px]' : 'max-h-[70vh] w-80'
             }`}
           >
@@ -545,7 +545,7 @@ export default function EtiquetaMarcacoes({
           <div
             role="tooltip"
             style={{ left: pos.left, top: pos.top }}
-            className="pointer-events-none fixed z-[300] max-h-[360px] w-80 overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 p-3 text-left shadow-2xl backdrop-blur-md"
+            className="pointer-events-none fixed z-300 max-h-[360px] w-80 overflow-hidden rounded-lg border border-teal-300/40 bg-base-surface/95 p-3 text-left shadow-2xl backdrop-blur-md"
           >
             {conteudo}
           </div>,

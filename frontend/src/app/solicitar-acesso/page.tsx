@@ -116,7 +116,7 @@ export default function SolicitarAcessoPage() {
             </div>
             <Link
               href="/login"
-              className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
+              className="block w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
             >
               {t('voltarLogin')}
             </Link>
@@ -132,7 +132,7 @@ export default function SolicitarAcessoPage() {
                 name="nome"
                 type="text"
                 autoFocus
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('nomeCompletoPlaceholder')}
               />
             </div>
@@ -145,7 +145,7 @@ export default function SolicitarAcessoPage() {
                 id="email"
                 name="email"
                 type="email"
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('emailPlaceholder')}
               />
             </div>
@@ -159,7 +159,7 @@ export default function SolicitarAcessoPage() {
                   id="senha"
                   name="senha"
                   type="password"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                   placeholder="••••••••"
                 />
               </div>
@@ -171,7 +171,7 @@ export default function SolicitarAcessoPage() {
                   id="confirmar_senha"
                   name="confirmar_senha"
                   type="password"
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                   placeholder="••••••••"
                 />
               </div>
@@ -185,7 +185,7 @@ export default function SolicitarAcessoPage() {
                 id="instituicao"
                 name="instituicao"
                 type="text"
-                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('instituicaoPlaceholder')}
               />
             </div>
@@ -223,7 +223,7 @@ export default function SolicitarAcessoPage() {
                 id="motivo"
                 name="motivo"
                 rows={2}
-                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                className="w-full resize-none rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('motivoPlaceholder')}
               />
             </div>
@@ -237,7 +237,7 @@ export default function SolicitarAcessoPage() {
             <button
               type="submit"
               disabled={carregando}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
+              className="w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
             >
               {carregando ? t('enviando') : t('enviarSolicitacao')}
             </button>

@@ -53,7 +53,7 @@ function Cartao({ item, numero, decorativo, compacta }: { item: ItemGaleria; num
         className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
       />
       {/* escurece a base para a legenda ficar legivel */}
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/80 via-black/10 to-transparent" />
       <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-3 p-4">
         <span>
           <span className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-[.16em] text-white/70">

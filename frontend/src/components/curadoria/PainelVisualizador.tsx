@@ -100,7 +100,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   return (
     <section
       ref={ref}
-      className="relative flex h-full min-h-[160px] flex-[2] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
+      className="relative flex h-full min-h-[160px] flex-2 flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface"
     >
       {fichaAtiva && (
         <>
@@ -137,7 +137,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
                       <path d="M17.5 17.5 21 21" />
                     </svg>
                     {marcacaoAtiva ? t('fecharMarcacao') : t('marcarImagem')}
-                    <kbd className="ml-0.5 rounded border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
+                    <kbd className="ml-0.5 rounded-sm border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
                   </button>
                 )}
                 <button

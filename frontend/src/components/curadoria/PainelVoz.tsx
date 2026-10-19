@@ -557,7 +557,7 @@ export default function PainelVoz({
             : 'border-teal-300 bg-teal-500/20 text-teal-100 hover:bg-teal-500/30'
       }`}
     >
-      {!continuo && gravando ? <span className="h-3 w-3 rounded-sm bg-white" /> : <IconeMicrofone className={grande ? 'h-5 w-5' : 'h-4 w-4'} />}
+      {!continuo && gravando ? <span className="h-3 w-3 rounded-xs bg-white" /> : <IconeMicrofone className={grande ? 'h-5 w-5' : 'h-4 w-4'} />}
     </button>
   )
 
@@ -652,13 +652,13 @@ export default function PainelVoz({
               </label>
             )}
             <div className="mt-1 flex flex-wrap gap-1">
-              <button type="button" onClick={() => enviarPara(n, 'descricao_didatica')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
+              <button type="button" onClick={() => enviarPara(n, 'descricao_didatica')} className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
                 → {t('campoDescricao')}
               </button>
-              <button type="button" onClick={() => enviarPara(n, 'observacoes_internas')} className="rounded border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
+              <button type="button" onClick={() => enviarPara(n, 'observacoes_internas')} className="rounded-sm border border-white/15 px-1.5 py-0.5 text-[11px] text-slate-300 hover:bg-white/10">
                 → {t('campoObservacoes')}
               </button>
-              <button type="button" onClick={() => setDuvidas((l) => l.filter((x) => x.id !== n.id))} className="rounded px-1.5 py-0.5 text-[11px] text-slate-400 hover:text-red-300">
+              <button type="button" onClick={() => setDuvidas((l) => l.filter((x) => x.id !== n.id))} className="rounded-sm px-1.5 py-0.5 text-[11px] text-slate-400 hover:text-red-300">
                 {t('descartar')}
               </button>
             </div>
@@ -691,7 +691,7 @@ export default function PainelVoz({
             {preenchidos.map((c) => (
               <li key={c.id} className="flex items-start gap-1.5 text-xs text-slate-300">
                 <span className="text-emerald-400" aria-hidden="true">✓</span>
-                <span className="min-w-0 break-words">{c.descricao}</span>
+                <span className="min-w-0 wrap-break-word">{c.descricao}</span>
               </li>
             ))}
           </ul>
@@ -743,12 +743,12 @@ export default function PainelVoz({
   // ---------------------------------------------- flutuante (ampliar imagem)
   if (!aberto && !duvidas.length) {
     return (
-      <div className="fixed bottom-4 right-4 z-[60] flex items-center gap-2">
+      <div className="fixed bottom-4 right-4 z-60 flex items-center gap-2">
         <button
           type="button"
           onClick={() => setAberto(true)}
           title={t('abrirPainel')}
-          className="flex items-center gap-2 rounded-full border border-teal-300/60 bg-base-surface/95 px-4 py-2.5 text-sm font-semibold text-teal-100 shadow-2xl backdrop-blur hover:border-teal-300"
+          className="flex items-center gap-2 rounded-full border border-teal-300/60 bg-base-surface/95 px-4 py-2.5 text-sm font-semibold text-teal-100 shadow-2xl backdrop-blur-sm hover:border-teal-300"
         >
           <IconeMicrofone className="h-4 w-4" />
           {t('titulo')}
@@ -758,7 +758,7 @@ export default function PainelVoz({
   }
   return (
     <section
-      className="fixed bottom-4 right-4 z-[60] w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+      className="fixed bottom-4 right-4 z-60 w-[min(26rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-teal-300/40 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
       aria-label={t('titulo')}
       onKeyDown={(e) => e.stopPropagation()}
     >

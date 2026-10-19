@@ -57,14 +57,14 @@ export default function SeletorDentesGrupos({
   }
 
   const linha = (lista: number[]) => (
-    <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-0.5">
+    <div className="grid grid-cols-16 gap-0.5">
       {lista.map((d, i) => (
         <button
           key={d}
           type="button"
           onClick={() => alternarDente(d)}
           aria-pressed={marcado(d)}
-          className={`rounded py-1 text-[11px] font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${i === 8 ? 'ml-1' : ''} ${
+          className={`rounded py-1 text-[11px] font-semibold outline-hidden transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${i === 8 ? 'ml-1' : ''} ${
             marcado(d) ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
           }`}
         >
@@ -86,7 +86,7 @@ export default function SeletorDentesGrupos({
               type="button"
               onClick={() => alternarGrupo(g.dentes)}
               aria-pressed={ativo}
-              className={`whitespace-nowrap rounded-full border px-1 py-1 text-center text-xs outline-none transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${
+              className={`whitespace-nowrap rounded-full border px-1 py-1 text-center text-xs outline-hidden transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${
                 ativo ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
               }`}
             >
@@ -105,7 +105,7 @@ export default function SeletorDentesGrupos({
           <button
             type="button"
             onClick={() => onChange([])}
-            className="rounded px-1 text-xs text-slate-400 outline-none hover:text-red-300 focus-visible:ring-2 focus-visible:ring-amber-300"
+            className="rounded-sm px-1 text-xs text-slate-400 outline-hidden hover:text-red-300 focus-visible:ring-2 focus-visible:ring-amber-300"
           >
             {t('limpar')}
           </button>

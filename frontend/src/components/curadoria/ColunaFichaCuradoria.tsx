@@ -30,7 +30,7 @@ import AjudaSecao from './AjudaSecao'
 // O painel de voz fica fixo no topo da coluna (`topo`), fora da rolagem.
 
 const campoTexto =
-  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand'
 
 function emCampoDeTexto(): boolean {
   const alvo = document.activeElement
@@ -86,7 +86,7 @@ function Secao({
       onMouseDown={() => !ativa && !simples && onAtivar()}
       className={`scroll-mt-2 rounded-xl border p-3 relative transition-[opacity,border-color,box-shadow] duration-200 ${
         holofote
-          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] [zoom:1.5]'
+          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] zoom-[1.5]'
           : ativa
             ? 'z-10 border-base-border bg-base-surface'
             : 'border-base-border bg-base-surface/70 opacity-[.18] saturate-0 hover:opacity-50'
@@ -369,7 +369,7 @@ export default function ColunaFichaCuradoria({
               }`}
             >
               {marcacaoAberta ? t('fecharMarcacao') : t('abrirMarcacao')}
-              <kbd className="rounded border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
+              <kbd className="rounded-sm border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
             </button>
           }
         >
@@ -405,7 +405,7 @@ export default function ColunaFichaCuradoria({
         {/* acoes da ficha no FIM de todas as caixas; o holofote chega aqui
             no passo "Aprovar" (Enter aprova) */}
         {acoesFinais && (
-          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 [zoom:1.5]' : ''}`}>
+          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 zoom-[1.5]' : ''}`}>
             {acoesFinais}
           </div>
         )}
@@ -431,7 +431,7 @@ export function ListaConferencia({ itens, onIr }: { itens: ItemConferencia[]; on
     <ul className="shrink-0 space-y-1 rounded-xl border border-amber-300/30 bg-amber-300/5 p-2">
       {itens.map((item, i) => (
         <li key={i} className="flex items-start gap-2 text-xs">
-          <span className={`mt-0.5 shrink-0 rounded px-1 text-[10px] font-bold ${item.nivel === 'bloqueio' ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'}`}>
+          <span className={`mt-0.5 shrink-0 rounded-sm px-1 text-[10px] font-bold ${item.nivel === 'bloqueio' ? 'bg-red-500 text-white' : 'bg-amber-400 text-black'}`}>
             {item.nivel === 'bloqueio' ? t('bloqueio') : t('aviso')}
           </span>
           <span className="min-w-0 flex-1 text-slate-200">{t(`itens.${item.chave}`, item.parametros ?? {})}</span>

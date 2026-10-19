@@ -21,7 +21,7 @@ interface DashboardCardProps {
 
 export default function DashboardCard({ label, valor, cor = 'teal', detalhe }: DashboardCardProps) {
   return (
-    <div className="rounded-xl border border-base-border bg-base-surface p-5 shadow-sm">
+    <div className="rounded-xl border border-base-border bg-base-surface p-5 shadow-xs">
       <p className="text-sm text-slate-400">{label}</p>
       <p className={`mt-2 text-3xl font-bold ${CORES_DESTAQUE[cor]}`}>{valor}</p>
       {detalhe && <p className="mt-1 text-xs leading-snug text-slate-500">{detalhe}</p>}

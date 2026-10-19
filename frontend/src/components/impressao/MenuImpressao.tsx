@@ -72,7 +72,7 @@ export default function MenuImpressao({ grupos, compacto = false }: { grupos: Gr
       </button>
 
       {aberto && (
-        <div className={`absolute z-[70] w-72 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl ${compacto ? 'bottom-full right-0 mb-2' : 'right-0 top-full mt-2'}`}>
+        <div className={`absolute z-70 w-72 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl ${compacto ? 'bottom-full right-0 mb-2' : 'right-0 top-full mt-2'}`}>
           {grupos.map((g) => (
             <div key={g.chave} className="py-1">
               <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -184,7 +184,7 @@ export function ImpressaoEmAndamento({
     <>
       <style dangerouslySetInnerHTML={{ __html: CSS_IMPRESSAO }} />
       {/* aviso na tela enquanto prepara */}
-      <div className="radix-impressao-aviso fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+      <div className="radix-impressao-aviso fixed inset-0 z-200 flex items-center justify-center bg-black/60 backdrop-blur-xs">
         <div className="w-80 rounded-2xl border border-base-border bg-base-surface p-5 text-center shadow-2xl">
           <p className="text-sm font-semibold text-ink">{t('preparando')}</p>
           <p className="mt-1 text-xs text-slate-400">{t('progresso', { feitas: prontas, total })}</p>

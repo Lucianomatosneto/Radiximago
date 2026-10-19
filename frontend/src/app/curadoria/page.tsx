@@ -1134,7 +1134,7 @@ export default function CuradoriaPage() {
                   onChange={(e) =>
                     setAnonimizacaoConfirmada((prev) => ({ ...prev, [item.id]: e.target.checked }))
                   }
-                  className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
+                  className="h-4 w-4 rounded-sm border-base-border bg-base-surface2 text-brand"
                 />
                 {t('reviewsRespondidas.confirmarAnonimizacao')}
               </label>
@@ -1232,7 +1232,7 @@ export default function CuradoriaPage() {
              titulo no estilo titulo-pagina e o atalho para o inicio. */
           <div className="flex shrink-0 items-center gap-3">
             <Logo variante="icone" />
-            <h1 className="titulo-pagina !text-xl">{t('titulo')}</h1>
+            <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
             <Link
               href="/dashboard"
               className="ml-1 rounded-full border border-base-border bg-base-surface px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
@@ -1501,7 +1501,7 @@ export default function CuradoriaPage() {
           aprovar "mesmo assim" (decisao do curador, que fica registrada
           normalmente na aprovacao). */}
       {conferenciaAberta && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-conferencia">
+        <div className="fixed inset-0 z-70 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-conferencia">
           <div className="w-full max-w-lg rounded-2xl border border-base-border bg-base-surface p-5 shadow-2xl">
             <h2 id="titulo-conferencia" className="text-base font-bold text-ink">{t('conferencia.tituloModal')}</h2>
             <p className="mb-3 mt-1 text-sm text-slate-400">

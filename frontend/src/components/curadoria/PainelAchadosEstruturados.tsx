@@ -232,7 +232,7 @@ export default function PainelAchadosEstruturados({
   }
 
   const campoInput =
-    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand disabled:opacity-60'
+    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand disabled:opacity-60'
   const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'
 
   return (
@@ -411,7 +411,7 @@ export default function PainelAchadosEstruturados({
                             : [...form.marcacoesSelecionadasIds, marcacao.id],
                         })
                       }
-                      className="h-3.5 w-3.5 rounded border-base-border bg-base-surface2 text-brand"
+                      className="h-3.5 w-3.5 rounded-sm border-base-border bg-base-surface2 text-brand"
                     />
                     {t('marcacaoRotulo', { indice: indice + 1, tipo: marcacao.tipo })}
                   </label>

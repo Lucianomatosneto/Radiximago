@@ -166,7 +166,7 @@ export default function SecaoSegundoFator() {
                 autoComplete="current-password"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                className="mt-1 w-64 rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+                className="mt-1 w-64 rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
               />
             </div>
           )}

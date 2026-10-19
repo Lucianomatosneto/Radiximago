@@ -86,7 +86,7 @@ export default function SeletorLayout({ grade, onEscolher }: { grade: Grade; onE
       </button>
 
       {aberto && (
-        <div className="absolute right-0 top-full z-[60] mt-2 w-[300px] rounded-2xl border border-base-border bg-base-surface p-3 shadow-2xl">
+        <div className="absolute right-0 top-full z-60 mt-2 w-[300px] rounded-2xl border border-base-border bg-base-surface p-3 shadow-2xl">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[.14em] text-slate-400">{t('prontos')}</p>
           <div className="grid grid-cols-3 gap-2">
             {PRESETS.map((p) => (

@@ -51,7 +51,7 @@ export function CampoCodigo({
         value={valor}
         onChange={(e) => aoMudar(e.target.value.toUpperCase())}
         placeholder={aceitaRecuperacao ? '123456 / ABCD-EFGH' : '123456'}
-        className={`mt-1 w-48 rounded-lg border px-3 py-2 font-mono text-lg tracking-[0.3em] outline-none ${cor}`}
+        className={`mt-1 w-48 rounded-lg border px-3 py-2 font-mono text-lg tracking-[0.3em] outline-hidden ${cor}`}
       />
       {aceitaRecuperacao && (
         <p className={`mt-1 text-xs ${variante === 'escura' ? 'text-white/70' : 'text-slate-400'}`}>{t('dicaRecuperacao')}</p>
@@ -89,7 +89,7 @@ export function CadastroAplicativo({
       <img src={dados.qr_code} alt={t('altQr')} className="h-44 w-44 rounded-lg bg-white p-1" />
       <p className={`text-xs ${variante === 'escura' ? 'text-white/70' : 'text-slate-400'}`}>
         {t('semCamera')}{' '}
-        <code className="select-all break-all rounded bg-black/40 px-1.5 py-0.5 font-mono text-[12px] text-teal-200">
+        <code className="select-all break-all rounded-sm bg-black/40 px-1.5 py-0.5 font-mono text-[12px] text-teal-200">
           {dados.segredo.replace(/(.{4})/g, '$1 ').trim()}
         </code>
       </p>

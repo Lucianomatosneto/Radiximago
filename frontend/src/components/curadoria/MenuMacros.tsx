@@ -77,7 +77,7 @@ export default function MenuMacros({
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder={t('procurar')}
-            className="mb-2 w-full rounded-lg border border-base-border bg-base-surface2 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand"
+            className="mb-2 w-full rounded-lg border border-base-border bg-base-surface2 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand"
           />
           <ul className="max-h-60 space-y-0.5 overflow-y-auto">
             {lista.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">{t('nenhuma')}</li>}
@@ -111,7 +111,7 @@ export default function MenuMacros({
                   onKeyDown={(e) => e.key === 'Enter' && salvar()}
                   maxLength={80}
                   placeholder={t('nomeNova')}
-                  className="min-w-0 flex-1 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-ink outline-none focus:border-brand"
+                  className="min-w-0 flex-1 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-ink outline-hidden focus:border-brand"
                 />
                 <button type="button" onClick={salvar} className="rounded-lg bg-brand px-2.5 py-1 text-xs font-semibold text-white">
                   {t('salvar')}

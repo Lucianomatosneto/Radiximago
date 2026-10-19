@@ -24,7 +24,7 @@ const ARCADA_INFERIOR = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36,
 
 const campoLabel = 'flex items-center gap-2 text-sm font-medium text-slate-300'
 const campoInput =
-  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand'
 const botaoOpcao = 'rounded-full border px-3 py-1.5 text-sm transition-colors'
 
 /** etiqueta da palavra-chave de voz de um campo */
@@ -60,7 +60,7 @@ function Item({
       onMouseDown={() => !ativa && onAtivar?.(etapa)}
       className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
         ativa
-          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] [zoom:1.5]'
+          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] zoom-[1.5]'
           : apagado
             ? 'opacity-[.18] saturate-0 hover:opacity-50'
             : ''
@@ -112,7 +112,7 @@ export default function PainelDadosSobrepostos({
 
   const denteNoCursor = cursorDente !== undefined ? [...ARCADA_SUPERIOR, ...ARCADA_INFERIOR][cursorDente] : undefined
   const linhaDentes = (lista: number[]) => (
-    <div className="grid grid-cols-[repeat(16,minmax(0,1fr))] gap-0.5">
+    <div className="grid grid-cols-16 gap-0.5">
       {lista.map((d, i) => {
         const marcado = form.dentes.includes(d)
         return (
@@ -150,7 +150,7 @@ export default function PainelDadosSobrepostos({
               onChange({ ...form, anonimizacao_validada: e.target.checked })
               if (e.target.checked) escolhido('anonimizacao')
             }}
-            className="h-5 w-5 rounded border-base-border bg-base-surface2 text-brand"
+            className="h-5 w-5 rounded-sm border-base-border bg-base-surface2 text-brand"
           />
           {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
           <PalavraChave texto={t('chaveAnonimizacao')} visivel={pk('anonimizacao')} />
@@ -201,7 +201,7 @@ export default function PainelDadosSobrepostos({
             onChange={(e) => onChange({ ...form, idade_min: e.target.value, idade_max: e.target.value })}
             aria-label={t('idade')}
             data-campo-idade
-            className={`${campoInput} max-w-[8rem]`}
+            className={`${campoInput} max-w-32`}
           />
         </>
       )}

@@ -96,7 +96,7 @@ export default function ResponderCompartilhamento({
         rows={3}
         placeholder={t('placeholderResposta')}
         aria-label={t('placeholderResposta')}
-        className="w-full resize-y rounded-md border border-sky-500/40 bg-black/30 px-2 py-1.5 text-xs leading-snug text-ink outline-none placeholder:text-slate-500 focus:border-sky-300"
+        className="w-full resize-y rounded-md border border-sky-500/40 bg-black/30 px-2 py-1.5 text-xs leading-snug text-ink outline-hidden placeholder:text-slate-500 focus:border-sky-300"
       />
       {erro && <p className="mt-1 text-xs text-red-400">{erro}</p>}
       <div className="mt-1 flex items-center justify-between gap-2">

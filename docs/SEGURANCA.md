@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.9 — 19/10/2026 |
+| Versão do documento | 1.10 — 19/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -285,6 +285,9 @@ Testes: `tests/test_anonimizacao_regras.py`. Teste de ponta a ponta com Orthanc 
 - Componente sem manutenção (ex.: biblioteca abandonada): planejar a troca.
 - Falhas em ferramentas usadas só na montagem do sistema (não expostas a usuários) seguem os mesmos prazos, mas podem ser agrupadas na manutenção seguinte.
 - Situação em 15/10/2026: 0 falhas conhecidas nas bibliotecas de produção (backend, voz e frontend); 7 avisos em ferramentas de montagem (Tailwind 3).
+- **19/10/2026:** os 7 avisos foram resolvidos com a atualização para o **Tailwind 4.3.3**, que não usa mais as ferramentas afetadas (`braces`, `micromatch`, `chokidar`, `postcss-selector-parser`). Resultado: `npm audit` sem nenhuma falha (incluindo ferramentas de montagem), `pip-audit` sem falhas no backend e na voz.
+  - A aparência das telas foi conferida antes e depois: 44 capturas de tela, 21 telas nos temas escuro e claro. Diferenças só nos dados (novos registros e acessos) e de poucos pixels.
+  - Efeito colateral: o Tailwind 4 exige navegadores de 2023 em diante (Chrome 111, Edge 111, Firefox 128, Safari 16.4).
 
 ## 8. Registros de auditoria (resumo)
 Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário (com fuso). Registra: login (sucesso/falha), troca e redefinição de senha (com nº de outras sessões encerradas), ações de curadoria, compartilhamentos, transcrições de voz (só duração) e **acessos negados às imagens**. Nunca registra senhas, áudio ou texto ditado.
@@ -312,5 +315,6 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.10 | 19/10/2026 | Tailwind 4: fim dos 7 avisos das ferramentas de montagem (seção 7) |
 | 1.9 | 19/10/2026 | Grupo 6: Argon2id e senhas de até 128 caracteres, lista de senhas vazadas (3.3), login em duas etapas (3.4), antivírus como risco aceito até a implantação (9) |
 | 1.8 | 18/10/2026 | Grupo 4: CSP completa nas telas (5.1), nome de arquivo definido pelo servidor (6), chave do serviço de voz (9.1); limites em `REGRAS_DE_NEGOCIO.md` |

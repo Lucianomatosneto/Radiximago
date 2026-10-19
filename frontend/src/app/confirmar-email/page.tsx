@@ -90,7 +90,7 @@ function ConfirmarEmailForm() {
           </div>
           <Link
             href="/login"
-            className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110"
+            className="block w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110"
           >
             {t('irParaLogin')}
           </Link>
@@ -102,7 +102,7 @@ function ConfirmarEmailForm() {
           </div>
           <Link
             href="/solicitar-acesso"
-            className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110"
+            className="block w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110"
           >
             {t('solicitarNovamente')}
           </Link>
@@ -119,7 +119,7 @@ function ConfirmarEmailForm() {
               type="password"
               autoComplete="current-password"
               autoFocus
-              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
               placeholder="••••••••"
             />
             <p className="mt-1.5 text-xs text-slate-400">{t('ajudaSenha')}</p>
@@ -134,7 +134,7 @@ function ConfirmarEmailForm() {
           <button
             type="submit"
             disabled={carregando}
-            className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 disabled:opacity-60"
+            className="w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 disabled:opacity-60"
           >
             {carregando ? t('confirmando') : t('confirmar')}
           </button>

@@ -67,7 +67,7 @@ function SeletorTipo({
           if (e.key === 'Escape') setBusca(null)
         }}
         placeholder={placeholder}
-        className={`w-full rounded-lg border px-2.5 py-1 text-sm outline-none focus:border-brand ${
+        className={`w-full rounded-lg border px-2.5 py-1 text-sm outline-hidden focus:border-brand ${
           valor ? 'border-teal-500/40 bg-teal-600/15 font-semibold text-ink' : 'border-dashed border-amber-300/60 bg-amber-300/5 text-amber-100'
         }`}
       />
@@ -145,7 +145,7 @@ export default function PainelAchadosFicha({
         disabled={!a}
         onChange={(e) => e.target.value && mudar({ dentes: Array.from(new Set([...(a?.dentes ?? []), Number(e.target.value)])).sort((x, y) => x - y) })}
         aria-label={t('adicionarDente')}
-        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-none disabled:opacity-40 ${a?.dentes.length ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
+        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-hidden disabled:opacity-40 ${a?.dentes.length ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
       >
         <option value="">{a?.dentes.length ? '+ dente' : t('denteQual')}</option>
         {[...form.dentes, ...TODOS_DENTES.filter((d) => !form.dentes.includes(d))]
@@ -162,7 +162,7 @@ export default function PainelAchadosFicha({
         disabled={!a}
         onChange={(e) => mudar({ regiao: e.target.value })}
         aria-label={t('regiao')}
-        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-none disabled:opacity-40 ${a?.regiao ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
+        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-hidden disabled:opacity-40 ${a?.regiao ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
       >
         <option value="">{t('regiaoQual')}</option>
         {REGIOES.map((r) => (
@@ -200,7 +200,7 @@ export default function PainelAchadosFicha({
               <li key={m.id} className={`rounded-lg border p-2 ${a ? 'border-base-border' : 'border-amber-300/50 bg-amber-300/5'}`}>
                 <div className="flex items-center gap-2">
                   <span
-                    className="flex h-7 min-w-[1.75rem] items-center justify-center rounded-full px-1 text-xs font-bold text-slate-900 ring-2 ring-black/40"
+                    className="flex h-7 min-w-7 items-center justify-center rounded-full px-1 text-xs font-bold text-slate-900 ring-2 ring-black/40"
                     style={{ background: corMarcacao(m) }}
                     title={t('marcacaoN', { numero: n + 1 })}
                   >
@@ -228,7 +228,7 @@ export default function PainelAchadosFicha({
             <div key={`${a.tipo}-${i}`} className="rounded-lg border border-base-border p-2">
               <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 text-sm font-semibold text-ink">{rotulo(a.tipo)}</span>
-                <button type="button" onClick={() => salvar(achados.filter((x) => x !== a))} aria-label={t('remover')} className="rounded px-1.5 text-base text-slate-400 hover:text-red-300">
+                <button type="button" onClick={() => salvar(achados.filter((x) => x !== a))} aria-label={t('remover')} className="rounded-sm px-1.5 text-base text-slate-400 hover:text-red-300">
                   ×
                 </button>
               </div>
@@ -248,7 +248,7 @@ export default function PainelAchadosFicha({
             value={form.achados_detalhe}
             onChange={(e) => onChange({ ...form, achados_detalhe: e.target.value })}
             rows={2}
-            className="w-full rounded-lg border border-base-border bg-white/5 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand"
+            className="w-full rounded-lg border border-base-border bg-white/5 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand"
           />
         </div>
       )}

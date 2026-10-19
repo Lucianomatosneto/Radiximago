@@ -233,7 +233,7 @@ export default function SecaoModalidades() {
           >
             <div className="h-px w-full" style={{ backgroundColor: 'var(--c1)', opacity: 0.4 }} />
             <div
-              className="absolute inset-x-0 -top-[3px] h-[7px]"
+              className="absolute inset-x-0 top-[-3px] h-[7px]"
               style={{
                 backgroundImage: 'radial-gradient(circle, var(--c1) 1.4px, transparent 1.6px)',
                 backgroundSize: '90px 7px',

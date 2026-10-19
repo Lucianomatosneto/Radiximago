@@ -233,7 +233,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
                 href={item.href}
                 aria-current={estaAtivo ? 'page' : undefined}
                 onClick={item.chave === 'curadoria' ? aoClicarCuradoria : undefined}
-                className={`rounded-lg border bg-gradient-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${cor} ${
+                className={`rounded-lg border bg-linear-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${cor} ${
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
               >

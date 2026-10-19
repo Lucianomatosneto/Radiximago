@@ -46,7 +46,7 @@ export const ERROS_TECNICOS: ErroTecnicoInfo[] = [
   { valor: 'tc_truncamento', rotulo: 'Truncamento', grupo: 'tomografia', formas: ['truncamento'] },
   { valor: 'tc_ruido', rotulo: 'Ruído excessivo', grupo: 'tomografia', formas: ['ruido excessivo', 'ruido'] },
   { valor: 'tc_volume_parcial', rotulo: 'Efeito de volume parcial', grupo: 'tomografia', formas: ['efeito de volume parcial', 'volume parcial'] },
-  { valor: 'tc_artefato_anel', rotulo: 'Artefato em anel (ring artifact)', grupo: 'tomografia', formas: ['artefato em anel', 'ring artifact', 'anel'] },
+  { valor: 'tc_artefato_anel', rotulo: 'Artefato em anel (ring artifact)', grupo: 'tomografia', formas: ['artefato em anel', 'ring-3 artifact', 'anel'] },
   { valor: 'tc_perda_resolucao', rotulo: 'Perda de resolução/nitidez', grupo: 'tomografia', formas: ['perda de resolucao', 'perda de nitidez', 'falta de nitidez'] },
 ]
 

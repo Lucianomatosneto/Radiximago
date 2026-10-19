@@ -118,8 +118,8 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
       </p>
       {/* recado de quem enviou: nao editavel, so pode ser apagado (para si) */}
       {mensagem && (
-        <div className="mt-1 flex items-start gap-1.5 rounded px-1 py-0.5 hover:bg-white/5">
-          <p className="min-w-0 flex-1 whitespace-pre-line break-words text-xs italic text-slate-300">“{mensagem}”</p>
+        <div className="mt-1 flex items-start gap-1.5 rounded-sm px-1 py-0.5 hover:bg-white/5">
+          <p className="min-w-0 flex-1 whitespace-pre-line wrap-break-word text-xs italic text-slate-300">“{mensagem}”</p>
           <button
             type="button"
             onClick={() => pedirApagar('recado')}
@@ -141,8 +141,8 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
       ) : (
         <ul className="mt-1 space-y-1">
           {notas.map((n) => (
-            <li key={n.id} className="flex items-start gap-1.5 rounded px-1 py-0.5 hover:bg-white/5">
-              <span className="min-w-0 flex-1 whitespace-pre-line break-words text-xs leading-snug text-ink">• {n.texto}</span>
+            <li key={n.id} className="flex items-start gap-1.5 rounded-sm px-1 py-0.5 hover:bg-white/5">
+              <span className="min-w-0 flex-1 whitespace-pre-line wrap-break-word text-xs leading-snug text-ink">• {n.texto}</span>
               <button
                 type="button"
                 onClick={() => pedirApagar(n.id)}
@@ -165,7 +165,7 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
             <button
               type="button"
               onClick={() => acao('reexibir')}
-              className="rounded px-1.5 py-0.5 text-[10px] font-semibold text-sky-200 hover:bg-sky-400/15"
+              className="rounded-sm px-1.5 py-0.5 text-[10px] font-semibold text-sky-200 hover:bg-sky-400/15"
             >
               {t('mostrarApagadas', { quantidade: ocultas })}
             </button>

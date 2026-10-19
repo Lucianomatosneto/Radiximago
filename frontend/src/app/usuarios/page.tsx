@@ -645,13 +645,13 @@ export default function UsuariosPage() {
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder={t('buscarPlaceholder')}
-              className="w-64 rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="w-64 rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             />
 
             <select
               value={filtroPerfil}
               onChange={(e) => setFiltroPerfil(e.target.value)}
-              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('todosPerfis')}</option>
               {PERFIS.map((perfil) => (
@@ -664,7 +664,7 @@ export default function UsuariosPage() {
             <select
               value={filtroStatus}
               onChange={(e) => setFiltroStatus(e.target.value)}
-              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('todosStatus')}</option>
               <option value="ativo">{t('statusAtivo')}</option>
@@ -841,7 +841,7 @@ export default function UsuariosPage() {
                 required
                 value={edicao.nome}
                 onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -850,7 +850,7 @@ export default function UsuariosPage() {
                 type="text"
                 value={edicao.instituicao}
                 onChange={(e) => setEdicao({ ...edicao, instituicao: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -891,7 +891,7 @@ export default function UsuariosPage() {
                 required
                 value={formCriacao.nome}
                 onChange={(e) => setFormCriacao({ ...formCriacao, nome: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -901,7 +901,7 @@ export default function UsuariosPage() {
                 required
                 value={formCriacao.email}
                 onChange={(e) => setFormCriacao({ ...formCriacao, email: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -912,7 +912,7 @@ export default function UsuariosPage() {
                 value={formCriacao.senha}
                 onChange={(e) => setFormCriacao({ ...formCriacao, senha: e.target.value })}
                 placeholder={t('campoSenhaPlaceholder')}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
             <div>
@@ -920,7 +920,7 @@ export default function UsuariosPage() {
               <select
                 value={formCriacao.perfil}
                 onChange={(e) => setFormCriacao({ ...formCriacao, perfil: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               >
                 {PERFIS.map((perfil) => (
                   <option key={perfil} value={perfil}>
@@ -937,7 +937,7 @@ export default function UsuariosPage() {
                 type="text"
                 value={formCriacao.instituicao}
                 onChange={(e) => setFormCriacao({ ...formCriacao, instituicao: e.target.value })}
-                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
 
@@ -1076,7 +1076,7 @@ export default function UsuariosPage() {
                 rows={3}
                 value={rejeicao.motivo}
                 onChange={(e) => setRejeicao({ ...rejeicao, motivo: e.target.value })}
-                className="w-full resize-none rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                className="w-full resize-none rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
                 placeholder={t('motivoRejeicaoPlaceholder')}
               />
             </div>

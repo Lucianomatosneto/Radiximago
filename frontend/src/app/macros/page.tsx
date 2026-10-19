@@ -53,7 +53,7 @@ const VAZIA: Edicao['conteudo'] = {
 }
 
 const campoTexto =
-  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
+  'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand'
 
 async function lerErro(r: Response, padrao: string) {
   try {

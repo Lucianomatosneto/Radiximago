@@ -103,7 +103,7 @@ export default function BarraSuperiorCuradoria({
           }`}
         >
           {aprovando ? t('aprovando') : t('aprovar')}
-          {destacarAprovar && <kbd className="rounded border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
+          {destacarAprovar && <kbd className="rounded-sm border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
         </button>
         <button
           type="button"

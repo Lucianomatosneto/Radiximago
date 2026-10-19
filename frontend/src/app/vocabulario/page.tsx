@@ -213,7 +213,7 @@ export default function VocabularioPage() {
 
   const caixa = 'rounded-2xl border border-base-border bg-base-surface p-5'
   const entrada =
-    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand dark:bg-teal-600/20'
+    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand dark:bg-teal-600/20'
   const botao = 'rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand-300'
   const botaoPrincipal = 'rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50'
 
@@ -297,7 +297,7 @@ export default function VocabularioPage() {
               ) : (
                 <ul className="max-h-80 space-y-1 overflow-y-auto">
                   {conferindo.itens.map((c) => (
-                    <li key={c.curation_id} className="flex items-start gap-2 rounded px-2 py-1 hover:bg-white/5">
+                    <li key={c.curation_id} className="flex items-start gap-2 rounded-sm px-2 py-1 hover:bg-white/5">
                       <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 accent-brand"
@@ -412,7 +412,7 @@ export default function VocabularioPage() {
                           </span>
                         ))}
                         <input
-                          className="w-40 rounded-full border border-white/15 bg-transparent px-2 py-0.5 text-xs text-ink outline-none focus:border-teal-300"
+                          className="w-40 rounded-full border border-white/15 bg-transparent px-2 py-0.5 text-xs text-ink outline-hidden focus:border-teal-300"
                           placeholder={t('adicionarSinonimo')}
                           value={novoSinonimo[termo.id] ?? ''}
                           onChange={(e) => setNovoSinonimo((m) => ({ ...m, [termo.id]: e.target.value }))}

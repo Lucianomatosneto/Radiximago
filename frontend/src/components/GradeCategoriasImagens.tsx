@@ -222,7 +222,7 @@ function CartaoCategoria({ categoria, contagem, total, indice, mostrarPercentual
       href={`/pesquisa?${categoria.parametro}=${categoria.valor}`}
       onPointerMove={aoMover}
       style={estilo}
-      className="cartao-categoria group relative flex min-h-[168px] flex-col overflow-hidden rounded-2xl p-5 outline-none"
+      className="cartao-categoria group relative flex min-h-[168px] flex-col overflow-hidden rounded-2xl p-5 outline-hidden"
     >
       {/* brilho que acompanha o mouse */}
       <span aria-hidden="true" className="cartao-lanterna pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -294,7 +294,7 @@ export default function GradeCategoriasImagens({ contagens }: Props) {
               <h2 id={`grupo-${grupo}`} className="text-xs font-semibold uppercase tracking-[.18em] text-ink-2">
                 {t(`rotulos.${grupo}`)}
               </h2>
-              <span className="h-px flex-1 bg-gradient-to-r from-teal-400/40 to-transparent" aria-hidden="true" />
+              <span className="h-px flex-1 bg-linear-to-r from-teal-400/40 to-transparent" aria-hidden="true" />
               <span className="font-mono text-[11px] text-ink-4">{String(itens.length).padStart(2, '0')}</span>
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

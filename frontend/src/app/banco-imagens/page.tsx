@@ -77,7 +77,7 @@ export default function BancoImagensPage() {
                 </div>
                 <Link
                   href="/pesquisa"
-                  className="group flex items-center justify-center gap-2.5 self-center rounded-full bg-blue-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
+                  className="group flex items-center justify-center gap-2.5 self-center rounded-full bg-blue-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
                 >
                   <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
                     <circle cx="11" cy="11" r="6.5" />

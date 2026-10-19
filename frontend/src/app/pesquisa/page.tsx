@@ -600,7 +600,7 @@ function PesquisaConteudo() {
 
   const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
   const campoInput =
-    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand'
+    'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand'
 
   function pillClasse(ativo: boolean): string {
     return `rounded-full border px-3.5 py-1.5 text-sm transition-colors ${
@@ -697,7 +697,7 @@ function PesquisaConteudo() {
                     setFiltros(novos)
                     pesquisar(novos)
                   }}
-                  className={`flex flex-col items-center gap-1 rounded-xl border bg-gradient-to-br px-2 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
+                  className={`flex flex-col items-center gap-1 rounded-xl border bg-linear-to-br px-2 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
                     filtros.tipo_radiografia === o.valor ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                   }`}
                 >
@@ -1149,7 +1149,7 @@ function PesquisaConteudo() {
                       max={resultados.length}
                       value={quantidadeLote}
                       onChange={(e) => setQuantidadeLote(Number(e.target.value))}
-                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-xs text-slate-100 outline-none focus:border-brand"
+                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-xs text-slate-100 outline-hidden focus:border-brand"
                     />
                     <button
                       type="button"
@@ -1243,7 +1243,7 @@ function PesquisaConteudo() {
                           {infoAberta && (
                             <div
                               role="tooltip"
-                              className="absolute inset-0 z-10 overflow-y-auto rounded-lg border border-teal-300/50 bg-base-surface/95 p-2 pb-8 text-left text-[11px] leading-snug shadow-xl backdrop-blur"
+                              className="absolute inset-0 z-10 overflow-y-auto rounded-lg border border-teal-300/50 bg-base-surface/95 p-2 pb-8 text-left text-[11px] leading-snug shadow-xl backdrop-blur-sm"
                             >
                               <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-teal-200">
                                 {tMarcacoes('tituloImagem', { numero: indice + 1 })}
@@ -1291,7 +1291,7 @@ function PesquisaConteudo() {
                             <span
                               title={t('marcacoesNaImagem', { total: totalMarcacoes })}
                               aria-label={t('marcacoesNaImagem', { total: totalMarcacoes })}
-                              className={`flex items-center gap-0.5 rounded-full border bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur dark:bg-black/70 ${
+                              className={`flex items-center gap-0.5 rounded-full border bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm dark:bg-black/70 ${
                                 totalMarcacoes > 0
                                   ? 'border-amber-500/70 text-amber-800 dark:border-amber-300/60 dark:text-amber-200'
                                   : 'border-slate-400/50 text-slate-500 dark:border-slate-500/50 dark:text-slate-400'
@@ -1322,7 +1322,7 @@ function PesquisaConteudo() {
                               aria-expanded={infoAberta}
                               title={infoFixada ? tMarcacoes('fecharDescricao') : tMarcacoes('abrirDescricao')}
                               aria-label={infoFixada ? tMarcacoes('fecharDescricao') : tMarcacoes('abrirDescricao')}
-                              className={`flex items-center rounded-full border bg-white/90 px-1.5 py-0.5 backdrop-blur dark:bg-black/70 ${
+                              className={`flex items-center rounded-full border bg-white/90 px-1.5 py-0.5 backdrop-blur-sm dark:bg-black/70 ${
                                 infoFixada
                                   ? 'border-teal-500 text-teal-700 ring-2 ring-teal-300/70 dark:border-teal-300 dark:text-teal-100'
                                   : 'border-teal-600/50 text-teal-800 hover:border-teal-600 dark:border-teal-300/50 dark:text-teal-100 dark:hover:border-teal-300'
@@ -1352,7 +1352,7 @@ function PesquisaConteudo() {
                               title={t('ampliarImagem')}
                               aria-label={t('ampliarImagem')}
                               aria-pressed={ampliado}
-                              className="flex items-center rounded-full border border-teal-600/50 bg-white/90 px-1.5 py-0.5 text-teal-800 backdrop-blur hover:border-teal-600 dark:border-teal-300/50 dark:bg-black/70 dark:text-teal-100 dark:hover:border-teal-300"
+                              className="flex items-center rounded-full border border-teal-600/50 bg-white/90 px-1.5 py-0.5 text-teal-800 backdrop-blur-sm hover:border-teal-600 dark:border-teal-300/50 dark:bg-black/70 dark:text-teal-100 dark:hover:border-teal-300"
                             >
                               {/* lupa com "+" */}
                               <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">

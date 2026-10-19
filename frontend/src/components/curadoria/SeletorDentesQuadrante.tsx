@@ -86,7 +86,7 @@ export default function SeletorDentesQuadrante({
               // "nao identificado" limpa os dentes especificos ja escolhidos.
               if (marcado && dentesSelecionados.length > 0) onChange([])
             }}
-            className="h-4 w-4 rounded border-base-border bg-base-surface2 text-brand"
+            className="h-4 w-4 rounded-sm border-base-border bg-base-surface2 text-brand"
           />
           {t('denteNaoIdentificado')}
         </label>
@@ -135,7 +135,7 @@ export default function SeletorDentesQuadrante({
                       checked={dentesSelecionados.includes(numero)}
                       disabled={desabilitado || foraDoLimite}
                       onChange={() => alternarDente(numero)}
-                      className="h-3.5 w-3.5 rounded border-base-border bg-base-surface2 text-brand"
+                      className="h-3.5 w-3.5 rounded-sm border-base-border bg-base-surface2 text-brand"
                     />
                     {numero}
                   </label>

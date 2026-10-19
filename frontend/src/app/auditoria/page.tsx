@@ -266,7 +266,7 @@ export default function AuditoriaPage() {
                 <select
                   value={filtroAcao}
                   onChange={(e) => setFiltroAcao(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
                 >
                   <option value="">{tPesquisa('opcaoTodas')}</option>
                   {CATEGORIAS_ACAO.map((grupo) => (
@@ -286,7 +286,7 @@ export default function AuditoriaPage() {
                 <select
                   value={filtroResultado}
                   onChange={(e) => setFiltroResultado(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
                 >
                   <option value="">{tPesquisa('campoTodos')}</option>
                   {OPCOES_RESULTADO.map((valor) => (
@@ -303,7 +303,7 @@ export default function AuditoriaPage() {
                   type="date"
                   value={dataDe}
                   onChange={(e) => setDataDe(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
                 />
               </div>
 
@@ -313,7 +313,7 @@ export default function AuditoriaPage() {
                   type="date"
                   value={dataAte}
                   onChange={(e) => setDataAte(e.target.value)}
-                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-none focus:border-brand"
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
                 />
               </div>
             </div>

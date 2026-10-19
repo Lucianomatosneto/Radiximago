@@ -78,12 +78,12 @@ export default function CentralAjuda({ aberta, onFechar, perfil }: { aberta: boo
     const texto = topico[idioma]
     const aberto = expandido === topico.id
     return (
-      <li key={topico.id} className={`rounded-lg border transition-colors ${aberto ? 'border-teal-300/50 bg-teal-400/10' : 'border-white/10 bg-white/[0.03] hover:border-teal-300/30'}`}>
+      <li key={topico.id} className={`rounded-lg border transition-colors ${aberto ? 'border-teal-300/50 bg-teal-400/10' : 'border-white/10 bg-white/3 hover:border-teal-300/30'}`}>
         <button
           type="button"
           onClick={() => setExpandido(aberto ? null : topico.id)}
           aria-expanded={aberto}
-          className="flex w-full items-start gap-2 px-3 py-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
+          className="flex w-full items-start gap-2 px-3 py-2.5 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-amber-300"
         >
           <span className={`mt-0.5 text-xs text-teal-200 transition-transform ${aberto ? 'rotate-90' : ''}`} aria-hidden="true">
             ▶
@@ -121,7 +121,7 @@ export default function CentralAjuda({ aberta, onFechar, perfil }: { aberta: boo
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[400] flex justify-end" role="presentation">
+    <div className="fixed inset-0 z-400 flex justify-end" role="presentation">
       {/* fundo escurecido: clicar fora fecha */}
       <button type="button" aria-label={t('fechar')} onClick={onFechar} className="absolute inset-0 cursor-default bg-black/40 backdrop-blur-[2px]" />
       <aside
@@ -161,7 +161,7 @@ export default function CentralAjuda({ aberta, onFechar, perfil }: { aberta: boo
               value={consulta}
               onChange={(e) => setConsulta(e.target.value)}
               placeholder={t('placeholder')}
-              className="w-full rounded-lg border border-teal-500/40 bg-black/30 py-2.5 pl-9 pr-3 text-sm text-ink outline-none placeholder:text-slate-500 focus:border-teal-300"
+              className="w-full rounded-lg border border-teal-500/40 bg-black/30 py-2.5 pl-9 pr-3 text-sm text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
             />
           </label>
           <p className="mt-1.5 text-[11px] text-slate-500">{t('exemplos')}</p>
@@ -177,7 +177,7 @@ export default function CentralAjuda({ aberta, onFechar, perfil }: { aberta: boo
                 <ul className="space-y-2">{resultados.map(cartao)}</ul>
               </>
             ) : (
-              <div className="rounded-lg border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
+              <div className="rounded-lg border border-white/10 bg-white/3 p-4 text-sm text-slate-300">
                 <p className="font-semibold text-ink">{t('nadaEncontrado')}</p>
                 <p className="mt-1 text-xs text-slate-400">{t('nadaEncontradoDica')}</p>
               </div>

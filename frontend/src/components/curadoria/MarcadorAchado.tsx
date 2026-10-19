@@ -425,7 +425,7 @@ export default function MarcadorAchado({
               onChange={(e) => definirAchadoDaSelecionada(e.target.value)}
               // Mesmo degrade de FichaCuradoriaForm.tsx, aplicado em todas
               // as caixas de texto desta tela (pedido explicito).
-              className="rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-none focus:border-brand dark:bg-teal-600/20"
+              className="rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-hidden focus:border-brand dark:bg-teal-600/20"
             >
               <option value="">{t('selecione')}</option>
               {OPCOES_ACHADO_MARCACAO.map((opcao) => (
@@ -448,7 +448,7 @@ export default function MarcadorAchado({
               onChange={(e) => definirDescricaoDaSelecionada(e.target.value)}
               placeholder={t('placeholderDescricaoOutro')}
               aria-label={t('placeholderDescricaoOutro')}
-              className="w-full rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-none focus:border-brand dark:bg-teal-600/20"
+              className="w-full rounded-lg border border-teal-500/40 bg-teal-100/70 px-2 py-1 text-sm text-ink outline-hidden focus:border-brand dark:bg-teal-600/20"
             />
           )}
         </div>

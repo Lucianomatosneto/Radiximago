@@ -58,7 +58,7 @@ export default function GuiaLaudo({ aberto, onFechar }: { aberto: boolean; onFec
   for (let i = 1; i <= 5; i++) if (t.has(`passos.${id}.fazer${i}`)) fazer.push(t(`passos.${id}.fazer${i}`))
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-guia">
+    <div className="fixed inset-0 z-80 flex items-center justify-center bg-black/65 p-4" role="dialog" aria-modal="true" aria-labelledby="titulo-guia">
       <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-teal-300/40 bg-base-surface shadow-2xl">
         <header className="flex items-center gap-3 border-b border-white/10 px-5 py-3">
           <span className="text-xl" aria-hidden="true">📘</span>

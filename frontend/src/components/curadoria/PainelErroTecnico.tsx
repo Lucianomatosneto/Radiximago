@@ -125,7 +125,7 @@ export default function PainelErroTecnico({
   }
 
   const campoInput =
-    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-none focus:border-brand'
+    'w-full rounded-lg border border-teal-500/40 bg-teal-100/70 dark:bg-teal-600/20 px-2.5 py-1.5 text-sm text-ink outline-hidden focus:border-brand'
   const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'
 
   return (

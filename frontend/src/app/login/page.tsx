@@ -223,7 +223,7 @@ export default function LoginPage() {
 
   const sombraTexto = { textShadow: '0 1px 10px rgba(0,0,0,.95)' }
   const campo =
-    'w-full border-0 border-b border-slate-600 bg-transparent px-0.5 py-3 text-base text-white outline-none transition placeholder:text-slate-500 focus:border-teal-300 focus-visible:outline-none'
+    'w-full border-0 border-b border-slate-600 bg-transparent px-0.5 py-3 text-base text-white outline-hidden transition placeholder:text-slate-500 focus:border-teal-300 focus-visible:outline-hidden'
   const ferramentas: { id: keyof typeof ICONES_FERRAMENTA; rotulo: string; cor: string; acao: () => void }[] = [
     { id: pausado ? 'retomar' : 'pausar', rotulo: pausado ? t('retomarRotacao') : t('pausarRotacao'), cor: '#60A5FA', acao: () => setPausado(controleRef.current?.alternarPausa() ?? false) },
     { id: 'avancar', rotulo: t('proximaImagem'), cor: '#4ADE80', acao: () => controleRef.current?.avancar() },
@@ -240,7 +240,7 @@ export default function LoginPage() {
       <CenaLogin controleRef={controleRef} aoMudarFoco={aoMudarFoco} aoMudarLongitude={aoMudarLongitude} />
 
       {/* barra superior: marca e idioma */}
-      <header className="relative z-20 flex h-12 items-center justify-between border-b border-white/10 bg-black/60 px-4 backdrop-blur-sm lg:fixed lg:inset-x-0 lg:top-0">
+      <header className="relative z-20 flex h-12 items-center justify-between border-b border-white/10 bg-black/60 px-4 backdrop-blur-xs lg:fixed lg:inset-x-0 lg:top-0">
         <Logo variante="navbar" className="[&_span]:text-white" />
         <SeletorIdioma />
       </header>
@@ -307,7 +307,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setMostrarSenha((v) => !v)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-teal-300"
                     aria-label={mostrarSenha ? t('ocultarSenha') : t('mostrarSenha')}
                   >
                     {mostrarSenha ? (
@@ -335,7 +335,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="group mt-1 flex min-w-[200px] items-center justify-center gap-2 self-start rounded-full bg-blue-600 px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:opacity-60"
+                className="group mt-1 flex min-w-[200px] items-center justify-center gap-2 self-start rounded-full bg-blue-600 px-9 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300 disabled:opacity-60"
               >
                 {carregando ? t('entrando') : t('entrar')}
                 {!carregando && (
@@ -374,7 +374,7 @@ export default function LoginPage() {
               title={f.rotulo}
               aria-label={f.rotulo}
               onClick={f.acao}
-              className="grid h-9 w-9 place-items-center rounded-lg border transition hover:brightness-150 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-300"
+              className="grid h-9 w-9 place-items-center rounded-lg border transition hover:brightness-150 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-teal-300"
               style={{ color: f.cor, borderColor: `${f.cor}73`, background: `linear-gradient(135deg, ${f.cor}38, #0A0C10)` }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-[17px] w-[17px]" aria-hidden="true">
@@ -409,7 +409,7 @@ export default function LoginPage() {
       </div>
 
       {/* rodape: aviso sobre as imagens ilustrativas */}
-      <footer className="fixed inset-x-0 bottom-0 z-20 flex h-9 items-center gap-2 border-t border-white/10 bg-black/70 px-4 text-[11.5px] text-slate-400 backdrop-blur-sm">
+      <footer className="fixed inset-x-0 bottom-0 z-20 flex h-9 items-center gap-2 border-t border-white/10 bg-black/70 px-4 text-[11.5px] text-slate-400 backdrop-blur-xs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
           <path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z" />
         </svg>

@@ -172,7 +172,7 @@ export default function ConhecaPage() {
             <span className="h-1.5 w-1.5 rounded-full bg-teal-400" aria-hidden="true" />
             {t('selo')}
           </p>
-          <h1 className="titulo-pagina text-balance !text-[clamp(34px,4.6vw,60px)] !leading-[1.04] !tracking-[-0.035em]">
+          <h1 className="titulo-pagina text-balance text-[clamp(34px,4.6vw,60px)]! leading-[1.04]! tracking-[-0.035em]!">
             {tLogin('tituloDestaque1')}
             <span className="block text-teal-600 dark:text-teal-300">{tLogin('tituloDestaque2')}</span>
           </h1>
@@ -211,7 +211,7 @@ export default function ConhecaPage() {
       {/* 2. NUMEROS */}
       <section aria-label={t('pilares.rotulo')} className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 md:grid-cols-4">
         {PILARES.map((p) => (
-          <div key={p} className="painel-vidro !rounded-none !border-0 px-5 py-6">
+          <div key={p} className="painel-vidro rounded-none! border-0! px-5 py-6">
             <p className="text-4xl font-semibold tracking-tight text-ink">{t(`pilares.itens.${p}.valor`)}</p>
             <p className="mt-1.5 text-sm leading-snug text-ink-3">{t(`pilares.itens.${p}.texto`)}</p>
           </div>
@@ -254,7 +254,7 @@ export default function ConhecaPage() {
                   grande ? 'flex min-h-[260px] flex-col justify-between' : ''
                 } ${
                   recurso.destaque
-                    ? 'border-blue-500/30 bg-gradient-to-br from-blue-500/10 to-cyan-400/5 hover:border-blue-400/50'
+                    ? 'border-blue-500/30 bg-linear-to-br from-blue-500/10 to-cyan-400/5 hover:border-blue-400/50'
                     : 'border-[rgba(15,23,42,.08)] bg-white/75 hover:border-[rgba(15,23,42,.16)] dark:border-white/10 dark:bg-white/5 dark:hover:border-white/20'
                 }`}
               >
@@ -267,15 +267,15 @@ export default function ConhecaPage() {
                       alt=""
                       aria-hidden="true"
                       loading="lazy"
-                      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-[1200ms] ease-out group-hover:scale-105"
+                      className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-55 transition-transform duration-1200 ease-out group-hover:scale-105"
                     />
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
+                    <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/90 via-black/40 to-black/10" />
                   </>
                 )}
                 <div
                   className={`relative mb-4 flex items-center justify-center rounded-xl ${grande ? 'h-14 w-14' : 'h-11 w-11'} ${
                     recurso.destaque
-                      ? 'bg-gradient-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/30'
+                      ? 'bg-linear-to-br from-blue-500 to-cyan-400 text-white shadow-lg shadow-blue-500/30'
                       : grande
                         ? 'bg-white/15 text-white'
                         : 'bg-blue-500/10 text-blue-700 dark:bg-white/10 dark:text-blue-300'
@@ -319,7 +319,7 @@ export default function ConhecaPage() {
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-3">{t('expansao.texto')}</p>
         <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-[1.1fr_1.6fr]">
           {/* agora: piloto */}
-          <div className="relative overflow-hidden rounded-2xl border border-orange-400/40 bg-gradient-to-br from-orange-500/15 to-amber-400/5 p-6">
+          <div className="relative overflow-hidden rounded-2xl border border-orange-400/40 bg-linear-to-br from-orange-500/15 to-amber-400/5 p-6">
             <span className="inline-flex items-center gap-2 rounded-full bg-orange-500/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-orange-700 dark:text-orange-300">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-orange-500" aria-hidden="true" />
               {t('expansao.agora')}
@@ -368,7 +368,7 @@ export default function ConhecaPage() {
 
       {/* 8. CHAMADA FINAL */}
       <section className="pb-16 pt-20">
-        <div className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-gradient-to-br from-blue-600/20 via-cyan-500/10 to-teal-500/10 px-8 py-12 text-center">
+        <div className="relative overflow-hidden rounded-3xl border border-blue-500/30 bg-linear-to-br from-blue-600/20 via-cyan-500/10 to-teal-500/10 px-8 py-12 text-center">
           <h2 className="text-balance text-3xl font-semibold tracking-tight text-ink">{t('ctaFinal.titulo')}</h2>
           <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-ink-2">{t('ctaFinal.texto')}</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">

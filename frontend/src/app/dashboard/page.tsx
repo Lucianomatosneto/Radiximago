@@ -199,7 +199,7 @@ export default function DashboardPage() {
             {Object.entries(stats.por_status).map(([status, total]) => (
               <div
                 key={status}
-                className="rounded-xl border border-base-border bg-base-surface p-5 shadow-sm"
+                className="rounded-xl border border-base-border bg-base-surface p-5 shadow-xs"
               >
                 <StatusBadge status={status} />
                 <p className="mt-3 text-3xl font-bold text-slate-100">{total}</p>

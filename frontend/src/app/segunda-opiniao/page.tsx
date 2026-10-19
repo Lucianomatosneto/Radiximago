@@ -490,7 +490,7 @@ export default function SegundaOpiniaoPage() {
                         ajuste feito em PainelVisualizador.tsx. */}
                     {fichaCompleta && (
                       <div className="absolute bottom-2 left-2 top-2 z-10 w-[220px]">
-                        <dl className="flex h-full w-full flex-col gap-2.5 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 text-sm shadow-lg backdrop-blur-sm">
+                        <dl className="flex h-full w-full flex-col gap-2.5 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 text-sm shadow-lg backdrop-blur-xs">
                           <div>
                             <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('tipoRadiografia')}</dt>
                             <dd className="text-slate-100">

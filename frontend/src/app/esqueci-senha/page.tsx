@@ -68,7 +68,7 @@ export default function EsqueciSenhaPage() {
             </div>
             <Link
               href="/login"
-              className="block w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
+              className="block w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50"
             >
               {t('voltarLogin')}
             </Link>
@@ -96,7 +96,7 @@ export default function EsqueciSenhaPage() {
                   name="email"
                   type="email"
                   autoFocus
-                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
+                  className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                   placeholder={t('emailPlaceholder')}
                 />
               </div>
@@ -111,7 +111,7 @@ export default function EsqueciSenhaPage() {
             <button
               type="submit"
               disabled={carregando}
-              className="w-full rounded-lg bg-gradient-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
+              className="w-full rounded-lg bg-linear-to-r from-blue-500 to-cyan-400 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:brightness-110 hover:shadow-blue-500/50 disabled:opacity-60"
             >
               {carregando ? t('enviando') : t('enviarInstrucoes')}
             </button>

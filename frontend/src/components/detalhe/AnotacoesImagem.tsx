@@ -388,7 +388,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           setEditando(null)
           setModoAdicionar((atual) => !atual)
         }}
-        className={`pointer-events-auto absolute bottom-24 z-50 rounded-lg border px-3 py-1.5 text-xs font-medium backdrop-blur transition ${
+        className={`pointer-events-auto absolute bottom-24 z-50 rounded-lg border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition ${
           filaVisivel ? 'left-[300px] sm:left-[364px]' : 'left-3 sm:left-6'
         } ${
           modoAdicionar
@@ -418,7 +418,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           onMouseMove={moverDuranteArrasto}
           onMouseUp={finalizarArrastoAjuste}
           onMouseLeave={finalizarArrastoAjuste}
-          className="pointer-events-auto absolute inset-0 z-[55] cursor-move"
+          className="pointer-events-auto absolute inset-0 z-55 cursor-move"
         />
       )}
 
@@ -549,7 +549,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                   fontWeight: anotacao.negrito ? 700 : 400,
                   fontStyle: anotacao.italico ? 'italic' : 'normal',
                 }}
-                className="block max-w-[220px] break-words rounded-lg border border-white/20 bg-black/70 px-2 py-1 text-left shadow-lg backdrop-blur-sm"
+                className="block max-w-[220px] wrap-break-word rounded-lg border border-white/20 bg-black/70 px-2 py-1 text-left shadow-lg backdrop-blur-xs"
               >
                 {anotacao.texto}
               </button>
@@ -619,7 +619,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           // movimentos atravessarem direto pra camada de arrastar por
           // baixo, em vez de ficarem presos nesse circulo pequeno que fica
           // sempre embaixo do cursor.
-          className={`absolute z-[60] flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-black/70 text-[10px] leading-none text-white shadow-lg ${
+          className={`absolute z-60 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-black/70 text-[10px] leading-none text-white shadow-lg ${
             arrastandoSeta ? 'pointer-events-none scale-125 cursor-move' : 'pointer-events-auto cursor-pointer'
           }`}
         >
@@ -633,7 +633,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           // bg-base-surface/10: quase todo transparente, so o suficiente pra
           // ainda dar pra ler o texto - a seta e a imagem por tras ficam bem
           // visiveis atraves do painel.
-          className="pointer-events-auto absolute z-50 w-64 -translate-x-1/2 rounded-xl border border-base-border bg-base-surface/10 p-3 shadow-2xl backdrop-blur-sm"
+          className="pointer-events-auto absolute z-50 w-64 -translate-x-1/2 rounded-xl border border-base-border bg-base-surface/10 p-3 shadow-2xl backdrop-blur-xs"
         >
           {/* Fecha a caixa sem salvar - mesmo estilo do "x" usado pra excluir
               um marcador (circulo pequeno no canto), so que aqui a acao e
@@ -674,7 +674,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               fontWeight: negrito ? 700 : 400,
               fontStyle: italico ? 'italic' : 'normal',
             }}
-            className="w-full resize-none rounded-lg border border-base-border bg-base-surface2/10 p-2 backdrop-blur-sm"
+            className="w-full resize-none rounded-lg border border-base-border bg-base-surface2/10 p-2 backdrop-blur-xs"
           />
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
