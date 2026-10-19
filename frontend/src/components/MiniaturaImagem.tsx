@@ -17,14 +17,21 @@ import { useTranslations } from 'next-intl'
 // atrasa qualquer outra chamada (ex.: abrir os detalhes de uma imagem).
 // Por isso o fetch so dispara quando a miniatura entra na area visivel
 // (mesmo padrao de lazy load ja usado em MiniaturaFila).
+//
+// `miniatura`: pede a versao REDUZIDA (ate 400 px, JPEG leve - ver
+// MINIATURA_PX em backend/app/modules/search_router.py). Para grades em que
+// a imagem so serve para ESCOLHER (Pesquisa); quem precisa ver a imagem em
+// detalhe (visualizador) continua recebendo a resolucao completa.
 export default function MiniaturaImagem({
   curationId,
   alt,
   className,
+  miniatura = false,
 }: {
   curationId: number
   alt: string
   className?: string
+  miniatura?: boolean
 }) {
   const t = useTranslations('MiniaturaImagem')
   const [src, setSrc] = useState('')
@@ -67,7 +74,8 @@ export default function MiniaturaImagem({
 
     async function carregar() {
       try {
-        const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/preview`, {
+        const sufixo = miniatura ? '?tamanho=miniatura' : ''
+        const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/${curationId}/preview${sufixo}`, {
           credentials: 'include',
         })
         if (!resposta.ok) {
@@ -87,7 +95,7 @@ export default function MiniaturaImagem({
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
-  }, [visivel, curationId])
+  }, [visivel, curationId, miniatura])
 
   if (erro) {
     return (

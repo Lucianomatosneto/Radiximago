@@ -415,6 +415,28 @@ def pesquisar_imagens(
     }
 
 
+# Maior lado da miniatura das grades de escolha. O cartao da Pesquisa tem
+# cerca de 300 px e dobra ao usar a lupa: 400 px fica nitido o bastante e
+# pesa uma fracao do original (radiografias tem milhares de pixels por lado).
+MINIATURA_PX = 400
+
+
+def reduzir_para_miniatura(conteudo_png: bytes) -> tuple[bytes, str]:
+    """Reduz a imagem (mantendo a proporcao) e devolve (JPEG leve, tipo).
+    Imagem que ja e pequena volta como esta (reduzir nao ganharia nada)."""
+    from PIL import Image
+
+    with Image.open(io.BytesIO(conteudo_png)) as imagem:
+        if max(imagem.size) <= MINIATURA_PX:
+            return conteudo_png, "image/png"
+        imagem.thumbnail((MINIATURA_PX, MINIATURA_PX))
+        if imagem.mode not in ("L", "RGB"):
+            imagem = imagem.convert("RGB")
+        saida = io.BytesIO()
+        imagem.save(saida, format="JPEG", quality=82, optimize=True)
+    return saida.getvalue(), "image/jpeg"
+
+
 def _buscar_ficha_aprovada(db: Session, curation_id: int) -> Curation:
     """
     Busca uma ficha, mas so devolve se ela estiver aprovada e com a imagem
@@ -584,6 +606,14 @@ def obter_preview(
             "mudanca nenhuma."
         ),
     ),
+    tamanho: Literal["original", "miniatura"] = Query(
+        "original",
+        description=(
+            "'miniatura': versao reduzida (ate MINIATURA_PX no maior lado, JPEG) para "
+            "as grades de escolha (Pesquisa) - carrega muito mais rapido. "
+            "'original': resolucao completa (visualizador, download)."
+        ),
+    ),
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
@@ -601,6 +631,19 @@ def obter_preview(
     )
     if com_marcacao:
         conteudo = desenhar_marcacoes_na_imagem(conteudo, ficha.marcacoes)
+    if tamanho == "miniatura":
+        reduzida, tipo = reduzir_para_miniatura(conteudo)
+        extensao = "jpg" if tipo == "image/jpeg" else "png"
+        return Response(
+            content=reduzida,
+            media_type=tipo,
+            headers={
+                "Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}-miniatura.{extensao}"),
+                # a mesma miniatura volta da memoria do navegador ao voltar a
+                # Pesquisa (so neste navegador; imagem anonimizada e aprovada)
+                "Cache-Control": "private, max-age=600",
+            },
+        )
     return Response(
         content=conteudo,
         media_type="image/png",

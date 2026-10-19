@@ -513,7 +513,9 @@
       "terceirosMolares": "Third molars",
       "limpar": "Clear teeth"
     },
-    "campoIdade": "Age"
+    "campoIdade": "Age",
+    "ampliarImagem": "Hover to enlarge the image",
+    "marcacoesNaImagem": "{total, plural, one {# curator marking} other {# curator markings}}"
   },
   "AlteracoesObservadas": {
     "categorias": {

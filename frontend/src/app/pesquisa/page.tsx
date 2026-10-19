@@ -236,6 +236,8 @@ function PesquisaConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Pesquisa')
+  // cartao da grade ampliado pela lupa (so um por vez)
+  const [cartaoAmpliado, setCartaoAmpliado] = useState<number | null>(null)
   const tComum = useTranslations('Comum')
   // Reaproveita os MESMOS rotulos de regiao anatomica/erro tecnico ja
   // criados na Fase 3 pra Curadoria (Curadoria.achadosEstruturados/
@@ -1079,61 +1081,109 @@ function PesquisaConteudo() {
                 </div>
 
                 {/* Grade de resultados: CINCO imagens por linha (em telas largas,
-                    duas linhas cabem na tela). Cada cartao mostra SO a imagem e um
-                    "i" pequeno no canto:
-                    - mouse na imagem -> ela dobra de tamanho; tirou o mouse, volta;
-                    - mouse no "i" -> mostra a descricao; um clique no "i" fixa a
-                      descricao e outro clique a esconde (EtiquetaMarcacoes, modo
-                      flutuante);
-                    - a caixinha de selecao (usada por Salvar/Imprimir/Visualizar)
-                      so aparece ao passar o mouse ou quando a imagem esta marcada,
-                      para nao poluir a miniatura. */}
+                    duas linhas cabem na tela). Cada cartao mostra a imagem em
+                    versao REDUZIDA (carrega rapido; aqui a imagem so serve para
+                    escolher) e, nos cantos:
+                    - em cima, a direita: caixa de selecao (Salvar/Imprimir/Visualizar);
+                    - embaixo, a direita: numero de marcacoes do curador (se houver),
+                      o "i" (mouse em cima mostra a descricao; um clique fixa, outro
+                      esconde) e a LUPA (mouse em cima dobra o tamanho da imagem;
+                      tirou o mouse da imagem, ela volta).
+                    Passar o mouse na imagem em si NAO amplia mais: os icones
+                    ficavam no meio da imagem ampliada. Ao ampliar, os icones vao
+                    junto para o canto e mantem o tamanho (escala inversa). */}
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5">
                   {resultados.map((imagem, indice) => {
                     const marcada = selecionados.includes(imagem.curation_id)
+                    const ampliado = cartaoAmpliado === imagem.curation_id
+                    const totalMarcacoes = (imagem.marcacoes ?? []).length
                     return (
-                      // O "i" fica FORA da parte que cresce: se ficasse dentro, ao
-                      // apontar para ele a imagem dobrava, o "i" saia de baixo do
-                      // mouse e a descricao fechava sozinha (achado no teste).
                       <div key={imagem.curation_id} className="relative aspect-square">
-                        <Link
-                          href={`/visualizar/${imagem.curation_id}`}
-                          onMouseEnter={(e) => ajustarOrigemAmpliacao(e.currentTarget)}
+                        <div
                           data-cartao-imagem
-                          aria-label={t('imagemNumero', { numero: indice + 1 })}
-                          className={`group absolute inset-0 block overflow-hidden rounded-lg border bg-black transition duration-200 hover:z-30 hover:scale-[2] hover:border-brand/60 hover:shadow-2xl hover:delay-150 motion-reduce:hover:scale-100 ${
-                            marcada ? 'border-brand ring-2 ring-brand/60' : 'border-base-border'
-                          }`}
+                          onMouseLeave={() => {
+                            if (ampliado) setCartaoAmpliado(null)
+                          }}
+                          className={`absolute inset-0 rounded-lg border bg-black transition-transform duration-200 motion-reduce:transition-none ${
+                            ampliado ? 'z-30 scale-[2] shadow-2xl motion-reduce:scale-100' : 'z-0'
+                          } ${marcada ? 'border-brand ring-2 ring-brand/60' : ampliado ? 'border-brand/60' : 'border-base-border'}`}
                         >
-                          <MiniaturaImagem
-                            curationId={imagem.curation_id}
-                            alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
-                            className="h-full w-full bg-black object-contain"
-                          />
+                          <Link
+                            href={`/visualizar/${imagem.curation_id}`}
+                            aria-label={t('imagemNumero', { numero: indice + 1 })}
+                            className="block h-full w-full overflow-hidden rounded-lg"
+                          >
+                            <MiniaturaImagem
+                              curationId={imagem.curation_id}
+                              miniatura
+                              alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
+                              className="h-full w-full bg-black object-contain"
+                            />
+                          </Link>
                           <label
-                            onClick={(e) => e.stopPropagation()}
-                            className={`absolute right-1 top-1 flex h-5 w-5 cursor-pointer items-center justify-center rounded-md bg-black/70 transition-opacity focus-within:opacity-100 group-hover:opacity-100 ${
-                              marcada ? 'opacity-100' : 'opacity-0'
+                            className={`absolute right-1 top-1 z-20 flex h-5 w-5 origin-top-right cursor-pointer items-center justify-center rounded-md bg-black/70 transition-transform duration-200 ${
+                              ampliado ? 'scale-50' : ''
                             }`}
                           >
                             <input
                               type="checkbox"
                               checked={marcada}
                               onChange={() => alternarSelecao(imagem.curation_id)}
-                              onClick={(e) => e.stopPropagation()}
                               aria-label={t('selecionarImagem', { numero: indice + 1 })}
                               className="h-3.5 w-3.5 accent-brand"
                             />
                           </label>
-                        </Link>
-                        {/* "i" pequeno: passar o mouse mostra a descricao; clique fixa/esconde */}
-                        <EtiquetaMarcacoes
-                          item={{ ...imagem, numero: indice + 1 }}
-                          curationId={imagem.curation_id}
-                          flutuante
-                          mostrarContagem={false}
-                          className="bottom-1 right-1 !z-40 scale-90"
-                        />
+                          <div
+                            className={`absolute bottom-1 right-1 z-20 flex origin-bottom-right items-center gap-1 transition-transform duration-200 ${
+                              ampliado ? 'scale-50' : ''
+                            }`}
+                          >
+                            {totalMarcacoes > 0 && (
+                              <span
+                                title={t('marcacoesNaImagem', { total: totalMarcacoes })}
+                                aria-label={t('marcacoesNaImagem', { total: totalMarcacoes })}
+                                className="flex items-center gap-0.5 rounded-full border border-amber-500/70 bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800 backdrop-blur dark:border-amber-300/60 dark:bg-black/70 dark:text-amber-200"
+                              >
+                                {/* alfinete de marcacao */}
+                                <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                  <path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z" />
+                                  <circle cx="12" cy="11" r="2" />
+                                </svg>
+                                {totalMarcacoes}
+                              </span>
+                            )}
+                            <EtiquetaMarcacoes
+                              item={{ ...imagem, numero: indice + 1 }}
+                              curationId={imagem.curation_id}
+                              flutuante
+                              embutido
+                              mostrarContagem={false}
+                            />
+                            <button
+                              type="button"
+                              onMouseEnter={(e) => {
+                                const cartao = e.currentTarget.closest('[data-cartao-imagem]') as HTMLElement | null
+                                if (cartao) ajustarOrigemAmpliacao(cartao)
+                                setCartaoAmpliado(imagem.curation_id)
+                              }}
+                              onClick={(e) => {
+                                // toque (celular): um toque amplia, outro volta
+                                e.preventDefault()
+                                setCartaoAmpliado(ampliado ? null : imagem.curation_id)
+                              }}
+                              title={t('ampliarImagem')}
+                              aria-label={t('ampliarImagem')}
+                              aria-pressed={ampliado}
+                              className="flex items-center rounded-full border border-teal-600/50 bg-white/90 px-1.5 py-0.5 text-teal-800 backdrop-blur hover:border-teal-600 dark:border-teal-300/50 dark:bg-black/70 dark:text-teal-100 dark:hover:border-teal-300"
+                            >
+                              {/* lupa com "+" */}
+                              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+                                <circle cx="11" cy="11" r="6.5" />
+                                <path d="M20 20l-4.2-4.2M11 8.5v5M8.5 11h5" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     )
                   })}

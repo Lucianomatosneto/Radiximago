@@ -513,7 +513,9 @@
       "terceirosMolares": "Terceiros molares",
       "limpar": "Limpar dentes"
     },
-    "campoIdade": "Idade"
+    "campoIdade": "Idade",
+    "ampliarImagem": "Passe o mouse para ampliar a imagem",
+    "marcacoesNaImagem": "{total, plural, one {# marcação do curador} other {# marcações do curador}}"
   },
   "AlteracoesObservadas": {
     "categorias": {
