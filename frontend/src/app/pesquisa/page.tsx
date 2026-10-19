@@ -206,22 +206,57 @@ function rotular(
   return opcao ? traduzir(opcao.chave) : valor
 }
 
-// Ao passar o mouse, o cartao do resultado DOBRA de tamanho (scale 2) por cima
-// dos vizinhos. Para nao "vazar" para fora da area da pagina (sumindo por
-// baixo do menu ou da borda), o ponto fixo da ampliacao muda conforme a
-// posicao do cartao: perto da borda esquerda ele cresce para a direita,
-// perto da direita cresce para a esquerda, e o mesmo em cima/embaixo.
-function ajustarOrigemAmpliacao(cartao: HTMLElement) {
-  const area = (cartao.closest('main') ?? document.body).getBoundingClientRect()
-  const r = cartao.getBoundingClientRect()
-  // cresce metade da largura/altura para cada lado (scale 2)
-  const sobraX = r.width * 0.5 + 8
-  const sobraY = r.height * 0.5 + 8
-  const topoVisivel = Math.max(area.top, 0)
-  const baseVisivel = Math.min(area.bottom, window.innerHeight)
-  const h = r.left - area.left < sobraX ? 'left' : area.right - r.right < sobraX ? 'right' : 'center'
-  const v = r.top - topoVisivel < sobraY ? 'top' : baseVisivel - r.bottom < sobraY ? 'bottom' : 'center'
-  cartao.style.transformOrigin = `${v} ${h}`
+// LUPA da grade: o quadro DOBRA de tamanho (scale 2) tendo como ponto fixo
+// a PROPRIA lupa - assim ela continua exatamente embaixo do mouse e o quadro
+// cresce para cima e para a esquerda a partir dela. Os icones do canto
+// diminuem pela metade em volta do mesmo ponto (escala inversa), entao
+// ficam no mesmo lugar e no mesmo tamanho.
+// Excecao: se o quadro ampliado sairia da area visivel (1a coluna, linha
+// de cima), ele e empurrado para dentro so o necessario. Mesmo assim os
+// icones NAO andam (deslocamento inverso): a lupa continua embaixo do
+// mouse; nesses quadros da borda os icones ficam um pouco para dentro da
+// imagem em vez de no canto.
+interface Ampliacao {
+  id: number
+  /** ponto fixo (a lupa) dentro do quadro, em px */
+  origemQuadro: string
+  /** o mesmo ponto dentro do grupo de icones, em px */
+  origemIcones: string
+  dx: number
+  dy: number
+}
+
+function calcularAmpliacao(id: number, lupa: HTMLElement): Ampliacao | null {
+  const quadro = lupa.closest('[data-cartao-imagem]') as HTMLElement | null
+  const icones = lupa.parentElement
+  if (!quadro || !icones) return null
+  const rq = quadro.getBoundingClientRect()
+  const ri = icones.getBoundingClientRect()
+  const rl = lupa.getBoundingClientRect()
+  const lx = rl.left + rl.width / 2
+  const ly = rl.top + rl.height / 2
+  // quadro ampliado com a lupa parada: cresce (lx - left) para a esquerda etc.
+  const novo = {
+    left: rq.left - (lx - rq.left),
+    top: rq.top - (ly - rq.top),
+    right: rq.right + (rq.right - lx),
+    bottom: rq.bottom + (rq.bottom - ly),
+  }
+  const area = (quadro.closest('main') ?? document.body).getBoundingClientRect()
+  const MARGEM = 8
+  const esq = area.left + MARGEM
+  const dir = Math.min(area.right, window.innerWidth) - MARGEM
+  const topo = Math.max(area.top, 0) + MARGEM
+  const base = window.innerHeight - MARGEM
+  const dx = novo.left < esq ? esq - novo.left : novo.right > dir ? dir - novo.right : 0
+  const dy = novo.top < topo ? topo - novo.top : novo.bottom > base ? base - novo.bottom : 0
+  return {
+    id,
+    origemQuadro: `${lx - rq.left}px ${ly - rq.top}px`,
+    origemIcones: `${lx - ri.left}px ${ly - ri.top}px`,
+    dx: Math.round(dx),
+    dy: Math.round(dy),
+  }
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -242,7 +277,8 @@ function PesquisaConteudo() {
   const descrever = useDescricaoCuradoria()
   // cartao da grade ampliado pela lupa (so um por vez) e os que ja tem a
   // versao maior carregada
-  const [cartaoAmpliado, setCartaoAmpliado] = useState<number | null>(null)
+  const [ampliacao, setAmpliacao] = useState<Ampliacao | null>(null)
+  const cartaoAmpliado = ampliacao?.id ?? null
   const [ampliadasCarregadas, setAmpliadasCarregadas] = useState<number[]>([])
   // informacoes da imagem: aberta pelo mouse no "i" ou fixada por clique
   const [infoPassando, setInfoPassando] = useState<number | null>(null)
@@ -1165,10 +1201,18 @@ function PesquisaConteudo() {
                         <div
                           data-cartao-imagem
                           onMouseLeave={() => {
-                            if (ampliado) setCartaoAmpliado(null)
+                            if (ampliado) setAmpliacao(null)
                           }}
+                          style={
+                            ampliado && ampliacao
+                              ? {
+                                  transformOrigin: ampliacao.origemQuadro,
+                                  transform: `translate(${ampliacao.dx}px, ${ampliacao.dy}px) scale(2)`,
+                                }
+                              : undefined
+                          }
                           className={`absolute inset-0 rounded-lg border bg-black transition-transform duration-200 motion-reduce:transition-none ${
-                            ampliado ? 'z-30 scale-[2] shadow-2xl motion-reduce:scale-100' : 'z-0'
+                            ampliado ? 'z-30 shadow-2xl' : 'z-0'
                           } ${marcada ? 'border-brand ring-2 ring-brand/60' : ampliado ? 'border-brand/60' : 'border-base-border'}`}
                         >
                           <Link
@@ -1233,9 +1277,16 @@ function PesquisaConteudo() {
                             />
                           </label>
                           <div
-                            className={`absolute bottom-1 right-1 z-20 flex origin-bottom-right items-center gap-1 transition-transform duration-200 ${
-                              ampliado ? 'scale-50' : ''
-                            }`}
+                            style={
+                              ampliado && ampliacao
+                                ? {
+                                    transformOrigin: ampliacao.origemIcones,
+                                    // desfaz o empurrao do quadro (que esta em escala 2): a lupa fica parada
+                                    transform: `translate(${-ampliacao.dx / 2}px, ${-ampliacao.dy / 2}px) scale(0.5)`,
+                                  }
+                                : undefined
+                            }
+                            className="absolute bottom-1 right-1 z-20 flex items-center gap-1 transition-transform duration-200"
                           >
                             <span
                               title={t('marcacoesNaImagem', { total: totalMarcacoes })}
@@ -1285,9 +1336,7 @@ function PesquisaConteudo() {
                             <button
                               type="button"
                               onMouseEnter={(e) => {
-                                const cartao = e.currentTarget.closest('[data-cartao-imagem]') as HTMLElement | null
-                                if (cartao) ajustarOrigemAmpliacao(cartao)
-                                setCartaoAmpliado(imagem.curation_id)
+                                if (!ampliado) setAmpliacao(calcularAmpliacao(imagem.curation_id, e.currentTarget))
                                 setAmpliadasCarregadas((lista) =>
                                   lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
                                 )
@@ -1298,7 +1347,7 @@ function PesquisaConteudo() {
                                 setAmpliadasCarregadas((lista) =>
                                   lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
                                 )
-                                setCartaoAmpliado(ampliado ? null : imagem.curation_id)
+                                setAmpliacao(ampliado ? null : calcularAmpliacao(imagem.curation_id, e.currentTarget))
                               }}
                               title={t('ampliarImagem')}
                               aria-label={t('ampliarImagem')}
