@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import {
   caminhoHolofote,
@@ -36,12 +37,15 @@ export default function CamadaMarcacoes({
   recorte,
   interativo = true,
   destaque = null,
+  aoClicarFora,
 }: {
   marcacoes: Marcacao[]
   recorte?: { x: number; y: number; largura: number; altura: number } | null
   interativo?: boolean
   /** marcacao destacada por fora (ex.: a selecionada no editor) */
   destaque?: number | null
+  /** clique FORA das marcacoes (ex.: na grade da Pesquisa, abre a imagem) */
+  aoClicarFora?: () => void
 }) {
   const t = useTranslations('DescricaoCuradoria')
   const caixaRef = useRef<HTMLDivElement>(null)
@@ -134,6 +138,7 @@ export default function CamadaMarcacoes({
         const [px, py] = pontoLocal(ev)
         const i = marcacaoSobPonto(visiveis(), px, py)
         if (i !== null) setIsolada((atual) => (atual === i ? null : i))
+        else aoClicarFora?.()
       }}
     >
       {tam && (
@@ -181,14 +186,17 @@ export default function CamadaMarcacoes({
           })}
         </svg>
       )}
-      {interativo && dica && (
+      {/* a descricao vai direto no <body>: dentro de um quadro ampliado
+          (transform) a posicao "fixa" ficaria deslocada */}
+      {interativo && dica && typeof document !== 'undefined' && createPortal(
         <span
           role="tooltip"
           className="pointer-events-none fixed z-50 max-w-xs rounded-lg border border-amber-400 bg-slate-900/95 px-2.5 py-1.5 text-xs font-semibold leading-snug text-slate-50 shadow-xl"
           style={{ left: dica.x + 14, top: dica.y + 14 }}
         >
           {dica.texto}
-        </span>
+        </span>,
+        document.body
       )}
     </div>
   )

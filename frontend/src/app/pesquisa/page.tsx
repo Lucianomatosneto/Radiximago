@@ -1303,7 +1303,9 @@ function PesquisaConteudo() {
                           </Link>
 
                           {/* marcacoes do curador sobre a miniatura (clique no numero):
-                              caixa do tamanho EXATO da imagem dentro do quadrado */}
+                              caixa do tamanho EXATO da imagem dentro do quadrado.
+                              Mouse sobre uma forma mostra a descricao dela; clique
+                              numa forma isola; fora delas, abre a imagem. */}
                           {mostrandoMarcacoes && proporcao && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
@@ -1314,7 +1316,12 @@ function PesquisaConteudo() {
                                   height: proporcao >= 1 ? 'auto' : '100%',
                                 }}
                               >
-                                <CamadaMarcacoes marcacoes={formasMarcacao} interativo={false} />
+                                {/* mouse sobre a forma: mostra a descricao dela;
+                                    clique fora das formas abre a imagem, como antes */}
+                                <CamadaMarcacoes
+                                  marcacoes={formasMarcacao}
+                                  aoClicarFora={() => router.push(`/visualizar/${imagem.curation_id}`)}
+                                />
                               </div>
                             </div>
                           )}
