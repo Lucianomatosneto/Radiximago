@@ -67,7 +67,8 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
     apaga o original identificavel em seguida. Devolve o orthanc_id da
     instancia anonimizada - e essa que deve ser referenciada dai em diante,
     nunca o original. Devolve tambem o resultado da verificacao de texto
-    nos pixels (ResultadoTexto - ver app/modules/texto_na_imagem.py).
+    nos pixels (ResultadoTexto - ver app/modules/texto_na_imagem.py) e o do
+    recorte da moldura branca (ResultadoRecorte - app/modules/geometria_imagem.py).
 
     Se a anonimizacao falhar (ou o Orthanc nao devolver um ID valido),
     tenta apagar o original mesmo assim (melhor esforco) antes de propagar
@@ -75,7 +76,7 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
     referencia no banco - parado no Orthanc.
     """
     try:
-        resultado, resultado_texto = orthanc_client.anonimizar_instancia(orthanc_id_original)
+        resultado, resultado_texto, resultado_recorte = orthanc_client.anonimizar_instancia(orthanc_id_original)
     except Exception:
         try:
             orthanc_client.excluir_instancia(orthanc_id_original)
@@ -95,7 +96,7 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
         )
 
     orthanc_client.excluir_instancia(orthanc_id_original)
-    return orthanc_id_anonimizado, resultado_texto
+    return orthanc_id_anonimizado, resultado_texto, resultado_recorte
 
 
 def _determinar_origem(orthanc_id_original: str) -> str:
@@ -145,7 +146,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
         return existente, False
 
     origem = _determinar_origem(orthanc_id)
-    orthanc_id_anonimizado, resultado_texto = _anonimizar_e_excluir_original(orthanc_id)
+    orthanc_id_anonimizado, resultado_texto, resultado_recorte = _anonimizar_e_excluir_original(orthanc_id)
 
     detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
     tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
@@ -163,6 +164,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
         origem=origem,
         texto_na_imagem=resultado_texto.situacao,
         texto_regioes=resultado_texto.regioes,
+        enquadramento=resultado_recorte.situacao,
     )
     db.add(nova_ref)
     db.commit()

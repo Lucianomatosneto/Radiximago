@@ -616,6 +616,7 @@ def baixar_zip_dicom(
 
 @router.get("/{curation_id}/preview")
 def obter_preview(
+    request: Request,
     curation_id: int,
     com_marcacao: bool = Query(
         False,
@@ -646,6 +647,18 @@ def obter_preview(
     pra essa mesma rota).
     """
     ficha = _buscar_ficha_aprovada(db, curation_id)
+    # Memoria do navegador (so neste navegador; imagem anonimizada e aprovada):
+    # a "etiqueta" muda quando o ARQUIVO muda (giro na Curadoria troca o
+    # orthanc_id) ou quando as marcacoes desenhadas mudam. O navegador
+    # pergunta "ainda e esta?" e, se for, recebe 304 (sem imagem nenhuma,
+    # sem consultar o Orthanc) - rapido como antes, e nunca mostra a
+    # imagem em posicao antiga.
+    etiqueta = etiqueta_da_imagem(
+        ficha.orthanc_reference.orthanc_id, tamanho, ficha.marcacoes if com_marcacao else None,
+    )
+    cabecalhos_cache = {"ETag": etiqueta, "Cache-Control": "private, no-cache"}
+    if request.headers.get("if-none-match") == etiqueta:
+        return Response(status_code=304, headers=cabecalhos_cache)
     conteudo = _chamar_orthanc(
         "carregar a miniatura/imagem",
         orthanc_client.obter_preview_instancia,
@@ -661,16 +674,23 @@ def obter_preview(
             media_type=tipo,
             headers={
                 "Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}-{tamanho}.{extensao}"),
-                # a mesma miniatura volta da memoria do navegador ao voltar a
-                # Pesquisa (so neste navegador; imagem anonimizada e aprovada)
-                "Cache-Control": "private, max-age=600",
+                **cabecalhos_cache,
             },
         )
     return Response(
         content=conteudo,
         media_type="image/png",
-        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}.png")},
+        headers={"Content-Disposition": disposicao_de_arquivo(f"radix-imago-{ficha.id}.png"), **cabecalhos_cache},
     )
+
+
+def etiqueta_da_imagem(orthanc_id: str, tamanho: str, marcacoes: list | None) -> str:
+    """ETag (HTTP) da renderizacao: arquivo + tamanho + marcacoes desenhadas."""
+    import hashlib
+    import json
+
+    base = f"{orthanc_id}|{tamanho}|{json.dumps(marcacoes, sort_keys=True) if marcacoes is not None else '-'}"
+    return '"' + hashlib.sha256(base.encode("utf-8")).hexdigest()[:32] + '"'
 
 
 @router.post("/{curation_id}/send-email")

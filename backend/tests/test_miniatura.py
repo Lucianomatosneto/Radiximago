@@ -28,7 +28,14 @@ def test_miniatura_e_reduzida_e_mantem_a_proporcao(client, criar_usuario, criar_
     r = client.get(f"/search/{ficha.id}/preview?tamanho=miniatura", headers=cabecalho_auth(token))
     assert r.status_code == 200
     assert r.headers["content-type"] == "image/jpeg"
-    assert r.headers["cache-control"] == "private, max-age=600"
+    # memoria do navegador com "etiqueta": volta 304 (sem imagem) enquanto o arquivo for o mesmo
+    assert r.headers["cache-control"] == "private, no-cache"
+    etiqueta = r.headers["etag"]
+    pedidos = []
+    monkeypatch.setattr(search_router.orthanc_client, "obter_preview_instancia", lambda i: pedidos.append(i) or original)
+    r304 = client.get(f"/search/{ficha.id}/preview?tamanho=miniatura",
+                      headers={**cabecalho_auth(token), "If-None-Match": etiqueta})
+    assert r304.status_code == 304 and not r304.content and pedidos == []  # nem consultou o Orthanc
     with Image.open(io.BytesIO(r.content)) as img:
         assert img.size == (search_router.MINIATURA_PX, round(search_router.MINIATURA_PX * 2 / 3))
     assert len(r.content) < len(original)

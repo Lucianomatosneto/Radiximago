@@ -172,15 +172,21 @@ def anonimizar_instancia(orthanc_id: str):
     1) METADADOS: o Orthanc aplica o perfil padrao com as regras acima
        (regras_de_anonimizacao) e devolve o arquivo anonimizado (no nivel
        de instancia ele devolve o ARQUIVO DICOM cru, nao um ID);
-    2) PIXELS: texto gravado na propria imagem e procurado e tarjado
+    2) ENQUADRAMENTO: a moldura branca em volta da radiografia (comum em
+       leitores de placa de fosforo) e recortada quando for seguro
+       (app/modules/geometria_imagem.py) - antes do OCR, para o texto
+       impresso so na moldura sair junto com ela;
+    3) PIXELS: texto gravado na propria imagem e procurado e tarjado
        (app/modules/texto_na_imagem.py), sem sair do servidor.
     Depois o arquivo final e enviado ao Orthanc (enviar_instancia).
 
     Parametro:
         orthanc_id: o identificador interno do Orthanc da instancia original.
 
-    Retorna: (resposta do Orthanc ao upload - inclui "ID", ResultadoTexto).
+    Retorna: (resposta do Orthanc ao upload - inclui "ID", ResultadoTexto,
+    ResultadoRecorte).
     """
+    from app.modules.geometria_imagem import recortar_moldura
     from app.modules.texto_na_imagem import tarjar_texto
 
     regras = regras_de_anonimizacao(obter_tags_simplificadas_instancia(orthanc_id))
@@ -188,8 +194,16 @@ def anonimizar_instancia(orthanc_id: str):
     corpo = {"Synchronous": True, **regras}
     resposta = _client.post(url, json=corpo, timeout=60.0)
     resposta.raise_for_status()
-    arquivo, resultado_texto = tarjar_texto(resposta.content)
-    return enviar_instancia(arquivo), resultado_texto
+    arquivo, resultado_recorte = recortar_moldura(resposta.content)
+    arquivo, resultado_texto = tarjar_texto(arquivo)
+    return enviar_instancia(arquivo), resultado_texto, resultado_recorte
+
+
+def obter_arquivo_instancia(orthanc_id: str) -> bytes:
+    """Baixa o arquivo DICOM de uma instancia (GET /instances/{id}/file)."""
+    resposta = _client.get(f"{settings.ORTHANC_URL}/instances/{orthanc_id}/file", timeout=60.0)
+    resposta.raise_for_status()
+    return resposta.content
 
 
 def excluir_instancia(orthanc_id: str) -> None:

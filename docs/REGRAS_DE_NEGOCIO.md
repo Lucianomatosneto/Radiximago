@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.1 — 18/10/2026 |
+| Versão do documento | 1.2 — 20/10/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -66,6 +66,7 @@ pendente ─┐
 | **Download `.zip` de série** (imagens ou DICOM, somados) | 20 por hora; até 1.000 cortes no ZIP de imagens | conta | `search_router.py` |
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
+| **Girar imagem** (Curadoria) | 30 por minuto; um giro por vez em cada imagem | conta (curadoria) | `curation/orientacao.py` |
 | Foto de perfil | 5 MB; JPG/PNG/WebP | por pedido | `users_router.py` |
 | Busca | até 200 resultados por página | por pedido | `search_router.py` |
 | Sessão | 60 min de inatividade; 12 h no máximo | por sessão | `app/core/sessao.py` |
@@ -85,6 +86,7 @@ pendente ─┐
 | Download `.zip` de uma série (vários cortes) | monta o arquivo na memória | só fichas aprovadas; 20 por hora; até 1.000 cortes no ZIP de imagens (acima disso, o DICOM); no máximo **2 ao mesmo tempo** no servidor inteiro, e o terceiro recebe 503 ("tente de novo em instantes") em vez de esperar na fila |
 | E-mail com imagens (individual e lote) | renderiza imagens e envia por SMTP | 20 por hora (uma imagem); 5 por hora com até 10 imagens por e-mail (lote); sempre para o e-mail da própria conta |
 | Sincronizar com o Orthanc | percorre todo o acervo | só administrador/suporte; 10 por hora |
+| Girar imagem / recortar moldura | lê e regrava o arquivo DICOM inteiro (cerca de 1 s) | giro: só curadoria, 30 por minuto, um por vez em cada imagem (trava do registro); recorte das imagens antigas: só pelo roteiro no servidor |
 | Busca com texto livre | consulta com `ILIKE` | texto até 150 caracteres; 200 por página; limite geral |
 
 O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servidor inteiro, não por pessoa.
@@ -100,3 +102,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Grupo 4: limites de e-mail, ZIP, envio e sincronização; limite geral por conta; teto de ZIPs simultâneos; coerência de idade na busca e de marcações |
+| 1.2 | 20/10/2026 | Limite do giro de imagem na Curadoria; recorte da moldura branca |

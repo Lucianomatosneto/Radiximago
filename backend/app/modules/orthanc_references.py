@@ -45,6 +45,13 @@ class OrthancReference(Base):
     # conferir a imagem com atencao, como em "nao_verificado".
     texto_na_imagem = Column(String(20), nullable=True)
     texto_regioes = Column(Integer, nullable=True)  # quantas tarjas foram aplicadas
+    # Recorte da moldura branca na entrada (app/modules/geometria_imagem.py):
+    # "recortada", "sem_borda", "incerto" ou "nao_verificado". Vazio (NULL) =
+    # imagem recebida antes de 20/10/2026 (ver roteiro recortar_molduras.py).
+    enquadramento = Column(String(20), nullable=True)
+    # Quanto a imagem ja foi girada pelo curador (0, 90, 180 ou 270, horario,
+    # acumulado). O giro e gravado no proprio arquivo; aqui fica so o registro.
+    giro_graus = Column(Integer, nullable=False, default=0, server_default=text("0"))
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 
     curations = relationship("Curation", back_populates="orthanc_reference")

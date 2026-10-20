@@ -227,6 +227,9 @@ def obter_link_visualizador(
         "orthanc_id": imagem.orthanc_id,
         "study_instance_uid": imagem.study_instance_uid,
         "viewer_url": viewer_url,
+        # posicao da imagem (girar na Curadoria) e resultado do recorte da moldura
+        "giro_graus": imagem.giro_graus or 0,
+        "enquadramento": imagem.enquadramento,
     }
 
 

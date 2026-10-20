@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.2 — 19/10/2026 |
+| Versão do documento | 1.3 — 20/10/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -27,6 +27,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 |---|---|---|---|
 | DICOM original identificável | Orthanc, **por segundos ou minutos**: apagado logo após a anonimização; imagens do aparelho são anonimizadas em até `ANONIMIZACAO_AUTOMATICA_SEGUNDOS` (60 s) | N4 | não é retido |
 | DICOM anonimizado | Orthanc (volume `orthanc_data`); referência em `orthanc_references` | N0/N1 | enquanto houver uso acadêmico; desativação lógica (`ativo=false`) |
+| Ajustes de enquadramento e posição (moldura branca recortada; giro de 90°/180°/270° pelo curador) | no próprio arquivo DICOM anonimizado (`ImageType` = DERIVED, `DerivationDescription`); resultado em `orthanc_references.enquadramento` e `giro_graus`; quem girou, na auditoria | N0/N1 | junto com a imagem |
 | Usuário: nome, e-mail, instituição, perfil, foto | `users`; foto em `backend/uploads/avatars` (nome gerado pelo servidor) | N2 | conta excluída fica marcada (`excluido`), sem apagar o histórico |
 | Resumo da senha | `users.senha_hash` (Argon2id; as anteriores a 19/10/2026 em bcrypt, custo 12, até o próximo login) | N3 | substituído a cada troca |
 | Login em duas etapas: segredo do aplicativo, último código aceito, resumos dos códigos de recuperação | `users.totp_segredo_cifrado` (**cifrado**), `totp_ultimo_passo`, `codigos_recuperacao` (só resumo SHA-256) | N3 | apagados ao desligar ou redefinir |
@@ -41,6 +42,19 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
 | Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
 | Cópias de segurança | `./backups` no servidor (Postgres e Orthanc), diárias, 14 mais recentes | igual à origem (até N3) | 14 dias; **sem criptografia e sem cópia fora do servidor** (pendente) |
+
+### 2.1 Recorte da moldura branca e giro (20/10/2026)
+
+Muitos leitores de placa gravam a radiografia dentro de uma **moldura branca** maior, sem informação, e algumas imagens chegam **deitadas**. Os dois ajustes são feitos no arquivo **já anonimizado** (`backend/app/modules/geometria_imagem.py`):
+
+| Ajuste | Quando | O que garante |
+|---|---|---|
+| **Recorte da moldura** | automático, na entrada, depois da anonimização dos metadados e **antes** da leitura de texto (OCR) — texto impresso só na moldura sai junto com ela | só corta se **dois lados inteiros** forem claros e uniformes; a parte descartada precisa ser ≥ 97% igual à moldura; a radiografia que sobra fica com ≥ 15% da área. Na dúvida, a imagem fica como está (`incerto`). Nenhum pixel da radiografia é alterado. |
+| **Giro** | manual, pelo curador, em passos de 90° (botões na Curadoria, com sugestão pelos dentes marcados: superiores com coroas para baixo, inferiores para cima) | **sem perda**: só troca os pixels de lugar (girar de volta devolve a mesma matriz). O arquivo recebe identificador novo (`SOPInstanceUID`) no mesmo estudo e série; marcações e anotações giram junto. Cortes de tomografia não são girados (fariam parte de um volume). |
+
+Nos dois casos o arquivo fica marcado como **imagem derivada** (`ImageType` = DERIVED) e o ajuste fica escrito no próprio arquivo (`DerivationDescription`) e na auditoria (`imagem_girada`, `moldura_recortada`). As imagens recebidas antes de 20/10/2026 são recortadas pelo roteiro `backend/recortar_molduras.py` — primeiro em **simulação**, que grava figuras para conferência (pasta `backend/recortes_simulacao/`, fora do Git), e só depois com `--aplicar`, após um backup.
+
+**Limite honesto (para a dissertação):** o recorte é um retângulo; se a placa estiver torta dentro da moldura, sobra um pouco de branco nos cantos (o recorte nunca avança sobre a parte escura). A posição correta continua sendo decisão do curador: o sistema sugere, mas não gira sozinho.
 
 ## 3. Requisitos de proteção por nível (ASVS 14.1.2)
 
@@ -131,3 +145,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Acesso por campo na escrita (seção 4.1, ASVS 8.2.3) |
 | 1.2 | 19/10/2026 | Senhas em Argon2id; dados do login em duas etapas |
+| 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |

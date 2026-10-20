@@ -12,6 +12,7 @@ Pacote dividido por sub-fluxo:
 - achados.py: CRUD de Achados odontologicos estruturados (Fase 2).
 - erros_tecnicos.py: CRUD de Erros Tecnicos (Fase 2) - dimensao
   independente de Achado, de proposito.
+- orientacao.py: giro da imagem pelo curador (no proprio arquivo, sem perda).
 - common.py: helpers e constantes compartilhados entre os submodulos acima.
 - schemas.py: schemas Pydantic de entrada dos endpoints.
 - router.py: instancia unica do APIRouter compartilhada por todos os
@@ -44,6 +45,7 @@ Endpoints:
 - GET    /curation/{curation_id}/erros-tecnicos/{erro_id}   -> obtem um erro tecnico
 - PATCH  /curation/{curation_id}/erros-tecnicos/{erro_id}   -> edita um erro tecnico (parcial)
 - DELETE /curation/{curation_id}/erros-tecnicos/{erro_id}   -> exclui um erro tecnico
+- POST   /curation/imagem/{orthanc_reference_id}/girar     -> gira a imagem 90/180/270 graus (horario)
 
 Acesso: administrador, suporte e curador podem operar todos os endpoints
 deste modulo (criar ficha, aprovar, descartar, solicitar/responder segunda
@@ -55,6 +57,6 @@ campos legados via PATCH /curation/{curation_id}.
 """
 
 from .router import router
-from . import consultas, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos  # noqa: F401 - registram as rotas no router compartilhado
+from . import consultas, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos, orientacao  # noqa: F401 - registram as rotas no router compartilhado
 
 __all__ = ["router"]

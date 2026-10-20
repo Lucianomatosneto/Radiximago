@@ -273,3 +273,6 @@ _to_delete/
 # Configuracoes locais do Claude Code (por convencao, arquivos
 # *.local.json em .claude/ sao pessoais, nao de projeto - nao versionar)
 .claude/settings.local.json
+
+# figuras de conferencia do roteiro recortar_molduras.py (imagens)
+backend/recortes_simulacao/

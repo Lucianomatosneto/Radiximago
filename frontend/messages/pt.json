@@ -1177,6 +1177,26 @@
       "tarjado": "Foi encontrado texto escrito na imagem, e ele foi coberto automaticamente com tarja preta ({regioes} trechos). Verifique se não sobrou nenhum nome, data ou número e se a tarja não cobriu anatomia importante.",
       "naoVerificado": "Não foi possível verificar automaticamente se há texto escrito na imagem. Procure com atenção nome, data ou número antes de marcar “Anonimização validada”.",
       "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”."
+    },
+    "orientacao": {
+      "titulo": "Posição da imagem",
+      "esquerda": "90° à esquerda",
+      "direita": "90° à direita",
+      "inverter": "180°",
+      "esquerdaDica": "Girar 90° no sentido anti-horário",
+      "direitaDica": "Girar 90° no sentido horário",
+      "inverterDica": "Virar de cabeça para baixo",
+      "girando": "Girando a imagem…",
+      "erro": "Não foi possível girar a imagem. Tente de novo.",
+      "sugestaoRotulo": "Posição correta:",
+      "sugestao": {
+        "superior": "coroas para BAIXO (dentes {dentes}: superiores).",
+        "inferior": "coroas para CIMA (dentes {dentes}: inferiores).",
+        "ambas": "superiores em cima com coroas para baixo; inferiores embaixo com coroas para cima.",
+        "interproximal": "superiores em cima, inferiores embaixo, coroas se encontrando no meio.",
+        "panoramica": "arcada superior em cima, inferior embaixo.",
+        "semDentes": "marque os dentes na ficha (superiores: coroas para baixo; inferiores: para cima)."
+      }
     }
   },
   "SegundaOpiniaoPage": {

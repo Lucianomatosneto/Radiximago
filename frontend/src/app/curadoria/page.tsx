@@ -9,6 +9,8 @@ import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curado
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
 import AvisoTextoNaImagem from '../../components/curadoria/AvisoTextoNaImagem'
+import ControleOrientacao from '../../components/curadoria/ControleOrientacao'
+import { girarMarcacoes, type Giro } from '../../lib/orientacao'
 import ColunaFichaCuradoria from '../../components/curadoria/ColunaFichaCuradoria'
 import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCuradoriaForm'
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECAO_DO_CAMPO, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
@@ -152,6 +154,9 @@ export default function CuradoriaPage() {
   const [statusFicha, setStatusFicha] = useState('em_analise')
   const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
   const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
+  // Muda a cada giro da imagem (ControleOrientacao): remonta o visualizador
+  // e a imagem de marcacao, que buscam de novo o arquivo ja girado.
+  const [versaoImagem, setVersaoImagem] = useState(0)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
   // Sinais de "a imagem principal terminou de carregar" - usados so pra
   // liberar o carregamento das miniaturas da fila (permitirCarregarMiniaturas
@@ -449,6 +454,17 @@ export default function CuradoriaPage() {
     }
   }
 
+
+  // Imagem girada no servidor (arquivo novo): as marcacoes ainda nao salvas
+  // giram com a mesma conta do servidor e o visualizador recarrega.
+  function aoGirarImagem(graus: Giro) {
+    if (!fichaAtiva) return
+    setForm((atual) => ({ ...atual, marcacoes: girarMarcacoes(atual.marcacoes, graus) }))
+    setOhifCarregado(false)
+    setMarcadorPronto(false)
+    setVersaoImagem((v) => v + 1)
+    carregarViewerUrl(fichaAtiva.orthancReferenceId)
+  }
 
   async function carregarViewerUrl(orthancReferenceId: number) {
     setCarregandoViewer(true)
@@ -1321,6 +1337,15 @@ export default function CuradoriaPage() {
               />
               )}
 
+              {fichaAtiva && (
+                <ControleOrientacao
+                  orthancReferenceId={fichaAtiva.orthancReferenceId}
+                  dentes={form.dentes}
+                  tipoRadiografia={form.tipo_radiografia || null}
+                  onGirou={aoGirarImagem}
+                />
+              )}
+
               {/* Imagem (visualizador OHIF) sem o cabecalho de botoes por cima;
                   "Abrir marcação": a imagem para marcacao ocupa o mesmo quadro.
                   O MarcadorAchado fica sempre montado (escondido) para a
@@ -1338,6 +1363,7 @@ export default function CuradoriaPage() {
                 }`}
               >
                 <PainelVisualizador
+                  key={versaoImagem}
                   fichaAtiva={!!fichaAtiva}
                   carregandoViewer={carregandoViewer}
                   viewerInfo={viewerInfo}
@@ -1368,6 +1394,7 @@ export default function CuradoriaPage() {
                 >
                   <div className="min-h-0 flex-1">
                     <MarcadorAchado
+                      key={versaoImagem}
                       orthancReferenceId={fichaAtiva.orthancReferenceId}
                       marcacoes={form.marcacoes}
                       semAchado

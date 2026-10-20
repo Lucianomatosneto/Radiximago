@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.2 — 19/10/2026 |
+| Versão do documento | 1.3 — 20/10/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -31,7 +31,7 @@
 | Cadastro | `solicitacao_acesso_registrada`, `confirmacao_email_solicitacao`, `falha_confirmacao_email`, `aprovacao_solicitacao_acesso`, `rejeicao_solicitacao_acesso` |
 | Usuários | `criacao_usuario`, `edicao_usuario`, `bloqueio_usuario`, `exclusao_usuario`, `atualizacao_foto_perfil`, `remocao_foto_perfil` |
 | Segurança (automáticos, `app/core/registro_seguranca.py`) | `acesso_negado`, `origem_recusada`, `limite_excedido`, `entrada_recusada`, `erro_inesperado`, `verificacao_integridade_auditoria` |
-| Imagens | `upload_imagem`, `upload_sem_preambulo_dicom`, `importacao_orthanc`, `anonimizacao_automatica`, `acesso_imagem_negado` |
+| Imagens | `upload_imagem`, `upload_sem_preambulo_dicom`, `importacao_orthanc`, `anonimizacao_automatica`, `acesso_imagem_negado`, `imagem_girada` (curador, com o ângulo e os arquivos antigo e novo), `moldura_recortada` (roteiro `recortar_molduras.py`) |
 | Curadoria | `edicao_curadoria`, `preenchimento_por_voz`, `aprovacao` (com o resultado da verificação de texto na imagem), `descarte`, `solicitacao_segunda_opiniao`, `resposta_segunda_opiniao`, `aprovacao_pos_segunda_opiniao`, `descarte_pos_segunda_opiniao` |
 | Achados e erros técnicos | `criacao_achado`, `edicao_achado`, `exclusao_achado`, `criacao_erro_tecnico`, `edicao_erro_tecnico`, `exclusao_erro_tecnico` |
 | Vocabulário e macros | `vocabulario_termo_criado`, `vocabulario_termo_editado`, `vocabulario_sinonimo_criado`, `vocabulario_sinonimo_removido`, `vocabulario_fichas_vinculadas`, `vocabulario_ficha_desvinculada`, `macro_criada`, `macro_editada`, `macro_desativada` |
@@ -83,3 +83,4 @@ Isso é comprovado por:
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Grupo 2: ip/rota, eventos de segurança, lacre e proteção, JSON, retenção |
 | 1.2 | 19/10/2026 | Ações do login em duas etapas |
+| 1.3 | 20/10/2026 | Giro da imagem pelo curador e recorte da moldura branca |
