@@ -413,7 +413,9 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       if (!r) return null
       const metade = r.width / 2
       const esquerda = ladoQuadro(item) === 'esquerda'
-      const abaixoDaBarra = ohifUnico ? ALTURA_BARRA_OHIF : 0
+      // com o OHIF na tela (uma imagem ou varias lado a lado), o quadro comeca
+      // ABAIXO da barra de ferramentas dele - a barra fica sempre inteira
+      const abaixoDaBarra = ohifUnico || (emGrade && !!urlGrade) ? ALTURA_BARRA_OHIF : 0
       return {
         left: Math.round(esquerda ? r.left + 8 : r.left + metade + 4),
         top: Math.round(r.top + 8 + abaixoDaBarra),
