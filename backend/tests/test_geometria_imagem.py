@@ -217,3 +217,58 @@ def test_marcacoes_acompanham_o_recorte():
     m = {"id": "a", "tipo": "oval", "x": 0.3, "y": 0.25, "largura": 0.2, "altura": 0.25}
     (r,) = g.recortar_marcacoes([m], (100, 50, 400, 350), 500, 400)
     assert (r["x"], r["y"], r["largura"], r["altura"]) == pytest.approx((50 / 300, 50 / 300, 100 / 300, 100 / 300))
+
+
+# ------------------------------------------------------------------ JPEG colorido (scan de filme)
+
+def _dicom_jpeg_ybr(rgb: np.ndarray) -> bytes:
+    """Como chegam fotos/scans de filme: JPEG colorido, cor YBR_FULL_422."""
+    from PIL import Image
+    from pydicom.encaps import encapsulate
+    from pydicom.uid import JPEGBaseline8Bit
+
+    buf = io.BytesIO()
+    Image.fromarray(rgb).save(buf, format="JPEG", quality=95)
+    meta = FileMetaDataset()
+    meta.MediaStorageSOPClassUID = DIGITAL_INTRAORAL
+    meta.MediaStorageSOPInstanceUID = generate_uid()
+    meta.TransferSyntaxUID = JPEGBaseline8Bit
+    ds = FileDataset("t.dcm", {}, file_meta=meta, preamble=b"\0" * 128)
+    ds.SOPClassUID = DIGITAL_INTRAORAL
+    ds.SOPInstanceUID = meta.MediaStorageSOPInstanceUID
+    ds.Modality = "DX"
+    ds.ImagePositionPatient = [0, 0, 0]  # alguns aparelhos gravam, mesmo sendo radiografia
+    ds.SamplesPerPixel = 3
+    ds.PhotometricInterpretation = "YBR_FULL_422"
+    ds.PlanarConfiguration = 0
+    ds.Rows, ds.Columns = rgb.shape[:2]
+    ds.BitsAllocated = ds.BitsStored = 8
+    ds.HighBit = 7
+    ds.PixelRepresentation = 0
+    ds.PixelData = encapsulate([buf.getvalue()])
+    ds["PixelData"].VR = "OB"
+    saida = io.BytesIO()
+    ds.save_as(saida, enforce_file_format=True)
+    return saida.getvalue()
+
+
+def test_jpeg_colorido_ybr_gira_e_vira_rgb():
+    rgb = np.zeros((120, 200, 3), dtype=np.uint8)
+    rgb[:, :100] = 200
+    girado = g.girar_dicom(_dicom_jpeg_ybr(rgb), 90)
+    ds = pydicom.dcmread(io.BytesIO(girado))
+    assert ds.PhotometricInterpretation == "RGB" and not ds.file_meta.TransferSyntaxUID.is_compressed
+    px = ds.pixel_array
+    assert px.shape == (200, 120, 3)
+    # metade clara (esquerda) foi para cima depois do giro horario
+    assert px[:100].mean() > 150 and px[100:].mean() < 50
+
+
+def test_radiografia_com_posicao_gravada_pode_ser_ajustada():
+    from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajustar
+
+    conferir_pode_ajustar({"Modality": "DX", "ImagePositionPatient": "0\\0\\0"})
+    with pytest.raises(ImagemDeVolume):
+        conferir_pode_ajustar({"Modality": "CT"})
+    with pytest.raises(ImagemDeVolume):
+        conferir_pode_ajustar({"Modality": "", "ImagePositionPatient": "0\\0\\0"})

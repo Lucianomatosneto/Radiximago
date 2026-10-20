@@ -12,6 +12,7 @@ As marcacoes e anotacoes ja feitas giram junto. Cada giro fica na auditoria
 e no proprio arquivo (DerivationDescription).
 """
 
+import logging
 from typing import Literal
 
 import httpx
@@ -30,6 +31,8 @@ from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajust
 from app.modules.users import User
 
 from .router import router
+
+logger = logging.getLogger(__name__)
 
 LIMITE_GIRO = "30/minute"
 
@@ -82,6 +85,8 @@ def _girar(db: Session, orthanc_reference_id: int, graus: int, usuario: User):
         girado = girar_dicom(orthanc_client.obter_arquivo_instancia(ref.orthanc_id), graus)
     except (ImagemDeVolume, FormatoNaoSuportado) as erro:
         db.rollback()
+        # o motivo fica no registro do servidor (docker compose logs radix-api)
+        logger.warning("Giro recusado (imagem %s): %s", orthanc_reference_id, erro)
         raise HTTPException(status_code=422, detail=f"Não foi possível girar: {erro}")
     except httpx.HTTPError:
         db.rollback()

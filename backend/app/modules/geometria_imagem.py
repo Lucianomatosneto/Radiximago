@@ -98,12 +98,19 @@ def ler_pixels(dicom_bytes: bytes):
     if int(getattr(ds, "NumberOfFrames", 1) or 1) > 1:
         raise FormatoNaoSuportado("imagem com vários quadros")
     fotometria = str(getattr(ds, "PhotometricInterpretation", "MONOCHROME2"))
-    if fotometria not in ("MONOCHROME1", "MONOCHROME2", "RGB"):
+    # Fotos/scans de filme costumam vir em JPEG colorido (YBR_FULL_422 etc.):
+    # a leitura do pydicom ja entrega essas cores convertidas para RGB, e o
+    # arquivo regravado passa a dizer RGB (pixels sem compressao).
+    ybr = fotometria.startswith("YBR_")
+    if fotometria not in ("MONOCHROME1", "MONOCHROME2", "RGB") and not ybr:
         raise FormatoNaoSuportado(f"cor {fotometria} não suportada")
     try:
         pixels = ds.pixel_array
     except Exception as erro:  # codec ausente
         raise FormatoNaoSuportado(f"formato de pixels não suportado ({type(erro).__name__})") from erro
+    if ybr:
+        ds.PhotometricInterpretation = "RGB"
+        fotometria = "RGB"
     if (pixels.ndim == 3) != (fotometria == "RGB"):
         raise FormatoNaoSuportado("formato de pixels inesperado")
     return ds, pixels, fotometria

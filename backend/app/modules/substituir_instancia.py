@@ -39,6 +39,8 @@ TransformarPonto = Callable[[float, float], tuple[float, float]]
 
 
 MODALIDADES_EM_VOLUME = {"CT", "MR", "PT", "NM", "US"}
+# radiografias: sempre imagens isoladas, mesmo que o aparelho grave a posicao
+MODALIDADES_RADIOGRAFIA = {"IO", "PX", "DX", "CR", "RG", "DR", "XC", "OT", "SC"}
 
 
 class ImagemDeVolume(ValueError):
@@ -47,12 +49,15 @@ class ImagemDeVolume(ValueError):
 
 def conferir_pode_ajustar(tags: dict) -> None:
     """
-    Radiografias (intraoral IO, panoramica PX, DX, CR) podem ser ajustadas uma
-    a uma, mesmo que o aparelho tenha guardado varias na mesma serie. Ja um
-    corte de tomografia faz parte de um volume (tem posicao no espaco -
-    ImagePositionPatient): ajustar so ele quebraria a reconstrucao.
+    Radiografias (intraoral IO, panoramica PX, DX, CR...) podem ser ajustadas
+    uma a uma, mesmo que o aparelho tenha guardado varias na mesma serie ou
+    tenha gravado uma "posicao no espaco". Ja um corte de tomografia faz parte
+    de um volume: ajustar so ele quebraria a reconstrucao.
     """
-    if str(tags.get("Modality") or "").upper() in MODALIDADES_EM_VOLUME or tags.get("ImagePositionPatient"):
+    modalidade = str(tags.get("Modality") or "").upper()
+    if modalidade in MODALIDADES_RADIOGRAFIA:
+        return
+    if modalidade in MODALIDADES_EM_VOLUME or tags.get("ImagePositionPatient"):
         raise ImagemDeVolume("Esta imagem é um corte de um exame em volume (ex.: tomografia) e não pode ser girada sozinha.")
 
 
