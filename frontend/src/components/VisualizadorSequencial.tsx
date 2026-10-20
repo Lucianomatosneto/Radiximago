@@ -10,7 +10,6 @@ import Logo from './Logo'
 import FundoMapaMundi from './fundo/FundoMapaMundi'
 import ThemeToggle from './ThemeToggle'
 import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
-import LegendaImagem from './visualizador/LegendaImagem'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
 import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
@@ -40,48 +39,8 @@ export interface ItemSequencia {
   compartilhamento?: InfoCompartilhamento
 }
 
-// `chave` referencia o namespace Pesquisa.opcoes (ja usado na tela de
-// Pesquisa avancada) - reaproveitado aqui pra nao duplicar os mesmos
-// rotulos numa segunda lista.
-const OPCOES_TIPO_RADIOGRAFIA = [
-  { valor: 'periapical', chave: 'periapical' },
-  { valor: 'panoramica', chave: 'panoramica' },
-  { valor: 'interproximal', chave: 'interproximal' },
-  { valor: 'oclusal', chave: 'oclusal' },
-]
-
-const OPCOES_QUALIDADE_TECNICA = [
-  { valor: 'otima', chave: 'otima' },
-  { valor: 'boa', chave: 'boa' },
-  { valor: 'regular', chave: 'regular' },
-  { valor: 'insatisfatoria', chave: 'insatisfatoria' },
-]
-
-// Usado na fila de imagens selecionadas (coluna do modo tela cheia) pra
-// mostrar o achado principal de cada imagem com o rotulo correto.
-const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', chave: 'normal' },
-  { valor: 'carie', chave: 'carie' },
-  { valor: 'lesao_periapical', chave: 'lesaoPeriapical' },
-  { valor: 'perda_ossea', chave: 'perdaOssea' },
-  { valor: 'dente_incluso', chave: 'denteIncluso' },
-  { valor: 'tratamento_endodontico', chave: 'tratamentoEndodontico' },
-  { valor: 'erro_tecnico', chave: 'erroTecnico' },
-  { valor: 'outro', chave: 'outro' },
-]
-
 const CLASSE_BOTAO_COMPACTO =
   'rounded-md border border-base-border bg-base-surface/80 px-3 py-1 text-xs text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-60'
-
-function rotular(
-  opcoes: { valor: string; chave: string }[],
-  valor: string | null | undefined,
-  traduzir: (chave: string) => string
-): string {
-  if (!valor) return '—'
-  const opcao = opcoes.find((o) => o.valor === valor)
-  return opcao ? traduzir(opcao.chave) : valor
-}
 
 // StudyInstanceUID dentro do viewer_url (".../viewer?StudyInstanceUIDs=<uid>")
 function estudoDe(viewerUrl: string | null): string | null {
@@ -115,6 +74,8 @@ function montarUrlGrade(itensPagina: ItemSequencia[], grade: Grade): string | nu
     url.searchParams.set('radixGrade', `${grade.linhas}x${grade.colunas}`)
     // abre sem a coluna "Studies" do OHIF (ver ohif/app-config.template.js)
     url.searchParams.set('radixRecolherEstudos', '1')
+    // tecla R: quem decide e o Radix (ver girarImagem)
+    url.searchParams.set('radixTeclaR', '1')
     // URLSearchParams codifica a virgula como %2C; o OHIF aceita os dois,
     // mas deixamos a virgula legivel como no endereco original
     return url.toString().replace(/%2C/g, ',')
@@ -178,11 +139,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     [itensRecebidos, marcacoesGiradas]
   )
   const t = useTranslations('Visualizador')
-  const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tDescricao = useTranslations('DescricaoCuradoria')
-  const traduzirTipoRadiografia = (chave: string) => tOpcoes(`tipoRadiografia.${chave}`)
-  const traduzirQualidadeTecnica = (chave: string) => tOpcoes(`qualidadeTecnica.${chave}`)
-  const traduzirAchadoPrincipal = (chave: string) => tOpcoes(`achadoPrincipal.${chave}`)
   const containerRef = useRef<HTMLDivElement>(null)
   const [indice, setIndice] = useState(indiceInicial)
   const [enviando, setEnviando] = useState(false)
@@ -290,13 +247,23 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   useEffect(() => {
     enviarMarcacoesRef.current()
   })
-  function comandoOhif(comando: 'rotateViewportCW' | 'invertViewport') {
-    const janela = ohifRef.current?.contentWindow
-    if (janela && origemOhif) janela.postMessage({ tipo: 'radix-comando', comando }, origemOhif)
-  }
-  async function salvarEmPe() {
-    const item = itens[indice]
-    if (!item || salvandoGiro) return
+  // Botao "R ⟳" de cada imagem e a tecla R: a CURADORIA grava o giro na
+  // imagem (sem perda; passa a abrir assim para todos); os demais giram so
+  // na tela (o mesmo giro do OHIF, ou da propria imagem fora dele).
+  const [rotacaoTela, setRotacaoTela] = useState<Record<number, number>>({})
+  async function girarImagem(item: ItemSequencia | undefined) {
+    if (!item) return
+    if (!podeSalvarGiro) {
+      const uid = estudoDe(item.viewer_url ?? null)
+      const janela = ohifRef.current?.contentWindow
+      if (uid && janela && origemOhif && (emGrade ? !!urlGrade : !!urlComSerie)) {
+        janela.postMessage({ tipo: 'radix-comando', comando: 'rotateViewportCW', uid }, origemOhif)
+      } else {
+        setRotacaoTela((atual) => ({ ...atual, [item.curation_id]: ((atual[item.curation_id] ?? 0) + 90) % 360 }))
+      }
+      return
+    }
+    if (salvandoGiro) return
     setSalvandoGiro(true)
     setErroGiro('')
     try {
@@ -318,6 +285,20 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       setSalvandoGiro(false)
     }
   }
+  const girarImagemRef = useRef<() => void>(() => {})
+  girarImagemRef.current = () => girarImagem(itens[indice])
+  useEffect(() => {
+    // tecla R com o foco fora do OHIF (dentro dele, o OHIF avisa)
+    function aoTeclar(ev: KeyboardEvent) {
+      if ((ev.key !== 'r' && ev.key !== 'R') || ev.ctrlKey || ev.metaKey || ev.altKey) return
+      const alvo = ev.target as HTMLElement | null
+      if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable)) return
+      ev.preventDefault()
+      girarImagemRef.current()
+    }
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [])
   useEffect(() => {
     // janela redimensionada: o espaco do quadro de informacoes muda junto
     const reenviar = () => enviarMarcacoesRef.current()
@@ -330,6 +311,17 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       if (evento.origin !== origemOhif) return
       const dados = evento.data as { tipo?: unknown } | null
       if (dados && dados.tipo === 'radix-ohif-pronto') enviarMarcacoesRef.current()
+      if (dados && dados.tipo === 'radix-tecla-girar') girarImagemRef.current()
+      const quadros = (dados as { quadros?: unknown } | null)?.quadros
+      if (dados && dados.tipo === 'radix-quadros' && Array.isArray(quadros)) {
+        setQuadrosOhif(
+          quadros
+            .filter((q): q is { x: number; y: number; w: number; h: number } =>
+              !!q && ['x', 'y', 'w', 'h'].every((k) => Number.isFinite((q as Record<string, unknown>)[k]))
+            )
+            .slice(0, 25)
+        )
+      }
     }
     window.addEventListener('message', aoProntoOhif)
     return () => window.removeEventListener('message', aoProntoOhif)
@@ -344,7 +336,9 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       : atual.viewer_url
   // Sempre abre sem a coluna "Studies" do OHIF (ver ohif/app-config.template.js):
   // a radiografia fica com a largura toda (o botao do OHIF reabre a coluna)
-  const urlComSerie = urlBase ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1` : urlBase
+  const urlComSerie = urlBase
+    ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1&radixTeclaR=1`
+    : urlBase
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
   const temMarcacao = (item: ItemSequencia) => (item.marcacoes ?? []).length > 0
@@ -399,6 +393,36 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   // livre e o quadro ampliado comeca logo abaixo dela
   const ohifUnico = !emGrade && !!urlComSerie
   const ALTURA_BARRA_OHIF = 56
+  // Posicao de cada quadro de imagem DENTRO do OHIF (ele avisa; ver
+  // ohif/app-config.template.js): o quadro de informacoes fica exatamente
+  // alinhado com eles - mesma linha de cima e de baixo, mesmo tamanho do
+  // quadro da imagem do lado oposto (pedido de 20/10/2026).
+  const [quadrosOhif, setQuadrosOhif] = useState<{ x: number; y: number; w: number; h: number }[]>([])
+  function quadroAlinhadoAoOhif(item: ItemSequencia, area: DOMRect) {
+    const janela = ohifRef.current?.getBoundingClientRect()
+    if (!janela || quadrosOhif.length === 0 || !(ohifUnico || (emGrade && urlGrade))) return null
+    const quadros = quadrosOhif
+      .map((q) => ({ left: janela.left + q.x, top: janela.top + q.y, right: janela.left + q.x + q.w, bottom: janela.top + q.y + q.h }))
+      .sort((a, b) => a.top - b.top || a.left - b.left)
+    const topo = Math.min(...quadros.map((q) => q.top))
+    const base = Math.max(...quadros.map((q) => q.bottom))
+    const VAO = 8
+    if (ladoQuadro(item) === 'encolher') {
+      // uma imagem (ou uma coluna): o quadro ocupa o espaco a direita dela,
+      // com a mesma margem que ela tem a esquerda
+      const direita = Math.max(...quadros.map((q) => q.right))
+      const margem = Math.max(0, Math.min(...quadros.map((q) => q.left)) - area.left)
+      return { left: direita + VAO, top: topo, width: Math.max(200, area.right - margem - direita - VAO), height: base - topo }
+    }
+    // varias lado a lado: cobre exatamente os quadros da metade oposta
+    const colunas = grade.colunas
+    const ladoDireito = ladoQuadro(item) === 'direita'
+    const opostos = quadros.filter((_, i) => (ladoDireito ? i % colunas >= colunas / 2 : i % colunas < colunas / 2))
+    if (opostos.length === 0) return null
+    const esq = Math.min(...opostos.map((q) => q.left))
+    const dir = Math.max(...opostos.map((q) => q.right))
+    return { left: esq, top: topo, width: dir - esq, height: base - topo }
+  }
   // "Expandir" de Minhas imagens: a descricao ja abre ampliada ao lado
   useEffect(() => {
     if (descricaoAoLado && !emGrade) setQuadroAmpliado(atual.curation_id)
@@ -411,6 +435,8 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     return () => {
       const r = areaRef.current?.getBoundingClientRect()
       if (!r) return null
+      const alinhado = quadroAlinhadoAoOhif(item, r)
+      if (alinhado) return alinhado
       const metade = r.width / 2
       const esquerda = ladoQuadro(item) === 'esquerda'
       // com o OHIF na tela (uma imagem ou varias lado a lado), o quadro comeca
@@ -437,6 +463,12 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       onIsolarMarcacao: (i: number) => isolarMarcacaoDe(item, i),
       holofote,
       onAlternarHolofote: () => setHolofote((v) => !v),
+      onGirar: () => {
+        setIndice(itens.indexOf(item))
+        girarImagem(item)
+      },
+      girando: salvandoGiro,
+      dicaGirar: podeSalvarGiro ? t('girar.salvarDica') : t('girar.dicaR'),
     }
   }
 
@@ -756,7 +788,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             <span>{t('marcacoes.botao')}</span>
             <kbd className="hidden rounded-sm border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
           </button>
-          {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} />}
+          {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} onAbrir={() => setQuadroAmpliado(null)} />}
           <ThemeToggle />
           <button
             type="button"
@@ -876,6 +908,10 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
                     aria-pressed={ativa}
                     className={`relative flex min-h-0 min-w-0 items-center justify-center bg-black ${ativa ? 'ring-2 ring-inset ring-teal-400/80' : ''}`}
                   >
+                    <div
+                      className="flex h-full w-full items-center justify-center transition-transform duration-200"
+                      style={rotacaoTela[item.curation_id] ? { transform: `rotate(${rotacaoTela[item.curation_id]}deg)` } : undefined}
+                    >
                     {mostraMarcacaoDe(item) ? (
                       <ImagemPrincipalMarcada
                         curationId={item.curation_id}
@@ -890,6 +926,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
                         className="max-h-full max-w-full object-contain"
                       />
                     )}
+                    </div>
                     {/* etiqueta discreta no canto, como nos PACS */}
                     <span className="pointer-events-none absolute left-2 top-2 rounded-sm bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-teal-200">
                       #{item.numero}
@@ -912,19 +949,26 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             title={t('visualizadorOhifTitulo', { numero: atual.numero })}
             className="h-full w-full flex-1 border-0"
           />
-        ) : mostrarMarcacaoEfetivo ? (
-          <ImagemPrincipalMarcada
-            curationId={atual.curation_id}
-            alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
-            marcacoes={marcacoes}
-            srcPreCarregado={marcacaoPreviewUrl}
-          />
         ) : (
-          <MiniaturaImagem
-            curationId={atual.curation_id}
-            alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
-            className="max-h-full max-w-full rounded-lg object-contain"
-          />
+          <div
+            className="flex h-full w-full items-center justify-center transition-transform duration-200"
+            style={rotacaoTela[atual.curation_id] ? { transform: `rotate(${rotacaoTela[atual.curation_id]}deg)` } : undefined}
+          >
+            {mostrarMarcacaoEfetivo ? (
+              <ImagemPrincipalMarcada
+                curationId={atual.curation_id}
+                alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
+                marcacoes={marcacoes}
+                srcPreCarregado={marcacaoPreviewUrl}
+              />
+            ) : (
+              <MiniaturaImagem
+                curationId={atual.curation_id}
+                alt={atual.descricao_didatica ?? t('imagemNumero', { numero: atual.numero })}
+                className="max-h-full max-w-full rounded-lg object-contain"
+              />
+            )}
+          </div>
         )}
 
         {/* Selo das marcacoes do curador no canto da imagem (layout de 1) */}
@@ -955,55 +999,6 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             esquerdo da imagem - quando a fila estiver visivel, empurrado
             pra depois dela (mesma logica da seta « de voltar), senao fica
             colado na borda. */}
-        {(urlComSerie || (emGrade && urlGrade)) && (
-          <div className="absolute bottom-3 left-3 z-30 flex max-w-[calc(50%-2rem)] flex-wrap items-center gap-1 rounded-lg bg-black/70 px-1.5 py-1.5 text-xs text-white/90 backdrop-blur-sm sm:left-6">
-            {/* "R" e "I": clicaveis (os mesmos atalhos do teclado do OHIF), so na
-                tela. Numa linha so, abaixo do botao "+ Anotação". */}
-            <button
-              type="button"
-              onClick={() => comandoOhif('rotateViewportCW')}
-              title={t('girar.dicaR')}
-              className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/10"
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-amber-400 text-sm font-bold text-black">
-                R
-              </span>
-              {t('giraImagem')}
-            </button>
-            <button
-              type="button"
-              onClick={() => comandoOhif('invertViewport')}
-              title={t('girar.dicaI')}
-              className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/10"
-            >
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-cyan-400 text-sm font-bold text-black">
-                I
-              </span>
-              {t('inverteJanela')}
-            </button>
-            {podeSalvarGiro && (
-              <>
-                <span className="mx-0.5 h-5 w-px bg-white/15" aria-hidden="true" />
-                <button
-                  type="button"
-                  onClick={salvarEmPe}
-                  disabled={salvandoGiro}
-                  title={t('girar.salvarDica')}
-                  className="flex items-center gap-2 rounded-md border border-amber-300/50 px-1.5 py-1 text-left text-amber-100 hover:bg-amber-300/15 disabled:cursor-wait disabled:opacity-60"
-                >
-                  <span aria-hidden="true" className="text-base leading-none">⟳</span>
-                  {salvandoGiro ? t('girar.salvando') : t('girar.salvar', { numero: atual.numero })}
-                </button>
-                {erroGiro && (
-                  <span className="max-w-[14rem] text-[11px] text-red-300" role="alert">
-                    {erroGiro}
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
         <div className="absolute right-2 z-10 flex items-center gap-1.5 sm:right-6">
           {seriesValidas.length > 1 && (
             <button
@@ -1045,36 +1040,17 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
         )}
       </div>
 
-      {/* LEGENDAS: o texto de cada imagem fica logo abaixo dela, em ate
-          duas linhas pequenas - o foco da tela e a imagem. Em grade, cada
-          legenda fica na mesma coluna da sua imagem. Clicar numa legenda
-          escolhe aquela imagem (os botoes e os detalhes passam a ser dela). */}
-      <div
-        className="relative z-10 grid gap-x-2 gap-y-1 border-t border-base-border bg-base/70 px-14 py-1.5 backdrop-blur-md sm:px-16"
-        style={{ gridTemplateColumns: `repeat(${emGrade ? grade.colunas : 1}, minmax(0,1fr))` }}
-      >
-        {(emGrade ? itensPagina : [atual]).map((item) => {
-          const posicao = itens.indexOf(item)
-          return (
-            <LegendaImagem
-              key={item.curation_id}
-              item={item}
-              ativa={emGrade && posicao === indice}
-              onEscolher={() => setIndice(posicao)}
-              tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, item.tipo_radiografia, traduzirTipoRadiografia)}
-              qualidade={item.qualidade_tecnica ? rotular(OPCOES_QUALIDADE_TECNICA, item.qualidade_tecnica, traduzirQualidadeTecnica) : null}
-              achado={item.achado_principal ? rotular(OPCOES_ACHADO_PRINCIPAL, item.achado_principal, traduzirAchadoPrincipal) : null}
-            />
-          )
-        })}
-      </div>
-
       {/* Barra de acoes compacta (uma linha). O antigo botao "Detalhes" saiu:
           as informacoes da imagem ja aparecem no "i" sobre a propria imagem. */}
       <div className="relative z-40 border-t border-base-border bg-base/80 px-4 py-1.5 backdrop-blur-md sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex min-w-0 items-center gap-3">
             {mensagem && <span className="truncate text-xs text-emerald-400">{mensagem}</span>}
+            {erroGiro && (
+              <span className="truncate text-xs text-red-400" role="alert">
+                {erroGiro}
+              </span>
+            )}
             {erro && (
               <span className="truncate text-xs text-red-400" role="alert">
                 {erro}
@@ -1160,6 +1136,9 @@ function SelosImagem({
   ampliado,
   onAmpliar,
   areaAmpliada,
+  onGirar,
+  girando = false,
+  dicaGirar,
   className = '',
 }: {
   item: ItemSequencia
@@ -1172,12 +1151,31 @@ function SelosImagem({
   ampliado?: boolean
   onAmpliar?: (valor: boolean) => void
   areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
+  onGirar?: () => void
+  girando?: boolean
+  dicaGirar?: string
   className?: string
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const total = (item.marcacoes ?? []).length
   return (
     <div className={`pointer-events-none absolute z-20 flex items-start gap-1.5 ${className}`}>
+      {onGirar && (
+        // "R ⟳": gira esta imagem 90 graus (tecla R tambem)
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            onGirar()
+          }}
+          disabled={girando}
+          title={dicaGirar}
+          aria-label={dicaGirar}
+          className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-amber-300/60 bg-black/70 px-2 py-0.5 text-[11px] font-bold text-amber-200 backdrop-blur-sm transition hover:border-amber-300 disabled:cursor-wait disabled:opacity-50"
+        >
+          R <span aria-hidden="true" className="text-[13px] leading-none">⟳</span>
+        </button>
+      )}
       {total > 0 && (
         <button
           type="button"

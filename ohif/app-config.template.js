@@ -293,13 +293,62 @@ window.config = {
     // botoes do Radix ("R" gira, "I" inverte): os mesmos comandos dos atalhos
     // de teclado do proprio OHIF, so na imagem ativa e so na tela (nao grava)
     if (d.tipo === 'radix-comando' && (d.comando === 'rotateViewportCW' || d.comando === 'invertViewport')) {
-      try { window.commandsManager.runCommand(d.comando); } catch (e) { /* OHIF ainda carregando */ }
+      try {
+        if (typeof d.uid === 'string') ativarEstudo(d.uid);
+        window.commandsManager.runCommand(d.comando);
+      } catch (e) { /* OHIF ainda carregando */ }
     }
     if (typeof d.espacoDireita === 'number' && isFinite(d.espacoDireita)) {
       estado.espacoDireita = Math.max(0, Math.min(d.espacoDireita, window.innerWidth));
       aplicarEspaco(0);
     }
   });
+
+  // deixa ativo o quadro que mostra o estudo pedido (para o "R" de uma
+  // imagem girar ESSA imagem quando ha varias lado a lado)
+  function ativarEstudo(uid) {
+    var sv = window.services;
+    var st = sv.viewportGridService.getState();
+    st.viewports.forEach(function (vp, id) {
+      var dsUid = vp && vp.displaySetInstanceUIDs && vp.displaySetInstanceUIDs[0];
+      var ds = dsUid && sv.displaySetService.getDisplaySetByUID(dsUid);
+      if (ds && ds.StudyInstanceUID === uid) sv.viewportGridService.setActiveViewportId(id);
+    });
+  }
+
+  // TECLA "R" (com radixTeclaR=1 na URL - visualizador da Pesquisa): em vez
+  // do giro so na tela do proprio OHIF, avisa o Radix, que decide (a
+  // curadoria grava o giro na imagem; os demais giram so na tela).
+  if (new URLSearchParams(window.location.search).get('radixTeclaR') === '1') {
+    window.addEventListener('keydown', function (ev) {
+      if ((ev.key !== 'r' && ev.key !== 'R') || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+      var alvo = ev.target;
+      if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable)) return;
+      ev.stopImmediatePropagation();
+      ev.preventDefault();
+      try { window.parent.postMessage({ tipo: 'radix-tecla-girar' }, origemRadix); } catch (e) { /* ignora */ }
+    }, true);
+  }
+
+  // QUADROS DAS IMAGENS: avisa o Radix onde fica cada quadro de imagem (com
+  // a moldura), para o quadro de informacoes do Radix ficar exatamente
+  // alinhado com eles (mesma linha de cima e de baixo).
+  var ultimosQuadros = '';
+  setInterval(function () {
+    var grade = document.querySelector('[data-cy="viewport-grid"]');
+    if (!grade) return;
+    var quadros = [];
+    Array.prototype.forEach.call(grade.children, function (f) {
+      var r = f.getBoundingClientRect();
+      if (r.width > 20 && r.height > 20) {
+        quadros.push({ x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) });
+      }
+    });
+    var texto = JSON.stringify(quadros);
+    if (texto === ultimosQuadros) return;
+    ultimosQuadros = texto;
+    try { window.parent.postMessage({ tipo: 'radix-quadros', quadros: quadros }, origemRadix); } catch (e) { /* ignora */ }
+  }, 400);
 
   // ESPACO A DIREITA (pedido de 20/10/2026): quando o Radix mostra o quadro
   // de informacoes da imagem na metade direita, o OHIF continua com a largura

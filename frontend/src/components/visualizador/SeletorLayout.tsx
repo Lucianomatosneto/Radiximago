@@ -40,7 +40,16 @@ function Icone({ grade, tamanho = 18 }: { grade: Grade; tamanho?: number }) {
   )
 }
 
-export default function SeletorLayout({ grade, onEscolher }: { grade: Grade; onEscolher: (grade: Grade) => void }) {
+export default function SeletorLayout({
+  grade,
+  onEscolher,
+  onAbrir,
+}: {
+  grade: Grade
+  onEscolher: (grade: Grade) => void
+  /** avisa quando o menu abre (o visualizador fecha o quadro ampliado, que ficaria por cima) */
+  onAbrir?: () => void
+}) {
   const t = useTranslations('Visualizador.layout')
   const [aberto, setAberto] = useState(false)
   const [hover, setHover] = useState<Grade | null>(null)
@@ -74,7 +83,10 @@ export default function SeletorLayout({ grade, onEscolher }: { grade: Grade; onE
     <div ref={ref} className="relative">
       <button
         type="button"
-        onClick={() => setAberto((v) => !v)}
+        onClick={() => {
+          if (!aberto) onAbrir?.()
+          setAberto((v) => !v)
+        }}
         aria-haspopup="true"
         aria-expanded={aberto}
         title={t('titulo')}
