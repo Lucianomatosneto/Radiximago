@@ -111,6 +111,8 @@ function montarUrlGrade(itensPagina: ItemSequencia[], grade: Grade): string | nu
     url.search = ''
     url.searchParams.set('StudyInstanceUIDs', estudos.join(','))
     url.searchParams.set('radixGrade', `${grade.linhas}x${grade.colunas}`)
+    // abre sem a coluna "Studies" do OHIF (ver ohif/app-config.template.js)
+    url.searchParams.set('radixRecolherEstudos', '1')
     // URLSearchParams codifica a virgula como %2C; o OHIF aceita os dois,
     // mas deixamos a virgula legivel como no endereco original
     return url.toString().replace(/%2C/g, ',')
@@ -257,11 +259,21 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
       }))
       if (marcacoesLigadas.includes(item.curation_id)) visiveis.push(uid)
     }
-    janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis, foco: focoMarcacao, holofote }, origemOhif)
+    // quadro de informacoes na metade direita: o OHIF deixa esse espaco livre
+    // so na area das imagens (a barra de ferramentas continua inteira)
+    const largura = areaRef.current?.getBoundingClientRect().width ?? 0
+    const espacoDireita = encolherArea && ohifUnico && largura ? Math.round(largura / 2) : 0
+    janela.postMessage({ tipo: 'radix-marcacoes', estudos, visiveis, foco: focoMarcacao, holofote, espacoDireita }, origemOhif)
   }
   useEffect(() => {
     enviarMarcacoesRef.current()
   })
+  useEffect(() => {
+    // janela redimensionada: o espaco do quadro de informacoes muda junto
+    const reenviar = () => enviarMarcacoesRef.current()
+    window.addEventListener('resize', reenviar)
+    return () => window.removeEventListener('resize', reenviar)
+  }, [])
   useEffect(() => {
     if (!origemOhif) return
     function aoProntoOhif(evento: MessageEvent) {
@@ -280,10 +292,9 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
     atual.viewer_url && serieAtual
       ? `${atual.viewer_url}&SeriesInstanceUIDs=${serieAtual.series_instance_uid}`
       : atual.viewer_url
-  // descricaoAoLado: recolhe a coluna "Studies" do OHIF (ver
-  // ohif/app-config.template.js) - a radiografia fica com a largura toda
-  const urlComSerie =
-    urlBase && descricaoAoLado ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1` : urlBase
+  // Sempre abre sem a coluna "Studies" do OHIF (ver ohif/app-config.template.js):
+  // a radiografia fica com a largura toda (o botao do OHIF reabre a coluna)
+  const urlComSerie = urlBase ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1` : urlBase
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
   const temMarcacao = (item: ItemSequencia) => (item.marcacoes ?? []).length > 0
@@ -334,6 +345,10 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
     return coluna < grade.colunas / 2 ? 'direita' : 'esquerda'
   }
   const encolherArea = itemAmpliado !== null && ladoQuadro(itemAmpliado) === 'encolher'
+  // OHIF de uma imagem so (fora da grade): a barra dele (altura 52 px) fica
+  // livre e o quadro ampliado comeca logo abaixo dela
+  const ohifUnico = !emGrade && !!urlComSerie
+  const ALTURA_BARRA_OHIF = 56
   // "Expandir" de Minhas imagens: a descricao ja abre ampliada ao lado
   useEffect(() => {
     if (descricaoAoLado && !emGrade) setQuadroAmpliado(atual.curation_id)
@@ -348,11 +363,12 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
       if (!r) return null
       const metade = r.width / 2
       const esquerda = ladoQuadro(item) === 'esquerda'
+      const abaixoDaBarra = ohifUnico ? ALTURA_BARRA_OHIF : 0
       return {
         left: Math.round(esquerda ? r.left + 8 : r.left + metade + 4),
-        top: Math.round(r.top + 8),
+        top: Math.round(r.top + 8 + abaixoDaBarra),
         width: Math.round(metade - 12),
-        height: Math.round(r.height - 16),
+        height: Math.round(r.height - 16 - abaixoDaBarra),
       }
     }
   }
@@ -712,7 +728,11 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
       <div
         ref={areaRef}
         className="relative flex flex-1 items-center justify-center overflow-hidden transition-[padding] duration-200"
-        style={encolherArea ? { paddingRight: '50%' } : undefined}
+        // Quadro de informacoes na metade direita: com o OHIF, o visualizador
+        // continua com a largura toda (barra de ferramentas de ponta a ponta)
+        // e o proprio OHIF encolhe so a area das imagens (espacoDireita); sem
+        // o OHIF, a area encolhe para a metade esquerda.
+        style={encolherArea && !ohifUnico ? { paddingRight: '50%' } : undefined}
       >
         {/* Seta de voltar (pagina/imagem anterior), colada na borda esquerda. */}
         <div

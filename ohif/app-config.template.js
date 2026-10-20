@@ -290,7 +290,35 @@ window.config = {
       estado.isoladas[d.uid] = estado.isoladas[d.uid] === d.indice ? null : d.indice;
       iniciar();
     }
+    if (typeof d.espacoDireita === 'number' && isFinite(d.espacoDireita)) {
+      estado.espacoDireita = Math.max(0, Math.min(d.espacoDireita, window.innerWidth));
+      aplicarEspaco(0);
+    }
   });
+
+  // ESPACO A DIREITA (pedido de 20/10/2026): quando o Radix mostra o quadro
+  // de informacoes da imagem na metade direita, o OHIF continua com a largura
+  // TODA (a barra de ferramentas inteira, de ponta a ponta), e so a area das
+  // imagens encolhe para nao ficar escondida atras do quadro. O Radix manda
+  // quantos pixels, a partir da borda direita, o quadro ocupa.
+  function aplicarEspaco(tentativa) {
+    var grade = document.querySelector('[data-cy="viewport-grid"]');
+    if (!grade || !grade.parentElement) {
+      if (tentativa < 40) setTimeout(function () { aplicarEspaco(tentativa + 1); }, 250);
+      return;
+    }
+    var pai = grade.parentElement;
+    var px = estado.espacoDireita || 0;
+    var chave = px + 'x' + window.innerWidth;
+    if (pai.__radixEspaco === chave) return;
+    pai.__radixEspaco = chave;
+    pai.style.boxSizing = 'border-box';
+    pai.style.paddingRight = '0px';
+    if (!px) return;
+    var sobra = grade.getBoundingClientRect().right - (window.innerWidth - px);
+    pai.style.paddingRight = Math.max(0, Math.round(sobra)) + 'px';
+  }
+  window.addEventListener('resize', function () { if (estado.espacoDireita) aplicarEspaco(0); });
 
   document.addEventListener('keydown', function (ev) {
     if (ev.key === 'Escape') estado.isoladas = {};
