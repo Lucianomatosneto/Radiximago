@@ -293,6 +293,9 @@ function PesquisaConteudo() {
   const [proporcoes, setProporcoes] = useState<Record<number, number>>({})
   // lado (px) de cada quadrado da grade: 5 por linha e 2 linhas inteiras na tela
   const areaPrincipalRef = useRef<HTMLElement | null>(null)
+  // cabecalho fixo (busca recolhida): sua altura posiciona a barra de acoes logo abaixo
+  const topoFixoRef = useRef<HTMLDivElement | null>(null)
+  const [alturaTopoFixo, setAlturaTopoFixo] = useState(0)
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
   const tComum = useTranslations('Comum')
@@ -369,6 +372,15 @@ function PesquisaConteudo() {
       window.removeEventListener('resize', ajustarGrade)
     }
   }, [resultados.length, filtrosRecolhidos, temSelecao])
+  useEffect(() => {
+    const topo = topoFixoRef.current
+    if (!topo) return
+    const medir = () => setAlturaTopoFixo(topo.offsetHeight)
+    medir()
+    const observador = new ResizeObserver(medir)
+    observador.observe(topo)
+    return () => observador.disconnect()
+  }, [filtrosRecolhidos])
   // Selecao em lote: numero ajustavel (nao so 10/15/20 fixos - o curador
   // pode digitar qualquer quantidade) usado tanto pelos atalhos rapidos
   // quanto pelo botao "Selecionar mais". Cada clique adiciona as proximas
@@ -626,10 +638,21 @@ function PesquisaConteudo() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main ref={areaPrincipalRef} className={`flex-1 overflow-y-auto ${filtrosRecolhidos ? 'px-6 py-3' : 'p-6'}`}>
+        {/* Com resultados na tela, a pagina inteira rola: "overflow-x-clip"
+            (e nao "overflow-y-auto") deixa os cabecalhos FIXOS (sticky)
+            presos no topo da janela enquanto as imagens passam por baixo. */}
+        <main
+          ref={areaPrincipalRef}
+          className={`flex-1 ${filtrosRecolhidos ? 'overflow-x-clip px-6 pb-3' : 'overflow-y-auto p-6'}`}
+        >
           {/* Com resultados na tela (busca recolhida) o cabecalho fica numa
               linha so e menor: sobra altura para as duas linhas de imagens
-              aparecerem inteiras. */}
+              aparecerem inteiras - e FIXO no topo ao rolar (pedido de
+              20/10/2026), junto com a barra de acoes logo abaixo. */}
+          <div
+            ref={topoFixoRef}
+            className={filtrosRecolhidos ? 'sticky top-0 z-40 -mx-6 bg-base px-6 pb-1 pt-3' : ''}
+          >
           <h1 className={filtrosRecolhidos ? 'text-xl font-bold text-ink' : 'titulo-pagina tela-entra'}>
             {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
           </h1>
@@ -1062,8 +1085,9 @@ function PesquisaConteudo() {
           </section>
           </>
           )}
+          </div>
 
-          <div className={filtrosRecolhidos ? 'mt-2' : 'mt-6'}>
+          <div className={filtrosRecolhidos ? 'mt-1' : 'mt-6'}>
             {!jaPesquisou ? (
               <p className="py-4 text-center text-slate-500">
                 {t('dicaUseFiltros')}
@@ -1076,6 +1100,11 @@ function PesquisaConteudo() {
               </p>
             ) : (
               <>
+                {/* acoes e selecao: FIXAS logo abaixo do cabecalho ao rolar */}
+                <div
+                  className={filtrosRecolhidos ? 'sticky z-40 -mx-6 bg-base px-6 pt-1' : ''}
+                  style={filtrosRecolhidos ? { top: alturaTopoFixo } : undefined}
+                >
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-slate-400">
                     <span className="rounded-full bg-brand/10 px-2.5 py-1 text-brand-300">
@@ -1176,6 +1205,7 @@ function PesquisaConteudo() {
                       {t('limparSelecao')}
                     </button>
                   )}
+                </div>
                 </div>
 
                 {/* Grade de resultados: CINCO imagens por linha e DUAS linhas
