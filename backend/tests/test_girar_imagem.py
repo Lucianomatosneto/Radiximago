@@ -164,3 +164,14 @@ def test_miniatura_da_pesquisa_muda_de_etiqueta_depois_do_giro(client, db, criar
     client.post(f"/curation/imagem/{ref.id}/girar", json={"graus": 90}, headers=_token(client, criar_usuario))
     r = client.get(f"/search/{ficha.id}/preview", headers={**estudante, "If-None-Match": antes})
     assert r.status_code == 200 and r.headers["etag"] != antes  # o navegador recebe a imagem nova
+
+
+def test_curador_gira_pela_ficha_no_visualizador(client, db, criar_usuario, criar_ficha, orthanc):
+    ficha = criar_ficha()
+    ref = db.get(OrthancReference, ficha.orthanc_reference_id)
+    orthanc.guardar(ref.orthanc_id, _dicom(_radiografia(80, 120)))
+    estudante = _token(client, criar_usuario, UserRole.estudante)
+    assert client.post(f"/curation/ficha/{ficha.id}/girar", json={"graus": 90}, headers=estudante).status_code == 403
+    r = client.post(f"/curation/ficha/{ficha.id}/girar", json={"graus": 270}, headers=_token(client, criar_usuario))
+    assert r.status_code == 200 and r.json()["giro_graus"] == 270
+    assert client.post("/curation/ficha/999999999/girar", json={"graus": 90}, headers=_token(client, criar_usuario)).status_code == 404

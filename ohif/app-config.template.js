@@ -290,6 +290,11 @@ window.config = {
       estado.isoladas[d.uid] = estado.isoladas[d.uid] === d.indice ? null : d.indice;
       iniciar();
     }
+    // botoes do Radix ("R" gira, "I" inverte): os mesmos comandos dos atalhos
+    // de teclado do proprio OHIF, so na imagem ativa e so na tela (nao grava)
+    if (d.tipo === 'radix-comando' && (d.comando === 'rotateViewportCW' || d.comando === 'invertViewport')) {
+      try { window.commandsManager.runCommand(d.comando); } catch (e) { /* OHIF ainda carregando */ }
+    }
     if (typeof d.espacoDireita === 'number' && isFinite(d.espacoDireita)) {
       estado.espacoDireita = Math.max(0, Math.min(d.espacoDireita, window.innerWidth));
       aplicarEspaco(0);

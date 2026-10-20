@@ -2,6 +2,8 @@
 Giro da imagem pelo curador (pedido de 20/10/2026).
 
 - POST /curation/imagem/{orthanc_reference_id}/girar  {"graus": 90|180|270}
+- POST /curation/ficha/{curation_id}/girar            (mesmo giro, pela ficha - usado
+  no visualizador da Pesquisa, que conhece a ficha e nao o registro da imagem)
 
 O giro e feito no proprio arquivo DICOM, sem perda (so troca os pixels de
 lugar - app/modules/geometria_imagem.py), para a imagem aparecer na mesma
@@ -22,6 +24,7 @@ from app.core.rate_limit import limiter
 from app.modules import orthanc_client
 from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
 from app.modules.geometria_imagem import FormatoNaoSuportado, girar_dicom, girar_marcacoes, girar_ponto
+from app.modules.curations import Curation
 from app.modules.orthanc_references import OrthancReference
 from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajustar, substituir_arquivo
 from app.modules.users import User
@@ -44,6 +47,25 @@ def girar_imagem(
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
+    return _girar(db, orthanc_reference_id, dados.graus, usuario)
+
+
+@router.post("/ficha/{curation_id}/girar")
+@limiter.limit(LIMITE_GIRO)
+def girar_imagem_da_ficha(
+    request: Request,
+    curation_id: int,
+    dados: PedidoGiro,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    ficha = db.query(Curation).filter(Curation.id == curation_id).first()
+    if not ficha:
+        raise HTTPException(status_code=404, detail="Ficha não encontrada.")
+    return _girar(db, ficha.orthanc_reference_id, dados.graus, usuario)
+
+
+def _girar(db: Session, orthanc_reference_id: int, graus: int, usuario: User):
     # trava o registro: dois cliques seguidos giram um depois do outro, nunca juntos
     ref = (
         db.query(OrthancReference)
@@ -55,7 +77,6 @@ def girar_imagem(
         raise HTTPException(status_code=404, detail="Imagem não encontrada.")
     if not ref.ativo:
         raise HTTPException(status_code=409, detail="Imagem desativada.")
-    graus = dados.graus
     try:
         conferir_pode_ajustar(orthanc_client.obter_tags_simplificadas_instancia(ref.orthanc_id))
         girado = girar_dicom(orthanc_client.obter_arquivo_instancia(ref.orthanc_id), graus)

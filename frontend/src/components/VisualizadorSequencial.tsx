@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import MiniaturaImagem from './MiniaturaImagem'
@@ -16,6 +16,8 @@ import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
 import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
 import { textoMarcacao } from '../lib/descricaoCuradoria'
+import { girarMarcacoes } from '../lib/orientacao'
+import { obterSessaoAtual } from '../lib/sessao'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
 // este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
@@ -153,8 +155,28 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-export default function VisualizadorSequencial({ itens, indiceInicial, onFechar, descricaoAoLado = false }: Props) {
+export default function VisualizadorSequencial({ itens: itensRecebidos, indiceInicial, onFechar, descricaoAoLado = false }: Props) {
   const router = useRouter()
+  // GIRAR NO VISUALIZADOR (pedido de 20/10/2026):
+  // - "R" (todos): gira so na tela, como o atalho do proprio OHIF;
+  // - "Salvar em pe" (curadoria): grava o giro no arquivo (sem perda) - a
+  //   imagem passa a abrir na posicao certa para todos. As marcacoes giram
+  //   junto: aqui guardamos a versao girada para desenhar no lugar certo.
+  const [marcacoesGiradas, setMarcacoesGiradas] = useState<Record<number, Marcacao[]>>({})
+  const [versaoArquivo, setVersaoArquivo] = useState<Record<number, number>>({})
+  const [podeSalvarGiro, setPodeSalvarGiro] = useState(false)
+  const [salvandoGiro, setSalvandoGiro] = useState(false)
+  const [erroGiro, setErroGiro] = useState('')
+  useEffect(() => {
+    obterSessaoAtual().then((s) => setPodeSalvarGiro(!!s && ['administrador', 'suporte', 'curador'].includes(s.perfil)))
+  }, [])
+  const itens = useMemo(
+    () =>
+      itensRecebidos.map((item) =>
+        marcacoesGiradas[item.curation_id] ? { ...item, marcacoes: marcacoesGiradas[item.curation_id] } : item
+      ),
+    [itensRecebidos, marcacoesGiradas]
+  )
   const t = useTranslations('Visualizador')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tDescricao = useTranslations('DescricaoCuradoria')
@@ -268,6 +290,34 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
   useEffect(() => {
     enviarMarcacoesRef.current()
   })
+  function comandoOhif(comando: 'rotateViewportCW' | 'invertViewport') {
+    const janela = ohifRef.current?.contentWindow
+    if (janela && origemOhif) janela.postMessage({ tipo: 'radix-comando', comando }, origemOhif)
+  }
+  async function salvarEmPe() {
+    const item = itens[indice]
+    if (!item || salvandoGiro) return
+    setSalvandoGiro(true)
+    setErroGiro('')
+    try {
+      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/ficha/${item.curation_id}/girar`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ graus: 90 }),
+      })
+      if (!resposta.ok) {
+        setErroGiro(await extrairErro(resposta, t('girar.erro')))
+        return
+      }
+      setMarcacoesGiradas((atual) => ({ ...atual, [item.curation_id]: girarMarcacoes(item.marcacoes ?? [], 90) }))
+      setVersaoArquivo((atual) => ({ ...atual, [item.curation_id]: (atual[item.curation_id] ?? 0) + 1 }))
+    } catch {
+      setErroGiro(t('girar.erro'))
+    } finally {
+      setSalvandoGiro(false)
+    }
+  }
   useEffect(() => {
     // janela redimensionada: o espaco do quadro de informacoes muda junto
     const reenviar = () => enviarMarcacoesRef.current()
@@ -769,7 +819,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
           <div className="relative h-full w-full px-14 sm:px-16">
             <iframe
               ref={ohifRef}
-              key={urlGrade}
+              key={`${urlGrade}|${itensPagina.map((i) => versaoArquivo[i.curation_id] ?? 0).join(',')}`}
               src={urlGrade}
               referrerPolicy="origin"
               title={t('layout.visualizadorGradeTitulo', { total: itensPagina.length })}
@@ -854,7 +904,7 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
           // marcacao, so as formas aparecem/somem.
           <iframe
             ref={ohifRef}
-            key={atual.curation_id}
+            key={`${atual.curation_id}|${versaoArquivo[atual.curation_id] ?? 0}`}
             src={urlComSerie}
             referrerPolicy="origin"
             title={t('visualizadorOhifTitulo', { numero: atual.numero })}
@@ -903,24 +953,52 @@ export default function VisualizadorSequencial({ itens, indiceInicial, onFechar,
             esquerdo da imagem - quando a fila estiver visivel, empurrado
             pra depois dela (mesma logica da seta « de voltar), senao fica
             colado na borda. */}
-        {urlComSerie && !emGrade && (
-          <div
-            className={`pointer-events-none absolute bottom-3 z-10 flex flex-col gap-1.5 rounded-lg bg-black/60 px-3 py-2 text-xs text-white/90 backdrop-blur-sm ${
-              'left-3 sm:left-6'
-            }`}
-          >
-            <span className="flex items-center gap-2">
+        {(urlComSerie || (emGrade && urlGrade)) && (
+          <div className="absolute bottom-3 left-3 z-30 flex max-w-[calc(50%-2rem)] flex-wrap items-center gap-1 rounded-lg bg-black/70 px-1.5 py-1.5 text-xs text-white/90 backdrop-blur-sm sm:left-6">
+            {/* "R" e "I": clicaveis (os mesmos atalhos do teclado do OHIF), so na
+                tela. Numa linha so, abaixo do botao "+ Anotação". */}
+            <button
+              type="button"
+              onClick={() => comandoOhif('rotateViewportCW')}
+              title={t('girar.dicaR')}
+              className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/10"
+            >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-amber-400 text-sm font-bold text-black">
                 R
               </span>
               {t('giraImagem')}
-            </span>
-            <span className="flex items-center gap-2">
+            </button>
+            <button
+              type="button"
+              onClick={() => comandoOhif('invertViewport')}
+              title={t('girar.dicaI')}
+              className="flex items-center gap-2 rounded-md px-1 py-0.5 text-left hover:bg-white/10"
+            >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm bg-cyan-400 text-sm font-bold text-black">
                 I
               </span>
               {t('inverteJanela')}
-            </span>
+            </button>
+            {podeSalvarGiro && (
+              <>
+                <span className="mx-0.5 h-5 w-px bg-white/15" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={salvarEmPe}
+                  disabled={salvandoGiro}
+                  title={t('girar.salvarDica')}
+                  className="flex items-center gap-2 rounded-md border border-amber-300/50 px-1.5 py-1 text-left text-amber-100 hover:bg-amber-300/15 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <span aria-hidden="true" className="text-base leading-none">⟳</span>
+                  {salvandoGiro ? t('girar.salvando') : t('girar.salvar', { numero: atual.numero })}
+                </button>
+                {erroGiro && (
+                  <span className="max-w-[14rem] text-[11px] text-red-300" role="alert">
+                    {erroGiro}
+                  </span>
+                )}
+              </>
+            )}
           </div>
         )}
 

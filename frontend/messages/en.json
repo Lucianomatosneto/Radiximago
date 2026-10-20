@@ -710,6 +710,14 @@
       "confirmarApagar": "Click again to delete",
       "apagarTodas": "Delete all",
       "confirmarApagarTodas": "Click again to delete all"
+    },
+    "girar": {
+      "dicaR": "Rotate the image 90° on this screen only (shortcut R)",
+      "dicaI": "Invert light and dark on this screen only (shortcut I)",
+      "salvar": "Rotate 90° and save #{numero}",
+      "salvarDica": "Saves the rotation in the image (lossless): it will open in this position for everyone. Click until the teeth are upright.",
+      "salvando": "Saving…",
+      "erro": "The image could not be rotated."
     }
   },
   "Curadoria": {

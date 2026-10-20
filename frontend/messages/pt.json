@@ -710,6 +710,14 @@
       "confirmarApagar": "Clique de novo para apagar",
       "apagarTodas": "Apagar todas",
       "confirmarApagarTodas": "Clique de novo para apagar todas"
+    },
+    "girar": {
+      "dicaR": "Gira a imagem 90° só nesta tela (atalho R)",
+      "dicaI": "Inverte claro e escuro só nesta tela (atalho I)",
+      "salvar": "Girar 90° e salvar #{numero}",
+      "salvarDica": "Grava o giro na imagem (sem perda): ela passa a abrir nesta posição para todos. Clique até os dentes ficarem em pé.",
+      "salvando": "Salvando…",
+      "erro": "Não foi possível girar a imagem."
     }
   },
   "Curadoria": {
