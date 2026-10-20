@@ -49,10 +49,21 @@ map $http_origin $cors_origin {
 server {
     listen 80;
 
+    # ENDERECOS SEMPRE ATUALIZADOS (20/10/2026): o Nginx, por padrao, descobre
+    # o endereco do radix-api e do radix-orthanc UMA vez, ao ligar, e guarda
+    # para sempre. Quando o radix-api era reiniciado ele podia ganhar outro
+    # endereco na rede interna do Docker, e a portaria batia na porta antiga
+    # ("Connection refused") - o visualizador mostrava "Something went
+    # wrong". Com o endereco numa variavel, o Nginx pergunta de novo ao DNS
+    # interno do Docker (127.0.0.11) a cada 10 s.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    resolver_timeout 5s;
+
     # consulta interna ao backend (o navegador nao consegue chamar direto)
     location = /_radix_autorizar {
         internal;
-        proxy_pass http://radix-api:8000/visualizador/autorizar;
+        set $radix_api radix-api;
+        proxy_pass http://$radix_api:8000/visualizador/autorizar;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
         proxy_set_header X-Original-URI $request_uri;
@@ -79,7 +90,9 @@ server {
         # o preflight (OPTIONS, acima) responde antes desta checagem
         auth_request /_radix_autorizar;
 
-        proxy_pass http://radix-orthanc:8042;
+        # com variavel e sem caminho, o endereco pedido segue igual ao original
+        set $radix_orthanc radix-orthanc;
+        proxy_pass http://$radix_orthanc:8042;
         # $host remove a porta da requisicao original - o Orthanc usa esse
         # header pra montar RetrieveURL nas respostas DICOMweb, e sem a porta
         # elas saiam como "http://localhost/..." (porta 80 implicita, errada).
