@@ -68,7 +68,7 @@ def test_imagem_ja_pequena_volta_como_esta(client, criar_usuario, criar_ficha, m
     assert r.headers["content-type"] == "image/png" and r.content == pequena
 
 
-def test_busca_conta_marcacoes_da_ficha_e_dos_achados(client, criar_usuario, criar_ficha, db):
+def test_busca_conta_marcacoes_da_ficha_e_dos_achados_sem_repetir(client, criar_usuario, criar_ficha, db):
     from app.modules.achados import Achado
 
     usuario = criar_usuario()
@@ -81,7 +81,9 @@ def test_busca_conta_marcacoes_da_ficha_e_dos_achados(client, criar_usuario, cri
     try:
         r = client.get("/search?texto=contagem-marcacoes-teste", headers=cabecalho_auth(token))
         item = [i for i in r.json()["itens"] if i["curation_id"] == ficha.id][0]
-        assert item["total_marcacoes"] == 3
+        # "a" esta na ficha E no achado (copia): conta uma vez so
+        assert item["total_marcacoes"] == 2
+        assert [m["id"] for m in item["marcacoes_exibicao"]] == ["a", "b"]
     finally:
         db.query(Achado).filter(Achado.curation_id == ficha.id).delete()
         db.commit()

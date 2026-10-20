@@ -517,7 +517,9 @@
     },
     "campoIdade": "Idade",
     "ampliarImagem": "Passe o mouse para ampliar a imagem",
-    "marcacoesNaImagem": "{total, plural, one {# marcação do curador} other {# marcações do curador}}"
+    "marcacoesNaImagem": "{total, plural, one {# marcação do curador} other {# marcações do curador}}",
+    "mostrarMarcacoes": "Mostrar {total, plural, one {a marcação} other {as # marcações}} do curador na imagem",
+    "esconderMarcacoes": "Esconder as marcações do curador"
   },
   "AlteracoesObservadas": {
     "categorias": {

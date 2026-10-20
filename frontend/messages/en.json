@@ -517,7 +517,9 @@
     },
     "campoIdade": "Age",
     "ampliarImagem": "Hover to enlarge the image",
-    "marcacoesNaImagem": "{total, plural, one {# curator marking} other {# curator markings}}"
+    "marcacoesNaImagem": "{total, plural, one {# curator marking} other {# curator markings}}",
+    "mostrarMarcacoes": "Show the curator's {total, plural, one {marking} other {# markings}} on the image",
+    "esconderMarcacoes": "Hide the curator's markings"
   },
   "AlteracoesObservadas": {
     "categorias": {

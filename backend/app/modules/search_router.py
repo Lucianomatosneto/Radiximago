@@ -388,6 +388,7 @@ def pesquisar_imagens(
             viewer_url = f"{settings.OHIF_BASE_URL}/viewer?StudyInstanceUIDs={ref.study_instance_uid}"
         else:
             viewer_url = None
+        exibicao = _juntar_marcacoes(ficha.marcacoes, marcacoes_dos_achados.get(ficha.id, []))
         itens.append({
             "curation_id": ficha.id,
             "orthanc_reference_id": ref.id,
@@ -399,9 +400,13 @@ def pesquisar_imagens(
             "achados_detalhe": ficha.achados_detalhe,
             "alteracoes_observadas": ficha.alteracoes_observadas,
             "marcacoes": ficha.marcacoes,
-            # todas as marcacoes do curador: as da ficha + as desenhadas em
-            # cada achado (secao "Achados") - numero mostrado na grade
-            "total_marcacoes": len(ficha.marcacoes or []) + marcacoes_dos_achados.get(ficha.id, 0),
+            # todas as marcacoes do curador, SEM repeticao: as da ficha + as
+            # desenhadas so nos achados. Na curadoria atual cada marcacao de
+            # achado e uma COPIA da marcacao da ficha (mesmo "id") - antes
+            # eram contadas duas vezes. A grade mostra o numero e, ao clicar
+            # nele, desenha estas formas sobre a miniatura.
+            "marcacoes_exibicao": exibicao,
+            "total_marcacoes": len(exibicao),
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,
@@ -419,14 +424,27 @@ def pesquisar_imagens(
     }
 
 
-def _marcacoes_dos_achados(db: Session, curation_ids: list[int]) -> dict[int, int]:
-    """Quantas marcacoes foram desenhadas nos achados de cada ficha (uma consulta so)."""
+def _marcacoes_dos_achados(db: Session, curation_ids: list[int]) -> dict[int, list[dict]]:
+    """Marcacoes desenhadas nos achados de cada ficha (uma consulta so)."""
     if not curation_ids:
         return {}
-    totais: dict[int, int] = {}
+    por_ficha: dict[int, list[dict]] = {}
     for curation_id, marcacoes in db.query(Achado.curation_id, Achado.marcacoes).filter(Achado.curation_id.in_(curation_ids)):
-        totais[curation_id] = totais.get(curation_id, 0) + len(marcacoes or [])
-    return totais
+        por_ficha.setdefault(curation_id, []).extend(marcacoes or [])
+    return por_ficha
+
+
+def _juntar_marcacoes(da_ficha: list[dict] | None, dos_achados: list[dict]) -> list[dict]:
+    """Ficha + achados, cada marcacao uma vez so (pelo "id")."""
+    juntas: list[dict] = []
+    vistos: set = set()
+    for m in [*(da_ficha or []), *dos_achados]:
+        chave = m.get("id") if isinstance(m, dict) else None
+        if chave is not None and chave in vistos:
+            continue
+        vistos.add(chave)
+        juntas.append(m)
+    return juntas
 
 
 # Versoes reduzidas para as grades de escolha (Pesquisa): (maior lado em

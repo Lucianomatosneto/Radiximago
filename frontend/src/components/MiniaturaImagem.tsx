@@ -24,18 +24,22 @@ import { useTranslations } from 'next-intl'
 // precisa ver a imagem em detalhe recebe a resolucao completa ('original').
 // `transparenteAoCarregar`: enquanto carrega (ou se falhar) nao desenha nada -
 // para uma versao maior que aparece POR CIMA da menor ja carregada.
+// `onProporcao`: avisa largura/altura da imagem carregada (para desenhar as
+// marcacoes exatamente sobre ela quando a imagem e "contida" num quadrado).
 export default function MiniaturaImagem({
   curationId,
   alt,
   className,
   tamanho = 'original',
   transparenteAoCarregar = false,
+  onProporcao,
 }: {
   curationId: number
   alt: string
   className?: string
   tamanho?: 'original' | 'miniatura' | 'ampliada'
   transparenteAoCarregar?: boolean
+  onProporcao?: (proporcao: number) => void
 }) {
   const t = useTranslations('MiniaturaImagem')
   const [src, setSrc] = useState('')
@@ -118,5 +122,15 @@ export default function MiniaturaImagem({
   }
 
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} />
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onLoad={(e) => {
+        const { naturalWidth: w, naturalHeight: h } = e.currentTarget
+        if (onProporcao && w > 0 && h > 0) onProporcao(w / h)
+      }}
+    />
+  )
 }

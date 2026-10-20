@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
+import CamadaMarcacoes from '../../components/detalhe/CamadaMarcacoes'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
@@ -189,6 +190,8 @@ interface ResultadoImagem {
   marcacoes: Marcacao[]
   /** marcacoes da ficha + as desenhadas nos achados (calculado pela API) */
   total_marcacoes?: number
+  /** as mesmas marcacoes, sem repeticao - desenhadas sobre a miniatura */
+  marcacoes_exibicao?: Marcacao[]
   qualidade_tecnica: string | null
   dificuldade: string | null
   origem: string | null
@@ -283,6 +286,11 @@ function PesquisaConteudo() {
   // informacoes da imagem: aberta pelo mouse no "i" ou fixada por clique
   const [infoPassando, setInfoPassando] = useState<number | null>(null)
   const [infoFixadas, setInfoFixadas] = useState<number[]>([])
+  // clique no numero de marcacoes: desenha as marcacoes sobre a miniatura
+  const [marcacoesVisiveis, setMarcacoesVisiveis] = useState<number[]>([])
+  // largura/altura de cada miniatura carregada (a imagem fica "contida" no
+  // quadrado; as marcacoes precisam de uma caixa do tamanho exato dela)
+  const [proporcoes, setProporcoes] = useState<Record<number, number>>({})
   // lado (px) de cada quadrado da grade: 5 por linha e 2 linhas inteiras na tela
   const areaPrincipalRef = useRef<HTMLElement | null>(null)
   const gradeRef = useRef<HTMLDivElement | null>(null)
@@ -1195,6 +1203,9 @@ function PesquisaConteudo() {
                     const infoAberta = infoFixadas.includes(imagem.curation_id) || infoPassando === imagem.curation_id
                     const infoFixada = infoFixadas.includes(imagem.curation_id)
                     const totalMarcacoes = imagem.total_marcacoes ?? (imagem.marcacoes ?? []).length
+                    const formasMarcacao = imagem.marcacoes_exibicao ?? imagem.marcacoes ?? []
+                    const mostrandoMarcacoes = marcacoesVisiveis.includes(imagem.curation_id) && formasMarcacao.length > 0
+                    const proporcao = proporcoes[imagem.curation_id]
                     const linhasInfo = infoAberta ? descrever({ ...imagem, numero: indice + 1 }) : []
                     return (
                       <div key={imagem.curation_id} className="relative aspect-square">
@@ -1225,6 +1236,9 @@ function PesquisaConteudo() {
                               tamanho="miniatura"
                               alt={imagem.descricao_didatica ?? t('imagemNumero', { numero: indice + 1 })}
                               className="h-full w-full bg-black object-contain"
+                              onProporcao={(r) =>
+                                setProporcoes((atual) => (atual[imagem.curation_id] === r ? atual : { ...atual, [imagem.curation_id]: r }))
+                              }
                             />
                             {/* versao maior (lupa): carregada na 1a vez que a lupa e usada
                                 e mantida por cima enquanto ampliado */}
@@ -1238,6 +1252,23 @@ function PesquisaConteudo() {
                               />
                             )}
                           </Link>
+
+                          {/* marcacoes do curador sobre a miniatura (clique no numero):
+                              caixa do tamanho EXATO da imagem dentro do quadrado */}
+                          {mostrandoMarcacoes && proporcao && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+                              <div
+                                className="relative max-h-full max-w-full"
+                                style={{
+                                  aspectRatio: String(proporcao),
+                                  width: proporcao >= 1 ? '100%' : 'auto',
+                                  height: proporcao >= 1 ? 'auto' : '100%',
+                                }}
+                              >
+                                <CamadaMarcacoes marcacoes={formasMarcacao} interativo={false} />
+                              </div>
+                            </div>
+                          )}
 
                           {/* informacoes da imagem: cobrem o quadrado inteiro, do mesmo tamanho */}
                           {infoAberta && (
@@ -1288,13 +1319,37 @@ function PesquisaConteudo() {
                             }
                             className="absolute bottom-1 right-1 z-20 flex items-center gap-1 transition-transform duration-200"
                           >
-                            <span
-                              title={t('marcacoesNaImagem', { total: totalMarcacoes })}
-                              aria-label={t('marcacoesNaImagem', { total: totalMarcacoes })}
-                              className={`flex items-center gap-0.5 rounded-full border bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm dark:bg-black/70 ${
-                                totalMarcacoes > 0
-                                  ? 'border-amber-500/70 text-amber-800 dark:border-amber-300/60 dark:text-amber-200'
-                                  : 'border-slate-400/50 text-slate-500 dark:border-slate-500/50 dark:text-slate-400'
+                            <button
+                              type="button"
+                              disabled={formasMarcacao.length === 0}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                // um clique mostra as marcacoes sobre a imagem; outro esconde
+                                setMarcacoesVisiveis((lista) =>
+                                  lista.includes(imagem.curation_id)
+                                    ? lista.filter((id) => id !== imagem.curation_id)
+                                    : [...lista, imagem.curation_id]
+                                )
+                              }}
+                              aria-pressed={mostrandoMarcacoes}
+                              title={
+                                formasMarcacao.length === 0
+                                  ? t('marcacoesNaImagem', { total: totalMarcacoes })
+                                  : mostrandoMarcacoes
+                                    ? t('esconderMarcacoes', { total: totalMarcacoes })
+                                    : t('mostrarMarcacoes', { total: totalMarcacoes })
+                              }
+                              aria-label={
+                                mostrandoMarcacoes
+                                  ? t('esconderMarcacoes', { total: totalMarcacoes })
+                                  : t('mostrarMarcacoes', { total: totalMarcacoes })
+                              }
+                              className={`flex items-center gap-0.5 rounded-full border bg-white/90 px-1.5 py-0.5 text-[11px] font-semibold backdrop-blur-sm disabled:cursor-default dark:bg-black/70 ${
+                                mostrandoMarcacoes
+                                  ? 'border-amber-500 text-amber-800 ring-2 ring-amber-300/70 dark:border-amber-300 dark:text-amber-100'
+                                  : totalMarcacoes > 0
+                                    ? 'border-amber-500/70 text-amber-800 hover:border-amber-500 dark:border-amber-300/60 dark:text-amber-200 dark:hover:border-amber-300'
+                                    : 'border-slate-400/50 text-slate-500 dark:border-slate-500/50 dark:text-slate-400'
                               }`}
                             >
                               {/* alfinete de marcacao */}
@@ -1303,7 +1358,7 @@ function PesquisaConteudo() {
                                 <circle cx="12" cy="11" r="2" />
                               </svg>
                               {totalMarcacoes}
-                            </span>
+                            </button>
                             <button
                               type="button"
                               onMouseEnter={() => setInfoPassando(imagem.curation_id)}
