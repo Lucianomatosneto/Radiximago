@@ -293,9 +293,10 @@ function PesquisaConteudo() {
   const [proporcoes, setProporcoes] = useState<Record<number, number>>({})
   // lado (px) de cada quadrado da grade: 5 por linha e 2 linhas inteiras na tela
   const areaPrincipalRef = useRef<HTMLElement | null>(null)
-  // cabecalho fixo (busca recolhida): sua altura posiciona a barra de acoes logo abaixo
+  // cabecalho grande (titulo + voltar): quando sai da tela, a barra de
+  // ferramentas fixa "encosta" no topo e muda de visual (barraRolada)
   const topoFixoRef = useRef<HTMLDivElement | null>(null)
-  const [alturaTopoFixo, setAlturaTopoFixo] = useState(0)
+  const [barraRolada, setBarraRolada] = useState(false)
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
   const tComum = useTranslations('Comum')
@@ -374,10 +375,13 @@ function PesquisaConteudo() {
   }, [resultados.length, filtrosRecolhidos, temSelecao])
   useEffect(() => {
     const topo = topoFixoRef.current
-    if (!topo) return
-    const medir = () => setAlturaTopoFixo(topo.offsetHeight)
-    medir()
-    const observador = new ResizeObserver(medir)
+    if (!topo || !filtrosRecolhidos) {
+      setBarraRolada(false)
+      return
+    }
+    // sem calculo a cada pixel de rolagem: o navegador avisa so quando o
+    // cabecalho entra ou sai da tela
+    const observador = new IntersectionObserver(([entrada]) => setBarraRolada(!entrada.isIntersecting))
     observador.observe(topo)
     return () => observador.disconnect()
   }, [filtrosRecolhidos])
@@ -647,12 +651,9 @@ function PesquisaConteudo() {
         >
           {/* Com resultados na tela (busca recolhida) o cabecalho fica numa
               linha so e menor: sobra altura para as duas linhas de imagens
-              aparecerem inteiras - e FIXO no topo ao rolar (pedido de
-              20/10/2026), junto com a barra de acoes logo abaixo. */}
-          <div
-            ref={topoFixoRef}
-            className={filtrosRecolhidos ? 'sticky top-0 z-40 -mx-6 bg-base px-6 pb-1 pt-3' : ''}
-          >
+              aparecerem inteiras. Ao rolar, ele sobe e some; fica so a barra
+              de ferramentas fixa (mais abaixo). */}
+          <div ref={topoFixoRef} className={filtrosRecolhidos ? 'pt-3' : ''}>
           <h1 className={filtrosRecolhidos ? 'text-xl font-bold text-ink' : 'titulo-pagina tela-entra'}>
             {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
           </h1>
@@ -1087,7 +1088,7 @@ function PesquisaConteudo() {
           )}
           </div>
 
-          <div className={filtrosRecolhidos ? 'mt-1' : 'mt-6'}>
+          <div className={filtrosRecolhidos ? 'mt-2' : 'mt-6'}>
             {!jaPesquisou ? (
               <p className="py-4 text-center text-slate-500">
                 {t('dicaUseFiltros')}
@@ -1100,112 +1101,130 @@ function PesquisaConteudo() {
               </p>
             ) : (
               <>
-                {/* acoes e selecao: FIXAS logo abaixo do cabecalho ao rolar */}
+                {/* BARRA DE FERRAMENTAS FIXA (pedido de 20/10/2026), no padrao
+                    dos grandes visualizadores de imagens (Google Fotos, Lightroom):
+                    o titulo "Pesquisa avancada" e o botao grande de voltar ROLAM
+                    para cima e somem; esta barra fica presa no topo, numa linha
+                    so e enxuta. Ao encostar no topo ela ganha fundo translucido,
+                    sombra suave e um botao compacto de voltar - as imagens passam
+                    por baixo dela. */}
                 <div
-                  className={filtrosRecolhidos ? 'sticky z-40 -mx-6 bg-base px-6 pt-1' : ''}
-                  style={filtrosRecolhidos ? { top: alturaTopoFixo } : undefined}
+                  className={
+                    filtrosRecolhidos
+                      ? `sticky top-0 z-40 -mx-6 mb-2 px-6 py-2 transition-[background-color,box-shadow,border-color] duration-200 ${
+                          barraRolada
+                            ? 'border-b border-base-border/70 bg-base/85 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)] backdrop-blur-md'
+                            : 'border-b border-transparent bg-base'
+                        }`
+                      : 'mb-2'
+                  }
                 >
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm text-slate-400">
-                    <span className="rounded-full bg-brand/10 px-2.5 py-1 text-brand-300">
-                      {totalResultados} {totalResultados === 1 ? t('imagemEncontradaSingular') : t('imagensEncontradasPlural')}
-                    </span>
-                    {resultados.length < totalResultados && (
-                      <span className="ml-2 text-slate-500">{t('mostrandoPrimeiras', { quantidade: resultados.length })}</span>
-                    )}
-                  </p>
                   <div className="flex flex-wrap items-center gap-2">
-                  {(() => {
-                    const gruposAcoes = [
-                      {
-                        chave: 'todas',
-                        rotulo: t('imprimirTodas'),
-                        itens: resultados.map((imagem, indice) => ({ ...imagem, numero: indice + 1 })),
-                      },
-                      { chave: 'selecionadas', rotulo: t('imprimirSelecionadas'), itens: itensSelecionados },
-                    ]
-                    return (
-                      <>
-                        <MenuSalvarMinhasImagens grupos={gruposAcoes} />
-                        <MenuSalvarComo grupos={gruposAcoes} />
-                      </>
-                    )
-                  })()}
-                  <MenuImpressao
-                    grupos={[
-                      {
-                        chave: 'todas',
-                        rotulo: t('imprimirTodas'),
-                        itens: resultados.map((imagem, indice) => ({ ...imagem, numero: indice + 1 })),
-                      },
-                      { chave: 'selecionadas', rotulo: t('imprimirSelecionadas'), itens: itensSelecionados },
-                    ]}
-                  />
-                  {selecionados.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setIndiceVisualizador(0)}
-                      className="flex items-center gap-2 rounded-lg bg-brand hover:bg-brand-hover px-4 py-2 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90"
-                    >
-                      ▶ {selecionados.length > 1
-                        ? t('verSelecionadasPlural', { quantidade: selecionados.length })
-                        : t('verSelecionadasSingular', { quantidade: selecionados.length })}
-                    </button>
-                  )}
-                  </div>
-                </div>
+                    {filtrosRecolhidos && barraRolada && (
+                      <button
+                        type="button"
+                        onClick={voltarBuscaAvancada}
+                        title={t('voltarBuscaAvancada')}
+                        aria-label={t('voltarBuscaAvancada')}
+                        className="flex h-8 items-center gap-1.5 rounded-lg border border-teal-400/50 bg-teal-400/10 px-2.5 text-xs font-medium text-teal-200 transition hover:bg-teal-400/20"
+                      >
+                        <span aria-hidden="true">←</span> 🔎
+                      </button>
+                    )}
+                    <span className="flex h-8 items-center rounded-full bg-brand/10 px-3 text-xs font-medium text-brand-300">
+                      {totalResultados} {totalResultados === 1 ? t('imagemEncontradaSingular') : t('imagensEncontradasPlural')}
+                      {resultados.length < totalResultados && (
+                        <span className="ml-1.5 text-slate-500">{t('mostrandoPrimeiras', { quantidade: resultados.length })}</span>
+                      )}
+                    </span>
 
-                {/* Selecao em lote: "Selecionar todas", atalhos rapidos de
-                    10/15/20/25 (somam a selecao atual, nao substituem) e um
-                    campo ajustavel pra digitar qualquer quantidade -
-                    pedido explicito pra nao ficar preso so a esses 4
-                    numeros fixos. */}
-                <div className="mb-2 flex flex-wrap items-center gap-2 rounded-xl border border-base-border bg-base-surface/40 px-3 py-1.5">
-                  <span className="text-xs font-medium text-slate-400">{t('selecaoLabel')}</span>
-                  <button
-                    type="button"
-                    onClick={selecionarTodas}
-                    className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                  >
-                    {t('selecionarTodas', { quantidade: resultados.length })}
-                  </button>
-                  {[10, 15, 20, 25].map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => selecionarMais(n)}
-                      className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                    >
-                      +{n}
-                    </button>
-                  ))}
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="number"
-                      min={1}
-                      max={resultados.length}
-                      value={quantidadeLote}
-                      onChange={(e) => setQuantidadeLote(Number(e.target.value))}
-                      className="w-16 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-xs text-slate-100 outline-hidden focus:border-brand"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => selecionarMais(quantidadeLote)}
-                      className="rounded-full border border-base-border px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                    >
-                      {t('selecionarMaisBotao')}
-                    </button>
+                    {/* selecao em lote: "Selecionar todas", atalhos que SOMAM a
+                        selecao atual e um campo para digitar qualquer quantidade */}
+                    <div className="flex h-8 items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
+                      {!barraRolada && <span className="px-1 text-[11px] font-medium text-slate-400">{t('selecaoLabel')}</span>}
+                      <button
+                        type="button"
+                        onClick={selecionarTodas}
+                        className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300"
+                      >
+                        {t('selecionarTodas', { quantidade: resultados.length })}
+                      </button>
+                      {[10, 15, 20, 25].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => selecionarMais(n)}
+                          className="rounded-md px-1.5 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300"
+                        >
+                          +{n}
+                        </button>
+                      ))}
+                      <span className="mx-0.5 h-4 w-px bg-base-border" aria-hidden="true" />
+                      <input
+                        type="number"
+                        min={1}
+                        max={resultados.length}
+                        value={quantidadeLote}
+                        onChange={(e) => setQuantidadeLote(Number(e.target.value))}
+                        aria-label={t('selecionarMaisBotao')}
+                        className="w-12 rounded-md border border-base-border bg-base-surface2 px-1.5 py-0.5 text-xs text-slate-100 outline-hidden focus:border-brand"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => selecionarMais(quantidadeLote)}
+                        className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300"
+                      >
+                        {t('selecionarMaisBotao')}
+                      </button>
+                      {selecionados.length > 0 && (
+                        <>
+                          <span className="mx-0.5 h-4 w-px bg-base-border" aria-hidden="true" />
+                          <button
+                            type="button"
+                            onClick={limparSelecao}
+                            className="rounded-md px-2 py-0.5 text-xs text-slate-400 hover:bg-white/5 hover:text-status-danger"
+                          >
+                            {t('limparSelecao')}
+                          </button>
+                        </>
+                      )}
+                    </div>
+
+                    <div className="ml-auto flex flex-wrap items-center gap-1.5">
+                      {(() => {
+                        const gruposAcoes = [
+                          {
+                            chave: 'todas',
+                            rotulo: t('imprimirTodas'),
+                            itens: resultados.map((imagem, indice) => ({ ...imagem, numero: indice + 1 })),
+                          },
+                          { chave: 'selecionadas', rotulo: t('imprimirSelecionadas'), itens: itensSelecionados },
+                        ]
+                        return (
+                          <>
+                            {/* rolando: so os icones (nome ao parar o mouse) */}
+                            <MenuSalvarMinhasImagens grupos={gruposAcoes} enxuto soIcone={barraRolada} />
+                            <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
+                            <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
+                          </>
+                        )
+                      })()}
+                      {selecionados.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setIndiceVisualizador(0)}
+                          className="flex h-8 items-center gap-1.5 rounded-lg bg-brand px-3 text-xs font-semibold text-white shadow-glow transition hover:bg-brand-hover"
+                        >
+                          ▶{' '}
+                          {barraRolada
+                            ? t('verSelecionadasCurto', { quantidade: selecionados.length })
+                            : selecionados.length > 1
+                              ? t('verSelecionadasPlural', { quantidade: selecionados.length })
+                              : t('verSelecionadasSingular', { quantidade: selecionados.length })}
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  {selecionados.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={limparSelecao}
-                      className="ml-auto rounded-full border border-base-border px-3 py-1 text-xs text-slate-400 hover:border-status-danger hover:text-status-danger"
-                    >
-                      {t('limparSelecao')}
-                    </button>
-                  )}
-                </div>
                 </div>
 
                 {/* Grade de resultados: CINCO imagens por linha e DUAS linhas

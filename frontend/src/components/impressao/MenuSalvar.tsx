@@ -29,6 +29,8 @@ function MenuBase({
   aberto,
   setAberto,
   desativado,
+  enxuto = false,
+  soIcone = false,
   children,
 }: {
   rotulo: string
@@ -36,6 +38,10 @@ function MenuBase({
   aberto: boolean
   setAberto: (v: boolean) => void
   desativado: boolean
+  /** botao menor (barra de acoes fixa da Pesquisa) */
+  enxuto?: boolean
+  /** so o icone (o nome aparece ao parar o mouse em cima) */
+  soIcone?: boolean
   children: React.ReactNode
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -55,9 +61,13 @@ function MenuBase({
         disabled={desativado}
         aria-haspopup="true"
         aria-expanded={aberto}
-        className="flex items-center gap-2 rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
+        title={soIcone ? rotulo : undefined}
+        aria-label={soIcone ? rotulo : undefined}
+        className={`flex items-center rounded-lg border border-base-border bg-base-surface text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50 ${
+          enxuto ? 'h-8 gap-1.5 px-2.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+        }`}
       >
-        {icone} {rotulo} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
+        {icone} {!soIcone && rotulo} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
       </button>
       {aberto && (
         <div className="absolute right-0 top-full z-70 mt-2 w-80 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl">
@@ -120,7 +130,15 @@ function useMensagemTemporaria(): [string, (m: string) => void] {
 
 const tresDigitos = (n: number) => String(n).padStart(3, '0')
 
-export function MenuSalvarComo({ grupos }: { grupos: GrupoImpressao[] }) {
+export function MenuSalvarComo({
+  grupos,
+  enxuto = false,
+  soIcone = false,
+}: {
+  grupos: GrupoImpressao[]
+  enxuto?: boolean
+  soIcone?: boolean
+}) {
   const t = useTranslations('Salvar')
   const descrever = useDescricaoCuradoria()
   const [aberto, setAberto] = useState(false)
@@ -175,6 +193,8 @@ export function MenuSalvarComo({ grupos }: { grupos: GrupoImpressao[] }) {
   return (
     <>
       <MenuBase
+        enxuto={enxuto}
+        soIcone={soIcone}
         rotulo={t('salvarComo')}
         icone="💾"
         aberto={aberto}
@@ -216,7 +236,15 @@ export function MenuSalvarComo({ grupos }: { grupos: GrupoImpressao[] }) {
   )
 }
 
-export function MenuSalvarMinhasImagens({ grupos }: { grupos: GrupoImpressao[] }) {
+export function MenuSalvarMinhasImagens({
+  grupos,
+  enxuto = false,
+  soIcone = false,
+}: {
+  grupos: GrupoImpressao[]
+  enxuto?: boolean
+  soIcone?: boolean
+}) {
   const t = useTranslations('Salvar')
   const router = useRouter()
   const [aberto, setAberto] = useState(false)
@@ -259,6 +287,8 @@ export function MenuSalvarMinhasImagens({ grupos }: { grupos: GrupoImpressao[] }
   return (
     <>
       <MenuBase
+        enxuto={enxuto}
+        soIcone={soIcone}
         rotulo={t('salvarMinhas')}
         icone="★"
         aberto={aberto}

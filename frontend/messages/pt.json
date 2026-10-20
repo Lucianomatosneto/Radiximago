@@ -447,6 +447,7 @@
     "mostrandoPrimeiras": "(mostrando as primeiras {quantidade})",
     "verSelecionadasSingular": "Ver {quantidade} selecionada em sequência",
     "verSelecionadasPlural": "Ver {quantidade} selecionadas em sequência",
+    "verSelecionadasCurto": "Ver {quantidade}",
     "selecaoLabel": "Seleção:",
     "selecionarTodas": "Selecionar todas ({quantidade})",
     "selecionarMaisBotao": "Selecionar mais",

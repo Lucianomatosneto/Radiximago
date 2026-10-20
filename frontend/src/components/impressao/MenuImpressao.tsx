@@ -37,7 +37,19 @@ export interface Trabalho {
 
 const PARALELO = 4
 
-export default function MenuImpressao({ grupos, compacto = false }: { grupos: GrupoImpressao[]; compacto?: boolean }) {
+export default function MenuImpressao({
+  grupos,
+  compacto = false,
+  enxuto = false,
+  soIcone = false,
+}: {
+  grupos: GrupoImpressao[]
+  compacto?: boolean
+  /** botao menor, menu abrindo para baixo (barra de acoes fixa da Pesquisa) */
+  enxuto?: boolean
+  /** so o icone (o nome aparece ao parar o mouse em cima) */
+  soIcone?: boolean
+}) {
   const t = useTranslations('Impressao')
   const [aberto, setAberto] = useState(false)
   const [trabalho, setTrabalho] = useState<Trabalho | null>(null)
@@ -62,13 +74,17 @@ export default function MenuImpressao({ grupos, compacto = false }: { grupos: Gr
         disabled={!temAlgo || !!trabalho}
         aria-haspopup="true"
         aria-expanded={aberto}
+        title={soIcone ? t('botao') : undefined}
+        aria-label={soIcone ? t('botao') : undefined}
         className={
           compacto
             ? 'rounded-md border border-base-border bg-base-surface/80 px-3 py-1 text-xs text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50'
-            : 'flex items-center gap-2 rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50'
+            : enxuto
+              ? 'flex h-8 items-center gap-1.5 rounded-lg border border-base-border bg-base-surface px-2.5 text-xs text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50'
+              : 'flex items-center gap-2 rounded-lg border border-base-border bg-base-surface px-4 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50'
         }
       >
-        🖨 {t('botao')} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
+        🖨 {!soIcone && t('botao')} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
       </button>
 
       {aberto && (

@@ -447,6 +447,7 @@
     "mostrandoPrimeiras": "(showing the first {quantidade})",
     "verSelecionadasSingular": "View {quantidade} selected in sequence",
     "verSelecionadasPlural": "View {quantidade} selected in sequence",
+    "verSelecionadasCurto": "View {quantidade}",
     "selecaoLabel": "Selection:",
     "selecionarTodas": "Select all ({quantidade})",
     "selecionarMaisBotao": "Select more",
