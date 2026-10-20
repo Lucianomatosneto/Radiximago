@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -1275,8 +1274,10 @@ function PesquisaConteudo() {
                             ampliado ? 'z-30 shadow-2xl' : 'z-0'
                           } ${marcada ? 'border-brand ring-2 ring-brand/60' : ampliado ? 'border-brand/60' : 'border-base-border'}`}
                         >
-                          <Link
-                            href={`/visualizar/${imagem.curation_id}`}
+                          {/* clicar na imagem NAO abre outra tela (pedido de 20/10/2026):
+                              a imagem fica na grade; para abrir, selecione e use "Ver" */}
+                          <div
+                            role="img"
                             aria-label={t('imagemNumero', { numero: indice + 1 })}
                             className="relative block h-full w-full overflow-hidden rounded-lg"
                           >
@@ -1300,12 +1301,12 @@ function PesquisaConteudo() {
                                 className={`absolute inset-0 h-full w-full object-contain transition-opacity ${ampliado ? 'opacity-100' : 'opacity-0'}`}
                               />
                             )}
-                          </Link>
+                          </div>
 
                           {/* marcacoes do curador sobre a miniatura (clique no numero):
                               caixa do tamanho EXATO da imagem dentro do quadrado.
                               Mouse sobre uma forma mostra a descricao dela; clique
-                              numa forma isola; fora delas, abre a imagem. */}
+                              numa forma isola (outro clique mostra todas). */}
                           {mostrandoMarcacoes && proporcao && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
@@ -1316,12 +1317,8 @@ function PesquisaConteudo() {
                                   height: proporcao >= 1 ? 'auto' : '100%',
                                 }}
                               >
-                                {/* mouse sobre a forma: mostra a descricao dela;
-                                    clique fora das formas abre a imagem, como antes */}
-                                <CamadaMarcacoes
-                                  marcacoes={formasMarcacao}
-                                  aoClicarFora={() => router.push(`/visualizar/${imagem.curation_id}`)}
-                                />
+                                {/* mouse sobre a forma: mostra a descricao dela */}
+                                <CamadaMarcacoes marcacoes={formasMarcacao} />
                               </div>
                             </div>
                           )}
