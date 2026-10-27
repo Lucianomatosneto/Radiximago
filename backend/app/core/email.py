@@ -65,12 +65,35 @@ def enviar_email(
         anexo.add_header("Content-Disposition", "attachment", filename=nome_arquivo)
         mensagem.attach(anexo)
 
-    with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as servidor:
+    with abrir_conexao_smtp(timeout=15) as servidor:
+        if settings.SMTP_USER:
+            servidor.login(settings.SMTP_USER, senha_smtp())
+        servidor.sendmail(settings.SMTP_FROM, [destinatario], mensagem.as_string())
+
+
+def senha_smtp() -> str:
+    """A "senha de app" do Gmail aparece na tela em 4 blocos com espacos
+    ("abcd efgh ijkl mnop"); os espacos nao fazem parte dela."""
+    return "".join((settings.SMTP_PASSWORD or "").split())
+
+
+def abrir_conexao_smtp(timeout: int = 15) -> smtplib.SMTP:
+    """Conecta ao servidor de e-mail.
+    - porta 465: conexao ja criptografada desde o inicio (SMTP_SSL) - util
+      quando antivirus/firewall do computador interrompe o STARTTLS da 587;
+    - outras portas (587): conexao comum + STARTTLS (SMTP_USE_TLS)."""
+    if settings.SMTP_PORT == 465:
+        return smtplib.SMTP_SSL(settings.SMTP_HOST, settings.SMTP_PORT, timeout=timeout)
+    servidor = smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=timeout)
+    try:
+        servidor.ehlo()
         if settings.SMTP_USE_TLS:
             servidor.starttls()
-        if settings.SMTP_USER:
-            servidor.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-        servidor.sendmail(settings.SMTP_FROM, [destinatario], mensagem.as_string())
+            servidor.ehlo()
+    except Exception:
+        servidor.close()
+        raise
+    return servidor
 
 
 def enviar_email_redefinicao_senha(destinatario: str, nome: str, link_reset: str, idioma: str = "pt") -> None:

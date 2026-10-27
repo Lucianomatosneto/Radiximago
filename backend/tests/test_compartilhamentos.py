@@ -1,7 +1,8 @@
 """
 Compartilhamento de imagens anotadas ("Compartilhadas comigo"):
 - resposta neutra (nao revela se o e-mail tem conta);
-- destinatario ve a imagem e as anotacoes ATUAIS do remetente, so leitura;
+- destinatario ve a imagem e SO o recado do compartilhamento (as "Minhas
+  anotacoes" de quem enviou sao privadas - 27/10/2026);
 - isolamento: terceiros nao veem nem mexem;
 - remetente desfaz; destinatario remove do proprio espaco;
 - auditoria registrada.
@@ -49,13 +50,13 @@ def test_compartilha_e_destinatario_ve_imagem_e_anotacoes(client, criar_usuario,
     assert item["quantidade_anotacoes"] == 1
     assert item["novo"] is True
 
+    # PRIVACIDADE: so o recado chega; a anotacao pessoal do remetente nao
     anot = client.get(f"/shares/recebidas/{item['id']}/anotacoes", headers=cabecalho_auth(t_dest)).json()
-    assert [a["texto"] for a in anot["itens"]] == ["Observar a raiz mesial"]
-
-    # anotacao ATUAL: o remetente edita e o destinatario ve a nova versao
+    assert anot["itens"] == [] and anot["mensagem"] == "Veja esta"
     client.put(f"/annotations/{nota['id']}", json={"texto": "Texto editado"}, headers=cabecalho_auth(t_rem))
     anot = client.get(f"/shares/recebidas/{item['id']}/anotacoes", headers=cabecalho_auth(t_dest)).json()
-    assert [a["texto"] for a in anot["itens"]] == ["Texto editado"]
+    assert anot["itens"] == []
+    assert "Texto editado" not in str(client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json())
 
     client.post("/shares/recebidas/vistas", headers=cabecalho_auth(t_dest))
     assert client.get("/shares/recebidas/novas", headers=cabecalho_auth(t_dest)).json()["quantidade"] == 0
@@ -146,38 +147,26 @@ def _compartilhar(client, t_rem, ficha_id, destinatario):
     client.post(f"/shares/{ficha_id}", json={"email": destinatario.email}, headers=cabecalho_auth(t_rem))
 
 
-def test_destinatario_apaga_anotacoes_so_da_propria_visao(client, criar_usuario, criar_ficha):
+def test_minhas_anotacoes_nao_vao_no_compartilhamento(client, criar_usuario, criar_ficha):
+    """27/10/2026: as anotacoes pessoais de quem compartilha continuam so dele."""
     remetente = criar_usuario()
     destinatario = criar_usuario()
     t_rem = obter_token(client, remetente.email)
     t_dest = obter_token(client, destinatario.email)
     ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
-    n1 = _anotar(client, t_rem, ficha.id, "Primeira")
+    _anotar(client, t_rem, ficha.id, "Primeira")
     _anotar(client, t_rem, ficha.id, "Segunda")
     _compartilhar(client, t_rem, ficha.id, destinatario)
-    comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
-    url = f"/shares/recebidas/{comp_id}/anotacoes"
-
-    # apaga UMA para si
-    r = client.post(f"{url}/ocultar", json={"ids": [n1["id"]]}, headers=cabecalho_auth(t_dest))
-    assert r.status_code == 200 and r.json()["ocultas"] == 1
-    anot = client.get(url, headers=cabecalho_auth(t_dest)).json()
-    assert [a["texto"] for a in anot["itens"]] == ["Segunda"]
-    assert anot["ocultas"] == 1
-    assert client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["quantidade_anotacoes"] == 1
-
-    # a anotacao continua existindo para quem escreveu
+    item = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]
+    assert item["quantidade_anotacoes"] == 0
+    url = f"/shares/recebidas/{item['id']}/anotacoes"
+    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"] == []
+    # nem "reexibir" mostra as anotacoes pessoais
+    client.post(f"{url}/reexibir", headers=cabecalho_auth(t_dest))
+    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"] == []
+    # para quem escreveu, continuam la
     minhas = client.get(f"/annotations/{ficha.id}", headers=cabecalho_auth(t_rem)).json()["itens"]
     assert {a["texto"] for a in minhas} == {"Primeira", "Segunda"}
-
-    # apagar todas (sem ids) e depois mostrar de novo
-    client.post(f"{url}/ocultar", json={}, headers=cabecalho_auth(t_dest))
-    assert client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"] == []
-    # anotacao NOVA do remetente aparece mesmo depois de "apagar todas"
-    _anotar(client, t_rem, ficha.id, "Nova")
-    assert [a["texto"] for a in client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"]] == ["Nova"]
-    client.post(f"{url}/reexibir", headers=cabecalho_auth(t_dest))
-    assert len(client.get(url, headers=cabecalho_auth(t_dest)).json()["itens"]) == 3
 
 
 def test_ocultar_anotacoes_isolado_e_so_ids_do_remetente(client, criar_usuario, criar_ficha):
@@ -250,11 +239,11 @@ def test_responder_a_quem_enviou_sem_email(client, criar_usuario, criar_ficha, d
     r = client.post(f"/shares/recebidas/{comp_id}/responder", json={"mensagem": "Avaliado, veja minha nota"}, headers=cabecalho_auth(t_dest))
     assert r.status_code == 200
 
-    # quem enviou recebe a resposta em "Compartilhadas comigo", com as anotacoes de quem respondeu
+    # quem enviou recebe a resposta em "Compartilhadas comigo" (so o recado; a anotacao pessoal fica com quem a escreveu)
     recebidas = client.get("/shares/recebidas", headers=cabecalho_auth(t_rem)).json()["itens"]
     assert len(recebidas) == 1
     resp = recebidas[0]
     assert resp["curation_id"] == ficha.id and resp["mensagem"] == "Avaliado, veja minha nota" and resp["novo"] is True
     notas = client.get(f"/shares/recebidas/{resp['id']}/anotacoes", headers=cabecalho_auth(t_rem)).json()["itens"]
-    assert [n["texto"] for n in notas] == ["Avaliei: lesao periapical"]
+    assert notas == []
     assert db.query(AuditLog).filter(AuditLog.acao == "resposta_compartilhamento").count() == 1

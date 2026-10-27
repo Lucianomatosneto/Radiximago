@@ -207,6 +207,12 @@ def test_email_anexa_pdf_como_documento(monkeypatch):
         def starttls(self):
             pass
 
+        def ehlo(self):
+            pass
+
+        def close(self):
+            pass
+
         def login(self, *a):
             pass
 

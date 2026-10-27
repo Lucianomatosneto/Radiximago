@@ -34,6 +34,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 
 from app.core.config import settings
+from app.core.email import abrir_conexao_smtp, senha_smtp
 from app.modules import orthanc_client
 from app.modules.auth import exigir_perfis
 from app.modules.users import User, UserRole
@@ -151,27 +152,39 @@ def situacao_email() -> dict:
         return {"status": "aguardando", "etapa": "configuracao", "erro": "sem_servidor"}
     etapa = "conexao"
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10) as servidor:
-            servidor.ehlo()
-            if settings.SMTP_USE_TLS:
-                etapa = "criptografia"
-                servidor.starttls()
-                servidor.ehlo()
+        with abrir_conexao_smtp(timeout=10) as servidor:
             if settings.SMTP_USER:
                 etapa = "login"
-                servidor.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+                servidor.login(settings.SMTP_USER, senha_smtp())
             servidor.noop()
         return {"status": "online", "etapa": "ok", "erro": None, "servidor": settings.SMTP_HOST}
-    except smtplib.SMTPAuthenticationError:
-        erro = "senha_recusada"
-    except (socket.timeout, TimeoutError):
-        erro = "tempo_esgotado"
+    except smtplib.SMTPAuthenticationError as e:
+        erro, detalhe = "senha_recusada", _detalhe_smtp(e)
+    except (socket.timeout, TimeoutError) as e:
+        erro, detalhe = "tempo_esgotado", _detalhe_smtp(e)
+    except smtplib.SMTPException as e:
+        # (SMTPException tambem e um OSError: precisa vir ANTES do OSError)
+        erro, detalhe = "recusado", _detalhe_smtp(e)
     except (ConnectionRefusedError, socket.gaierror, OSError) as e:
-        erro = "sem_conexao" if not isinstance(e, smtplib.SMTPException) else "recusado"
-    except smtplib.SMTPException:
-        erro = "recusado"
-    logger.warning("Teste do servidor de e-mail falhou na etapa %s (%s).", etapa, erro)
-    return {"status": "erro", "etapa": etapa, "erro": erro, "servidor": settings.SMTP_HOST}
+        erro, detalhe = "sem_conexao", _detalhe_smtp(e)
+    logger.warning("Teste do servidor de e-mail falhou na etapa %s (%s): %s", etapa, erro, detalhe)
+    return {"status": "erro", "etapa": etapa, "erro": erro, "detalhe": detalhe, "servidor": settings.SMTP_HOST}
+
+
+def _detalhe_smtp(e: Exception) -> str:
+    """Resposta do servidor de e-mail, curta e sem dados da conta: o tipo do
+    erro e o codigo/mensagem SMTP (ex.: 'SMTPServerDisconnected' ou '535
+    5.7.8 Username and Password not accepted'). A senha nunca aparece -
+    ela nao faz parte da resposta do servidor."""
+    codigo = getattr(e, "smtp_code", None)
+    texto = getattr(e, "smtp_error", None)
+    if isinstance(texto, bytes):
+        texto = texto.decode("utf-8", "replace")
+    texto = str(texto if texto is not None else e)
+    if settings.SMTP_USER:
+        texto = texto.replace(settings.SMTP_USER, "***")
+    texto = " ".join(texto.split())[:180]
+    return f"{type(e).__name__}{f' {codigo}' if codigo else ''}{f': {texto}' if texto else ''}"
 
 
 @router.get("/email")

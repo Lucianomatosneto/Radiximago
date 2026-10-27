@@ -9,7 +9,7 @@ Endpoints (sempre em cima do usuario logado):
 - GET    /shares/recebidas/novas                -> quantas chegaram e ainda nao vi
 - POST   /shares/recebidas/vistas               -> marca todas como vistas
 - DELETE /shares/recebidas/{id}                 -> tiro uma imagem do meu espaco
-- GET    /shares/recebidas/{id}/anotacoes       -> anotacoes ATUAIS do remetente (so leitura)
+- GET    /shares/recebidas/{id}/anotacoes       -> o recado de quem compartilhou (so leitura)
 - POST   /shares/recebidas/{id}/anotacoes/ocultar   -> "apaga" anotacoes (ou o recado) do remetente SO da minha visao
 - POST   /shares/recebidas/{id}/anotacoes/reexibir  -> volta a mostrar todas
 - POST   /shares/recebidas/{id}/responder       -> responde a quem enviou (sem digitar e-mail)
@@ -25,6 +25,10 @@ Seguranca / LGPD:
   lista de quem recebeu;
 - quem recebe NUNCA apaga dados de quem enviou: "apagar" uma anotacao
   recebida so a esconde da visao de quem recebeu (anotacoes_ocultas).
+- PRIVACIDADE DAS ANOTACOES (27/10/2026): "Minhas anotações" sao SO de quem
+  as escreveu. Compartilhar uma imagem NAO leva essas anotacoes; quem recebe
+  ve apenas o que foi escrito na caixa do proprio compartilhamento (o
+  recado). A lista de anotacoes do remetente volta sempre vazia.
 """
 
 import re
@@ -179,8 +183,8 @@ def responder(
     db: Session = Depends(get_db),
 ):
     """Responder a quem enviou, SEM digitar e-mail: a mesma imagem volta
-    para o remetente, com a resposta como recado (e as anotacoes de quem
-    responde). Ele recebe em "Compartilhadas comigo" como nova."""
+    para o remetente, com a resposta como recado. Ele recebe em
+    "Compartilhadas comigo" como nova."""
     comp, ficha, _, remetente = _compartilhamento_recebido(db, usuario, compartilhamento_id)
     mensagem = dados.mensagem.strip()
     if not mensagem:
@@ -262,19 +266,6 @@ def listar_recebidas(
     db: Session = Depends(get_db),
 ):
     resultados = _recebidas_query(db, usuario).order_by(CompartilhamentoImagem.criado_em.desc()).all()
-    # quantas anotacoes cada remetente tem em cada imagem (uma consulta so)
-    pares = {(comp.remetente_id, comp.curation_id) for comp, _, _, _ in resultados}
-    ids_por_par: dict[tuple[int, int], set[int]] = {}
-    if pares:
-        linhas = (
-            db.query(AnotacaoImagem.usuario_id, AnotacaoImagem.curation_id, AnotacaoImagem.id)
-            .filter(AnotacaoImagem.usuario_id.in_({p[0] for p in pares}))
-            .filter(AnotacaoImagem.curation_id.in_({p[1] for p in pares}))
-            .all()
-        )
-        for u, c, i in linhas:
-            ids_por_par.setdefault((u, c), set()).add(i)
-
     erros = erros_por_ficha(db, [r[1].id for r in resultados])
     segmentacoes = contar_por_ficha(db, [r[1].id for r in resultados])
     itens = []
@@ -292,8 +283,9 @@ def listar_recebidas(
             "mensagem": None if comp.mensagem_oculta else comp.mensagem,
             "compartilhado_em": comp.criado_em.isoformat() if comp.criado_em else None,
             "novo": comp.visto_em is None,
-            # so as que quem recebeu ainda ve (sem as que ele "apagou")
-            "quantidade_anotacoes": len(ids_por_par.get((comp.remetente_id, ficha.id), set()) - set(comp.anotacoes_ocultas or [])),
+            # so o recado do compartilhamento conta (as "Minhas anotações" de
+            # quem enviou sao privadas e nao vao junto)
+            "quantidade_anotacoes": 1 if (comp.mensagem and not comp.mensagem_oculta) else 0,
             "tipo_radiografia": ficha.tipo_radiografia,
             "dentes": ficha.dentes,
             "achado_principal": ficha.achado_principal,
@@ -359,13 +351,11 @@ def _compartilhamento_recebido(db: Session, usuario: User, compartilhamento_id: 
     return resultado
 
 
-def _anotacoes_remetente(db: Session, comp: CompartilhamentoImagem):
-    return (
-        db.query(AnotacaoImagem)
-        .filter(AnotacaoImagem.curation_id == comp.curation_id, AnotacaoImagem.usuario_id == comp.remetente_id)
-        .order_by(AnotacaoImagem.criado_em)
-        .all()
-    )
+def _anotacoes_remetente(db: Session, comp: CompartilhamentoImagem) -> list[AnotacaoImagem]:
+    """Anotacoes de quem enviou que quem recebeu pode ver: NENHUMA.
+    "Minhas anotações" sao privadas (27/10/2026); so o recado escrito na
+    caixa do compartilhamento chega a quem recebe."""
+    return []
 
 
 @router.get("/recebidas/{compartilhamento_id}/anotacoes")
