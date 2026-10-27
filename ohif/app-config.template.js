@@ -130,23 +130,52 @@ window.config = {
 })();
 
 // ---------------------------------------------------------------------
-// CURADORIA: RECOLHER A COLUNA "STUDIES" DO OHIF
-// Com radixRecolherEstudos=1 na URL (usado pela tela de Curadoria, que
-// mostra os dados da imagem na coluna da direita do proprio Radix), a
-// coluna "Studies" da esquerda do OHIF e recolhida uma vez, assim que
-// aparece - a radiografia ganha essa largura. O mesmo botao do OHIF abre
-// a coluna de novo, se a pessoa quiser. Sem o parametro, nada muda.
+// SEM A COLUNA "STUDIES" E SEM O "LAYOUT" DO OHIF
+// Com radixRecolherEstudos=1 na URL (Curadoria e visualizador do Radix), a
+// coluna "Studies" da esquerda do OHIF SOME por completo - nem a faixa
+// estreita com a seta e a aba "Studies" fica (pedido de 20/10/2026). A
+// radiografia ganha essa largura. Quem escolhe as imagens e o Radix.
+// Com radixTeclaR=1 (visualizador do Radix, que tem o proprio seletor de
+// layout), o botao "Layout" do OHIF tambem some - um seletor so na tela.
+// So esconde (display:none): nada e apagado nem muda no OHIF fora do Radix.
 // ---------------------------------------------------------------------
 ;(function () {
   var params = new URLSearchParams(window.location.search);
-  if (params.get('radixRecolherEstudos') !== '1') return;
+  var semEstudos = params.get('radixRecolherEstudos') === '1';
+  var semLayout = params.get('radixTeclaR') === '1';
+  if (!semEstudos && !semLayout) return;
+
+  // a coluna da esquerda inteira: sobe do botao da seta ate o bloco que fica
+  // AO LADO da area de imagens (o pai dele ja contem a area de imagens)
+  function esconderEstudos() {
+    var botao = document.querySelector('[data-cy="side-panel-header-left"]');
+    var grade = document.querySelector('[data-cy="viewport-grid"]');
+    if (!botao || !grade) return false;
+    var bloco = botao;
+    while (bloco.parentElement && !bloco.parentElement.contains(grade)) bloco = bloco.parentElement;
+    if (!bloco.parentElement || bloco === document.body || bloco.contains(grade)) return false;
+    if (bloco.style.display !== 'none') bloco.style.setProperty('display', 'none', 'important');
+    return true;
+  }
+
+  // o botao "Layout" e o invólucro dele na barra de ferramentas
+  function esconderLayout() {
+    var botao = document.querySelector('[data-cy="Layout"]');
+    if (!botao) return false;
+    var alvo = botao;
+    // sobe enquanto o pai so tiver este botao dentro (tooltip, moldura...)
+    for (var i = 0; i < 4 && alvo.parentElement && alvo.parentElement.children.length === 1; i++) alvo = alvo.parentElement;
+    if (alvo.style.display !== 'none') alvo.style.setProperty('display', 'none', 'important');
+    return true;
+  }
+
+  // o OHIF redesenha a tela algumas vezes ao abrir: confere por ~30 s
   var tentativas = 0;
   var relogio = setInterval(function () {
     tentativas++;
-    var painel = document.querySelector('[data-cy="studyBrowser-panel"]');
-    var botao = document.querySelector('[data-cy="side-panel-header-left"]');
-    if (painel && botao) { botao.click(); clearInterval(relogio); return; }
-    if (tentativas > 120) clearInterval(relogio); // ~30 s: desiste em silencio
+    if (semEstudos) esconderEstudos();
+    if (semLayout) esconderLayout();
+    if (tentativas > 120) clearInterval(relogio);
   }, 250);
 })();
 
@@ -188,6 +217,36 @@ window.config = {
     } catch (e) { /* sem aviso: a tela do Radix continua funcionando */ }
   }
 
+  // CORRECAO (27/10/2026 - "as imagens carregam e logo somem, tela escura"):
+  // ao trocar a imagem de um quadro logo depois de dividir a tela, o OHIF
+  // 3.9 as vezes fica com a "camera" do quadro anterior (imagem fora de
+  // vista = quadro preto) ou mostra a imagem que estava antes no quadro
+  // (visto com radiografias coloridas, sem orientacao no DICOM). Quando
+  // cada quadro ja tem a sua imagem carregada, recarrega a pilha e
+  // recentraliza a camera - mesma imagem, sem alterar nada no arquivo.
+  function recarregarQuadros(s, pares, tentativa) {
+    setTimeout(function () {
+      var cs = s.cornerstoneViewportService;
+      var prontos = pares.every(function (p) {
+        var vp = cs && cs.getCornerstoneViewport(p.viewportId);
+        return vp && vp.getImageIds && vp.getImageIds().length && vp.getImageData && vp.getImageData();
+      });
+      if (!prontos && tentativa < 40) { recarregarQuadros(s, pares, tentativa + 1); return; }
+      pares.forEach(function (p) {
+        try {
+          var vp = cs.getCornerstoneViewport(p.viewportId);
+          if (!vp || !vp.setStack) return;
+          var ids = vp.getImageIds();
+          if (!ids || !ids.length) return;
+          Promise.resolve(vp.setStack(ids, vp.getCurrentImageIdIndex() || 0)).then(function () {
+            vp.resetCamera();
+            vp.render();
+          }).catch(function () { /* quadro ficou como estava */ });
+        } catch (e) { /* quadro ficou como estava */ }
+      });
+    }, tentativa === 0 ? 600 : 250);
+  }
+
   function distribuir() {
     var s = window.services;
     var cmd = window.commandsManager;
@@ -201,7 +260,10 @@ window.config = {
       var pares = ids.slice(0, escolhidos.length).map(function (id, i) {
         return { viewportId: id, displaySetInstanceUIDs: [escolhidos[i].displaySetInstanceUID] };
       });
-      if (pares.length) s.viewportGridService.setDisplaySetsForViewports(pares);
+      if (pares.length) {
+        s.viewportGridService.setDisplaySetsForViewports(pares);
+        recarregarQuadros(s, pares, 0);
+      }
       // mais espaco para as imagens: recolhe a coluna "Studies" da esquerda
       // (so clica se a coluna estiver aberta - o mesmo botao abre e fecha)
       var recolher = document.querySelector('[data-cy="side-panel-header-left"]');
@@ -292,7 +354,8 @@ window.config = {
     }
     // botoes do Radix ("R" gira, "I" inverte): os mesmos comandos dos atalhos
     // de teclado do proprio OHIF, so na imagem ativa e so na tela (nao grava)
-    if (d.tipo === 'radix-comando' && (d.comando === 'rotateViewportCW' || d.comando === 'invertViewport')) {
+    // (rotateViewportCCW: o Radix desfaz o giro quando a gravacao falha)
+    if (d.tipo === 'radix-comando' && (d.comando === 'rotateViewportCW' || d.comando === 'rotateViewportCCW' || d.comando === 'invertViewport')) {
       try {
         if (typeof d.uid === 'string') ativarEstudo(d.uid);
         window.commandsManager.runCommand(d.comando);
@@ -326,7 +389,8 @@ window.config = {
       if (alvo && (alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.isContentEditable)) return;
       ev.stopImmediatePropagation();
       ev.preventDefault();
-      try { window.parent.postMessage({ tipo: 'radix-tecla-girar' }, origemRadix); } catch (e) { /* ignora */ }
+      // Shift+R = girar para a esquerda (anti-horario)
+      try { window.parent.postMessage({ tipo: 'radix-tecla-girar', sentido: ev.shiftKey ? 'anti' : 'horario' }, origemRadix); } catch (e) { /* ignora */ }
     }, true);
   }
 
