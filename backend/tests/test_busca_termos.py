@@ -98,3 +98,21 @@ def test_curador_marca_a_origem(client, db, criar_usuario, criar_ficha):
     db.expire_all()
     assert db.get(OrthancReference, ficha.orthanc_reference_id).origem == "externa"
     assert client.get(f"/curation/{ficha.id}", headers=hc).json()["origem"] == "externa"
+
+
+def test_grupo_de_dentes_pelo_numero_marcado(client, h, fichas, db):
+    # ficha "a": carie no dente 36 (achado) -> molares; ficha "b": dente 11 na propria ficha -> incisivos
+    b = db.get(Curation, fichas["b"])
+    b.dentes = [11, 21]
+    db.commit()
+    molares = _ids(client, h, termos="dentes:molares")
+    assert fichas["a"] in molares and fichas["b"] not in molares
+    incisivos = _ids(client, h, termos="dentes:incisivos")
+    assert fichas["b"] in incisivos and fichas["a"] not in incisivos
+    assert fichas["a"] in _ids(client, h, termos="dente:36")
+    assert fichas["a"] in _ids(client, h, termos=["dentes:inferiores", "grupo:carie"])
+
+
+@pytest.mark.parametrize("token", ["dentes:caninos_x", "dente:19", "dente:abc"])
+def test_dente_invalido_e_recusado(client, h, token):
+    assert client.get("/search", params={"termos": token}, headers=h).status_code == 422

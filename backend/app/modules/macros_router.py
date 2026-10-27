@@ -26,7 +26,10 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
+from app.modules.achados import TipoErroTecnico
+from app.modules.busca_termos import DENTES_VALIDOS
 from app.modules.curations import AlteracaoObservada, QualidadeTecnica, TipoRadiografia
+from app.modules.orthanc_references import OrigemImagem
 from app.modules.macros import FraseAprendida, MacroCuradoria
 from app.modules.users import User
 from app.modules.vocabulario import SinonimoTermo, TermoVocabulario, normalizar
@@ -49,6 +52,26 @@ class ConteudoMacro(BaseModel):
     # lista fechada conferida nos validadores abaixo; o tamanho so barra abuso
     tipo_radiografia: Optional[str] = Field(default=None, max_length=40)
     qualidade_tecnica: Optional[str] = Field(default=None, max_length=40)
+    # 27/10/2026: as mesmas opcoes da Curadoria e da Pesquisa avancada
+    origem: Optional[OrigemImagem] = None
+    erros_tecnicos: List[TipoErroTecnico] = Field(default_factory=list, max_length=40)
+    termos: List[int] = Field(default_factory=list, max_length=30)
+    dentes: List[int] = Field(default_factory=list, max_length=52)
+
+    @field_validator("dentes")
+    @classmethod
+    def _dentes(cls, v: List[int]) -> List[int]:
+        invalidos = [d for d in v if d not in DENTES_VALIDOS]
+        if invalidos:
+            raise ValueError(f"Dente inválido (FDI): {invalidos[0]}")
+        return sorted(set(v))
+
+    @field_validator("termos")
+    @classmethod
+    def _termos(cls, v: List[int]) -> List[int]:
+        if any(t < 1 for t in v):
+            raise ValueError("Termo do vocabulário inválido.")
+        return list(dict.fromkeys(v))
 
     @field_validator("alteracoes_observadas")
     @classmethod
@@ -74,7 +97,7 @@ class ConteudoMacro(BaseModel):
 
     def limpo(self) -> dict:
         """so os campos preenchidos (textos aparados)"""
-        dados = self.model_dump()
+        dados = self.model_dump(mode="json")
         saida: dict = {}
         for chave, valor in dados.items():
             if isinstance(valor, str):
@@ -82,6 +105,16 @@ class ConteudoMacro(BaseModel):
             if valor:
                 saida[chave] = valor
         return saida
+
+
+def _conferir_termos(db: Session, conteudo: dict) -> None:
+    """os termos da macro precisam existir no vocabulario"""
+    ids = conteudo.get("termos") or []
+    if not ids:
+        return
+    existentes = {t for (t,) in db.query(TermoVocabulario.id).filter(TermoVocabulario.id.in_(ids)).all()}
+    if set(ids) - existentes:
+        raise HTTPException(status_code=422, detail="Termo do vocabulário não encontrado.")
 
 
 class MacroEntrada(BaseModel):
@@ -151,6 +184,7 @@ def criar_macro(
 ):
     normalizado = _nome_valido(db, dados.nome)
     conteudo = dados.conteudo.limpo()
+    _conferir_termos(db, conteudo)
     if not conteudo:
         raise HTTPException(status_code=422, detail="A macro precisa preencher pelo menos um campo.")
     macro = MacroCuradoria(
@@ -183,6 +217,7 @@ def editar_macro(
         macro.nome = dados.nome.strip()
     if dados.conteudo is not None:
         conteudo = dados.conteudo.limpo()
+        _conferir_termos(db, conteudo)
         if not conteudo:
             raise HTTPException(status_code=422, detail="A macro precisa preencher pelo menos um campo.")
         macro.conteudo = conteudo

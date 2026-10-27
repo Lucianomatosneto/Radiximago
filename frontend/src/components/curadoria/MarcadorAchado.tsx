@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import CamadaMarcacoes from '../detalhe/CamadaMarcacoes'
-import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, gerarIdMarcacao, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
+import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, contornoRelativo, gerarIdMarcacao, girarRelativo, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
 import { detectarRecorteConteudo, type RecorteRelativo } from '../../lib/recorteImagem'
 
 // Mapeia o valor cru do enum AchadoPrincipal (mesmos valores de
@@ -65,6 +65,7 @@ type Arrasto =
   | { tipo: 'mover'; id: string; inicioX: number; inicioY: number; original: Marcacao }
   | { tipo: 'redimensionar'; id: string; original: Marcacao }
   | { tipo: 'ponta'; id: string; extremidade: 'x1y1' | 'x2y2' }
+  | { tipo: 'girar'; id: string }
 
 export default function MarcadorAchado({
   orthancReferenceId,
@@ -124,6 +125,12 @@ export default function MarcadorAchado({
   const desenhoRef = useRef<Marcacao | null>(null)
   const arrastoRef = useRef<Arrasto | null>(null)
   marcacoesRef.current = marcacoes
+  // largura/altura da imagem em pixels: a inclinacao das formas e medida em
+  // pixels (sem isso, numa imagem retangular a forma girada se deformaria)
+  const proporcao = () => {
+    const n = tamanhoNaturalRef.current
+    return n && n.altura ? n.largura / n.altura : 1
+  }
 
   function setDesenhoAtual(valor: Marcacao | null) {
     desenhoRef.current = valor
@@ -263,9 +270,37 @@ export default function MarcadorAchado({
           if (arrasto.tipo === 'ponta') {
             return arrasto.extremidade === 'x1y1' ? { ...m, x1: x, y1: y } : { ...m, x2: x, y2: y }
           }
-          const x0 = arrasto.original.x as number
-          const y0 = arrasto.original.y as number
-          return { ...m, largura: Math.max(0, x - x0), altura: Math.max(0, y - y0) }
+          const k = proporcao()
+          const cx = (m.x as number) + (m.largura as number) / 2
+          const cy = (m.y as number) + (m.altura as number) / 2
+          if (arrasto.tipo === 'girar') {
+            // INCLINAR (27/10/2026): o angulo segue o mouse em volta do
+            // centro; perto de 0/90/180/270 graus ele "gruda" no reto
+            let graus = (Math.atan2(y - cy, (x - cx) * k) * 180) / Math.PI + 90
+            graus = ((Math.round(graus) % 360) + 360) % 360
+            for (const reto of [0, 90, 180, 270, 360]) if (Math.abs(graus - reto) <= 3) graus = reto % 360
+            return { ...m, angulo: graus > 180 ? graus - 360 : graus }
+          }
+          const o = arrasto.original
+          const graus = o.angulo ?? 0
+          if (!graus) {
+            const x0 = o.x as number
+            const y0 = o.y as number
+            return { ...m, largura: Math.max(0, x - x0), altura: Math.max(0, y - y0) }
+          }
+          // forma inclinada: o canto de cima/esquerda fica parado e o tamanho
+          // e medido "na direcao" da forma (conta em pixels)
+          const ocx = (o.x as number) + (o.largura as number) / 2
+          const ocy = (o.y as number) + (o.altura as number) / 2
+          const fixo = girarRelativo(o.x as number, o.y as number, ocx, ocy, graus, k)
+          const a = (graus * Math.PI) / 180
+          const vx = (x - fixo.x) * k
+          const vy = y - fixo.y
+          const lw = Math.max(0, vx * Math.cos(a) + vy * Math.sin(a))
+          const lh = Math.max(0, -vx * Math.sin(a) + vy * Math.cos(a))
+          const ncx = fixo.x + ((lw / 2) * Math.cos(a) - (lh / 2) * Math.sin(a)) / k
+          const ncy = fixo.y + (lw / 2) * Math.sin(a) + (lh / 2) * Math.cos(a)
+          return { ...m, largura: lw / k, altura: lh, x: ncx - lw / k / 2, y: ncy - lh / 2 }
         })
       )
     }
@@ -315,6 +350,11 @@ export default function MarcadorAchado({
     const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper, recorteRef.current)
     setSelecionadoId(marcacao.id)
     arrastoRef.current = { tipo: 'mover', id: marcacao.id, inicioX: x, inicioY: y, original: marcacao }
+  }
+
+  function aoPressionarGiro(evento: React.MouseEvent, marcacao: Marcacao) {
+    evento.stopPropagation()
+    arrastoRef.current = { tipo: 'girar', id: marcacao.id }
   }
 
   function aoPressionarAlca(evento: React.MouseEvent, marcacao: Marcacao, extremidade?: 'x1y1' | 'x2y2') {
@@ -530,11 +570,8 @@ export default function MarcadorAchado({
                     style={{ cursor: 'move' }}
                   />
                 ) : (
-                  <rect
-                    x={m.x}
-                    y={m.y}
-                    width={m.largura}
-                    height={m.altura}
+                  <polygon
+                    points={contornoRelativo(m, proporcao()).map((p) => `${p.x},${p.y}`).join(' ')}
                     fill="transparent"
                     onMouseDown={(e) => aoPressionarForma(e, m)}
                     style={{ cursor: 'move' }}
@@ -566,20 +603,58 @@ export default function MarcadorAchado({
                     />
                   </>
                 )}
-                {selecionadoId === m.id && m.tipo !== 'seta' && (
-                  <rect
-                    x={(m.x as number) + (m.largura as number) - 0.012}
-                    y={(m.y as number) + (m.altura as number) - 0.012}
-                    width={0.024}
-                    height={0.024}
-                    fill="#ef4444"
-                    stroke="white"
-                    strokeWidth={1}
-                    vectorEffect="non-scaling-stroke"
-                    onMouseDown={(e) => aoPressionarAlca(e, m)}
-                    style={{ cursor: 'nwse-resize' }}
-                  />
-                )}
+                {selecionadoId === m.id && m.tipo !== 'seta' && (() => {
+                  const k = proporcao()
+                  const cx = (m.x as number) + (m.largura as number) / 2
+                  const cy = (m.y as number) + (m.altura as number) / 2
+                  const graus = m.angulo ?? 0
+                  const canto = girarRelativo((m.x as number) + (m.largura as number), (m.y as number) + (m.altura as number), cx, cy, graus, k)
+                  // alca de INCLINAR: um pouco acima do meio do lado de cima
+                  const topo = girarRelativo(cx, (m.y as number) - 0.045, cx, cy, graus, k)
+                  const meioTopo = girarRelativo(cx, m.y as number, cx, cy, graus, k)
+                  const r = 0.012
+                  return (
+                    <>
+                      <line
+                        x1={meioTopo.x}
+                        y1={meioTopo.y}
+                        x2={topo.x}
+                        y2={topo.y}
+                        stroke="white"
+                        strokeWidth={1}
+                        strokeDasharray="3 2"
+                        vectorEffect="non-scaling-stroke"
+                        pointerEvents="none"
+                      />
+                      <ellipse
+                        cx={topo.x}
+                        cy={topo.y}
+                        rx={r / k}
+                        ry={r}
+                        fill="#14b8a6"
+                        stroke="white"
+                        strokeWidth={1}
+                        vectorEffect="non-scaling-stroke"
+                        onMouseDown={(e) => aoPressionarGiro(e, m)}
+                        style={{ cursor: 'grab' }}
+                      >
+                        <title>{t('inclinar')}</title>
+                      </ellipse>
+                      <rect
+                        x={canto.x - r / k}
+                        y={canto.y - r}
+                        width={(2 * r) / k}
+                        height={2 * r}
+                        fill="#ef4444"
+                        stroke="white"
+                        strokeWidth={1}
+                        vectorEffect="non-scaling-stroke"
+                        onMouseDown={(e) => aoPressionarAlca(e, m)}
+                        style={{ cursor: 'nwse-resize' }}
+                      />
+                    </>
+                  )
+                })()}
               </g>
             ))}
           </svg>

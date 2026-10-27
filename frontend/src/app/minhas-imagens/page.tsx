@@ -13,7 +13,7 @@ import CamadaSegmentacoes from '../../components/segmentacao/CamadaSegmentacoes'
 import { BotaoPintura, usePinturaNaGrade } from '../../components/segmentacao/PinturaNaGrade'
 import VisualizadorSequencial, { type ItemSequencia } from '../../components/VisualizadorSequencial'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
-import MenuPrancha from '../../components/impressao/MenuPrancha'
+import { BotaoComPrancha } from '../../components/impressao/MenuPrancha'
 import { MenuSalvarComo } from '../../components/impressao/MenuSalvar'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
@@ -399,12 +399,18 @@ export default function MinhasImagensPage() {
                   <div className="ml-auto flex flex-wrap items-center gap-1.5">
                     <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                     <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
-                    <MenuPrancha grupos={gruposAcoes} enxuto soIcone={barraRolada} />
-                    {permiteEnviarLote && (
-                      <button type="button" onClick={enviarSelecionadasPorEmail} disabled={enviandoLote} className={botaoBarra} title={t('enviarPorEmailPlural', { quantidade: selecionados.length })}>
-                        {enviandoLote ? t('enviando') : barraRolada ? `✉ ${selecionados.length}` : t('enviarPorEmailCurto', { quantidade: selecionados.length })}
-                      </button>
-                    )}
+                    {/* E-MAIL: as selecionadas (sem tomografia) ou a prancha */}
+                    <BotaoComPrancha
+                      rotulo={enviandoLote ? t('enviando') : barraRolada ? '✉' : t('email')}
+                      rotuloAcao={t('enviarPorEmailPlural', { quantidade: selecionados.length })}
+                      onAcao={enviarSelecionadasPorEmail}
+                      semAcao={!permiteEnviarLote}
+                      desativado={enviandoLote}
+                      modo="email"
+                      grupos={gruposAcoes}
+                      paraBaixo
+                      className={botaoBarra}
+                    />
                     {temSelecao &&
                       (confirmandoRemocao ? (
                         <span className="flex h-8 items-center gap-1 rounded-lg border border-red-500/60 bg-red-500/10 px-2 text-xs text-red-300">

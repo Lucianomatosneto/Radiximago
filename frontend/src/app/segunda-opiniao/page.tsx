@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import Link from 'next/link'
+import BotaoInicio from '../../components/BotaoInicio'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
 import ThemeToggle from '../../components/ThemeToggle'
@@ -355,12 +355,7 @@ export default function SegundaOpiniaoPage() {
         <div className="flex shrink-0 flex-wrap items-center gap-3">
           <Logo variante="icone" />
           <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
-          <Link
-            href="/dashboard"
-            className="rounded-full border border-base-border bg-base-surface px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-          >
-            ← {t('inicio')}
-          </Link>
+          <BotaoInicio rotulo={t('inicio')} />
           <div role="tablist" aria-label={t('titulo')} className="ml-2 flex rounded-full border border-base-border bg-base-surface p-0.5">
             {(['revisar', 'devolvidas'] as Aba[]).map((a) => {
               const total = a === 'revisar' ? filaRevisar.filter((i) => i.pode_responder !== false).length : filaDevolvidas.length

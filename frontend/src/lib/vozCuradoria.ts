@@ -51,6 +51,7 @@ export interface FichaVoz {
   sem_alteracoes?: boolean
   anonimizacao_validada?: boolean
   erros_tecnicos?: string[]
+  origem?: string
 }
 
 export interface TermoVoz {
@@ -71,6 +72,7 @@ export type CampoVoz =
   | 'observacoes_internas'
   | 'marcacoes'
   | 'termos'
+  | 'origem'
   | 'anonimizacao'
   | 'erros_tecnicos'
 
@@ -125,6 +127,11 @@ export interface ConteudoMacro {
   alteracoes_observadas?: string[]
   tipo_radiografia?: string
   qualidade_tecnica?: string
+  // 27/10/2026: mesmas opcoes da Curadoria e da Pesquisa avancada
+  origem?: string
+  erros_tecnicos?: string[]
+  termos?: number[]
+  dentes?: number[]
 }
 
 export interface MacroVoz {
@@ -167,6 +174,24 @@ export function aplicarMacro<F extends FichaVoz>(ficha: F, macro: MacroVoz): { f
   if (c.qualidade_tecnica) {
     novo.qualidade_tecnica = c.qualidade_tecnica
     alteracoes.push({ campo: 'qualidade_tecnica', descricao: `${rotulo}: qualidade` })
+  }
+  if (c.origem) {
+    novo.origem = c.origem
+    alteracoes.push({ campo: 'origem', descricao: `${rotulo}: origem` })
+  }
+  // listas: a macro SOMA ao que ja esta marcado (nada e desmarcado)
+  const somar = <T,>(atual: T[] | undefined, extra: T[] | undefined) => [...(atual ?? []), ...(extra ?? []).filter((x) => !(atual ?? []).includes(x))]
+  if (c.erros_tecnicos?.length) {
+    novo.erros_tecnicos = somar(ficha.erros_tecnicos, c.erros_tecnicos)
+    alteracoes.push({ campo: 'erros_tecnicos', descricao: `${rotulo}: erro técnico` })
+  }
+  if (c.termos?.length) {
+    novo.termos = somar(ficha.termos, c.termos)
+    alteracoes.push({ campo: 'termos', descricao: `${rotulo}: termos` })
+  }
+  if (c.dentes?.length) {
+    novo.dentes = somar(ficha.dentes, c.dentes).sort((a, b) => a - b)
+    alteracoes.push({ campo: 'dentes', descricao: `${rotulo}: dentes` })
   }
   return { ficha: novo, alteracoes }
 }

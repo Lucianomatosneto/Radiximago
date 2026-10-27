@@ -78,3 +78,20 @@ def test_frases_aprendidas(client, criar_usuario, db):
     assert client.delete(f"/voz/frases/{fid}", headers=h).status_code == 200
     acoes = [a.acao for a in db.query(AuditLog).filter(AuditLog.usuario_id == curador.id).all()]
     assert acoes.count("voz_frase_aprendida") == 2 and "voz_frase_esquecida" in acoes
+
+
+def test_macro_com_opcoes_da_curadoria_e_da_busca(client, criar_usuario, db):
+    """27/10/2026: macro tambem leva origem, erros tecnicos, termos e dentes."""
+    from app.modules.vocabulario import TermoVocabulario
+
+    h = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.curador).email))
+    termo = db.query(TermoVocabulario).first()
+    assert termo, "o vocabulario inicial deveria existir"
+    nome = f"Completa {uuid.uuid4().hex[:5]}"
+    r = client.post("/macros", headers=h, json={"nome": nome, "conteudo": {
+        "origem": "externa", "erros_tecnicos": ["alongamento"], "termos": [termo.id], "dentes": [36, 11, 36],
+    }})
+    assert r.status_code == 200, r.text
+    assert r.json()["conteudo"] == {"origem": "externa", "erros_tecnicos": ["alongamento"], "termos": [termo.id], "dentes": [11, 36]}
+    for ruim in ({"dentes": [19]}, {"erros_tecnicos": ["inventado"]}, {"origem": "marte"}, {"termos": [99999999]}):
+        assert client.post("/macros", headers=h, json={"nome": f"r{uuid.uuid4().hex[:6]}", "conteudo": ruim}).status_code == 422, ruim

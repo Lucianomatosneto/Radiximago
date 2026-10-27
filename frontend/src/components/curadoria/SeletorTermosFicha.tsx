@@ -10,6 +10,10 @@ import { itensDoVocabulario, type TermoBusca, type TermoVocabularioApi } from '.
  * termos do vocabulario odontologico (ex.: "Nódulo pulpar", "Lesão de
  * furca") com a mesma caixa de sugestoes da Pesquisa avancada - assim o
  * que ele marca aqui e exatamente o que a busca encontra.
+ * Termo que nao existe (27/10/2026): "Acrescentar '...' ao vocabulario" cria
+ * o termo (POST /vocabulario/termos, registrado na auditoria) e ja o liga a
+ * ficha; a Pesquisa avancada passa a oferece-lo na hora (ela le o mesmo
+ * vocabulario).
  */
 export default function SeletorTermosFicha({ termos, onChange }: { termos: number[]; onChange: (ids: number[]) => void }) {
   const t = useTranslations('BuscaTermos')
@@ -24,6 +28,23 @@ export default function SeletorTermosFicha({ termos, onChange }: { termos: numbe
       })
   }, [])
 
+  async function criarTermo(texto: string): Promise<TermoBusca | string> {
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/vocabulario/termos`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ termo: texto.trim().slice(0, 150), categoria: 'achado' }),
+      })
+      const dados = await r.json().catch(() => null)
+      if (!r.ok) return typeof dados?.detail === 'string' ? dados.detail : t('erroCriar')
+      setVocabulario((lista) => [...lista, dados as TermoVocabularioApi])
+      return { tipo: 'vocab', valor: String(dados.id), rotulo: dados.termo }
+    } catch {
+      return t('erroCriar')
+    }
+  }
+
   const catalogo = useMemo(() => itensDoVocabulario(vocabulario, (lista) => t('sinonimos', { lista })), [vocabulario, t])
   const selecionados: TermoBusca[] = termos.map((id) => ({
     tipo: 'vocab',
@@ -37,6 +58,7 @@ export default function SeletorTermosFicha({ termos, onChange }: { termos: numbe
         catalogo={catalogo}
         selecionados={selecionados}
         onChange={(lista) => onChange(lista.filter((x) => x.tipo === 'vocab').map((x) => Number(x.valor)))}
+        onCriar={criarTermo}
         rotuloCampo={t('rotuloFicha')}
         placeholder={t('placeholderFicha')}
       />

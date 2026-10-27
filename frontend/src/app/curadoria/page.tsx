@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import BotaoInicio from '../../components/BotaoInicio'
 import Logo from '../../components/Logo'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
@@ -1082,6 +1083,10 @@ export default function CuradoriaPage() {
             alteracoes_observadas: form.alteracoes_observadas,
             tipo_radiografia: form.tipo_radiografia || null,
             qualidade_tecnica: form.qualidade_tecnica || null,
+            origem: form.origem || null,
+            erros_tecnicos: form.erros_tecnicos,
+            termos: form.termos,
+            dentes: form.dentes,
           },
         }),
       })
@@ -1304,12 +1309,7 @@ export default function CuradoriaPage() {
           <div className="flex shrink-0 items-center gap-3">
             <Logo variante="icone" />
             <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
-            <Link
-              href="/dashboard"
-              className="ml-1 rounded-full border border-base-border bg-base-surface px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-            >
-              ← {t('inicio')}
-            </Link>
+            <BotaoInicio rotulo={t('inicio')} />
 
             {/* Atalho visivel para a tela cheia "de verdade" (sem abas e
                 barra de endereco): o navegador so deixa entrar nela com um
@@ -1396,7 +1396,15 @@ export default function CuradoriaPage() {
                   "Abrir marcação": a imagem para marcacao ocupa o mesmo quadro.
                   O MarcadorAchado fica sempre montado (escondido) para a
                   imagem de marcacao ir carregando junto com a principal. */}
-              <div className="relative flex min-h-0 min-w-0 flex-1 gap-3">
+              <div className={`relative flex min-h-0 min-w-0 flex-1 gap-3 ${fichaAtiva && fichaVisivel ? 'px-9' : ''}`}>
+              {/* SETAS DE PASSAR A IMAGEM (27/10/2026): fora da caixa da
+                  imagem, bem junto dela - ← na esquerda e → na direita */}
+              {fichaAtiva && fichaVisivel && (
+                <>
+                  <SetaImagem lado="esquerda" onClick={irParaAnterior} desativada={!podeAnterior} rotulo={t('barraSuperior.imagemAnterior')} />
+                  <SetaImagem lado="direita" onClick={irParaProxima} desativada={!podeProxima} rotulo={t('barraSuperior.proximaImagem')} />
+                </>
+              )}
               <div
                 className={`flex min-h-0 min-w-0 ${
                   // marcacao aberta: o visualizador fica INVISIVEL por baixo
@@ -1571,31 +1579,10 @@ export default function CuradoriaPage() {
                           >
                             {t('barraSuperior.descartar')}
                           </button>
-                          {/* navegacao entre imagens (sem caixa), ao lado de Descartar */}
-                          <span className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={irParaAnterior}
-                              disabled={!podeAnterior}
-                              aria-label={t('barraSuperior.imagemAnterior')}
-                              title={t('barraSuperior.imagemAnterior')}
-                              className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
-                            >
-                              ←
-                            </button>
-                            <span className="whitespace-nowrap text-sm font-medium text-slate-300">
-                              {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={irParaProxima}
-                              disabled={!podeProxima}
-                              aria-label={t('barraSuperior.proximaImagem')}
-                              title={t('barraSuperior.proximaImagem')}
-                              className="flex h-7 w-7 items-center justify-center rounded-full border border-base-border text-slate-300 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-30"
-                            >
-                              →
-                            </button>
+                          {/* posicao na fila; as SETAS de passar a imagem ficam ao
+                              lado da caixa da imagem (27/10/2026) */}
+                          <span className="whitespace-nowrap text-sm font-medium text-slate-300">
+                            {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
                           </span>
                           {badgeReviewsRespondidas}
                         </>
@@ -1703,5 +1690,35 @@ export default function CuradoriaPage() {
         />
       )}
     </div>
+  )
+}
+
+/** seta moderna (chevron em circulo) para passar a imagem, ao lado da caixa da imagem */
+function SetaImagem({
+  lado,
+  onClick,
+  desativada,
+  rotulo,
+}: {
+  lado: 'esquerda' | 'direita'
+  onClick: () => void
+  desativada: boolean
+  rotulo: string
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={desativada}
+      aria-label={rotulo}
+      title={rotulo}
+      className={`absolute top-1/2 z-30 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-teal-500/50 bg-base-surface/90 text-teal-700 shadow-md backdrop-blur-sm transition hover:scale-110 hover:border-teal-400 hover:bg-teal-500/15 hover:shadow-[0_0_14px_rgba(45,212,191,.45)] disabled:cursor-not-allowed disabled:opacity-25 disabled:hover:scale-100 dark:text-teal-200 ${
+        lado === 'esquerda' ? 'left-0' : 'right-0'
+      }`}
+    >
+      <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={lado === 'esquerda' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'} />
+      </svg>
+    </button>
   )
 }

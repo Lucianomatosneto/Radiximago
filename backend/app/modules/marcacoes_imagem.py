@@ -157,6 +157,17 @@ def _geometria(marcacao: dict[str, Any], para_pixel, escala: float) -> dict[str,
         pontos = [para_pixel(x, y), para_pixel(x + w, y), para_pixel(x + w, y + h), para_pixel(x, y + h)]
     ancora = para_pixel(*_ponto_numero(marcacao))
     centro = para_pixel(x + w / 2, y + h / 2)
+    angulo = marcacao.get("angulo") or 0
+    if angulo:
+        # forma inclinada pelo curador: gira em volta do centro (em pixels)
+        cos_a, sen_a = math.cos(math.radians(angulo)), math.sin(math.radians(angulo))
+
+        def girar(p):
+            px, py = p[0] - centro[0], p[1] - centro[1]
+            return (centro[0] + px * cos_a - py * sen_a, centro[1] + px * sen_a + py * cos_a)
+
+        pontos = [girar(p) for p in pontos]
+        ancora = girar(ancora)
     dx, dy = ancora[0] - centro[0], ancora[1] - centro[1]
     comp = math.hypot(dx, dy)
     if comp < 0.5:

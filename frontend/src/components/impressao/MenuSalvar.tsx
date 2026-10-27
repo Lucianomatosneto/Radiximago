@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { criarZip, escolherOndeSalvar, gravarArquivo, type ArquivoZip } from '../../lib/zip'
 import { ImpressaoEmAndamento, type GrupoImpressao, type ItemImpressao, type Trabalho } from './MenuImpressao'
+import { DialogoPrancha, OpcaoPrancha } from './MenuPrancha'
 
 // Dois botoes ao lado de "Imprimir", com os mesmos grupos (ex.: todas as
 // encontradas / somente as selecionadas):
@@ -143,6 +144,7 @@ export function MenuSalvarComo({
   const descrever = useDescricaoCuradoria()
   const [aberto, setAberto] = useState(false)
   const [pdf, setPdf] = useState<Trabalho | null>(null)
+  const [prancha, setPrancha] = useState(false)
   const [progresso, setProgresso] = useState<{ feitas: number; total: number } | null>(null)
   const [mensagem, setMensagem] = useMensagemTemporaria()
 
@@ -228,10 +230,19 @@ export function MenuSalvarComo({
             </Opcao>
           </div>
         ))}
+        {/* prancha (imagens a esquerda e informacoes a direita), dentro do Baixar */}
+        <OpcaoPrancha
+          modo="baixar"
+          onEscolher={() => {
+            setAberto(false)
+            setPrancha(true)
+          }}
+        />
       </MenuBase>
       {mensagem && <span className="text-xs text-emerald-400">{mensagem}</span>}
       {progresso && <Progresso titulo={t('preparandoZip')} feitas={progresso.feitas} total={progresso.total} />}
       {pdf && <ImpressaoEmAndamento trabalho={pdf} dicaPdf onTerminar={() => setPdf(null)} />}
+      {prancha && <DialogoPrancha grupos={grupos} modo="baixar" onFechar={() => setPrancha(false)} />}
     </>
   )
 }

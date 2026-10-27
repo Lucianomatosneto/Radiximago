@@ -17,9 +17,9 @@ window.config = {
     createLogoComponentFn: function (React) {
     return React.createElement(
     'span',
-    { style: { display: 'flex', alignItems: 'center', gap: '8px', color: '#F8FAFC', fontWeight: 600, fontSize: '14px', letterSpacing: '.02em', fontFamily: 'Inter, system-ui, sans-serif' } },
-    React.createElement('span', { style: { width: '26px', height: '26px', borderRadius: '7px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'grid', placeItems: 'center' } },
-    React.createElement('svg', { viewBox: '0 0 24 24', width: 16, height: 16, fill: '#fff' },
+    { style: { display: 'flex', alignItems: 'center', gap: '10px', color: '#F8FAFC', fontWeight: 700, fontSize: '18px', letterSpacing: '.03em', fontFamily: 'Inter, system-ui, sans-serif' } },
+    React.createElement('span', { style: { width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg,#3b82f6,#2563eb)', display: 'grid', placeItems: 'center' } },
+    React.createElement('svg', { viewBox: '0 0 24 24', width: 20, height: 20, fill: '#fff' },
     React.createElement('rect', { x: 5, y: 5, width: 14, height: 2.6, rx: 1.3 }),
     React.createElement('rect', { x: 5, y: 9.4, width: 14, height: 2.6, rx: 1.3, opacity: 0.85 }),
     React.createElement('rect', { x: 7, y: 13.8, width: 10, height: 2.6, rx: 1.3, opacity: 0.7 }),
@@ -116,7 +116,12 @@ window.config = {
     // contorno do viewport ativo: turquesa fino em vez do ciano forte
     '.border-primary-light.border-2,.border-primary-light{box-shadow:none}',
     // barras de rolagem discretas
-    '*{scrollbar-color:#2F3B48 transparent}'
+    '*{scrollbar-color:#2F3B48 transparent}',
+    // SETA "<" AO LADO DO RADIX IMAGO (pedido de 27/10/2026): some. Ela
+    // levava a lista de estudos do proprio OHIF, que nao e usada no Radix
+    // (quem escolhe as imagens e o Radix); o nome RADIX IMAGO fica maior.
+    '[data-cy="return-to-work-list"]>svg{display:none!important}',
+    '[data-cy="return-to-work-list"]{pointer-events:none!important;cursor:default!important}'
   ].join('');
   function aplicar() {
     if (document.getElementById('radix-tema')) return;
@@ -498,19 +503,35 @@ window.config = {
       };
     }
     var x = m.x || 0, y = m.y || 0, w = m.largura || 0, h = m.altura || 0, pts = [], k;
+    // INCLINACAO (27/10/2026): `angulo` (graus, horario) gira a forma em volta
+    // do centro, em PIXELS da imagem - a proporcao da imagem vem da propria
+    // conversao para a tela (o giro/espelho do OHIF continua valendo)
+    var angulo = +m.angulo || 0, cxr = x + w / 2, cyr = y + h / 2, prop = 1;
+    if (angulo) {
+      var o0 = tela(0, 0), o1 = tela(1, 0), o2 = tela(0, 1);
+      var lw = Math.sqrt((o1[0] - o0[0]) * (o1[0] - o0[0]) + (o1[1] - o0[1]) * (o1[1] - o0[1]));
+      var lh = Math.sqrt((o2[0] - o0[0]) * (o2[0] - o0[0]) + (o2[1] - o0[1]) * (o2[1] - o0[1]));
+      prop = lh ? lw / lh : 1;
+    }
+    var rad = angulo * Math.PI / 180, ca = Math.cos(rad), sa = Math.sin(rad);
+    function ponto(rx, ry) {
+      if (!angulo) return tela(rx, ry);
+      var dx = (rx - cxr) * prop, dy = ry - cyr;
+      return tela(cxr + (dx * ca - dy * sa) / prop, cyr + dx * sa + dy * ca);
+    }
     if (m.tipo === 'oval') {
       for (k = 0; k < 72; k++) {
         var t = (k / 72) * Math.PI * 2;
-        pts.push(tela(x + w / 2 + (w / 2) * Math.cos(t), y + h / 2 + (h / 2) * Math.sin(t)));
+        pts.push(ponto(x + w / 2 + (w / 2) * Math.cos(t), y + h / 2 + (h / 2) * Math.sin(t)));
       }
     } else {
-      pts = [tela(x, y), tela(x + w, y), tela(x + w, y + h), tela(x, y + h)];
+      pts = [ponto(x, y), ponto(x + w, y), ponto(x + w, y + h), ponto(x, y + h)];
     }
     var ancora;
     if (m.tipo === 'oval') {
       var rx = w / 2, ry = h / 2;
-      ancora = tela(x + rx - rx * Math.SQRT1_2, y + ry - ry * Math.SQRT1_2);
-    } else ancora = tela(x, y);
+      ancora = ponto(x + rx - rx * Math.SQRT1_2, y + ry - ry * Math.SQRT1_2);
+    } else ancora = ponto(x, y);
     var centro = tela(x + w / 2, y + h / 2);
     var ddx = ancora[0] - centro[0], ddy = ancora[1] - centro[1], l = Math.sqrt(ddx * ddx + ddy * ddy);
     if (l < 0.5) { ddx = -Math.SQRT1_2; ddy = -Math.SQRT1_2; } else { ddx /= l; ddy /= l; }
@@ -556,8 +577,9 @@ window.config = {
   function caminhoHolofote(g, w, h) {
     var fora = 'M0,0 H' + w + ' V' + h + ' H0 Z';
     if (!g.seta) return fora + ' ' + g.caminho;
-    var a = g.seta.a, b = g.seta.b, cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
-    var r = Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1])) / 2 + 30, pts = [];
+    // seta (27/10/2026): ilumina um circulo em volta da PONTA, onde fica a alteracao
+    var a = g.seta.a, b = g.seta.b, cx = b[0], cy = b[1];
+    var r = Math.max(28, Math.sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1])) * 0.5), pts = [];
     for (var k = 0; k < 48; k++) { var t = (k / 48) * Math.PI * 2; pts.push((cx + r * Math.cos(t)) + ',' + (cy + r * Math.sin(t))); }
     return fora + ' M' + pts.join(' L') + ' Z';
   }

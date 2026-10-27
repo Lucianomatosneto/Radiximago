@@ -24,6 +24,48 @@ export interface Marcacao {
   // fora dela so com `achado`). O estudante ve esse texto no tooltip no
   // lugar do rotulo generico "Outro", quando preenchido.
   achado_descricao?: string | null
+  // Inclinacao (graus, sentido horario, em volta do centro) do retangulo ou
+  // oval (27/10/2026) - medida em PIXELS da imagem, entao a proporcao da
+  // imagem nao deforma a forma.
+  angulo?: number | null
+}
+
+/**
+ * Cantos (ou contorno do oval) da forma em coordenadas RELATIVAS (0-1),
+ * ja com a inclinacao. `proporcao` = largura/altura da imagem em pixels.
+ */
+export function contornoRelativo(m: Marcacao, proporcao: number, passos = 4): { x: number; y: number }[] {
+  const x = m.x ?? 0
+  const y = m.y ?? 0
+  const w = m.largura ?? 0
+  const h = m.altura ?? 0
+  const cx = x + w / 2
+  const cy = y + h / 2
+  let pts: { x: number; y: number }[]
+  if (m.tipo === 'oval') {
+    const n = Math.max(passos, 36)
+    pts = Array.from({ length: n }, (_, k) => {
+      const t = (k / n) * Math.PI * 2
+      return { x: cx + (w / 2) * Math.cos(t), y: cy + (h / 2) * Math.sin(t) }
+    })
+  } else {
+    pts = [
+      { x, y },
+      { x: x + w, y },
+      { x: x + w, y: y + h },
+      { x, y: y + h },
+    ]
+  }
+  return pts.map((p) => girarRelativo(p.x, p.y, cx, cy, m.angulo ?? 0, proporcao))
+}
+
+/** gira o ponto (relativo) em volta de (cx, cy) - a conta e feita em pixels */
+export function girarRelativo(px: number, py: number, cx: number, cy: number, graus: number, proporcao: number) {
+  if (!graus) return { x: px, y: py }
+  const a = (graus * Math.PI) / 180
+  const dx = (px - cx) * proporcao
+  const dy = py - cy
+  return { x: cx + (dx * Math.cos(a) - dy * Math.sin(a)) / proporcao, y: cy + dx * Math.sin(a) + dy * Math.cos(a) }
 }
 
 export const FORMAS_MARCACAO: { tipo: TipoMarcacao; rotulo: string; icone: string }[] = [
@@ -163,8 +205,20 @@ export function geometriaMarcacao(m: Marcacao, paraTela: (rx: number, ry: number
     pontos = [paraTela(x, y), paraTela(x + w, y), paraTela(x + w, y + h), paraTela(x, y + h)]
   }
   const rel = pontoNumeroMarcacao(m)
-  const ancora = paraTela(rel.x, rel.y)
+  let ancora = paraTela(rel.x, rel.y)
   const centro = paraTela(x + w / 2, y + h / 2)
+  if (m.angulo) {
+    // forma inclinada pelo curador: gira em volta do centro (na tela, que
+    // tem a mesma proporcao da imagem)
+    const a = (m.angulo * Math.PI) / 180
+    const girar = (p: Ponto): Ponto => {
+      const dx = p[0] - centro[0]
+      const dy = p[1] - centro[1]
+      return [centro[0] + dx * Math.cos(a) - dy * Math.sin(a), centro[1] + dx * Math.sin(a) + dy * Math.cos(a)]
+    }
+    pontos = pontos.map(girar)
+    ancora = girar(ancora)
+  }
   let dx = ancora[0] - centro[0]
   let dy = ancora[1] - centro[1]
   const len = Math.hypot(dx, dy)
@@ -240,14 +294,17 @@ export function caminhoHolofote(g: GeometriaMarcacao, largura: number, altura: n
 
 /**
  * So o contorno da regiao clara do holofote (a forma; na seta, um circulo
- * em volta dela). Serve para recortar varias marcacoes de uma vez.
+ * em volta da PONTA). Serve para recortar varias marcacoes de uma vez.
  */
 export function buracoHolofote(g: GeometriaMarcacao): string {
   if (!g.seta) return g.caminho
+  // SETA (27/10/2026): a alteracao fica junto da PONTA - o holofote ilumina
+  // um circulo em volta da ponta (metade do comprimento da seta, no minimo
+  // 28 px), e nao a seta inteira
   const { a, b } = g.seta
-  const cx = (a[0] + b[0]) / 2
-  const cy = (a[1] + b[1]) / 2
-  const r = Math.hypot(b[0] - a[0], b[1] - a[1]) / 2 + 30
+  const cx = b[0]
+  const cy = b[1]
+  const r = Math.max(28, Math.hypot(b[0] - a[0], b[1] - a[1]) * 0.5)
   const pts: string[] = []
   for (let k = 0; k < 48; k++) {
     const t = (k / 48) * Math.PI * 2

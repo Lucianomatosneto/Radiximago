@@ -12,7 +12,6 @@ import CamadaSegmentacoes from '../../components/segmentacao/CamadaSegmentacoes'
 import { BotaoPintura, usePinturaNaGrade } from '../../components/segmentacao/PinturaNaGrade'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
-import MenuPrancha from '../../components/impressao/MenuPrancha'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
@@ -27,6 +26,8 @@ import BuscaTermos from '../../components/pesquisa/BuscaTermos'
 import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
 import {
   GRUPOS_TERMOS,
+  GRUPOS_DENTES,
+  DENTES_FDI,
   itensDoVocabulario,
   normalizarBusca,
   token,
@@ -365,6 +366,8 @@ function PesquisaConteudo() {
       ...REGIOES_ANATOMICAS.map((v) =>
         item('regiao', v, tAchadosEstruturados(`regioes.${v}` as Parameters<typeof tAchadosEstruturados>[0]))
       ),
+      ...GRUPOS_DENTES.map((g) => item('dentes', g, tTermos(`dentes.${g}`), [tTermos(`dentesPalavras.${g}`)])),
+      ...DENTES_FDI.map((n) => item('dente', String(n), tTermos('denteNumero', { numero: n }), [String(n)])),
       ...itensDoVocabulario(termosVocabulario, (sin) => tTermos('sinonimos', { lista: sin })),
     ]
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -432,7 +435,7 @@ function PesquisaConteudo() {
     for (const tk of tokens) {
       const [tipo, ...resto] = tk.split(':')
       const valor = resto.join(':')
-      if (!valor || !['grupo', 'achado', 'regiao', 'vocab', 'texto'].includes(tipo)) continue
+      if (!valor || !['grupo', 'achado', 'regiao', 'vocab', 'dentes', 'dente', 'texto'].includes(tipo)) continue
       filtrosDaUrl.termos.push({ tipo: tipo as TermoBusca['tipo'], valor, rotulo: rotuloDoToken(tk) ?? valor })
       temFiltroNaUrl = true
     }
@@ -1056,7 +1059,6 @@ function PesquisaConteudo() {
                             <MenuSalvarMinhasImagens grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
-                            <MenuPrancha grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                           </>
                         )
                       })()}

@@ -12,7 +12,7 @@ import FundoMapaMundi from './fundo/FundoMapaMundi'
 import ThemeToggle from './ThemeToggle'
 import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
-import MenuPrancha from './impressao/MenuPrancha'
+import { BotaoComPrancha } from './impressao/MenuPrancha'
 import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
 import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
@@ -841,6 +841,12 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     }
   }
 
+  // grupos de Imprimir e da prancha (dentro de Imprimir, Baixar e E-mail)
+  const gruposPrancha = [
+    { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
+    { chave: 'tela', rotulo: t('impressao.daTela'), itens: emGrade ? itensPagina : [atual] },
+  ]
+
   return (
     <div ref={containerRef} className="fixed inset-0 z-50 isolate flex flex-col bg-base">
       {/* Mesmo padrao visual das demais telas: mapa-mundi discreto (modo
@@ -1156,21 +1162,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             )}
           </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
-              <MenuImpressao
-                compacto
-                grupos={[
-                  { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
-                  { chave: 'tela', rotulo: t('impressao.daTela'), itens: emGrade ? itensPagina : [atual] },
-                ]}
-              />
-              {/* prancha: imagens a esquerda e informacoes a direita (baixar, imprimir, e-mail) */}
-              <MenuPrancha
-                compacto
-                grupos={[
-                  { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
-                  { chave: 'tela', rotulo: t('impressao.daTela'), itens: emGrade ? itensPagina : [atual] },
-                ]}
-              />
+              <MenuImpressao compacto grupos={gruposPrancha} />
             {infoSerie?.eh_serie ? (
               <>
                 <button
@@ -1193,14 +1185,16 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
                 </button>
               </>
             ) : (
-              <button
-                type="button"
-                onClick={baixarUnico}
-                disabled={baixandoUnico}
+              // BAIXAR (27/10/2026): menu com "esta imagem" e a prancha
+              <BotaoComPrancha
+                rotulo={baixandoUnico ? t('baixando') : t('baixar')}
+                rotuloAcao={t('baixarEstaImagem')}
+                onAcao={baixarUnico}
+                desativado={baixandoUnico}
+                modo="baixar"
+                grupos={gruposPrancha}
                 className={CLASSE_BOTAO_COMPACTO}
-              >
-                {baixandoUnico ? t('baixando') : t('baixar')}
-              </button>
+              />
             )}
             <button
               type="button"
@@ -1210,16 +1204,18 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             >
               {jaSalvo ? t('salva') : salvando ? t('salvando') : t('salvarNoUsuario')}
             </button>
-            {!infoSerie?.eh_serie && (
-              <button
-                type="button"
-                onClick={enviarPorEmail}
-                disabled={enviando}
-                className={CLASSE_BOTAO_COMPACTO}
-              >
-                {enviando ? t('enviando') : t('enviarPorEmail')}
-              </button>
-            )}
+            {/* E-MAIL (27/10/2026): menu com "esta imagem" e a prancha (serie
+                de tomografia nao vai por e-mail - so a prancha) */}
+            <BotaoComPrancha
+              rotulo={enviando ? t('enviando') : t('enviarPorEmail')}
+              rotuloAcao={t('enviarEstaImagem')}
+              onAcao={enviarPorEmail}
+              semAcao={!!infoSerie?.eh_serie}
+              desativado={enviando}
+              modo="email"
+              grupos={gruposPrancha}
+              className={CLASSE_BOTAO_COMPACTO}
+            />
           </div>
 
         </div>

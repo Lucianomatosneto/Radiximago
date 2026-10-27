@@ -13,6 +13,9 @@ import { useTranslations } from 'next-intl'
 //  - Baixar: PDF (ou PNG; varias folhas em PNG vem num .zip)
 //  - Imprimir: abre o mesmo PDF na janela de impressao do navegador
 //  - E-mail: envia o PDF para o e-mail da propria conta
+// 27/10/2026: a prancha deixou de ser um botao a parte - ela aparece DENTRO
+// de "Imprimir", "Baixar"/"Salvar como" e "Enviar por e-mail" (OpcaoPrancha
+// abre esta mesma janela ja com a acao certa).
 
 export interface ItemPrancha {
   curation_id: number
@@ -99,7 +102,114 @@ export default function MenuPrancha({
   )
 }
 
-function IconePrancha({ por, className }: { por: 2 | 3; className?: string }) {
+export type ModoPrancha = 'baixar' | 'imprimir' | 'email'
+
+/**
+ * Item "Prancha com informações…" para colocar dentro dos menus Imprimir,
+ * Baixar/Salvar como e Enviar por e-mail. So o botao: quem usa guarda o
+ * estado e mostra <DialogoPrancha modo=...> FORA do menu (o menu fecha ao
+ * escolher, e a janela precisa continuar aberta).
+ */
+export function OpcaoPrancha({
+  modo,
+  desativado,
+  onEscolher,
+}: {
+  modo: ModoPrancha
+  desativado?: boolean
+  onEscolher: () => void
+}) {
+  const t = useTranslations('Prancha')
+  return (
+    <button
+      type="button"
+      disabled={desativado}
+      onClick={onEscolher}
+      className="mt-1 flex w-full items-center gap-2 rounded-lg border-t border-base-border px-2 py-2 text-left text-sm text-slate-200 hover:bg-white/5 disabled:opacity-40"
+    >
+      <IconePrancha por={2} className="h-4 w-4 shrink-0" />
+      <span>
+        {t(`opcaoMenu.${modo}`)}
+        <span className="block text-[11px] text-slate-400">{t('opcaoMenuDica')}</span>
+      </span>
+    </button>
+  )
+}
+
+/**
+ * Botao de uma acao com menu (barra do visualizador): "Baixar" e "Enviar por
+ * e-mail" abrem um menu com a acao de sempre e a "Prancha com informações…".
+ */
+export function BotaoComPrancha({
+  rotulo,
+  rotuloAcao,
+  onAcao,
+  desativado,
+  modo,
+  grupos,
+  className,
+  semAcao = false,
+  paraBaixo = false,
+}: {
+  rotulo: string
+  /** texto da acao de sempre dentro do menu (ex.: "Esta imagem") */
+  rotuloAcao: string
+  onAcao: () => void
+  desativado?: boolean
+  modo: ModoPrancha
+  grupos: GrupoPrancha[]
+  className: string
+  /** a acao de sempre nao vale aqui (ex.: e-mail de serie) - so a prancha */
+  semAcao?: boolean
+  /** menu abre para baixo (barra no topo da tela) */
+  paraBaixo?: boolean
+}) {
+  const [aberto, setAberto] = useState(false)
+  const [prancha, setPrancha] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!aberto) return
+    function fora(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false)
+    }
+    document.addEventListener('mousedown', fora)
+    return () => document.removeEventListener('mousedown', fora)
+  }, [aberto])
+  return (
+    <div ref={ref} className="relative">
+      <button type="button" onClick={() => setAberto((v) => !v)} disabled={desativado} aria-haspopup="true" aria-expanded={aberto} className={className}>
+        {rotulo} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
+      </button>
+      {aberto && (
+        <div className={`absolute right-0 z-70 w-72 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl ${paraBaixo ? 'top-full mt-2' : 'bottom-full mb-2'}`}>
+          {!semAcao && (
+            <button
+              type="button"
+              onClick={() => {
+                setAberto(false)
+                onAcao()
+              }}
+              className="block w-full rounded-lg px-2 py-1.5 text-left text-sm text-slate-200 hover:bg-white/5"
+            >
+              {rotuloAcao}
+            </button>
+          )}
+          <OpcaoPrancha
+            modo={modo}
+            desativado={!grupos.some((g) => g.itens.length)}
+            onEscolher={() => {
+              setAberto(false)
+              setPrancha(true)
+            }}
+          />
+        </div>
+      )}
+      {prancha && <DialogoPrancha grupos={grupos} modo={modo} onFechar={() => setPrancha(false)} />}
+    </div>
+  )
+}
+
+export function IconePrancha({ por, className }: { por: 2 | 3; className?: string }) {
   const altura = por === 2 ? 9 : 6
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
@@ -117,8 +227,17 @@ function IconePrancha({ por, className }: { por: 2 | 3; className?: string }) {
   )
 }
 
-function DialogoPrancha({ grupos, onFechar }: { grupos: GrupoPrancha[]; onFechar: () => void }) {
+export function DialogoPrancha({
+  grupos: gruposTodos,
+  onFechar,
+  modo,
+}: {
+  grupos: GrupoPrancha[]
+  onFechar: () => void
+  modo?: ModoPrancha
+}) {
   const t = useTranslations('Prancha')
+  const grupos = gruposTodos.filter((g) => g.itens.length > 0)
   const [chave, setChave] = useState(grupos[grupos.length > 1 ? 1 : 0]?.chave ?? '')
   const [porFolha, setPorFolha] = useState<2 | 3>(2)
   const [comInformacoes, setComInformacoes] = useState(true)
@@ -328,25 +447,33 @@ function DialogoPrancha({ grupos, onFechar }: { grupos: GrupoPrancha[]; onFechar
         <p className="mb-3 text-xs text-slate-400">{t('resumo', { imagens: total, folhas })}</p>
         {demais && <p className="mb-3 text-xs text-amber-300">{t('limite', { maximo: MAX_IMAGENS })}</p>}
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-          <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('pdf')}>
-            {ocupado === 'pdf' ? t('gerando') : `⬇ ${t('baixarPdf')}`}
-          </button>
-          <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('png')}>
-            {ocupado === 'png' ? t('gerando') : `⬇ ${t('baixarPng')}`}
-          </button>
-          <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('imprimir')}>
-            {ocupado === 'imprimir' ? t('gerando') : `🖨 ${t('imprimir')}`}
-          </button>
-          <button
-            type="button"
-            className={botaoAcao}
-            disabled={!!ocupado || demaisEmail || total === 0}
-            title={demaisEmail ? t('limiteEmail', { maximo: MAX_IMAGENS_EMAIL }) : undefined}
-            onClick={() => executar('email')}
-          >
-            {ocupado === 'email' ? t('enviando') : `✉ ${t('email')}`}
-          </button>
+        <div className={`grid gap-2 ${modo === 'baixar' ? 'grid-cols-2' : modo ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-4'}`}>
+          {(!modo || modo === 'baixar') && (
+            <>
+              <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('pdf')}>
+                {ocupado === 'pdf' ? t('gerando') : `⬇ ${t('baixarPdf')}`}
+              </button>
+              <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('png')}>
+                {ocupado === 'png' ? t('gerando') : `⬇ ${t('baixarPng')}`}
+              </button>
+            </>
+          )}
+          {(!modo || modo === 'imprimir') && (
+            <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('imprimir')}>
+              {ocupado === 'imprimir' ? t('gerando') : `🖨 ${t('imprimir')}`}
+            </button>
+          )}
+          {(!modo || modo === 'email') && (
+            <button
+              type="button"
+              className={botaoAcao}
+              disabled={!!ocupado || demaisEmail || total === 0}
+              title={demaisEmail ? t('limiteEmail', { maximo: MAX_IMAGENS_EMAIL }) : undefined}
+              onClick={() => executar('email')}
+            >
+              {ocupado === 'email' ? t('enviando') : `✉ ${t('email')}`}
+            </button>
+          )}
         </div>
 
         <div aria-live="polite" className="mt-3 min-h-[1.25rem] text-xs">

@@ -629,7 +629,7 @@
     "baixar": "⬇ Download",
     "salva": "✓ Saved",
     "salvando": "Saving...",
-    "salvarNoUsuario": "★ Save to my account",
+    "salvarNoUsuario": "★ My images",
     "enviando": "Sending...",
     "enviarPorEmail": "✉ Send by email",
     "erroBaixar": "Couldn't download the file.",
@@ -758,7 +758,9 @@
       "salvarDica": "Saves the rotation in the image (lossless): it will open in this position for everyone. Click until the teeth are upright.",
       "salvando": "Saving…",
       "erro": "The image could not be rotated."
-    }
+    },
+    "baixarEstaImagem": "⬇ This image",
+    "enviarEstaImagem": "✉ This image to my e-mail"
   },
   "Curadoria": {
     "inicio": "Home",
@@ -878,7 +880,8 @@
         "oval": "Oval",
         "retangulo": "Rectangle",
         "seta": "Arrow"
-      }
+      },
+      "inclinar": "Drag to tilt the shape"
     },
     "painelLateral": {
       "imagemParaMarcacao": "Image for marking",
@@ -1306,7 +1309,8 @@
     "removerSelecionadas": "Remove from list ({quantidade})",
     "confirmarRemover": "Remove {quantidade, plural, one {# image} other {# images}} from My images?",
     "sim": "Yes, remove",
-    "nao": "Cancel"
+    "nao": "Cancel",
+    "email": "✉ E-mail"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",
@@ -1980,7 +1984,12 @@
     "frases": "Phrases learned by voice",
     "frasesSubtitulo": "When a curator confirms a doubt with “Remember”, the heard phrase starts to count as the chosen change.",
     "nenhumaFrase": "No learned phrases yet.",
-    "esquecer": "Forget"
+    "esquecer": "Forget",
+    "voltar": "Back",
+    "achadosPlaceholder": "Type the finding initials: car, lesion, resorp…",
+    "termos": "Vocabulary terms",
+    "errosTecnicos": "Technical errors",
+    "dentes": "Teeth"
   },
   "Ajuda": {
     "titulo": "Help center",
@@ -2105,7 +2114,13 @@
     "erro": "The plate could not be generated. Please try again.",
     "aviso": "Teaching and research material. Anonymized images. Not intended for diagnosis.",
     "todasSalvas": "All saved",
-    "selecionadas": "Selected"
+    "selecionadas": "Selected",
+    "opcaoMenu": {
+      "baixar": "Download sheet with information…",
+      "imprimir": "Print sheet with information…",
+      "email": "E-mail sheet…"
+    },
+    "opcaoMenuDica": "2 or 3 images per page, with the information beside them"
   },
   "SegundaOpiniao": {
     "titulo": "Second opinion",
@@ -2362,14 +2377,55 @@
       "achado": "Finding",
       "regiao": "Region",
       "vocab": "Term",
-      "texto": "Words"
+      "texto": "Words",
+      "dentes": "Teeth",
+      "dente": "Tooth",
+      "novo": "New"
     },
     "tirar": "Remove {termo}",
     "maisUm": "Add another term…",
     "nada": "No term with those letters.",
     "procurarTexto": "Search \"{texto}\" in the record texts",
     "sinonimos": "synonyms: {lista}",
-    "rotuloFicha": "Standard terms (shown in Advanced search)",
-    "placeholderFicha": "Type the first letters: nodule, furcation…"
+    "rotuloFicha": "Other image terms (standard vocabulary — shown in Advanced search)",
+    "placeholderFicha": "Type the initials: nodule, furcation, resorp… (not found? add it)",
+    "dentes": {
+      "incisivos": "Incisors",
+      "incisivos_centrais": "Central incisors",
+      "incisivos_laterais": "Lateral incisors",
+      "caninos": "Canines",
+      "pre_molares": "Premolars",
+      "molares": "Molars",
+      "primeiros_molares": "First molars",
+      "segundos_molares": "Second molars",
+      "terceiros_molares": "Third molars (wisdom teeth)",
+      "anteriores": "Anterior teeth",
+      "posteriores": "Posterior teeth",
+      "superiores": "Upper teeth (maxilla)",
+      "inferiores": "Lower teeth (mandible)",
+      "deciduos": "Primary (baby) teeth",
+      "permanentes": "Permanent teeth"
+    },
+    "dentesPalavras": {
+      "incisivos": "11 12 21 22 31 32 41 42 tooth group",
+      "incisivos_centrais": "11 21 31 41",
+      "incisivos_laterais": "12 22 32 42",
+      "caninos": "13 23 33 43 cuspid",
+      "pre_molares": "bicuspid 14 15 24 25 34 35 44 45",
+      "molares": "16 17 18 26 27 28 36 37 38 46 47 48",
+      "primeiros_molares": "16 26 36 46",
+      "segundos_molares": "17 27 37 47",
+      "terceiros_molares": "wisdom 18 28 38 48",
+      "anteriores": "front",
+      "posteriores": "back",
+      "superiores": "maxilla upper arch",
+      "inferiores": "mandible lower arch",
+      "deciduos": "baby milk child 51 85",
+      "permanentes": "adult"
+    },
+    "denteNumero": "Tooth {numero}",
+    "acrescentar": "➕ Add “{texto}” to the vocabulary (and link to this image)",
+    "criando": "Adding…",
+    "erroCriar": "Could not add the term right now."
   }
 }

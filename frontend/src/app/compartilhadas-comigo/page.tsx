@@ -13,7 +13,6 @@ import { BotaoPintura, usePinturaNaGrade } from '../../components/segmentacao/Pi
 import VisualizadorSequencial, { type ItemSequencia } from '../../components/VisualizadorSequencial'
 import ResponderCompartilhamento from '../../components/compartilhar/ResponderCompartilhamento'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
-import MenuPrancha from '../../components/impressao/MenuPrancha'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
@@ -332,7 +331,6 @@ export default function CompartilhadasComigoPage() {
                     <MenuSalvarMinhasImagens grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                     <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                     <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
-                    <MenuPrancha grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                     {temSelecao && (
                       <button
                         type="button"

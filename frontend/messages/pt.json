@@ -629,7 +629,7 @@
     "baixar": "⬇ Baixar",
     "salva": "✓ Salva",
     "salvando": "Salvando...",
-    "salvarNoUsuario": "★ Salvar no meu usuário",
+    "salvarNoUsuario": "★ Minhas imagens",
     "enviando": "Enviando...",
     "enviarPorEmail": "✉ Enviar por e-mail",
     "erroBaixar": "Não foi possível baixar o arquivo.",
@@ -758,7 +758,9 @@
       "salvarDica": "Grava o giro na imagem (sem perda): ela passa a abrir nesta posição para todos. Clique até os dentes ficarem em pé.",
       "salvando": "Salvando…",
       "erro": "Não foi possível girar a imagem."
-    }
+    },
+    "baixarEstaImagem": "⬇ Esta imagem",
+    "enviarEstaImagem": "✉ Esta imagem para o meu e-mail"
   },
   "Curadoria": {
     "inicio": "Início",
@@ -878,7 +880,8 @@
         "oval": "Oval",
         "retangulo": "Retângulo",
         "seta": "Seta"
-      }
+      },
+      "inclinar": "Arraste para inclinar a forma"
     },
     "painelLateral": {
       "imagemParaMarcacao": "Imagem para marcação",
@@ -1306,7 +1309,8 @@
     "removerSelecionadas": "Tirar da lista ({quantidade})",
     "confirmarRemover": "Tirar {quantidade, plural, one {# imagem} other {# imagens}} de Minhas imagens?",
     "sim": "Sim, tirar",
-    "nao": "Cancelar"
+    "nao": "Cancelar",
+    "email": "✉ E-mail"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",
@@ -1980,7 +1984,12 @@
     "frases": "Frases que a voz aprendeu",
     "frasesSubtitulo": "Quando o curador confirma uma dúvida com “Lembrar”, a frase ouvida passa a valer como a alteração escolhida.",
     "nenhumaFrase": "Nenhuma frase aprendida ainda.",
-    "esquecer": "Esquecer"
+    "esquecer": "Esquecer",
+    "voltar": "Voltar",
+    "achadosPlaceholder": "Digite as iniciais do achado: cár, lesão, reabs…",
+    "termos": "Termos do vocabulário",
+    "errosTecnicos": "Erros técnicos",
+    "dentes": "Dentes"
   },
   "Ajuda": {
     "titulo": "Central de ajuda",
@@ -2105,7 +2114,13 @@
     "erro": "Não foi possível gerar a prancha. Tente de novo.",
     "aviso": "Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.",
     "todasSalvas": "Todas as salvas",
-    "selecionadas": "Selecionadas"
+    "selecionadas": "Selecionadas",
+    "opcaoMenu": {
+      "baixar": "Baixar prancha com informações…",
+      "imprimir": "Imprimir prancha com informações…",
+      "email": "Enviar prancha por e-mail…"
+    },
+    "opcaoMenuDica": "2 ou 3 imagens por folha, com as informações ao lado"
   },
   "SegundaOpiniao": {
     "titulo": "Segunda opinião",
@@ -2362,14 +2377,55 @@
       "achado": "Achado",
       "regiao": "Região",
       "vocab": "Termo",
-      "texto": "Palavras"
+      "texto": "Palavras",
+      "dentes": "Dentes",
+      "dente": "Dente",
+      "novo": "Novo"
     },
     "tirar": "Tirar {termo}",
     "maisUm": "Adicionar outro termo…",
     "nada": "Nenhum termo com essas iniciais.",
     "procurarTexto": "Procurar \"{texto}\" nos textos das fichas",
     "sinonimos": "sinônimos: {lista}",
-    "rotuloFicha": "Termos padronizados (aparecem na Pesquisa avançada)",
-    "placeholderFicha": "Digite as iniciais: nódulo, furca, reabs…"
+    "rotuloFicha": "Outros termos da imagem (vocabulário padronizado — aparecem na Pesquisa avançada)",
+    "placeholderFicha": "Digite as iniciais: nódulo, furca, reabs… (não achou? acrescente)",
+    "dentes": {
+      "incisivos": "Incisivos",
+      "incisivos_centrais": "Incisivos centrais",
+      "incisivos_laterais": "Incisivos laterais",
+      "caninos": "Caninos",
+      "pre_molares": "Pré-molares",
+      "molares": "Molares",
+      "primeiros_molares": "Primeiros molares",
+      "segundos_molares": "Segundos molares",
+      "terceiros_molares": "Terceiros molares (sisos)",
+      "anteriores": "Dentes anteriores",
+      "posteriores": "Dentes posteriores",
+      "superiores": "Dentes superiores (maxila)",
+      "inferiores": "Dentes inferiores (mandíbula)",
+      "deciduos": "Dentes decíduos (de leite)",
+      "permanentes": "Dentes permanentes"
+    },
+    "dentesPalavras": {
+      "incisivos": "11 12 21 22 31 32 41 42 dente grupo",
+      "incisivos_centrais": "11 21 31 41",
+      "incisivos_laterais": "12 22 32 42",
+      "caninos": "13 23 33 43 presa",
+      "pre_molares": "premolar 14 15 24 25 34 35 44 45",
+      "molares": "16 17 18 26 27 28 36 37 38 46 47 48",
+      "primeiros_molares": "16 26 36 46",
+      "segundos_molares": "17 27 37 47",
+      "terceiros_molares": "siso 18 28 38 48",
+      "anteriores": "frente",
+      "posteriores": "tras fundo",
+      "superiores": "maxila maxilar arcada superior",
+      "inferiores": "mandibula arcada inferior",
+      "deciduos": "leite infantil crianca 51 85",
+      "permanentes": "adulto"
+    },
+    "denteNumero": "Dente {numero}",
+    "acrescentar": "➕ Acrescentar “{texto}” ao vocabulário (e ligar a esta imagem)",
+    "criando": "Acrescentando…",
+    "erroCriar": "Não foi possível acrescentar o termo agora."
   }
 }

@@ -16,6 +16,7 @@ import { errosParaTipo } from './errosTecnicos'
 export const OPCOES_TIPO = ['periapical', 'interproximal', 'oclusal', 'panoramica', 'tomografia']
 export const OPCOES_GENERO = ['masculino', 'feminino']
 export const OPCOES_QUALIDADE = ['otima', 'boa', 'regular', 'insatisfatoria']
+export const OPCOES_ORIGEM = ['ufsc', 'externa']
 /** dentes na ordem em que aparecem na tela (arcada superior, depois inferior) */
 export const DENTES_EM_ORDEM = [
   18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
@@ -47,6 +48,8 @@ export function trocarOpcao(etapa: EtapaFicha, form: FormularioFicha, passo: 1 |
       return { ...form, genero: girar(OPCOES_GENERO, form.genero, passo) }
     case 'qualidade':
       return { ...form, qualidade_tecnica: girar(OPCOES_QUALIDADE, form.qualidade_tecnica, passo) }
+    case 'origem':
+      return { ...form, origem: girar(OPCOES_ORIGEM, form.origem, passo) }
     default:
       return null
   }
@@ -95,6 +98,8 @@ export function confirmarComEnter(
       return form.genero ? { form: null, avancar: true } : null
     case 'qualidade':
       return form.qualidade_tecnica ? { form: null, avancar: true } : null
+    case 'origem':
+      return form.origem ? { form: null, avancar: true } : null
     case 'idade':
       return { form: null, avancar: true }
     case 'dentes':

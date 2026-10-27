@@ -11,7 +11,7 @@
 // Cada item escolhido vira um "token" (tipo:valor) enviado a API
 // (backend: app/modules/busca_termos.py). Os termos se somam (E).
 
-export type TipoTermo = 'grupo' | 'achado' | 'regiao' | 'vocab' | 'texto'
+export type TipoTermo = 'grupo' | 'achado' | 'regiao' | 'vocab' | 'dentes' | 'dente' | 'texto' | 'novo'
 
 export interface TermoBusca {
   tipo: TipoTermo
@@ -42,6 +42,31 @@ export const GRUPOS_TERMOS = [
   'erro_tecnico',
 ] as const
 
+/** Grupos de dentes (mesmos valores de GRUPOS_DENTES no backend). */
+export const GRUPOS_DENTES = [
+  'incisivos',
+  'incisivos_centrais',
+  'incisivos_laterais',
+  'caninos',
+  'pre_molares',
+  'molares',
+  'primeiros_molares',
+  'segundos_molares',
+  'terceiros_molares',
+  'anteriores',
+  'posteriores',
+  'superiores',
+  'inferiores',
+  'deciduos',
+  'permanentes',
+] as const
+
+/** Numeros FDI: 11-48 (permanentes) e 51-85 (deciduos). */
+export const DENTES_FDI: number[] = [
+  ...[1, 2, 3, 4].flatMap((q) => [1, 2, 3, 4, 5, 6, 7, 8].map((p) => q * 10 + p)),
+  ...[5, 6, 7, 8].flatMap((q) => [1, 2, 3, 4, 5].map((p) => q * 10 + p)),
+]
+
 export function token(t: TermoBusca): string {
   return `${t.tipo}:${t.valor}`
 }
@@ -66,8 +91,12 @@ export function procurarNoCatalogo(catalogo: ItemCatalogo[], consulta: string, l
   const q = normalizarBusca(consulta)
   if (!q) return []
   const pedacos = q.split(' ')
+  // dentes um a um so aparecem quando a pessoa digita um numero ("36",
+  // "dente 3"), senao os 52 dentes tomariam a lista em "de", "den"...
+  const temNumero = /\d/.test(q)
   const pontuados: { item: ItemCatalogo; pontos: number }[] = []
   for (const item of catalogo) {
+    if (item.tipo === 'dente' && !temNumero) continue
     let melhor = 0
     item.chaves.forEach((chave, indice) => {
       const palavras = chave.split(' ')

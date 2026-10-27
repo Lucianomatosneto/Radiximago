@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricaoCuradoria'
+import { DialogoPrancha, OpcaoPrancha } from './MenuPrancha'
 
 // IMPRESSAO DAS IMAGENS
 // Botao "Imprimir" com um menu: para cada grupo (ex.: "Todas", "Selecionadas")
@@ -53,6 +54,7 @@ export default function MenuImpressao({
   const t = useTranslations('Impressao')
   const [aberto, setAberto] = useState(false)
   const [trabalho, setTrabalho] = useState<Trabalho | null>(null)
+  const [prancha, setPrancha] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -110,10 +112,19 @@ export default function MenuImpressao({
               ))}
             </div>
           ))}
+          {/* prancha (imagens a esquerda e informacoes a direita), dentro do Imprimir */}
+          <OpcaoPrancha
+            modo="imprimir"
+            onEscolher={() => {
+              setAberto(false)
+              setPrancha(true)
+            }}
+          />
         </div>
       )}
 
       {trabalho && <ImpressaoEmAndamento trabalho={trabalho} onTerminar={() => setTrabalho(null)} />}
+      {prancha && <DialogoPrancha grupos={grupos} modo="imprimir" onFechar={() => setPrancha(false)} />}
     </div>
   )
 }

@@ -41,6 +41,7 @@ export const SECAO_DO_CAMPO: Record<string, SecaoFicha> = {
   idade: 'dados',
   genero: 'dados',
   qualidade_tecnica: 'dados',
+  origem: 'dados',
   anonimizacao: 'dados',
   marcacoes: 'achados',
   alteracoes_observadas: 'achados',
@@ -77,6 +78,7 @@ export type EtapaFicha =
   | 'genero'
   | 'dentes'
   | 'qualidade'
+  | 'origem'
   | 'achados'
   | 'erro_tecnico'
   | 'descricao'
@@ -92,6 +94,8 @@ export const ETAPAS_FICHA: EtapaFicha[] = [
   'genero',
   'dentes',
   'qualidade',
+  // origem da imagem (27/10/2026): Tab/↓ passam por ela antes dos achados
+  'origem',
   'achados',
   'erro_tecnico',
   'descricao',
@@ -109,6 +113,7 @@ export const SECAO_DA_ETAPA: Record<EtapaFicha, SecaoFicha> = {
   genero: 'dados',
   dentes: 'dados',
   qualidade: 'dados',
+  origem: 'dados',
   achados: 'achados',
   erro_tecnico: 'erro_tecnico',
   descricao: 'descricao',

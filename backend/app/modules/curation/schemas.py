@@ -47,6 +47,11 @@ class Marcacao(BaseModel):
     y1: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     x2: Optional[float] = Field(default=None, ge=0.0, le=1.0)
     y2: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    # Inclinacao (graus, sentido horario, em volta do centro) do retangulo ou
+    # oval - o curador gira a forma para alinha-la a estrutura (27/10/2026).
+    # Medida em PIXELS da imagem (a proporcao largura/altura da imagem nao a
+    # deforma).
+    angulo: Optional[float] = Field(default=None, ge=-360.0, le=360.0)
     # Tipo de lesao indicada por essa forma - o curador escolhe logo apos
     # desenhar, e o estudante ve o rotulo ao passar o mouse em cima dela.
     achado: Optional[AchadoPrincipal] = None

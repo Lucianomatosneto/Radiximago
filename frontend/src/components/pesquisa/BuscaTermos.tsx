@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { procurarNoCatalogo, token, type ItemCatalogo, type TermoBusca } from '../../lib/catalogoTermos'
+import { normalizarBusca, procurarNoCatalogo, token, type ItemCatalogo, type TermoBusca } from '../../lib/catalogoTermos'
 
 /**
  * Caixa de BUSCA POR TERMOS com sugestoes enquanto se digita (padrao dos
@@ -20,6 +20,7 @@ export default function BuscaTermos({
   selecionados,
   onChange,
   permitirTexto = false,
+  onCriar,
   placeholder,
   rotuloCampo,
   estilo,
@@ -29,6 +30,11 @@ export default function BuscaTermos({
   onChange: (termos: TermoBusca[]) => void
   /** oferece "procurar as palavras nos textos" quando nada combina exatamente */
   permitirTexto?: boolean
+  /**
+   * Curadoria (27/10/2026): quando o termo nao existe, oferece "Acrescentar
+   * '...' ao vocabulario". Devolve o termo criado (ou uma mensagem de erro).
+   */
+  onCriar?: (texto: string) => Promise<TermoBusca | string>
   placeholder: string
   rotuloCampo: string
   estilo?: React.CSSProperties
@@ -39,6 +45,8 @@ export default function BuscaTermos({
   const [aberto, setAberto] = useState(false)
   const [cursor, setCursor] = useState(0)
   const campoRef = useRef<HTMLInputElement>(null)
+  const [criando, setCriando] = useState(false)
+  const [erroCriar, setErroCriar] = useState('')
 
   const escolhidos = new Set(selecionados.map(token))
   const sugestoes = useMemo(() => {
@@ -47,11 +55,27 @@ export default function BuscaTermos({
     if (permitirTexto && texto.length >= 2) {
       achados.push({ tipo: 'texto', valor: texto, rotulo: texto, chaves: [] })
     }
+    const igual = catalogo.some((i) => i.chaves.includes(normalizarBusca(texto)))
+    if (onCriar && texto.length >= 2 && !igual) {
+      achados.push({ tipo: 'novo', valor: texto, rotulo: texto, chaves: [] })
+    }
     return achados
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [catalogo, consulta, permitirTexto, selecionados])
+  }, [catalogo, consulta, permitirTexto, selecionados, onCriar])
 
-  function adicionar(item: TermoBusca) {
+  async function adicionar(item: TermoBusca) {
+    if (item.tipo === 'novo') {
+      if (!onCriar || criando) return
+      setCriando(true)
+      setErroCriar('')
+      const criado = await onCriar(item.valor)
+      setCriando(false)
+      if (typeof criado === 'string') {
+        setErroCriar(criado)
+        return
+      }
+      item = criado
+    }
     onChange([...selecionados, { tipo: item.tipo, valor: item.valor, rotulo: item.rotulo }])
     setConsulta('')
     setCursor(0)
@@ -86,6 +110,9 @@ export default function BuscaTermos({
     achado: 'border-amber-400/60 bg-amber-500/15 text-amber-800 dark:text-amber-100',
     regiao: 'border-sky-400/60 bg-sky-500/15 text-sky-800 dark:text-sky-100',
     vocab: 'border-teal-400/60 bg-teal-500/15 text-teal-800 dark:text-teal-100',
+    dentes: 'border-violet-400/60 bg-violet-500/15 text-violet-800 dark:text-violet-100',
+    dente: 'border-violet-400/60 bg-violet-500/15 text-violet-800 dark:text-violet-100',
+    novo: 'border-emerald-500/60 bg-emerald-500/15 text-emerald-800 dark:text-emerald-100',
     texto: 'border-slate-400/60 bg-slate-500/15 text-slate-800 dark:text-slate-100',
   }
 
@@ -128,6 +155,7 @@ export default function BuscaTermos({
           maxLength={150}
           onChange={(e) => {
             setConsulta(e.target.value)
+            setErroCriar('')
             setAberto(true)
             setCursor(0)
           }}
@@ -138,6 +166,11 @@ export default function BuscaTermos({
           className="min-w-[160px] flex-1 bg-transparent px-1 py-0.5 text-sm text-ink outline-hidden placeholder:text-slate-500"
         />
       </div>
+      {erroCriar && (
+        <p role="alert" className="mt-1 text-xs text-red-500">
+          {erroCriar}
+        </p>
+      )}
       {aberto && consulta.trim() && (
         <ul
           id={`${id}-lista`}
@@ -159,7 +192,15 @@ export default function BuscaTermos({
             >
               <span className={`mt-0.5 shrink-0 rounded-full border px-1.5 text-[10px] font-semibold ${corTipo[s.tipo]}`}>{t(`tipo.${s.tipo}`)}</span>
               <span className="min-w-0">
-                <span className="block text-ink">{s.tipo === 'texto' ? t('procurarTexto', { texto: s.rotulo }) : s.rotulo}</span>
+                <span className="block text-ink">
+                  {s.tipo === 'texto'
+                    ? t('procurarTexto', { texto: s.rotulo })
+                    : s.tipo === 'novo'
+                      ? criando
+                        ? t('criando')
+                        : t('acrescentar', { texto: s.rotulo })
+                      : s.rotulo}
+                </span>
                 {'detalhe' in s && s.detalhe && <span className="block truncate text-[11px] text-slate-500">{s.detalhe}</span>}
               </span>
             </li>

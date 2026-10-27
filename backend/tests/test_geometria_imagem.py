@@ -272,3 +272,21 @@ def test_radiografia_com_posicao_gravada_pode_ser_ajustada():
         conferir_pode_ajustar({"Modality": "CT"})
     with pytest.raises(ImagemDeVolume):
         conferir_pode_ajustar({"Modality": "", "ImagePositionPatient": "0\\0\\0"})
+
+
+def test_retangulo_inclinado_gira_em_volta_do_centro():
+    """27/10/2026: retangulo com `angulo` e desenhado inclinado (em pixels)."""
+    from app.modules.marcacoes_imagem import _geometria
+
+    def para_pixel(rx, ry):
+        return (rx * 200, ry * 100)
+
+    m = {"tipo": "retangulo", "x": 0.25, "y": 0.25, "largura": 0.5, "altura": 0.5}
+    reto = _geometria(m, para_pixel, 1.0)["pontos"]
+    inclinado = _geometria({**m, "angulo": 90}, para_pixel, 1.0)["pontos"]
+    # 100x50 px em volta do centro (100, 50): a 90 graus vira 50x100
+    xs = [p[0] for p in inclinado]
+    ys = [p[1] for p in inclinado]
+    assert round(max(xs) - min(xs)) == 50 and round(max(ys) - min(ys)) == 100
+    assert reto != inclinado
+    assert round(sum(xs) / 4) == 100 and round(sum(ys) / 4) == 50

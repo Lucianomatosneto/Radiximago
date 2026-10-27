@@ -7,11 +7,17 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
 import { CATEGORIAS_ALTERACOES } from '../../lib/alteracoesObservadas'
+import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
+import BuscaTermos from '../../components/pesquisa/BuscaTermos'
+import { DENTES_FDI, itensDoVocabulario, normalizarBusca, type ItemCatalogo, type TermoVocabularioApi } from '../../lib/catalogoTermos'
 
 // MACROS DA CURADORIA (frases prontas da equipe) + FRASES QUE A VOZ
 // APRENDEU. Uma macro preenche de uma vez descricao, achados, observacoes,
 // alteracoes, tipo e qualidade; e usada pelo menu "⚡ Macros" da Curadoria
 // ou falando "macro <nome>". Ver backend/app/modules/macros_router.py.
+// 27/10/2026: a macro usa as MESMAS listas da Curadoria e da Pesquisa
+// avancada - achados (com busca pelas iniciais), origem, erros tecnicos,
+// termos do vocabulario e dentes - e a tela tem "Voltar".
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_PERMITIDOS = ['administrador', 'curador', 'suporte']
@@ -25,6 +31,10 @@ interface Conteudo {
   alteracoes_observadas?: string[]
   tipo_radiografia?: string | null
   qualidade_tecnica?: string | null
+  origem?: string | null
+  erros_tecnicos?: string[]
+  termos?: number[]
+  dentes?: number[]
 }
 interface Macro {
   id: number
@@ -40,7 +50,11 @@ interface Frase {
 interface Edicao {
   id: number | null
   nome: string
-  conteudo: Required<Omit<Conteudo, 'tipo_radiografia' | 'qualidade_tecnica'>> & { tipo_radiografia: string; qualidade_tecnica: string }
+  conteudo: Required<Omit<Conteudo, 'tipo_radiografia' | 'qualidade_tecnica' | 'origem'>> & {
+    tipo_radiografia: string
+    qualidade_tecnica: string
+    origem: string
+  }
 }
 
 const VAZIA: Edicao['conteudo'] = {
@@ -50,6 +64,10 @@ const VAZIA: Edicao['conteudo'] = {
   alteracoes_observadas: [],
   tipo_radiografia: '',
   qualidade_tecnica: '',
+  origem: '',
+  erros_tecnicos: [],
+  termos: [],
+  dentes: [],
 }
 
 const campoTexto =
@@ -72,13 +90,14 @@ export default function MacrosPage() {
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tItens = useTranslations('AlteracoesObservadas.itens')
-  const tCategorias = useTranslations('AlteracoesObservadas.categorias')
   const [carregando, setCarregando] = useState(true)
   const [macros, setMacros] = useState<Macro[]>([])
   const [frases, setFrases] = useState<Frase[]>([])
   const [edicao, setEdicao] = useState<Edicao | null>(null)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  const [vocabulario, setVocabulario] = useState<TermoVocabularioApi[]>([])
+  const tTermos = useTranslations('BuscaTermos')
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -102,6 +121,10 @@ export default function MacrosPage() {
         fetch(`${API}/macros?incluir_inativas=true`, { credentials: 'include' }),
         fetch(`${API}/voz/frases`, { credentials: 'include' }),
       ])
+      fetch(`${API}/vocabulario`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d?.termos && setVocabulario(d.termos))
+        .catch(() => {})
       if (!rm.ok || !rf.ok) {
         setErro(t('erroCarregar'))
         return
@@ -133,6 +156,10 @@ export default function MacrosPage() {
               alteracoes_observadas: m.conteudo.alteracoes_observadas ?? [],
               tipo_radiografia: m.conteudo.tipo_radiografia ?? '',
               qualidade_tecnica: m.conteudo.qualidade_tecnica ?? '',
+              origem: m.conteudo.origem ?? '',
+              erros_tecnicos: m.conteudo.erros_tecnicos ?? [],
+              termos: m.conteudo.termos ?? [],
+              dentes: m.conteudo.dentes ?? [],
             },
           }
         : { id: null, nome: '', conteudo: { ...VAZIA } }
@@ -148,6 +175,7 @@ export default function MacrosPage() {
         ...edicao.conteudo,
         tipo_radiografia: edicao.conteudo.tipo_radiografia || null,
         qualidade_tecnica: edicao.conteudo.qualidade_tecnica || null,
+        origem: edicao.conteudo.origem || null,
       },
     }
     const r = await fetch(edicao.id ? `${API}/macros/${edicao.id}` : `${API}/macros`, {
@@ -198,6 +226,10 @@ export default function MacrosPage() {
   }
 
   const c = edicao?.conteudo
+  const catalogoAchados: ItemCatalogo[] = CATEGORIAS_ALTERACOES.flatMap((g) =>
+    g.itens.map((i) => ({ tipo: 'achado' as const, valor: i.valor, rotulo: traduzirItem(i.valor), chaves: [normalizarBusca(traduzirItem(i.valor))] }))
+  )
+  const catalogoVocab = itensDoVocabulario(vocabulario, (lista) => tTermos('sinonimos', { lista }))
   const mudar = (parcial: Partial<Edicao['conteudo']>) => edicao && setEdicao({ ...edicao, conteudo: { ...edicao.conteudo, ...parcial } })
 
   return (
@@ -206,6 +238,16 @@ export default function MacrosPage() {
       <div className="flex flex-1 flex-col">
         <Topbar />
         <main className="flex-1 space-y-6 overflow-y-auto p-6">
+          <button
+            type="button"
+            onClick={() => (window.history.length > 1 ? router.back() : router.push('/curadoria'))}
+            className="inline-flex items-center gap-1.5 rounded-full border border-base-border px-3 py-1.5 text-sm text-slate-300 transition hover:border-brand hover:text-brand-300"
+          >
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" />
+            </svg>
+            {t('voltar')}
+          </button>
           <div>
             <h1 className="titulo-pagina tela-entra">
               {t('tituloPrefixo')} <span className="text-violet-600 dark:text-violet-300">{t('tituloDestaque')}</span>
@@ -231,7 +273,7 @@ export default function MacrosPage() {
                   <input value={edicao.nome} maxLength={80} onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })} className={campoTexto} placeholder={t('exemploNome')} />
                   <p className="mt-1 text-[11px] text-slate-500">{t('dicaNome')}</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 sm:grid-cols-3">
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-400">{t('tipo')}</label>
                     <select value={c.tipo_radiografia} onChange={(e) => mudar({ tipo_radiografia: e.target.value })} className={campoTexto}>
@@ -246,6 +288,13 @@ export default function MacrosPage() {
                       {QUALIDADES.map((v) => <option key={v} value={v}>{tOpcoes(`qualidadeTecnica.${v}`)}</option>)}
                     </select>
                   </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-400">{tOpcoes('origemRotulo')}</label>
+                    <select value={c.origem} onChange={(e) => mudar({ origem: e.target.value })} className={campoTexto}>
+                      <option value="">{t('naoAlterar')}</option>
+                      {['ufsc', 'externa'].map((v) => <option key={v} value={v}>{tOpcoes(`origem.${v}`)}</option>)}
+                    </select>
+                  </div>
                 </div>
                 {(['descricao_didatica', 'achados_detalhe', 'observacoes_internas'] as const).map((campo) => (
                   <div key={campo}>
@@ -253,35 +302,54 @@ export default function MacrosPage() {
                     <textarea value={c[campo]} rows={campo === 'descricao_didatica' ? 3 : 2} onChange={(e) => mudar({ [campo]: e.target.value })} className={campoTexto} />
                   </div>
                 ))}
-                <details>
-                  <summary className="cursor-pointer text-xs font-medium text-slate-300">
-                    {t('alteracoes')} ({c.alteracoes_observadas.length})
-                  </summary>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {CATEGORIAS_ALTERACOES.map((g) => (
-                      <div key={g.categoria}>
-                        <p className="text-[11px] font-semibold text-slate-400">{tCategorias(g.categoriaChave)}</p>
-                        {g.itens.map((item) => (
-                          <label key={item.valor} className="flex items-center gap-1.5 text-xs text-slate-300">
-                            <input
-                              type="checkbox"
-                              checked={c.alteracoes_observadas.includes(item.valor)}
-                              onChange={() =>
-                                mudar({
-                                  alteracoes_observadas: c.alteracoes_observadas.includes(item.valor)
-                                    ? c.alteracoes_observadas.filter((x) => x !== item.valor)
-                                    : [...c.alteracoes_observadas, item.valor],
-                                })
+                {/* ACHADOS: a mesma lista da Curadoria, com busca pelas iniciais */}
+                <BuscaTermos
+                  catalogo={catalogoAchados}
+                  selecionados={c.alteracoes_observadas.map((v) => ({ tipo: 'achado' as const, valor: v, rotulo: traduzirItem(v) }))}
+                  onChange={(lista) => mudar({ alteracoes_observadas: lista.map((x) => x.valor) })}
+                  rotuloCampo={`${t('alteracoes')} (${c.alteracoes_observadas.length})`}
+                  placeholder={t('achadosPlaceholder')}
+                />
+                <BuscaTermos
+                  catalogo={catalogoVocab}
+                  selecionados={c.termos.map((id) => ({ tipo: 'vocab' as const, valor: String(id), rotulo: vocabulario.find((v) => v.id === id)?.termo ?? `#${id}` }))}
+                  onChange={(lista) => mudar({ termos: lista.map((x) => Number(x.valor)) })}
+                  rotuloCampo={`${t('termos')} (${c.termos.length})`}
+                  placeholder={tTermos('placeholderFicha')}
+                />
+                <div>
+                  <p className="mb-1 text-xs font-medium text-slate-400">
+                    {t('errosTecnicos')} ({c.erros_tecnicos.length})
+                  </p>
+                  <FiltroErrosTecnicos selecionados={c.erros_tecnicos} onChange={(v) => mudar({ erros_tecnicos: v })} />
+                </div>
+                <div>
+                  <p className="mb-1 text-xs font-medium text-slate-400">
+                    {t('dentes')} {c.dentes.length > 0 && <span className="text-teal-300">({c.dentes.join(', ')})</span>}
+                  </p>
+                  <div className="space-y-1 rounded-lg border border-base-border p-1.5">
+                    {[DENTES_FDI.slice(0, 16), DENTES_FDI.slice(16, 32), DENTES_FDI.slice(32, 42), DENTES_FDI.slice(42)].map((linha, i) => (
+                      <div key={i} className="flex flex-wrap gap-0.5">
+                        {linha.map((d) => {
+                          const marcado = c.dentes.includes(d)
+                          return (
+                            <button
+                              key={d}
+                              type="button"
+                              aria-pressed={marcado}
+                              onClick={() =>
+                                mudar({ dentes: marcado ? c.dentes.filter((x) => x !== d) : [...c.dentes, d].sort((x, y) => x - y) })
                               }
-                              className="h-3 w-3"
-                            />
-                            {traduzirItem(item.valor)}
-                          </label>
-                        ))}
+                              className={`w-8 rounded py-0.5 text-[11px] font-semibold ${marcado ? 'bg-brand text-white' : 'bg-white/5 text-slate-400 hover:bg-white/15'}`}
+                            >
+                              {d}
+                            </button>
+                          )
+                        })}
                       </div>
                     ))}
                   </div>
-                </details>
+                </div>
                 <div className="flex justify-end gap-2">
                   <button type="button" onClick={() => setEdicao(null)} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-300">
                     {t('cancelar')}
@@ -311,6 +379,10 @@ export default function MacrosPage() {
                           m.conteudo.tipo_radiografia && tOpcoes(`tipoRadiografia.${m.conteudo.tipo_radiografia}`),
                           m.conteudo.qualidade_tecnica && tOpcoes(`qualidadeTecnica.${m.conteudo.qualidade_tecnica}`),
                           m.conteudo.alteracoes_observadas?.length ? t('nAlteracoes', { quantidade: m.conteudo.alteracoes_observadas.length }) : '',
+                          m.conteudo.origem && tOpcoes(`origem.${m.conteudo.origem}`),
+                          m.conteudo.erros_tecnicos?.length ? `${t('errosTecnicos')}: ${m.conteudo.erros_tecnicos.length}` : '',
+                          m.conteudo.termos?.length ? `${t('termos')}: ${m.conteudo.termos.length}` : '',
+                          m.conteudo.dentes?.length ? `${t('dentes')}: ${m.conteudo.dentes.join(', ')}` : '',
                         ].filter(Boolean).join(' · ')}
                       </p>
                     </div>
