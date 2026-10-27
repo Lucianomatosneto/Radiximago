@@ -30,10 +30,16 @@ function CardServico({
   nome,
   status,
   descricao,
+  detalhes = [],
+  alertas = [],
 }: {
   nome: string
   status: StatusServico
   descricao: string
+  /** linhas extras (ex.: espaco em disco, ultimo backup) */
+  detalhes?: string[]
+  /** avisos em destaque (ex.: backup vazio) */
+  alertas?: string[]
 }) {
   return (
     <div className="rounded-xl border border-base-border bg-base-surface p-5">
@@ -42,8 +48,65 @@ function CardServico({
         <BadgeStatus status={status} />
       </div>
       <p className="mt-2 text-xs text-slate-500">{descricao}</p>
+      {detalhes.length > 0 && (
+        <ul className="mt-2 space-y-0.5 text-xs text-slate-400">
+          {detalhes.map((linha) => (
+            <li key={linha}>{linha}</li>
+          ))}
+        </ul>
+      )}
+      {alertas.length > 0 && (
+        <ul className="mt-2 space-y-1">
+          {alertas.map((linha) => (
+            <li key={linha} role="alert" className="rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-200">
+              ⚠ {linha}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
+}
+
+interface InfoBackup {
+  arquivo: string
+  tamanho_bytes: number
+  data: string
+  horas_desde: number
+  quantidade_guardada: number
+}
+
+interface SituacaoArmazenamento {
+  status: StatusServico
+  alertas: string[]
+  disco: { total_gb: number; livre_gb: number; percentual_livre: number } | null
+  orthanc: { tamanho_mb: number | null; instancias: number | null } | null
+  backup_banco: InfoBackup | null
+  backup_imagens: InfoBackup | null
+}
+
+const ALERTAS_CONHECIDOS = [
+  'backup_banco_ausente',
+  'backup_banco_vazio',
+  'backup_banco_antigo',
+  'backup_imagens_ausente',
+  'backup_imagens_vazio',
+  'backup_imagens_antigo',
+  'disco_pouco_espaco',
+  'pasta_backup_indisponivel',
+  'orthanc_estatisticas_indisponiveis',
+]
+
+function tamanhoLegivel(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`
+  const unidades = ['KB', 'MB', 'GB', 'TB']
+  let valor = bytes / 1024
+  let i = 0
+  while (valor >= 1024 && i < unidades.length - 1) {
+    valor /= 1024
+    i++
+  }
+  return `${valor.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} ${unidades[i]}`
 }
 
 export default function IntegracoesPage() {
@@ -71,6 +134,9 @@ export default function IntegracoesPage() {
     status: 'aguardando',
     descricao: t('verificando'),
   })
+  const [armazenamento, setArmazenamento] = useState<SituacaoArmazenamento | null>(null)
+  const [erroStatus, setErroStatus] = useState(false)
+  const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string } | null>(null)
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -82,8 +148,7 @@ export default function IntegracoesPage() {
         router.push('/acesso-negado')
         return
       }
-      verificarBancoEOrthanc()
-      verificarOhif()
+      atualizarTudo()
       setCarregando(false)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,12 +165,52 @@ export default function IntegracoesPage() {
     setAtualizando(false)
   }
 
-  async function verificarOhif() {
-    const ohifUrl = process.env.NEXT_PUBLIC_OHIF_URL
+  function atualizarTudo() {
+    verificarBancoEOrthanc()
+    verificarInfraestrutura()
+    verificarEmail()
+  }
+
+  // servidor de e-mail (cadastro e "esqueci a senha" dependem dele): o
+  // backend conecta e faz login SEM enviar nada (GET /integracoes/email)
+  async function verificarEmail() {
+    setEmail(null)
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integracoes/email`, { credentials: 'include', cache: 'no-store' })
+      if (!r.ok) throw new Error()
+      setEmail(await r.json())
+    } catch {
+      setEmail({ status: 'instavel', etapa: 'consulta', erro: 'consulta' })
+    }
+  }
+
+  // OHIF e Armazenamento: o backend informa o endereco do OHIF que o
+  // sistema REALMENTE usa (o mesmo das telas de imagem) e a situacao do
+  // disco e dos backups (GET /integracoes/status)
+  async function verificarInfraestrutura() {
+    setErroStatus(false)
+    let ohifUrl: string | null = null
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integracoes/status`, {
+        credentials: 'include',
+        cache: 'no-store',
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      const dados = await r.json()
+      ohifUrl = dados.ohif_url ?? null
+      setArmazenamento(dados.armazenamento ?? null)
+    } catch {
+      setErroStatus(true)
+      setArmazenamento(null)
+    }
+    await verificarOhif(ohifUrl)
+  }
+
+  async function verificarOhif(ohifUrl: string | null) {
     if (!ohifUrl) {
       setOhif({
-        status: 'aguardando',
-        descricao: t('variavelOhifNaoConfigurada'),
+        status: 'instavel',
+        descricao: t('ohifSemEndereco'),
       })
       return
     }
@@ -118,7 +223,7 @@ export default function IntegracoesPage() {
       await fetch(ohifUrl, { mode: 'no-cors', cache: 'no-store' })
       setOhif({
         status: 'online',
-        descricao: t('ohifRespondeu'),
+        descricao: t('ohifRespondeu', { url: ohifUrl }),
       })
     } catch {
       setOhif({
@@ -127,6 +232,46 @@ export default function IntegracoesPage() {
       })
     }
   }
+
+  // Docker: checagem INDIRETA (sem acesso ao Docker, por seguranca) - se os
+  // servicos que rodam dentro dele respondem, ele esta funcionando
+  const servicosNoDocker = [banco.status, orthanc.status]
+  const statusDocker: StatusServico = servicosNoDocker.every((s) => s === 'online')
+    ? 'online'
+    : servicosNoDocker.some((s) => s === 'online')
+      ? 'instavel'
+      : 'offline'
+
+  const formatarData = (iso: string) =>
+    new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+  const linhaBackup = (rotulo: string, b: InfoBackup | null) =>
+    b
+      ? t('linhaBackup', {
+          rotulo,
+          data: formatarData(b.data),
+          tamanho: tamanhoLegivel(b.tamanho_bytes),
+          quantidade: b.quantidade_guardada,
+        })
+      : null
+  const detalhesArmazenamento: string[] = armazenamento
+    ? ([
+        armazenamento.disco
+          ? t('linhaDisco', {
+              livre: armazenamento.disco.livre_gb.toLocaleString('pt-BR'),
+              total: armazenamento.disco.total_gb.toLocaleString('pt-BR'),
+              percentual: armazenamento.disco.percentual_livre.toLocaleString('pt-BR'),
+            })
+          : null,
+        armazenamento.orthanc && armazenamento.orthanc.tamanho_mb !== null
+          ? t('linhaOrthanc', {
+              tamanho: tamanhoLegivel((armazenamento.orthanc.tamanho_mb ?? 0) * 1024 * 1024),
+              instancias: armazenamento.orthanc.instancias ?? 0,
+            })
+          : null,
+        linhaBackup(t('backupBanco'), armazenamento.backup_banco),
+        linhaBackup(t('backupImagens'), armazenamento.backup_imagens),
+      ].filter(Boolean) as string[])
+    : []
 
   if (carregando) {
     return (
@@ -154,7 +299,7 @@ export default function IntegracoesPage() {
             </div>
             <button
               type="button"
-              onClick={verificarBancoEOrthanc}
+              onClick={atualizarTudo}
               disabled={atualizando}
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover disabled:opacity-50"
             >
@@ -183,13 +328,22 @@ export default function IntegracoesPage() {
             />
             <CardServico
               nome="Docker"
-              status="aguardando"
-              descricao={t('semEndpointChecagem')}
+              status={statusDocker}
+              descricao={statusDocker === 'online' ? t('dockerIndiretoOk') : t('dockerIndiretoFalha')}
+              detalhes={[t('dockerPorQue')]}
+            />
+            <CardServico
+              nome={t('servicoEmail')}
+              status={email?.status ?? 'aguardando'}
+              descricao={!email ? t('verificando') : email.status === 'online' ? t('emailOk', { servidor: email.servidor ?? '' }) : t(`emailErro.${email.erro ?? 'consulta'}`)}
+              detalhes={email && email.status !== 'online' ? [t('emailPorQue')] : []}
             />
             <CardServico
               nome={t('servicoArmazenamento')}
-              status="aguardando"
-              descricao={t('semEndpointChecagem')}
+              status={erroStatus ? 'instavel' : (armazenamento?.status ?? 'aguardando')}
+              descricao={erroStatus ? t('armazenamentoErro') : armazenamento ? t('verificadoAgora') : t('verificando')}
+              detalhes={detalhesArmazenamento}
+              alertas={(armazenamento?.alertas ?? []).map((a) => (ALERTAS_CONHECIDOS.includes(a) ? t(`alertas.${a}`) : a))}
             />
           </div>
         </main>

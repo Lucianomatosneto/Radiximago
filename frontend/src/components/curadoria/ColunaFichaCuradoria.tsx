@@ -7,6 +7,7 @@ import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
+import SeletorTermosFicha from './SeletorTermosFicha'
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECOES_FICHA, etapaVizinha, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
@@ -374,6 +375,8 @@ export default function ColunaFichaCuradoria({
           }
         >
           <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} />
+          {/* termos padronizados (vocabulario): o que a Pesquisa avancada encontra */}
+          <SeletorTermosFicha termos={form.termos} onChange={(termos) => onChange({ ...form, termos })} />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>

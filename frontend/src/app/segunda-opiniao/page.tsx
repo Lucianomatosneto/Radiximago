@@ -1,350 +1,342 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useLocale, useTranslations } from 'next-intl'
+// SEGUNDA OPINIAO (redesenhada em out/2026, no padrao das telas do Radix)
+// Tela inteira, como a Curadoria: fila a esquerda, OHIF (com todas as
+// ferramentas) no centro e o painel de trabalho a direita. Duas abas:
+//  - "Para revisar": o REVISOR ve quem pediu, por que, e avalia a ficha
+//    ITEM POR ITEM (concordo / ajustar / discordo, com anotacao e valor
+//    proposto), da a avaliacao geral (escala tipo RADPEER) e envia;
+//  - "Devolvidas para mim": QUEM PEDIU ve o parecer e cada anotacao no seu
+//    item, e escolhe "Acrescentar a curadoria" ou "Dispensar"; no fim,
+//    aprova ou descarta a ficha.
+// Regras e registros: backend/app/modules/curation/segunda_opiniao.py.
+
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import Sidebar from '../../components/Sidebar'
-import Topbar from '../../components/Topbar'
-import BarraClassificacao from '../../components/detalhe/BarraClassificacao'
-import type { Marcacao } from '../../lib/marcacoes'
+import Logo from '../../components/Logo'
+import ThemeToggle from '../../components/ThemeToggle'
+import CartaoPedido from '../../components/segundaOpiniao/CartaoPedido'
+import FilaSegundaOpiniao from '../../components/segundaOpiniao/FilaSegundaOpiniao'
+import PainelDevolvida from '../../components/segundaOpiniao/PainelDevolvida'
+import PainelParecer, { rascunhoValido } from '../../components/segundaOpiniao/PainelParecer'
+import VisualizadorRevisao from '../../components/segundaOpiniao/VisualizadorRevisao'
+import { useItensFicha } from '../../components/segundaOpiniao/useItensFicha'
+import {
+  API,
+  extrairErro,
+  lerDentes,
+  type AnotacaoRascunho,
+  type AnotacaoServidor,
+  type Classificacao,
+  type DetalheRevisao,
+  type Ficha,
+  type ItemFila,
+  type ViewerInfo,
+} from '../../components/segundaOpiniao/tipos'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
-
-const TAG_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US' }
-
-// Mesmos valores (mesmos usados na tela de Curadoria e no restante do
-// sistema) - o pedido foi pra segunda opiniao mostrar "as mesmas opcoes da
-// tela do curador", entao os rotulos precisam bater exatamente. Os rotulos
-// em si vem do namespace compartilhado Pesquisa.opcoes (mesmo texto usado
-// em Pesquisa avançada e em Curadoria), pra nao duplicar a mesma traducao
-// pela quarta vez.
-const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
-const OPCOES_GENERO = ['masculino', 'feminino']
-const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
-
-// Mapeia o valor cru do achado principal pra chave de traducao do namespace
-// Pesquisa.opcoes.achadoPrincipal (a unica lista cuja chave nao bate 1:1
-// com o valor cru - as outras 3 usam o mesmo texto como valor e como
-// chave).
-const CHAVE_ACHADO: Record<string, string> = {
-  normal: 'normal',
-  carie: 'carie',
-  lesao_periapical: 'lesaoPeriapical',
-  perda_ossea: 'perdaOssea',
-  dente_incluso: 'denteIncluso',
-  tratamento_endodontico: 'tratamentoEndodontico',
-  erro_tecnico: 'erroTecnico',
-  outro: 'outro',
-}
-
-interface ReviewPendente {
-  id: number
-  motivo: string
-  primeiro_parecer: string | null
-  criado_em: string | null
-  curation: {
-    id: number
-    achado_principal: string | null
-    tipo_radiografia: string | null
-  }
-  orthanc_reference: {
-    id: number
-    orthanc_id: string
-  }
-}
-
-interface ViewerInfo {
-  abrivel: boolean
-  motivo?: string
-  viewer_url: string | null
-}
-
-// Ficha completa (GET /curation/{id}) - os MESMOS campos que a tela de
-// Curadoria usa pra montar a ficha (ver FichaCuradoriaForm.tsx,
-// PainelDadosSobrepostos.tsx e PainelAchadosRadiografia.tsx), pra dar ao
-// revisor exatamente a mesma informação que o curador registrou.
-interface FichaCompleta {
-  id: number
-  tipo_radiografia: string | null
-  dentes: number[] | null
-  idade_min: number | null
-  idade_max: number | null
-  genero: string | null
-  achado_principal: string | null
-  marcacoes: Marcacao[]
-  achados_detalhe: string | null
-  alteracoes_observadas: string[] | null
-  qualidade_tecnica: string | null
-  dificuldade: string | null
-  descricao_didatica: string | null
-  observacoes_internas: string | null
-  status: string
-  anonimizacao_validada: boolean
-}
-
-function formatarData(valor: string | null, tagLocale: string): string {
-  if (!valor) return '—'
-  const data = new Date(valor)
-  if (Number.isNaN(data.getTime())) return '—'
-  return data.toLocaleString(tagLocale)
-}
-
-async function extrairErro(response: Response, generica: string): Promise<string> {
-  try {
-    const dados = await response.json()
-    if (typeof dados?.detail === 'string') return dados.detail
-  } catch {
-    // resposta sem corpo JSON legivel
-  }
-  return generica
-}
+type Aba = 'revisar' | 'devolvidas'
 
 export default function SegundaOpiniaoPage() {
   const router = useRouter()
-  const t = useTranslations('SegundaOpiniaoPage')
+  const t = useTranslations('SegundaOpiniao')
   const tComum = useTranslations('Comum')
-  const tOpcoes = useTranslations('Pesquisa.opcoes')
-  const tVisualizador = useTranslations('Curadoria.visualizador')
-  const tCancelar = useTranslations('Curadoria.modalMotivo')
-  const tDadosSobrepostos = useTranslations('Curadoria.dadosSobrepostos')
-  const locale = useLocale()
-  const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
+  const itensDaFicha = useItensFicha()
 
-  function rotular(opcoes: string[], valor: string | null, namespace: 'tipoRadiografia' | 'genero' | 'qualidadeTecnica'): string {
-    if (!valor || !opcoes.includes(valor)) return valor ?? '—'
-    return tOpcoes(`${namespace}.${valor}`)
-  }
+  const [pronto, setPronto] = useState(false)
+  const [aba, setAba] = useState<Aba>('revisar')
+  const [filaRevisar, setFilaRevisar] = useState<ItemFila[]>([])
+  const [filaDevolvidas, setFilaDevolvidas] = useState<ItemFila[]>([])
+  const [carregandoFilas, setCarregandoFilas] = useState(true)
+  const [filaAberta, setFilaAberta] = useState(true)
 
-  function traduzirAchado(valor: string | null): string {
-    if (!valor) return '—'
-    const chave = CHAVE_ACHADO[valor]
-    if (!chave) return valor
-    return tOpcoes(`achadoPrincipal.${chave}`)
-  }
-
-  const [autenticado, setAutenticado] = useState(false)
-  const [carregando, setCarregando] = useState(true)
-
-  const [reviews, setReviews] = useState<ReviewPendente[]>([])
-  const [carregandoFila, setCarregandoFila] = useState(false)
-  const [erroFila, setErroFila] = useState('')
-
-  const [reviewAtiva, setReviewAtiva] = useState<ReviewPendente | null>(null)
-  const [viewerInfo, setViewerInfo] = useState<ViewerInfo | null>(null)
+  const [ativo, setAtivo] = useState<ItemFila | null>(null)
+  const [detalhe, setDetalhe] = useState<DetalheRevisao | null>(null)
+  const [ficha, setFicha] = useState<Ficha | null>(null)
+  const [viewer, setViewer] = useState<ViewerInfo | null>(null)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
-  const [telaCheia, setTelaCheia] = useState(false)
-  const visualizadorRef = useRef<HTMLDivElement | null>(null)
-  // So disparam uma vez, na entrada na tela - depois disso, trocar de
-  // solicitacao (clique manual na lista) nao re-aciona nem o auto-select
-  // nem a tela cheia automatica.
-  const autoAbriuPrimeiraRef = useRef(false)
-  const autoTelaCheiaRef = useRef(false)
+  const [mostrarMarcacoes, setMostrarMarcacoes] = useState(true)
 
-  const [fichaCompleta, setFichaCompleta] = useState<FichaCompleta | null>(null)
-  const [carregandoFicha, setCarregandoFicha] = useState(false)
-
+  const [rascunho, setRascunho] = useState<Record<string, AnotacaoRascunho>>({})
+  const [classificacao, setClassificacao] = useState<Classificacao | null>(null)
+  const [parecer, setParecer] = useState('')
+  // holofote do revisor: item aceso (ver PainelParecer)
+  const [etapa, setEtapa] = useState(0)
   const [enviando, setEnviando] = useState(false)
-  const [erroFormulario, setErroFormulario] = useState('')
+  const [ocupado, setOcupado] = useState<number | null>(null)
+  const [decidindo, setDecidindo] = useState(false)
+  const [erro, setErro] = useState('')
+  const [aviso, setAviso] = useState('')
+  const [telaCheia, setTelaCheia] = useState(false)
+  const pedidoInicial = useRef<{ review: number | null; aba: Aba | null }>({ review: null, aba: null })
 
-  useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
+  const fila = aba === 'revisar' ? filaRevisar : filaDevolvidas
+  const itens = useMemo(() => (ficha ? itensDaFicha(ficha) : []), [ficha, itensDaFicha])
+
+  const carregarFilas = useCallback(async () => {
+    setCarregandoFilas(true)
+    try {
+      const [r1, r2] = await Promise.all([
+        fetch(`${API}/curation/reviews/pending`, { credentials: 'include' }),
+        fetch(`${API}/curation/reviews/answered`, { credentials: 'include' }),
+      ])
+      if (r1.status === 401 || r2.status === 401) {
         router.push('/login')
-        return
+        return { revisar: [], devolvidas: [] }
       }
-
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
-        return
-      }
-
-      setAutenticado(true)
-      carregarFila()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
-
-  // Abre a primeira solicitacao pendente automaticamente assim que a fila
-  // carrega, pro revisor ja cair direto analisando (mesmo padrao ja usado
-  // na Curadoria - ver curadoria/page.tsx), em vez de ver a lista vazia
-  // "Selecione uma solicitacao" e precisar clicar na primeira manualmente.
-  useEffect(() => {
-    if (autoAbriuPrimeiraRef.current) return
-    if (carregando || carregandoFila) return
-    if (reviewAtiva) return
-    if (!autenticado || reviews.length === 0) return
-    autoAbriuPrimeiraRef.current = true
-    selecionarReview(reviews[0])
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carregando, carregandoFila, reviews, reviewAtiva, autenticado])
-
-  // Entra em tela cheia automaticamente assim que o visualizador da
-  // primeira solicitacao fica pronto (so uma vez) - reaproveita a mesma
-  // alternarTelaCheia usada pelo botao manual. Navegadores exigem uma
-  // interacao real do usuario pra aceitar a Fullscreen API; como a tela
-  // normalmente e aberta a partir de um clique no menu, essa interacao
-  // costuma ainda valer nesse primeiro carregamento. Se o navegador negar
-  // mesmo assim, alternarTelaCheia ja trata o erro em silencio e o botao
-  // manual continua disponivel.
-  useEffect(() => {
-    if (autoTelaCheiaRef.current) return
-    if (!viewerInfo?.abrivel || !viewerInfo.viewer_url) return
-    autoTelaCheiaRef.current = true
-    alternarTelaCheia()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewerInfo])
-
-  useEffect(() => {
-    function aoMudarTelaCheia() {
-      setTelaCheia(document.fullscreenElement === visualizadorRef.current)
+      const revisar: ItemFila[] = r1.ok ? (await r1.json()).itens ?? [] : []
+      const devolvidas: ItemFila[] = r2.ok ? (await r2.json()).itens ?? [] : []
+      setFilaRevisar(revisar)
+      setFilaDevolvidas(devolvidas)
+      return { revisar, devolvidas }
+    } catch {
+      setErro(t('erros.fila'))
+      return { revisar: [], devolvidas: [] }
+    } finally {
+      setCarregandoFilas(false)
     }
-    document.addEventListener('fullscreenchange', aoMudarTelaCheia)
-    return () => document.removeEventListener('fullscreenchange', aoMudarTelaCheia)
+  }, [router, t])
+
+  const carregarDetalhe = useCallback(async (reviewId: number) => {
+    const r = await fetch(`${API}/curation/reviews/${reviewId}/detalhe`, { credentials: 'include' })
+    if (!r.ok) throw new Error(await extrairErro(r, t('erros.detalhe')))
+    const d: DetalheRevisao = await r.json()
+    setDetalhe(d)
+    return d
+  }, [t])
+
+  const carregarFicha = useCallback(async (curationId: number) => {
+    const r = await fetch(`${API}/curation/${curationId}`, { credentials: 'include' })
+    if (r.ok) setFicha(await r.json())
   }, [])
 
+  const escolher = useCallback(
+    async (item: ItemFila) => {
+      setAtivo(item)
+      setDetalhe(null)
+      setFicha(null)
+      setViewer(null)
+      setRascunho({})
+      setClassificacao(null)
+      setParecer('')
+      setEtapa(0)
+      setErro('')
+      setCarregandoViewer(true)
+      fetch(`${API}/curation/${item.orthanc_reference.id}/viewer-url`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((v) => setViewer(v))
+        .catch(() => setViewer(null))
+        .finally(() => setCarregandoViewer(false))
+      try {
+        await Promise.all([carregarDetalhe(item.id), carregarFicha(item.curation.id)])
+      } catch (e) {
+        setErro(e instanceof Error ? e.message : t('erros.detalhe'))
+      }
+    },
+    [carregarDetalhe, carregarFicha, t]
+  )
+
+  // entrada: sessao, filas e (se veio da Curadoria) o pedido indicado no endereco
+  useEffect(() => {
+    const busca = new URLSearchParams(window.location.search)
+    const review = Number(busca.get('review'))
+    pedidoInicial.current = {
+      review: Number.isInteger(review) && review > 0 ? review : null,
+      aba: busca.get('aba') === 'devolvidas' ? 'devolvidas' : busca.get('aba') === 'revisar' ? 'revisar' : null,
+    }
+    obterSessaoAtual().then(async (sessao) => {
+      if (!sessao) return router.push('/login')
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado')
+      setPronto(true)
+      const { revisar, devolvidas } = await carregarFilas()
+      const { review: alvo, aba: abaPedida } = pedidoInicial.current
+      const naDevolvida = devolvidas.find((i) => i.id === alvo)
+      const naRevisar = revisar.find((i) => i.id === alvo)
+      const abaInicial: Aba = abaPedida ?? (naDevolvida ? 'devolvidas' : revisar.some((i) => i.pode_responder !== false) || !devolvidas.length ? 'revisar' : 'devolvidas')
+      setAba(abaInicial)
+      const primeiro =
+        naDevolvida ?? naRevisar ??
+        (abaInicial === 'revisar' ? revisar.find((i) => i.pode_responder !== false) ?? revisar[0] : devolvidas[0])
+      if (primeiro) escolher(primeiro)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    const aoMudar = () => setTelaCheia(!!document.fullscreenElement)
+    document.addEventListener('fullscreenchange', aoMudar)
+    return () => document.removeEventListener('fullscreenchange', aoMudar)
+  }, [])
+
+  // "Sair": o mesmo da Topbar (esta tela ocupa a tela inteira, sem a Topbar)
+  async function sair() {
+    try {
+      await fetch(`${API}/auth/logout`, { method: 'POST', credentials: 'include' })
+    } catch {
+      // mesmo sem resposta, volta ao login
+    }
+    // recarrega a pagina inteira: descarta da memoria o que foi carregado com o login (ASVS 14.3.1)
+    window.location.replace('/login')
+  }
+
   async function alternarTelaCheia() {
-    if (!visualizadorRef.current) return
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen()
-      } else {
-        await visualizadorRef.current.requestFullscreen()
-      }
+      if (document.fullscreenElement) await document.exitFullscreen()
+      else await document.documentElement.requestFullscreen()
     } catch {
-      // navegador pode negar (ex.: sem interacao do usuario) - ignora
+      // navegador recusou: segue normal
     }
   }
 
-  async function carregarFila() {
-    setCarregandoFila(true)
-    setErroFila('')
-    try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/reviews/pending`, {
-        credentials: 'include',
-      })
-      if (resposta.status === 401) {
-        router.push('/login')
-        return
-      }
-      if (!resposta.ok) {
-        router.push('/login')
-        return
-      }
-      const dados = await resposta.json()
-      setReviews(dados.itens ?? [])
-    } catch {
-      router.push('/login')
-    } finally {
-      setCarregandoFila(false)
-      setCarregando(false)
+  function trocarAba(nova: Aba) {
+    if (nova === aba) return
+    setAba(nova)
+    const lista = nova === 'revisar' ? filaRevisar : filaDevolvidas
+    const primeiro = nova === 'revisar' ? lista.find((i) => i.pode_responder !== false) ?? lista[0] : lista[0]
+    if (primeiro) escolher(primeiro)
+    else {
+      setAtivo(null)
+      setDetalhe(null)
+      setFicha(null)
+      setViewer(null)
     }
   }
 
-  async function carregarViewerUrl(orthancReferenceId: number) {
-    setCarregandoViewer(true)
-    setViewerInfo(null)
-    try {
-      const resposta = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/viewer-url`,
-        { credentials: 'include' }
-      )
-      if (resposta.status === 401) {
-        router.push('/login')
-        return
-      }
-      if (!resposta.ok) return
-      const dados: ViewerInfo = await resposta.json()
-      setViewerInfo(dados)
-    } catch {
-      // painel so mostra a mensagem de indisponibilidade
-    } finally {
-      setCarregandoViewer(false)
-    }
-  }
+  // ---- revisor: enviar o parecer ----
+  const anotacoesValidas = itens.every((i) => rascunhoValido(i, rascunho[i.chave]))
+  const podeEnviar = !!detalhe?.pode_responder && !!classificacao && anotacoesValidas && !enviando
 
-  // Busca a ficha COMPLETA (mesmo endpoint que a Curadoria usa pra
-  // reabrir uma ficha em edicao) - e o que da ao revisor acesso a TUDO que
-  // o curador preencheu (nao so achado principal e tipo de radiografia,
-  // que era tudo que a fila resumida ja trazia).
-  async function carregarFichaCompleta(curationId: number) {
-    setCarregandoFicha(true)
-    setFichaCompleta(null)
-    try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
-        credentials: 'include',
-      })
-      if (resposta.status === 401) {
-        router.push('/login')
-        return
-      }
-      if (!resposta.ok) return
-      const dados: FichaCompleta = await resposta.json()
-      setFichaCompleta(dados)
-    } catch {
-      // secao so mostra o aviso de que nao deu pra carregar
-    } finally {
-      setCarregandoFicha(false)
-    }
-  }
-
-  function selecionarReview(review: ReviewPendente) {
-    setReviewAtiva(review)
-    setErroFormulario('')
-    if (autenticado) {
-      carregarViewerUrl(review.orthanc_reference.id)
-      carregarFichaCompleta(review.curation.id)
-    }
-  }
-
-  function limparSelecao() {
-    setReviewAtiva(null)
-    setViewerInfo(null)
-    setFichaCompleta(null)
-  }
-
-  // Um clique = a decisao inteira. Sem parecer escrito nem campos extras -
-  // pedido explicito pra tela ter APENAS os dois botoes (Concordar /
-  // Discordar). O parecer escrito continua existindo na API (agora
-  // opcional; ver schemas.py) pra nao fechar a porta pra uma versao futura
-  // que volte a coletar um comentario, mas hoje esta tela nao envia nada
-  // alem da concordancia.
-  async function responderReview(concordancia: 'concorda' | 'discorda') {
-    if (!reviewAtiva || !autenticado) return
-
+  async function enviarParecer() {
+    if (!detalhe || !classificacao) return
     setEnviando(true)
-    setErroFormulario('')
-
+    setErro('')
+    const anotacoes = itens
+      .map((item) => ({ item, r: rascunho[item.chave] }))
+      .filter(({ r }) => r && r.avaliacao !== 'concordo')
+      .map(({ item, r }) => {
+        let valor: string | number[] | null = null
+        if (item.tipo === 'dentes' && r.valor.trim()) valor = lerDentes(r.valor)
+        else if (item.tipo === 'valor' && r.valor) valor = r.valor
+        return { item: item.chave, avaliacao: r.avaliacao, nota: r.nota.trim() || null, valor_sugerido: valor }
+      })
     try {
-      const resposta = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/curation/reviews/${reviewAtiva.id}/respond`,
-        {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ concordancia }),
-        }
-      )
-      if (resposta.status === 401) {
-        router.push('/login')
-        return
-      }
+      const resposta = await fetch(`${API}/curation/reviews/${detalhe.id}/respond`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classificacao, parecer_revisor: parecer.trim() || null, anotacoes }),
+      })
       if (!resposta.ok) {
-        setErroFormulario(await extrairErro(resposta, t('erroEnviarAvaliacao')))
+        setErro(await extrairErro(resposta, t('erros.enviar')))
         return
       }
-
-      setReviews((prev) => prev.filter((r) => r.id !== reviewAtiva.id))
-      limparSelecao()
-      carregarFila()
+      setAviso(t('avisos.parecerEnviado', { nome: detalhe.solicitante?.nome ?? '—' }))
+      const { revisar } = await carregarFilas()
+      const proximo = revisar.find((i) => i.pode_responder !== false)
+      if (proximo) escolher(proximo)
+      else {
+        setAtivo(null)
+        setDetalhe(null)
+        setFicha(null)
+        setViewer(null)
+      }
     } catch {
-      setErroFormulario(t('erroEnviarAvaliacao'))
+      setErro(t('erros.enviar'))
     } finally {
       setEnviando(false)
     }
   }
 
-  if (carregando) {
+  // ---- quem pediu: acrescentar / dispensar / decidir ----
+  async function resolverAnotacao(nota: AnotacaoServidor, acao: 'incorporar' | 'dispensar') {
+    if (!detalhe) return
+    setOcupado(nota.id)
+    setErro('')
+    try {
+      const r = await fetch(`${API}/curation/reviews/${detalhe.id}/anotacoes/${nota.id}/${acao}`, {
+        method: 'POST',
+        credentials: 'include',
+      })
+      if (!r.ok) {
+        setErro(await extrairErro(r, t('erros.anotacao')))
+        return
+      }
+      setAviso(acao === 'incorporar' ? t('avisos.incorporada', { item: nota.rotulo }) : t('avisos.dispensada', { item: nota.rotulo }))
+      await Promise.all([carregarDetalhe(detalhe.id), carregarFicha(detalhe.curation_id)])
+      setFilaDevolvidas((lista) =>
+        lista.map((i) =>
+          i.id === detalhe.id && nota.situacao === 'pendente'
+            ? { ...i, anotacoes_pendentes: Math.max(0, (i.anotacoes_pendentes ?? 1) - 1) }
+            : i
+        )
+      )
+    } catch {
+      setErro(t('erros.anotacao'))
+    } finally {
+      setOcupado(null)
+    }
+  }
+
+  async function decidir(corpo: Record<string, unknown>, mensagem: string) {
+    if (!detalhe) return
+    setDecidindo(true)
+    setErro('')
+    try {
+      const r = await fetch(`${API}/curation/${detalhe.curation_id}/apply-review-decision`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(corpo),
+      })
+      if (!r.ok) {
+        setErro(await extrairErro(r, t('erros.decisao')))
+        return
+      }
+      setAviso(mensagem)
+      const { devolvidas } = await carregarFilas()
+      if (devolvidas[0]) escolher(devolvidas[0])
+      else {
+        setAtivo(null)
+        setDetalhe(null)
+        setFicha(null)
+        setViewer(null)
+      }
+    } catch {
+      setErro(t('erros.decisao'))
+    } finally {
+      setDecidindo(false)
+    }
+  }
+
+  // holofote no botao "Enviar parecer": Enter envia
+  const enviarRef = useRef<() => void>(() => {})
+  enviarRef.current = () => {
+    if (podeEnviar) enviarParecer()
+  }
+  useEffect(() => {
+    function aoTeclar(ev: KeyboardEvent) {
+      if (ev.key !== 'Enter' || ev.ctrlKey || ev.altKey || ev.metaKey) return
+      const alvo = ev.target as HTMLElement | null
+      if (alvo && ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(alvo.tagName)) return
+      if (aba === 'revisar' && itens.length > 0 && etapa === itens.length + 1) {
+        ev.preventDefault()
+        enviarRef.current()
+      }
+    }
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [aba, etapa, itens.length])
+
+  useEffect(() => {
+    if (!aviso) return
+    const id = setTimeout(() => setAviso(''), 5000)
+    return () => clearTimeout(id)
+  }, [aviso])
+
+  if (!pronto) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
         <p className="text-slate-300">{tComum('carregando')}</p>
@@ -352,287 +344,195 @@ export default function SegundaOpiniaoPage() {
     )
   }
 
+  const modoRevisar = aba === 'revisar'
+  const propria = modoRevisar && !!detalhe && !detalhe.pode_responder
+  const etapaEnviar = modoRevisar && !propria && itens.length > 0 && etapa === itens.length + 1
+
   return (
-    <div className="flex min-h-screen bg-base">
-      <Sidebar />
+    <div className="flex h-screen flex-col bg-base">
+      <main className="flex h-full min-h-0 flex-1 flex-col gap-3 p-4">
+        {/* cabecalho compacto (mesmo padrao da Curadoria) */}
+        <div className="flex shrink-0 flex-wrap items-center gap-3">
+          <Logo variante="icone" />
+          <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
+          <Link
+            href="/dashboard"
+            className="rounded-full border border-base-border bg-base-surface px-3 py-1 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
+          >
+            ← {t('inicio')}
+          </Link>
+          <div role="tablist" aria-label={t('titulo')} className="ml-2 flex rounded-full border border-base-border bg-base-surface p-0.5">
+            {(['revisar', 'devolvidas'] as Aba[]).map((a) => {
+              const total = a === 'revisar' ? filaRevisar.filter((i) => i.pode_responder !== false).length : filaDevolvidas.length
+              return (
+                <button
+                  key={a}
+                  type="button"
+                  role="tab"
+                  aria-selected={aba === a}
+                  onClick={() => trocarAba(a)}
+                  className={`flex items-center gap-1.5 rounded-full px-3.5 py-1 text-xs font-medium transition ${
+                    aba === a ? 'bg-teal-400/15 text-teal-800 dark:text-teal-100 ring-1 ring-teal-400/50' : 'text-slate-300 hover:text-white'
+                  }`}
+                >
+                  {a === 'revisar' ? t('abas.revisar') : t('abas.devolvidas')}
+                  <span
+                    className={`min-w-5 rounded-full px-1.5 text-[10px] font-bold ${
+                      total ? (a === 'devolvidas' ? 'bg-amber-400 text-black' : 'bg-teal-400 text-black') : 'bg-white/10 text-slate-400'
+                    }`}
+                  >
+                    {total}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {aviso && (
+              <span role="status" className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs text-emerald-700 dark:text-emerald-200">
+                {aviso}
+              </span>
+            )}
+            <ThemeToggle />
+            <button
+              type="button"
+              onClick={sair}
+              className="rounded-full border border-base-border bg-base-surface px-3 py-1.5 text-xs text-slate-300 hover:border-rose-400 hover:text-rose-600 dark:hover:text-rose-300"
+            >
+              {t('sair')}
+            </button>
+            <button
+              type="button"
+              onClick={alternarTelaCheia}
+              className="flex items-center gap-2 rounded-full border border-teal-400/40 bg-teal-400/10 px-3.5 py-1.5 text-xs font-medium text-teal-700 dark:text-teal-200 hover:bg-teal-400/20"
+            >
+              <span aria-hidden="true">⛶</span> {telaCheia ? t('sairTelaCheia') : t('telaCheia')}
+            </button>
+          </div>
+        </div>
 
-      <div className="flex flex-1 flex-col">
-        <Topbar />
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <h1 className="titulo-pagina tela-entra mb-4">{t('titulo')}</h1>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[360px_1fr]">
-            {/* LISTA - reviews pendentes */}
-            <section className="rounded-xl border border-base-border bg-base-surface">
-              <h2 className="border-b border-base-border px-4 py-3 text-sm font-semibold text-slate-200">
-                {t('aguardandoParecer')}
-              </h2>
-
-              {erroFila && (
-                <p className="px-4 py-2 text-xs text-red-400" role="alert">
-                  {erroFila}
+        {/* area de trabalho: fila | OHIF | painel */}
+        <div
+          className={`grid min-h-0 flex-1 gap-3 ${
+            filaAberta ? 'lg:grid-cols-[280px_minmax(0,1fr)_minmax(380px,460px)]' : 'lg:grid-cols-[44px_minmax(0,1fr)_minmax(380px,460px)]'
+          }`}
+        >
+          <aside className="flex min-h-0 flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
+            <div className="flex items-center justify-between gap-2 border-b border-base-border px-3 py-2">
+              {filaAberta && (
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                  {modoRevisar ? t('fila.tituloRevisar') : t('fila.tituloDevolvidas')}
                 </p>
               )}
-
-              <div className="max-h-[75vh] overflow-y-auto">
-                {carregandoFila ? (
-                  <p className="p-4 text-sm text-slate-500">{t('carregandoFila')}</p>
-                ) : reviews.length === 0 ? (
-                  <p className="p-4 text-sm text-slate-500">{t('nenhumaPendente')}</p>
-                ) : (
-                  <ul className="divide-y divide-slate-800">
-                    {reviews.map((review) => (
-                      <li key={review.id}>
-                        <button
-                          type="button"
-                          onClick={() => selecionarReview(review)}
-                          className={`w-full px-4 py-3 text-left text-sm hover:bg-base-surface2/60 ${
-                            reviewAtiva?.id === review.id ? 'bg-base-surface2/60' : ''
-                          }`}
-                        >
-                          <p className="text-slate-200">
-                            {traduzirAchado(review.curation.achado_principal)}
-                          </p>
-                          <p className="mt-1 text-slate-400">
-                            {rotular(OPCOES_TIPO_RADIOGRAFIA, review.curation.tipo_radiografia, 'tipoRadiografia')}
-                          </p>
-                          <p className="mt-1 text-xs text-slate-500 line-clamp-2">{review.motivo}</p>
-                          <p className="mt-1 text-xs text-slate-600">
-                            {formatarData(review.criado_em, tagLocale)}
-                          </p>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </section>
-
-            {/* PAINEL - imagem + ficha completa do curador + decisao do revisor */}
-            {!reviewAtiva ? (
-              <section className="flex min-h-[75vh] items-center justify-center rounded-xl border border-base-border bg-base-surface p-8 text-center text-slate-500">
-                {t('selecioneSolicitacao')}
-              </section>
-            ) : (
-              // Igual a tela de Curadoria: TUDO (imagem, o que o curador
-              // registrou e os botoes de Concordar/Discordar) fica dentro do
-              // elemento que vira tela cheia (Fullscreen API so mostra o
-              // elemento pedido, escondendo tudo fora dele) - assim o revisor
-              // consegue ver a imagem grande E analisar/decidir sem sair do
-              // modo tela cheia. So a lista da fila (coluna da esquerda) fica
-              // de fora, igual la.
-              <div
-                ref={visualizadorRef}
-                className={`flex flex-col gap-4 overflow-y-auto bg-base ${telaCheia ? 'p-4' : ''}`}
+              <button
+                type="button"
+                onClick={() => setFilaAberta((v) => !v)}
+                aria-label={filaAberta ? t('fila.recolher') : t('fila.abrir')}
+                title={filaAberta ? t('fila.recolher') : t('fila.abrir')}
+                className="rounded-md px-1.5 text-slate-400 hover:text-white"
               >
-                <section className="relative flex min-h-[45vh] flex-col overflow-hidden rounded-xl border border-base-border bg-base-surface">
-                  {/* Cabecalho com o botao de tela cheia - sempre visivel
-                      (igual visualizar/[id]/page.tsx), nao so quando a
-                      imagem carrega no OHIF. Antes, o botao ficava dentro
-                      do mesmo `if` que so aparece com viewerInfo.abrivel
-                      true, entao sem uma imagem visualizavel o revisor nao
-                      tinha NENHUMA forma de entrar em tela cheia. */}
-                  <div className="flex items-center justify-end border-b border-base-border px-3 py-2">
-                    <button
-                      type="button"
-                      onClick={alternarTelaCheia}
-                      aria-label={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
-                      title={telaCheia ? tVisualizador('sairTelaCheia') : tVisualizador('abrirTelaCheia')}
-                      className="flex items-center gap-1.5 rounded-full border border-base-border bg-base-surface2 px-3 py-1.5 text-xs text-slate-300 hover:border-brand hover:text-brand-300"
-                    >
-                      {telaCheia ? (
-                        <>
-                          <span aria-hidden="true">⤡</span> {tVisualizador('voltar')}
-                        </>
-                      ) : (
-                        <>
-                          <span aria-hidden="true">⛶</span> {tVisualizador('telaCheia')}
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  <div className="relative min-h-[45vh] flex-1">
-                    {carregandoViewer ? (
-                      <div className="flex h-full items-center justify-center text-slate-400">
-                        {tVisualizador('carregandoVisualizador')}
-                      </div>
-                    ) : viewerInfo?.abrivel && viewerInfo.viewer_url ? (
-                      <iframe
-                        src={viewerInfo.viewer_url}
-                        title={tVisualizador('ohifTitulo')}
-                        className="h-full w-full border-0"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-8 text-center text-slate-500">
-                        {viewerInfo?.motivo ?? tVisualizador('naoDisponivel')}
-                      </div>
-                    )}
-
-                    {/* Coluna sobreposta no canto esquerdo do OHIF, escondendo
-                        o painel "Studies" dele (mesma tecnica ja usada na
-                        Curadoria - ver PainelDadosSobrepostos.tsx - o iframe
-                        e cross-origin, entao a unica forma de cobrir aquele
-                        painel e por fora, com uma caixa opaca por cima).
-                        Tipo, qualidade, dentes, faixa etaria e sexo, todos
-                        empilhados verticalmente, somente leitura (o revisor
-                        nao edita a ficha). Anonimizacao validada nao aparece
-                        mais aqui (pedido explicito pra remove-la da tela).
-                        Usa os mesmos tokens de tema (bg-base-surface,
-                        border-base-border, text-slate-300/400) do resto do
-                        app, entao acompanha automaticamente o modo claro e o
-                        modo noturno. Largura FIXA em px (sem max-w em %):
-                        o painel "Studies" nativo do OHIF tem largura fixa,
-                        entao um cap em porcentagem faz essa coluna crescer
-                        alem da largura real dele em tela cheia (container
-                        bem mais largo) e invadir a area da imagem - mesmo
-                        ajuste feito em PainelVisualizador.tsx. */}
-                    {fichaCompleta && (
-                      <div className="absolute bottom-2 left-2 top-2 z-10 w-[220px]">
-                        <dl className="flex h-full w-full flex-col gap-2.5 overflow-y-auto rounded-xl border border-base-border bg-base-surface/95 p-3 text-sm shadow-lg backdrop-blur-xs">
-                          <div>
-                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('tipoRadiografia')}</dt>
-                            <dd className="text-slate-100">
-                              {rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia, 'tipoRadiografia')}
-                            </dd>
-                          </div>
-                          <div className="border-t border-base-border pt-2.5">
-                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('qualidadeTecnica')}</dt>
-                            <dd className="text-slate-100">
-                              {rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica, 'qualidadeTecnica')}
-                            </dd>
-                          </div>
-                          <div className="border-t border-base-border pt-2.5">
-                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('dentes')}</dt>
-                            <dd className="text-slate-100">
-                              {fichaCompleta.dentes && fichaCompleta.dentes.length > 0 ? fichaCompleta.dentes.join(', ') : '—'}
-                            </dd>
-                          </div>
-                          <div className="border-t border-base-border pt-2.5">
-                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('faixaEtaria')}</dt>
-                            <dd className="text-slate-100">
-                              {fichaCompleta.idade_min || fichaCompleta.idade_max
-                                ? t('faixaEtariaValor', { min: fichaCompleta.idade_min ?? '?', max: fichaCompleta.idade_max ?? '?' })
-                                : '—'}
-                            </dd>
-                          </div>
-                          <div className="border-t border-base-border pt-2.5">
-                            <dt className="mb-1 text-xs font-medium text-slate-400">{tDadosSobrepostos('sexo')}</dt>
-                            <dd className="text-slate-100">{rotular(OPCOES_GENERO, fichaCompleta.genero, 'genero')}</dd>
-                          </div>
-                        </dl>
-                      </div>
-                    )}
-                  </div>
-                </section>
-
-                {/* Tudo que o curador registrou - MESMOS campos e MESMO
-                    componente de classificacao (BarraClassificacao) usado nas
-                    telas de visualizacao de imagem, pra dar ao revisor a
-                    informacao completa (nao so achado principal e tipo). */}
-                <section className="rounded-xl border border-base-border bg-base-surface p-4">
-                  <h2 className="mb-3 text-sm font-semibold text-slate-200">
-                    {t('oQueCuradorRegistrou')}
-                  </h2>
-
-                  <dl className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
-                    <div>
-                      <dt className="text-xs text-slate-500">{t('motivoSolicitacao')}</dt>
-                      <dd className="text-slate-300">{reviewAtiva.motivo}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs text-slate-500">{t('primeiroParecer')}</dt>
-                      <dd className="text-slate-300">{reviewAtiva.primeiro_parecer || '—'}</dd>
-                    </div>
-                  </dl>
-
-                  {carregandoFicha ? (
-                    <p className="text-sm text-slate-500">{t('carregandoFichaCompleta')}</p>
-                  ) : !fichaCompleta ? (
-                    <p className="text-sm text-slate-500">{t('erroCarregarFichaCompleta')}</p>
-                  ) : (
-                    <>
-                      <BarraClassificacao
-                        tipo={rotular(OPCOES_TIPO_RADIOGRAFIA, fichaCompleta.tipo_radiografia, 'tipoRadiografia')}
-                        qualidade={rotular(OPCOES_QUALIDADE_TECNICA, fichaCompleta.qualidade_tecnica, 'qualidadeTecnica')}
-                        dentes={fichaCompleta.dentes}
-                        alteracoesObservadas={fichaCompleta.alteracoes_observadas}
-                        achadosDetalhe={fichaCompleta.achados_detalhe}
-                        descricaoDidatica={fichaCompleta.descricao_didatica}
-                        achadoPrincipal={fichaCompleta.achado_principal}
-                        ocultarClassificacao
-                      />
-
-                      {fichaCompleta.observacoes_internas && (
-                        <div className="mt-3 rounded-lg border border-base-border bg-base-surface2/70 p-3">
-                          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
-                            {t('observacoesInternasCurador')}
-                          </p>
-                          <p className="text-sm text-slate-300">{fichaCompleta.observacoes_internas}</p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </section>
-
-                {/* Decisao do revisor: so os dois botoes, por pedido - sem
-                    parecer escrito obrigatorio, sem decisao final sugerida,
-                    sem observacoes. Clicar em um dos dois JA envia a
-                    resposta. */}
-                <section className="rounded-xl border border-base-border bg-base-surface p-4">
-                  <h2 className="mb-1 text-sm font-semibold text-slate-200">{t('suaAvaliacao')}</h2>
-                  <p className="mb-4 text-xs text-slate-500">
-                    {t('instrucaoAvaliacao')}
-                  </p>
-
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <button
-                      type="button"
-                      onClick={() => responderReview('concorda')}
-                      disabled={enviando}
-                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-emerald-600/40 bg-emerald-500/10 px-4 py-6 text-emerald-300 transition-colors hover:border-emerald-500 hover:bg-emerald-500/20 disabled:opacity-50"
-                    >
-                      <span className="text-3xl" aria-hidden="true">
-                        ✓
-                      </span>
-                      <span className="text-base font-semibold">{t('concordar')}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => responderReview('discorda')}
-                      disabled={enviando}
-                      className="flex flex-col items-center gap-1 rounded-xl border-2 border-red-600/40 bg-red-500/10 px-4 py-6 text-red-300 transition-colors hover:border-red-500 hover:bg-red-500/20 disabled:opacity-50"
-                    >
-                      <span className="text-3xl" aria-hidden="true">
-                        ✕
-                      </span>
-                      <span className="text-base font-semibold">{t('discordar')}</span>
-                    </button>
-                  </div>
-
-                  {erroFormulario && (
-                    <p className="mt-3 text-sm text-red-400" role="alert">
-                      {erroFormulario}
-                    </p>
-                  )}
-
-                  <div className="mt-4 flex justify-end border-t border-base-border pt-4">
-                    <button
-                      type="button"
-                      onClick={limparSelecao}
-                      disabled={enviando}
-                      className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
-                    >
-                      {tCancelar('cancelar')}
-                    </button>
-                  </div>
-                </section>
+                {filaAberta ? '«' : '»'}
+              </button>
+            </div>
+            {filaAberta && (
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                <FilaSegundaOpiniao itens={fila} ativo={ativo?.id ?? null} carregando={carregandoFilas} modo={aba} onEscolher={escolher} />
               </div>
             )}
-          </div>
-        </main>
-      </div>
+          </aside>
+
+          <section className="min-h-[50vh] lg:min-h-0">
+            {ativo ? (
+              <VisualizadorRevisao
+                carregando={carregandoViewer}
+                viewerInfo={viewer}
+                marcacoes={ficha?.marcacoes ?? []}
+                mostrarMarcacoes={mostrarMarcacoes}
+                onAlternarMarcacoes={() => setMostrarMarcacoes((v) => !v)}
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-base-border p-8 text-center text-sm text-slate-400">
+                {modoRevisar ? t('vazio.revisar') : t('vazio.devolvidas')}
+              </div>
+            )}
+          </section>
+
+          <aside className="flex min-h-0 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
+              {erro && (
+                <p role="alert" className="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
+                  {erro}
+                </p>
+              )}
+              {ativo && detalhe && (
+                <CartaoPedido
+                  solicitante={detalhe.solicitante}
+                  curadorDaFicha={detalhe.curador_da_ficha}
+                  criadoEm={detalhe.criado_em}
+                  motivo={detalhe.motivo}
+                  primeiroParecer={detalhe.primeiro_parecer}
+                  fichaId={detalhe.curation_id}
+                />
+              )}
+              {ativo && (!detalhe || !ficha) && !erro && <p className="text-sm text-slate-400">{t('carregandoFicha')}</p>}
+              {ativo && detalhe && ficha && modoRevisar && (
+                <PainelParecer
+                  itens={itens}
+                  rascunho={rascunho}
+                  onRascunho={(chave, v) => setRascunho((r) => ({ ...r, [chave]: v }))}
+                  classificacao={classificacao}
+                  onClassificacao={setClassificacao}
+                  parecer={parecer}
+                  onParecer={setParecer}
+                  somenteLeitura={propria}
+                  etapa={etapa}
+                  onEtapa={setEtapa}
+                />
+              )}
+              {ativo && detalhe && ficha && !modoRevisar && (
+                <PainelDevolvida
+                  detalhe={detalhe}
+                  itens={itens}
+                  ocupado={ocupado}
+                  onIncorporar={(n) => resolverAnotacao(n, 'incorporar')}
+                  onDispensar={(n) => resolverAnotacao(n, 'dispensar')}
+                  onAprovar={() => decidir({ decisao: 'aprovar', anonimizacao_validada: true }, t('avisos.aprovada'))}
+                  onDescartar={(motivo) => decidir({ decisao: 'descartar', motivo }, t('avisos.descartada'))}
+                  decidindo={decidindo}
+                />
+              )}
+            </div>
+
+            {/* rodape fixo do revisor: resumo + enviar */}
+            {ativo && detalhe && ficha && modoRevisar && !propria && (
+              <div className="mt-3 shrink-0 rounded-xl border border-base-border bg-base-surface p-3">
+                <div className="flex items-center gap-3">
+                  <p className="min-w-0 flex-1 text-xs text-slate-400">
+                    {!classificacao
+                      ? t('rodape.falta')
+                      : !anotacoesValidas
+                        ? t('rodape.faltaAnotacao')
+                        : t('rodape.pronto', {
+                            anotacoes: itens.filter((i) => (rascunho[i.chave]?.avaliacao ?? 'concordo') !== 'concordo').length,
+                            nome: detalhe.solicitante?.nome ?? '—',
+                          })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={enviarParecer}
+                    disabled={!podeEnviar}
+                    className={`shrink-0 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-40 ${
+                      etapaEnviar ? 'scale-110 shadow-[0_0_0_2px_rgba(45,212,191,.9),0_0_28px_-2px_rgba(45,212,191,.7)]' : ''
+                    }`}
+                  >
+                    {enviando ? t('rodape.enviando') : t('rodape.enviar')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </aside>
+        </div>
+      </main>
     </div>
   )
 }

@@ -23,6 +23,8 @@ function traduzirErroBackend(detalhe: string | undefined, t: ReturnType<typeof u
       return t('erroSenhaComum')
     case 'A senha pode ter no máximo 64 caracteres (letras acentuadas e símbolos especiais ocupam mais espaço).':
       return t('erroSenhaLonga')
+    case 'Não foi possível enviar o e-mail de confirmação agora. Tente de novo em alguns minutos; se continuar, avise o administrador.':
+      return t('erroEmailConfirmacao')
     default:
       return t('erroEnviarGenerico')
   }

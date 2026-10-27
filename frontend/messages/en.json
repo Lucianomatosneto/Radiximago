@@ -498,7 +498,8 @@
       "origem": {
         "ufsc": "UFSC (equipment)",
         "externa": "External (upload)"
-      }
+      },
+      "origemRotulo": "Image origin"
     },
     "voltarBuscaAvancada": "Back to advanced search",
     "filtrosEmUso": "{total, plural, one {1 filter in use} other {# filters in use}}",
@@ -520,7 +521,46 @@
     "ampliarImagem": "Hover to enlarge the image",
     "marcacoesNaImagem": "{total, plural, one {# curator marking} other {# curator markings}}",
     "mostrarMarcacoes": "Show the curator's {total, plural, one {marking} other {# markings}} on the image",
-    "esconderMarcacoes": "Hide the curator's markings"
+    "esconderMarcacoes": "Hide the curator's markings",
+    "grupos": {
+      "carie": "Caries — all types",
+      "periodontal": "Periodontal disease — all",
+      "perda_ossea": "Bone loss",
+      "lesao_periapical": "Periapical lesion",
+      "tratamento_endodontico": "Endodontic treatment",
+      "reabsorcao": "Root resorption — internal and external",
+      "restaurador": "Restorations and prostheses",
+      "lesoes_osseas": "Bone lesions (cysts, radiopaque, radiolucent)",
+      "anomalias": "Number and eruption anomalies",
+      "dente_incluso": "Impacted tooth",
+      "normal": "Normal anatomy (no findings)",
+      "erro_tecnico": "With technical error"
+    },
+    "gruposPalavras": {
+      "carie": "caries decay carious lesion",
+      "periodontal": "periodontium periodontitis calculus",
+      "perda_ossea": "alveolar bone resorption",
+      "lesao_periapical": "apical granuloma abscess",
+      "tratamento_endodontico": "root canal endodontics filling",
+      "reabsorcao": "resorptions",
+      "restaurador": "restoration prosthesis crown post",
+      "lesoes_osseas": "bone cyst tumor",
+      "anomalias": "supernumerary agenesis impacted",
+      "dente_incluso": "impacted retained",
+      "normal": "no findings healthy",
+      "erro_tecnico": "technical errors failure"
+    },
+    "campoTermos": "Search by terms",
+    "placeholderTermos": "Type the first letters: car, bone, pulp, resorp, canal…",
+    "resumoTermos": "Terms: {termos}",
+    "errosDigite": "Type the first letters of the error…",
+    "errosLimpar": "Clear ({total})",
+    "errosGrupo": {
+      "geral": "Intraoral and general",
+      "panoramica": "Panoramic",
+      "tomografia": "Tomography (CBCT)"
+    },
+    "errosNenhum": "No error with those letters."
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -951,7 +991,8 @@
       "aprovando": "Approving...",
       "descartar": "Discard",
       "erroAprovar": "Couldn't approve this record.",
-      "erroDescartar": "Couldn't discard this record."
+      "erroDescartar": "Couldn't discard this record.",
+      "abrirParecerCompleto": "See notes and add to the curation"
     },
     "foco": {
       "voltarVisualizador": "Back to viewer",
@@ -1002,7 +1043,7 @@
     "macroErroCriar": "Could not create the macro.",
     "macros": {
       "botao": "Macros",
-      "dica": "Team templates (or say “macro <name>”)",
+      "dica": "Team templates (or say “macro [name]”)",
       "procurar": "Search macro…",
       "nenhuma": "No macro found.",
       "semTexto": "(no text)",
@@ -1190,7 +1231,7 @@
       "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”."
     },
     "orientacao": {
-      "titulo": "Image position",
+      "titulo": "Rotate the image",
       "esquerda": "90° left",
       "direita": "90° right",
       "inverter": "180°",
@@ -1207,7 +1248,10 @@
         "interproximal": "upper on top, lower below, crowns meeting in the middle.",
         "panoramica": "upper arch on top, lower arch below.",
         "semDentes": "select the teeth in the record (upper: crowns down; lower: crowns up)."
-      }
+      },
+      "originalDica": "Back to the original position",
+      "salvo": "Position saved",
+      "teclaDica": "Rotate 90° right (R key) — Shift+R rotates left"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1255,7 +1299,14 @@
     "infoAchados": "Findings",
     "infoDescricao": "Description",
     "infoErros": "Technical error",
-    "limiteLote": "Send at most {maximo} images per email. Unselect some and try again."
+    "limiteLote": "Send at most {maximo} images per email. Unselect some and try again.",
+    "quantidade": "{quantidade, plural, one {# saved image} other {# saved images}}",
+    "imagem": "Image {numero}",
+    "enviarPorEmailCurto": "✉ E-mail ({quantidade})",
+    "removerSelecionadas": "Remove from list ({quantidade})",
+    "confirmarRemover": "Remove {quantidade, plural, one {# image} other {# images}} from My images?",
+    "sim": "Yes, remove",
+    "nao": "Cancel"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",
@@ -1377,10 +1428,8 @@
     "descricaoFastapi": "This page's own response confirms the API responded.",
     "descricaoNextjs": "The frontend is running — you're looking at this page.",
     "servicoArmazenamento": "Storage",
-    "semEndpointChecagem": "No health-check endpoint available.",
     "descricaoDicomweb": "Same status as Orthanc — DICOMWeb is a plugin of it, not a separate check. {descricaoOrthanc}",
-    "variavelOhifNaoConfigurada": "NEXT_PUBLIC_OHIF_URL variable not configured.",
-    "ohifRespondeu": "Responded to the request (best-effort check, content not validated).",
+    "ohifRespondeu": "Responded at {url} (browser check, content not validated).",
     "ohifNaoRespondeu": "Didn't respond — could be a real failure or just CORS/local network. Best-effort check.",
     "status": {
       "online": "Online",
@@ -1395,6 +1444,39 @@
       "erroBackend": "Checked just now — backend reported \"{detalhe}\".",
       "formatoInesperado": "Unexpected response format.",
       "falhaRede": "Network failure while checking."
+    },
+    "ohifSemEndereco": "Could not get the OHIF address from the server.",
+    "verificadoAgora": "Checked just now.",
+    "dockerIndiretoOk": "The services running in Docker (database and Orthanc) are responding.",
+    "dockerIndiretoFalha": "A service running in Docker did not respond — see the cards above.",
+    "dockerPorQue": "Indirect check, for security: Radix has no access to Docker's control.",
+    "armazenamentoErro": "Could not check storage right now.",
+    "linhaDisco": "Disk: {livre} GB free of {total} GB ({percentual}%).",
+    "linhaOrthanc": "Images in Orthanc: {tamanho} ({instancias} images).",
+    "linhaBackup": "Latest {rotulo} backup: {data} — {tamanho} ({quantidade} kept).",
+    "backupBanco": "database",
+    "backupImagens": "images",
+    "alertas": {
+      "backup_banco_ausente": "No database backup found.",
+      "backup_banco_vazio": "The latest database backup is EMPTY (0 bytes).",
+      "backup_banco_antigo": "The latest database backup is older than 36 hours.",
+      "backup_imagens_ausente": "No image backup found.",
+      "backup_imagens_vazio": "The latest image backup is EMPTY (0 bytes).",
+      "backup_imagens_antigo": "The latest image backup is older than 36 hours.",
+      "disco_pouco_espaco": "Low disk space (less than 10% free).",
+      "pasta_backup_indisponivel": "The backup folder is not connected to the system (restart radix-api with docker compose up -d).",
+      "orthanc_estatisticas_indisponiveis": "Could not read the image size in Orthanc."
+    },
+    "servicoEmail": "E-mail (SMTP)",
+    "emailOk": "Connected and signed in to {servidor} (test without sending).",
+    "emailPorQue": "New-user sign-up and \"forgot password\" depend on this service.",
+    "emailErro": {
+      "sem_servidor": "E-mail server not configured (SMTP_HOST in .env).",
+      "senha_recusada": "The server rejected the user/password. For Gmail, SMTP_PASSWORD must be an \"app password\" (16 letters, created with 2-step verification on), not the normal account password.",
+      "tempo_esgotado": "The e-mail server did not answer in time: network/firewall blocking the port (SMTP_PORT), or wrong address.",
+      "sem_conexao": "Could not connect to the e-mail server: check SMTP_HOST, SMTP_PORT and the computer's internet.",
+      "recusado": "The e-mail server refused the connection (check SMTP_USE_TLS, SMTP_PORT and SMTP_FROM).",
+      "consulta": "Could not check the e-mail server right now."
     }
   },
   "PainelAdmin": {
@@ -1491,7 +1573,8 @@
       "professor": "Professor",
       "estudante": "Student",
       "pesquisador": "Researcher"
-    }
+    },
+    "erroEmailConfirmacao": "Your data was received, but we could not send the confirmation e-mail right now. Try again in a few minutes; if it keeps happening, tell the system administrator."
   },
   "Usuarios": {
     "titulo": "Users",
@@ -1759,7 +1842,10 @@
     "remover": "Remove",
     "verTodas": "View all ({quantidade})",
     "expandir": "Expand",
-    "info": "Image description"
+    "info": "Image description",
+    "todasCompartilhadas": "All shared",
+    "quantidade": "{quantidade, plural, one {1 shared image} other {# shared images}}",
+    "anotacoesNoVisualizador": "open with ▶ View to read"
   },
   "Vocabulario": {
     "tituloPrefixo": "Controlled",
@@ -1865,7 +1951,7 @@
   "Macros": {
     "tituloPrefixo": "Curation",
     "tituloDestaque": "macros",
-    "subtitulo": "Team templates that fill description, findings, notes, changes, type and quality at once. Use the ⚡ Macros menu in Curation or say “macro <name>”. Applying a macro only fills the draft — approval stays manual.",
+    "subtitulo": "Team templates that fill description, findings, notes, changes, type and quality at once. Use the ⚡ Macros menu in Curation or say “macro [name]”. Applying a macro only fills the draft — approval stays manual.",
     "erroCarregar": "Could not load macros.",
     "erroSalvar": "Could not save.",
     "salva": "Macro saved.",
@@ -1991,5 +2077,299 @@
     "redefinir": "Reset 2-step",
     "confirmarRedefinir": "Reset {nome}'s two-step login? Confirm the person's identity first (in person or via institutional email). Their sessions will be closed and they will set up the app again.",
     "redefinido": "{nome}'s two-step login was reset."
+  },
+  "Prancha": {
+    "botao": "Plate",
+    "dica": "Sheet with the images on the left and their information on the right (download, print or e-mail)",
+    "titulo": "Plate with information",
+    "subtitulo": "Images stacked on the left and each one's information on the right, at the same height.",
+    "fechar": "Close",
+    "quais": "Which images",
+    "porFolha": "Images per sheet",
+    "opcao": "{quantidade} per sheet",
+    "opcaoDica": "one below the other",
+    "comInformacoes": "Image information beside it",
+    "comMarcacoes": "Curator markings drawn on the image",
+    "resumo": "{imagens, plural, one {1 image} other {# images}} on {folhas, plural, one {1 A4 sheet} other {# A4 sheets}}",
+    "limite": "Choose at most {maximo} images per plate.",
+    "limiteEmail": "By e-mail, up to {maximo} images per plate.",
+    "baixarPdf": "PDF",
+    "baixarPng": "PNG",
+    "imprimir": "Print",
+    "email": "E-mail",
+    "gerando": "Generating…",
+    "enviando": "Sending…",
+    "baixado": "Plate downloaded.",
+    "impressaoAberta": "Print window opened (you can also \"Save as PDF\").",
+    "emailEnviado": "Plate sent to your e-mail.",
+    "erro": "The plate could not be generated. Please try again.",
+    "aviso": "Teaching and research material. Anonymized images. Not intended for diagnosis.",
+    "todasSalvas": "All saved",
+    "selecionadas": "Selected"
+  },
+  "SegundaOpiniao": {
+    "titulo": "Second opinion",
+    "inicio": "Home",
+    "telaCheia": "Full screen",
+    "sairTelaCheia": "Exit full screen",
+    "carregandoFicha": "Loading the record…",
+    "abas": {
+      "revisar": "To review",
+      "devolvidas": "Returned to me"
+    },
+    "fila": {
+      "tituloRevisar": "Second opinion requests",
+      "tituloDevolvidas": "Opinions received",
+      "recolher": "Collapse queue",
+      "abrir": "Open queue",
+      "carregando": "Loading…",
+      "vaziaRevisar": "No requests waiting for an opinion.",
+      "vaziaDevolvidas": "No opinions waiting for your decision.",
+      "miniatura": "Image of record #{id}",
+      "vocePediu": "You requested this second opinion",
+      "pedidoPor": "Requested by {nome}",
+      "revisadoPor": "Opinion by {nome}",
+      "anotacoesPendentes": "{total, plural, one {1 note to decide} other {# notes to decide}}",
+      "soLeitura": "read only"
+    },
+    "vazio": {
+      "revisar": "Choose a request in the queue to review.",
+      "devolvidas": "Choose an opinion in the queue."
+    },
+    "erros": {
+      "fila": "Could not load the queues.",
+      "detalhe": "Could not open this request.",
+      "enviar": "Could not send the opinion.",
+      "anotacao": "Could not record your choice.",
+      "decisao": "Could not apply the decision."
+    },
+    "avisos": {
+      "parecerEnviado": "Opinion sent to {nome}.",
+      "incorporada": "{item}: added to the curation.",
+      "dispensada": "{item}: note dismissed.",
+      "aprovada": "Record approved.",
+      "descartada": "Record discarded."
+    },
+    "rodape": {
+      "falta": "Choose the overall rating (1, 2 or 3) to send.",
+      "faltaAnotacao": "Explain each item marked ✎ or ✕ (note or proposed value).",
+      "pronto": "{anotacoes, plural, =0 {No item notes} one {1 note} other {# notes}} · goes back to {nome}",
+      "enviando": "Sending…",
+      "enviar": "Send opinion"
+    },
+    "visualizador": {
+      "carregando": "Loading the viewer…",
+      "titulo": "Image viewer (OHIF)",
+      "indisponivel": "Image unavailable in the viewer.",
+      "mostrarMarcacoes": "Show curator markings ({total})",
+      "esconderMarcacoes": "Hide curator markings ({total})"
+    },
+    "pedido": {
+      "titulo": "Second opinion request",
+      "semNome": "Curator",
+      "quando": "Requested on {data}",
+      "ficha": "Record #{id}",
+      "curadorDaFicha": "curated by {nome}",
+      "motivo": "Reason",
+      "primeiroParecer": "Requester's first opinion",
+      "semPrimeiroParecer": "Not provided"
+    },
+    "itens": {
+      "tipo_radiografia": "Radiograph type",
+      "qualidade_tecnica": "Technical quality",
+      "dentes": "Teeth (FDI)",
+      "faixa_etaria": "Age range",
+      "faixaValor": "{min} to {max} years",
+      "genero": "Gender",
+      "achado_principal": "Main finding",
+      "dentesDoAchado": "teeth {dentes}",
+      "achadoN": "Finding {numero}",
+      "alteracoes_observadas": "Observed changes",
+      "erros_tecnicos": "Technical errors",
+      "marcacoes": "Markings on the image",
+      "achados_detalhe": "Detailed findings",
+      "descricao_didatica": "Teaching description",
+      "observacoes_internas": "Internal notes"
+    },
+    "grupos": {
+      "dados": "Image data",
+      "achados": "Findings",
+      "textos": "Curation texts"
+    },
+    "parecer": {
+      "tituloItens": "Curator's record — rate each item",
+      "contagem": "{anotados} of {total} with notes",
+      "propriaSolicitacao": "You requested this second opinion: another curator must give the opinion. Here you can only follow it.",
+      "instrucaoItens": "Everything starts as ✓ Agree. Mark ✎ Adjust or ✕ Disagree where you have something to say and write your note — it goes back to the curator, who can add it to the curation.",
+      "tituloGeral": "Overall rating",
+      "instrucaoGeral": "How do you rate the curation as a whole?",
+      "sugerida": "suggested",
+      "comentarioGeral": "Overall comment (optional)",
+      "comentarioGeralDica": "Summary of your opinion, references, guidance for the curator…",
+      "referenciaRadpeer": "Scale inspired by RADPEER (American College of Radiology), used for peer review in radiology."
+    },
+    "classificacao": {
+      "concordo": "Agree",
+      "concordoDica": "Interpretation and classification are correct.",
+      "discordancia_menor": "Minor discrepancy",
+      "discordancia_menorDica": "Detail adjustments; the interpretation does not change.",
+      "discordancia_importante": "Major discrepancy",
+      "discordancia_importanteDica": "Changes the interpretation or classification of the case."
+    },
+    "avaliacao": {
+      "concordo": "Agree",
+      "ajustar": "Adjust",
+      "discordo": "Disagree"
+    },
+    "item": {
+      "verMenos": "show less",
+      "verMais": "show all",
+      "avaliarItem": "Rate: {item}",
+      "valorProposto": "Proposed value",
+      "semValorProposto": "— no proposed value —",
+      "dentesPropostos": "Proposed teeth (FDI)",
+      "dentesInvalidos": "Use FDI numbers from 11 to 48, separated by commas.",
+      "textoSugerido": "Suggested text (appended to the curator's)",
+      "anotacao": "Your note",
+      "dica": {
+        "valor": "Why change it? What do you see in the image?",
+        "dentes": "E.g.: tooth 21 is also involved.",
+        "texto": "Write the addition or correction.",
+        "nota": "Write your remark on this item."
+      },
+      "expliqueAnotacao": "Write the note (or propose a value) for this item."
+    },
+    "devolvida": {
+      "parecerDe": "Second opinion",
+      "respondidoEm": "Answered on {data}",
+      "discorda": "Disagrees",
+      "tituloAnotacoes": "Reviewer's notes",
+      "pendentes": "{total, plural, =0 {all decided} one {1 to decide} other {# to decide}}",
+      "instrucao": "For each note: add it to your curation or dismiss it. Everything is recorded in the record history.",
+      "semAnotacoes": "The reviewer made no item notes.",
+      "efeitoTexto": "appends the text to the item",
+      "efeitoValor": "replaces the value in the record",
+      "efeitoNota": "records it in the internal notes",
+      "vocesRegistrou": "You:",
+      "proposta": "Proposed:",
+      "anotacao": "Note:",
+      "incorporada": "Added to the curation",
+      "dispensada": "Dismissed",
+      "aplicando": "Applying…",
+      "incorporar": "Add to curation",
+      "dispensar": "Dismiss",
+      "concordouCom": "Reviewer agreed with:",
+      "decisaoTitulo": "Final decision",
+      "decisaoComPendentes": "{total, plural, one {1 note is still undecided} other {# notes are still undecided}} — you can decide anyway.",
+      "decisaoInstrucao": "With the notes resolved, approve the record (it goes to the collection) or discard it.",
+      "anonimizacao": "I checked the image anonymization",
+      "enviando": "Sending…",
+      "aprovar": "Approve record",
+      "descartar": "Discard",
+      "motivoDescarte": "Reason for discarding",
+      "confirmarDescarte": "Confirm discard",
+      "voltar": "Back"
+    },
+    "sair": "Sign out",
+    "holofote": {
+      "mudar": "change item",
+      "proximo": "next",
+      "proximoItem": "Next item"
+    }
+  },
+  "Segmentacao": {
+    "abaFormas": "Shapes (circle, arrow)",
+    "abaPintura": "Structure painting",
+    "altImagem": "Radiograph for painting structures",
+    "semImagem": "Could not load the image.",
+    "crieParaPintar": "Create a structure on the side to start painting.",
+    "novaEstrutura": "New structure",
+    "tipo": "Structure type",
+    "dente": "Tooth (FDI)",
+    "semDente": "—",
+    "criar": "Create \"{nome}\"",
+    "tipos": {
+      "dente": "Tooth",
+      "canal": "Root canal",
+      "lesao": "Lesion",
+      "restauracao": "Restoration",
+      "osso": "Bone",
+      "outra": "Other structure"
+    },
+    "desfazerDica": "Undo last stroke (Ctrl+Z)",
+    "tamanho": "Brush size: {px} px  ([ and ])",
+    "transparencia": "Paint opacity: {pct}%",
+    "estruturas": "Painted structures ({total})",
+    "carregando": "Loading…",
+    "nenhuma": "No structures yet.",
+    "cor": "Structure color",
+    "selecionar": "Paint this structure",
+    "mostrar": "Show",
+    "esconder": "Hide",
+    "apagar": "Delete structure",
+    "confirmarApagar": "Delete?",
+    "ajuda": "Mouse wheel: zoom. Right button or Space + drag: move the image. Ctrl+Z undo, Ctrl+Shift+Z redo, 1–9 pick the structure. Every action saves on its own; the original radiograph is not changed.",
+    "mostrarPintura": "Show structure painting ({total})",
+    "esconderPintura": "Hide structure painting ({total})",
+    "varinhaGrandeDemais": "The region got too large (it leaked into the background). Lower the tolerance or click further inside the structure.",
+    "zoomMenos": "Zoom out",
+    "zoomMais": "Zoom in",
+    "zoomAjustar": "Fit the whole image (0)",
+    "ferramentas": "Tools",
+    "ferramenta": {
+      "inteligente": "Smart",
+      "pincel": "Brush",
+      "varinha": "Wand",
+      "laco": "Lasso",
+      "pontos": "Points"
+    },
+    "dica": {
+      "inteligente": "Smart brush: paints only what has a density similar to where you started — it does not leak into bone or background. Adjust the tolerance.",
+      "pincel": "Free brush: paints everything it passes over.",
+      "varinha": "Magic wand: one click paints the whole region of similar density. After the click, move the tolerance to adjust it live.",
+      "laco": "Lasso: outline the structure with the mouse; on release, the inside is filled.",
+      "apagar": "Switches between painting and erasing, with any tool (E key).",
+      "buracos": "Paints the unpainted gaps inside the structure.",
+      "suavizar": "Removes jagged edges and stray dots.",
+      "pontos": "Extreme points: click points on the edge of the structure (top, apex, sides — any order) and press Fill. Drag a point to adjust; the paint redoes itself. Backspace removes the last point, Esc finishes."
+    },
+    "modoApagando": "Erasing",
+    "modoPintando": "Painting",
+    "refazerDica": "Redo (Ctrl+Shift+Z)",
+    "tolerancia": "Density tolerance: {valor}",
+    "preencherBuracos": "Fill holes",
+    "suavizar": "Smooth edges",
+    "visualizacao": "View",
+    "preenchido": "Filled",
+    "contorno": "Outline",
+    "pixelsPintados": "{nome}: {total} pixels painted",
+    "pontosContagem": "{total, plural, =0 {Click the edge of the structure to place points} one {1 point} other {# points}}",
+    "pontosPreencher": "Fill",
+    "pontosRefazer": "Fill again",
+    "pontosLimpar": "Clear",
+    "pontosConcluir": "Finish",
+    "pontosConcluirDica": "Removes the points from the screen (paint stays) — Esc",
+    "pontosAjustar": "Fit to density: the paint snaps to the real edge of the structure, never past the points",
+    "pontosPoucos": "Place at least 3 points on the edge of the structure.",
+    "telaCheia": "Full screen",
+    "sairTelaCheia": "Exit full screen",
+    "telaCheiaDica": "Hides the record and uses the whole screen to paint",
+    "sairTelaCheiaDica": "Shows the record again (Esc)"
+  },
+  "BuscaTermos": {
+    "tipo": {
+      "grupo": "Group",
+      "achado": "Finding",
+      "regiao": "Region",
+      "vocab": "Term",
+      "texto": "Words"
+    },
+    "tirar": "Remove {termo}",
+    "maisUm": "Add another term…",
+    "nada": "No term with those letters.",
+    "procurarTexto": "Search \"{texto}\" in the record texts",
+    "sinonimos": "synonyms: {lista}",
+    "rotuloFicha": "Standard terms (shown in Advanced search)",
+    "placeholderFicha": "Type the first letters: nodule, furcation…"
   }
 }

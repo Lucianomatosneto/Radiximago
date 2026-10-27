@@ -22,6 +22,7 @@ from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.saved_images import SavedImage
+from app.modules.segmentacoes import contar_por_ficha
 
 router = APIRouter(prefix="/saved-images", tags=["Minhas imagens"])
 
@@ -96,6 +97,8 @@ def listar_imagens_salvas(
     )
 
     erros = erros_por_ficha(db, [r[1].id for r in resultados])
+    # estruturas pintadas pelo curador (icone de pintura no quadrado)
+    segmentacoes = contar_por_ficha(db, [r[1].id for r in resultados])
     itens = []
     for salva, ficha, ref in resultados:
         if ref.study_instance_uid:
@@ -112,6 +115,7 @@ def listar_imagens_salvas(
             "achados_detalhe": ficha.achados_detalhe,
             "alteracoes_observadas": ficha.alteracoes_observadas,
             "marcacoes": ficha.marcacoes,
+            "total_segmentacoes": segmentacoes.get(ficha.id, 0),
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,

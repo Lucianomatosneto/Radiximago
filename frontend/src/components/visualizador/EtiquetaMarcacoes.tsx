@@ -35,6 +35,7 @@ export default function EtiquetaMarcacoes({
   ampliado = false,
   onAmpliar,
   areaAmpliada,
+  areaPropria,
   janela = false,
 }: {
   item: ItemDescritivel
@@ -57,6 +58,9 @@ export default function EtiquetaMarcacoes({
   ampliado?: boolean
   onAmpliar?: (valor: boolean) => void
   areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
+  /** quadro NORMAL enquadrado em cima da propria imagem (visualizador):
+   *  quem chama informa o retangulo da imagem */
+  areaPropria?: () => { left: number; top: number; width: number; height: number } | null
   /** JANELA (ex.: Minhas imagens): o clique abre a caixa AO LADO do cartao
    *  da imagem (elemento com data-cartao-imagem mais proximo), sem cobrir a
    *  propria imagem; a caixa pode ser arrastada pela barra e fechada no x */
@@ -216,6 +220,28 @@ export default function EtiquetaMarcacoes({
       window.removeEventListener('resize', medir)
     }
   }, [maximizado, areaAmpliada])
+  // Quadro normal EM CIMA da propria imagem (mesmo tamanho dela)
+  const sobreImagem = !!areaPropria && !flutuante && !janela
+  const [retProprio, setRetProprio] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  useEffect(() => {
+    if (!sobreImagem || !aberta || maximizado || !areaPropria) {
+      setRetProprio(null)
+      return
+    }
+    function medir() {
+      const r = areaPropria!()
+      setRetProprio((atual) =>
+        r && (!atual || atual.left !== r.left || atual.top !== r.top || atual.width !== r.width || atual.height !== r.height) ? r : atual
+      )
+    }
+    medir()
+    const id = setInterval(medir, 150)
+    window.addEventListener('resize', medir)
+    return () => {
+      clearInterval(id)
+      window.removeEventListener('resize', medir)
+    }
+  }, [sobreImagem, aberta, maximizado, areaPropria])
   function alternarMaximizar() {
     onAmpliar?.(!ampliado)
     setFixada(true)
@@ -366,7 +392,39 @@ export default function EtiquetaMarcacoes({
         {mostrarContagem && totalMarcacoes > 0 && <span>{totalMarcacoes}</span>}
       </button>
 
-      {aberta && !flutuante && !maximizado && (
+      {/* QUADRO NORMAL SOBRE A IMAGEM (visualizador): enquadrado em cima da
+          propria imagem, do mesmo tamanho; "ampliar" leva para a vizinha */}
+      {aberta &&
+        sobreImagem &&
+        !maximizado &&
+        retProprio &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-label={item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}
+            style={{ left: retProprio.left, top: retProprio.top, width: retProprio.width, height: retProprio.height }}
+            className="fixed z-250 flex flex-col overflow-hidden rounded-lg border-2 border-teal-300/70 bg-base-surface/95 text-left shadow-2xl backdrop-blur-md"
+          >
+            <div className="flex shrink-0 items-stretch border-b border-teal-300/25 bg-teal-400/10">
+              <div className="flex flex-1 select-none items-center gap-2 px-3 py-1.5 text-[11px] font-medium text-teal-100/80">
+                <span className="truncate">{item.numero ? t('tituloImagem', { numero: item.numero }) : t('tituloCuradoria')}</span>
+              </div>
+              {podeAmpliar && botaoAmpliar}
+              <button
+                type="button"
+                onClick={() => setFixada(false)}
+                aria-label={t('fecharDescricao')}
+                title={t('fecharDescricao')}
+                className="flex w-9 items-center justify-center border-l border-teal-300/25 text-teal-100/80 hover:bg-teal-400/20 hover:text-teal-50"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4 text-[13px]">{conteudo}</div>
+          </div>,
+          (typeof document !== 'undefined' && document.fullscreenElement) || document.body
+        )}
+      {aberta && !flutuante && !maximizado && !sobreImagem && (
         <div
           ref={caixaRef}
           role="tooltip"

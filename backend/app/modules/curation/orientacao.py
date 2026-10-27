@@ -27,6 +27,7 @@ from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
 from app.modules.geometria_imagem import FormatoNaoSuportado, girar_dicom, girar_marcacoes, girar_ponto
 from app.modules.curations import Curation
 from app.modules.orthanc_references import OrthancReference
+from app.modules.segmentacoes import girar_mascara
 from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajustar, substituir_arquivo
 from app.modules.users import User
 
@@ -104,6 +105,7 @@ def _girar(db: Session, orthanc_reference_id: int, graus: int, usuario: User):
             marcacoes=lambda m: girar_marcacoes(m, graus),
             ponto=lambda x, y: girar_ponto(x, y, graus),
             antes_de_gravar=anotar_giro,
+            mascara=lambda png: girar_mascara(png, graus),
         )
     except httpx.HTTPError:
         raise HTTPException(status_code=502, detail="O servidor de imagens (Orthanc) não respondeu. Tente de novo.")

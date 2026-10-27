@@ -235,6 +235,8 @@ def editar_curadoria(
         ficha.observacoes_internas = dados.observacoes_internas
     if dados.anonimizacao_validada is not None:
         ficha.anonimizacao_validada = dados.anonimizacao_validada
+    if dados.origem is not None and ficha.orthanc_reference is not None:
+        ficha.orthanc_reference.origem = dados.origem.value
     if dados.termos is not None:
         ids_validos = {
             t for (t,) in db.query(TermoVocabulario.id).filter(TermoVocabulario.id.in_(set(dados.termos))).all()
@@ -312,5 +314,6 @@ def editar_curadoria(
         "observacoes_internas": ficha.observacoes_internas,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
+        "origem": ficha.orthanc_reference.origem if ficha.orthanc_reference else None,
         "atualizado_em": ficha.atualizado_em.isoformat() if ficha.atualizado_em else None,
     }

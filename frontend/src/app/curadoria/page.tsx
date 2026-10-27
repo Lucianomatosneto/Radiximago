@@ -8,6 +8,7 @@ import Logo from '../../components/Logo'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
+import PintorSegmentacao from '../../components/segmentacao/PintorSegmentacao'
 import AvisoTextoNaImagem from '../../components/curadoria/AvisoTextoNaImagem'
 import ControleOrientacao from '../../components/curadoria/ControleOrientacao'
 import { girarMarcacoes, type Giro } from '../../lib/orientacao'
@@ -106,12 +107,14 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   payload.erros_tecnicos = form.erros_tecnicos
   payload.termos = form.termos
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
+  if (form.origem) payload.origem = form.origem
   return payload
 }
 
 export default function CuradoriaPage() {
   const router = useRouter()
   const t = useTranslations('Curadoria')
+  const tSegmentacao = useTranslations('Segmentacao')
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
 
@@ -157,6 +160,8 @@ export default function CuradoriaPage() {
   // Muda a cada giro da imagem (ControleOrientacao): remonta o visualizador
   // e a imagem de marcacao, que buscam de novo o arquivo ja girado.
   const [versaoImagem, setVersaoImagem] = useState(0)
+  // so a imagem de marcacao: muda a cada giro gravado (o OHIF nao recarrega)
+  const [versaoMarcador, setVersaoMarcador] = useState(0)
   const [carregandoViewer, setCarregandoViewer] = useState(false)
   // Sinais de "a imagem principal terminou de carregar" - usados so pra
   // liberar o carregamento das miniaturas da fila (permitirCarregarMiniaturas
@@ -213,6 +218,24 @@ export default function CuradoriaPage() {
   // da esquerda e o visualizador vira uma miniatura no canto (clicar nela
   // fecha a marcacao). Nada e desmontado - o iframe do OHIF nao recarrega.
   const [marcacaoAberta, setMarcacaoAberta] = useState(false)
+  // painel de marcacao: formas (circulo, seta...) ou pintura de estruturas
+  const [abaMarcacao, setAbaMarcacao] = useState<'formas' | 'pintura'>('formas')
+  // pintura em TELA CHEIA (22/10/2026): a ficha da direita recolhe e a
+  // pintura ocupa a tela inteira, com a imagem grande
+  const [pinturaTelaCheia, setPinturaTelaCheia] = useState(false)
+  const telaCheiaAtiva = pinturaTelaCheia && abaMarcacao === 'pintura'
+  // fechou a marcacao: sai da tela cheia; Esc tambem sai
+  useEffect(() => {
+    if (!marcacaoAberta) setPinturaTelaCheia(false)
+  }, [marcacaoAberta])
+  useEffect(() => {
+    if (!telaCheiaAtiva) return
+    function aoTeclar(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') setPinturaTelaCheia(false)
+    }
+    window.addEventListener('keydown', aoTeclar)
+    return () => window.removeEventListener('keydown', aoTeclar)
+  }, [telaCheiaAtiva])
   // Janela do navegador ja em tela cheia (F11, ou aberta pelo atalho
   // "Abrir Radix Curadoria em tela cheia") - nesse caso o botao de tela
   // cheia nao precisa aparecer.
@@ -455,15 +478,38 @@ export default function CuradoriaPage() {
   }
 
 
-  // Imagem girada no servidor (arquivo novo): as marcacoes ainda nao salvas
-  // giram com a mesma conta do servidor e o visualizador recarrega.
-  function aoGirarImagem(graus: Giro) {
+  // GIRO SEM APAGAR A TELA (pedido de 20/10/2026): a imagem gira NA HORA
+  // dentro do OHIF (o mesmo giro da ferramenta dele) e o arquivo e gravado por
+  // tras (ControleOrientacao). O OHIF NAO recarrega - so a imagem de marcacao
+  // (escondida) busca o arquivo novo. Sem o OHIF aberto, recarrega como antes.
+  const ohifRef = useRef<HTMLIFrameElement>(null)
+  function girarNaTela(graus: Giro): boolean {
+    const janela = ohifRef.current?.contentWindow
+    const url = viewerInfo?.viewer_url
+    if (!janela || !url) return false
+    let origem = ''
+    try {
+      origem = new URL(url).origin
+    } catch {
+      return false
+    }
+    const comandos = graus === 270 ? ['rotateViewportCCW'] : graus === 180 ? ['rotateViewportCW', 'rotateViewportCW'] : ['rotateViewportCW']
+    for (const comando of comandos) janela.postMessage({ tipo: 'radix-comando', comando }, origem)
+    return true
+  }
+
+  // Giro GRAVADO no servidor (arquivo novo): as marcacoes ainda nao salvas
+  // giram com a mesma conta do servidor; o OHIF ja mostra a imagem girada.
+  function aoGirarImagem(graus: Giro, mostradoNaTela: boolean) {
     if (!fichaAtiva) return
     setForm((atual) => ({ ...atual, marcacoes: girarMarcacoes(atual.marcacoes, graus) }))
-    setOhifCarregado(false)
     setMarcadorPronto(false)
-    setVersaoImagem((v) => v + 1)
-    carregarViewerUrl(fichaAtiva.orthancReferenceId)
+    setVersaoMarcador((v) => v + 1)
+    if (!mostradoNaTela) {
+      setOhifCarregado(false)
+      setVersaoImagem((v) => v + 1)
+      carregarViewerUrl(fichaAtiva.orthancReferenceId)
+    }
   }
 
   async function carregarViewerUrl(orthancReferenceId: number) {
@@ -683,6 +729,7 @@ export default function CuradoriaPage() {
       achados: achadosDaApi(ficha.achados, ficha.alteracoes_observadas),
       sem_alteracoes: !!ficha.sem_alteracoes,
       erros_tecnicos: Array.isArray(ficha.erros_tecnicos) ? ficha.erros_tecnicos : [],
+      origem: ficha.origem ?? '',
     })
   }
 
@@ -1143,6 +1190,14 @@ export default function CuradoriaPage() {
                 <p className="mt-1">{item.parecer_revisor || t('reviewsRespondidas.semParecerEscrito')}</p>
               </div>
 
+              {/* parecer completo, item por item, com "Acrescentar a curadoria" */}
+              <Link
+                href={`/segunda-opiniao?aba=devolvidas&review=${item.id}`}
+                className="mt-2 flex items-center justify-center gap-1.5 rounded-lg border border-teal-400/50 bg-teal-400/10 px-3 py-1.5 text-xs font-semibold text-teal-100 hover:bg-teal-400/20"
+              >
+                {t('reviewsRespondidas.abrirParecerCompleto')} →
+              </Link>
+
               <label className="mt-3 flex items-center gap-2 text-xs text-slate-300">
                 <input
                   type="checkbox"
@@ -1337,15 +1392,6 @@ export default function CuradoriaPage() {
               />
               )}
 
-              {fichaAtiva && (
-                <ControleOrientacao
-                  orthancReferenceId={fichaAtiva.orthancReferenceId}
-                  dentes={form.dentes}
-                  tipoRadiografia={form.tipo_radiografia || null}
-                  onGirou={aoGirarImagem}
-                />
-              )}
-
               {/* Imagem (visualizador OHIF) sem o cabecalho de botoes por cima;
                   "Abrir marcação": a imagem para marcacao ocupa o mesmo quadro.
                   O MarcadorAchado fica sempre montado (escondido) para a
@@ -1381,20 +1427,78 @@ export default function CuradoriaPage() {
                   onAlternarMarcacao={alternarMarcacao}
                   dadosNaColuna
                   semCabecalho={fichaVisivel}
+                  iframeRef={ohifRef}
                 />
+                {/* roda de giro: pequena, no canto de baixo a direita da imagem (fora do contador do OHIF) */}
+                {fichaAtiva && !marcacaoGrande && (
+                  <div className="pointer-events-none absolute bottom-10 right-16 z-20">
+                    <ControleOrientacao
+                      key={fichaAtiva.orthancReferenceId}
+                      orthancReferenceId={fichaAtiva.orthancReferenceId}
+                      dentes={form.dentes}
+                      tipoRadiografia={form.tipo_radiografia || null}
+                      giroAtual={viewerInfo?.giro_graus ?? null}
+                      onGirarNaTela={girarNaTela}
+                      onGirou={aoGirarImagem}
+                      iframeOhifRef={ohifRef}
+                    />
+                  </div>
+                )}
               </div>
 
               {fichaAtiva && (
                 <section
                   className={
-                    marcacaoGrande
-                      ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-teal-400/60 bg-base-surface p-3'
-                      : 'hidden'
+                    marcacaoGrande && telaCheiaAtiva
+                      ? 'fixed inset-0 z-[70] flex flex-col overflow-hidden bg-base p-3'
+                      : marcacaoGrande
+                        ? 'relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-teal-400/60 bg-base-surface p-3'
+                        : 'hidden'
                   }
                 >
-                  <div className="min-h-0 flex-1">
+                  <div className="mb-2 flex shrink-0 items-center gap-1.5" role="tablist">
+                    {(['formas', 'pintura'] as const).map((aba) => (
+                      <button
+                        key={aba}
+                        type="button"
+                        role="tab"
+                        aria-selected={abaMarcacao === aba}
+                        onClick={() => setAbaMarcacao(aba)}
+                        className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                          abaMarcacao === aba
+                            ? 'border-teal-500 bg-teal-500/15 text-teal-800 dark:border-teal-300 dark:text-teal-100'
+                            : 'border-base-border text-slate-600 hover:border-teal-500 dark:text-slate-300'
+                        }`}
+                      >
+                        {aba === 'formas' ? tSegmentacao('abaFormas') : `🖌 ${tSegmentacao('abaPintura')}`}
+                      </button>
+                    ))}
+                    {abaMarcacao === 'pintura' && (
+                      <button
+                        type="button"
+                        onClick={() => setPinturaTelaCheia((v) => !v)}
+                        aria-pressed={telaCheiaAtiva}
+                        title={telaCheiaAtiva ? tSegmentacao('sairTelaCheiaDica') : tSegmentacao('telaCheiaDica')}
+                        className="ml-auto rounded-full border border-teal-500/60 bg-teal-500/10 px-3 py-1 text-xs font-semibold text-teal-800 hover:bg-teal-500/20 dark:text-teal-100"
+                      >
+                        {telaCheiaAtiva ? `✕ ${tSegmentacao('sairTelaCheia')}` : `⛶ ${tSegmentacao('telaCheia')}`}
+                      </button>
+                    )}
+                  </div>
+                  {abaMarcacao === 'pintura' && (
+                    <div className="min-h-0 flex-1">
+                      <PintorSegmentacao
+                        key={`${fichaAtiva.curationId}-${versaoImagem}-${versaoMarcador}`}
+                        curationId={fichaAtiva.curationId}
+                        orthancReferenceId={fichaAtiva.orthancReferenceId}
+                        dentesFicha={form.dentes}
+                      />
+                    </div>
+                  )}
+                  {/* as formas ficam sempre montadas (escondidas na aba Pintura) */}
+                  <div className={abaMarcacao === 'pintura' ? 'hidden' : 'min-h-0 flex-1'}>
                     <MarcadorAchado
-                      key={versaoImagem}
+                      key={`${versaoImagem}-${versaoMarcador}`}
                       orthancReferenceId={fichaAtiva.orthancReferenceId}
                       marcacoes={form.marcacoes}
                       semAchado

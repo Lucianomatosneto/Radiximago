@@ -31,11 +31,14 @@ from app.modules.anotacoes import AnotacaoImagem
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation
 from app.modules.orthanc_references import OrthancReference
+from app.modules.segmentacoes import SegmentacaoCuradoria
 
 logger = logging.getLogger(__name__)
 
 TransformarMarcacoes = Callable[[list[dict] | None], list[dict]]
 TransformarPonto = Callable[[float, float], tuple[float, float]]
+# pintura (segmentacao): PNG 1 bit -> (PNG 1 bit, largura, altura)
+TransformarMascara = Callable[[bytes], tuple[bytes, int, int]]
 
 
 MODALIDADES_EM_VOLUME = {"CT", "MR", "PT", "NM", "US"}
@@ -61,7 +64,13 @@ def conferir_pode_ajustar(tags: dict) -> None:
         raise ImagemDeVolume("Esta imagem é um corte de um exame em volume (ex.: tomografia) e não pode ser girada sozinha.")
 
 
-def _ajustar_marcacoes(db: Session, ref: OrthancReference, marcacoes: TransformarMarcacoes, ponto: TransformarPonto) -> int:
+def _ajustar_marcacoes(
+    db: Session,
+    ref: OrthancReference,
+    marcacoes: TransformarMarcacoes,
+    ponto: TransformarPonto,
+    mascara: TransformarMascara | None = None,
+) -> int:
     """Leva todas as marcacoes e anotacoes da imagem para a nova posicao. Devolve quantas fichas."""
     fichas = db.query(Curation).filter(Curation.orthanc_reference_id == ref.id).all()
     for ficha in fichas:
@@ -75,6 +84,10 @@ def _ajustar_marcacoes(db: Session, ref: OrthancReference, marcacoes: Transforma
                 nota.pos_x, nota.pos_y = ponto(nota.pos_x, nota.pos_y)
             if nota.alvo_x is not None and nota.alvo_y is not None:
                 nota.alvo_x, nota.alvo_y = ponto(nota.alvo_x, nota.alvo_y)
+        # a pintura das estruturas gira/recorta junto com a imagem
+        if mascara is not None:
+            for seg in db.query(SegmentacaoCuradoria).filter(SegmentacaoCuradoria.curation_id == ficha.id).all():
+                seg.mascara, seg.largura, seg.altura = mascara(seg.mascara)
     return len(fichas)
 
 
@@ -89,6 +102,7 @@ def substituir_arquivo(
     marcacoes: TransformarMarcacoes,
     ponto: TransformarPonto,
     antes_de_gravar: Callable[[OrthancReference], None] | None = None,
+    mascara: TransformarMascara | None = None,
 ) -> OrthancReference:
     antigo = ref.orthanc_id
     novo = orthanc_client.enviar_instancia(novo_arquivo).get("ID")
@@ -101,7 +115,7 @@ def substituir_arquivo(
         ref.dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{novo}"
         if antes_de_gravar:
             antes_de_gravar(ref)
-        fichas = _ajustar_marcacoes(db, ref, marcacoes, ponto)
+        fichas = _ajustar_marcacoes(db, ref, marcacoes, ponto, mascara)
         db.add(AuditLog(
             usuario_id=usuario_id, acao=acao, entidade="orthanc_reference", entidade_id=ref.id,
             resultado="sucesso",

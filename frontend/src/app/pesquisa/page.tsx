@@ -1,22 +1,39 @@
 'use client'
 
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import CamadaMarcacoes from '../../components/detalhe/CamadaMarcacoes'
+import BotaoHolofote from '../../components/detalhe/BotaoHolofote'
+import CamadaSegmentacoes from '../../components/segmentacao/CamadaSegmentacoes'
+import { BotaoPintura, usePinturaNaGrade } from '../../components/segmentacao/PinturaNaGrade'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import MenuImpressao from '../../components/impressao/MenuImpressao'
+import MenuPrancha from '../../components/impressao/MenuPrancha'
+import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
 import { corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
-import { TIPOS_ACHADO, REGIOES_ANATOMICAS, rotularTipoAchado } from '../../lib/achados'
-import { ERROS_TECNICOS, errosParaTipo, rotuloErro } from '../../lib/errosTecnicos'
+import { TIPOS_ACHADO, REGIOES_ANATOMICAS } from '../../lib/achados'
+import { rotuloErro } from '../../lib/errosTecnicos'
+import Link from 'next/link'
+import BuscaTermos from '../../components/pesquisa/BuscaTermos'
+import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
+import {
+  GRUPOS_TERMOS,
+  itensDoVocabulario,
+  normalizarBusca,
+  token,
+  type ItemCatalogo,
+  type TermoBusca,
+  type TermoVocabularioApi,
+} from '../../lib/catalogoTermos'
 
 // `chave` referencia o namespace Pesquisa.opcoes das mensagens de traducao
 // (messages/pt.json e messages/en.json) - o rotulo (label) visivel vem de
@@ -46,16 +63,6 @@ const OPCOES_GENERO = [
 
 // Valores reais do enum AchadoPrincipal (backend/app/modules/curations.py) -
 // confirmado no arquivo antes de montar esta lista.
-const OPCOES_ACHADO_PRINCIPAL = [
-  { valor: 'normal', chave: 'normal' },
-  { valor: 'carie', chave: 'carie' },
-  { valor: 'lesao_periapical', chave: 'lesaoPeriapical' },
-  { valor: 'perda_ossea', chave: 'perdaOssea' },
-  { valor: 'dente_incluso', chave: 'denteIncluso' },
-  { valor: 'tratamento_endodontico', chave: 'tratamentoEndodontico' },
-  { valor: 'erro_tecnico', chave: 'erroTecnico' },
-  { valor: 'outro', chave: 'outro' },
-]
 
 // Valores reais do enum QualidadeTecnica.
 const OPCOES_QUALIDADE_TECNICA = [
@@ -65,11 +72,6 @@ const OPCOES_QUALIDADE_TECNICA = [
   { valor: 'insatisfatoria', chave: 'insatisfatoria' },
 ]
 
-const OPCOES_DIFICULDADE = [
-  { valor: 'basico', chave: 'basico' },
-  { valor: 'intermediario', chave: 'intermediario' },
-  { valor: 'avancado', chave: 'avancado' },
-]
 
 // Valores reais do enum OrigemImagem (backend/app/modules/orthanc_references.py).
 // "ufsc" = veio direto do aparelho de raio-x da UFSC (protocolo DICOM/C-STORE),
@@ -111,10 +113,8 @@ interface Filtros {
   tipo_radiografia: string
   arcada: string
   lado: string
-  achado_principal: string
   genero: string
   qualidade_tecnica: string
-  dificuldade: string
   origem: string
   idade_min: string
   idade_max: string
@@ -122,33 +122,29 @@ interface Filtros {
   quadrante: string
   dentesSelecionados: number[]
   modoDentes: 'qualquer_um' | 'todos'
-  achado: string
   regiaoAnatomica: string
-  erroTecnico: string
-  // Busca por palavras nos textos livres e termo do vocabulario controlado
-  texto: string
-  termo_id: string
+  // BUSCA POR TERMOS (26/10/2026): os mesmos termos marcados na Curadoria
+  // (grupos, achados, regioes, vocabulario, palavras) - lib/catalogoTermos.ts
+  termos: TermoBusca[]
+  // erros tecnicos marcados na Curadoria (basta ter qualquer um)
+  errosTecnicos: string[]
 }
 
 const FILTROS_VAZIOS: Filtros = {
   tipo_radiografia: '',
   arcada: '',
   lado: '',
-  achado_principal: '',
   genero: '',
   qualidade_tecnica: '',
-  dificuldade: '',
   origem: '',
   idade_min: '',
   idade_max: '',
   quadrante: '',
   dentesSelecionados: [],
   modoDentes: 'qualquer_um',
-  achado: '',
   regiaoAnatomica: '',
-  erroTecnico: '',
-  texto: '',
-  termo_id: '',
+  termos: [],
+  errosTecnicos: [],
 }
 
 // So os filtros de valor simples (string) participam do deep-link por URL
@@ -156,24 +152,18 @@ const FILTROS_VAZIOS: Filtros = {
 // qualidade_tecnica hoje - ver GradeCategoriasImagens.tsx) - quadrante/dentes
 // tem forma propria (lista + modo) e nao se encaixam nesse mecanismo de
 // "1 parametro = 1 chave de Filtros", entao ficam de fora dele.
-type ChaveFiltroTexto = Exclude<keyof Filtros, 'dentesSelecionados' | 'modoDentes'>
+type ChaveFiltroTexto = Exclude<keyof Filtros, 'dentesSelecionados' | 'modoDentes' | 'termos' | 'errosTecnicos'>
 const CHAVES_FILTRO: ChaveFiltroTexto[] = [
   'tipo_radiografia',
   'arcada',
   'lado',
-  'achado_principal',
   'genero',
   'qualidade_tecnica',
-  'dificuldade',
   'origem',
   'idade_min',
   'idade_max',
   'quadrante',
-  'achado',
   'regiaoAnatomica',
-  'erroTecnico',
-  'texto',
-  'termo_id',
 ]
 
 interface ResultadoImagem {
@@ -189,6 +179,8 @@ interface ResultadoImagem {
   marcacoes: Marcacao[]
   /** marcacoes da ficha + as desenhadas nos achados (calculado pela API) */
   total_marcacoes?: number
+  /** estruturas pintadas pelo curador (segmentacao) */
+  total_segmentacoes?: number
   /** as mesmas marcacoes, sem repeticao - desenhadas sobre a miniatura */
   marcacoes_exibicao?: Marcacao[]
   qualidade_tecnica: string | null
@@ -218,49 +210,6 @@ function rotular(
 // icones NAO andam (deslocamento inverso): a lupa continua embaixo do
 // mouse; nesses quadros da borda os icones ficam um pouco para dentro da
 // imagem em vez de no canto.
-interface Ampliacao {
-  id: number
-  /** ponto fixo (a lupa) dentro do quadro, em px */
-  origemQuadro: string
-  /** o mesmo ponto dentro do grupo de icones, em px */
-  origemIcones: string
-  dx: number
-  dy: number
-}
-
-function calcularAmpliacao(id: number, lupa: HTMLElement): Ampliacao | null {
-  const quadro = lupa.closest('[data-cartao-imagem]') as HTMLElement | null
-  const icones = lupa.parentElement
-  if (!quadro || !icones) return null
-  const rq = quadro.getBoundingClientRect()
-  const ri = icones.getBoundingClientRect()
-  const rl = lupa.getBoundingClientRect()
-  const lx = rl.left + rl.width / 2
-  const ly = rl.top + rl.height / 2
-  // quadro ampliado com a lupa parada: cresce (lx - left) para a esquerda etc.
-  const novo = {
-    left: rq.left - (lx - rq.left),
-    top: rq.top - (ly - rq.top),
-    right: rq.right + (rq.right - lx),
-    bottom: rq.bottom + (rq.bottom - ly),
-  }
-  const area = (quadro.closest('main') ?? document.body).getBoundingClientRect()
-  const MARGEM = 8
-  const esq = area.left + MARGEM
-  const dir = Math.min(area.right, window.innerWidth) - MARGEM
-  const topo = Math.max(area.top, 0) + MARGEM
-  const base = window.innerHeight - MARGEM
-  const dx = novo.left < esq ? esq - novo.left : novo.right > dir ? dir - novo.right : 0
-  const dy = novo.top < topo ? topo - novo.top : novo.bottom > base ? base - novo.bottom : 0
-  return {
-    id,
-    origemQuadro: `${lx - rq.left}px ${ly - rq.top}px`,
-    origemIcones: `${lx - ri.left}px ${ly - ri.top}px`,
-    dx: Math.round(dx),
-    dy: Math.round(dy),
-  }
-}
-
 async function extrairErro(response: Response, generica: string): Promise<string> {
   try {
     const dados = await response.json()
@@ -287,6 +236,8 @@ function PesquisaConteudo() {
   const [infoFixadas, setInfoFixadas] = useState<number[]>([])
   // clique no numero de marcacoes: desenha as marcacoes sobre a miniatura
   const [marcacoesVisiveis, setMarcacoesVisiveis] = useState<number[]>([])
+  const [holofotesLigados, setHolofotesLigados] = useState<number[]>([])
+  const pintura = usePinturaNaGrade()
   // largura/altura de cada miniatura carregada (a imagem fica "contida" no
   // quadrado; as marcacoes precisam de uma caixa do tamanho exato dela)
   const [proporcoes, setProporcoes] = useState<Record<number, number>>({})
@@ -313,15 +264,11 @@ function PesquisaConteudo() {
   const traduzirGenero = (chave: string) => t(`opcoes.genero.${chave}`)
   const traduzirArcada = (chave: string) => t(`opcoes.arcada.${chave}`)
   const traduzirLado = (chave: string) => t(`opcoes.lado.${chave}`)
-  const traduzirAchadoPrincipal = (chave: string) => t(`opcoes.achadoPrincipal.${chave}`)
   const traduzirQualidadeTecnica = (chave: string) => t(`opcoes.qualidadeTecnica.${chave}`)
-  const traduzirDificuldade = (chave: string) => t(`opcoes.dificuldade.${chave}`)
   const traduzirOrigem = (chave: string) => t(`opcoes.origem.${chave}`)
 
   const [autenticado, setAutenticado] = useState(false)
   const [carregandoPagina, setCarregandoPagina] = useState(true)
-  // acesso rapido por tipo de exame: escondido atras de um icone medio
-  const [acessoRapidoAberto, setAcessoRapidoAberto] = useState(false)
 
   const [filtros, setFiltros] = useState<Filtros>(FILTROS_VAZIOS)
   const [resultados, setResultados] = useState<ResultadoImagem[]>([])
@@ -400,7 +347,29 @@ function PesquisaConteudo() {
   // marcado, nenhum filtro real enviado, mas o painel ficava exposto).
   const [chaveSeletorDentes, setChaveSeletorDentes] = useState(0)
   // termos do vocabulario controlado (filtro "Termo padronizado")
-  const [termosVocabulario, setTermosVocabulario] = useState<{ id: number; termo: string; quantidade_fichas: number }[]>([])
+  const [termosVocabulario, setTermosVocabulario] = useState<TermoVocabularioApi[]>([])
+  const [vocabularioCarregado, setVocabularioCarregado] = useState(false)
+  const tTermos = useTranslations('BuscaTermos')
+
+  // CATALOGO da busca por termos: tudo o que o curador marca na Curadoria
+  const catalogo: ItemCatalogo[] = useMemo(() => {
+    const item = (tipo: ItemCatalogo['tipo'], valor: string, rotulo: string, extras: string[] = []): ItemCatalogo => ({
+      tipo,
+      valor,
+      rotulo,
+      chaves: [rotulo, ...extras].map(normalizarBusca),
+    })
+    return [
+      ...GRUPOS_TERMOS.map((g) => item('grupo', g, t(`grupos.${g}`), [t(`gruposPalavras.${g}`)])),
+      ...TIPOS_ACHADO.filter((v) => v !== 'outro').map((v) => item('achado', v, tAlteracoesItens(v))),
+      ...REGIOES_ANATOMICAS.map((v) =>
+        item('regiao', v, tAchadosEstruturados(`regioes.${v}` as Parameters<typeof tAchadosEstruturados>[0]))
+      ),
+      ...itensDoVocabulario(termosVocabulario, (sin) => tTermos('sinonimos', { lista: sin })),
+    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [termosVocabulario])
+  const rotuloDoToken = (tk: string) => catalogo.find((i) => token(i) === tk)?.rotulo
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -417,8 +386,9 @@ function PesquisaConteudo() {
           if (dados?.termos) setTermosVocabulario(dados.termos)
         })
         .catch(() => {
-          // sem o vocabulario, o filtro de termo so nao aparece
+          // sem o vocabulario, a busca por termos fica so com achados/grupos
         })
+        .finally(() => setVocabularioCarregado(true))
 
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
         credentials: 'include',
@@ -437,9 +407,9 @@ function PesquisaConteudo() {
   // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
   // formulario com eles e ja dispara a busca automaticamente.
   useEffect(() => {
-    if (!autenticado) return
+    if (!autenticado || !vocabularioCarregado) return
 
-    const filtrosDaUrl: Filtros = { ...FILTROS_VAZIOS }
+    const filtrosDaUrl: Filtros = { ...FILTROS_VAZIOS, termos: [], errosTecnicos: [] }
     let temFiltroNaUrl = false
     for (const chave of CHAVES_FILTRO) {
       const valor = searchParams.get(chave)
@@ -448,26 +418,40 @@ function PesquisaConteudo() {
         temFiltroNaUrl = true
       }
     }
+    // termos (Banco de imagens manda ?termos=grupo:carie) e os parametros
+    // antigos, convertidos em termos (links salvos continuam valendo)
+    const tokens = [...searchParams.getAll('termos')]
+    const antigoAchadoPrincipal = searchParams.get('achado_principal')
+    if (antigoAchadoPrincipal) tokens.push(`grupo:${antigoAchadoPrincipal}`)
+    const antigoAchado = searchParams.get('achado')
+    if (antigoAchado) tokens.push(`achado:${antigoAchado}`)
+    const antigoTermo = searchParams.get('termo_id')
+    if (antigoTermo) tokens.push(`vocab:${antigoTermo}`)
+    const antigoTexto = searchParams.get('texto')
+    if (antigoTexto) tokens.push(`texto:${antigoTexto}`)
+    for (const tk of tokens) {
+      const [tipo, ...resto] = tk.split(':')
+      const valor = resto.join(':')
+      if (!valor || !['grupo', 'achado', 'regiao', 'vocab', 'texto'].includes(tipo)) continue
+      filtrosDaUrl.termos.push({ tipo: tipo as TermoBusca['tipo'], valor, rotulo: rotuloDoToken(tk) ?? valor })
+      temFiltroNaUrl = true
+    }
+    const erros = searchParams.getAll('erros_tecnicos')
+    if (erros.length) {
+      filtrosDaUrl.errosTecnicos = erros
+      temFiltroNaUrl = true
+    }
 
     if (temFiltroNaUrl) {
       setFiltros(filtrosDaUrl)
       pesquisar(filtrosDaUrl)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autenticado])
+  }, [autenticado, vocabularioCarregado])
 
   function atualizarFiltro(campo: ChaveFiltroTexto, valor: string) {
     setFiltros({ ...filtros, [campo]: valor })
   }
-
-  // tipo de exame trocado: um erro tecnico que nao existe para o novo tipo
-  // sai do filtro (a lista de erros mostra so os possiveis para o tipo)
-  useEffect(() => {
-    if (!filtros.tipo_radiografia || !filtros.erroTecnico) return
-    if (!errosParaTipo(filtros.tipo_radiografia).some((e) => e.valor === filtros.erroTecnico)) {
-      setFiltros((f) => ({ ...f, erroTecnico: '' }))
-    }
-  }, [filtros.tipo_radiografia, filtros.erroTecnico])
 
   // TECLADO na busca avancada: Tab passa de caixa em caixa (padrao do
   // navegador); dentro de uma caixa de lista, ← / → trocam a opcao.
@@ -495,7 +479,7 @@ function PesquisaConteudo() {
   }
 
   function limparFiltros() {
-    setFiltros(FILTROS_VAZIOS)
+    setFiltros({ ...FILTROS_VAZIOS, termos: [], errosTecnicos: [] })
     setChaveSeletorDentes((c) => c + 1)
   }
 
@@ -510,10 +494,8 @@ function PesquisaConteudo() {
     if (filtrosParaUsar.tipo_radiografia) params.set('tipo_radiografia', filtrosParaUsar.tipo_radiografia)
     if (filtrosParaUsar.arcada) params.set('arcada', filtrosParaUsar.arcada)
     if (filtrosParaUsar.lado) params.set('lado', filtrosParaUsar.lado)
-    if (filtrosParaUsar.achado_principal) params.set('achado_principal', filtrosParaUsar.achado_principal)
     if (filtrosParaUsar.genero) params.set('genero', filtrosParaUsar.genero)
     if (filtrosParaUsar.qualidade_tecnica) params.set('qualidade_tecnica', filtrosParaUsar.qualidade_tecnica)
-    if (filtrosParaUsar.dificuldade) params.set('dificuldade', filtrosParaUsar.dificuldade)
     if (filtrosParaUsar.origem) params.set('origem', filtrosParaUsar.origem)
     if (filtrosParaUsar.idade_min) params.set('idade_min', filtrosParaUsar.idade_min)
     if (filtrosParaUsar.idade_max) params.set('idade_max', filtrosParaUsar.idade_max)
@@ -532,11 +514,9 @@ function PesquisaConteudo() {
     } else if (filtrosParaUsar.quadrante) {
       params.set('quadrante', filtrosParaUsar.quadrante)
     }
-    if (filtrosParaUsar.achado) params.set('achado', filtrosParaUsar.achado)
     if (filtrosParaUsar.regiaoAnatomica) params.set('regiao_anatomica', filtrosParaUsar.regiaoAnatomica)
-    if (filtrosParaUsar.erroTecnico) params.set('erro_tecnico', filtrosParaUsar.erroTecnico)
-    if (filtrosParaUsar.texto.trim()) params.set('texto', filtrosParaUsar.texto.trim())
-    if (filtrosParaUsar.termo_id) params.set('termo_id', filtrosParaUsar.termo_id)
+    filtrosParaUsar.termos.forEach((termo) => params.append('termos', token(termo)))
+    filtrosParaUsar.errosTecnicos.forEach((erro) => params.append('erros_tecnicos', erro))
 
     // Antes nao mandava "limit" nenhum, entao o backend usava o padrao
     // (50) - "Selecionar todas" e a selecao em lote so fazem sentido
@@ -697,92 +677,33 @@ function PesquisaConteudo() {
                 🔎 {t('buscaAvancadaTitulo')}
                 <span className="ml-2 text-xs font-normal text-slate-400">{t('buscaAvancadaSubtitulo')}</span>
               </p>
-              <button
-                type="button"
-                onClick={() => setAcessoRapidoAberto((v) => !v)}
-                aria-expanded={acessoRapidoAberto}
+              {/* acesso rapido por tipo de exame: abre o Banco de imagens */}
+              <Link
+                href="/banco-imagens"
                 title={t('acessoRapidoTitulo')}
-                className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm font-medium transition ${
-                  acessoRapidoAberto ? 'border-brand bg-brand/15 text-brand-300' : 'border-base-border bg-base-surface/40 text-slate-200 hover:border-brand/60'
-                }`}
+                className="flex items-center gap-2 rounded-xl border border-base-border bg-base-surface/40 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:border-brand/60"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-teal-500/20 text-xl" aria-hidden="true">
                   🦷
                 </span>
                 {t('acessoRapidoTitulo')}
-                <span className="text-xs text-slate-400" aria-hidden="true">{acessoRapidoAberto ? '▴' : '▾'}</span>
-              </button>
+                <span className="text-xs text-slate-400" aria-hidden="true">→</span>
+              </Link>
             </div>
-            {acessoRapidoAberto && (
-            <div className="mb-3 grid grid-cols-3 gap-2 sm:grid-cols-5">
-              {/* Cada caixa com sua PROPRIA cor (../../lib/coresAchados) - Periapical
-                  em teal, Panoramica em ciano, Interproximal em azul-claro e
-                  Oclusal em indigo, pra ficarem facilmente distinguiveis entre si.
-                  O anel azul (ring-brand) continua marcando qual esta selecionada. */}
-              {OPCOES_TIPO_RADIOGRAFIA.map((o) => (
-                <button
-                  key={o.valor}
-                  type="button"
-                  onClick={() => {
-                    const novos = { ...filtros, tipo_radiografia: o.valor }
-                    setFiltros(novos)
-                    pesquisar(novos)
-                  }}
-                  className={`flex flex-col items-center gap-1 rounded-xl border bg-linear-to-br px-2 py-2.5 text-sm font-medium transition-transform hover:-translate-y-0.5 ${corCartaoTipoRadiografia(o.valor)} ${
-                    filtros.tipo_radiografia === o.valor ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
-                  }`}
-                >
-                  <span className="text-xl" aria-hidden="true">
-                    🦷
-                  </span>
-                  {traduzirTipoRadiografia(o.chave)}
-                </button>
-              ))}
-            </div>
-            )}
 
-            {/* BUSCA POR PALAVRAS: procura nos textos livres da ficha
-                (achados detalhados, descricao didatica e o "Outro" das
-                marcacoes), sem diferenca de acento/maiusculas, no plural e
-                com pequenos erros de digitacao - e por sinonimos do
-                vocabulario. Combina com todos os outros filtros. */}
-            <div className="grade-busca mb-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <label htmlFor="filtro-texto" className={campoLabel}>{t('campoTexto')}</label>
-                <input
-                  id="filtro-texto"
-                  type="search"
-                  value={filtros.texto}
-                  onChange={(e) => atualizarFiltro('texto', e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') pesquisar()
-                  }}
-                  maxLength={150}
-                  placeholder={t('placeholderTexto')}
-                  title={t('ajudaTexto')}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(2)}
-                />
-              </div>
-              {termosVocabulario.length > 0 && (
-                <div>
-                  <label htmlFor="filtro-termo" className={campoLabel}>{t('campoTermo')}</label>
-                  <select
-                    id="filtro-termo"
-                    value={filtros.termo_id}
-                    onChange={(e) => atualizarFiltro('termo_id', e.target.value)}
-                    className={campoInput}
-                    style={estiloCaixaFiltro(3)}
-                  >
-                    <option className="bg-white text-slate-900" value="">{t('campoTodos')}</option>
-                    {termosVocabulario.map((termo) => (
-                      <option className="bg-white text-slate-900" key={termo.id} value={String(termo.id)}>
-                        {termo.termo} ({termo.quantidade_fichas})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
+            {/* BUSCA POR TERMOS: os mesmos termos que o curador marca (grupos,
+                achados, regioes, vocabulario odontologico com sinonimos) -
+                sugestoes enquanto digita; ou palavras livres nos textos */}
+            <div className="mb-3">
+              <BuscaTermos
+                catalogo={catalogo}
+                selecionados={filtros.termos}
+                onChange={(termos) => setFiltros((f) => ({ ...f, termos }))}
+                permitirTexto
+                rotuloCampo={t('campoTermos')}
+                placeholder={t('placeholderTermos')}
+                estilo={estiloCaixaFiltro(2)}
+              />
             </div>
 
             {/* HOLOFOTE (globals.css .busca-holofote): o campo em uso fica aceso e
@@ -862,46 +783,6 @@ function PesquisaConteudo() {
               </div>
 
               <div>
-                <label htmlFor="filtro-patologia" className={campoLabel}>{t('campoPatologia')}</label>
-                <select
-                  id="filtro-patologia"
-                  value={filtros.achado_principal}
-                  onChange={(e) => atualizarFiltro('achado_principal', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(5)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {OPCOES_ACHADO_PRINCIPAL.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirAchadoPrincipal(o.chave)}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Fase 4 - achado/condicao estruturado: busca HIBRIDA
-                  (legado + Achado estruturado) quando sozinho; so
-                  estruturado quando combinado com dentes/regiao (ver
-                  search_router.py). Diferente do campo "Patologia" acima
-                  (achado_principal, legado, write-orphaned na Curadoria
-                  atual - preservado sem alteracao nenhuma). */}
-              <div>
-                <label htmlFor="filtro-achado" className={campoLabel}>{t('campoAchado')}</label>
-                <select
-                  id="filtro-achado"
-                  value={filtros.achado}
-                  onChange={(e) => atualizarFiltro('achado', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(9)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {TIPOS_ACHADO.map((valor) => (
-                    <option className="bg-white text-slate-900" key={valor} value={valor}>
-                      {rotularTipoAchado(valor, tAchadosEstruturados('outro'), tAlteracoesItens)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label htmlFor="filtro-regiao-anatomica" className={campoLabel}>{t('campoRegiaoAnatomica')}</label>
                 <select
                   id="filtro-regiao-anatomica"
@@ -919,24 +800,13 @@ function PesquisaConteudo() {
                 </select>
               </div>
 
-              <div>
-                <label htmlFor="filtro-erro-tecnico" className={campoLabel}>{t('campoErroTecnico')}</label>
-                <select
-                  id="filtro-erro-tecnico"
-                  value={filtros.erroTecnico}
-                  onChange={(e) => atualizarFiltro('erroTecnico', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(0)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {/* so os erros possiveis para o tipo de exame escolhido
-                      (todos, se nenhum tipo foi escolhido) */}
-                  {(filtros.tipo_radiografia ? errosParaTipo(filtros.tipo_radiografia) : ERROS_TECNICOS).map(({ valor }) => (
-                    <option className="bg-white text-slate-900" key={valor} value={valor}>
-                      {rotuloErro(valor)}
-                    </option>
-                  ))}
-                </select>
+              <div className="col-span-2">
+                <label className={campoLabel}>{t('campoErroTecnico')}</label>
+                <FiltroErrosTecnicos
+                  selecionados={filtros.errosTecnicos}
+                  onChange={(errosTecnicos) => setFiltros((f) => ({ ...f, errosTecnicos }))}
+                  estilo={estiloCaixaFiltro(0)}
+                />
               </div>
 
               <div>
@@ -951,22 +821,6 @@ function PesquisaConteudo() {
                   <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
                   {OPCOES_QUALIDADE_TECNICA.map((o) => (
                     <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirQualidadeTecnica(o.chave)}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="filtro-dificuldade" className={campoLabel}>{t('campoDificuldade')}</label>
-                <select
-                  id="filtro-dificuldade"
-                  value={filtros.dificuldade}
-                  onChange={(e) => atualizarFiltro('dificuldade', e.target.value)}
-                  className={campoInput}
-                  style={estiloCaixaFiltro(7)}
-                >
-                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
-                  {OPCOES_DIFICULDADE.map((o) => (
-                    <option className="bg-white text-slate-900" key={o.valor} value={o.valor}>{traduzirDificuldade(o.chave)}</option>
                   ))}
                 </select>
               </div>
@@ -1022,7 +876,7 @@ function PesquisaConteudo() {
                 pedido) - so os filtros da classificacao odontologica nova,
                 que sao os que mais mudam de estado (quadrante/dentes/modo)
                 e onde fica menos obvio "o que exatamente vou pesquisar". */}
-            {(filtros.tipo_radiografia || filtros.quadrante || filtros.dentesSelecionados.length > 0 || filtros.achado || filtros.regiaoAnatomica || filtros.erroTecnico) && (
+            {(filtros.tipo_radiografia || filtros.quadrante || filtros.dentesSelecionados.length > 0 || filtros.termos.length > 0 || filtros.regiaoAnatomica || filtros.errosTecnicos.length > 0) && (
               <div className="mt-4 flex flex-wrap items-center gap-1.5 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-slate-300">
                 <span className="font-medium text-brand-300">{t('resumoSelecaoTitulo')}:</span>
                 {filtros.tipo_radiografia && (
@@ -1039,8 +893,8 @@ function PesquisaConteudo() {
                     {t('resumoModo', { modo: filtros.modoDentes === 'todos' ? t('modoTodos') : t('modoQualquerUm') })}
                   </span>
                 )}
-                {filtros.achado && (
-                  <span>{t('resumoAchado', { achado: rotularTipoAchado(filtros.achado, tAchadosEstruturados('outro'), tAlteracoesItens) })}</span>
+                {filtros.termos.length > 0 && (
+                  <span>{t('resumoTermos', { termos: filtros.termos.map((x) => x.rotulo).join(' + ') })}</span>
                 )}
                 {filtros.regiaoAnatomica && (
                   <span>
@@ -1049,12 +903,8 @@ function PesquisaConteudo() {
                     })}
                   </span>
                 )}
-                {filtros.erroTecnico && (
-                  <span>
-                    {t('resumoErroTecnico', {
-                      erro: rotuloErro(filtros.erroTecnico),
-                    })}
-                  </span>
+                {filtros.errosTecnicos.length > 0 && (
+                  <span>{t('resumoErroTecnico', { erro: filtros.errosTecnicos.map(rotuloErro).join(' ou ') })}</span>
                 )}
               </div>
             )}
@@ -1108,6 +958,7 @@ function PesquisaConteudo() {
                     sombra suave e um botao compacto de voltar - as imagens passam
                     por baixo dela. */}
                 <div
+                  data-barra-grade
                   className={
                     filtrosRecolhidos
                       ? `sticky top-0 z-40 -mx-6 mb-2 px-6 py-2 transition-[background-color,box-shadow,border-color] duration-200 ${
@@ -1205,6 +1056,7 @@ function PesquisaConteudo() {
                             <MenuSalvarMinhasImagens grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
+                            <MenuPrancha grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                           </>
                         )
                       })()}
@@ -1303,6 +1155,22 @@ function PesquisaConteudo() {
                             )}
                           </div>
 
+                          {/* pintura das estruturas (por baixo das marcacoes) */}
+                          {pintura.visivel(imagem.curation_id) && proporcao && (
+                            <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
+                              <div
+                                className="relative max-h-full max-w-full"
+                                style={{
+                                  aspectRatio: String(proporcao),
+                                  width: proporcao >= 1 ? '100%' : 'auto',
+                                  height: proporcao >= 1 ? 'auto' : '100%',
+                                }}
+                              >
+                                <CamadaSegmentacoes segmentacoes={pintura.dados(imagem.curation_id)} />
+                              </div>
+                            </div>
+                          )}
+
                           {/* marcacoes do curador sobre a miniatura (clique no numero):
                               caixa do tamanho EXATO da imagem dentro do quadrado.
                               Mouse sobre uma forma mostra a descricao dela; clique
@@ -1318,7 +1186,7 @@ function PesquisaConteudo() {
                                 }}
                               >
                                 {/* mouse sobre a forma: mostra a descricao dela */}
-                                <CamadaMarcacoes marcacoes={formasMarcacao} />
+                                <CamadaMarcacoes marcacoes={formasMarcacao} estilo="discreto" holofoteLigado={holofotesLigados.includes(imagem.curation_id)} />
                               </div>
                             </div>
                           )}
@@ -1364,9 +1232,10 @@ function PesquisaConteudo() {
                             style={
                               ampliado && ampliacao
                                 ? {
-                                    transformOrigin: ampliacao.origemIcones,
-                                    // desfaz o empurrao do quadro (que esta em escala 2): a lupa fica parada
-                                    transform: `translate(${-ampliacao.dx / 2}px, ${-ampliacao.dy / 2}px) scale(0.5)`,
+                                    // icones SEMPRE no canto de baixo a direita (pedido de
+                                    // 22/10/2026), no mesmo tamanho: desfaz so a escala 2 do quadro
+                                    transformOrigin: 'bottom right',
+                                    transform: 'scale(0.5)',
                                   }
                                 : undefined
                             }
@@ -1412,6 +1281,27 @@ function PesquisaConteudo() {
                               </svg>
                               {totalMarcacoes}
                             </button>
+                            {/* pintura das estruturas */}
+                            {(imagem.total_segmentacoes ?? 0) > 0 && (
+                              <BotaoPintura
+                                total={imagem.total_segmentacoes ?? 0}
+                                ligado={pintura.visivel(imagem.curation_id)}
+                                onAlternar={() => pintura.alternar(imagem.curation_id)}
+                              />
+                            )}
+                            {/* holofote: escurece fora das marcacoes */}
+                            {mostrandoMarcacoes && (
+                              <BotaoHolofote
+                                ligado={holofotesLigados.includes(imagem.curation_id)}
+                                onAlternar={() =>
+                                  setHolofotesLigados((lista) =>
+                                    lista.includes(imagem.curation_id)
+                                      ? lista.filter((id) => id !== imagem.curation_id)
+                                      : [...lista, imagem.curation_id]
+                                  )
+                                }
+                              />
+                            )}
                             <button
                               type="button"
                               onMouseEnter={() => setInfoPassando(imagem.curation_id)}

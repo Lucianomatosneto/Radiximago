@@ -36,6 +36,17 @@ def listar_instancias() -> list[str]:
     return resposta.json()
 
 
+def obter_estatisticas() -> dict:
+    """
+    Numeros gerais do Orthanc (GET /statistics): tamanho ocupado em disco
+    (TotalDiskSizeMB) e quantidade de imagens (CountInstances), entre
+    outros. Usado na tela de Integracoes (cartao Armazenamento).
+    """
+    resposta = _client.get(f"{settings.ORTHANC_URL}/statistics", timeout=10.0)
+    resposta.raise_for_status()
+    return resposta.json()
+
+
 def obter_preview_instancia(orthanc_id: str) -> bytes:
     """
     Pede ao Orthanc uma renderizacao PNG (com windowing automatico) de uma

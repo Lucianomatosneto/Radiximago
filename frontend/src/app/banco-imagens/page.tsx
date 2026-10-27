@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -21,6 +21,17 @@ export default function BancoImagensPage() {
   const [carregando, setCarregando] = useState(true)
   const contagens = useContagensBanco()
   const total = useContador(contagens?.total ?? null, 1200)
+  // ao rolar a tela, o botao grande "Busca avancada" sai de vista: um botao
+  // compacto aparece fixo na barra do topo, ao lado do logo (27/10/2026)
+  const botaoBuscaRef = useRef<HTMLAnchorElement | null>(null)
+  const [buscaNaBarra, setBuscaNaBarra] = useState(false)
+  useEffect(() => {
+    const el = botaoBuscaRef.current
+    if (!el) return
+    const obs = new IntersectionObserver(([e]) => setBuscaNaBarra(!e.isIntersecting), { rootMargin: '-80px 0px 0px 0px' })
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [carregando])
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -46,7 +57,23 @@ export default function BancoImagensPage() {
         <Sidebar />
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar />
+          <Topbar
+            fixa
+            acao={
+              buscaNaBarra && (
+                <Link
+                  href="/pesquisa"
+                  className="tela-entra flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-[0_8px_20px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="6.5" />
+                    <path d="M16 16l4.5 4.5" />
+                  </svg>
+                  {t('buscaAvancada')}
+                </Link>
+              )
+            }
+          />
 
           <main className="flex-1 px-5 pb-28 pt-8 sm:px-8 lg:px-10">
             {/* cabecalho */}
@@ -76,6 +103,7 @@ export default function BancoImagensPage() {
                   </span>
                 </div>
                 <Link
+                  ref={botaoBuscaRef}
                   href="/pesquisa"
                   className="group flex items-center justify-center gap-2.5 self-center rounded-full bg-blue-600 px-7 py-3.5 text-[15px] font-semibold text-white shadow-[0_10px_26px_-10px_rgba(37,99,235,.95)] transition hover:bg-blue-500 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-300"
                 >

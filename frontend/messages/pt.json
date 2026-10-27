@@ -498,7 +498,8 @@
       "origem": {
         "ufsc": "UFSC (equipamento)",
         "externa": "Externa (upload)"
-      }
+      },
+      "origemRotulo": "Origem da imagem"
     },
     "voltarBuscaAvancada": "Voltar à busca avançada",
     "filtrosEmUso": "{total, plural, one {1 filtro em uso} other {# filtros em uso}}",
@@ -520,7 +521,46 @@
     "ampliarImagem": "Passe o mouse para ampliar a imagem",
     "marcacoesNaImagem": "{total, plural, one {# marcação do curador} other {# marcações do curador}}",
     "mostrarMarcacoes": "Mostrar {total, plural, one {a marcação} other {as # marcações}} do curador na imagem",
-    "esconderMarcacoes": "Esconder as marcações do curador"
+    "esconderMarcacoes": "Esconder as marcações do curador",
+    "grupos": {
+      "carie": "Cárie — todos os tipos",
+      "periodontal": "Doença periodontal — todos",
+      "perda_ossea": "Perda óssea",
+      "lesao_periapical": "Lesão periapical",
+      "tratamento_endodontico": "Tratamento endodôntico",
+      "reabsorcao": "Reabsorção radicular — interna e externa",
+      "restaurador": "Restaurações e próteses",
+      "lesoes_osseas": "Lesões ósseas (cistos, radiopacas, radiolúcidas)",
+      "anomalias": "Anomalias de número e erupção",
+      "dente_incluso": "Dente incluso",
+      "normal": "Anatomia normal (sem alterações)",
+      "erro_tecnico": "Com erro técnico"
+    },
+    "gruposPalavras": {
+      "carie": "caries carie dentaria lesao cariosa",
+      "periodontal": "periodonto periodontite gengiva calculo",
+      "perda_ossea": "reabsorcao ossea alveolar",
+      "lesao_periapical": "periapice apical granuloma abscesso",
+      "tratamento_endodontico": "canal endodontia obturacao",
+      "reabsorcao": "reabsorcoes",
+      "restaurador": "restauracao protese coroa pino",
+      "lesoes_osseas": "osso cisto tumor",
+      "anomalias": "supranumerario agenesia incluso",
+      "dente_incluso": "impactado retido",
+      "normal": "sem alteracoes saudavel",
+      "erro_tecnico": "erros tecnicos falha"
+    },
+    "campoTermos": "Buscar por termos",
+    "placeholderTermos": "Digite as iniciais: cár, perda, nódulo, reabs, canal…",
+    "resumoTermos": "Termos: {termos}",
+    "errosDigite": "Digite as iniciais do erro…",
+    "errosLimpar": "Limpar ({total})",
+    "errosGrupo": {
+      "geral": "Intraorais e gerais",
+      "panoramica": "Panorâmica",
+      "tomografia": "Tomografia (TCFC)"
+    },
+    "errosNenhum": "Nenhum erro com essas iniciais."
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -951,7 +991,8 @@
       "aprovando": "Aprovando...",
       "descartar": "Descartar",
       "erroAprovar": "Não foi possível aprovar esta ficha.",
-      "erroDescartar": "Não foi possível descartar esta ficha."
+      "erroDescartar": "Não foi possível descartar esta ficha.",
+      "abrirParecerCompleto": "Ver anotações e acrescentar à curadoria"
     },
     "foco": {
       "voltarVisualizador": "Voltar ao visualizador",
@@ -1002,7 +1043,7 @@
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
       "botao": "Macros",
-      "dica": "Frases prontas da equipe (ou fale “macro <nome>”)",
+      "dica": "Frases prontas da equipe (ou fale “macro [nome]”)",
       "procurar": "Procurar macro…",
       "nenhuma": "Nenhuma macro encontrada.",
       "semTexto": "(sem texto)",
@@ -1190,7 +1231,7 @@
       "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”."
     },
     "orientacao": {
-      "titulo": "Posição da imagem",
+      "titulo": "Girar a imagem",
       "esquerda": "90° à esquerda",
       "direita": "90° à direita",
       "inverter": "180°",
@@ -1207,7 +1248,10 @@
         "interproximal": "superiores em cima, inferiores embaixo, coroas se encontrando no meio.",
         "panoramica": "arcada superior em cima, inferior embaixo.",
         "semDentes": "marque os dentes na ficha (superiores: coroas para baixo; inferiores: para cima)."
-      }
+      },
+      "originalDica": "Voltar à posição em que a imagem chegou",
+      "salvo": "Posição salva",
+      "teclaDica": "Girar 90° à direita (tecla R) — Shift+R gira à esquerda"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1255,7 +1299,14 @@
     "infoAchados": "Achados",
     "infoDescricao": "Descrição",
     "infoErros": "Erro técnico",
-    "limiteLote": "Envie no máximo {maximo} imagens por e-mail. Desmarque algumas e tente de novo."
+    "limiteLote": "Envie no máximo {maximo} imagens por e-mail. Desmarque algumas e tente de novo.",
+    "quantidade": "{quantidade, plural, one {# imagem salva} other {# imagens salvas}}",
+    "imagem": "Imagem {numero}",
+    "enviarPorEmailCurto": "✉ E-mail ({quantidade})",
+    "removerSelecionadas": "Tirar da lista ({quantidade})",
+    "confirmarRemover": "Tirar {quantidade, plural, one {# imagem} other {# imagens}} de Minhas imagens?",
+    "sim": "Sim, tirar",
+    "nao": "Cancelar"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",
@@ -1377,10 +1428,8 @@
     "descricaoFastapi": "A própria resposta desta página confirma que a API respondeu.",
     "descricaoNextjs": "O frontend está rodando — você está vendo esta página.",
     "servicoArmazenamento": "Armazenamento",
-    "semEndpointChecagem": "Sem endpoint de checagem disponível.",
     "descricaoDicomweb": "Mesmo status do Orthanc — DICOMWeb é um plugin dele, não uma checagem separada. {descricaoOrthanc}",
-    "variavelOhifNaoConfigurada": "Variável NEXT_PUBLIC_OHIF_URL não configurada.",
-    "ohifRespondeu": "Respondeu à requisição (checagem best-effort, sem validar o conteúdo).",
+    "ohifRespondeu": "Respondeu em {url} (checagem pelo navegador, sem validar o conteúdo).",
     "ohifNaoRespondeu": "Não respondeu — pode ser falha real ou apenas CORS/rede local. Checagem best-effort.",
     "status": {
       "online": "Online",
@@ -1395,6 +1444,39 @@
       "erroBackend": "Verificado agora — backend reportou \"{detalhe}\".",
       "formatoInesperado": "Resposta em formato inesperado.",
       "falhaRede": "Falha de rede ao verificar."
+    },
+    "ohifSemEndereco": "Não foi possível obter o endereço do OHIF no servidor.",
+    "verificadoAgora": "Verificado agora.",
+    "dockerIndiretoOk": "Os serviços que rodam no Docker (banco de dados e Orthanc) estão respondendo.",
+    "dockerIndiretoFalha": "Algum serviço que roda no Docker não respondeu — veja os cartões acima.",
+    "dockerPorQue": "Checagem indireta, por segurança: o Radix não tem acesso ao controle do Docker.",
+    "armazenamentoErro": "Não foi possível consultar o armazenamento agora.",
+    "linhaDisco": "Disco: {livre} GB livres de {total} GB ({percentual}%).",
+    "linhaOrthanc": "Imagens no Orthanc: {tamanho} ({instancias} imagens).",
+    "linhaBackup": "Último backup {rotulo}: {data} — {tamanho} ({quantidade, plural, one {# guardado} other {# guardados}}).",
+    "backupBanco": "do banco",
+    "backupImagens": "das imagens",
+    "alertas": {
+      "backup_banco_ausente": "Nenhum backup do banco de dados encontrado.",
+      "backup_banco_vazio": "O último backup do banco de dados está VAZIO (0 bytes).",
+      "backup_banco_antigo": "O último backup do banco de dados tem mais de 36 horas.",
+      "backup_imagens_ausente": "Nenhum backup das imagens encontrado.",
+      "backup_imagens_vazio": "O último backup das imagens está VAZIO (0 bytes).",
+      "backup_imagens_antigo": "O último backup das imagens tem mais de 36 horas.",
+      "disco_pouco_espaco": "Pouco espaço em disco (menos de 10% livre).",
+      "pasta_backup_indisponivel": "A pasta de backups não está ligada ao sistema (reinicie o radix-api com docker compose up -d).",
+      "orthanc_estatisticas_indisponiveis": "Não foi possível ler o tamanho das imagens no Orthanc."
+    },
+    "servicoEmail": "E-mail (SMTP)",
+    "emailOk": "Conectou e entrou em {servidor} (teste sem enviar e-mail).",
+    "emailPorQue": "O cadastro de novos usuários e o \"esqueci a senha\" dependem deste serviço.",
+    "emailErro": {
+      "sem_servidor": "Servidor de e-mail não configurado (SMTP_HOST no arquivo .env).",
+      "senha_recusada": "O servidor recusou o usuário/senha. No Gmail, SMTP_PASSWORD precisa ser uma \"senha de app\" (16 letras, criada com a verificação em duas etapas ligada), não a senha normal da conta.",
+      "tempo_esgotado": "O servidor de e-mail não respondeu a tempo: rede ou firewall bloqueando a porta (SMTP_PORT), ou endereço errado.",
+      "sem_conexao": "Não foi possível conectar ao servidor de e-mail: confira SMTP_HOST e SMTP_PORT e a internet do computador.",
+      "recusado": "O servidor de e-mail recusou a conexão (confira SMTP_USE_TLS, SMTP_PORT e SMTP_FROM).",
+      "consulta": "Não foi possível consultar o servidor de e-mail agora."
     }
   },
   "PainelAdmin": {
@@ -1491,7 +1573,8 @@
       "professor": "Professor",
       "estudante": "Estudante",
       "pesquisador": "Pesquisador"
-    }
+    },
+    "erroEmailConfirmacao": "Seus dados foram recebidos, mas não conseguimos enviar o e-mail de confirmação agora. Tente de novo em alguns minutos; se continuar, avise o administrador do sistema."
   },
   "Usuarios": {
     "titulo": "Usuários",
@@ -1759,7 +1842,10 @@
     "remover": "Remover",
     "verTodas": "Ver todas ({quantidade})",
     "expandir": "Expandir",
-    "info": "Descrição da imagem"
+    "info": "Descrição da imagem",
+    "todasCompartilhadas": "Todas as compartilhadas",
+    "quantidade": "{quantidade, plural, one {1 imagem compartilhada} other {# imagens compartilhadas}}",
+    "anotacoesNoVisualizador": "abra com ▶ Ver para ler"
   },
   "Vocabulario": {
     "tituloPrefixo": "Vocabulário",
@@ -1865,7 +1951,7 @@
   "Macros": {
     "tituloPrefixo": "Macros da",
     "tituloDestaque": "curadoria",
-    "subtitulo": "Frases prontas da equipe: preenchem descrição, achados, observações, alterações, tipo e qualidade de uma vez. Use pelo menu ⚡ Macros da Curadoria ou falando “macro <nome>”. Aplicar uma macro só preenche o rascunho — aprovar continua manual.",
+    "subtitulo": "Frases prontas da equipe: preenchem descrição, achados, observações, alterações, tipo e qualidade de uma vez. Use pelo menu ⚡ Macros da Curadoria ou falando “macro [nome]”. Aplicar uma macro só preenche o rascunho — aprovar continua manual.",
     "erroCarregar": "Não foi possível carregar as macros.",
     "erroSalvar": "Não foi possível salvar.",
     "salva": "Macro salva.",
@@ -1991,5 +2077,299 @@
     "redefinir": "Redefinir 2 etapas",
     "confirmarRedefinir": "Redefinir o login em duas etapas de {nome}? Confirme antes a identidade da pessoa (pessoalmente ou pelo e-mail institucional). Os acessos dela serão encerrados e ela cadastrará o aplicativo de novo.",
     "redefinido": "Login em duas etapas de {nome} redefinido."
+  },
+  "Prancha": {
+    "botao": "Prancha",
+    "dica": "Folha com as imagens à esquerda e as informações à direita (baixar, imprimir ou enviar por e-mail)",
+    "titulo": "Prancha com informações",
+    "subtitulo": "Imagens empilhadas à esquerda e as informações de cada uma à direita, na mesma altura.",
+    "fechar": "Fechar",
+    "quais": "Quais imagens",
+    "porFolha": "Imagens por folha",
+    "opcao": "{quantidade} por folha",
+    "opcaoDica": "uma embaixo da outra",
+    "comInformacoes": "Informações da imagem ao lado",
+    "comMarcacoes": "Marcações do curador desenhadas na imagem",
+    "resumo": "{imagens, plural, one {1 imagem} other {# imagens}} em {folhas, plural, one {1 folha} other {# folhas}} A4",
+    "limite": "Escolha no máximo {maximo} imagens por prancha.",
+    "limiteEmail": "Por e-mail, até {maximo} imagens por prancha.",
+    "baixarPdf": "PDF",
+    "baixarPng": "PNG",
+    "imprimir": "Imprimir",
+    "email": "E-mail",
+    "gerando": "Gerando…",
+    "enviando": "Enviando…",
+    "baixado": "Prancha baixada.",
+    "impressaoAberta": "Janela de impressão aberta (também dá para \"Salvar como PDF\").",
+    "emailEnviado": "Prancha enviada para o seu e-mail.",
+    "erro": "Não foi possível gerar a prancha. Tente de novo.",
+    "aviso": "Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.",
+    "todasSalvas": "Todas as salvas",
+    "selecionadas": "Selecionadas"
+  },
+  "SegundaOpiniao": {
+    "titulo": "Segunda opinião",
+    "inicio": "Início",
+    "telaCheia": "Tela cheia",
+    "sairTelaCheia": "Sair da tela cheia",
+    "carregandoFicha": "Carregando a ficha…",
+    "abas": {
+      "revisar": "Para revisar",
+      "devolvidas": "Devolvidas para mim"
+    },
+    "fila": {
+      "tituloRevisar": "Pedidos de segunda opinião",
+      "tituloDevolvidas": "Pareceres recebidos",
+      "recolher": "Recolher a fila",
+      "abrir": "Abrir a fila",
+      "carregando": "Carregando…",
+      "vaziaRevisar": "Nenhum pedido aguardando parecer.",
+      "vaziaDevolvidas": "Nenhum parecer aguardando sua decisão.",
+      "miniatura": "Imagem da ficha #{id}",
+      "vocePediu": "Você pediu esta segunda opinião",
+      "pedidoPor": "Pedido por {nome}",
+      "revisadoPor": "Parecer de {nome}",
+      "anotacoesPendentes": "{total, plural, one {1 anotação a decidir} other {# anotações a decidir}}",
+      "soLeitura": "só leitura"
+    },
+    "vazio": {
+      "revisar": "Escolha um pedido na fila para revisar.",
+      "devolvidas": "Escolha um parecer na fila."
+    },
+    "erros": {
+      "fila": "Não foi possível carregar as filas.",
+      "detalhe": "Não foi possível abrir este pedido.",
+      "enviar": "Não foi possível enviar o parecer.",
+      "anotacao": "Não foi possível registrar a sua escolha.",
+      "decisao": "Não foi possível aplicar a decisão."
+    },
+    "avisos": {
+      "parecerEnviado": "Parecer enviado para {nome}.",
+      "incorporada": "{item}: acrescentado à curadoria.",
+      "dispensada": "{item}: anotação dispensada.",
+      "aprovada": "Ficha aprovada.",
+      "descartada": "Ficha descartada."
+    },
+    "rodape": {
+      "falta": "Escolha a avaliação geral (1, 2 ou 3) para enviar.",
+      "faltaAnotacao": "Explique cada item marcado com ✎ ou ✕ (anotação ou valor proposto).",
+      "pronto": "{anotacoes, plural, =0 {Sem anotações por item} one {1 anotação} other {# anotações}} · volta para {nome}",
+      "enviando": "Enviando…",
+      "enviar": "Enviar parecer"
+    },
+    "visualizador": {
+      "carregando": "Carregando o visualizador…",
+      "titulo": "Visualizador de imagens (OHIF)",
+      "indisponivel": "Imagem indisponível no visualizador.",
+      "mostrarMarcacoes": "Mostrar marcações do curador ({total})",
+      "esconderMarcacoes": "Esconder marcações do curador ({total})"
+    },
+    "pedido": {
+      "titulo": "Pedido de segunda opinião",
+      "semNome": "Curador",
+      "quando": "Pedido em {data}",
+      "ficha": "Ficha #{id}",
+      "curadorDaFicha": "curadoria de {nome}",
+      "motivo": "Motivo",
+      "primeiroParecer": "Primeiro parecer de quem pediu",
+      "semPrimeiroParecer": "Não informado"
+    },
+    "itens": {
+      "tipo_radiografia": "Tipo de radiografia",
+      "qualidade_tecnica": "Qualidade técnica",
+      "dentes": "Dentes (FDI)",
+      "faixa_etaria": "Faixa etária",
+      "faixaValor": "{min} a {max} anos",
+      "genero": "Gênero",
+      "achado_principal": "Achado principal",
+      "dentesDoAchado": "dentes {dentes}",
+      "achadoN": "Achado {numero}",
+      "alteracoes_observadas": "Alterações observadas",
+      "erros_tecnicos": "Erros técnicos",
+      "marcacoes": "Marcações na imagem",
+      "achados_detalhe": "Achados detalhados",
+      "descricao_didatica": "Descrição didática",
+      "observacoes_internas": "Observações internas"
+    },
+    "grupos": {
+      "dados": "Dados da imagem",
+      "achados": "Achados",
+      "textos": "Textos da curadoria"
+    },
+    "parecer": {
+      "tituloItens": "Ficha do curador — avalie cada item",
+      "contagem": "{anotados} de {total} com anotação",
+      "propriaSolicitacao": "Você pediu esta segunda opinião: outro curador precisa dar o parecer. Aqui você só acompanha.",
+      "instrucaoItens": "Tudo começa como ✓ Concordo. Marque ✎ Ajustar ou ✕ Discordo nos itens em que tiver algo a dizer e escreva a sua anotação — ela volta para o curador, que poderá acrescentá-la à curadoria.",
+      "tituloGeral": "Avaliação geral",
+      "instrucaoGeral": "Como você classifica a curadoria como um todo?",
+      "sugerida": "sugerida",
+      "comentarioGeral": "Comentário geral (opcional)",
+      "comentarioGeralDica": "Resumo do seu parecer, referências, orientação para o curador…",
+      "referenciaRadpeer": "Escala inspirada no RADPEER (American College of Radiology), usada na revisão por pares em radiologia."
+    },
+    "classificacao": {
+      "concordo": "Concordo",
+      "concordoDica": "A interpretação e a classificação estão corretas.",
+      "discordancia_menor": "Discordância menor",
+      "discordancia_menorDica": "Ajustes de detalhe; a interpretação do caso não muda.",
+      "discordancia_importante": "Discordância importante",
+      "discordancia_importanteDica": "Muda a interpretação ou a classificação do caso."
+    },
+    "avaliacao": {
+      "concordo": "Concordo",
+      "ajustar": "Ajustar",
+      "discordo": "Discordo"
+    },
+    "item": {
+      "verMenos": "ver menos",
+      "verMais": "ver tudo",
+      "avaliarItem": "Avaliar: {item}",
+      "valorProposto": "Valor proposto",
+      "semValorProposto": "— sem proposta de valor —",
+      "dentesPropostos": "Dentes propostos (FDI)",
+      "dentesInvalidos": "Use números FDI de 11 a 48, separados por vírgula.",
+      "textoSugerido": "Texto sugerido (será juntado ao do curador)",
+      "anotacao": "Sua anotação",
+      "dica": {
+        "valor": "Por que mudar? O que você observa na imagem?",
+        "dentes": "Ex.: o 21 também está envolvido.",
+        "texto": "Escreva o complemento ou a correção.",
+        "nota": "Escreva a sua observação sobre este item."
+      },
+      "expliqueAnotacao": "Escreva a anotação (ou proponha um valor) para este item."
+    },
+    "devolvida": {
+      "parecerDe": "Parecer da segunda opinião",
+      "respondidoEm": "Respondido em {data}",
+      "discorda": "Discorda",
+      "tituloAnotacoes": "Anotações do revisor",
+      "pendentes": "{total, plural, =0 {todas decididas} one {1 a decidir} other {# a decidir}}",
+      "instrucao": "Para cada anotação: acrescente à sua curadoria ou dispense. Tudo fica registrado no histórico da ficha.",
+      "semAnotacoes": "O revisor não fez anotações por item.",
+      "efeitoTexto": "junta o texto ao item",
+      "efeitoValor": "troca o valor na ficha",
+      "efeitoNota": "registra nas observações internas",
+      "vocesRegistrou": "Você:",
+      "proposta": "Proposta:",
+      "anotacao": "Anotação:",
+      "incorporada": "Acrescentado à curadoria",
+      "dispensada": "Dispensada",
+      "aplicando": "Aplicando…",
+      "incorporar": "Acrescentar à curadoria",
+      "dispensar": "Dispensar",
+      "concordouCom": "Revisor concordou com:",
+      "decisaoTitulo": "Decisão final",
+      "decisaoComPendentes": "{total, plural, one {Ainda há 1 anotação sem decisão} other {Ainda há # anotações sem decisão}} — você pode decidir mesmo assim.",
+      "decisaoInstrucao": "Com as anotações resolvidas, aprove a ficha (vai para o acervo) ou descarte.",
+      "anonimizacao": "Conferi a anonimização da imagem",
+      "enviando": "Enviando…",
+      "aprovar": "Aprovar ficha",
+      "descartar": "Descartar",
+      "motivoDescarte": "Motivo do descarte",
+      "confirmarDescarte": "Confirmar descarte",
+      "voltar": "Voltar"
+    },
+    "sair": "Sair",
+    "holofote": {
+      "mudar": "mudar de item",
+      "proximo": "próximo",
+      "proximoItem": "Próximo item"
+    }
+  },
+  "Segmentacao": {
+    "abaFormas": "Formas (círculo, seta)",
+    "abaPintura": "Pintura de estruturas",
+    "altImagem": "Radiografia para pintar estruturas",
+    "semImagem": "Não foi possível carregar a imagem.",
+    "crieParaPintar": "Crie uma estrutura ao lado para começar a pintar.",
+    "novaEstrutura": "Nova estrutura",
+    "tipo": "Tipo de estrutura",
+    "dente": "Dente (FDI)",
+    "semDente": "—",
+    "criar": "Criar \"{nome}\"",
+    "tipos": {
+      "dente": "Dente",
+      "canal": "Canal radicular",
+      "lesao": "Lesão",
+      "restauracao": "Restauração",
+      "osso": "Osso",
+      "outra": "Outra estrutura"
+    },
+    "desfazerDica": "Desfazer a última pincelada (Ctrl+Z)",
+    "tamanho": "Tamanho do pincel: {px} px  ([ e ])",
+    "transparencia": "Opacidade da pintura: {pct}%",
+    "estruturas": "Estruturas pintadas ({total})",
+    "carregando": "Carregando…",
+    "nenhuma": "Nenhuma estrutura ainda.",
+    "cor": "Cor da estrutura",
+    "selecionar": "Pintar esta estrutura",
+    "mostrar": "Mostrar",
+    "esconder": "Esconder",
+    "apagar": "Apagar estrutura",
+    "confirmarApagar": "Apagar?",
+    "ajuda": "Roda do mouse: zoom. Botão direito ou Espaço + arrastar: mover a imagem. Ctrl+Z desfaz, Ctrl+Shift+Z refaz, 1–9 escolhem a estrutura. Cada ação é salva sozinha; a radiografia original não é alterada.",
+    "mostrarPintura": "Mostrar a pintura das estruturas ({total})",
+    "esconderPintura": "Esconder a pintura das estruturas ({total})",
+    "varinhaGrandeDemais": "A região ficou grande demais (passou do fundo). Diminua a tolerância ou clique mais para dentro da estrutura.",
+    "zoomMenos": "Diminuir zoom",
+    "zoomMais": "Aumentar zoom",
+    "zoomAjustar": "Voltar a ver a imagem inteira (0)",
+    "ferramentas": "Ferramentas",
+    "ferramenta": {
+      "inteligente": "Inteligente",
+      "pincel": "Pincel",
+      "varinha": "Varinha",
+      "laco": "Laço",
+      "pontos": "Pontos"
+    },
+    "dica": {
+      "inteligente": "Pincel inteligente: pinta só o que tem densidade parecida com o ponto onde você começou — não vaza para o osso nem para o fundo. Ajuste a tolerância.",
+      "pincel": "Pincel livre: pinta tudo por onde passar.",
+      "varinha": "Varinha mágica: um clique pinta a região inteira de densidade parecida. Depois do clique, mexa na tolerância para ajustar na hora.",
+      "laco": "Laço: contorne a estrutura com o mouse; ao soltar, o interior é preenchido.",
+      "apagar": "Alterna entre pintar e apagar, com qualquer ferramenta (tecla E).",
+      "buracos": "Pinta os espaços que ficaram sem tinta dentro da estrutura.",
+      "suavizar": "Tira o serrilhado da borda e pontinhos soltos.",
+      "pontos": "Pontos nas extremidades: clique pontos na borda da estrutura (topo, ápice, lados — em qualquer ordem) e aperte Preencher. Arraste um ponto para ajustar; a pintura se refaz sozinha. Backspace apaga o último ponto, Esc conclui."
+    },
+    "modoApagando": "Apagando",
+    "modoPintando": "Pintando",
+    "refazerDica": "Refazer (Ctrl+Shift+Z)",
+    "tolerancia": "Tolerância de densidade: {valor}",
+    "preencherBuracos": "Preencher buracos",
+    "suavizar": "Suavizar bordas",
+    "visualizacao": "Visualização",
+    "preenchido": "Preenchido",
+    "contorno": "Contorno",
+    "pixelsPintados": "{nome}: {total} pixels pintados",
+    "pontosContagem": "{total, plural, =0 {Clique na borda da estrutura para marcar os pontos} one {1 ponto} other {# pontos}}",
+    "pontosPreencher": "Preencher",
+    "pontosRefazer": "Preencher de novo",
+    "pontosLimpar": "Limpar",
+    "pontosConcluir": "Concluir",
+    "pontosConcluirDica": "Tira os pontos da tela (a pintura fica) — Esc",
+    "pontosAjustar": "Ajustar à densidade: a pintura gruda na borda real da estrutura, sem passar dos pontos",
+    "pontosPoucos": "Marque pelo menos 3 pontos na borda da estrutura.",
+    "telaCheia": "Tela cheia",
+    "sairTelaCheia": "Sair da tela cheia",
+    "telaCheiaDica": "Recolhe a ficha e usa a tela inteira para pintar",
+    "sairTelaCheiaDica": "Volta a mostrar a ficha ao lado (Esc)"
+  },
+  "BuscaTermos": {
+    "tipo": {
+      "grupo": "Grupo",
+      "achado": "Achado",
+      "regiao": "Região",
+      "vocab": "Termo",
+      "texto": "Palavras"
+    },
+    "tirar": "Tirar {termo}",
+    "maisUm": "Adicionar outro termo…",
+    "nada": "Nenhum termo com essas iniciais.",
+    "procurarTexto": "Procurar \"{texto}\" nos textos das fichas",
+    "sinonimos": "sinônimos: {lista}",
+    "rotuloFicha": "Termos padronizados (aparecem na Pesquisa avançada)",
+    "placeholderFicha": "Digite as iniciais: nódulo, furca, reabs…"
   }
 }

@@ -35,7 +35,15 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-export default function Topbar() {
+export default function Topbar({
+  acao,
+  fixa = false,
+}: {
+  /** botao extra ao lado do logo (ex.: "Busca avançada" no Banco de imagens) */
+  acao?: React.ReactNode
+  /** a barra fica presa no topo ao rolar a tela */
+  fixa?: boolean
+} = {}) {
   const t = useTranslations('Topbar')
   const router = useRouter()
   const [nome, setNome] = useState('')
@@ -182,8 +190,15 @@ export default function Topbar() {
   }
 
   return (
-    <header className="flex h-20 items-center justify-between border-b border-base-border bg-base px-6">
-      <Logo variante="navbar" />
+    <header
+      className={`flex h-20 items-center justify-between border-b border-base-border bg-base px-6 ${
+        fixa ? 'sticky top-0 z-30 bg-base/90 backdrop-blur-md' : ''
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-4">
+        <Logo variante="navbar" />
+        {acao}
+      </div>
 
       <div className="flex items-center gap-6">
         <ThemeToggle />

@@ -10,6 +10,7 @@ SMTP_HOST/SMTP_USER/SMTP_PASSWORD no .env pra envio de verdade.
 import logging
 from html import escape
 import smtplib
+from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -56,7 +57,11 @@ def enviar_email(
     mensagem.attach(corpo)
 
     for conteudo, nome_arquivo in lista_anexos:
-        anexo = MIMEImage(conteudo)
+        # PDF (prancha) vai como documento; o resto sao imagens (PNG)
+        if nome_arquivo.lower().endswith(".pdf"):
+            anexo = MIMEApplication(conteudo, _subtype="pdf")
+        else:
+            anexo = MIMEImage(conteudo)
         anexo.add_header("Content-Disposition", "attachment", filename=nome_arquivo)
         mensagem.attach(anexo)
 
@@ -160,6 +165,22 @@ def enviar_email_imagens_pesquisa_lote(
     enviar_email(
         destinatario, "Imagens selecionadas - Rádix Imago", corpo_html,
         anexos=[(anexo_bytes, anexo_nome) for _, anexo_bytes, anexo_nome in itens],
+    )
+
+
+def enviar_email_prancha(
+    destinatario: str, nome: str, total_imagens: int, total_folhas: int, anexo_pdf: bytes, anexo_nome: str
+) -> None:
+    """Prancha (folhas com as imagens e as informacoes ao lado) em PDF."""
+    corpo_html = f"""
+    <p>Olá, {escape(nome)}.</p>
+    <p>Segue em anexo (PDF) a prancha com {total_imagens} imagem(ns) em {total_folhas} folha(s),
+    com as informações da curadoria ao lado de cada imagem.</p>
+    <p>Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.</p>
+    """
+    enviar_email(
+        destinatario, "Prancha de imagens - Rádix Imago", corpo_html,
+        anexo_bytes=anexo_pdf, anexo_nome=anexo_nome,
     )
 
 

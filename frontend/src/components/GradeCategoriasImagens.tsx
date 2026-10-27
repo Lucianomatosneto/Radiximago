@@ -11,7 +11,9 @@ interface Categoria {
   // fica fixo aqui.
   chaveTitulo: string
   chaveRotulo: 'tipoRadiografia' | 'achadoPrincipal' | 'qualidadeTecnica'
-  parametro: 'tipo_radiografia' | 'achado_principal' | 'qualidade_tecnica'
+  // 'termos' (grupo:carie...): a busca por termos, alinhada a Curadoria -
+  // o cartao traz TODOS os achados do grupo marcados pelo curador
+  parametro: 'tipo_radiografia' | 'termos' | 'qualidade_tecnica'
   valor: string
   /** Cor de destaque (hex) usada no brilho, na barra e no ponto do cartao. */
   destaque: string
@@ -51,50 +53,50 @@ const CATEGORIAS: Categoria[] = [
   {
     chaveTitulo: 'anatomiaNormal',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'normal',
+    parametro: 'termos',
+    valor: 'grupo:normal',
     destaque: '#10B981',
   },
   {
     chaveTitulo: 'carie',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'carie',
+    parametro: 'termos',
+    valor: 'grupo:carie',
     destaque: '#EF4444',
   },
   {
     chaveTitulo: 'lesoesPeriapicais',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'lesao_periapical',
+    parametro: 'termos',
+    valor: 'grupo:lesao_periapical',
     destaque: '#F97316',
   },
   {
     chaveTitulo: 'perdaOssea',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'perda_ossea',
+    parametro: 'termos',
+    valor: 'grupo:perda_ossea',
     destaque: '#F59E0B',
   },
   {
     chaveTitulo: 'dentesInclusos',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'dente_incluso',
+    parametro: 'termos',
+    valor: 'grupo:dente_incluso',
     destaque: '#A855F7',
   },
   {
     chaveTitulo: 'tratamentoEndodontico',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'tratamento_endodontico',
+    parametro: 'termos',
+    valor: 'grupo:tratamento_endodontico',
     destaque: '#3B82F6',
   },
   {
     chaveTitulo: 'errosTecnicos',
     chaveRotulo: 'achadoPrincipal',
-    parametro: 'achado_principal',
-    valor: 'erro_tecnico',
+    parametro: 'termos',
+    valor: 'grupo:erro_tecnico',
     destaque: '#94A3B8',
   },
   {
@@ -111,11 +113,13 @@ export interface Contagens {
   por_tipo_radiografia: Record<string, number>
   por_achado_principal: Record<string, number>
   por_qualidade_tecnica: Record<string, number>
+  /** cartoes de achados: todos os achados do grupo marcados na curadoria */
+  por_grupo?: Record<string, number>
 }
 
 const MAPA_CONTAGEM: Record<Categoria['parametro'], keyof Contagens> = {
   tipo_radiografia: 'por_tipo_radiografia',
-  achado_principal: 'por_achado_principal',
+  termos: 'por_grupo',
   qualidade_tecnica: 'por_qualidade_tecnica',
 }
 
@@ -279,8 +283,9 @@ export default function GradeCategoriasImagens({ contagens }: Props) {
 
   function contagemDaCategoria(categoria: Categoria): number | null {
     if (!contagens) return null
-    const grupo = contagens[MAPA_CONTAGEM[categoria.parametro]] as Record<string, number>
-    return grupo?.[categoria.valor] ?? 0
+    const grupo = contagens[MAPA_CONTAGEM[categoria.parametro]] as Record<string, number> | undefined
+    const chave = categoria.parametro === 'termos' ? categoria.valor.replace('grupo:', '') : categoria.valor
+    return grupo?.[chave] ?? 0
   }
 
   let indice = 0

@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from typing import Annotated, Literal
 
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -32,6 +33,8 @@ from app.modules.sessoes import (
     abrir_sessao, encerrar_sessao, encerrar_sessoes_do_usuario, identificador_publico, registrar_uso,
     sessao_aberta, sessoes_abertas,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 
@@ -351,7 +354,18 @@ def solicitar_redefinicao_senha(
     # frontend/src/lib/codigoDoLink.ts
     link_reset = f"{settings.FRONTEND_URL}/redefinir-senha#token={codigo_reset}"
     idioma_email = dados.idioma if dados.idioma == "en" else "pt"
-    enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset, idioma=idioma_email)
+    try:
+        enviar_email_redefinicao_senha(usuario.email, usuario.nome, link_reset, idioma=idioma_email)
+    except Exception as erro:
+        # falha do servidor de e-mail (senha de app, rede...): fica no
+        # registro e na auditoria. A resposta continua a mesma de sempre,
+        # para nao revelar quais e-mails existem (OWASP ASVS 6.3.8).
+        logger.exception("Falha ao enviar o e-mail de redefinicao de senha.")
+        db.add(AuditLog(
+            usuario_id=usuario.id, acao="falha_envio_email", entidade="user", entidade_id=usuario.id,
+            resultado="erro", detalhes=f"Redefinição de senha: e-mail não enviado ({type(erro).__name__}).",
+        ))
+        db.commit()
 
     return mensagem_generica
 
@@ -477,7 +491,23 @@ def solicitar_acesso(
     db.commit()
 
     link = f"{settings.FRONTEND_URL}/confirmar-email#token={token}"
-    enviar_email_confirmacao_cadastro(dados.email, dados.nome, link, CONFIRMACAO_VALIDADE_HORAS)
+    try:
+        enviar_email_confirmacao_cadastro(dados.email, dados.nome, link, CONFIRMACAO_VALIDADE_HORAS)
+    except Exception as erro:
+        # antes: a falha do e-mail virava "erro 500" e a tela so dizia
+        # "tente mais tarde". Agora fica registrada (para o administrador ver
+        # em Integracoes / Auditoria) e a pessoa recebe um aviso claro. O
+        # pedido continua gravado: ao tentar de novo, um link novo e enviado.
+        logger.exception("Falha ao enviar o e-mail de confirmacao do cadastro.")
+        db.add(AuditLog(
+            usuario_id=None, acao="falha_envio_email", entidade="access_request", entidade_id=pedido.id,
+            resultado="erro", detalhes=f"Confirmação de cadastro: e-mail não enviado ({type(erro).__name__}).",
+        ))
+        db.commit()
+        raise HTTPException(
+            status_code=503,
+            detail="Não foi possível enviar o e-mail de confirmação agora. Tente de novo em alguns minutos; se continuar, avise o administrador.",
+        )
 
     return mensagem_generica
 

@@ -48,6 +48,7 @@ from app.modules.compartilhamentos import CompartilhamentoImagem
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference
 from app.modules.users import User
+from app.modules.segmentacoes import contar_por_ficha
 
 router = APIRouter(prefix="/shares", tags=["Compartilhamentos"])
 
@@ -275,6 +276,7 @@ def listar_recebidas(
             ids_por_par.setdefault((u, c), set()).add(i)
 
     erros = erros_por_ficha(db, [r[1].id for r in resultados])
+    segmentacoes = contar_por_ficha(db, [r[1].id for r in resultados])
     itens = []
     for comp, ficha, ref, remetente in resultados:
         viewer_url = (
@@ -298,6 +300,7 @@ def listar_recebidas(
             "achados_detalhe": ficha.achados_detalhe,
             "alteracoes_observadas": ficha.alteracoes_observadas,
             "marcacoes": ficha.marcacoes,
+            "total_segmentacoes": segmentacoes.get(ficha.id, 0),
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "descricao_didatica": ficha.descricao_didatica,
             "erros_tecnicos": erros.get(ficha.id, []),

@@ -18,10 +18,13 @@ export default function ResponderCompartilhamento({
   compartilhamentoId,
   remetenteNome,
   icone = false,
+  compacto = false,
 }: {
   compartilhamentoId: number
   remetenteNome: string
   icone?: boolean
+  /** botao pequeno, no padrao dos icones da grade de imagens (Pesquisa) */
+  compacto?: boolean
 }) {
   const t = useTranslations('Compartilhar')
   const [aberto, setAberto] = useState(false)
@@ -79,11 +82,17 @@ export default function ResponderCompartilhamento({
 
   const formulario = (
     <div
-      className={icone ? 'absolute bottom-full left-0 right-0 z-30 mb-2 rounded-lg border border-sky-400/40 bg-base-surface p-2 shadow-2xl' : 'mt-2'}
+      className={
+        compacto
+          ? 'absolute bottom-full right-0 z-30 mb-2 w-64 rounded-lg border border-sky-400/40 bg-base-surface p-2 text-left shadow-2xl'
+          : icone
+            ? 'absolute bottom-full left-0 right-0 z-30 mb-2 rounded-lg border border-sky-400/40 bg-base-surface p-2 shadow-2xl'
+            : 'mt-2'
+      }
       // teclas digitadas aqui nao acionam atalhos da tela
       onKeyDown={(e) => e.stopPropagation()}
     >
-      {icone && <p className="mb-1 text-[11px] font-semibold text-sky-200">{rotulo}</p>}
+      {(icone || compacto) && <p className="mb-1 text-[11px] font-semibold text-sky-700 dark:text-sky-200">{rotulo}</p>}
       <textarea
         ref={campoRef}
         value={texto}
@@ -117,6 +126,31 @@ export default function ResponderCompartilhamento({
       </div>
     </div>
   )
+
+  if (compacto) {
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => {
+            setErro('')
+            setAberto((v) => !v)
+          }}
+          title={rotulo}
+          aria-label={rotulo}
+          aria-expanded={aberto}
+          className={`flex items-center rounded-full border bg-white/90 px-1.5 py-0.5 backdrop-blur-sm dark:bg-black/70 ${
+            enviado
+              ? 'border-emerald-500 text-emerald-700 dark:border-emerald-300 dark:text-emerald-200'
+              : 'border-sky-600/50 text-sky-800 hover:border-sky-600 dark:border-sky-300/50 dark:text-sky-100 dark:hover:border-sky-300'
+          }`}
+        >
+          {enviado ? <span className="text-[11px] leading-none">✓</span> : <span className="[&_svg]:h-3.5 [&_svg]:w-3.5"><IconeResponder /></span>}
+        </button>
+        {aberto && formulario}
+      </div>
+    )
+  }
 
   if (icone) {
     return (

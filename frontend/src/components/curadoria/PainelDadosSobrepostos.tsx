@@ -274,6 +274,27 @@ export default function PainelDadosSobrepostos({
           </div>
         </>
       )}
+
+      {/* ORIGEM da imagem (26/10/2026): e filtro da Pesquisa avancada; o
+          sistema sugere sozinho (por onde a imagem chegou) e o curador
+          confere/corrige aqui */}
+      <div className="rounded-xl px-2.5 py-2">
+        <p className={`${campoLabel} mb-1.5`}>{tOpcoes('origemRotulo')}</p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {(['ufsc', 'externa'] as const).map((valor) => (
+            <button
+              key={valor}
+              type="button"
+              onClick={() => onChange({ ...form, origem: valor })}
+              className={`${botaoOpcao} px-1 ${
+                form.origem === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+              }`}
+            >
+              {tOpcoes(`origem.${valor}`)}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   )
 }

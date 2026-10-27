@@ -12,6 +12,8 @@ export interface ViewerInfo {
   abrivel: boolean
   motivo?: string
   viewer_url: string | null
+  /** quanto a imagem ja foi girada na Curadoria (0, 90, 180, 270) */
+  giro_graus?: number
 }
 
 // Painel central: mantem o OHIF exatamente como estava (iframe puro,
@@ -68,6 +70,8 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   /** Sem o cabecalho de botoes (logo, status, Marcar imagem, Ampliar,
    * Tela cheia) acima da imagem - layout de curadoria com a ficha ao lado. */
   semCabecalho?: boolean
+  /** acesso ao <iframe> do OHIF (girar a imagem na hora, sem recarregar) */
+  iframeRef?: React.Ref<HTMLIFrameElement>
 }>(function PainelVisualizador(
   {
     fichaAtiva,
@@ -87,6 +91,7 @@ const PainelVisualizador = forwardRef<HTMLElement, {
     onAlternarMarcacao,
     dadosNaColuna = false,
     semCabecalho = false,
+    iframeRef,
   },
   ref
 ) {
@@ -94,8 +99,12 @@ const PainelVisualizador = forwardRef<HTMLElement, {
   const viewerPronto = !!(viewerInfo?.abrivel && viewerInfo.viewer_url)
   const urlViewer =
     viewerPronto && dadosNaColuna
-      ? `${viewerInfo!.viewer_url!}${viewerInfo!.viewer_url!.includes('?') ? '&' : '?'}radixRecolherEstudos=1`
-      : viewerInfo?.viewer_url ?? ''
+      ? `${viewerInfo!.viewer_url!}${viewerInfo!.viewer_url!.includes('?') ? '&' : '?'}radixRecolherEstudos=1&radixTeclaR=1`
+      : viewerPronto
+        ? `${viewerInfo!.viewer_url!}${viewerInfo!.viewer_url!.includes('?') ? '&' : '?'}radixTeclaR=1`
+        : viewerInfo?.viewer_url ?? ''
+  // radixTeclaR=1: a tecla R dentro do OHIF nao gira so a tela - avisa o
+  // Radix, que gira E GRAVA (ControleOrientacao)
 
   return (
     <section
@@ -187,7 +196,10 @@ const PainelVisualizador = forwardRef<HTMLElement, {
           </div>
         ) : viewerPronto ? (
           <iframe
+            ref={iframeRef}
             src={urlViewer}
+            // o OHIF so aceita comandos (girar) de quem o abriu - precisa saber a origem
+            referrerPolicy="origin"
             title={t('ohifTitulo')}
             className="h-full w-full border-0"
             onLoad={onIframeCarregado}

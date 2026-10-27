@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import {
+  buracoHolofote,
   caminhoHolofote,
+  corDaSequencia,
   corMarcacao,
   geometriaMarcacao,
   marcacaoSobPonto,
@@ -38,6 +40,8 @@ export default function CamadaMarcacoes({
   interativo = true,
   destaque = null,
   aoClicarFora,
+  estilo = 'padrao',
+  holofoteLigado,
 }: {
   marcacoes: Marcacao[]
   recorte?: { x: number; y: number; largura: number; altura: number } | null
@@ -46,13 +50,26 @@ export default function CamadaMarcacoes({
   destaque?: number | null
   /** clique FORA das marcacoes (ex.: na grade da Pesquisa, abre a imagem) */
   aoClicarFora?: () => void
+  /**
+   * 'discreto' (grades da Pesquisa e de Compartilhadas comigo, pedido de
+   * 21/10/2026): cada marcacao com uma cor diferente, linhas bem finas e
+   * numeros pequenos, para nao cobrir a anatomia da miniatura.
+   */
+  estilo?: 'padrao' | 'discreto'
+  /** holofote ligado/desligado por um botao de fora (a tecla H continua valendo) */
+  holofoteLigado?: boolean
 }) {
   const t = useTranslations('DescricaoCuradoria')
   const caixaRef = useRef<HTMLDivElement>(null)
   const [tam, setTam] = useState<{ w: number; h: number } | null>(null)
   const [foco, setFoco] = useState<number | null>(null)
   const [isolada, setIsolada] = useState<number | null>(null)
-  const [holofote, setHolofote] = useState(false)
+  const [holofote, setHolofote] = useState(holofoteLigado ?? false)
+  useEffect(() => {
+    if (holofoteLigado !== undefined) setHolofote(holofoteLigado)
+  }, [holofoteLigado])
+  const idMascara = `holofote-${useId().replace(/:/g, '')}`
+  const discreto = estilo === 'discreto'
   const [dentro, setDentro] = useState(false)
   const [dica, setDica] = useState<{ texto: string; x: number; y: number } | null>(null)
 
@@ -104,8 +121,14 @@ export default function CamadaMarcacoes({
   }, [interativo, dentro, marcacoes.length])
 
   function pontoLocal(ev: React.MouseEvent) {
-    const rect = caixaRef.current!.getBoundingClientRect()
-    return [ev.clientX - rect.left, ev.clientY - rect.top] as const
+    const el = caixaRef.current!
+    const rect = el.getBoundingClientRect()
+    // a caixa pode estar AMPLIADA por CSS (lupa da grade: scale(2)): o
+    // retangulo na tela fica maior que o desenho, entao converte o ponto
+    // de volta para os pixels do desenho - senao o mouse "erra" a forma.
+    const escalaX = el.clientWidth && rect.width ? rect.width / el.clientWidth : 1
+    const escalaY = el.clientHeight && rect.height ? rect.height / el.clientHeight : 1
+    return [(ev.clientX - rect.left) / escalaX, (ev.clientY - rect.top) / escalaY] as const
   }
   function visiveis(): (GeometriaMarcacao | null)[] {
     return geos.map((g, i) => (isolada !== null && i !== isolada ? null : g))
@@ -143,15 +166,61 @@ export default function CamadaMarcacoes({
     >
       {tam && (
         <svg width={tam.w} height={tam.h} className="pointer-events-none absolute inset-0 overflow-visible" aria-hidden="true">
-          {holofote && ativo !== null && geos[ativo] && (
+          {holofote && !discreto && ativo !== null && geos[ativo] && (
             <path d={caminhoHolofote(geos[ativo]!, tam.w, tam.h)} fill="rgba(0,0,0,0.55)" fillRule="evenodd" />
+          )}
+          {/* discreto: escurece fora da marcacao sob o mouse; sem mouse, fora de TODAS */}
+          {holofote && discreto && (
+            <>
+              <defs>
+                <mask id={idMascara}>
+                  <rect x={0} y={0} width={tam.w} height={tam.h} fill="white" />
+                  {(ativo !== null && geos[ativo] ? [geos[ativo]] : visiveis()).map((g, k) =>
+                    g ? <path key={k} d={buracoHolofote(g)} fill="black" /> : null
+                  )}
+                </mask>
+              </defs>
+              <rect x={0} y={0} width={tam.w} height={tam.h} fill="rgba(0,0,0,0.6)" mask={`url(#${idMascara})`} />
+            </>
           )}
           {ordem.map((i) => {
             const g = geos[i]
             if (!g) return null
-            const cor = corMarcacao(marcacoes[i])
+            const cor = discreto ? corDaSequencia(i) : corMarcacao(marcacoes[i])
             const forte = ativo === i
             const apagada = ativo !== null && !forte
+            if (discreto) {
+              // pedido de 22/10/2026: linhas com menos da metade da espessura
+              // anterior (eram 0,75 px; na lupa a imagem dobra e elas tambem)
+              const linha = forte ? 0.35 : 0.2
+              const halo = linha + 0.3
+              // semitransparente (22/10/2026): a anatomia aparece por baixo; acende ao passar o mouse
+              const opacidade = forte ? 0.95 : 0.6
+              return (
+                <g key={marcacoes[i].id ?? i} style={{ opacity: apagada ? 0.3 : 1, transition: 'opacity .18s ease' }}>
+                  <path d={g.caminho} fill="none" stroke="rgba(0,0,0,0.5)" strokeOpacity={opacidade * 0.6} strokeWidth={halo} strokeLinejoin="round" strokeLinecap="round" />
+                  {g.seta && <path d={g.seta.ponta} fill="none" stroke="rgba(0,0,0,0.5)" strokeOpacity={opacidade * 0.6} strokeWidth={halo} strokeLinejoin="round" strokeLinecap="round" />}
+                  <path d={g.caminho} fill="none" stroke={cor} strokeOpacity={opacidade} strokeWidth={linha} strokeLinejoin="round" strokeLinecap="round" />
+                  {g.seta && <path d={g.seta.ponta} fill="none" stroke={cor} strokeOpacity={opacidade} strokeWidth={linha} strokeLinejoin="round" strokeLinecap="round" />}
+                  <line x1={g.ancora[0]} y1={g.ancora[1]} x2={g.selo[0]} y2={g.selo[1]} stroke={cor} strokeOpacity={opacidade * 0.8} strokeWidth={0.18} strokeLinecap="round" />
+                  {/* numero discreto (22/10/2026): fundo e numero semitransparentes; acendem ao passar o mouse */}
+                  <circle cx={g.selo[0]} cy={g.selo[1]} r={forte ? 6.5 : 5.5} fill="rgb(11,18,32)" fillOpacity={forte ? 0.6 : 0.25} stroke={cor} strokeOpacity={opacidade * 0.8} strokeWidth={0.35} />
+                  <text
+                    x={g.selo[0]}
+                    y={g.selo[1]}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={7}
+                    fontWeight={600}
+                    fill={cor}
+                    fillOpacity={forte ? 0.95 : 0.5}
+                    style={{ fontFamily: 'Inter, Arial, sans-serif' }}
+                  >
+                    {i + 1}
+                  </text>
+                </g>
+              )
+            }
             return (
               <g key={marcacoes[i].id ?? i} style={{ opacity: apagada ? 0.25 : 1, transition: 'opacity .18s ease' }}>
                 <path d={g.caminho} fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth={forte ? 3.5 : 2.5} strokeLinejoin="round" strokeLinecap="round" />

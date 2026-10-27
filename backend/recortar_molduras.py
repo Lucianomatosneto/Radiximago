@@ -23,6 +23,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
+import app.main  # noqa: F401 - carrega TODAS as tabelas do sistema (sem isso o banco nao monta as ligacoes entre elas)
 from app.core.database import SessionLocal
 from app.modules import orthanc_client
 from app.modules.geometria_imagem import (
@@ -30,6 +31,7 @@ from app.modules.geometria_imagem import (
 )
 from app.modules.orthanc_references import OrthancReference
 from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajustar, substituir_arquivo
+from app.modules.segmentacoes import recortar_mascara
 
 PASTA_SIMULACAO = Path(__file__).resolve().parent / "recortes_simulacao"
 LADO_FIGURA = 800
@@ -104,6 +106,7 @@ def executar(aplicar: bool) -> None:
                 marcacoes=lambda m: recortar_marcacoes(m, caixa, largura, altura),
                 ponto=lambda x, y: recortar_ponto(x, y, caixa, largura, altura),
                 antes_de_gravar=marcar,
+                mascara=lambda png: recortar_mascara(png, caixa, largura, altura),
             )
     finally:
         db.close()

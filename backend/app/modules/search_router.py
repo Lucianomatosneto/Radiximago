@@ -11,7 +11,7 @@ Acesso: qualquer usuario logado (a pesquisa so expoe o que ja foi liberado).
 import io
 import logging
 import zipfile
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
@@ -37,6 +37,7 @@ from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules import orthanc_client
 from app.modules.marcacoes_imagem import desenhar_marcacoes_na_imagem
+from app.modules.segmentacoes import contar_por_ficha
 from app.modules.curations import (
     Curation,
     TipoRadiografia,
@@ -50,6 +51,7 @@ from app.modules.curations import (
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico, erros_por_ficha
 
 from app.modules.busca_texto import condicao_busca_texto, condicao_termo
+from app.modules.busca_termos import GRUPOS_ACHADO, MAX_CARACTERES_TOKEN, MAX_TERMOS_BUSCA, condicao_grupo, condicao_token
 
 logger = logging.getLogger(__name__)
 
@@ -137,7 +139,21 @@ def contagens_disponiveis(
         "por_achado_principal": _contar_por(db, Curation.achado_principal),
         "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
         "por_origem": _contar_por(db, OrthancReference.origem),
+        # cartoes do Banco de imagens: cada grupo conta TODOS os achados do
+        # grupo marcados na curadoria (ex.: qualquer tipo de carie)
+        "por_grupo": {grupo: _contar_grupo(db, grupo) for grupo in GRUPOS_ACHADO},
     }
+
+
+def _contar_grupo(db: Session, grupo: str) -> int:
+    return (
+        db.query(func.count(Curation.id))
+        .join(OrthancReference, Curation.orthanc_reference_id == OrthancReference.id)
+        .filter(Curation.status == StatusCuradoria.APROVADA.value)
+        .filter(OrthancReference.ativo.is_(True))
+        .filter(condicao_grupo(grupo))
+        .scalar()
+    )
 
 
 class EnvioLotePedido(BaseModel):
@@ -219,6 +235,17 @@ def pesquisar_imagens(
         description="Busca por palavras nos textos livres (achados detalhados, descricao, 'Outro' das marcacoes) - ver busca_texto.py",
     ),
     termo_id: Optional[int] = Query(None, description="Termo do vocabulario controlado (ver /vocabulario)"),
+    termos: Optional[List[Annotated[str, Field(max_length=MAX_CARACTERES_TOKEN)]]] = Query(
+        None,
+        max_length=MAX_TERMOS_BUSCA,
+        description=(
+            "Busca por termos (todos precisam bater): 'grupo:carie', 'achado:carie_dentina', "
+            "'regiao:coroa', 'vocab:12', 'texto:reabsorcao' - ver busca_termos.py"
+        ),
+    ),
+    erros_tecnicos: Optional[List[TipoErroTecnico]] = Query(
+        None, max_length=40, description="Erros tecnicos marcados na curadoria - basta ter QUALQUER UM deles"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     usuario: User = Depends(obter_usuario_atual),
@@ -276,6 +303,17 @@ def pesquisar_imagens(
             consulta = consulta.filter(condicao)
     if termo_id is not None:
         consulta = consulta.filter(condicao_termo(termo_id))
+    # Busca por termos (os mesmos que o curador marca): cada termo e um filtro a mais
+    for token in termos or []:
+        condicao = condicao_token(db, token)
+        if condicao is not None:
+            consulta = consulta.filter(condicao)
+    if erros_tecnicos:
+        consulta = consulta.filter(
+            exists().where(
+                and_(ErroTecnico.curation_id == Curation.id, ErroTecnico.tipo.in_([e.value for e in erros_tecnicos]))
+            )
+        )
 
     # Filtro por dente especifico (o array de dentes contem aquele numero) -
     # mantido exatamente como antes, nenhuma mudanca de comportamento.
@@ -382,6 +420,7 @@ def pesquisar_imagens(
 
     erros = erros_por_ficha(db, [r[0].id for r in resultados])
     marcacoes_dos_achados = _marcacoes_dos_achados(db, [r[0].id for r in resultados])
+    segmentacoes = contar_por_ficha(db, [r[0].id for r in resultados])
     itens = []
     for ficha, ref in resultados:
         if ref.study_instance_uid:
@@ -407,6 +446,8 @@ def pesquisar_imagens(
             # nele, desenha estas formas sobre a miniatura.
             "marcacoes_exibicao": exibicao,
             "total_marcacoes": len(exibicao),
+            # estruturas pintadas pelo curador (as mascaras vem de /segmentacoes)
+            "total_segmentacoes": segmentacoes.get(ficha.id, 0),
             "qualidade_tecnica": ficha.qualidade_tecnica,
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,

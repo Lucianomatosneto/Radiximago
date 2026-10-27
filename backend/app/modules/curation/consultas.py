@@ -18,12 +18,26 @@ from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules import orthanc_client
-from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria, StatusRevisao
+from app.modules.geometria_imagem import RECORTADA, SEM_BORDA
+from app.modules.curations import (
+    Curation, CurationHistory, CurationReview, CurationReviewNote, SituacaoAnotacao, StatusCuradoria, StatusRevisao,
+)
 
 from app.modules.vocabulario import CurationTermo
 from app.modules.achados import Achado, ErroTecnico
 from .common import _buscar_ficha
 from .router import router
+
+
+# imagens que podem ser curadas: sem moldura (ver listar_pendentes)
+ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA = (RECORTADA, SEM_BORDA)
+
+
+def _nomes_usuarios(db: Session, ids: set[int]) -> dict[int, str]:
+    """Nome de cada usuario (quem pediu / quem revisou a segunda opiniao)."""
+    if not ids:
+        return {}
+    return dict(db.query(User.id, User.nome).filter(User.id.in_(ids)).all())
 
 
 # ---------------------------------------------------------------------
@@ -36,13 +50,22 @@ def listar_pendentes(
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
-    """Lista as imagens ainda sem ficha de curadoria."""
+    """
+    Lista as imagens ainda sem ficha de curadoria.
+
+    So entram imagens SEM MOLDURA (pedido de 20/10/2026, inicio da curadoria
+    profissional): a moldura ja foi recortada ("recortada") ou nunca existiu
+    ("sem_borda"). As "incertas", as nao verificadas e as recebidas antes do
+    recorte automatico (enquadramento vazio) ficam fora da fila ate passarem
+    pelo recorte (roteiro recortar_molduras.py) - ver geometria_imagem.py.
+    """
 
     consulta_base = (
         db.query(OrthancReference)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(Curation.id.is_(None))
         .filter(OrthancReference.ativo.is_(True))
+        .filter(OrthancReference.enquadramento.in_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA))
         .order_by(OrthancReference.id)
     )
 
@@ -93,12 +116,16 @@ def listar_reviews_pendentes(
         .all()
     )
 
+    nomes = _nomes_usuarios(db, {r.solicitante_id for r, _, _ in resultados})
     itens = [
         {
             "id": review.id,
             "motivo": review.motivo,
             "primeiro_parecer": review.primeiro_parecer,
             "criado_em": review.criado_em.isoformat() if review.criado_em else None,
+            # quem pediu (nome) e se ESTE usuario pode responder (nao pode a propria)
+            "solicitante": {"id": review.solicitante_id, "nome": nomes.get(review.solicitante_id)},
+            "pode_responder": review.solicitante_id != usuario.id,
             "curation": {
                 "id": curation.id,
                 "achado_principal": curation.achado_principal,
@@ -148,12 +175,27 @@ def listar_reviews_respondidas(
         .all()
     )
 
+    nomes = _nomes_usuarios(db, {r.revisor_id for r, _, _ in resultados if r.revisor_id})
+    pendentes = dict(
+        db.query(CurationReviewNote.review_id, func.count(CurationReviewNote.id))
+        .filter(
+            CurationReviewNote.review_id.in_([r.id for r, _, _ in resultados] or [0]),
+            CurationReviewNote.situacao == SituacaoAnotacao.PENDENTE.value,
+        )
+        .group_by(CurationReviewNote.review_id)
+        .all()
+    )
     itens = [
         {
             "id": review.id,
             "motivo": review.motivo,
             "primeiro_parecer": review.primeiro_parecer,
             "criado_em": review.criado_em.isoformat() if review.criado_em else None,
+            "respondido_em": review.respondido_em.isoformat() if review.respondido_em else None,
+            "revisor": {"id": review.revisor_id, "nome": nomes.get(review.revisor_id)} if review.revisor_id else None,
+            "classificacao": review.classificacao,
+            "concordancia": review.concordancia,
+            "anotacoes_pendentes": pendentes.get(review.id, 0),
             "curation": {
                 "id": curation.id,
                 "achado_principal": curation.achado_principal,
@@ -398,6 +440,7 @@ def obter_ficha(
         "observacoes_internas": ficha.observacoes_internas,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
+        "origem": ficha.orthanc_reference.origem if ficha.orthanc_reference else None,
         # verificacao de texto gravado nos pixels (texto_na_imagem.py) - a tela
         # mostra um aviso ao lado de "Anonimizacao validada" quando o curador
         # precisa conferir a imagem com atencao
@@ -456,6 +499,7 @@ def listar_reviews_da_ficha(
             "revisor_id": r.revisor_id,
             "parecer_revisor": r.parecer_revisor,
             "concordancia": r.concordancia,
+            "classificacao": r.classificacao,
             "decisao_final": r.decisao_final,
             "observacoes": r.observacoes,
             "status": r.status,

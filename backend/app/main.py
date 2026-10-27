@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 from app.modules.auth import router as auth_router
 from app.modules.mfa_router import router as mfa_router
 from app.modules.search_router import router as search_router
+from app.modules.prancha_router import router as prancha_router
 from app.modules.admin_router import router as admin_router
 from app.modules.users_router import router as users_router
 from app.modules.images_router import router as images_router
@@ -27,6 +28,8 @@ from app.modules.vocabulario_router import router as vocabulario_router
 from app.modules.voz_router import router as voz_router
 from app.modules.macros_router import router_frases, router_macros
 from app.modules.visualizador_router import router as visualizador_router
+from app.modules.integracoes_router import router as integracoes_router
+from app.modules.segmentacoes_router import router as segmentacoes_router
 
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
@@ -99,6 +102,7 @@ app.mount("/uploads", StaticFiles(directory=_DIRETORIO_UPLOADS), name="uploads")
 app.include_router(auth_router)
 app.include_router(mfa_router)
 app.include_router(search_router)
+app.include_router(prancha_router)
 app.include_router(admin_router)
 app.include_router(users_router)
 app.include_router(images_router)
@@ -111,6 +115,8 @@ app.include_router(voz_router)
 app.include_router(router_macros)
 app.include_router(router_frases)
 app.include_router(visualizador_router)
+app.include_router(integracoes_router)
+app.include_router(segmentacoes_router)
 
 @app.get("/health")
 async def health():

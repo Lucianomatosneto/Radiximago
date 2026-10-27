@@ -235,8 +235,15 @@ export function marcacaoSobPonto(geos: (GeometriaMarcacao | null)[], px: number,
 
 /** Buraco do "holofote": a regiao da marcacao que fica clara. */
 export function caminhoHolofote(g: GeometriaMarcacao, largura: number, altura: number): string {
-  const fora = `M0,0 H${largura} V${altura} H0 Z`
-  if (!g.seta) return `${fora} ${g.caminho}`
+  return `M0,0 H${largura} V${altura} H0 Z ${buracoHolofote(g)}`
+}
+
+/**
+ * So o contorno da regiao clara do holofote (a forma; na seta, um circulo
+ * em volta dela). Serve para recortar varias marcacoes de uma vez.
+ */
+export function buracoHolofote(g: GeometriaMarcacao): string {
+  if (!g.seta) return g.caminho
   const { a, b } = g.seta
   const cx = (a[0] + b[0]) / 2
   const cy = (a[1] + b[1]) / 2
@@ -246,5 +253,27 @@ export function caminhoHolofote(g: GeometriaMarcacao, largura: number, altura: n
     const t = (k / 48) * Math.PI * 2
     pts.push(`${cx + r * Math.cos(t)},${cy + r * Math.sin(t)}`)
   }
-  return `${fora} M${pts.join(' L')} Z`
+  return `M${pts.join(' L')} Z`
+}
+
+/**
+ * Cores por MARCACAO (estilo "discreto" das grades): cada marcacao da
+ * imagem ganha uma cor diferente, na ordem em que o curador marcou.
+ * Paleta Okabe-Ito (legivel para daltonicos) + extras bem distintas.
+ */
+export const CORES_SEQUENCIA = [
+  '#56B4E9',
+  '#E69F00',
+  '#CC79A7',
+  '#009E73',
+  '#F0E442',
+  '#D55E00',
+  '#7FD1FF',
+  '#FFFFFF',
+  '#B8E986',
+  '#FF8FA3',
+]
+
+export function corDaSequencia(indice: number): string {
+  return CORES_SEQUENCIA[indice % CORES_SEQUENCIA.length]
 }

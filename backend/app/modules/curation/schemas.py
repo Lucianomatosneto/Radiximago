@@ -1,7 +1,7 @@
 """Schemas Pydantic de entrada dos endpoints de curadoria."""
 
 from datetime import datetime
-from typing import List, Literal, Optional
+from typing import Annotated, List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -20,8 +20,11 @@ from app.modules.curations import (
     Dificuldade,
     DecisaoRevisao,
     DecisaoFinalRevisao,
+    ClassificacaoRevisao,
+    AvaliacaoItem,
 )
 from app.modules.achados import TipoAchado, RegiaoAnatomica, TipoErroTecnico
+from app.modules.orthanc_references import OrigemImagem
 
 
 class Marcacao(BaseModel):
@@ -122,6 +125,9 @@ class CurationUpdate(BaseModel):
     sem_alteracoes: Optional[bool] = None
     # Erros tecnicos da imagem (lista completa - substitui os anteriores).
     erros_tecnicos: Optional[List[TipoErroTecnico]] = Field(default=None, max_length=MAX_ERROS_TECNICOS)
+    # ORIGEM da imagem (UFSC / externa) - antes so automatica; desde
+    # 26/10/2026 o curador confere e corrige na ficha (filtro da Pesquisa)
+    origem: Optional[OrigemImagem] = None
 
 
 class CurationApprove(BaseModel):
@@ -138,13 +144,25 @@ class ReviewRequest(BaseModel):
     primeiro_parecer: Optional[TextoMedio] = None
 
 
+class AnotacaoItemEntrada(BaseModel):
+    """Anotacao do revisor sobre UM item da ficha (ver segunda_opiniao.py)."""
+    item: str = Field(max_length=40)
+    avaliacao: AvaliacaoItem
+    nota: Optional[TextoMedio] = None
+    # valor proposto para o item (so nos itens com lista de valores: tipo,
+    # qualidade, achado principal, genero, dentes) - validado no servidor
+    valor_sugerido: Optional[Annotated[str, Field(max_length=60)] | Annotated[List[int], Field(max_length=MAX_DENTES)]] = None
+
+
 class ReviewRespond(BaseModel):
-    # Opcional por pedido: a tela de segunda opiniao passou a ter so os
-    # botoes "Concordar com o curador" / "Discordar" - sem campo de texto
-    # livre obrigatorio. Continua aceitando um parecer escrito se um dia a
-    # tela voltar a coletar um (nao remove a capacidade da API).
+    # Parecer escrito opcional. A tela nova (out/2026) manda a avaliacao
+    # geral (classificacao, escala tipo RADPEER) e as anotacoes item a item;
+    # "concordancia" continua aceito (telas/integracoes antigas) e, quando a
+    # classificacao vem, e derivado dela.
     parecer_revisor: Optional[TextoMedio] = None
-    concordancia: str = Field(max_length=20)  # "concorda" ou "discorda"
+    concordancia: Optional[str] = Field(default=None, max_length=20)  # "concorda" ou "discorda"
+    classificacao: Optional[ClassificacaoRevisao] = None
+    anotacoes: List[AnotacaoItemEntrada] = Field(default_factory=list, max_length=60)
     decisao_final: Optional[DecisaoRevisao] = None
     observacoes: Optional[TextoMedio] = None
 

@@ -48,10 +48,14 @@ LIMITE_EMAIL_LOTE = "5/hour"            # envio de varias imagens num e-mail so
 LIMITE_DOWNLOAD_ZIP = "20/hour"         # ZIP de serie (PNG ou DICOM), somados
 LIMITE_UPLOAD_DICOM = "300/hour"        # envio de arquivo DICOM (cada um passa por anonimizacao e leitura de texto)
 LIMITE_IMPORTACAO_ORTHANC = "10/hour"   # sincronizacao em lote com o Orthanc (varre todas as imagens)
+LIMITE_PRANCHA = "60/hour"              # prancha (folha com imagens e informacoes) para baixar/imprimir
+LIMITE_PRANCHA_EMAIL = "5/hour"         # prancha por e-mail (mesmo teto do envio em lote)
 
 # --- quantidade ---------------------------------------------------------
 MAX_IMAGENS_EMAIL_LOTE = 10   # anexos por e-mail (servidores de e-mail recusam mensagens grandes)
 MAX_CORTES_ZIP_PNG = 1000     # cortes renderizados num ZIP de imagens
+MAX_IMAGENS_PRANCHA = 30     # imagens numa prancha para baixar/imprimir (ate 15 folhas)
+MAX_IMAGENS_PRANCHA_EMAIL = 15  # imagens numa prancha por e-mail (ate ~5 MB de PDF)
 MAX_ZIPS_SIMULTANEOS = 2      # ZIPs sendo montados ao mesmo tempo no servidor
 
 MENSAGEM_LIMITE = "Muitos pedidos em pouco tempo. Aguarde alguns minutos e tente novamente."

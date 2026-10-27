@@ -36,6 +36,10 @@ export default async function RootLayout({
       // o erro "o conteudo do texto nao corresponde" (hidratacao). O
       // sistema ja tem portugues e ingles proprios (seletor PT/EN).
       translate="no"
+      // o tema (classe "dark"/"light") e posto por um script ANTES do React
+      // carregar (sem piscar a tela) - entao a classe do <html> difere do
+      // HTML do servidor de proposito. Aviso padrao do Next para esse caso.
+      suppressHydrationWarning
     >
       <head>
         <meta name="google" content="notranslate" />

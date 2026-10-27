@@ -151,6 +151,33 @@ class DecisaoFinalRevisao(str, enum.Enum):
     DESCARTAR = "descartar"
 
 
+class ClassificacaoRevisao(str, enum.Enum):
+    """
+    Avaliacao geral do revisor (segunda opiniao), na mesma logica de escala
+    do RADPEER (American College of Radiology) - o programa de revisao por
+    pares mais usado em radiologia: 1 = concorda; 2 = discordancia menor
+    (detalhe, sem mudar a interpretacao); 3 = discordancia importante
+    (muda a interpretacao/classificacao do caso).
+    """
+    CONCORDO = "concordo"
+    DISCORDANCIA_MENOR = "discordancia_menor"
+    DISCORDANCIA_IMPORTANTE = "discordancia_importante"
+
+
+class AvaliacaoItem(str, enum.Enum):
+    """Avaliacao do revisor sobre UM item da ficha (tipo, dentes, achado...)."""
+    CONCORDO = "concordo"
+    AJUSTAR = "ajustar"      # concorda em parte - sugere complemento/ajuste
+    DISCORDO = "discordo"
+
+
+class SituacaoAnotacao(str, enum.Enum):
+    """O que o curador (quem pediu a segunda opiniao) fez com a anotacao."""
+    PENDENTE = "pendente"
+    INCORPORADA = "incorporada"   # acrescentada a ficha de curadoria
+    DISPENSADA = "dispensada"     # lida e nao aplicada
+
+
 # Dentes permanentes validos (notacao FDI), quadrantes 1 a 4.
 DENTES_PERMANENTES = (
     list(range(11, 19))    # 11-18 superior direita
@@ -250,6 +277,8 @@ class CurationReview(Base):
     decisao_final = Column(String(25), nullable=True)
     observacoes = Column(Text, nullable=True)
     status = Column(String(20), nullable=False, default="solicitada")
+    # avaliacao geral do revisor (ClassificacaoRevisao - escala tipo RADPEER)
+    classificacao = Column(String(30), nullable=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     respondido_em = Column(DateTime(timezone=True), nullable=True)
 
@@ -264,4 +293,36 @@ class CurationReview(Base):
             unique=True,
             postgresql_where=text("status IN ('solicitada', 'respondida')"),
         ),
+    )
+
+
+class CurationReviewNote(Base):
+    """
+    ANOTACAO DO REVISOR SOBRE UM ITEM DA FICHA (segunda opiniao).
+
+    Em vez de um "concordo/discordo" so para a ficha inteira, o revisor
+    comenta item por item (tipo de radiografia, dentes, um achado, a
+    descricao didatica...) - como nos sistemas de revisao por pares em
+    radiologia. Quando a segunda opiniao volta, o curador ve cada anotacao
+    no item correspondente e decide: ACRESCENTAR a curadoria (incorporada)
+    ou DISPENSAR. Nada e apagado: a anotacao e a decisao do curador ficam
+    guardadas (rastreabilidade para a pesquisa).
+    """
+    __tablename__ = "curation_review_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    review_id = Column(Integer, ForeignKey("curation_reviews.id"), nullable=False, index=True)
+    # qual item da ficha (ver curation/segunda_opiniao.py, ITENS_REVISAVEIS)
+    item = Column(String(40), nullable=False)
+    avaliacao = Column(String(15), nullable=False)          # AvaliacaoItem
+    nota = Column(Text, nullable=True)                      # comentario do revisor
+    valor_sugerido = Column(JSONB, nullable=True)           # ex.: "panoramica", [11, 12]
+    situacao = Column(String(15), nullable=False, default="pendente")  # SituacaoAnotacao
+    resolvido_por = Column(Integer, ForeignKey("users.id"), nullable=True)
+    resolvido_em = Column(DateTime(timezone=True), nullable=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        # uma anotacao por item em cada segunda opiniao
+        Index("uq_curation_review_notes_item", "review_id", "item", unique=True),
     )

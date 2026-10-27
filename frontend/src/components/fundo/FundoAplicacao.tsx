@@ -32,7 +32,9 @@ const VIVO = ['/conheca', '/banco-imagens', '/acesso-negado', '/esqueci-senha', 
 // Telas publicas desenhadas so para fundo escuro (texto branco sobre vidro)
 const SEMPRE_ESCURO = ['/esqueci-senha', '/redefinir-senha', '/solicitar-acesso', '/confirmar-email']
 // Telas que mostram a leitura do hemisferio no canto
-const COM_HEMISFERIO = ['/banco-imagens', '/dashboard']
+// (27/10/2026) so a tela de login mostra o hemisferio - e ela tem a propria
+// leitura (login/page.tsx); nas demais telas a caixa nao aparece mais
+const COM_HEMISFERIO: string[] = []
 
 const casa = (rota: string, lista: string[]) =>
   lista.some((r) => (r === '/' ? rota === '/' : rota === r || rota.startsWith(`${r}/`)))

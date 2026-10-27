@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import MiniaturaImagem from './MiniaturaImagem'
@@ -11,6 +12,7 @@ import FundoMapaMundi from './fundo/FundoMapaMundi'
 import ThemeToggle from './ThemeToggle'
 import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
+import MenuPrancha from './impressao/MenuPrancha'
 import MenuImpressao from './impressao/MenuImpressao'
 import type { Marcacao } from '../lib/marcacoes'
 import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
@@ -232,7 +234,13 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     for (const item of emGrade ? itensPagina : [itens[indice]]) {
       const uid = estudoDe(item?.viewer_url ?? null)
       if (!uid) continue
-      estudos[uid] = (item.marcacoes ?? []).map((m, i) => ({
+      // o OHIF aberto pode ainda ter o arquivo de ANTES do giro gravado
+      // (girado so na tela): as marcacoes vao na posicao desse arquivo
+      const desfazer = (360 - (giroSalvoNaTela[item.curation_id] ?? 0)) % 360
+      const naImagemCarregada = desfazer
+        ? girarMarcacoes(item.marcacoes ?? [], desfazer as 90 | 180 | 270)
+        : (item.marcacoes ?? [])
+      estudos[uid] = naImagemCarregada.map((m, i) => ({
         ...m,
         texto: `${tDescricao('marcacaoN', { numero: i + 1 })}: ${textoMarcacao(m)}`,
       }))
@@ -251,39 +259,96 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   // imagem (sem perda; passa a abrir assim para todos); os demais giram so
   // na tela (o mesmo giro do OHIF, ou da propria imagem fora dele).
   const [rotacaoTela, setRotacaoTela] = useState<Record<number, number>>({})
-  async function girarImagem(item: ItemSequencia | undefined) {
+  // GIRO SEM APAGAR A TELA (pedido de 20/10/2026): antes, depois de gravar o
+  // giro, o OHIF inteiro era recarregado (tela preta e espera de varios
+  // segundos). Agora a imagem gira NA HORA, na propria tela (o mesmo giro do
+  // OHIF), e a gravacao no arquivo acontece por tras, sem recarregar nada.
+  // Varios cliques seguidos viram UMA gravacao so (ex.: 2 cliques = 180°).
+  // giroSalvoNaTela: quanto do giro ja gravado esta sendo mostrado pelo OHIF
+  // aberto (que ainda tem o arquivo antigo carregado). As marcacoes enviadas a
+  // ele "desgiram" esse tanto, para continuarem no lugar certo da imagem.
+  const [giroSalvoNaTela, setGiroSalvoNaTela] = useState<Record<number, number>>({})
+  const giroPendente = useRef<Record<number, number>>({})
+  const gravandoGiro = useRef<Record<number, boolean>>({})
+  const relogioGiro = useRef<Record<number, ReturnType<typeof setTimeout>>>({})
+  const ohifAbertoRef = useRef(false)
+
+  function comandoOhif(item: ItemSequencia, comando: 'rotateViewportCW' | 'rotateViewportCCW'): boolean {
+    const uid = estudoDe(item.viewer_url ?? null)
+    const janela = ohifRef.current?.contentWindow
+    if (!uid || !janela || !origemOhif || !ohifAbertoRef.current) return false
+    janela.postMessage({ tipo: 'radix-comando', comando, uid }, origemOhif)
+    return true
+  }
+
+  function girarImagem(item: ItemSequencia | undefined) {
     if (!item) return
-    if (!podeSalvarGiro) {
-      const uid = estudoDe(item.viewer_url ?? null)
-      const janela = ohifRef.current?.contentWindow
-      if (uid && janela && origemOhif && (emGrade ? !!urlGrade : !!urlComSerie)) {
-        janela.postMessage({ tipo: 'radix-comando', comando: 'rotateViewportCW', uid }, origemOhif)
-      } else {
-        setRotacaoTela((atual) => ({ ...atual, [item.curation_id]: ((atual[item.curation_id] ?? 0) + 90) % 360 }))
-      }
+    const id = item.curation_id
+    // 1) gira na tela, na hora
+    const noOhif = comandoOhif(item, 'rotateViewportCW')
+    if (!noOhif) setRotacaoTela((atual) => ({ ...atual, [id]: ((atual[id] ?? 0) + 90) % 360 }))
+    if (!podeSalvarGiro) return
+    // 2) curadoria: grava no arquivo, por tras (junta cliques seguidos)
+    setErroGiro('')
+    giroPendente.current[id] = ((giroPendente.current[id] ?? 0) + 90) % 360
+    setSalvandoGiro(true)
+    clearTimeout(relogioGiro.current[id])
+    relogioGiro.current[id] = setTimeout(() => gravarGiro(item, noOhif), 700)
+  }
+
+  function algumGiroEmAndamento() {
+    return (
+      Object.values(giroPendente.current).some((g) => g) ||
+      Object.values(gravandoGiro.current).some(Boolean)
+    )
+  }
+
+  async function gravarGiro(item: ItemSequencia, noOhif: boolean) {
+    const id = item.curation_id
+    if (gravandoGiro.current[id]) return // termina a atual e depois grava o resto
+    const graus = giroPendente.current[id] ?? 0
+    giroPendente.current[id] = 0
+    if (!graus) {
+      setSalvandoGiro(algumGiroEmAndamento())
       return
     }
-    if (salvandoGiro) return
-    setSalvandoGiro(true)
-    setErroGiro('')
+    gravandoGiro.current[id] = true
+    let ok = false
     try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/ficha/${item.curation_id}/girar`, {
+      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/ficha/${id}/girar`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ graus: 90 }),
+        body: JSON.stringify({ graus }),
       })
-      if (!resposta.ok) {
-        setErroGiro(await extrairErro(resposta, t('girar.erro')))
-        return
-      }
-      setMarcacoesGiradas((atual) => ({ ...atual, [item.curation_id]: girarMarcacoes(item.marcacoes ?? [], 90) }))
-      setVersaoArquivo((atual) => ({ ...atual, [item.curation_id]: (atual[item.curation_id] ?? 0) + 1 }))
+      if (resposta.ok) ok = true
+      else setErroGiro(await extrairErro(resposta, t('girar.erro')))
     } catch {
       setErroGiro(t('girar.erro'))
     } finally {
-      setSalvandoGiro(false)
+      gravandoGiro.current[id] = false
     }
+    const original = itensRecebidos.find((i) => i.curation_id === id)?.marcacoes ?? []
+    if (ok) {
+      // o arquivo (e as marcacoes no banco) agora estao girados
+      setMarcacoesGiradas((atual) => ({ ...atual, [id]: girarMarcacoes(atual[id] ?? original, graus as 90 | 180 | 270) }))
+      if (noOhif) {
+        setGiroSalvoNaTela((atual) => ({ ...atual, [id]: ((atual[id] ?? 0) + graus) % 360 }))
+      } else {
+        // sem OHIF: troca a imagem pela versao gravada e tira o giro de tela
+        setRotacaoTela((atual) => ({ ...atual, [id]: (((atual[id] ?? 0) - graus) % 360 + 360) % 360 }))
+        setVersaoArquivo((atual) => ({ ...atual, [id]: (atual[id] ?? 0) + 1 }))
+      }
+    } else {
+      // nao gravou: desfaz o giro mostrado na tela
+      if (noOhif) {
+        for (let k = 0; k < graus / 90; k++) comandoOhif(item, 'rotateViewportCCW')
+      } else {
+        setRotacaoTela((atual) => ({ ...atual, [id]: (((atual[id] ?? 0) - graus) % 360 + 360) % 360 }))
+      }
+    }
+    if (giroPendente.current[id]) gravarGiro(item, noOhif)
+    else setSalvandoGiro(algumGiroEmAndamento())
   }
   const girarImagemRef = useRef<() => void>(() => {})
   girarImagemRef.current = () => girarImagem(itens[indice])
@@ -339,6 +404,14 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   const urlComSerie = urlBase
     ? `${urlBase}${urlBase.includes('?') ? '&' : '?'}radixRecolherEstudos=1&radixTeclaR=1`
     : urlBase
+  // o giro na tela usa o OHIF quando ele esta aberto; senao, gira a imagem
+  ohifAbertoRef.current = emGrade ? !!urlGrade : !!urlComSerie
+  // cada vez que o OHIF recarrega (outra pagina/imagem/layout), ele ja abre
+  // o arquivo gravado (girado): nada mais a desfazer nas marcacoes
+  const chaveOhif = emGrade && urlGrade ? urlGrade : `${atual.curation_id}|${urlComSerie ?? ''}`
+  useEffect(() => {
+    setGiroSalvoNaTela({})
+  }, [chaveOhif])
   const marcacoes = atual.marcacoes ?? []
   const marcacaoDisponivel = marcacoes.length > 0
   const temMarcacao = (item: ItemSequencia) => (item.marcacoes ?? []).length > 0
@@ -360,7 +433,6 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     const novo = ligar ?? !todasMarcacoesLigadas
     setMarcacoesLigadas(novo ? itensComMarcacao.map((item) => item.curation_id) : [])
   }
-  const selecaoTemMarcacao = itens.some((item) => (item.marcacoes ?? []).length > 0)
 
   // Descricao ligada a imagem: mouse sobre "Marcação N" destaca a marcacao
   // dentro do OHIF; clique isola (so ela aparece) - e liga as marcacoes
@@ -398,30 +470,31 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   // alinhado com eles - mesma linha de cima e de baixo, mesmo tamanho do
   // quadro da imagem do lado oposto (pedido de 20/10/2026).
   const [quadrosOhif, setQuadrosOhif] = useState<{ x: number; y: number; w: number; h: number }[]>([])
-  function quadroAlinhadoAoOhif(item: ItemSequencia, area: DOMRect) {
+  type Retangulo = { left: number; top: number; width: number; height: number }
+  // Retangulo (na tela) do quadro de imagem numero k da pagina: com o OHIF,
+  // pela posicao que ele informa; sem o OHIF, pela propria celula da grade.
+  function retanguloDaCelula(k: number): Retangulo | null {
     const janela = ohifRef.current?.getBoundingClientRect()
-    if (!janela || quadrosOhif.length === 0 || !(ohifUnico || (emGrade && urlGrade))) return null
-    const quadros = quadrosOhif
-      .map((q) => ({ left: janela.left + q.x, top: janela.top + q.y, right: janela.left + q.x + q.w, bottom: janela.top + q.y + q.h }))
-      .sort((a, b) => a.top - b.top || a.left - b.left)
-    const topo = Math.min(...quadros.map((q) => q.top))
-    const base = Math.max(...quadros.map((q) => q.bottom))
-    const VAO = 8
-    if (ladoQuadro(item) === 'encolher') {
-      // uma imagem (ou uma coluna): o quadro ocupa o espaco a direita dela,
-      // com a mesma margem que ela tem a esquerda
-      const direita = Math.max(...quadros.map((q) => q.right))
-      const margem = Math.max(0, Math.min(...quadros.map((q) => q.left)) - area.left)
-      return { left: direita + VAO, top: topo, width: Math.max(200, area.right - margem - direita - VAO), height: base - topo }
+    if (janela && quadrosOhif.length > 0 && (ohifUnico || (emGrade && urlGrade))) {
+      const quadros = [...quadrosOhif].sort((a, b) => a.y - b.y || a.x - b.x)
+      const q = quadros[emGrade ? k : 0]
+      if (q) return { left: janela.left + q.x, top: janela.top + q.y, width: q.w, height: q.h }
     }
-    // varias lado a lado: cobre exatamente os quadros da metade oposta
-    const colunas = grade.colunas
-    const ladoDireito = ladoQuadro(item) === 'direita'
-    const opostos = quadros.filter((_, i) => (ladoDireito ? i % colunas >= colunas / 2 : i % colunas < colunas / 2))
-    if (opostos.length === 0) return null
-    const esq = Math.min(...opostos.map((q) => q.left))
-    const dir = Math.max(...opostos.map((q) => q.right))
-    return { left: esq, top: topo, width: dir - esq, height: base - topo }
+    if (emGrade) {
+      const el = areaRef.current?.querySelector(`[data-celula="${k}"]`)
+      const r = el?.getBoundingClientRect()
+      if (r) return { left: r.left, top: r.top, width: r.width, height: r.height }
+    }
+    return null
+  }
+  const posicaoNaPagina = (item: ItemSequencia) => (emGrade ? itensPagina.indexOf(item) : 0)
+  // Celula VIZINHA na mesma linha onde o quadro ampliado se encaixa (pedido
+  // de 20/10/2026): a da direita; na ultima coluna, a da esquerda.
+  // 1x3: esquerda -> meio, meio -> direita, direita -> meio.
+  // 2x2: sup. esq. -> sup. dir., inf. dir. -> inf. esq. (sempre na mesma linha).
+  function celulaVizinha(k: number): number {
+    const coluna = k % grade.colunas
+    return coluna + 1 < grade.colunas ? k + 1 : k - 1
   }
   // "Expandir" de Minhas imagens: a descricao ja abre ampliada ao lado
   useEffect(() => {
@@ -432,23 +505,60 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     if (quadroAmpliado !== null && !itemAmpliado) setQuadroAmpliado(null)
   }, [quadroAmpliado, itemAmpliado])
   function areaAmpliadaDe(item: ItemSequencia) {
-    return () => {
+    return (): Retangulo | null => {
       const r = areaRef.current?.getBoundingClientRect()
       if (!r) return null
-      const alinhado = quadroAlinhadoAoOhif(item, r)
-      if (alinhado) return alinhado
+      const VAO = 8
+      if (ladoQuadro(item) !== 'encolher') {
+        // varias imagens lado a lado: encaixa EXATAMENTE na celula vizinha
+        const vizinha = retanguloDaCelula(celulaVizinha(posicaoNaPagina(item)))
+        if (vizinha) return vizinha
+      } else {
+        // uma imagem (ou uma coluna): ocupa o espaco a direita dela, mesma
+        // altura e mesma margem que ela tem a esquerda
+        const propria = retanguloDaCelula(posicaoNaPagina(item))
+        if (propria && (ohifUnico || (emGrade && urlGrade))) {
+          const direita = propria.left + propria.width
+          const margem = Math.max(0, propria.left - r.left)
+          return { left: direita + VAO, top: propria.top, width: Math.max(200, r.right - margem - direita - VAO), height: propria.height }
+        }
+      }
+      // sem as posicoes do OHIF: metade da area, abaixo da barra de ferramentas
       const metade = r.width / 2
       const esquerda = ladoQuadro(item) === 'esquerda'
-      // com o OHIF na tela (uma imagem ou varias lado a lado), o quadro comeca
-      // ABAIXO da barra de ferramentas dele - a barra fica sempre inteira
       const abaixoDaBarra = ohifUnico || (emGrade && !!urlGrade) ? ALTURA_BARRA_OHIF : 0
       return {
-        left: Math.round(esquerda ? r.left + 8 : r.left + metade + 4),
-        top: Math.round(r.top + 8 + abaixoDaBarra),
+        left: Math.round(esquerda ? r.left + VAO : r.left + metade + 4),
+        top: Math.round(r.top + VAO + abaixoDaBarra),
         width: Math.round(metade - 12),
         height: Math.round(r.height - 16 - abaixoDaBarra),
       }
     }
+  }
+  // Quadro de informacoes NORMAL (clique no "i"): enquadrado em cima da
+  // propria imagem, do mesmo tamanho dela.
+  function areaPropriaDe(item: ItemSequencia) {
+    return (): Retangulo | null => {
+      const propria = retanguloDaCelula(posicaoNaPagina(item))
+      if (propria) return propria
+      const r = areaRef.current?.getBoundingClientRect()
+      if (!r) return null
+      const abaixoDaBarra = ohifUnico ? ALTURA_BARRA_OHIF : 0
+      return { left: r.left + 8, top: r.top + 8 + abaixoDaBarra, width: r.width - 16, height: r.height - 16 - abaixoDaBarra }
+    }
+  }
+  // Moldura UNICA em volta da imagem e do seu quadro ampliado: os dois se
+  // leem como uma coisa so.
+  const molduraConjunta = (): Retangulo | null => {
+    if (!itemAmpliado) return null
+    const quadro = areaAmpliadaDe(itemAmpliado)()
+    const imagem = retanguloDaCelula(posicaoNaPagina(itemAmpliado))
+    if (!quadro || !imagem) return null
+    const left = Math.min(quadro.left, imagem.left)
+    const top = Math.min(quadro.top, imagem.top)
+    const right = Math.max(quadro.left + quadro.width, imagem.left + imagem.width)
+    const bottom = Math.max(quadro.top + quadro.height, imagem.top + imagem.height)
+    return { left, top, width: right - left, height: bottom - top }
   }
 
   function propsSelos(item: ItemSequencia) {
@@ -456,6 +566,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       ampliado: quadroAmpliado === item.curation_id,
       onAmpliar: (v: boolean) => setQuadroAmpliado(v ? item.curation_id : null),
       areaAmpliada: areaAmpliadaDe(item),
+      areaPropria: areaPropriaDe(item),
       item,
       ligada: mostraMarcacaoDe(item),
       onAlternar: () => alternarMarcacaoDe(item.curation_id),
@@ -767,27 +878,9 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Liga/desliga as marcacoes do curador desenhadas em TODAS as
-              imagens que tiverem marcacao (atalho: tecla K). */}
-          <button
-            type="button"
-            onClick={() => alternarTodasMarcacoes()}
-            disabled={!selecaoTemMarcacao}
-            aria-pressed={todasMarcacoesLigadas}
-            title={selecaoTemMarcacao ? t('marcacoes.botaoTitulo') : t('marcacoes.semMarcacao')}
-            className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition disabled:cursor-not-allowed disabled:opacity-40 ${
-              todasMarcacoesLigadas
-                ? 'border-amber-300/80 bg-amber-300/15 text-amber-200'
-                : 'border-base-border text-slate-300 hover:border-amber-300/60 hover:text-amber-200'
-            }`}
-          >
-            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <ellipse cx="12" cy="12" rx="9" ry="6.5" />
-              <path d="M4 20l4-4" />
-            </svg>
-            <span>{t('marcacoes.botao')}</span>
-            <kbd className="hidden rounded-sm border border-current/40 px-1 text-[10px] opacity-70 md:inline">K</kbd>
-          </button>
+          {/* O botao "Marcações do curador" do topo saiu (pedido de
+              20/10/2026): cada imagem tem o proprio selo de marcacoes no
+              canto. A tecla K continua ligando/desligando todas. */}
           {itens.length > 1 && <SeletorLayout grade={grade} onEscolher={escolherGrade} onAbrir={() => setQuadroAmpliado(null)} />}
           <ThemeToggle />
           <button
@@ -853,7 +946,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           <div className="relative h-full w-full px-14 sm:px-16">
             <iframe
               ref={ohifRef}
-              key={`${urlGrade}|${itensPagina.map((i) => versaoArquivo[i.curation_id] ?? 0).join(',')}`}
+              key={urlGrade}
               src={urlGrade}
               referrerPolicy="origin"
               title={t('layout.visualizadorGradeTitulo', { total: itensPagina.length })}
@@ -888,11 +981,12 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
               {Array.from({ length: celulas }, (_, k) => {
                 const idx = inicioPagina + k
                 const item = itens[idx]
-                if (!item) return <div key={`vazio-${k}`} className="bg-black" />
+                if (!item) return <div key={`vazio-${k}`} data-celula={k} className="bg-black" />
                 const ativa = idx === indice
                 return (
                   <div
                     key={item.curation_id}
+                    data-celula={k}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => {
@@ -909,6 +1003,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
                     className={`relative flex min-h-0 min-w-0 items-center justify-center bg-black ${ativa ? 'ring-2 ring-inset ring-teal-400/80' : ''}`}
                   >
                     <div
+                      key={versaoArquivo[item.curation_id] ?? 0}
                       className="flex h-full w-full items-center justify-center transition-transform duration-200"
                       style={rotacaoTela[item.curation_id] ? { transform: `rotate(${rotacaoTela[item.curation_id]}deg)` } : undefined}
                     >
@@ -943,7 +1038,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           // marcacao, so as formas aparecem/somem.
           <iframe
             ref={ohifRef}
-            key={`${atual.curation_id}|${versaoArquivo[atual.curation_id] ?? 0}`}
+            key={chaveOhif}
             src={urlComSerie}
             referrerPolicy="origin"
             title={t('visualizadorOhifTitulo', { numero: atual.numero })}
@@ -951,6 +1046,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           />
         ) : (
           <div
+            key={`${atual.curation_id}|${versaoArquivo[atual.curation_id] ?? 0}`}
             className="flex h-full w-full items-center justify-center transition-transform duration-200"
             style={rotacaoTela[atual.curation_id] ? { transform: `rotate(${rotacaoTela[atual.curation_id]}deg)` } : undefined}
           >
@@ -1040,6 +1136,8 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
         )}
       </div>
 
+      {itemAmpliado && <MolduraConjunta key={itemAmpliado.curation_id} obter={molduraConjunta} />}
+
       {/* Barra de acoes compacta (uma linha). O antigo botao "Detalhes" saiu:
           as informacoes da imagem ja aparecem no "i" sobre a propria imagem. */}
       <div className="relative z-40 border-t border-base-border bg-base/80 px-4 py-1.5 backdrop-blur-md sm:px-6">
@@ -1059,6 +1157,14 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
               <MenuImpressao
+                compacto
+                grupos={[
+                  { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
+                  { chave: 'tela', rotulo: t('impressao.daTela'), itens: emGrade ? itensPagina : [atual] },
+                ]}
+              />
+              {/* prancha: imagens a esquerda e informacoes a direita (baixar, imprimir, e-mail) */}
+              <MenuPrancha
                 compacto
                 grupos={[
                   { chave: 'todas', rotulo: t('impressao.todas'), itens: itens },
@@ -1136,6 +1242,7 @@ function SelosImagem({
   ampliado,
   onAmpliar,
   areaAmpliada,
+  areaPropria,
   onGirar,
   girando = false,
   dicaGirar,
@@ -1151,6 +1258,7 @@ function SelosImagem({
   ampliado?: boolean
   onAmpliar?: (valor: boolean) => void
   areaAmpliada?: () => { left: number; top: number; width: number; height: number } | null
+  areaPropria?: () => { left: number; top: number; width: number; height: number } | null
   onGirar?: () => void
   girando?: boolean
   dicaGirar?: string
@@ -1168,12 +1276,15 @@ function SelosImagem({
             e.stopPropagation()
             onGirar()
           }}
-          disabled={girando}
+          aria-busy={girando}
           title={dicaGirar}
           aria-label={dicaGirar}
-          className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-amber-300/60 bg-black/70 px-2 py-0.5 text-[11px] font-bold text-amber-200 backdrop-blur-sm transition hover:border-amber-300 disabled:cursor-wait disabled:opacity-50"
+          className="pointer-events-auto flex items-center gap-0.5 rounded-full border border-amber-300/60 bg-black/70 px-2 py-0.5 text-[11px] font-bold text-amber-200 backdrop-blur-sm transition hover:border-amber-300"
         >
-          R <span aria-hidden="true" className="text-[13px] leading-none">⟳</span>
+          R{' '}
+          <span aria-hidden="true" className={`text-[13px] leading-none ${girando ? 'inline-block animate-spin' : ''}`}>
+            ⟳
+          </span>
         </button>
       )}
       {total > 0 && (
@@ -1233,7 +1344,41 @@ function SelosImagem({
         ampliado={ampliado}
         onAmpliar={onAmpliar}
         areaAmpliada={areaAmpliada}
+        areaPropria={areaPropria}
       />
     </div>
+  )
+}
+
+// Moldura unica (linha) em volta da imagem e do seu quadro de informacoes
+// ampliado - os dois aparecem como uma coisa so. Acompanha mudancas de
+// tamanho da tela e do layout.
+function MolduraConjunta({ obter }: { obter: () => { left: number; top: number; width: number; height: number } | null }) {
+  const [ret, setRet] = useState<{ left: number; top: number; width: number; height: number } | null>(null)
+  const obterRef = useRef(obter)
+  obterRef.current = obter
+  useEffect(() => {
+    function medir() {
+      const r = obterRef.current()
+      setRet((atual) =>
+        r && (!atual || atual.left !== r.left || atual.top !== r.top || atual.width !== r.width || atual.height !== r.height)
+          ? r
+          : r
+            ? atual
+            : null
+      )
+    }
+    medir()
+    const id = setInterval(medir, 150)
+    return () => clearInterval(id)
+  }, [])
+  if (!ret || typeof document === 'undefined') return null
+  return createPortal(
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed z-260 rounded-xl border-2 border-amber-300 shadow-[0_0_0_3px_rgba(252,211,77,0.15)]"
+      style={{ left: ret.left - 4, top: ret.top - 4, width: ret.width + 8, height: ret.height + 8 }}
+    />,
+    document.fullscreenElement || document.body
   )
 }

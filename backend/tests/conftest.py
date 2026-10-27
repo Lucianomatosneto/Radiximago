@@ -23,7 +23,7 @@ from app.main import app
 from app.core.database import SessionLocal
 from app.core.security import gerar_hash_senha
 from app.modules.users import User, UserRole
-from app.modules.curations import Curation, CurationHistory, CurationReview, StatusCuradoria
+from app.modules.curations import Curation, CurationHistory, CurationReview, CurationReviewNote, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference
 from app.modules.saved_images import SavedImage
 from app.modules.compartilhamentos import CompartilhamentoImagem
@@ -116,6 +116,12 @@ def criar_usuario(db):
         db.query(AuditLog).filter(AuditLog.usuario_id == usuario_id).delete()
         db.query(SessaoUsuario).filter(SessaoUsuario.usuario_id == usuario_id).delete()
         db.query(CurationHistory).filter(CurationHistory.usuario_id == usuario_id).delete()
+        dele = db.query(CurationReview.id).filter(
+            (CurationReview.solicitante_id == usuario_id) | (CurationReview.revisor_id == usuario_id)
+        )
+        db.query(CurationReviewNote).filter(
+            (CurationReviewNote.review_id.in_(dele.scalar_subquery())) | (CurationReviewNote.resolvido_por == usuario_id)
+        ).delete(synchronize_session=False)
         db.query(CurationReview).filter(CurationReview.solicitante_id == usuario_id).delete()
         db.query(CurationReview).filter(CurationReview.revisor_id == usuario_id).delete()
         # nao apaga a ficha em si (pode ser uma fixture gerenciada por
@@ -180,6 +186,9 @@ def criar_ficha(db):
         db.query(CompartilhamentoImagem).filter(CompartilhamentoImagem.curation_id == curation_id).delete()
         db.query(AnotacaoImagem).filter(AnotacaoImagem.curation_id == curation_id).delete()
         db.query(SavedImage).filter(SavedImage.curation_id == curation_id).delete()
+        db.query(CurationReviewNote).filter(CurationReviewNote.review_id.in_(
+            db.query(CurationReview.id).filter(CurationReview.curation_id == curation_id).scalar_subquery()
+        )).delete(synchronize_session=False)
         db.query(CurationReview).filter(CurationReview.curation_id == curation_id).delete()
         db.query(CurationHistory).filter(CurationHistory.curation_id == curation_id).delete()
         db.query(Curation).filter(Curation.id == curation_id).delete()
@@ -220,6 +229,9 @@ def criar_referencia(db):
         ]
         for curation_id in curation_ids:
             db.query(SavedImage).filter(SavedImage.curation_id == curation_id).delete()
+            db.query(CurationReviewNote).filter(CurationReviewNote.review_id.in_(
+                db.query(CurationReview.id).filter(CurationReview.curation_id == curation_id).scalar_subquery()
+            )).delete(synchronize_session=False)
             db.query(CurationReview).filter(CurationReview.curation_id == curation_id).delete()
             db.query(CurationHistory).filter(CurationHistory.curation_id == curation_id).delete()
         db.query(Curation).filter(Curation.orthanc_reference_id == ref_id).delete()

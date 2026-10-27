@@ -36,6 +36,8 @@ export interface FormularioFicha {
   sem_alteracoes: boolean
   // erros tecnicos da imagem (lib/errosTecnicos.ts)
   erros_tecnicos: string[]
+  // origem da imagem: 'ufsc' | 'externa' (filtro da Pesquisa avancada)
+  origem: string
 }
 
 export const FORM_VAZIO: FormularioFicha = {
@@ -55,6 +57,7 @@ export const FORM_VAZIO: FormularioFicha = {
   achados: [],
   sem_alteracoes: false,
   erros_tecnicos: [],
+  origem: '',
 }
 
 const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'

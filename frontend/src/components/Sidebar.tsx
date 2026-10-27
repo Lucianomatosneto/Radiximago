@@ -47,7 +47,9 @@ const COR_LIME = 'from-lime-100 to-lime-50 border-lime-300 text-lime-700 dark:fr
 const PALETA_MENU = [COR_BLUE, COR_SKY, COR_CYAN, COR_TEAL, COR_EMERALD, COR_GREEN, COR_LIME]
 
 const ITENS_MENU: ItemMenu[] = [
-  { chave: 'inicio', href: '/dashboard', ativo: true, cor: COR_BLUE },
+  // Inicio (painel de indicadores) so para o administrador: para os demais
+  // perfis o Inicio E o Banco de imagens (item repetido - 27/10/2026)
+  { chave: 'inicio', href: '/dashboard', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_BLUE },
   { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
   { chave: 'usuarios', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
   { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
