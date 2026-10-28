@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi.errors import RateLimitExceeded
 from sqlalchemy import text
+from app.core.config import settings
 from app.core.database import SessionLocal
 from app.core.rate_limit import limite_geral, limiter, resposta_limite_excedido
 from app.modules import orthanc_client
@@ -54,11 +55,20 @@ async def ciclo_de_vida(app: FastAPI):
             tarefa.cancel()
 
 
+# Na internet (ENVIRONMENT=production) a documentacao interativa da API
+# (/docs, /redoc e /openapi.json) fica DESLIGADA: ela lista todos os
+# enderecos do sistema para qualquer visitante (OWASP ASVS 13.4.5). Em
+# desenvolvimento continua em http://localhost:8000/docs.
+_DOCUMENTACAO_LIGADA = settings.ENVIRONMENT != "production"
+
 app = FastAPI(
     lifespan=ciclo_de_vida,
     title="Radix Imago API",
     description="Plataforma para curadoria e pesquisa de imagens radiograficas odontologicas",
-    version="1.0.0"
+    version="1.0.0",
+    docs_url="/docs" if _DOCUMENTACAO_LIGADA else None,
+    redoc_url="/redoc" if _DOCUMENTACAO_LIGADA else None,
+    openapi_url="/openapi.json" if _DOCUMENTACAO_LIGADA else None,
 )
 
 app.add_middleware(

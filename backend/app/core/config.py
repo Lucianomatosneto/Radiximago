@@ -33,6 +33,11 @@ class Settings(BaseSettings):
     ORTHANC_PASSWORD: str
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
     OHIF_BASE_URL: str = "http://localhost:3001"
+    # Dominio do cookie de login na internet (ex.: ".radiximago.com.br"): as
+    # telas (app.), a API (api.) e o visualizador (viewer.) ficam em
+    # subdominios diferentes e todos precisam do mesmo login. Vazio = so o
+    # proprio endereco (desenvolvimento, tudo em localhost).
+    COOKIE_DOMAIN: str = ""
     # servico de transcricao de voz (container radix-whisper, rede interna)
     WHISPER_URL: str = "http://radix-whisper:9000"
     # chave compartilhada com o servico de voz (cabecalho X-Radix-Chave -

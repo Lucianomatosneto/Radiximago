@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.rate_limit import limiter
 import time
 
-from app.core.sessao import COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
+from app.core.sessao import COOKIE_DOMAIN, COOKIE_SECURE, NOME_COOKIE_TOKEN, definir_cookie_token
 from app.core.security import (
     criar_desafio_mfa, criar_token_acesso, decodificar_token, gerar_hash_senha, senha_precisa_atualizar, verificar_senha,
 )
@@ -260,7 +260,7 @@ def logout(
     # fecha a sessao no servidor: uma copia do token deixa de valer na hora
     # (OWASP ASVS 7.4.1) - antes o logout so apagava o cookie
     encerrar_sessao(db, getattr(request.state, "sessao_jti", None), "logout")
-    response.delete_cookie(key=NOME_COOKIE_TOKEN, path="/", samesite="lax", secure=COOKIE_SECURE)
+    response.delete_cookie(key=NOME_COOKIE_TOKEN, path="/", samesite="lax", secure=COOKIE_SECURE, domain=COOKIE_DOMAIN)
     # pede ao navegador que descarte o que guardou em cache desta origem
     # (OWASP ASVS 14.3.1); as preferencias locais (tema) sao mantidas
     response.headers["Clear-Site-Data"] = '"cache"'

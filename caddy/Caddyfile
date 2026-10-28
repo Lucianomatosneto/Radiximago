@@ -1,0 +1,38 @@
+# CADDY - a "porta de entrada" do Radix Imago na internet.
+#
+# Unico servico com portas abertas para o mundo (80 e 443). Ele:
+#   1. pede e renova SOZINHO os certificados HTTPS (cadeado) na Let's
+#      Encrypt, gratis, para cada endereco abaixo;
+#   2. manda cada endereco para o servico certo, pela rede interna do Docker.
+# Nada de senha aqui. O e-mail (CADDY_EMAIL no .env) so recebe avisos da
+# Let's Encrypt sobre certificados.
+
+{
+	email {$CADDY_EMAIL}
+}
+
+# endereco "curto" (sem app.) leva para as telas
+radiximago.com.br, www.radiximago.com.br {
+	redir https://app.radiximago.com.br{uri} permanent
+}
+
+# telas do sistema (Next.js)
+app.radiximago.com.br {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy radix-frontend:3000
+}
+
+# API (FastAPI)
+api.radiximago.com.br {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy radix-api:8000
+}
+
+# visualizador de imagens (OHIF); as imagens passam pela portaria do Orthanc
+viewer.radiximago.com.br {
+	encode zstd gzip
+	header Strict-Transport-Security "max-age=31536000"
+	reverse_proxy radix-ohif:80
+}

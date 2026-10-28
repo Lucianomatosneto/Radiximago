@@ -232,6 +232,9 @@ services:
     volumes:
       - ./backend:/app
       - ./dicom_teste:/app/dicom_teste:ro
+      # tela Integracoes (cartao Armazenamento): le data/tamanho do ultimo
+      # backup - SOMENTE LEITURA, a API nao consegue alterar nem apagar
+      - ./backups:/backups:ro
     networks:
       - radix-network
 

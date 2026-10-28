@@ -31,6 +31,8 @@ from app.core.security import criar_token_acesso, decodificar_token
 
 NOME_COOKIE_TOKEN = "access_token"
 COOKIE_SECURE = settings.ENVIRONMENT == "production"
+# na internet: ".radiximago.com.br" (telas, API e visualizador em subdominios)
+COOKIE_DOMAIN = settings.COOKIE_DOMAIN.strip() or None
 
 
 def definir_cookie_token(response, token: str) -> None:
@@ -42,6 +44,7 @@ def definir_cookie_token(response, token: str) -> None:
         samesite="lax",
         max_age=settings.JWT_EXPIRE_MINUTES * 60,
         path="/",
+        domain=COOKIE_DOMAIN,
     )
 
 

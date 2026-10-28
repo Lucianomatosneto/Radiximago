@@ -1,0 +1,88 @@
+# RADIX IMAGO NA INTERNET (servidor VPS) - complemento do docker-compose.yml.
+#
+# Uso (no servidor, na pasta do projeto):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+# Passo a passo completo: docs/IMPLANTACAO.md
+#
+# O que muda em relacao ao computador de desenvolvimento:
+#  - NENHUMA porta dos servicos fica aberta para a internet; so o Caddy
+#    (80/443, com HTTPS automatico) recebe visitas e repassa pela rede
+#    interna. Orthanc (8042/4242), API (8000), OHIF (3001) e telas (3000)
+#    ficam invisiveis de fora.
+#  - telas compiladas (next build/start) em vez do modo desenvolvimento;
+#  - codigo DENTRO das imagens (sem pastas do computador montadas);
+#  - o servico de voz (Whisper) so liga se pedido: --profile voz.
+# Requer Docker Compose 2.24 ou mais novo (marcas !reset/!override).
+
+services:
+  radix-orthanc:
+    ports: !reset []
+    environment:
+      # enderecos das imagens devolvidos pelo Orthanc com https://
+      # (o navegador recusa http:// dentro de pagina https)
+      - ORTHANC__DICOM_WEB__SSL=true
+
+  radix-orthanc-cors:
+    ports: !reset []
+
+  radix-ohif:
+    ports: !reset []
+
+  radix-api:
+    ports: !reset []
+    volumes: !override
+      - ./backups:/backups:ro
+    environment:
+      # a API so e alcancada pelo Caddy (rede interna): confiar no IP do
+      # visitante que ele informa - limite de tentativas e auditoria por
+      # pessoa, nao pelo IP do Caddy
+      - FORWARDED_ALLOW_IPS=*
+
+  radix-whisper:
+    profiles: ['voz']
+
+  radix-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: https://api.radiximago.com.br
+        NEXT_PUBLIC_OHIF_URL: https://viewer.radiximago.com.br
+    ports: !reset []
+    # as telas NAO precisam de nenhuma senha do .env
+    env_file: !reset []
+    environment: !override
+      - NEXT_PUBLIC_API_URL=https://api.radiximago.com.br
+      - NEXT_PUBLIC_OHIF_URL=https://viewer.radiximago.com.br
+    volumes: !reset []
+
+  # --- Porta de entrada com HTTPS automatico ---
+  radix-caddy:
+    image: caddy:2
+    container_name: radix-caddy
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    environment:
+      - CADDY_EMAIL=${CADDY_EMAIL}
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - radix-frontend
+      - radix-api
+      - radix-ohif
+    networks:
+      - radix-network
+
+volumes:
+  caddy_data:
+  caddy_config:

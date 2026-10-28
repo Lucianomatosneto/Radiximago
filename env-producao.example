@@ -1,0 +1,53 @@
+# =====================================================================
+# .env DO SERVIDOR (internet) - Radix Imago em radiximago.com.br
+# Copie para ".env" NO SERVIDOR e preencha. NUNCA envie o .env ao GitHub.
+# Toda senha/chave daqui deve ser NOVA (nao reaproveite a do computador).
+# Para gerar cada chave, no servidor:
+#     openssl rand -base64 48 | tr -d '/+=' | cut -c1-48
+# =====================================================================
+
+ENVIRONMENT=production
+
+# --- Banco de dados ---
+POSTGRES_USER=radix
+POSTGRES_PASSWORD=
+POSTGRES_DB=radix_imago
+# repita aqui a mesma senha do POSTGRES_PASSWORD
+DATABASE_URL=postgresql://radix:REPITA_A_SENHA@radix-postgres:5432/radix_imago
+
+# --- Login (chave com 48 caracteres ou mais) ---
+JWT_SECRET_KEY=
+JWT_ALGORITHM=HS256
+JWT_EXPIRE_MINUTES=60
+SESSAO_MAXIMA_HORAS=12
+# vale para app., api. e viewer. (o visualizador recebe o login)
+COOKIE_DOMAIN=.radiximago.com.br
+
+# --- Orthanc (servidor de imagens; fica fechado para a internet) ---
+ORTHANC_URL=http://radix-orthanc:8042
+ORTHANC_USERNAME=admin
+ORTHANC_PASSWORD=
+DICOMWEB_URL=http://radix-orthanc:8042/dicom-web
+
+# --- Enderecos publicos ---
+FRONTEND_URL=https://app.radiximago.com.br
+OHIF_BASE_URL=https://viewer.radiximago.com.br
+OHIF_URL=http://radix-ohif
+
+# --- E-mail (Brevo) - os mesmos valores que ja funcionam no computador ---
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USE_TLS=true
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=Radix Imago <nao-responda@radiximago.com.br>
+
+# --- HTTPS automatico: e-mail que recebe avisos da Let's Encrypt ---
+CADDY_EMAIL=
+
+# --- Servico de voz: desligado no servidor, mas a chave e obrigatoria ---
+WHISPER_CHAVE=
+
+# --- IA (opcional) ---
+CLAUDE_API_KEY=
+CLAUDE_MODEL=claude-sonnet-4-6
