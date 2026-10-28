@@ -1,0 +1,64 @@
+# DEMONSTRACAO PELA INTERNET A PARTIR DO SEU COMPUTADOR (Cloudflare Tunnel)
+#
+# O Radix continua rodando no seu PC, mas fica acessivel em
+#   https://app.radiximago.com.br  (telas)
+#   https://api.radiximago.com.br  (API)
+#   https://viewer.radiximago.com.br (visualizador)
+# por um "tunel": o servico radix-cloudflared liga DE DENTRO para a
+# Cloudflare e as visitas voltam por essa ligacao. Nenhuma porta do
+# roteador e aberta. Passo a passo: docs/TUNEL_CLOUDFLARE.md
+#
+# Ligar:     .\scripts\tunel-ligar.ps1
+# Desligar:  .\scripts\tunel-desligar.ps1   (volta ao modo localhost)
+#
+# Requer no .env: CLOUDFLARE_TUNNEL_TOKEN (copiado do painel da Cloudflare;
+# e uma senha - nunca mande para ninguem nem coloque no GitHub).
+
+services:
+  radix-api:
+    environment:
+      # modo internet: cookie so por HTTPS, /docs desligado, sem --reload
+      - ENVIRONMENT=production
+      - FRONTEND_URL=https://app.radiximago.com.br
+      - OHIF_BASE_URL=https://viewer.radiximago.com.br
+      - COOKIE_DOMAIN=.radiximago.com.br
+      # visitas chegam pelo radix-cloudflared: usar o IP real do visitante
+      - FORWARDED_ALLOW_IPS=*
+
+  radix-orthanc:
+    environment:
+      # enderecos das imagens com https:// (pagina e https)
+      - ORTHANC__DICOM_WEB__SSL=true
+
+  # telas compiladas (mais rapidas e sem ferramentas de desenvolvimento)
+  radix-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: https://api.radiximago.com.br
+        NEXT_PUBLIC_OHIF_URL: https://viewer.radiximago.com.br
+    env_file: !reset []
+    environment: !override
+      - NEXT_PUBLIC_API_URL=https://api.radiximago.com.br
+      - NEXT_PUBLIC_OHIF_URL=https://viewer.radiximago.com.br
+    volumes: !reset []
+
+  radix-cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: radix-cloudflared
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:?Coloque CLOUDFLARE_TUNNEL_TOKEN no .env (docs/TUNEL_CLOUDFLARE.md)}
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+    depends_on:
+      - radix-frontend
+      - radix-api
+      - radix-ohif
+    networks:
+      - radix-network

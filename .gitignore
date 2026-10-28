@@ -276,3 +276,6 @@ _to_delete/
 
 # figuras de conferencia do roteiro recortar_molduras.py (imagens)
 backend/recortes_simulacao/
+
+# Copias completas do servidor (scripts/copia-completa.sh) - contem senhas
+copias/

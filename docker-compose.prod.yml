@@ -32,6 +32,9 @@ services:
     ports: !reset []
     volumes: !override
       - ./backups:/backups:ro
+      # fotos de perfil enviadas pelos usuarios: ficam no disco do servidor
+      # (senao seriam perdidas a cada atualizacao do container)
+      - ./backend/uploads:/app/uploads
     environment:
       # a API so e alcancada pelo Caddy (rede interna): confiar no IP do
       # visitante que ele informa - limite de tentativas e auditoria por

@@ -205,6 +205,74 @@ radix exec radix-api alembic upgrade head
 scp -r root@IP_DO_SERVIDOR:~/radiximago/backups C:\Users\lmnvo\Radiximago_backups_servidor
 ```
 
+## Pausar e reativar
+
+### Pausa curta (o servidor continua pago)
+
+```bash
+radix stop     # tira o Radix do ar; banco e imagens ficam guardados
+radix start    # volta exatamente como estava
+```
+
+### Pausa longa (cancelar o servidor para parar de pagar)
+
+**1. Gerar a cópia completa.** No servidor:
+
+```bash
+cd ~/radiximago
+bash scripts/copia-completa.sh
+```
+
+O resultado é **um único arquivo** com o banco, as imagens, as fotos de
+perfil e o `.env`. No fim, o script mostra o comando para baixá-lo.
+
+**2. Baixar a cópia para o seu PC.** No PowerShell do PC:
+
+```powershell
+mkdir C:\Users\lmnvo\Radiximago_copias
+scp root@IP_DO_SERVIDOR:/root/radiximago/copias/radix-copia-completa-DATA.tar.gz C:\Users\lmnvo\Radiximago_copias\
+```
+
+- Troque `DATA` pelo nome exato que o script mostrou.
+- Confira que o arquivo chegou e tem tamanho maior que zero.
+- ⚠️ O arquivo contém as senhas do `.env`. Guarde-o só no seu PC ou num
+  pendrive. Nunca no GitHub nem por e-mail.
+
+**3. Cancelar o VPS no painel da Hostinger.**
+
+- O domínio radiximago.com.br **não** é cancelado: ele é pago à parte, no
+  registro.br.
+- Enquanto isso, se quiser, o Radix pode ser mostrado pelo túnel no seu PC
+  (docs/TUNEL_CLOUDFLARE.md).
+
+### Reativar depois
+
+1. Contrate um VPS novo e faça os **Passos 1 a 5** deste guia. No Passo 2,
+   aponte o domínio para o **IP novo**.
+   - **Pule o Passo 6**: o `.env` vem dentro da cópia.
+   - **Pule o Passo 7**: a restauração liga tudo.
+2. Envie a cópia do PC para o servidor. No PowerShell do PC:
+
+   ```powershell
+   scp C:\Users\lmnvo\Radiximago_copias\radix-copia-completa-DATA.tar.gz root@IP_NOVO:/root/
+   ```
+
+3. Restaure. No servidor:
+
+   ```bash
+   cd ~/radiximago
+   echo "alias radix='cd ~/radiximago && docker compose -f docker-compose.yml -f docker-compose.prod.yml'" >> ~/.bashrc
+   bash scripts/restaurar-copia.sh ~/radix-copia-completa-DATA.tar.gz
+   ```
+
+   Digite `RESTAURAR` quando o script pedir.
+4. Abra <https://app.radiximago.com.br>: os usuários, as imagens e as
+   curadorias estarão como antes.
+
+> Para ganhar segurança, ensaie uma vez: gere a cópia, restaure-a no mesmo
+> servidor e confira que tudo continua lá. Faça isso antes de precisar
+> de verdade.
+
 ## O que fica fora desta primeira versão (de propósito)
 
 - **Voz (Whisper):** desligado para economizar memória. Para ligar depois:
