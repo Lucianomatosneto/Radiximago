@@ -30,7 +30,7 @@
 | Conta do usuário | nome, e-mail, perfil, senha (só o resumo Argon2id), segredo do login em duas etapas (cifrado) | login obrigatório; só administrador gerencia contas |
 | Imagens DICOM | radiografias odontológicas | anonimização automática no envio; acesso pela portaria das imagens (seção 5) |
 | Ficha de curadoria | achados, descrição didática, observações internas | estudante não vê observações internas; só fichas aprovadas aparecem na busca |
-| Anotações pessoais | texto livre do usuário | só o dono vê/edita; compartilhamento explícito |
+| Anotações pessoais | texto livre do usuário | só o dono vê/edita; o compartilhamento leva só a anotação escrita nele |
 | Registros de auditoria | quem, o quê, quando, resultado | só administrador consulta; sem senha, áudio ou texto ditado |
 
 O acervo atual é composto por imagens obtidas na internet, sem identificação. **Antes de receber imagens de pacientes**, devem estar resolvidos: aprovação no Comitê de Ética (CEP), remoção de texto gravado nos pixels e revisão dos campos DICOM mantidos (ver `claude/auditoria/resultados_testes_dicom.md`).
@@ -205,7 +205,7 @@ Fonte única: constantes `PERFIS_ADMIN`, `PERFIS_IMAGENS`, `PERFIS_CURADORIA`, `
 |---|---|
 | Resultados da pesquisa | só fichas **aprovadas** de imagens **ativas** |
 | Imagens no visualizador (portaria das imagens) | admin: tudo; suporte: tudo, só leitura; curador: imagens cadastradas no Radix; demais: só aprovadas ou compartilhadas com a própria pessoa. Listas gerais e API do Orthanc: só admin/suporte |
-| Anotações pessoais | só o autor; quem recebe um compartilhamento vê as do remetente e pode ocultá-las **só para si** |
+| Anotações pessoais | só o autor; quem recebe um compartilhamento vê só a anotação escrita no próprio compartilhamento e pode ocultá-la **só para si** |
 | Imagens salvas | só o dono |
 | Compartilhamentos | só imagens aprovadas; só remetente e destinatário veem |
 | Observações internas da ficha | só perfis de curadoria |

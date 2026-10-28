@@ -152,7 +152,7 @@
     },
     "ctaFinal": {
       "titulo": "Ready to study with quality images?",
-      "texto": "Request your access. An administrator reviews the request and grants the right profile.",
+      "texto": "Create your account and confirm your e-mail. Students, teachers and researchers get in right away; the curator profile is granted by the administrator.",
       "botao": "Request access"
     },
     "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC).",
@@ -553,14 +553,15 @@
     "campoTermos": "Search by terms",
     "placeholderTermos": "Type the first letters: car, bone, pulp, resorp, canal…",
     "resumoTermos": "Terms: {termos}",
-    "errosDigite": "Type the first letters of the error…",
+    "errosDigite": "Type the technical error initials: under, elong, cone…",
     "errosLimpar": "Clear ({total})",
     "errosGrupo": {
       "geral": "Intraoral and general",
       "panoramica": "Panoramic",
       "tomografia": "Tomography (CBCT)"
     },
-    "errosNenhum": "No error with those letters."
+    "errosNenhum": "No error with those letters.",
+    "errosMaisUm": "Add another error…"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -1481,7 +1482,16 @@
       "sem_conexao": "Could not connect to the e-mail server: check SMTP_HOST, SMTP_PORT and the computer's internet.",
       "recusado": "The e-mail server refused the connection (check SMTP_USE_TLS, SMTP_PORT and SMTP_FROM).",
       "consulta": "Could not check the e-mail server right now."
-    }
+    },
+    "emailEtapa": "Stopped at step: {etapa}.",
+    "emailEtapas": {
+      "configuracao": "configuration",
+      "conexao": "connection to the server",
+      "criptografia": "encryption (STARTTLS)",
+      "login": "login (user and app password)",
+      "ok": "ok"
+    },
+    "emailDetalhe": "Server answer: {detalhe}"
   },
   "PainelAdmin": {
     "titulo": "Admin panel",
@@ -1546,7 +1556,7 @@
   },
   "SolicitarAcesso": {
     "titulo": "Request access",
-    "subtitulo": "Fill in your details. You will get a link to confirm your email; then an administrator reviews the request.",
+    "subtitulo": "Fill in your details. You will get a link to confirm your e-mail. Students, teachers and researchers get in as soon as they confirm; curators wait for the administrator.",
     "erroCamposObrigatorios": "Fill in your name, email and password.",
     "erroSenhaCurta": "The password must be at least 8 characters long.",
     "erroSenhaComum": "This password is too common or easy to guess. Please choose another one (tip: a short phrase).",
@@ -1555,7 +1565,7 @@
     "erroTipoAcessoObrigatorio": "Select the type of access you're requesting.",
     "erroEnviarGenerico": "Couldn't send your request. Please try again.",
     "erroEnviarGenericoTentarNovamente": "Couldn't send your request. Please try again later.",
-    "sucessoMensagem": "Almost there! We sent a confirmation link to the email you entered. Open it and confirm (the link is valid for 24 hours) — only then does the request go to the administrator. Didn't get it? Check spam or submit the form again.",
+    "sucessoMensagem": "Almost there! We sent a confirmation link to your e-mail (valid for 24 hours). Open it and confirm. Not there? Check Spam/Junk or send the form again.",
     "voltarLogin": "Back to login",
     "nomeCompleto": "Full name",
     "nomeCompletoPlaceholder": "Your full name",
@@ -1736,7 +1746,7 @@
     "ajudaSenha": "It is the same password you chose when filling in the form. It proves you made the request.",
     "confirmar": "Confirm email",
     "confirmando": "Confirming...",
-    "sucessoMensagem": "Email confirmed! Your request has been sent to the administrator for review. You will get an email once access is granted.",
+    "sucessoMensagem": "E-mail confirmed! Since you asked for the curator profile, your request was sent to the administrator. You will get an e-mail when access is granted.",
     "irParaLogin": "Go to login",
     "solicitarNovamente": "Request access again",
     "voltarLogin": "Back to login",
@@ -1745,7 +1755,8 @@
     "erroLinkExpirado": "This link has expired (it is valid for 24 hours). Request access again to get a new link.",
     "erroLinkBloqueado": "This link was blocked after several wrong passwords. Request access again.",
     "erroLinkInvalido": "This confirmation link is invalid or has already been used.",
-    "erroGenerico": "Could not confirm right now. Please try again shortly."
+    "erroGenerico": "Could not confirm right now. Please try again shortly.",
+    "sucessoLiberado": "E-mail confirmed! Your access is ready: sign in with your e-mail and the password you chose."
   },
   "Impressao": {
     "botao": "Print",
@@ -1794,8 +1805,8 @@
     "titulo": "Share",
     "abrir": "Share this image and your notes with another user",
     "placeholderEmail": "The person's registered e-mail",
-    "placeholderMensagem": "Message (optional)",
-    "explicacao": "The person will see the image and your notes (read-only) in \"Shared with me\". You can undo it at any time.",
+    "placeholderMensagem": "Note for the recipient (optional)",
+    "explicacao": "The person will see the image and only the note written here (read-only), in \"Shared with me\". Your \"My notes\" stay private. You can undo it at any time.",
     "cancelar": "Cancel",
     "enviar": "Share",
     "enviando": "Sharing...",

@@ -136,7 +136,7 @@ export default function IntegracoesPage() {
   })
   const [armazenamento, setArmazenamento] = useState<SituacaoArmazenamento | null>(null)
   const [erroStatus, setErroStatus] = useState(false)
-  const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string } | null>(null)
+  const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string; detalhe?: string } | null>(null)
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -336,7 +336,15 @@ export default function IntegracoesPage() {
               nome={t('servicoEmail')}
               status={email?.status ?? 'aguardando'}
               descricao={!email ? t('verificando') : email.status === 'online' ? t('emailOk', { servidor: email.servidor ?? '' }) : t(`emailErro.${email.erro ?? 'consulta'}`)}
-              detalhes={email && email.status !== 'online' ? [t('emailPorQue')] : []}
+              detalhes={
+                email && email.status !== 'online'
+                  ? [
+                      t('emailPorQue'),
+                      ...(email.etapa && email.etapa !== 'consulta' ? [t('emailEtapa', { etapa: t(`emailEtapas.${email.etapa}`) })] : []),
+                      ...(email.detalhe ? [t('emailDetalhe', { detalhe: email.detalhe })] : []),
+                    ]
+                  : []
+              }
             />
             <CardServico
               nome={t('servicoArmazenamento')}

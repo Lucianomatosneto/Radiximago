@@ -1,15 +1,19 @@
 'use client'
 
-import { useState } from 'react'
+import { useId, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { ERROS_TECNICOS, type GrupoErro } from '../../lib/errosTecnicos'
+import { ERROS_TECNICOS } from '../../lib/errosTecnicos'
 import { normalizarBusca } from '../../lib/catalogoTermos'
 
 /**
- * ERRO TECNICO na Pesquisa avancada (26/10/2026): TODOS os erros que a
- * Curadoria permite marcar, para assinalar (varios ao mesmo tempo - basta a
- * imagem ter qualquer um). Digitar as iniciais filtra a lista ("sub" ->
- * Subexposição; "cab" -> Rotação/Inclinação da cabeça).
+ * ERRO TECNICO na Pesquisa avancada (e nas Macros).
+ * 27/10/2026: em vez da lista sempre aberta, fica SO a caixa de texto; as
+ * opcoes aparecem conforme a pessoa digita as iniciais ("sub" ->
+ * Subexposição; "cab" -> Rotação/Inclinação da cabeça) - todos os erros
+ * que a Curadoria permite marcar. Cada erro escolhido vira uma etiqueta
+ * com ✕; varios ao mesmo tempo valem como "qualquer um deles".
+ * Teclado: ↑/↓ escolhem, Enter marca, Esc fecha, Backspace no campo vazio
+ * tira o ultimo.
  */
 export default function FiltroErrosTecnicos({
   selecionados,
@@ -21,57 +25,123 @@ export default function FiltroErrosTecnicos({
   estilo?: React.CSSProperties
 }) {
   const t = useTranslations('Pesquisa')
-  const [filtro, setFiltro] = useState('')
-  const q = normalizarBusca(filtro)
-  const visiveis = ERROS_TECNICOS.filter((e) => {
-    if (!q) return true
-    const chaves = [e.rotulo, ...e.formas].map(normalizarBusca)
-    return q.split(' ').every((p) => chaves.some((c) => c.split(' ').some((w) => w.startsWith(p)) || c.includes(p)))
-  })
-  const grupos: GrupoErro[] = ['geral', 'panoramica', 'tomografia']
+  const id = useId()
+  const [consulta, setConsulta] = useState('')
+  const [aberto, setAberto] = useState(false)
+  const [cursor, setCursor] = useState(0)
+  const campoRef = useRef<HTMLInputElement>(null)
 
-  function alternar(valor: string) {
-    onChange(selecionados.includes(valor) ? selecionados.filter((v) => v !== valor) : [...selecionados, valor])
+  const sugestoes = useMemo(() => {
+    const q = normalizarBusca(consulta)
+    if (!q) return []
+    return ERROS_TECNICOS.filter((e) => !selecionados.includes(e.valor)).filter((e) => {
+      const chaves = [e.rotulo, ...e.formas].map(normalizarBusca)
+      return q.split(' ').every((p) => chaves.some((c) => c.split(' ').some((w) => w.startsWith(p)) || c.includes(p)))
+    })
+  }, [consulta, selecionados])
+
+  function adicionar(valor: string) {
+    onChange([...selecionados, valor])
+    setConsulta('')
+    setCursor(0)
+    campoRef.current?.focus()
   }
 
+  function aoTeclar(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'ArrowDown' && sugestoes.length) {
+      e.preventDefault()
+      setAberto(true)
+      setCursor((c) => (c + 1) % sugestoes.length)
+    } else if (e.key === 'ArrowUp' && sugestoes.length) {
+      e.preventDefault()
+      setCursor((c) => (c - 1 + sugestoes.length) % sugestoes.length)
+    } else if (e.key === 'Enter' && aberto && sugestoes[cursor]) {
+      e.preventDefault()
+      e.stopPropagation()
+      adicionar(sugestoes[cursor].valor)
+    } else if (e.key === 'Escape') {
+      setAberto(false)
+    } else if (e.key === 'Backspace' && !consulta && selecionados.length) {
+      onChange(selecionados.slice(0, -1))
+    }
+  }
+
+  const rotulo = (valor: string) => ERROS_TECNICOS.find((e) => e.valor === valor)?.rotulo ?? valor
+
   return (
-    <div className="rounded-lg border p-2" style={estilo}>
-      <div className="mb-1.5 flex items-center gap-2">
+    <div className="relative">
+      <div
+        className="flex min-h-[42px] flex-wrap items-center gap-1.5 rounded-lg border border-base-border bg-base-surface2 px-2 py-1.5 focus-within:border-brand"
+        style={estilo}
+        onClick={() => campoRef.current?.focus()}
+      >
+        {selecionados.map((v) => (
+          <span
+            key={v}
+            className="flex items-center gap-1 rounded-full border border-orange-400/60 bg-orange-500/15 px-2 py-0.5 text-xs font-semibold text-orange-800 dark:text-orange-100"
+          >
+            {rotulo(v)}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onChange(selecionados.filter((x) => x !== v))
+              }}
+              aria-label={`✕ ${rotulo(v)}`}
+              className="ml-0.5 rounded-full px-1 hover:bg-black/10"
+            >
+              ✕
+            </button>
+          </span>
+        ))}
         <input
+          ref={campoRef}
           type="search"
-          value={filtro}
-          onChange={(e) => setFiltro(e.target.value)}
-          placeholder={t('errosDigite')}
-          aria-label={t('errosDigite')}
+          role="combobox"
+          aria-expanded={aberto && sugestoes.length > 0}
+          aria-controls={`${id}-lista`}
+          aria-autocomplete="list"
+          autoComplete="off"
+          value={consulta}
           maxLength={60}
-          className="min-w-0 flex-1 rounded-md border border-base-border bg-base-surface2 px-2 py-1 text-xs text-ink outline-hidden focus:border-brand"
+          onChange={(e) => {
+            setConsulta(e.target.value)
+            setAberto(true)
+            setCursor(0)
+          }}
+          onFocus={() => setAberto(true)}
+          onBlur={() => window.setTimeout(() => setAberto(false), 150)}
+          onKeyDown={aoTeclar}
+          placeholder={selecionados.length ? t('errosMaisUm') : t('errosDigite')}
+          aria-label={t('errosDigite')}
+          className="min-w-[160px] flex-1 bg-transparent px-1 py-0.5 text-sm text-ink outline-hidden placeholder:text-slate-500"
         />
-        {selecionados.length > 0 && (
-          <button type="button" onClick={() => onChange([])} className="text-[11px] text-slate-500 hover:text-red-500">
-            {t('errosLimpar', { total: selecionados.length })}
-          </button>
-        )}
       </div>
-      <div className="max-h-44 space-y-1.5 overflow-y-auto pr-1">
-        {grupos.map((g) => {
-          const itens = visiveis.filter((e) => e.grupo === g)
-          if (!itens.length) return null
-          return (
-            <div key={g}>
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{t(`errosGrupo.${g}`)}</p>
-              <div className="mt-0.5 grid grid-cols-1 gap-x-2 sm:grid-cols-2">
-                {itens.map((e) => (
-                  <label key={e.valor} className="flex cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 text-xs text-ink hover:bg-brand/10">
-                    <input type="checkbox" checked={selecionados.includes(e.valor)} onChange={() => alternar(e.valor)} className="accent-teal-600" />
-                    {e.rotulo}
-                  </label>
-                ))}
-              </div>
-            </div>
-          )
-        })}
-        {!visiveis.length && <p className="text-xs text-slate-500">{t('errosNenhum')}</p>}
-      </div>
+      {aberto && consulta.trim() && (
+        <ul
+          id={`${id}-lista`}
+          role="listbox"
+          className="absolute z-40 mt-1 max-h-72 w-full overflow-y-auto rounded-xl border border-base-border bg-base-surface p-1 shadow-2xl"
+        >
+          {sugestoes.length === 0 && <li className="px-3 py-2 text-xs text-slate-500">{t('errosNenhum')}</li>}
+          {sugestoes.map((e, i) => (
+            <li
+              key={e.valor}
+              role="option"
+              aria-selected={i === cursor}
+              onMouseDown={(ev) => {
+                ev.preventDefault()
+                adicionar(e.valor)
+              }}
+              onMouseEnter={() => setCursor(i)}
+              className={`flex cursor-pointer items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-sm ${i === cursor ? 'bg-brand/15' : ''}`}
+            >
+              <span className="text-ink">{e.rotulo}</span>
+              <span className="text-[10px] uppercase tracking-wide text-slate-500">{t(`errosGrupo.${e.grupo}`)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

@@ -39,12 +39,14 @@ pendente ─┐
 | **Aprovar exige "anonimização validada"** marcada pelo curador (LGPD) | `curation/common.py` (`_executar_aprovacao`) |
 | Descartar exige justificativa | `curation/common.py` |
 | Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
+| Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
 | Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
+| Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto ou valor proposto; **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
 **Outras regras de negócio:**
-- Pedido de acesso: o e-mail precisa ser confirmado antes de o administrador analisar. O link vale 24 h e é invalidado após 5 senhas erradas.
-- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe pode esconder anotações e recados só da própria visão, sem apagar os dados de quem enviou.
+- Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 28/10/2026, **estudante, professor e pesquisador** entram assim que confirmam o e-mail (auditoria `aprovacao_automatica_solicitacao`); só **curador** continua dependendo da aprovação do administrador. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
+- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
 - Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
 
 ## 3. Limites por usuário e globais (ASVS 2.1.3, 2.3.2 e 2.4.1)
@@ -64,6 +66,8 @@ pendente ─┐
 | **E-mail com uma imagem** (para o próprio e-mail) | 20 por hora | conta | `search_router.py` |
 | **E-mail com várias imagens** | 5 por hora; até 10 imagens por e-mail | conta | `search_router.py` |
 | **Download `.zip` de série** (imagens ou DICOM, somados) | 20 por hora; até 1.000 cortes no ZIP de imagens | conta | `search_router.py` |
+| **Prancha** (folha com as imagens à esquerda e as informações à direita; baixar ou imprimir) | 60 por hora; até 30 imagens por prancha; montagem conta como trabalho pesado (no máximo 2 ao mesmo tempo) | conta | `prancha_router.py` |
+| **Prancha por e-mail** (PDF, para o próprio e-mail) | 5 por hora; até 15 imagens por prancha | conta | `prancha_router.py` |
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
 | **Girar imagem** (Curadoria) | 30 por minuto; um giro por vez em cada imagem | conta (curadoria) | `curation/orientacao.py` |
@@ -85,6 +89,7 @@ pendente ─┐
 | Anonimização + OCR do texto na imagem | leitura completa da imagem (cerca de 1 a 10 s por imagem) | 1 imagem por envio; 50 MB por arquivo; 300 envios por hora; chegada pelo aparelho em ciclos de 60 s |
 | Download `.zip` de uma série (vários cortes) | monta o arquivo na memória | só fichas aprovadas; 20 por hora; até 1.000 cortes no ZIP de imagens (acima disso, o DICOM); no máximo **2 ao mesmo tempo** no servidor inteiro, e o terceiro recebe 503 ("tente de novo em instantes") em vez de esperar na fila |
 | E-mail com imagens (individual e lote) | renderiza imagens e envia por SMTP | 20 por hora (uma imagem); 5 por hora com até 10 imagens por e-mail (lote); sempre para o e-mail da própria conta |
+| Prancha (PDF/PNG) | busca as imagens e desenha as folhas | só fichas aprovadas; 60 por hora (baixar/imprimir) com até 30 imagens; 5 por hora por e-mail com até 15 imagens; divide as 2 vagas de trabalho pesado com os ZIPs |
 | Sincronizar com o Orthanc | percorre todo o acervo | só administrador/suporte; 10 por hora |
 | Girar imagem / recortar moldura | lê e regrava o arquivo DICOM inteiro (cerca de 1 s) | giro: só curadoria, 30 por minuto, um por vez em cada imagem (trava do registro); recorte das imagens antigas: só pelo roteiro no servidor |
 | Busca com texto livre | consulta com `ILIKE` | texto até 150 caracteres; 200 por página; limite geral |

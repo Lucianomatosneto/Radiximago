@@ -92,7 +92,7 @@ Perfis (`backend/app/modules/auth.py`):
 | Sincronizar, ativar ou desativar imagens | — | — | só suporte | sim |
 | Própria conta: nome, instituição, foto, senha | editar | editar | editar | editar |
 | Outros usuários: nome, e-mail, perfil, situação | — | — | — | ver e editar |
-| Anotações | só as **suas**; as do remetente, em leitura, quando lhe compartilham uma imagem | idem | idem | idem |
+| Anotações | só as **suas** (desde 27/10/2026 o compartilhamento leva apenas a anotação escrita na caixa do próprio compartilhamento, nunca as anotações pessoais) | idem | idem | idem |
 | Compartilhamento: o remetente vê o **e-mail que ele mesmo digitou**; o destinatário vê só o **nome** do remetente | | | | |
 | Registros de auditoria | — | — | — | ver (nunca editar ou apagar pela aplicação) |
 | Resumo da senha, códigos, `jti` | nunca | nunca | nunca | nunca |

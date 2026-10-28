@@ -43,6 +43,7 @@ function ConfirmarEmailForm() {
   }, [lido, token])
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
+  const [liberado, setLiberado] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -62,6 +63,9 @@ function ConfirmarEmailForm() {
         body: JSON.stringify({ token, senha }),
       })
       if (resposta.ok) {
+        // estudante, professor e pesquisador ja entram; curador espera o administrador
+        const dados = await resposta.json().catch(() => null)
+        setLiberado(dados?.aprovado === true)
         setSituacao('confirmado')
         return
       }
@@ -86,7 +90,7 @@ function ConfirmarEmailForm() {
       {!lido ? null : situacao === 'confirmado' ? (
         <div className="space-y-5">
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300" role="status">
-            {t('sucessoMensagem')}
+            {liberado ? t('sucessoLiberado') : t('sucessoMensagem')}
           </div>
           <Link
             href="/login"

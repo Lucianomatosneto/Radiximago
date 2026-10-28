@@ -22,6 +22,7 @@ from app.modules import mfa
 from app.core.politica_senha import problema_na_senha
 from app.core.limites import EMAIL_MAX, SENHA_MAX, Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
+    enviar_email_acesso_aprovado,
     enviar_email_confirmacao_cadastro,
     enviar_email_redefinicao_senha,
     enviar_email_solicitacao_recebida,
@@ -512,6 +513,11 @@ def solicitar_acesso(
     return mensagem_generica
 
 
+# perfis liberados assim que a pessoa confirma o e-mail (sem o administrador);
+# "curador" continua dependendo da aprovacao do administrador
+PERFIS_APROVACAO_AUTOMATICA = {"estudante", "professor", "pesquisador"}
+
+
 class ConfirmarEmail(BaseModel):
     token: Codigo
     senha: Senha
@@ -576,6 +582,40 @@ def confirmar_email(
     pedido.token_confirmacao_hash = None
     pedido.token_confirmacao_expira_em = None
     pedido.tentativas_confirmacao = 0
+
+    # APROVACAO AUTOMATICA (28/10/2026): estudante, professor e pesquisador
+    # entram assim que confirmam o e-mail; so CURADOR (que aprova imagens)
+    # continua passando pelo administrador. O administrador pode bloquear ou
+    # mudar o perfil depois, e tudo fica na auditoria.
+    perfil = pedido.perfil_solicitado.value if hasattr(pedido.perfil_solicitado, "value") else str(pedido.perfil_solicitado)
+    ja_existe = db.query(User).filter(User.email == pedido.email, User.excluido.is_(False)).first()
+    if perfil in PERFIS_APROVACAO_AUTOMATICA and not ja_existe:
+        novo = User(
+            nome=pedido.nome,
+            email=pedido.email,
+            senha_hash=pedido.senha_hash,
+            perfil=UserRole(perfil),
+            instituicao=pedido.instituicao,
+        )
+        db.add(novo)
+        db.flush()
+        pedido.status = StatusSolicitacaoAcesso.aprovada
+        pedido.revisado_em = datetime.now(timezone.utc)
+        db.add(AuditLog(
+            usuario_id=None, acao="aprovacao_automatica_solicitacao", entidade="user",
+            entidade_id=novo.id, resultado="sucesso",
+            detalhes=f"Solicitação #{pedido.id}: e-mail confirmado; conta criada automaticamente com perfil {perfil}.",
+        ))
+        db.commit()
+        try:
+            enviar_email_acesso_aprovado(novo.email, novo.nome)
+        except Exception as erro:  # a conta ja existe; o aviso por e-mail e so cortesia
+            logger.warning("Aviso de acesso liberado nao enviado (%s).", type(erro).__name__)
+        return {
+            "mensagem": "E-mail confirmado. Seu acesso já está liberado: entre com seu e-mail e senha.",
+            "aprovado": True,
+        }
+
     db.add(AuditLog(
         usuario_id=None, acao="confirmacao_email_solicitacao", entidade="access_request",
         entidade_id=pedido.id, resultado="sucesso",
@@ -583,9 +623,13 @@ def confirmar_email(
     ))
     db.commit()
 
-    enviar_email_solicitacao_recebida(pedido.email, pedido.nome)
+    try:
+        enviar_email_solicitacao_recebida(pedido.email, pedido.nome)
+    except Exception as erro:
+        logger.warning("Aviso de pedido recebido nao enviado (%s).", type(erro).__name__)
     return {
-        "mensagem": "E-mail confirmado. Seu pedido foi enviado para análise do administrador."
+        "mensagem": "E-mail confirmado. Seu pedido foi enviado para análise do administrador.",
+        "aprovado": False,
     }
 
 

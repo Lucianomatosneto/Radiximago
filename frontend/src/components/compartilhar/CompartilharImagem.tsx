@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
-// Compartilhar a imagem (com as MINHAS anotacoes) com outro usuario do
+// Compartilhar a imagem (com a anotacao escrita AQUI - as "Minhas anotacoes"
+// continuam privadas, 27/10/2026) com outro usuario do
 // sistema, digitando o e-mail do cadastro dele. A resposta do servidor e
 // sempre a mesma, exista ou nao um usuario com aquele e-mail (privacidade:
 // o formulario nao serve para descobrir quem tem conta). Lista abaixo com

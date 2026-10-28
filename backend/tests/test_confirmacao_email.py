@@ -15,7 +15,7 @@ from app.modules.access_requests import AccessRequest
 from sqlalchemy import text
 
 from app.modules.audit_logs import AuditLog
-from app.modules.users import UserRole
+from app.modules.users import User, UserRole
 from tests.conftest import cabecalho_auth, obter_token
 
 SENHA = "SenhaValida123"
@@ -31,6 +31,7 @@ def links_enviados(monkeypatch):
 
     monkeypatch.setattr(modulo_auth, "enviar_email_confirmacao_cadastro", _falso)
     monkeypatch.setattr(modulo_auth, "enviar_email_solicitacao_recebida", lambda *a, **k: None)
+    monkeypatch.setattr(modulo_auth, "enviar_email_acesso_aprovado", lambda *a, **k: None)
     return links
 
 
@@ -39,6 +40,11 @@ def email_novo(db):
     email = f"suite-confirma-{uuid.uuid4().hex[:12]}@teste.example"
     yield email
     ids = [p.id for p in db.query(AccessRequest).filter(AccessRequest.email == email).all()]
+    usuarios = [u.id for u in db.query(User).filter(User.email == email).all()]
+    if usuarios:
+        db.execute(text("SET LOCAL session_replication_role = replica"))
+        db.query(AuditLog).filter(AuditLog.entidade == "user", AuditLog.entidade_id.in_(usuarios)).delete(synchronize_session=False)
+        db.query(User).filter(User.id.in_(usuarios)).delete(synchronize_session=False)
     if ids:
         # auditoria protegida (ASVS 16.4.2): so a limpeza do teste desliga os gatilhos
         db.execute(text("SET LOCAL session_replication_role = replica"))
@@ -49,10 +55,11 @@ def email_novo(db):
     db.commit()
 
 
-def _solicitar(client, email, senha=SENHA):
+def _solicitar(client, email, senha=SENHA, perfil="curador"):
+    # padrao "curador": e o unico perfil que ainda passa pelo administrador
     return client.post(
         "/auth/request-access",
-        json={"nome": "Solicitante <b>Suite</b>", "email": email, "senha": senha, "perfil_solicitado": "estudante"},
+        json={"nome": "Solicitante <b>Suite</b>", "email": email, "senha": senha, "perfil_solicitado": perfil},
     )
 
 
@@ -182,3 +189,27 @@ def test_pedido_ja_confirmado_nao_e_substituido(client, db, links_enviados, emai
     db.expire_all()
     pedido = db.query(AccessRequest).filter(AccessRequest.email == email_novo).one()
     assert pedido.email_confirmado_em is not None
+
+
+@pytest.mark.parametrize("perfil", ["estudante", "professor", "pesquisador"])
+def test_estudante_professor_pesquisador_entram_ao_confirmar(client, db, links_enviados, email_novo, perfil):
+    """28/10/2026: so curador depende do administrador; os outros entram ao confirmar o e-mail."""
+    _solicitar(client, email_novo, perfil=perfil)
+    r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
+    assert r.status_code == 200, r.text
+    assert r.json()["aprovado"] is True
+    db.expire_all()
+    usuario = db.query(User).filter(User.email == email_novo).one()
+    assert usuario.perfil.value == perfil
+    assert db.query(AccessRequest).filter(AccessRequest.email == email_novo).one().status.value == "aprovada"
+    assert db.query(AuditLog).filter(AuditLog.acao == "aprovacao_automatica_solicitacao", AuditLog.entidade_id == usuario.id).count() == 1
+    # ja consegue entrar com a senha do cadastro
+    login = client.post("/auth/login", data={"username": email_novo, "password": SENHA})
+    assert login.status_code == 200, login.text
+
+
+def test_curador_continua_esperando_o_administrador(client, db, links_enviados, email_novo):
+    _solicitar(client, email_novo, perfil="curador")
+    r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
+    assert r.status_code == 200 and r.json()["aprovado"] is False
+    assert db.query(User).filter(User.email == email_novo).count() == 0

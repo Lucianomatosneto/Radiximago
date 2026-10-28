@@ -152,7 +152,7 @@
     },
     "ctaFinal": {
       "titulo": "Pronto para estudar com imagens de qualidade?",
-      "texto": "Solicite seu acesso. Um administrador revisa o pedido e libera o perfil adequado.",
+      "texto": "Crie sua conta e confirme o seu e-mail. Estudantes, professores e pesquisadores entram na hora; o perfil de curador é liberado pelo administrador.",
       "botao": "Solicitar acesso"
     },
     "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC).",
@@ -553,14 +553,15 @@
     "campoTermos": "Buscar por termos",
     "placeholderTermos": "Digite as iniciais: cár, perda, nódulo, reabs, canal…",
     "resumoTermos": "Termos: {termos}",
-    "errosDigite": "Digite as iniciais do erro…",
+    "errosDigite": "Digite as iniciais do erro técnico: sub, along, cone…",
     "errosLimpar": "Limpar ({total})",
     "errosGrupo": {
       "geral": "Intraorais e gerais",
       "panoramica": "Panorâmica",
       "tomografia": "Tomografia (TCFC)"
     },
-    "errosNenhum": "Nenhum erro com essas iniciais."
+    "errosNenhum": "Nenhum erro com essas iniciais.",
+    "errosMaisUm": "Adicionar outro erro…"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -1481,7 +1482,16 @@
       "sem_conexao": "Não foi possível conectar ao servidor de e-mail: confira SMTP_HOST e SMTP_PORT e a internet do computador.",
       "recusado": "O servidor de e-mail recusou a conexão (confira SMTP_USE_TLS, SMTP_PORT e SMTP_FROM).",
       "consulta": "Não foi possível consultar o servidor de e-mail agora."
-    }
+    },
+    "emailEtapa": "Parou na etapa: {etapa}.",
+    "emailEtapas": {
+      "configuracao": "configuração",
+      "conexao": "conexão com o servidor",
+      "criptografia": "criptografia (STARTTLS)",
+      "login": "login (usuário e senha de app)",
+      "ok": "ok"
+    },
+    "emailDetalhe": "Resposta do servidor: {detalhe}"
   },
   "PainelAdmin": {
     "titulo": "Painel administrativo",
@@ -1546,7 +1556,7 @@
   },
   "SolicitarAcesso": {
     "titulo": "Solicitar acesso",
-    "subtitulo": "Preencha seus dados. Você vai receber um link para confirmar seu e-mail; depois, um administrador revisa o pedido.",
+    "subtitulo": "Preencha seus dados. Você vai receber um link para confirmar seu e-mail. Estudante, professor e pesquisador entram assim que confirmam; curador aguarda a aprovação do administrador.",
     "erroCamposObrigatorios": "Preencha nome, e-mail e senha.",
     "erroSenhaCurta": "A senha deve ter ao menos 8 caracteres.",
     "erroSenhaComum": "Essa senha é muito comum ou fácil de adivinhar. Escolha outra (dica: uma frase curta).",
@@ -1555,7 +1565,7 @@
     "erroTipoAcessoObrigatorio": "Selecione o tipo de acesso que você está solicitando.",
     "erroEnviarGenerico": "Não foi possível enviar sua solicitação. Tente novamente.",
     "erroEnviarGenericoTentarNovamente": "Não foi possível enviar sua solicitação. Tente novamente mais tarde.",
-    "sucessoMensagem": "Quase lá! Enviamos um link de confirmação para o e-mail informado. Abra o e-mail e confirme (o link vale por 24 horas) — só então o pedido segue para o administrador. Não chegou? Confira o spam ou envie o formulário de novo.",
+    "sucessoMensagem": "Quase lá! Enviamos um link de confirmação para o e-mail informado (vale por 24 horas). Abra o e-mail e confirme. Não chegou? Confira o Spam/Lixo eletrônico ou envie o formulário de novo.",
     "voltarLogin": "Voltar para o login",
     "nomeCompleto": "Nome completo",
     "nomeCompletoPlaceholder": "Seu nome completo",
@@ -1736,7 +1746,7 @@
     "ajudaSenha": "É a mesma senha que você escolheu ao preencher o formulário. Ela comprova que foi você quem fez o pedido.",
     "confirmar": "Confirmar e-mail",
     "confirmando": "Confirmando...",
-    "sucessoMensagem": "E-mail confirmado! Seu pedido foi enviado para análise do administrador. Você receberá um e-mail quando o acesso for liberado.",
+    "sucessoMensagem": "E-mail confirmado! Como você pediu o perfil de curador, o pedido foi enviado para análise do administrador. Você receberá um e-mail quando o acesso for liberado.",
     "irParaLogin": "Ir para o login",
     "solicitarNovamente": "Fazer o pedido novamente",
     "voltarLogin": "Voltar para o login",
@@ -1745,7 +1755,8 @@
     "erroLinkExpirado": "Este link expirou (ele vale por 24 horas). Faça o pedido novamente para receber um link novo.",
     "erroLinkBloqueado": "Este link foi bloqueado depois de várias senhas incorretas. Faça o pedido novamente.",
     "erroLinkInvalido": "Este link de confirmação é inválido ou já foi usado.",
-    "erroGenerico": "Não foi possível confirmar agora. Tente novamente em instantes."
+    "erroGenerico": "Não foi possível confirmar agora. Tente novamente em instantes.",
+    "sucessoLiberado": "E-mail confirmado! Seu acesso já está liberado: entre com o seu e-mail e a senha que você cadastrou."
   },
   "Impressao": {
     "botao": "Imprimir",
@@ -1794,8 +1805,8 @@
     "titulo": "Compartilhar",
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
     "placeholderEmail": "E-mail do cadastro da pessoa",
-    "placeholderMensagem": "Recado (opcional)",
-    "explicacao": "A pessoa verá a imagem e as suas anotações (só para leitura) em \"Compartilhadas comigo\". Você pode desfazer quando quiser.",
+    "placeholderMensagem": "Anotação para quem vai receber (opcional)",
+    "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
     "cancelar": "Cancelar",
     "enviar": "Compartilhar",
     "enviando": "Compartilhando...",
