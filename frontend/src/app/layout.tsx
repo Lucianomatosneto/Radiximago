@@ -53,7 +53,7 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider>
           {/* mapa-mundi de fundo (padrao visual de todas as telas - ver FundoAplicacao) */}
-          <FundoAplicacao />
+          <FundoAplicacao intensity="subtle" />
           {children}
         </NextIntlClientProvider>
       </body>

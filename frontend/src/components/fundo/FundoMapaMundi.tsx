@@ -15,6 +15,15 @@ import type { ControleMapaMundi, IntensidadeFundo } from './motorMapaMundi'
 // uma versao gelo-turquesa no tema claro. Fica aqui, junto do componente,
 // para nao depender do globals.css.
 const ESTILO = `
+/* DISCRETO (telas internas, 01/11/2026): o mesmo mapa com ~40% de
+   opacidade e um veu escuro suave atras da area de conteudo (direita do
+   menu), para o texto ler melhor. No tema claro o veu e claro. */
+.fundo-mapa-mundi[data-intensidade="discreto"] canvas{opacity:.4}
+.fundo-mapa-veu{display:none}
+.fundo-mapa-mundi[data-intensidade="discreto"] .fundo-mapa-veu{display:block;background:
+  radial-gradient(ellipse 75% 70% at 58% 48%, rgba(6,10,12,.55), rgba(6,10,12,.28) 65%, transparent 100%);}
+.light .fundo-mapa-mundi:not([data-forcar-escuro])[data-intensidade="discreto"] .fundo-mapa-veu{background:
+  radial-gradient(ellipse 75% 70% at 58% 48%, rgba(255,255,255,.6), rgba(255,255,255,.3) 65%, transparent 100%);}
 .fundo-mapa-mundi{background:
   radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.16), transparent 70%),
   linear-gradient(180deg,#000 0%,#02080A 40%,#03201F 78%,#063936 100%);}
@@ -24,15 +33,15 @@ const ESTILO = `
 /* leitura (escuro): grafite bem escuro e pouco saturado (nem preto
    absoluto, nem o cinza-azulado medio de antes, que deixava a tela clara
    demais e cansava a vista); o brilho turquesa no rodape ficou discreto */
-.fundo-mapa-mundi[data-intensidade="leitura"]{background:
+.fundo-mapa-mundi[data-intensidade="leitura"],.fundo-mapa-mundi[data-intensidade="discreto"]{background:
   radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.06), transparent 70%),
   linear-gradient(180deg,#0B1013 0%,#0C1215 45%,#0D1618 80%,#0F1C1C 100%);}
-.fundo-mapa-mundi[data-intensidade="leitura"] .fundo-mapa-vinheta{background:
+.fundo-mapa-mundi[data-intensidade="leitura"] .fundo-mapa-vinheta,.fundo-mapa-mundi[data-intensidade="discreto"] .fundo-mapa-vinheta{background:
   radial-gradient(120% 95% at 55% 45%, transparent 60%, rgba(0,0,0,.18) 100%);}
 .light .fundo-mapa-mundi:not([data-forcar-escuro]){background:
   radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.22), transparent 70%),
   linear-gradient(180deg,#FAFCFD 0%,#F2F8F9 55%,#DDF4F0 100%);}
-.light .fundo-mapa-mundi:not([data-forcar-escuro])[data-intensidade="leitura"]{background:
+.light .fundo-mapa-mundi:not([data-forcar-escuro])[data-intensidade="leitura"],.light .fundo-mapa-mundi:not([data-forcar-escuro])[data-intensidade="discreto"]{background:
   radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.12), transparent 70%),
   linear-gradient(180deg,#FBFCFD 0%,#F6F9FA 60%,#EAF6F4 100%);}
 .light .fundo-mapa-mundi:not([data-forcar-escuro]) .fundo-mapa-vinheta{background:
@@ -82,9 +91,11 @@ export default function FundoMapaMundi({ intensidade, forcarEscuro = false, aoMu
       data-forcar-escuro={forcarEscuro ? '' : undefined}
       className="fundo-mapa-mundi pointer-events-none fixed inset-0 -z-10"
     >
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
+      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
       {/* vinheta: escurece as bordas para o conteudo continuar legivel */}
       <div className="fundo-mapa-vinheta absolute inset-0" />
+      {/* veu do modo discreto: melhora a leitura sobre o mapa */}
+      <div className="fundo-mapa-veu absolute inset-0" />
       <style dangerouslySetInnerHTML={{ __html: ESTILO }} />
     </div>
   )

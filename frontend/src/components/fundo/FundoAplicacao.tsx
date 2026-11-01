@@ -28,7 +28,9 @@ import { regiaoDe } from '../../lib/regiaoGeografica'
 type Modo = IntensidadeFundo | 'nenhum'
 
 const SEM_FUNDO = ['/login']
-const VIVO = ['/conheca', '/banco-imagens', '/acesso-negado', '/esqueci-senha', '/redefinir-senha', '/solicitar-acesso', '/confirmar-email']
+// mapa CHEIO so nas telas de entrada (01/11/2026: Banco de imagens passou
+// para o modo discreto - e tela de trabalho com radiografias)
+const VIVO = ['/conheca', '/acesso-negado', '/esqueci-senha', '/redefinir-senha', '/solicitar-acesso', '/confirmar-email']
 // Telas publicas desenhadas so para fundo escuro (texto branco sobre vidro)
 const SEMPRE_ESCURO = ['/esqueci-senha', '/redefinir-senha', '/solicitar-acesso', '/confirmar-email']
 // Telas que mostram a leitura do hemisferio no canto
@@ -39,16 +41,27 @@ const COM_HEMISFERIO: string[] = []
 const casa = (rota: string, lista: string[]) =>
   lista.some((r) => (r === '/' ? rota === '/' : rota === r || rota.startsWith(`${r}/`)))
 
-function modoDaRota(rota: string): Modo {
+/**
+ * Intensidade do mapa nas TELAS INTERNAS (prop `intensity` - 01/11/2026):
+ * - "subtle" (padrao): mapa a ~40%, 5x mais lento e com veu escuro atras do
+ *   conteudo;
+ * - "full": como era antes desta mudanca (modo "leitura").
+ * As telas de entrada (lista VIVO) continuam com o mapa cheio, e o login
+ * tem a cena propria. Para voltar ao visual anterior: <FundoAplicacao
+ * intensity="full" /> em app/layout.tsx.
+ */
+export type IntensidadeInternas = 'full' | 'subtle'
+
+function modoDaRota(rota: string, internas: IntensidadeInternas): Modo {
   if (casa(rota, SEM_FUNDO)) return 'nenhum'
   if (casa(rota, VIVO)) return 'vivo'
-  return 'leitura'
+  return internas === 'full' ? 'leitura' : 'discreto'
 }
 
-export default function FundoAplicacao() {
+export default function FundoAplicacao({ intensity = 'subtle' }: { intensity?: IntensidadeInternas } = {}) {
   const rota = usePathname() || '/'
   const t = useTranslations('Login')
-  const modo = modoDaRota(rota)
+  const modo = modoDaRota(rota, intensity)
   const escuroForcado = casa(rota, SEMPRE_ESCURO)
   const [longitude, setLongitude] = useState<number | null>(null)
 
@@ -154,9 +167,9 @@ html[data-fundo] header.bg-base{
        sobre o mapa (subtitulos, mensagens de "nenhum item") "apaga" os
        pontos logo atras de cada letra. Dentro dos paineis o halo tem a
        mesma cor do painel, entao nao aparece. */
-html[data-fundo="leitura"] main{--halo:rgb(var(--rgb-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 5px var(--halo),0 0 8px var(--halo),0 0 12px var(--halo)}
-html[data-fundo="leitura"] main .titulo-pagina,html[data-fundo="leitura"] main .titulo-pagina *{text-shadow:none}
-html[data-fundo="leitura"] main :is(button,a,input,select,textarea)[class*="bg-"]{text-shadow:none}
+html:is([data-fundo="leitura"],[data-fundo="discreto"]) main{--halo:rgb(var(--rgb-base));text-shadow:0 0 1px var(--halo),0 0 3px var(--halo),0 0 5px var(--halo),0 0 8px var(--halo),0 0 12px var(--halo)}
+html:is([data-fundo="leitura"],[data-fundo="discreto"]) main .titulo-pagina,html:is([data-fundo="leitura"],[data-fundo="discreto"]) main .titulo-pagina *{text-shadow:none}
+html:is([data-fundo="leitura"],[data-fundo="discreto"]) main :is(button,a,input,select,textarea)[class*="bg-"]{text-shadow:none}
 
 /* 3. Paineis de conteudo (cartoes, tabelas, formularios): vidro QUASE
       opaco - o mapa so "respira" pelas bordas e nunca fica atras do texto
@@ -165,7 +178,7 @@ html[data-fundo] .bg-base-surface{
   background-color:rgb(var(--rgb-base-surface) / .84);
   backdrop-filter:blur(10px) saturate(130%);-webkit-backdrop-filter:blur(10px) saturate(130%);
 }
-html[data-fundo="leitura"] .bg-base-surface{background-color:rgb(var(--rgb-base-surface) / .92)}
+html:is([data-fundo="leitura"],[data-fundo="discreto"]) .bg-base-surface{background-color:rgb(var(--rgb-base-surface) / .92)}
 /* cartoes e botoes com gradiente translucido (ex.: "dark:from-teal-600/30")
    ganham um fundo solido por baixo do gradiente - sem isso os pontos do
    mapa apareceriam atras do texto */

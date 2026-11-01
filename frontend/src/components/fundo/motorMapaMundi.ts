@@ -26,7 +26,10 @@
  *   mais apagados, sem varredura, sem estrela cadente e sem lanterna do
  *   mouse, para o fundo nunca competir com a leitura.
  */
-export type IntensidadeFundo = 'vivo' | 'leitura'
+export type IntensidadeFundo = 'vivo' | 'leitura' | 'discreto'
+// 'discreto' (01/11/2026): telas internas - o mesmo desenho do 'leitura',
+// ainda mais lento; a opacidade (~40%) e o veu escuro atras do conteudo
+// ficam no CSS de FundoMapaMundi.tsx
 
 export interface ModoMapaMundi {
   intensidade: IntensidadeFundo
@@ -95,6 +98,8 @@ const SEGUNDOS_POR_VOLTA = 360
 const LONGITUDE_INICIAL = 15
 // Nas telas de leitura o mapa anda 3x mais devagar (quase parado).
 const FATOR_LENTIDAO_LEITURA = 3
+// No modo discreto (telas internas), 5x mais devagar.
+const FATOR_LENTIDAO_DISCRETO = 5
 const PERIODO_VARREDURA = 11 // segundos entre uma passada e outra do meridiano de luz
 const PERIODO_METEORO = 9
 
@@ -121,7 +126,8 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
   const reduzir = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   let ativo = true
   let modo: ModoMapaMundi = { intensidade: op.intensidade, forcarEscuro: op.forcarEscuro }
-  const leitura = () => modo.intensidade === 'leitura'
+  const leitura = () => modo.intensidade === 'leitura' || modo.intensidade === 'discreto'
+  const fatorLentidao = () => (modo.intensidade === 'discreto' ? FATOR_LENTIDAO_DISCRETO : modo.intensidade === 'leitura' ? FATOR_LENTIDAO_LEITURA : 1)
   let quadro = 0
   let terra: Uint8ClampedArray | null = null
   let larguraMascara = 0
@@ -224,7 +230,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
   function deslocamento(t: number) {
     const dt = Math.min(0.1, Math.max(0, t - ultimoT))
     ultimoT = t
-    if (!reduzir) voltas += dt / (SEGUNDOS_POR_VOLTA * (leitura() ? FATOR_LENTIDAO_LEITURA : 1))
+    if (!reduzir) voltas += dt / (SEGUNDOS_POR_VOLTA * fatorLentidao())
     const inicial = ((LONGITUDE_INICIAL + 180) / 360) * mapaL - w / 2
     return fract((inicial - voltas * mapaL) / mapaL) * mapaL
   }
@@ -405,8 +411,18 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
 
   function iniciarDesenho() {
     if (reduzir) desenhar(performance.now())
-    else quadro = requestAnimationFrame(laco)
+    else if (document.visibilityState !== 'hidden') quadro = requestAnimationFrame(laco)
   }
+
+  // ABA OCULTA = ANIMACAO PARADA (01/11/2026): nenhum quadro e desenhado
+  // enquanto a aba nao esta visivel (economiza processador e bateria); ao
+  // voltar, continua de onde parou (o deslocamento limita o salto de tempo).
+  function aoMudarVisibilidade() {
+    if (!ativo || reduzir) return
+    cancelAnimationFrame(quadro)
+    if (document.visibilityState !== 'hidden') quadro = requestAnimationFrame(laco)
+  }
+  document.addEventListener('visibilitychange', aoMudarVisibilidade)
 
   // Carrega a mascara dos continentes e le os pixels uma vez so
   const img = new Image()
@@ -470,6 +486,7 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
     desligar() {
       ativo = false
       cancelAnimationFrame(quadro)
+      document.removeEventListener('visibilitychange', aoMudarVisibilidade)
       window.clearTimeout(esperaResize)
       window.removeEventListener('resize', aoRedimensionar)
       window.removeEventListener('pointermove', aoMover)
