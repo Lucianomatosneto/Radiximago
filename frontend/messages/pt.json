@@ -263,7 +263,8 @@
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
-    "recolherMenu": "Recolher o menu de navegação"
+    "recolherMenu": "Recolher o menu de navegação",
+    "menuRecolhidoDica": "Menu recolhido: passe o mouse sobre um ícone para ver o nome da seção."
   },
   "Topbar": {
     "ajuda": "Ajuda",
@@ -290,7 +291,8 @@
       "pesquisador": "Pesquisador",
       "suporte": "Suporte"
     },
-    "meusAcessos": "Meus acessos (aparelhos conectados)"
+    "meusAcessos": "Meus acessos (aparelhos conectados)",
+    "irInicio": "Rádix Imago — ir para a página inicial"
   },
   "StatusCuradoria": {
     "pendente": "Pendente",
@@ -2748,6 +2750,41 @@
       "acessosTexto": "Cada vez que alguém abrir uma pasta de paciente, o acesso aparecerá aqui.",
       "minhasPastasTitulo": "Nenhuma pasta de paciente ainda",
       "minhasPastasTexto": "Fotografe as radiografias no negatoscópio e envie ao professor; a pasta aparecerá aqui com as correções."
+    }
+  },
+  "Navegacao": {
+    "trilha": "Trilha de navegação",
+    "inicio": "Início",
+    "pastaN": "Pasta nº {id}",
+    "itemN": "Nº {id}",
+    "segmentos": {
+      "painel": "Painel",
+      "painelAdministrativo": "Painel administrativo",
+      "usuarios": "Usuários",
+      "imagensRecebidas": "Imagens recebidas",
+      "curadoria": "Curadoria",
+      "segundaOpiniao": "Segunda opinião",
+      "bancoImagens": "Banco de imagens",
+      "pesquisa": "Pesquisa avançada",
+      "minhasImagens": "Minhas imagens",
+      "compartilhadasComigo": "Compartilhadas comigo",
+      "vocabulario": "Vocabulário",
+      "macros": "Macros",
+      "relatorios": "Relatórios",
+      "auditoria": "Auditoria",
+      "integracoes": "Integrações",
+      "configuracoes": "Configurações",
+      "sugestoes": "Sugestões",
+      "meusAcessos": "Meus acessos",
+      "imagem": "Banco de imagens",
+      "pacientes": "Pacientes",
+      "uploadCamera": "Upload (câmera)",
+      "meusPacientes": "Meus pacientes em tratamento",
+      "aguardandoTratamento": "Aguardando tratamento",
+      "alunosPacientes": "Alunos e pacientes",
+      "registroAcessos": "Registro de acessos",
+      "verEstudos": "Ver estudos",
+      "imprimir": "Imprimir"
     }
   }
 }

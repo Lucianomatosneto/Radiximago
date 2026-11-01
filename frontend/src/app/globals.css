@@ -314,3 +314,12 @@
   outline: 6px solid transparent;
   background-color: rgb(var(--rgb-base-surface) / 0.55);
 }
+
+/* LARGURA DE LEITURA (01/11/2026): nas telas de texto, lista e formulario
+   (lib/navegacao.ts: ROTAS_LARGURA_LIMITADA) o conteudo fica com no maximo
+   1200px, centralizado. Telas de imagem continuam com a largura toda. */
+html[data-largura="limitada"] main > *,
+html[data-largura="limitada"] .trilha-lista {
+  max-width: 1200px;
+  margin-inline: auto;
+}

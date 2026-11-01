@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState, FormEvent } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { BookOpen, ChevronDown, CircleHelp, GraduationCap, Microscope, Settings, ShieldCheck, UserRound, Wrench, type LucideIcon } from 'lucide-react'
 import Logo from './Logo'
+import TrilhaNavegacao from './TrilhaNavegacao'
+import { ROTAS_LARGURA_LIMITADA, casaRota, paginaInicial } from '../lib/navegacao'
 import ThemeToggle from './ThemeToggle'
 import { obterSessaoAtual } from '../lib/sessao'
 import CentralAjuda from './ajuda/CentralAjuda'
@@ -54,6 +56,14 @@ export default function Topbar({
 } = {}) {
   const t = useTranslations('Topbar')
   const router = useRouter()
+  const rota = usePathname() || '/'
+
+  // largura de leitura (~1200px) nas telas de texto/lista - ver globals.css
+  useEffect(() => {
+    const html = document.documentElement
+    if (casaRota(rota, ROTAS_LARGURA_LIMITADA)) html.dataset.largura = 'limitada'
+    else delete html.dataset.largura
+  }, [rota])
   const [nome, setNome] = useState('')
   const [perfil, setPerfil] = useState('')
   const [fotoPerfilUrl, setFotoPerfilUrl] = useState('')
@@ -198,13 +208,17 @@ export default function Topbar({
   }
 
   return (
+    <>
     <header
       className={`flex h-20 items-center justify-between border-b border-base-border bg-base px-6 ${
         fixa ? 'sticky top-0 z-30 bg-base/90 backdrop-blur-md' : ''
       }`}
     >
       <div className="flex min-w-0 items-center gap-4">
-        <Logo variante="navbar" />
+        {/* o logo leva a pagina inicial do perfil */}
+        <Link href={paginaInicial(perfil)} aria-label={t('irInicio')} className="rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand">
+          <Logo variante="navbar" />
+        </Link>
         {acao}
       </div>
 
@@ -351,5 +365,7 @@ export default function Topbar({
         </div>
       )}
     </header>
+    {perfil && <TrilhaNavegacao perfil={perfil} />}
+    </>
   )
 }

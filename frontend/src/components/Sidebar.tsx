@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
+import { type LucideIcon, Camera, ChartColumn, ClipboardList, GraduationCap, History, Hourglass, Inbox, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Stethoscope, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -19,6 +20,8 @@ interface ItemMenu {
    * cada item do menu tem a SUA PROPRIA cor (por pedido), pra ficar facil
    * de diferenciar um item do outro so pela cor. */
   cor: string
+  /** icone da secao (lucide-react) - aparece no menu recolhido, com o nome em dica */
+  icone: LucideIcon
 }
 
 const PERFIS_ADMIN_APENAS = ['administrador']
@@ -49,31 +52,31 @@ const PALETA_MENU = [COR_BLUE, COR_SKY, COR_CYAN, COR_TEAL, COR_EMERALD, COR_GRE
 const ITENS_MENU: ItemMenu[] = [
   // Inicio (painel de indicadores) so para o administrador: para os demais
   // perfis o Inicio E o Banco de imagens (item repetido - 27/10/2026)
-  { chave: 'inicio', href: '/dashboard', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_BLUE },
-  { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
-  { chave: 'usuarios', href: '/usuarios', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
-  { chave: 'imagensRecebidas', href: '/imagens', ativo: true, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
-  { chave: 'curadoria', href: '/curadoria', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
-  { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
+  { chave: 'inicio', href: '/dashboard', ativo: true, icone: LayoutDashboard, perfis: PERFIS_ADMIN_APENAS, cor: COR_BLUE },
+  { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, icone: Settings, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
+  { chave: 'usuarios', href: '/usuarios', ativo: true, icone: Users, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
+  { chave: 'imagensRecebidas', href: '/imagens', ativo: true, icone: Inbox, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
+  { chave: 'curadoria', href: '/curadoria', ativo: true, icone: ClipboardList, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
+  { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, icone: MessagesSquare, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
   // "Pesquisa avancada" saiu do menu: ja e acessada pelo Banco de imagens
   // (cartoes e botao) e por Minhas imagens
-  { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
-  { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
-  { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, cor: COR_BLUE },
+  { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, icone: Library, cor: COR_BLUE },
+  { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
+  { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
   // Pastas de pacientes (fotos do negatoscopio) - 31/10/2026
-  { chave: 'uploadCamera', href: '/casos/novo', ativo: true, perfis: ['estudante', 'professor', 'curador'], cor: COR_TEAL },
-  { chave: 'meusPacientes', href: '/casos/meus-tratamentos', ativo: true, perfis: ['estudante'], cor: COR_CYAN },
-  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, perfis: ['professor', 'curador'], cor: COR_CYAN },
-  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, perfis: ['professor', 'curador'], cor: COR_TEAL },
-  { chave: 'registroAcessos', href: '/casos/acessos', ativo: true, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD },
-  { chave: 'vocabulario', href: '/vocabulario', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
-  { chave: 'macros', href: '/macros', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
-  { chave: 'relatorios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
-  { chave: 'auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
-  { chave: 'integracoes', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
-  { chave: 'configuracoes', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
+  { chave: 'uploadCamera', href: '/casos/novo', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador'], cor: COR_TEAL },
+  { chave: 'meusPacientes', href: '/casos/meus-tratamentos', ativo: true, icone: Stethoscope, perfis: ['estudante'], cor: COR_CYAN },
+  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, icone: Hourglass, perfis: ['professor', 'curador'], cor: COR_CYAN },
+  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, icone: GraduationCap, perfis: ['professor', 'curador'], cor: COR_TEAL },
+  { chave: 'registroAcessos', href: '/casos/acessos', ativo: true, icone: History, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD },
+  { chave: 'vocabulario', href: '/vocabulario', ativo: true, icone: Tags, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
+  { chave: 'macros', href: '/macros', ativo: true, icone: Zap, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
+  { chave: 'relatorios', href: '/relatorios', ativo: true, icone: ChartColumn, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
+  { chave: 'auditoria', href: '/auditoria', ativo: true, icone: ScrollText, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
+  { chave: 'integracoes', href: '/integracoes', ativo: true, icone: Plug, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
+  { chave: 'configuracoes', href: '/configuracoes', ativo: true, icone: SlidersHorizontal, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
   // Sugestoes de melhoria (30/10/2026): todos enviam; o administrador ve a lista completa
-  { chave: 'sugestoes', href: '/sugestoes', ativo: true, cor: COR_LIME },
+  { chave: 'sugestoes', href: '/sugestoes', ativo: true, icone: Lightbulb, cor: COR_LIME },
 ]
 
 // `recolhivel`: a tela pede o menu RECOLHIDO (uma faixa fina com o botao
@@ -199,10 +202,45 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
     </button>
   )
 
+  // MENU RECOLHIDO (01/11/2026): os icones das secoes, com o nome numa dica
+  // ao passar o mouse ou focar pelo teclado (e no aria-label)
   if (recolhivel && recolhido) {
     return (
-      <aside className="flex h-screen w-14 shrink-0 flex-col items-center border-r border-base-border bg-base py-4">
-        {botaoRecolher}
+      <aside className="flex h-screen w-14 shrink-0 flex-col items-center justify-between border-r border-base-border bg-base py-4 print:hidden" aria-label={t('navegacao')}>
+        <div className="flex flex-col items-center gap-3">
+          {botaoRecolher}
+          <nav className="flex flex-col items-center gap-1">
+            {itensVisiveis.filter((item) => item.ativo).map((item) => {
+              const Icone = item.icone
+              const estaAtivo = pathname === item.href || pathname?.startsWith(`${item.href}/`)
+              const rotulo = t(`itens.${item.chave}`)
+              return (
+                <Link
+                  key={item.chave}
+                  href={item.href}
+                  aria-label={rotulo}
+                  aria-current={estaAtivo ? 'page' : undefined}
+                  onClick={item.chave === 'curadoria' ? aoClicarCuradoria : undefined}
+                  className={`group relative flex h-10 w-10 items-center justify-center rounded-lg transition ${estaAtivo ? 'bg-brand/15 text-brand ring-1 ring-brand' : 'text-slate-400 hover:bg-base-surface2 hover:text-ink'}`}
+                >
+                  <Icone aria-hidden="true" className="h-5 w-5" />
+                  {item.chave === 'compartilhadasComigo' && novasCompartilhadas > 0 && (
+                    <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-400" />
+                  )}
+                  <span role="tooltip" className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
+                    {rotulo}
+                  </span>
+                </Link>
+              )
+            })}
+          </nav>
+        </div>
+        <button type="button" onClick={handleSair} aria-label={t('sair')} className="group relative flex h-10 w-10 items-center justify-center rounded-lg text-status-danger hover:bg-red-950/30">
+          <LogOut aria-hidden="true" className="h-5 w-5" />
+          <span role="tooltip" className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
+            {t('sair')}
+          </span>
+        </button>
       </aside>
     )
   }

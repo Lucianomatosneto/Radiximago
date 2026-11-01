@@ -263,7 +263,8 @@
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
-    "recolherMenu": "Collapse the navigation menu"
+    "recolherMenu": "Collapse the navigation menu",
+    "menuRecolhidoDica": "Collapsed menu: hover an icon to see the section name."
   },
   "Topbar": {
     "ajuda": "Help",
@@ -290,7 +291,8 @@
       "pesquisador": "Researcher",
       "suporte": "Support"
     },
-    "meusAcessos": "My sessions (connected devices)"
+    "meusAcessos": "My sessions (connected devices)",
+    "irInicio": "Rádix Imago — go to the home page"
   },
   "StatusCuradoria": {
     "pendente": "Pending",
@@ -2748,6 +2750,41 @@
       "acessosTexto": "Every time someone opens a patient folder, the access will appear here.",
       "minhasPastasTitulo": "No patient folders yet",
       "minhasPastasTexto": "Photograph the radiographs on the light box and send them to a professor; the folder will appear here with the reviews."
+    }
+  },
+  "Navegacao": {
+    "trilha": "Breadcrumb",
+    "inicio": "Home",
+    "pastaN": "Folder #{id}",
+    "itemN": "#{id}",
+    "segmentos": {
+      "painel": "Dashboard",
+      "painelAdministrativo": "Admin panel",
+      "usuarios": "Users",
+      "imagensRecebidas": "Received images",
+      "curadoria": "Curation",
+      "segundaOpiniao": "Second opinion",
+      "bancoImagens": "Image bank",
+      "pesquisa": "Advanced search",
+      "minhasImagens": "My images",
+      "compartilhadasComigo": "Shared with me",
+      "vocabulario": "Vocabulary",
+      "macros": "Macros",
+      "relatorios": "Reports",
+      "auditoria": "Audit",
+      "integracoes": "Integrations",
+      "configuracoes": "Settings",
+      "sugestoes": "Suggestions",
+      "meusAcessos": "My sessions",
+      "imagem": "Image bank",
+      "pacientes": "Patients",
+      "uploadCamera": "Camera upload",
+      "meusPacientes": "My patients in treatment",
+      "aguardandoTratamento": "Awaiting treatment",
+      "alunosPacientes": "Students and patients",
+      "registroAcessos": "Access log",
+      "verEstudos": "View studies",
+      "imprimir": "Print"
     }
   }
 }
