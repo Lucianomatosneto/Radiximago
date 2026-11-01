@@ -6,19 +6,29 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { paginaInicial } from '../../lib/navegacao'
 
 export default function AcessoNegadoPage() {
   const t = useTranslations('AcessoNegado')
   const tComum = useTranslations('Comum')
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
+  // 01/11/2026 (QA item 10): UMA pagina de acesso negado para todas as telas
+  // restritas (/usuarios, /configuracoes, /integracoes...): diz qual pagina
+  // foi pedida e volta para o inicio do PERFIL (antes ia para /dashboard, que
+  // mandava quem nao e administrador para o Banco de imagens)
+  const [pagina, setPagina] = useState('')
+  const [inicio, setInicio] = useState('/banco-imagens')
 
   useEffect(() => {
+    const de = new URLSearchParams(window.location.search).get('de') ?? ''
+    if (/^\/[a-z0-9/_-]{0,80}$/i.test(de)) setPagina(de)
     obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
       }
+      setInicio(paginaInicial(sessao.perfil))
       setCarregando(false)
     })
   }, [router])
@@ -59,13 +69,18 @@ export default function AcessoNegadoPage() {
             <p className="mt-3 text-sm text-slate-400">
               {t('descricao')}
             </p>
+            {pagina && (
+              <p className="mt-2 text-xs text-slate-500">
+                {t('paginaPedida')} <code className="rounded-sm bg-white/5 px-1">{pagina}</code> · {t('codigo')}
+              </p>
+            )}
             <p className="mt-2 text-xs text-slate-500">
               {t('orientacao')}
             </p>
 
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
+              onClick={() => router.push(inicio)}
               className="mt-6 rounded-md bg-brand px-5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-hover"
             >
               {t('voltarInicio')}

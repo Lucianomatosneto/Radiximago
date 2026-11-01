@@ -261,6 +261,13 @@ export default function PastaPage() {
                 <section className="space-y-2 rounded-2xl border border-brand/40 bg-base-surface p-3">
                   <h3 className="text-sm font-semibold text-ink">{painel === 'compartilhar' ? t('acoes.compartilhar') : painel === 'link' ? t('acoes.email') : t('acoes.encaminharAluno')}</h3>
                   {painel === 'link' && <p className="text-xs text-slate-500">{t('emailSoLink')}</p>}
+                  {/* 01/11/2026 (QA item 11): dizer QUEM pode receber e por que a lista pode vir vazia */}
+                  {painel !== 'aluno' && <p className="text-xs text-slate-500">{t('quemPodeReceber')}</p>}
+                  {pessoas.length === 0 && (
+                    <p className="text-xs text-amber-600 dark:text-amber-300" role="note">
+                      {painel === 'aluno' ? t('nenhumAlunoCadastrado') : t('ninguemParaCompartilhar')}
+                    </p>
+                  )}
                   <select value={destino} onChange={(e) => setDestino(e.target.value)} className={campo} aria-label={t('escolhaPessoa')}>
                     <option value="">{t('escolhaPessoa')}</option>
                     {pessoas.map((p) => <option key={p.id} value={p.id}>{p.nome} ({t(`perfis.${p.perfil}`)})</option>)}

@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl'
 export default function BarraSuperiorCuradoria({
   posicaoAtual,
   totalFila,
+  explicacaoFila,
   podeAnterior,
   podeProxima,
   onAnterior,
@@ -28,6 +29,8 @@ export default function BarraSuperiorCuradoria({
 }: {
   posicaoAtual: number | null
   totalFila: number
+  /** o que conta (e o que nao conta) na fila - dica ao passar o mouse */
+  explicacaoFila?: string
   podeAnterior: boolean
   podeProxima: boolean
   onAnterior: () => void
@@ -78,7 +81,7 @@ export default function BarraSuperiorCuradoria({
             →
           </button>
         </div>
-        <span className="text-sm font-medium text-slate-300">
+        <span className="text-sm font-medium text-slate-300" title={explicacaoFila}>
           {posicaoAtual !== null ? t('imagemXdeY', { atual: posicaoAtual, total: totalFila }) : '—'}
         </span>
       </div>

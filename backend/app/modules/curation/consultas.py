@@ -8,7 +8,7 @@ ficha.
 from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Query, Response
-from sqlalchemy import func
+from sqlalchemy import or_, func
 from sqlalchemy.orm import Session
 
 from app.core.cabecalhos import disposicao_de_arquivo
@@ -70,6 +70,17 @@ def listar_pendentes(
     )
 
     total_pendentes = consulta_base.count()
+    # 01/11/2026 (QA item 9): imagens sem ficha que AINDA nao entram na fila
+    # (moldura incerta / nao recortada) - a tela explica a diferenca entre a
+    # fila e o "Aguardando curadoria" de Imagens recebidas
+    aguardando_recorte = (
+        db.query(OrthancReference.id)
+        .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
+        .filter(Curation.id.is_(None), OrthancReference.ativo.is_(True))
+        .filter(or_(OrthancReference.enquadramento.is_(None),
+                    OrthancReference.enquadramento.notin_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA)))
+        .count()
+    )
     registros = consulta_base.offset(skip).limit(limit).all()
 
     itens = [
@@ -87,6 +98,7 @@ def listar_pendentes(
 
     return {
         "total_pendentes": total_pendentes,
+        "aguardando_recorte": aguardando_recorte,
         "skip": skip,
         "limit": limit,
         "quantidade_retornada": len(itens),

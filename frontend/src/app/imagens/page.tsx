@@ -60,6 +60,7 @@ interface Imagem {
   anonimizacao_status: string
   criado_em?: string
   status_curadoria: string | null
+  aguarda_recorte?: boolean
 }
 
 export default function ImagensPage() {
@@ -140,7 +141,7 @@ export default function ImagensPage() {
       }
 
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/imagens')
         return
       }
 
@@ -195,6 +196,8 @@ export default function ImagensPage() {
     (imagem) => imagem.status_curadoria === null || STATUS_AGUARDANDO.includes(imagem.status_curadoria)
   ).length
   const totalAprovadas = imagens.filter((imagem) => imagem.status_curadoria === 'aprovada').length
+  // QA item 9: parte do "aguardando" ainda nao esta na fila da Curadoria
+  const totalAguardaRecorte = imagens.filter((imagem) => imagem.aguarda_recorte).length
 
   const imagensFiltradas = imagens.filter((imagem) => {
     const bateAnonimizacao =
@@ -228,7 +231,12 @@ export default function ImagensPage() {
           <h1 className="titulo-pagina tela-entra mb-4">{t('titulo')}</h1>
 
           <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <DashboardCard label={t('totalAguardandoCuradoria')} valor={totalAguardando} cor="amber" />
+            <DashboardCard
+              label={t('totalAguardandoCuradoria')}
+              valor={totalAguardando}
+              cor="amber"
+              detalhe={t('totalAguardandoDetalhe', { recorte: totalAguardaRecorte, fila: totalAguardando - totalAguardaRecorte })}
+            />
             <DashboardCard label={t('totalAprovadas')} valor={totalAprovadas} cor="green" />
           </div>
 

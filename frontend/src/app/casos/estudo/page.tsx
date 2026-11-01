@@ -41,7 +41,7 @@ function Estudo() {
   useEffect(() => {
     obterSessaoAtual().then(async (s) => {
       if (!s) return router.push('/login')
-      if (!PERFIS_EQUIPE.includes(s.perfil)) return router.push('/acesso-negado')
+      if (!PERFIS_EQUIPE.includes(s.perfil)) return router.push('/acesso-negado?de=/casos/estudo')
       const ids = Array.from(new Set(selecao.map(([c]) => c)))
       try {
         const lista = await Promise.all(ids.map((id) => apiJson<DetalheCaso>(`/casos/${id}`)))

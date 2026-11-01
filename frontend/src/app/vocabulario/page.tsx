@@ -74,7 +74,7 @@ export default function VocabularioPage() {
         return
       }
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/vocabulario')
         return
       }
       carregar()

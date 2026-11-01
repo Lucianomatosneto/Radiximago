@@ -149,7 +149,7 @@ export default function SegundaOpiniaoPage() {
     }
     obterSessaoAtual().then(async (sessao) => {
       if (!sessao) return router.push('/login')
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado')
+      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado?de=/segunda-opiniao')
       setPronto(true)
       const { revisar, devolvidas } = await carregarFilas()
       const { review: alvo, aba: abaPedida } = pedidoInicial.current

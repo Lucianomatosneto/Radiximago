@@ -37,6 +37,10 @@ from app.modules.audit_logs import AuditLog
 
 logger = logging.getLogger(__name__)
 
+from app.modules.geometria_imagem import RECORTADA, SEM_BORDA  # noqa: E402
+
+ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA = (RECORTADA, SEM_BORDA)  # mesma regra de curation/consultas.py
+
 router = APIRouter(prefix="/images", tags=["Imagens"])
 
 
@@ -251,6 +255,10 @@ def listar_imagens(
             "origem": imagem.origem,
             "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
             "status_curadoria": status_mais_recente_por_imagem.get(imagem.id),
+            # 01/11/2026 (QA item 9): sem ficha e com a moldura resolvida = esta
+            # na fila da Curadoria; sem ficha e moldura pendente = aguarda recorte
+            "aguarda_recorte": imagem.id not in status_mais_recente_por_imagem
+            and imagem.enquadramento not in ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA,
         }
         for imagem in imagens
     ]

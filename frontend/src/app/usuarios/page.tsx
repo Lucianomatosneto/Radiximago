@@ -155,8 +155,13 @@ export default function UsuariosPage() {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
           credentials: 'include',
         })
-        if (!response.ok) {
+        if (response.status === 401) {
           router.push('/login')
+          return
+        }
+        if (!response.ok) {
+          // 403 = logado, mas sem permissao (antes ia para o login)
+          router.push('/acesso-negado?de=/usuarios')
           return
         }
         const dados: Usuario[] = await response.json()
@@ -184,6 +189,10 @@ export default function UsuariosPage() {
     obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
+        return
+      }
+      if (sessao.perfil !== 'administrador') {
+        router.push('/acesso-negado?de=/usuarios')
         return
       }
       setAutenticado(true)

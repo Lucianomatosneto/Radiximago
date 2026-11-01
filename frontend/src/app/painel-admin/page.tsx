@@ -98,7 +98,7 @@ export default function PainelAdminPage() {
       }
 
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/painel-admin')
         return
       }
 

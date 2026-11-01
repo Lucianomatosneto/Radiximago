@@ -162,7 +162,7 @@ export default function RelatoriosPage() {
       }
 
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/relatorios')
         return
       }
 
@@ -284,7 +284,7 @@ export default function RelatoriosPage() {
           {stats && (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <DashboardCard label={t('totalImagens')} valor={stats.total_imagens_orthanc} cor="teal" />
+                <DashboardCard label={t('totalImagens')} valor={stats.total_imagens_orthanc} cor="teal" detalhe={t('totalImagensDetalhe')} />
                 <DashboardCard label={t('totalFichas')} valor={stats.total_fichas_curadoria} cor="blue" />
                 {perfil === 'administrador' && (
                   <>

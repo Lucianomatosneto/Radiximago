@@ -404,7 +404,8 @@
       "baixa_qualidade": "Baixa qualidade",
       "descartada": "Descartada",
       "sem_ficha": "Sem ficha"
-    }
+    },
+    "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila."
   },
   "MiniaturaImagem": {
     "semPreview": "Sem preview"
@@ -810,7 +811,8 @@
       "aprovar": "✓ Aprovar",
       "aprovando": "Aprovando...",
       "solicitarSegundaOpiniao": "Solicitar segunda opinião",
-      "descartar": "Descartar"
+      "descartar": "Descartar",
+      "explicacaoFila": "A fila mostra só as imagens SEM ficha e já sem moldura. {recorte} imagem(ns) ainda esperam o recorte da moldura e entram depois. Fichas já abertas (em análise) não contam aqui."
     },
     "ficha": {
       "titulo": "Ficha de curadoria",
@@ -1438,7 +1440,8 @@
     },
     "fichasPorAchado": "Fichas por achado (alterações observadas)",
     "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. A porcentagem é sobre o total de fichas; uma ficha com vários achados entra em cada um deles, por isso a soma das linhas pode passar de 100%.",
-    "semAlteracoes": "Sem alterações"
+    "semAlteracoes": "Sem alterações",
+    "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria."
   },
   "Integracoes": {
     "titulo": "Integrações",
@@ -1731,7 +1734,9 @@
     "titulo": "Acesso não autorizado",
     "descricao": "Você não possui permissão para acessar esta área ou visualizar esta imagem.",
     "orientacao": "Caso acredite que isso seja um erro, entre em contato com o administrador do sistema.",
-    "voltarInicio": "Voltar ao início"
+    "voltarInicio": "Voltar ao início",
+    "paginaPedida": "Página pedida:",
+    "codigo": "erro 403 (sem permissão para o seu perfil)"
   },
   "ErroTecnico": {
     "titulo": "Erro técnico",
@@ -2160,7 +2165,8 @@
     "oQueVai": "Anexo: 1 PDF com {imagens} imagem(ns) em {folhas} folha(s).",
     "emailSuspeito": "Atenção: este e-mail parece ter erro de digitação. Você quis dizer {sugerido}? Peça ao administrador para corrigir o cadastro antes de enviar.",
     "cancelar": "Cancelar",
-    "confirmarEnvio": "Confirmar envio"
+    "confirmarEnvio": "Confirmar envio",
+    "soParaVoce": "A prancha vai para o seu e-mail. Professores e curadores também podem escolher outro professor ou curador cadastrado; nenhum está disponível agora."
   },
   "SegundaOpiniao": {
     "titulo": "Segunda opinião",
@@ -2782,7 +2788,10 @@
     "cancelar": "Cancelar",
     "enviandoAcao": "Salvando…",
     "reabertoOk": "Tratamento reaberto.",
-    "observacaoOpcional": "Observação (opcional)"
+    "observacaoOpcional": "Observação (opcional)",
+    "quemPodeReceber": "Só é possível escolher pessoas cadastradas no Rádix como professor ou curador.",
+    "ninguemParaCompartilhar": "Nenhum outro professor ou curador está cadastrado ainda. Peça ao administrador para cadastrar a pessoa; ela aparece aqui depois.",
+    "nenhumAlunoCadastrado": "Nenhum aluno cadastrado ainda. Peça ao administrador para cadastrar o aluno."
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

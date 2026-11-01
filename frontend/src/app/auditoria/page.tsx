@@ -148,7 +148,7 @@ export default function AuditoriaPage() {
         return
       }
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/auditoria')
         return
       }
       setAutenticado(true)

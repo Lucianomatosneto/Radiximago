@@ -67,7 +67,7 @@ export default function NovaPastaPage() {
   useEffect(() => {
     obterSessaoAtual().then(async (s) => {
       if (!s) return router.push('/login')
-      if (!PERFIS_CADASTRO.includes(s.perfil)) return router.push('/acesso-negado')
+      if (!PERFIS_CADASTRO.includes(s.perfil)) return router.push('/acesso-negado?de=/casos/novo')
       const r = await fetch(`${API}/casos/opcoes`, { credentials: 'include' })
       if (r.ok) setOpcoes(await r.json())
       setPronto(true)

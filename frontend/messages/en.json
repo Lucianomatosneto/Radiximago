@@ -404,7 +404,8 @@
       "baixa_qualidade": "Low quality",
       "descartada": "Discarded",
       "sem_ficha": "No record"
-    }
+    },
+    "totalAguardandoDetalhe": "No record, pending and under review. {fila} are in the Curation queue (or already being curated) and {recorte} still wait for the white frame to be cropped, so they are not in the queue yet."
   },
   "MiniaturaImagem": {
     "semPreview": "No preview"
@@ -810,7 +811,8 @@
       "aprovar": "✓ Approve",
       "aprovando": "Approving...",
       "solicitarSegundaOpiniao": "Request second opinion",
-      "descartar": "Discard"
+      "descartar": "Discard",
+      "explicacaoFila": "The queue shows only images WITHOUT a record and already without frame. {recorte} image(s) still wait for frame cropping and come in later. Records already open (under review) are not counted here."
     },
     "ficha": {
       "titulo": "Curation record",
@@ -1438,7 +1440,8 @@
     },
     "fichasPorAchado": "Records by finding (observed changes)",
     "fichasPorAchadoNota": "Counts the changes marked in Curation. The percentage is over the total of records; a record with several findings counts in each, so the rows can add up to more than 100%.",
-    "semAlteracoes": "No changes"
+    "semAlteracoes": "No changes",
+    "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue."
   },
   "Integracoes": {
     "titulo": "Integrations",
@@ -1731,7 +1734,9 @@
     "titulo": "Access not authorized",
     "descricao": "You don't have permission to access this area or view this image.",
     "orientacao": "If you believe this is a mistake, contact your system administrator.",
-    "voltarInicio": "Back to home"
+    "voltarInicio": "Back to home",
+    "paginaPedida": "Requested page:",
+    "codigo": "error 403 (not allowed for your profile)"
   },
   "ErroTecnico": {
     "titulo": "Technical error",
@@ -2160,7 +2165,8 @@
     "oQueVai": "Attachment: 1 PDF with {imagens} image(s) on {folhas} page(s).",
     "emailSuspeito": "Warning: this e-mail looks mistyped. Did you mean {sugerido}? Ask the administrator to fix the account before sending.",
     "cancelar": "Cancel",
-    "confirmarEnvio": "Confirm sending"
+    "confirmarEnvio": "Confirm sending",
+    "soParaVoce": "The sheet goes to your e-mail. Professors and curators can also choose another registered professor or curator; none is available now."
   },
   "SegundaOpiniao": {
     "titulo": "Second opinion",
@@ -2782,7 +2788,10 @@
     "cancelar": "Cancel",
     "enviandoAcao": "Saving…",
     "reabertoOk": "Treatment reopened.",
-    "observacaoOpcional": "Note (optional)"
+    "observacaoOpcional": "Note (optional)",
+    "quemPodeReceber": "Only people registered in Rádix as professor or curator can be chosen.",
+    "ninguemParaCompartilhar": "No other professor or curator is registered yet. Ask the administrator to register the person; they will show up here.",
+    "nenhumAlunoCadastrado": "No student registered yet. Ask the administrator to register the student."
   },
   "Navegacao": {
     "trilha": "Breadcrumb",

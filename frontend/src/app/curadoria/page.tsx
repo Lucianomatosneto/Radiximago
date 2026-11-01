@@ -139,6 +139,8 @@ export default function CuradoriaPage() {
   const [fila, setFila] = useState<ImagemPendente[]>([])
   const [ordemInicial, setOrdemInicial] = useState<ImagemPendente[]>([])
   const [totalPendentes, setTotalPendentes] = useState(0)
+  // imagens sem ficha que ainda esperam o recorte da moldura (fora da fila)
+  const [aguardandoRecorte, setAguardandoRecorte] = useState(0)
   const filaRef = useRef<ImagemPendente[]>([])
   const ordemInicialRef = useRef<ImagemPendente[]>([])
 
@@ -300,7 +302,7 @@ export default function CuradoriaPage() {
         return
       }
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/curadoria')
         return
       }
       setAutenticado(true)
@@ -423,6 +425,7 @@ export default function CuradoriaPage() {
       }
       const dados = await resposta.json()
       aplicarFila(dados.itens ?? [], dados.total_pendentes ?? 0, { append: opcoes?.append })
+      setAguardandoRecorte(dados.aguardando_recorte ?? 0)
     } catch {
       setErroFila(t('ficha.erroConexao'))
     } finally {
@@ -1273,6 +1276,7 @@ export default function CuradoriaPage() {
     <BarraSuperiorCuradoria
       posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
       totalFila={totalPendentes}
+      explicacaoFila={t('barraSuperior.explicacaoFila', { recorte: aguardandoRecorte })}
       podeAnterior={podeAnterior}
       podeProxima={podeProxima}
       onAnterior={irParaAnterior}
@@ -1291,6 +1295,7 @@ export default function CuradoriaPage() {
     <BarraSuperiorCuradoria
       posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
       totalFila={totalPendentes}
+      explicacaoFila={t('barraSuperior.explicacaoFila', { recorte: aguardandoRecorte })}
       podeAnterior={podeAnterior}
       podeProxima={podeProxima}
       onAnterior={irParaAnterior}
@@ -1601,7 +1606,9 @@ export default function CuradoriaPage() {
                           {/* posicao na fila; as SETAS de passar a imagem ficam ao
                               lado da caixa da imagem (27/10/2026) */}
                           <span className="whitespace-nowrap text-sm font-medium text-slate-300">
-                            {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
+                            <span title={t('barraSuperior.explicacaoFila', { recorte: aguardandoRecorte })}>
+                              {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
+                            </span>
                           </span>
                           {badgeReviewsRespondidas}
                         </>

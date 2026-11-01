@@ -522,6 +522,9 @@ export function DialogoPrancha({
               !erro && <p className="text-xs text-slate-400">{t('carregandoDestinos')}</p>
             ) : (
               <>
+                {destinos.length === 1 && (
+                  <p className="mb-2 text-xs text-slate-400">{t('soParaVoce')}</p>
+                )}
                 {destinos.length > 1 && (
                   <label className="mb-2 block text-xs text-slate-300">
                     {t('destinatario')}

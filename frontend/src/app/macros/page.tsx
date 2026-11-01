@@ -106,7 +106,7 @@ export default function MacrosPage() {
         return
       }
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/macros')
         return
       }
       carregar()

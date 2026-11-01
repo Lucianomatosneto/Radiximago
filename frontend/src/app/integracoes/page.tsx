@@ -145,7 +145,7 @@ export default function IntegracoesPage() {
         return
       }
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado')
+        router.push('/acesso-negado?de=/integracoes')
         return
       }
       atualizarTudo()

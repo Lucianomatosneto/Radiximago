@@ -30,7 +30,7 @@ export default function LayoutCasos({
   useEffect(() => {
     obterSessaoAtual().then((s) => {
       if (!s) return router.push('/login')
-      if (!perfis.includes(s.perfil)) return router.push('/acesso-negado')
+      if (!perfis.includes(s.perfil)) return router.push(`/acesso-negado?de=${window.location.pathname}`)
       setSessao(s)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -76,6 +76,20 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 - Ao trocar o tipo de exame na Curadoria, os erros que não valem para o novo tipo saem da ficha.
 - O mesmo erro técnico não pode ser registrado duas vezes na mesma ficha: a API responde **409**.
 
+### 1.4 Contagens de imagens em cada tela (01/11/2026)
+
+As telas contam coisas diferentes, de propósito, e cada uma explica o seu número:
+
+| Tela | O que conta |
+|---|---|
+| Relatórios: "Imagens" | **Todas** as imagens ativas, em qualquer situação (`contar_imagens_por_situacao`). |
+| Imagens recebidas: "Aguardando curadoria" | Sem ficha, pendentes e em análise. O detalhe separa quantas ainda **esperam o recorte da moldura** (`aguarda_recorte`). |
+| Curadoria: "Imagem X de Y" | Só imagens **sem ficha e já sem moldura** (recortada ou sem borda). A dica ao passar o mouse informa quantas esperam o recorte (`aguardando_recorte` em `/curation/pending`). |
+
+### 1.5 Acesso negado (01/11/2026)
+
+Toda tela restrita leva à mesma página `/acesso-negado?de=<página>`. Ela mostra a página pedida e o "erro 403", e o botão volta para o início **do perfil**. Antes, `/usuarios` ia para o login e o botão levava ao painel do administrador.
+
 ## 2. Fluxo da ficha (estados permitidos)
 
 ```
@@ -169,3 +183,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.5 | 01/11/2026 | Prancha por e-mail: confirmação com destino visível, destinatário cadastrado e aviso de erro de digitação |
 | 1.6 | 01/11/2026 | Erro técnico recusado (422) quando não combina com o tipo de exame |
 | 1.7 | 01/11/2026 | Erro técnico repetido (409), termo inativo fora da busca, teste Curadoria × Busca |
+| 1.8 | 01/11/2026 | Contagens explicadas em cada tela, página única de acesso negado, explicação de quem pode receber um compartilhamento |
