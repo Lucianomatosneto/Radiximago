@@ -27,7 +27,7 @@ from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
 from app.modules.curations import DENTES_PERMANENTES
-from app.modules.achados import Achado, TipoAchado
+from app.modules.achados import Achado, TipoAchado, regiao_do_achado
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico
 from .router import router
@@ -134,7 +134,7 @@ def criar_achado(
     achado = Achado(
         curation_id=curation_id,
         tipo=dados.tipo.value,
-        regiao_anatomica=dados.regiao_anatomica.value if dados.regiao_anatomica else None,
+        regiao_anatomica=regiao_do_achado(dados.tipo.value, dados.regiao_anatomica.value if dados.regiao_anatomica else None),
         dentes=dentes_normalizados,
         dente_nao_identificado=dados.dente_nao_identificado,
         descricao=dados.descricao,

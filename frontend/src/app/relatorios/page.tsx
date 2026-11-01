@@ -7,7 +7,6 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
-import { corBarraAchado, corTextoAchado } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
@@ -16,7 +15,6 @@ const PERFIS_PERMITIDOS = ['administrador', 'curador']
 // usado em Pesquisa avançada, Curadoria e demais telas) - so os valores
 // crus (mesmos salvos pelo backend) ficam fixos aqui.
 const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
-const OPCOES_DIFICULDADE = ['basico', 'intermediario', 'avancado']
 const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
 // achadoPrincipal precisa do mapa abaixo porque as chaves de traducao nao
@@ -40,8 +38,7 @@ interface StatsResponse {
   usuarios_bloqueados: number
   por_status: Record<string, number>
   por_tipo_radiografia: Record<string, number>
-  por_achado_principal: Record<string, number>
-  por_dificuldade: Record<string, number>
+  por_achado: Record<string, number>
   por_qualidade_tecnica: Record<string, number>
   por_curador: Record<string, number>
 }
@@ -126,6 +123,7 @@ export default function RelatoriosPage() {
   const t = useTranslations('Relatorios')
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tItensAchado = useTranslations('AlteracoesObservadas.itens')
 
   function rotular(opcoes: string[], namespace: 'tipoRadiografia' | 'dificuldade' | 'qualidadeTecnica', chave: string): string {
     if (chave === 'nao_informado') return t('naoInformado')
@@ -299,17 +297,16 @@ export default function RelatoriosPage() {
                   dados={stats.por_tipo_radiografia}
                   renderRotulo={(chave) => rotular(OPCOES_TIPO_RADIOGRAFIA, 'tipoRadiografia', chave)}
                 />
+                {/* 01/11/2026: por achado = alteracoes observadas marcadas na
+                    Curadoria (o antigo "achado principal" ficou vazio); uma ficha
+                    com varios achados conta em cada um. "Dificuldade" saiu: nao
+                    ha campo para preenche-la na Curadoria. */}
                 <TabelaProporcao
-                  titulo={t('fichasPorAchadoPrincipal')}
-                  dados={stats.por_achado_principal}
-                  renderRotulo={(chave) => rotularAchado(chave)}
-                  corPorChave={(chave) => ({ texto: corTextoAchado(chave), barra: corBarraAchado(chave) })}
+                  titulo={t('fichasPorAchado')}
+                  dados={stats.por_achado}
+                  renderRotulo={(chave) => (chave === 'sem_alteracoes' ? t('semAlteracoes') : tItensAchado.has(chave) ? tItensAchado(chave) : rotularAchado(chave))}
                 />
-                <TabelaProporcao
-                  titulo={t('fichasPorDificuldade')}
-                  dados={stats.por_dificuldade}
-                  renderRotulo={(chave) => rotular(OPCOES_DIFICULDADE, 'dificuldade', chave)}
-                />
+                <p className="-mt-2 text-xs text-slate-500">{t('fichasPorAchadoNota')}</p>
                 <TabelaProporcao
                   titulo={t('fichasPorQualidadeTecnica')}
                   dados={stats.por_qualidade_tecnica}

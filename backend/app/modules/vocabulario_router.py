@@ -84,21 +84,61 @@ def _ja_existe(db: Session, normalizado: str, ignorar_termo_id: int | None = Non
     return db.query(SinonimoTermo).filter(SinonimoTermo.sinonimo_normalizado == normalizado).first() is not None
 
 
-def _serializar(termo: TermoVocabulario, quantidade: int = 0) -> dict:
-    return {
+def _serializar(termo: TermoVocabulario, quantidade: int = 0, aprovadas: int | None = None,
+                na_busca: int | None = None) -> dict:
+    dados = {
         "id": termo.id,
         "termo": termo.termo,
         "categoria": termo.categoria,
         "codigo_decs": termo.codigo_decs,
         "ativo": termo.ativo,
         "sinonimos": [{"id": s.id, "sinonimo": s.sinonimo} for s in termo.sinonimos],
+        # fichas LIGADAS ao termo (qualquer situacao: rascunho, em analise, aprovada...)
         "quantidade_fichas": quantidade,
     }
+    if aprovadas is not None:
+        # das ligadas, quantas ja estao APROVADAS e com a imagem ativa (as unicas que a busca mostra)
+        dados["quantidade_aprovadas"] = aprovadas
+    if na_busca is not None:
+        # o que a busca "vocab:<id>" devolve de fato: fichas aprovadas ligadas ao termo OU
+        # cujo texto cita o termo/sinonimo - a MESMA regra de busca_termos.condicao_vocabulario
+        dados["quantidade_na_busca"] = na_busca
+    return dados
 
 
 def _contagem_fichas(db: Session) -> dict[int, int]:
     linhas = db.query(CurationTermo.termo_id, func.count(CurationTermo.curation_id)).group_by(CurationTermo.termo_id).all()
     return {termo_id: n for termo_id, n in linhas}
+
+
+def _contagem_aprovadas(db: Session) -> dict[int, int]:
+    """Fichas ligadas que a busca pode mostrar (aprovadas, imagem ativa)."""
+    from app.modules.orthanc_references import OrthancReference
+
+    linhas = (
+        db.query(CurationTermo.termo_id, func.count(CurationTermo.curation_id))
+        .join(Curation, Curation.id == CurationTermo.curation_id)
+        .join(OrthancReference, OrthancReference.id == Curation.orthanc_reference_id)
+        .filter(Curation.status == StatusCuradoria.APROVADA.value, OrthancReference.ativo.is_(True))
+        .group_by(CurationTermo.termo_id)
+        .all()
+    )
+    return {termo_id: n for termo_id, n in linhas}
+
+
+def _contagem_na_busca(db: Session, termo_id: int) -> int:
+    """Quantas imagens a busca por este termo devolve - mesma regra da Pesquisa avancada."""
+    from app.modules.busca_termos import condicao_vocabulario
+    from app.modules.orthanc_references import OrthancReference
+
+    return (
+        db.query(func.count(Curation.id))
+        .join(OrthancReference, OrthancReference.id == Curation.orthanc_reference_id)
+        .filter(Curation.status == StatusCuradoria.APROVADA.value, OrthancReference.ativo.is_(True))
+        .filter(condicao_vocabulario(db, termo_id))
+        .scalar()
+        or 0
+    )
 
 
 def _buscar_termo(db: Session, termo_id: int) -> TermoVocabulario:
@@ -111,15 +151,24 @@ def _buscar_termo(db: Session, termo_id: int) -> TermoVocabulario:
 @router.get("")
 def listar_vocabulario(
     incluir_inativos: bool = False,
+    com_contagem_busca: bool = False,
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
+    """`com_contagem_busca=true` (tela Vocabulario): acrescenta, por termo, quantas
+    ligadas ja estao aprovadas e quantas imagens a busca devolve de fato - para a
+    tela explicar quando "1 ficha ligada" nao aparece na busca (ficha nao aprovada)."""
     consulta = db.query(TermoVocabulario)
     if not incluir_inativos:
         consulta = consulta.filter(TermoVocabulario.ativo.is_(True))
     contagem = _contagem_fichas(db)
     termos = consulta.order_by(TermoVocabulario.termo).all()
-    return {"categorias": list(CATEGORIAS_TERMO), "termos": [_serializar(t, contagem.get(t.id, 0)) for t in termos]}
+    if not com_contagem_busca:
+        return {"categorias": list(CATEGORIAS_TERMO), "termos": [_serializar(t, contagem.get(t.id, 0)) for t in termos]}
+    aprovadas = _contagem_aprovadas(db)
+    return {"categorias": list(CATEGORIAS_TERMO), "termos": [
+        _serializar(t, contagem.get(t.id, 0), aprovadas.get(t.id, 0), _contagem_na_busca(db, t.id)) for t in termos
+    ]}
 
 
 @router.get("/termos-livres")

@@ -9,7 +9,7 @@ from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
-from app.modules.achados import Achado, ErroTecnico, TipoAchado
+from app.modules.achados import Achado, ErroTecnico, TipoAchado, regiao_do_achado
 from app.modules.curations import AlteracaoObservada
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico, _valor
@@ -138,7 +138,7 @@ def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id
         novos.append(Achado(
             curation_id=ficha.id,
             tipo=item.tipo.value,
-            regiao_anatomica=item.regiao_anatomica.value if item.regiao_anatomica else None,
+            regiao_anatomica=regiao_do_achado(item.tipo.value, item.regiao_anatomica.value if item.regiao_anatomica else None),
             dentes=dentes,
             dente_nao_identificado=item.dente_nao_identificado,
             descricao=item.descricao,

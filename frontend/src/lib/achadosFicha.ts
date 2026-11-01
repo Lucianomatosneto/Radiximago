@@ -35,6 +35,35 @@ export const TIPOS_ACHADO_FICHA = CATEGORIAS_ALTERACOES.flatMap((c) =>
   c.itens.map((i) => ({ valor: i.valor, label: i.label, categoria: c.categoria, categoriaChave: c.categoriaChave }))
 )
 
+/**
+ * 01/11/2026 - regiao anatomica PADRAO de cada achado (copia de
+ * backend/app/modules/achados.py: REGIAO_PADRAO_POR_ACHADO). O curador pode
+ * trocar; se deixar vazio, vale esta - assim a busca por "Periodonto" ou
+ * "Regiao periapical" encontra as fichas com achados periodontais/periapicais.
+ */
+export const REGIAO_PADRAO_POR_ACHADO: Record<string, string> = {
+  perda_ossea_horizontal: 'periodonto',
+  perda_ossea_vertical: 'periodonto',
+  calculo_dentario: 'periodonto',
+  alargamento_ligamento_periodontal: 'periodonto',
+  lesao_periapical: 'regiao_periapical',
+  carie_esmalte: 'coroa',
+  carie_dentina: 'coroa',
+  carie_proxima_polpa: 'coroa',
+  carie_secundaria: 'coroa',
+  restauracao_presente: 'coroa',
+  restauracao_com_infiltracao: 'coroa',
+  coroa_protetica: 'coroa',
+  reabsorcao_radicular_externa: 'raiz',
+  reabsorcao_radicular_interna: 'raiz',
+  fratura_radicular: 'raiz',
+  alteracao_seio_maxilar: 'seio_maxilar',
+}
+
+export function regiaoDoAchado(a: Pick<AchadoFicha, 'tipo' | 'regiao'>): string {
+  return a.regiao || REGIAO_PADRAO_POR_ACHADO[a.tipo] || ''
+}
+
 export const REGIOES = [
   'coroa',
   'raiz',
@@ -137,7 +166,7 @@ export function achadosParaApi(achados: AchadoFicha[], marcacoes: Marcacao[]) {
   return achados.map((a) => ({
     tipo: a.tipo,
     dentes: a.dentes,
-    regiao_anatomica: a.regiao || null,
+    regiao_anatomica: regiaoDoAchado(a) || null,
     marcacoes: marcacoes.filter((m) => a.marcacoes.includes(m.id)),
   }))
 }

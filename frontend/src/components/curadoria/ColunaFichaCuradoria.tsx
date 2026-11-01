@@ -298,6 +298,7 @@ export default function ColunaFichaCuradoria({
   }, [teclasAtivas, irPara])
 
   const tFicha = useTranslations('Curadoria.ficha')
+  const tItensAchado = useTranslations('AlteracoesObservadas.itens')
 
   function ativarPorClique(etapa: EtapaFicha) {
     porCliqueRef.current = true
@@ -376,7 +377,11 @@ export default function ColunaFichaCuradoria({
         >
           <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} />
           {/* termos padronizados (vocabulario): o que a Pesquisa avancada encontra */}
-          <SeletorTermosFicha termos={form.termos} onChange={(termos) => onChange({ ...form, termos })} />
+          <SeletorTermosFicha
+            termos={form.termos}
+            onChange={(termos) => onChange({ ...form, termos })}
+            textoFicha={[form.descricao_didatica, ...form.alteracoes_observadas.map((a) => (tItensAchado.has(a) ? tItensAchado(a) : a.replace(/_/g, ' ')))].join(' ')}
+          />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>

@@ -1215,7 +1215,8 @@
       "qualAchado": "achado da marcação {numero}? (digite ou fale)",
       "semMarcacaoAntigos": "Achados sem marcação (fichas anteriores):",
       "textoAntigo": "Texto livre antigo (achados detalhados):",
-      "chaveNormal": "sem alterações"
+      "chaveNormal": "sem alterações",
+      "regiaoPadrao": "Região padrão deste achado. Troque se for outra."
     },
     "errosFicha": {
       "paraTipo": "Erros possíveis para {tipo}:",
@@ -1419,8 +1420,6 @@
     "usuariosBloqueados": "Usuários bloqueados",
     "fichasPorStatus": "Fichas por status",
     "fichasPorTipoRadiografia": "Fichas por tipo de radiografia",
-    "fichasPorAchadoPrincipal": "Fichas por achado principal",
-    "fichasPorDificuldade": "Fichas por dificuldade",
     "fichasPorQualidadeTecnica": "Fichas por qualidade técnica",
     "fichasPorCurador": "Fichas por curador",
     "naoInformado": "Não informado",
@@ -1434,7 +1433,10 @@
       "posicaoDeTotal": "{posicao}º de {total}",
       "semCuradoriasNoMes": "Sem curadorias este mês",
       "notaAnonimizado": "A classificação mostra só a sua posição - o desempenho dos demais curadores não é exibido."
-    }
+    },
+    "fichasPorAchado": "Fichas por achado (alterações observadas)",
+    "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. Uma ficha com vários achados entra em cada um deles, por isso a soma pode passar do total de fichas.",
+    "semAlteracoes": "Sem alterações"
   },
   "Integracoes": {
     "titulo": "Integrações",
@@ -1915,7 +1917,10 @@
       "achado": "Achado",
       "alteracao": "Alteração",
       "outro": "Outro"
-    }
+    },
+    "naBusca": "{quantidade} na busca",
+    "ligadasNaoAprovadas": "{quantidade} ficha(s) ligada(s) ainda não aprovada(s) (ou com a imagem inativa): só entram na busca depois de aprovadas na Curadoria.",
+    "buscaPorTexto": "+{quantidade} imagem(ns) encontrada(s) pelo nome ou sinônimo escrito na ficha, mesmo sem o termo ligado."
   },
   "Voz": {
     "titulo": "Curadoria por voz",
@@ -2449,7 +2454,10 @@
     "denteNumero": "Dente {numero}",
     "acrescentar": "➕ Acrescentar “{texto}” ao vocabulário (e ligar a esta imagem)",
     "criando": "Acrescentando…",
-    "erroCriar": "Não foi possível acrescentar o termo agora."
+    "erroCriar": "Não foi possível acrescentar o termo agora.",
+    "maisSugestoes": "Mostrando {mostrando} de {total} sugestões. Continue digitando para refinar.",
+    "incentivoVocabulario": "Nenhum termo padronizado ligado. São os termos que fazem esta imagem aparecer na busca por termos da Pesquisa avançada: ligue ao menos um.",
+    "sugeridosTitulo": "Sugeridos pelo texto da ficha:"
   },
   "Sugestoes": {
     "carregando": "Carregando...",

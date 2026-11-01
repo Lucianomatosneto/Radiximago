@@ -27,6 +27,21 @@ from app.modules.curations import Curation, StatusCuradoria
 router = APIRouter(prefix="/admin", tags=["Administracao"])
 
 
+def _contar_por_achado(db) -> dict:
+    """Fichas por achado (alteracoes observadas). Soma pode passar do total de fichas."""
+    achado = func.unnest(Curation.alteracoes_observadas).label("achado")
+    linhas = db.query(achado, func.count(Curation.id)).group_by("achado").all()
+    contagem = {valor: total for valor, total in linhas if valor}
+    sem = (
+        db.query(func.count(Curation.id))
+        .filter((Curation.alteracoes_observadas.is_(None)) | (func.cardinality(Curation.alteracoes_observadas) == 0))
+        .scalar()
+    )
+    if sem:
+        contagem["sem_alteracoes"] = sem
+    return contagem
+
+
 def _contar_por(db, coluna):
     """Conta fichas de curadoria agrupadas por uma coluna. Retorna dict {valor: total}."""
     linhas = (
@@ -141,8 +156,13 @@ def obter_indicadores(
         ],
         "por_status": _contar_por(db, Curation.status),
         "por_tipo_radiografia": _contar_por(db, Curation.tipo_radiografia),
-        "por_achado_principal": _contar_por(db, Curation.achado_principal),
-        "por_dificuldade": _contar_por(db, Curation.dificuldade),
+        # 01/11/2026: por ACHADO a partir das alteracoes observadas (o que o
+        # curador marca hoje) - o antigo "achado principal" ficou vazio desde a
+        # ficha com varios achados. Uma ficha com 3 achados conta nos 3; ficha
+        # sem nenhum conta em "sem_alteracoes".
+        "por_achado": _contar_por_achado(db),
+        # "Dificuldade" saiu do relatorio: nao existe campo na Curadoria para
+        # preenche-la (decisao de 01/11/2026 - docs/REGRAS_DE_NEGOCIO.md).
         "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
         "por_curador": _contar_por(db, Curation.curador_id),
     }

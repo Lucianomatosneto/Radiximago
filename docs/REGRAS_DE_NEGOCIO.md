@@ -23,6 +23,25 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 | Uma imagem tem **no máximo uma** ficha; imagem desativada não recebe ficha | `curation/ficha.py` |
 | Limites de tamanho de textos e listas | `app/core/limites.py` (ver `SEGURANCA.md`, seção 2.1) |
 
+### 1.1 Vocabulário, busca e relatórios (01/11/2026)
+
+- **O que entra na busca:** só fichas **aprovadas** com a imagem **ativa**. O Vocabulário mostra, para cada termo:
+  - quantas fichas estão ligadas (em qualquer situação);
+  - quantas delas já estão aprovadas;
+  - quantas imagens a busca devolve, pela mesma regra da Pesquisa avançada. Esse número inclui o nome ou sinônimo escrito no texto da ficha.
+
+  Uma ficha ligada mas ainda pendente aparece com o aviso "ainda não aprovada".
+- **Região anatômica padrão:** se o curador não escolher a região de um achado, vale a região padrão do tipo de achado (`REGIAO_PADRAO_POR_ACHADO` em `backend/app/modules/achados.py`). Exemplos:
+  - perdas ósseas, cálculo e alargamento do ligamento → Periodonto;
+  - lesão periapical → Região periapical;
+  - cáries, restaurações e coroa → Coroa;
+  - reabsorções e fratura radicular → Raiz;
+  - alteração do seio maxilar → Seio maxilar.
+
+  A escolha do curador sempre prevalece. A busca por região também acha as fichas antigas pelo mesmo mapa.
+- **Relatório "Fichas por achado":** conta as **alterações observadas** marcadas na Curadoria. O antigo campo "achado principal" não é mais preenchido. Uma ficha com vários achados conta em cada um deles.
+- **"Dificuldade" removida do relatório:** a Curadoria não tem campo para preenchê-la, então o cartão mostrava sempre vazio. Se um dia for necessária, deve entrar primeiro como campo da ficha e filtro da busca.
+
 ## 2. Fluxo da ficha (estados permitidos)
 
 ```
@@ -111,3 +130,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Grupo 4: limites de e-mail, ZIP, envio e sincronização; limite geral por conta; teto de ZIPs simultâneos; coerência de idade na busca e de marcações |
 | 1.2 | 20/10/2026 | Limite do giro de imagem na Curadoria; recorte da moldura branca |
+| 1.3 | 01/11/2026 | Vocabulário × busca, região anatômica padrão, relatório por achado, Dificuldade removida do relatório |

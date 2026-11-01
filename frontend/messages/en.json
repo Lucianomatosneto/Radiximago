@@ -1215,7 +1215,8 @@
       "qualAchado": "finding for marking {numero}? (type or speak)",
       "semMarcacaoAntigos": "Findings without marking (older records):",
       "textoAntigo": "Old free text (detailed findings):",
-      "chaveNormal": "no changes"
+      "chaveNormal": "no changes",
+      "regiaoPadrao": "Default region for this finding. Change it if different."
     },
     "errosFicha": {
       "paraTipo": "Possible errors for {tipo}:",
@@ -1419,8 +1420,6 @@
     "usuariosBloqueados": "Blocked users",
     "fichasPorStatus": "Records by status",
     "fichasPorTipoRadiografia": "Records by radiograph type",
-    "fichasPorAchadoPrincipal": "Records by primary finding",
-    "fichasPorDificuldade": "Records by difficulty",
     "fichasPorQualidadeTecnica": "Records by technical quality",
     "fichasPorCurador": "Records by curator",
     "naoInformado": "Not informed",
@@ -1434,7 +1433,10 @@
       "posicaoDeTotal": "#{posicao} of {total}",
       "semCuradoriasNoMes": "No curations this month",
       "notaAnonimizado": "The ranking shows only your position - other curators' performance isn't displayed."
-    }
+    },
+    "fichasPorAchado": "Records by finding (observed changes)",
+    "fichasPorAchadoNota": "Counts the changes marked in Curation. A record with several findings counts in each, so the sum can exceed the total of records.",
+    "semAlteracoes": "No changes"
   },
   "Integracoes": {
     "titulo": "Integrations",
@@ -1915,7 +1917,10 @@
       "achado": "Finding",
       "alteracao": "Alteration",
       "outro": "Other"
-    }
+    },
+    "naBusca": "{quantidade} in search",
+    "ligadasNaoAprovadas": "{quantidade} linked record(s) not yet approved (or with an inactive image): they only appear in search after approval in Curation.",
+    "buscaPorTexto": "+{quantidade} image(s) found by the name or synonym written in the record, even without the linked term."
   },
   "Voz": {
     "titulo": "Voice curation",
@@ -2449,7 +2454,10 @@
     "denteNumero": "Tooth {numero}",
     "acrescentar": "➕ Add “{texto}” to the vocabulary (and link to this image)",
     "criando": "Adding…",
-    "erroCriar": "Could not add the term right now."
+    "erroCriar": "Could not add the term right now.",
+    "maisSugestoes": "Showing {mostrando} of {total} suggestions. Keep typing to refine.",
+    "incentivoVocabulario": "No standardized term linked. Terms are what make this image appear in the term search of Advanced search: link at least one.",
+    "sugeridosTitulo": "Suggested from the record text:"
   },
   "Sugestoes": {
     "carregando": "Loading...",

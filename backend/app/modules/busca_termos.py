@@ -29,7 +29,7 @@ from fastapi import HTTPException
 from sqlalchemy import and_, exists, or_
 from sqlalchemy.orm import Session
 
-from app.modules.achados import Achado, ErroTecnico, RegiaoAnatomica, TipoAchado
+from app.modules.achados import REGIAO_PADRAO_POR_ACHADO, Achado, ErroTecnico, RegiaoAnatomica, TipoAchado
 from app.modules.busca_texto import condicao_busca_texto, condicao_termo
 from app.modules.curations import Curation
 from app.modules.vocabulario import TermoVocabulario
@@ -119,7 +119,16 @@ def condicao_achado(tipo: str):
 def condicao_regiao(regiao: str):
     if regiao not in REGIOES:
         raise HTTPException(status_code=422, detail=f"Região anatômica desconhecida: {regiao}")
-    return exists().where(and_(Achado.curation_id == Curation.id, Achado.regiao_anatomica == regiao))
+    # 1) achado com a regiao marcada; 2) achado SEM regiao cujo tipo tem essa
+    # regiao como padrao (fichas curadas antes do mapeamento); 3) fichas antigas
+    # so com a lista "alteracoes observadas" (REGIAO_PADRAO_POR_ACHADO)
+    tipos = [t for t, r in REGIAO_PADRAO_POR_ACHADO.items() if r == regiao]
+    partes = [exists().where(and_(Achado.curation_id == Curation.id, Achado.regiao_anatomica == regiao))]
+    if tipos:
+        partes.append(exists().where(and_(Achado.curation_id == Curation.id, Achado.regiao_anatomica.is_(None),
+                                          Achado.tipo.in_(tipos))))
+        partes.append(Curation.alteracoes_observadas.overlap(tipos))
+    return or_(*partes)
 
 
 def condicao_dentes(numeros: list[int]):

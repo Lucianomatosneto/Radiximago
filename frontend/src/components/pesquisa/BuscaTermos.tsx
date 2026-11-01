@@ -1,8 +1,11 @@
 'use client'
 
-import { useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { normalizarBusca, procurarNoCatalogo, token, type ItemCatalogo, type TermoBusca } from '../../lib/catalogoTermos'
+
+
+const LIMITE_SUGESTOES = 50
 
 /**
  * Caixa de BUSCA POR TERMOS com sugestoes enquanto se digita (padrao dos
@@ -49,8 +52,19 @@ export default function BuscaTermos({
   const [erroCriar, setErroCriar] = useState('')
 
   const escolhidos = new Set(selecionados.map(token))
+  // 01/11/2026: ate LIMITE_SUGESTOES (antes 12) com rolagem; se houver mais,
+  // aviso "continue digitando para refinar"
+  const totalNoCatalogo = useMemo(
+    () => procurarNoCatalogo(catalogo, consulta, Number.MAX_SAFE_INTEGER).filter((i) => !escolhidos.has(token(i))).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [catalogo, consulta, selecionados],
+  )
+  const listaRef = useRef<HTMLUListElement>(null)
+  useEffect(() => {
+    listaRef.current?.querySelector<HTMLElement>(`[data-indice="${cursor}"]`)?.scrollIntoView({ block: 'nearest' })
+  }, [cursor])
   const sugestoes = useMemo(() => {
-    const achados = procurarNoCatalogo(catalogo, consulta).filter((i) => !escolhidos.has(token(i)))
+    const achados = procurarNoCatalogo(catalogo, consulta, LIMITE_SUGESTOES).filter((i) => !escolhidos.has(token(i)))
     const texto = consulta.trim()
     if (permitirTexto && texto.length >= 2) {
       achados.push({ tipo: 'texto', valor: texto, rotulo: texto, chaves: [] })
@@ -173,6 +187,7 @@ export default function BuscaTermos({
       )}
       {aberto && consulta.trim() && (
         <ul
+          ref={listaRef}
           id={`${id}-lista`}
           role="listbox"
           className="absolute z-40 mt-1 max-h-80 w-full overflow-y-auto rounded-xl border border-base-border bg-base-surface p-1 shadow-2xl"
@@ -181,6 +196,7 @@ export default function BuscaTermos({
           {sugestoes.map((s, i) => (
             <li
               key={token(s)}
+              data-indice={i}
               role="option"
               aria-selected={i === cursor}
               onMouseDown={(e) => {
@@ -205,6 +221,11 @@ export default function BuscaTermos({
               </span>
             </li>
           ))}
+          {totalNoCatalogo > LIMITE_SUGESTOES && (
+            <li role="presentation" className="px-3 py-2 text-[11px] text-slate-500">
+              {t('maisSugestoes', { mostrando: LIMITE_SUGESTOES, total: totalNoCatalogo })}
+            </li>
+          )}
         </ul>
       )}
     </div>

@@ -109,6 +109,36 @@ class RegiaoAnatomica(str, enum.Enum):
     OUTRAS_ESTRUTURAS = "outras_estruturas"
 
 
+# REGIAO ANATOMICA PADRAO DE CADA ACHADO (01/11/2026): quando o curador nao
+# escolhe a regiao, ela vem do proprio achado - os periodontais vao para
+# "periodonto", a lesao periapical para "regiao periapical" etc. Assim a busca
+# por regiao encontra as fichas ja curadas. Achado sem regiao obvia (cisto,
+# lesao radiolucida, dente incluso...) fica sem regiao ate o curador escolher.
+REGIAO_PADRAO_POR_ACHADO: dict[str, str] = {
+    "perda_ossea_horizontal": RegiaoAnatomica.PERIODONTO.value,
+    "perda_ossea_vertical": RegiaoAnatomica.PERIODONTO.value,
+    "calculo_dentario": RegiaoAnatomica.PERIODONTO.value,
+    "alargamento_ligamento_periodontal": RegiaoAnatomica.PERIODONTO.value,
+    "lesao_periapical": RegiaoAnatomica.REGIAO_PERIAPICAL.value,
+    "carie_esmalte": RegiaoAnatomica.COROA.value,
+    "carie_dentina": RegiaoAnatomica.COROA.value,
+    "carie_proxima_polpa": RegiaoAnatomica.COROA.value,
+    "carie_secundaria": RegiaoAnatomica.COROA.value,
+    "restauracao_presente": RegiaoAnatomica.COROA.value,
+    "restauracao_com_infiltracao": RegiaoAnatomica.COROA.value,
+    "coroa_protetica": RegiaoAnatomica.COROA.value,
+    "reabsorcao_radicular_externa": RegiaoAnatomica.RAIZ.value,
+    "reabsorcao_radicular_interna": RegiaoAnatomica.RAIZ.value,
+    "fratura_radicular": RegiaoAnatomica.RAIZ.value,
+    "alteracao_seio_maxilar": RegiaoAnatomica.SEIO_MAXILAR.value,
+}
+
+
+def regiao_do_achado(tipo: str, escolhida: str | None) -> str | None:
+    """A regiao escolhida pelo curador; sem escolha, a padrao do achado (ou nenhuma)."""
+    return escolhida or REGIAO_PADRAO_POR_ACHADO.get(tipo)
+
+
 class TipoErroTecnico(str, enum.Enum):
     """
     Tipo de erro tecnico da AQUISICAO da imagem - dimensao independente

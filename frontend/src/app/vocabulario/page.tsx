@@ -31,6 +31,10 @@ interface Termo {
   ativo: boolean
   sinonimos: { id: number; sinonimo: string }[]
   quantidade_fichas: number
+  /** ligadas que ja estao aprovadas (com imagem ativa) */
+  quantidade_aprovadas?: number
+  /** imagens que a busca por este termo devolve (mesma regra da Pesquisa) */
+  quantidade_na_busca?: number
 }
 interface Candidata {
   curation_id: number
@@ -84,7 +88,7 @@ export default function VocabularioPage() {
     try {
       const [rLivres, rTermos] = await Promise.all([
         fetch(`${API}/vocabulario/termos-livres`, { credentials: 'include' }),
-        fetch(`${API}/vocabulario?incluir_inativos=true`, { credentials: 'include' }),
+        fetch(`${API}/vocabulario?incluir_inativos=true&com_contagem_busca=true`, { credentials: 'include' }),
       ])
       if (!rLivres.ok || !rTermos.ok) {
         setErro(t('erroCarregar'))
@@ -400,8 +404,23 @@ export default function VocabularioPage() {
                         <span className="font-semibold text-ink">{termo.termo}</span>
                         <span className="rounded-full bg-teal-400/10 px-2 py-0.5 text-[11px] text-teal-200">{t(`categorias.${termo.categoria}`)}</span>
                         {termo.codigo_decs && <span className="text-[11px] text-slate-400">DeCS {termo.codigo_decs}</span>}
-                        <span className="ml-auto text-xs text-slate-400">{t('fichasLigadas', { quantidade: termo.quantidade_fichas })}</span>
+                        <span className="ml-auto text-right text-xs text-slate-400">
+                          {/* mesmo numero da Pesquisa avancada + as ligadas (01/11/2026) */}
+                          <span className="font-semibold text-ink">{t('naBusca', { quantidade: termo.quantidade_na_busca ?? 0 })}</span>
+                          {' · '}
+                          {t('fichasLigadas', { quantidade: termo.quantidade_fichas })}
+                        </span>
                       </div>
+                      {termo.quantidade_fichas > (termo.quantidade_aprovadas ?? termo.quantidade_fichas) && (
+                        <p className="mt-1 text-xs text-amber-700 dark:text-amber-300" role="note">
+                          {t('ligadasNaoAprovadas', { quantidade: termo.quantidade_fichas - (termo.quantidade_aprovadas ?? 0) })}
+                        </p>
+                      )}
+                      {(termo.quantidade_na_busca ?? 0) > (termo.quantidade_aprovadas ?? 0) && (
+                        <p className="mt-1 text-xs text-slate-500" role="note">
+                          {t('buscaPorTexto', { quantidade: (termo.quantidade_na_busca ?? 0) - (termo.quantidade_aprovadas ?? 0) })}
+                        </p>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
                         {termo.sinonimos.map((s) => (
                           <span key={s.id} className="flex items-center gap-1 rounded-full border border-white/15 px-2 py-0.5 text-xs text-slate-200">

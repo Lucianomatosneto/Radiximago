@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { REGIOES, TIPOS_ACHADO_FICHA, comAchados, type AchadoFicha } from '../../lib/achadosFicha'
+import { REGIOES, TIPOS_ACHADO_FICHA, comAchados, regiaoDoAchado, type AchadoFicha } from '../../lib/achadosFicha'
 import { normalizar } from '../../lib/vozCuradoria'
 import { corMarcacao } from '../../lib/marcacoes'
 import { PalavraChave } from './PainelDadosSobrepostos'
@@ -158,11 +158,12 @@ export default function PainelAchadosFicha({
           ))}
       </select>
       <select
-        value={a?.regiao ?? ''}
+        value={a ? regiaoDoAchado(a) : ''}
         disabled={!a}
+        title={a && !a.regiao && regiaoDoAchado(a) ? t('regiaoPadrao') : undefined}
         onChange={(e) => mudar({ regiao: e.target.value })}
         aria-label={t('regiao')}
-        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-hidden disabled:opacity-40 ${a?.regiao ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
+        className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-hidden disabled:opacity-40 ${a && regiaoDoAchado(a) ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
       >
         <option value="">{t('regiaoQual')}</option>
         {REGIOES.map((r) => (
