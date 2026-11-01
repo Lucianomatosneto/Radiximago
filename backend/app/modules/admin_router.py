@@ -10,7 +10,7 @@ Fornece a "materia-prima" numerica para os paineis do frontend.
 """
 
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import text, func
@@ -236,6 +236,34 @@ def consultar_auditoria(
     }
 
 
+JANELA_ORDEM_CONCORRENTE = 20  # quantos registros antes/depois procurar o elo
+
+
+@router.get("/audit-logs/integridade/ultima")
+def ultima_verificacao_integridade(
+    db: Session = Depends(get_db),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """Resultado da ULTIMA verificacao (sem refazer a conta nem gravar nada):
+    usado pelo aviso da Auditoria e do Painel administrativo (01/11/2026)."""
+    ultima = (
+        db.query(AuditLog)
+        .filter(AuditLog.acao == "verificacao_integridade_auditoria")
+        .order_by(AuditLog.id.desc())
+        .first()
+    )
+    if not ultima:
+        return {"verificado_em": None}
+    numeros = dict(par.split("=", 1) for par in (ultima.detalhes or "").split() if "=" in par)
+    return {
+        "verificado_em": ultima.criado_em.isoformat() if ultima.criado_em else None,
+        "integro": ultima.resultado == "sucesso",
+        "registros_conferidos": int(numeros.get("conferidos", 0)),
+        "quantidade_com_problema": int(numeros.get("problemas", 0)),
+        "quantidade_ordem_concorrente": int(numeros.get("ordem_concorrente", 0)),
+    }
+
+
 @router.get("/audit-logs/integridade")
 def verificar_integridade_auditoria(
     a_partir_de_id: Optional[int] = Query(None, ge=1, description="Conferir so a partir deste registro (padrao: todos)"),
@@ -257,20 +285,42 @@ def verificar_integridade_auditoria(
     """), {"inicio": a_partir_de_id or 0}).all()
     # o registro mais antigo que ainda existe serve de ancora (os anteriores
     # podem ter sido apagados legitimamente ao vencer o prazo de guarda)
-    problemas = [l.id for i, l in enumerate(linhas) if i > 0 and l.lacre != l.esperado]
+    fora_da_ordem = [l.id for i, l in enumerate(linhas) if i > 0 and l.lacre and l.lacre != l.esperado]
     sem_lacre = [l.id for l in linhas if not l.lacre]
-    integro = not problemas and not sem_lacre
+    # 01/11/2026 (auditoria do administrador, A1): antes da migracao
+    # f5d1b3a7c9e2, dois registros gravados AO MESMO TEMPO podiam entrar na
+    # corrente fora da ordem dos numeros. Nesses casos o elo continua
+    # conferivel: o lacre bate com o de um vizinho proximo. Conteudo alterado
+    # ou registro apagado NAO bate com nenhum vizinho - continua problema.
+    ordem_concorrente, problemas = [], []
+    for rid in fora_da_ordem:
+        confere = db.execute(text("""
+            SELECT EXISTS (
+              SELECT 1 FROM audit_logs c
+              WHERE c.id BETWEEN :id - :janela AND :id + :janela AND c.id <> :id
+                AND radix_lacre_auditoria(c.lacre, a) = a.lacre
+            ) FROM audit_logs a WHERE a.id = :id
+        """), {"id": rid, "janela": JANELA_ORDEM_CONCORRENTE}).scalar()
+        (ordem_concorrente if confere else problemas).append(rid)
+    problemas += sem_lacre
+    integro = not problemas
     db.add(AuditLog(
         usuario_id=usuario.id, acao="verificacao_integridade_auditoria", entidade="audit_log",
         resultado="sucesso" if integro else "erro",
-        detalhes=f"conferidos={len(linhas)} problemas={len(problemas) + len(sem_lacre)}",
+        detalhes=(f"conferidos={len(linhas)} problemas={len(problemas)} "
+                  f"ordem_concorrente={len(ordem_concorrente)}"),
     ))
     db.commit()
     return {
         "integro": integro,
         "registros_conferidos": len(linhas),
-        "primeiro_problema_id": (problemas + sem_lacre or [None])[0],
-        "quantidade_com_problema": len(problemas) + len(sem_lacre),
+        "primeiro_problema_id": (problemas or [None])[0],
+        "quantidade_com_problema": len(problemas),
+        # elos gravados fora de ordem por pedidos simultaneos (antes da
+        # correcao): conferidos com o vizinho, conteudo intacto
+        "quantidade_ordem_concorrente": len(ordem_concorrente),
+        "ids_ordem_concorrente": ordem_concorrente[:50],
+        "verificado_em": datetime.now(timezone.utc).isoformat(),
     }
 
 

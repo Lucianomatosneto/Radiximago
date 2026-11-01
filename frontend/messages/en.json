@@ -2833,5 +2833,15 @@
   },
   "AvisoEmail": {
     "vocequisdizer": "Possible typo: did you mean {sugerido}?"
+  },
+  "IntegridadeAuditoria": {
+    "nunca": "Audit log integrity not verified yet",
+    "integro": "Log intact: no audit record was changed or deleted",
+    "problema": "Warning: {n} record(s) with a problem (first: #{id})",
+    "detalhe": "{conferidos} records checked on {quando}",
+    "ordemConcorrente": "{n} written out of order by simultaneous requests before the 01/11/2026 fix (checked, content intact)",
+    "verificarAgora": "Verify now",
+    "verificando": "Verifying…",
+    "erro": "Could not verify now. Try again in a moment."
   }
 }

@@ -1,5 +1,6 @@
 'use client'
 
+import IntegridadeAuditoria from '../../components/IntegridadeAuditoria'
 import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -171,6 +172,8 @@ export default function PainelAdminPage() {
           <p className="mb-6 text-sm text-slate-500">
             {t('subtitulo')}
           </p>
+
+          <IntegridadeAuditoria />
 
           {erro && (
             <p className="mb-4 text-sm text-red-400" role="alert">

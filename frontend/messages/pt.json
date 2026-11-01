@@ -2833,5 +2833,15 @@
   },
   "AvisoEmail": {
     "vocequisdizer": "Possível erro de digitação: você quis dizer {sugerido}?"
+  },
+  "IntegridadeAuditoria": {
+    "nunca": "Integridade da auditoria ainda não verificada",
+    "integro": "Registro íntegro: nenhum registro de auditoria foi alterado ou apagado",
+    "problema": "Atenção: {n} registro(s) com problema (primeiro: nº {id})",
+    "detalhe": "{conferidos} registros conferidos em {quando}",
+    "ordemConcorrente": "{n} gravado(s) fora de ordem por pedidos simultâneos antes da correção de 01/11/2026 (conferidos, conteúdo intacto)",
+    "verificarAgora": "Verificar agora",
+    "verificando": "Verificando…",
+    "erro": "Não foi possível verificar agora. Tente de novo em instantes."
   }
 }
