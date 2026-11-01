@@ -13,6 +13,7 @@ import BarraClassificacao from '../../../components/detalhe/BarraClassificacao'
 import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
+import BotaoEditarCuradoria from '../../../components/curadoria/BotaoEditarCuradoria'
 import { obterSessaoAtual } from '../../../lib/sessao'
 
 // Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
@@ -191,6 +192,9 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
             <p className="mt-1 text-sm text-slate-400">
               {t('subtitulo')}
             </p>
+            <div className="mt-2">
+              <BotaoEditarCuradoria curationId={curationId} />
+            </div>
           </div>
 
           {!carregando && !erro && imagem && (

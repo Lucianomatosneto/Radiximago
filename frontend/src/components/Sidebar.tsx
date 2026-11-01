@@ -60,12 +60,20 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, cor: COR_BLUE },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, cor: COR_BLUE },
+  // Pastas de pacientes (fotos do negatoscopio) - 31/10/2026
+  { chave: 'uploadCamera', href: '/casos/novo', ativo: true, perfis: ['estudante', 'professor', 'curador'], cor: COR_TEAL },
+  { chave: 'meusPacientes', href: '/casos/meus-tratamentos', ativo: true, perfis: ['estudante'], cor: COR_CYAN },
+  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, perfis: ['professor', 'curador'], cor: COR_CYAN },
+  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, perfis: ['professor', 'curador'], cor: COR_TEAL },
+  { chave: 'registroAcessos', href: '/casos/acessos', ativo: true, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD },
   { chave: 'vocabulario', href: '/vocabulario', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
   { chave: 'macros', href: '/macros', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'relatorios', href: '/relatorios', ativo: true, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'auditoria', href: '/auditoria', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
   { chave: 'integracoes', href: '/integracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
   { chave: 'configuracoes', href: '/configuracoes', ativo: true, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
+  // Sugestoes de melhoria (30/10/2026): todos enviam; o administrador ve a lista completa
+  { chave: 'sugestoes', href: '/sugestoes', ativo: true, cor: COR_LIME },
 ]
 
 // `recolhivel`: a tela pede o menu RECOLHIDO (uma faixa fina com o botao
@@ -88,12 +96,15 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   useEffect(() => {
     let cancelado = false
     function contar() {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/shares/recebidas/novas`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((dados) => {
-          if (!cancelado && dados) setNovasCompartilhadas(dados.quantidade ?? 0)
-        })
-        .catch(() => {})
+      // imagens do banco compartilhadas + pastas de pacientes novas (professor/curador)
+      const ler = (caminho: string) =>
+        fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, { credentials: 'include' })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((dados) => (dados?.quantidade as number) ?? 0)
+          .catch(() => 0)
+      Promise.all([ler('/shares/recebidas/novas'), ler('/casos/recebidos/novos')]).then(([a, b]) => {
+        if (!cancelado) setNovasCompartilhadas(a + b)
+      })
     }
     contar()
     const id = setInterval(contar, 60000)

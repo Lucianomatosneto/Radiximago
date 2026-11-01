@@ -51,6 +51,10 @@ echo "3/4 Imagens (Orthanc) e fotos de perfil..."
 mkdir -p backend
 rm -rf backend/uploads
 tar -xzf "$TEMP/fotos.tar.gz" -C backend
+if [ -f "$TEMP/dados_clinicos.tar.gz" ]; then
+  rm -rf dados_clinicos
+  tar -xzf "$TEMP/dados_clinicos.tar.gz"
+fi
 
 echo "4/4 Ligando o Radix..."
 "${DC[@]}" up -d --build

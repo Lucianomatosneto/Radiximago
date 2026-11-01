@@ -18,6 +18,7 @@ Glossário rápido:
 | Guardar senhas | **Argon2id** (resumo lento e "caro em memória", com "sal"): 19456 KiB de memória, 2 passadas, 1 linha de execução, o mínimo recomendado pela OWASP. Lê a senha **inteira** (o bcrypt só lia 72 bytes). Desde 19/10/2026 | adequada (OWASP, recomendação principal) | `passlib` + `argon2-cffi` | `security.py` (`pwd_context`) |
 | Senhas antigas (antes de 19/10/2026) | **bcrypt**, custo 12: só **conferidas**; no login certo são regravadas em Argon2id | adequada | `passlib` + `bcrypt` | `security.py`, `auth.py` |
 | Segredo do login em duas etapas (TOTP) | guardado **cifrado** com Fernet (AES-128-CBC + HMAC-SHA256); chave de 256 bits **derivada** da `JWT_SECRET_KEY` por HKDF-SHA256 (contexto `radix-imago/totp/v1`) | adequada | `cryptography` | `mfa.py` (`_cofre`) |
+| Fotos das pastas de pacientes (identificadas, 31/10/2026) | **AES-256-GCM** (cifra com verificação de integridade), código aleatório de 96 bits por arquivo; chave de 256 bits derivada por HKDF-SHA256 (contexto `radix-imago/casos-clinicos/v1`) da `CASOS_CHAVE` do `.env` ou, se ela estiver vazia, da `JWT_SECRET_KEY`. Trocar a chave usada torna as fotos já guardadas ilegíveis: em produção, defina a `CASOS_CHAVE` uma vez e guarde-a junto das cópias | adequada | `cryptography` | `casos_arquivos.py` |
 | Códigos do aplicativo (TOTP, RFC 6238) | HMAC-SHA1 sobre o relógio, 6 números a cada 30 s, segredo de 160 bits, cada código aceito **uma vez** | padrão da RFC (o SHA-1 aqui é usado só como HMAC, uso aceito) | `pyotp` | `mfa.py` |
 | Códigos de recuperação | 8 códigos aleatórios de ~40 bits (`secrets`); no banco só o **resumo SHA-256** | adequada para uso único com limite de tentativas | `secrets`, `hashlib` | `mfa.py` |
 | Assinar a sessão (JWT) | **HMAC-SHA256 (HS256)**, algoritmo fixo; `alg: none` e outros recusados | 256 bits (chave ≥ 32 bytes, obrigatória em produção) | `PyJWT` | `security.py`, `config.py` |
@@ -77,3 +78,4 @@ Proibidos no código (conferido por `test_11_4_3_e_11_5_1`):
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2). Também passou a vigorar: chave do JWT com 32 bytes ou mais obrigatória em produção, e regravação automática de senhas em padrão antigo |
 | 1.1 | 19/10/2026 | Senhas em Argon2id (bcrypt só para conferir as antigas); segredos do login em duas etapas cifrados; `WHISPER_CHAVE` na política de segredos |
+| 1.2 | 31/10/2026 | Fotos das pastas de pacientes cifradas com AES-256-GCM (`CASOS_CHAVE`) |

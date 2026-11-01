@@ -304,6 +304,16 @@ export default function CuradoriaPage() {
       setAutenticado(true)
       carregarFila()
       carregarReviewsRespondidas()
+      // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
+      // ficha e mandou para ca - abre ESSA ficha em vez da 1a da fila
+      const q = new URLSearchParams(window.location.search)
+      const editar = Number(q.get('editar'))
+      const ref = Number(q.get('ref'))
+      if (editar > 0 && ref > 0) {
+        autoAbriuPrimeiraRef.current = true
+        carregarViewerUrl(ref)
+        carregarFichaCompleta(editar, ref)
+      }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])

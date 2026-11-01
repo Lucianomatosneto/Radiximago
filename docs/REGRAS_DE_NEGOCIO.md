@@ -70,6 +70,9 @@ pendente ─┐
 | **Prancha por e-mail** (PDF, para o próprio e-mail) | 5 por hora; até 15 imagens por prancha | conta | `prancha_router.py` |
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
+| **Sugestão de melhoria** | 10 por hora | conta | `sugestoes.py` |
+| **Pasta de paciente nova** (fotos do negatoscópio) | 30 por hora; até 30 fotos por pasta | conta | `casos_router.py` |
+| **E-mail com o link de uma pasta de paciente** (só o link, que exige login) | 10 por hora | conta | `casos_router.py` |
 | **Girar imagem** (Curadoria) | 30 por minuto; um giro por vez em cada imagem | conta (curadoria) | `curation/orientacao.py` |
 | Foto de perfil | 5 MB; JPG/PNG/WebP | por pedido | `users_router.py` |
 | Busca | até 200 resultados por página | por pedido | `search_router.py` |

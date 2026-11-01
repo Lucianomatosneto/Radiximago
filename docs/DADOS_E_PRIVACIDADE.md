@@ -41,6 +41,8 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Vocabulário, macros, frases de voz | `termos_vocabulario`, `sinonimos_termo`, `macros_curadoria`, `frases_aprendidas_voz` | N1 | permanente |
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
 | Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
+| **Pastas de pacientes** (31/10/2026): nome completo, nascimento, gênero, contato, nº do prontuário e observações do paciente; modalidade e descrição do caso; anotações e versões; histórico; tratamento | `casos_clinicos`, `casos_revisoes`, `casos_historico`, `casos_compartilhamentos` — **identificados, não passam pelo Orthanc nem pela anonimização** | **N4** | prazo legal do prontuário (20 anos após o último registro, a confirmar com a clínica-escola); exclusão a pedido do titular a definir |
+| Fotos das pastas (radiografias no negatoscópio e termo de aceitação assinado) | `dados_clinicos/` no servidor, **cifradas (AES-256-GCM)**, nome aleatório; reduzidas a 2.400 px e **sem metadados** (GPS e modelo do celular apagados); referência em `casos_imagens` | **N4** | junto com a pasta |
 | Cópias de segurança | `./backups` no servidor (Postgres e Orthanc), diárias, 14 mais recentes | igual à origem (até N3) | 14 dias; **sem criptografia e sem cópia fora do servidor** (pendente) |
 
 ### 2.1 Recorte da moldura branca e giro (20/10/2026)
@@ -146,3 +148,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.1 | 18/10/2026 | Acesso por campo na escrita (seção 4.1, ASVS 8.2.3) |
 | 1.2 | 19/10/2026 | Senhas em Argon2id; dados do login em duas etapas |
 | 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |
+| 1.4 | 31/10/2026 | Pastas de pacientes (dados identificados, N4): quem vê — aluno autor, aluno do tratamento, professores e curadores; administrador só o registro de acessos (`casos_router.py`, `_pode_ver`) |

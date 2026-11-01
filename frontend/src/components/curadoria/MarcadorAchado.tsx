@@ -74,8 +74,15 @@ export default function MarcadorAchado({
   onCarregou,
   compacto = false,
   semAchado = false,
+  urlImagem,
+  semRecorte = false,
 }: {
-  orthancReferenceId: number
+  orthancReferenceId?: number
+  /** Outra imagem no lugar do preview da curadoria (ex.: foto de uma pasta
+   * de paciente - /casos/{id}/imagens/{img}). */
+  urlImagem?: string
+  /** Nao recortar borda branca (foto do negatoscopio: o fundo claro e da luz). */
+  semRecorte?: boolean
   /** Modo miniatura (tela cheia da Curadoria): mostra so a imagem, sem a
    * barra de formas nem o texto de ajuda - o painel fica pequeno ao lado
    * do visualizador e so vira editor quando o curador clica nele. */
@@ -181,7 +188,7 @@ export default function MarcadorAchado({
     async function carregar() {
       try {
         const resposta = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`,
+          urlImagem || `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`,
           { credentials: 'include' }
         )
         if (!resposta.ok) {
@@ -199,7 +206,7 @@ export default function MarcadorAchado({
           // Detecta a borda branca (se houver) ANTES de mostrar a
           // imagem - assim ja aparece recortada de cara, sem "pulo"
           // visual (mesmo motivo do tamanho natural acima).
-          recorteRef.current = detectarRecorteConteudo(imagemTeste)
+          recorteRef.current = semRecorte ? null : detectarRecorteConteudo(imagemTeste)
           setSrc(urlObjeto)
           onCarregou?.()
         }
@@ -217,7 +224,7 @@ export default function MarcadorAchado({
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
-  }, [orthancReferenceId])
+  }, [orthancReferenceId, urlImagem])
 
   useEffect(() => {
     if (src) recalcularTamanho()

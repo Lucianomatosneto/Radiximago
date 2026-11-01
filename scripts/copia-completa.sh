@@ -45,9 +45,10 @@ if [ "$ORTHANC_PARADO" = 1 ]; then
   ORTHANC_PARADO=0
 fi
 
-echo "3/4 Fotos de perfil e configuracao..."
-mkdir -p backend/uploads
+echo "3/4 Fotos de perfil, fotos das pastas de pacientes (cifradas) e configuracao..."
+mkdir -p backend/uploads dados_clinicos
 tar -czf "$TEMP/fotos.tar.gz" -C backend uploads
+tar -czf "$TEMP/dados_clinicos.tar.gz" dados_clinicos
 cp .env "$TEMP/env"
 {
   echo "Copia completa do Radix Imago"

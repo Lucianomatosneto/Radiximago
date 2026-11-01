@@ -80,3 +80,37 @@ def descartar_curadoria(
         "status": ficha.status,
         "motivo": motivo,
     }
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/reabrir  -> "editar depois do envio" (31/10/2026)
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/reabrir")
+def reabrir_para_edicao(
+    curation_id: int,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    db: Session = Depends(get_db),
+):
+    """
+    Reabre uma ficha ja APROVADA (ou descartada) para o curador corrigir:
+    volta para 'em_analise' e, ao aprovar de novo, a versao corrigida e a que
+    vale. Enquanto estiver reaberta ela SAI da busca dos usuarios (so ficha
+    aprovada aparece) - nada fica publicado pela metade. O historico da
+    ficha guarda quem reabriu e quando; a anterior continua no historico.
+    """
+    from app.modules.audit_logs import AuditLog
+    from app.modules.curations import StatusCuradoria
+
+    from .common import _registrar_historico
+
+    ficha = _buscar_ficha(db, curation_id)
+    if ficha.status not in STATUS_FINAIS:
+        raise HTTPException(status_code=409, detail="Esta ficha já está em edição.")
+    anterior = ficha.status
+    ficha.status = StatusCuradoria.EM_ANALISE.value
+    _registrar_historico(db, ficha.id, usuario.id, "reabertura_edicao", anterior,
+                         ficha.status, "Reaberta para edição depois do envio")
+    db.add(AuditLog(usuario_id=usuario.id, acao="curadoria_reaberta", entidade="curation", entidade_id=ficha.id,
+                    resultado="sucesso", detalhes=f"{anterior} -> em_analise"))
+    db.commit()
+    return {"curation_id": ficha.id, "orthanc_reference_id": ficha.orthanc_reference_id, "status": ficha.status}
