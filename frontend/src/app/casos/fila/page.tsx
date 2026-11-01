@@ -3,6 +3,9 @@
 import { Printer, Search } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Hourglass } from 'lucide-react'
+import EstadoVazio from '../../../components/EstadoVazio'
+import AvisoNaoDiagnostico from '../../../components/casos/AvisoNaoDiagnostico'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
 import ListaPacientes from '../../../components/casos/ListaPacientes'
 import { apiJson, type ResumoCaso } from '../../../lib/casos'
@@ -84,7 +87,21 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
       </section>
       {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600" role="alert">{erro}</p>}
       {casos && <p className="text-sm text-slate-500">{t('fila.encontrados', { n: casos.length })}</p>}
-      {casos && <ListaPacientes casos={casos} vazio={aba === 'na_fila' ? t('fila.vazia') : t('fila.nadaClassificar')} />}
+      {casos && (
+        <ListaPacientes
+          casos={casos}
+          vazio={
+            <EstadoVazio
+              icone={Hourglass}
+              titulo={aba === 'na_fila' ? t('vazios.filaTitulo') : t('vazios.classificarTitulo')}
+              texto={aba === 'na_fila' ? t('fila.vazia') : t('fila.nadaClassificar')}
+              acao={{ href: '/compartilhadas-comigo', rotulo: t('vazios.verRecebidas') }}
+              comoFunciona={{ titulo: t('vazios.comoFunciona'), passos: [t('vazios.passo1'), t('vazios.passo2'), t('vazios.passo3'), t('vazios.passo4')] }}
+              rodape={<AvisoNaoDiagnostico compacto />}
+            />
+          }
+        />
+      )}
     </>
   )
 }

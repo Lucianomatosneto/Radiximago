@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import { History } from 'lucide-react'
+import EstadoVazio from '../../../components/EstadoVazio'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
 import { apiJson, dataHora } from '../../../lib/casos'
 
@@ -57,7 +59,11 @@ function Tabela() {
             ))}
           </tbody>
         </table>
-        {linhas && linhas.length === 0 && <p className="p-6 text-center text-sm text-slate-500">{t('acessos.vazio')}</p>}
+        {linhas && linhas.length === 0 && (
+          <div className="p-4">
+            <EstadoVazio icone={History} titulo={t('acessos.vazio')} texto={t('vazios.acessosTexto')} />
+          </div>
+        )}
       </div>
     </>
   )

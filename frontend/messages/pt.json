@@ -2491,7 +2491,8 @@
       "estudante": "Aluno",
       "pesquisador": "Pesquisador",
       "suporte": "Suporte"
-    }
+    },
+    "vazioTexto": "Use o formulário acima: sua sugestão aparece aqui com o andamento (recebida, em análise, feita)."
   },
   "Casos": {
     "carregando": "Carregando...",
@@ -2728,6 +2729,25 @@
         "caso_encaminhado_aluno": "encaminhou ao aluno",
         "caso_concluido": "concluiu o tratamento"
       }
+    },
+    "vazios": {
+      "meusTratamentosTitulo": "Nenhum paciente em tratamento",
+      "meusTratamentosTexto": "Quando um professor encaminhar um paciente para você, ele aparecerá aqui.",
+      "verMinhasPastas": "Ver minhas pastas de pacientes",
+      "comoFunciona": "Como funciona o encaminhamento",
+      "passo1": "O aluno fotografa as radiografias e envia a pasta do paciente ao professor.",
+      "passo2": "O professor revisa e, se for o caso, pede revisão ao curador.",
+      "passo3": "O curador classifica o tratamento necessário e o paciente entra na fila.",
+      "passo4": "Um professor escolhe o paciente na fila e o encaminha a um aluno.",
+      "filaTitulo": "Nenhum paciente aguardando tratamento",
+      "classificarTitulo": "Nada para classificar",
+      "verRecebidas": "Ver pastas recebidas",
+      "tratamentosTitulo": "Nenhum paciente em tratamento",
+      "tratamentosTexto": "Quando um professor encaminhar um paciente da fila para um aluno, a dupla aparecerá aqui.",
+      "verFila": "Ver a fila de tratamento",
+      "acessosTexto": "Cada vez que alguém abrir uma pasta de paciente, o acesso aparecerá aqui.",
+      "minhasPastasTitulo": "Nenhuma pasta de paciente ainda",
+      "minhasPastasTexto": "Fotografe as radiografias no negatoscópio e envie ao professor; a pasta aparecerá aqui com as correções."
     }
   }
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import { Phone } from 'lucide-react'
+import type { ReactNode } from 'react'
 import Link from 'next/link'
 import AvisoNaoDiagnostico from './AvisoNaoDiagnostico'
 import { useTranslations } from 'next-intl'
@@ -8,15 +9,9 @@ import { COR_ETAPA, data, urlFoto, type ResumoCaso } from '../../lib/casos'
 
 // Lista de pacientes (fila de tratamento e "meus pacientes em tratamento"):
 // miniatura, dados importantes do paciente, CONTATO e tratamento.
-export default function ListaPacientes({ casos, vazio }: { casos: ResumoCaso[]; vazio: string }) {
+export default function ListaPacientes({ casos, vazio }: { casos: ResumoCaso[]; vazio: ReactNode }) {
   const t = useTranslations('Casos')
-  if (!casos.length)
-    return (
-      <div className="space-y-3 py-6 text-center">
-        <p className="text-sm text-slate-500">{vazio}</p>
-        <AvisoNaoDiagnostico compacto />
-      </div>
-    )
+  if (!casos.length) return <>{vazio}</>
   return (
     <>
     <AvisoNaoDiagnostico />

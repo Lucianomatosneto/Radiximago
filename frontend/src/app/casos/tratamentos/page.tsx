@@ -4,6 +4,8 @@ import { GraduationCap, Printer } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import { Users } from 'lucide-react'
+import EstadoVazio from '../../../components/EstadoVazio'
 import AvisoNaoDiagnostico from '../../../components/casos/AvisoNaoDiagnostico'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
 import { apiJson, dataHora } from '../../../lib/casos'
@@ -61,7 +63,15 @@ function Tabela() {
       </div>
       {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600" role="alert">{erro}</p>}
       {linhas && linhas.length > 0 && <AvisoNaoDiagnostico />}
-      {linhas && linhas.length === 0 && <p className="py-8 text-center text-sm text-slate-500">{t('tratamentosLista.vazio')}</p>}
+      {linhas && linhas.length === 0 && (
+        <EstadoVazio
+          icone={Users}
+          titulo={t('vazios.tratamentosTitulo')}
+          texto={t('vazios.tratamentosTexto')}
+          acao={{ href: '/casos/fila', rotulo: t('vazios.verFila') }}
+          rodape={<AvisoNaoDiagnostico compacto />}
+        />
+      )}
       {Array.from(porAluno.entries()).map(([aluno, lista]) => (
         <section key={aluno} className="rounded-2xl border border-base-border bg-base-surface p-3">
           <h2 className="mb-2 text-sm font-semibold text-ink"><GraduationCap aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{aluno} <span className="font-normal text-slate-500">({lista.length})</span></h2>

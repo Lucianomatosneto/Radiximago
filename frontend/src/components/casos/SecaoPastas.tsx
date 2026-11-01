@@ -1,10 +1,12 @@
 'use client'
 
-import { Camera } from 'lucide-react'
+import { Camera, FolderOpen } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
+import EstadoVazio from '../EstadoVazio'
+import AvisoNaoDiagnostico from './AvisoNaoDiagnostico'
 import GradePastas, { type Selecao } from './GradePastas'
 import { API, PERFIS_CADASTRO, PERFIS_EQUIPE, type ResumoCaso } from '../../lib/casos'
 import { obterSessaoAtual } from '../../lib/sessao'
@@ -58,7 +60,13 @@ export default function SecaoPastas({ modo }: { modo: 'recebidas' | 'minhas' }) 
       </div>
       {modo === 'recebidas' && <p className="text-xs text-slate-500">{t('grade.ajudaRecebidas')}</p>}
       {casos.length === 0 ? (
-        <p className="text-sm text-slate-500">{t('grade.nenhumaMinha')}</p>
+        <EstadoVazio
+          icone={FolderOpen}
+          titulo={t('vazios.minhasPastasTitulo')}
+          texto={t('vazios.minhasPastasTexto')}
+          acao={{ href: '/casos/novo', rotulo: t('grade.novaPasta') }}
+          rodape={<AvisoNaoDiagnostico compacto />}
+        />
       ) : (
         <GradePastas casos={casos} selecao={modo === 'recebidas' ? selecao : undefined} onSelecao={setSelecao} mostrarPaciente />
       )}

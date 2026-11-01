@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { Lightbulb } from 'lucide-react'
+import EstadoVazio from '../../components/EstadoVazio'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
@@ -185,7 +187,9 @@ export default function SugestoesPage() {
 
           <section className="max-w-3xl rounded-2xl border border-base-border bg-base-surface p-4">
             <h2 className="mb-3 text-base font-semibold text-ink">{t('minhas')}</h2>
-            {minhas.length === 0 && <p className="text-sm text-slate-500">{t('nenhumaMinha')}</p>}
+            {minhas.length === 0 && (
+              <EstadoVazio icone={Lightbulb} titulo={t('nenhumaMinha')} texto={t('vazioTexto')} />
+            )}
             <ul className="space-y-2">
               {minhas.map((s) => (
                 <li key={s.id} className="rounded-xl border border-base-border p-3">

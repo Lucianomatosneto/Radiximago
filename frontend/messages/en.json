@@ -2491,7 +2491,8 @@
       "estudante": "Student",
       "pesquisador": "Researcher",
       "suporte": "Support"
-    }
+    },
+    "vazioTexto": "Use the form above: your suggestion shows up here with its status (received, under review, done)."
   },
   "Casos": {
     "carregando": "Loading...",
@@ -2728,6 +2729,25 @@
         "caso_encaminhado_aluno": "referred to student",
         "caso_concluido": "completed treatment"
       }
+    },
+    "vazios": {
+      "meusTratamentosTitulo": "No patients in treatment",
+      "meusTratamentosTexto": "When a professor refers a patient to you, they will appear here.",
+      "verMinhasPastas": "See my patient folders",
+      "comoFunciona": "How referral works",
+      "passo1": "The student photographs the radiographs and sends the patient folder to a professor.",
+      "passo2": "The professor reviews it and, if needed, asks the curator for review.",
+      "passo3": "The curator classifies the needed treatment and the patient enters the queue.",
+      "passo4": "A professor picks the patient from the queue and refers them to a student.",
+      "filaTitulo": "No patients awaiting treatment",
+      "classificarTitulo": "Nothing to classify",
+      "verRecebidas": "See received folders",
+      "tratamentosTitulo": "No patients in treatment",
+      "tratamentosTexto": "When a professor refers a patient from the queue to a student, the pair will appear here.",
+      "verFila": "See the treatment queue",
+      "acessosTexto": "Every time someone opens a patient folder, the access will appear here.",
+      "minhasPastasTitulo": "No patient folders yet",
+      "minhasPastasTexto": "Photograph the radiographs on the light box and send them to a professor; the folder will appear here with the reviews."
     }
   }
 }
