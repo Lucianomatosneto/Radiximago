@@ -14,7 +14,7 @@ const PERFIS_PERMITIDOS = ['administrador', 'curador']
 // Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
 // usado em Pesquisa avançada, Curadoria e demais telas) - so os valores
 // crus (mesmos salvos pelo backend) ficam fixos aqui.
-const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+const OPCOES_TIPO_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal', 'tomografia']
 const OPCOES_QUALIDADE_TECNICA = ['otima', 'boa', 'regular', 'insatisfatoria']
 
 // achadoPrincipal precisa do mapa abaixo porque as chaves de traducao nao
@@ -41,6 +41,9 @@ interface StatsResponse {
   por_achado: Record<string, number>
   por_qualidade_tecnica: Record<string, number>
   por_curador: Record<string, number>
+  /** nomes dos curadores de por_curador (01/11/2026: a tela nao depende
+   * mais da lista de usuarios, que so o administrador pode ver) */
+  nomes_curadores?: Record<string, string>
 }
 
 interface Usuario {
@@ -70,8 +73,13 @@ function TabelaProporcao({
   dados,
   renderRotulo,
   corPorChave,
+  base,
 }: {
   titulo: string
+  /** base da porcentagem; sem ela, a soma das linhas (01/11/2026: em
+   * "Fichas por achado" uma ficha conta em varias linhas, entao a base e o
+   * total de fichas) */
+  base?: number
   dados: Record<string, number>
   renderRotulo: (chave: string) => ReactNode
   // Opcional: quando informado, colore o rotulo e a barra de cada linha
@@ -83,7 +91,7 @@ function TabelaProporcao({
 }) {
   const t = useTranslations('Relatorios')
   const entradas = Object.entries(dados).sort((a, b) => b[1] - a[1])
-  const total = entradas.reduce((soma, [, valor]) => soma + valor, 0)
+  const total = base ?? entradas.reduce((soma, [, valor]) => soma + valor, 0)
 
   return (
     <section className="rounded-xl border border-base-border bg-base-surface p-5">
@@ -217,7 +225,7 @@ export default function RelatoriosPage() {
   function rotularCurador(chave: string): string {
     if (chave === 'nao_informado') return t('semCuradorAtribuido')
     const id = Number(chave)
-    return mapaCuradores[id] ?? t('usuarioNumero', { id: chave })
+    return stats?.nomes_curadores?.[chave] ?? mapaCuradores[id] ?? t('usuarioNumero', { id: chave })
   }
 
   if (carregando) {
@@ -304,6 +312,7 @@ export default function RelatoriosPage() {
                 <TabelaProporcao
                   titulo={t('fichasPorAchado')}
                   dados={stats.por_achado}
+                  base={stats.total_fichas_curadoria}
                   renderRotulo={(chave) => (chave === 'sem_alteracoes' ? t('semAlteracoes') : tItensAchado.has(chave) ? tItensAchado(chave) : rotularAchado(chave))}
                 />
                 <p className="-mt-2 text-xs text-slate-500">{t('fichasPorAchadoNota')}</p>

@@ -1437,7 +1437,7 @@
       "notaAnonimizado": "A classificação mostra só a sua posição - o desempenho dos demais curadores não é exibido."
     },
     "fichasPorAchado": "Fichas por achado (alterações observadas)",
-    "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. Uma ficha com vários achados entra em cada um deles, por isso a soma pode passar do total de fichas.",
+    "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. A porcentagem é sobre o total de fichas; uma ficha com vários achados entra em cada um deles, por isso a soma das linhas pode passar de 100%.",
     "semAlteracoes": "Sem alterações"
   },
   "Integracoes": {
@@ -1922,7 +1922,8 @@
     },
     "naBusca": "{quantidade} na busca",
     "ligadasNaoAprovadas": "{quantidade} ficha(s) ligada(s) ainda não aprovada(s) (ou com a imagem inativa): só entram na busca depois de aprovadas na Curadoria.",
-    "buscaPorTexto": "+{quantidade} imagem(ns) encontrada(s) pelo nome ou sinônimo escrito na ficha, mesmo sem o termo ligado."
+    "buscaPorTexto": "+{quantidade} imagem(ns) encontrada(s) pelo nome ou sinônimo escrito na ficha, mesmo sem o termo ligado.",
+    "aprovadas": "{quantidade} aprovada(s)"
   },
   "Voz": {
     "titulo": "Curadoria por voz",

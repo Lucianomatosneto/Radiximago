@@ -134,6 +134,7 @@ def obter_indicadores(
         .all()
     )
 
+    por_curador = {str(k) if k != "nao_informado" else k: v for k, v in _contar_por(db, Curation.curador_id).items()}
     return {
         # total de imagens ATIVAS = soma exata de imagens.por_situacao
         "total_imagens_orthanc": total_imagens,
@@ -164,7 +165,16 @@ def obter_indicadores(
         # "Dificuldade" saiu do relatorio: nao existe campo na Curadoria para
         # preenche-la (decisao de 01/11/2026 - docs/REGRAS_DE_NEGOCIO.md).
         "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
-        "por_curador": _contar_por(db, Curation.curador_id),
+        "por_curador": por_curador,
+        # nomes de quem aparece em "Fichas por curador" (so esses) - antes a
+        # tela buscava /users/, que o curador nao pode ver, e mostrava
+        # "Usuario #1"
+        "nomes_curadores": {
+            str(uid): nome
+            for uid, nome in db.query(User.id, User.nome).filter(
+                User.id.in_([int(k) for k in por_curador if k != "nao_informado"])
+            )
+        },
     }
 
 

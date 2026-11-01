@@ -406,9 +406,11 @@ export default function VocabularioPage() {
                         {termo.codigo_decs && <span className="text-[11px] text-slate-400">DeCS {termo.codigo_decs}</span>}
                         <span className="ml-auto text-right text-xs text-slate-400">
                           {/* mesmo numero da Pesquisa avancada + as ligadas (01/11/2026) */}
-                          <span className="font-semibold text-ink">{t('naBusca', { quantidade: termo.quantidade_na_busca ?? 0 })}</span>
-                          {' · '}
                           {t('fichasLigadas', { quantidade: termo.quantidade_fichas })}
+                          {' · '}
+                          {t('aprovadas', { quantidade: termo.quantidade_aprovadas ?? 0 })}
+                          {' · '}
+                          <span className="font-semibold text-ink">{t('naBusca', { quantidade: termo.quantidade_na_busca ?? 0 })}</span>
                         </span>
                       </div>
                       {termo.quantidade_fichas > (termo.quantidade_aprovadas ?? termo.quantidade_fichas) && (

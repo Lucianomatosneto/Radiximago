@@ -130,3 +130,19 @@ def test_curadoria_grava_regioes_da_imagem(client, db, criar_usuario, criar_fich
     assert r.json()["regioes_imagem"] == ["maxila", "atm"]
     r = client.patch(f"/curation/{f.id}", json={"regioes_imagem": ["nao_existe"]}, headers=h)
     assert r.status_code == 422
+
+
+def test_relatorio_mostra_nome_do_curador_sem_lista_de_usuarios(client, db, criar_usuario, criar_ficha):
+    """01/11/2026: "Fichas por curador" mostrava "Usuario #1" para o curador,
+    que nao pode ver /users/ - os nomes agora vem junto do relatorio."""
+    curador = criar_usuario(perfil=UserRole.curador)
+    f = criar_ficha()
+    db.get(Curation, f.id).curador_id = curador.id
+    db.commit()
+    h = cabecalho_auth(obter_token(client, curador.email))
+    r = client.get("/admin/stats", headers=h)
+    assert r.status_code == 200, r.text
+    dados = r.json()
+    assert dados["por_curador"][str(curador.id)] >= 1
+    assert dados["nomes_curadores"][str(curador.id)] == curador.nome
+    assert set(dados["nomes_curadores"]) <= set(dados["por_curador"])  # so quem aparece no relatorio

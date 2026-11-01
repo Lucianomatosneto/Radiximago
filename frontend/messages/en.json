@@ -1437,7 +1437,7 @@
       "notaAnonimizado": "The ranking shows only your position - other curators' performance isn't displayed."
     },
     "fichasPorAchado": "Records by finding (observed changes)",
-    "fichasPorAchadoNota": "Counts the changes marked in Curation. A record with several findings counts in each, so the sum can exceed the total of records.",
+    "fichasPorAchadoNota": "Counts the changes marked in Curation. The percentage is over the total of records; a record with several findings counts in each, so the rows can add up to more than 100%.",
     "semAlteracoes": "No changes"
   },
   "Integracoes": {
@@ -1922,7 +1922,8 @@
     },
     "naBusca": "{quantidade} in search",
     "ligadasNaoAprovadas": "{quantidade} linked record(s) not yet approved (or with an inactive image): they only appear in search after approval in Curation.",
-    "buscaPorTexto": "+{quantidade} image(s) found by the name or synonym written in the record, even without the linked term."
+    "buscaPorTexto": "+{quantidade} image(s) found by the name or synonym written in the record, even without the linked term.",
+    "aprovadas": "{quantidade} approved"
   },
   "Voz": {
     "titulo": "Voice curation",
