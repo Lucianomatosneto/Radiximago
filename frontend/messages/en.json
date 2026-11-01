@@ -1415,7 +1415,8 @@
     "resultados": {
       "sucesso": "Success",
       "negado": "Denied",
-      "erro": "Error"
+      "erro": "Error",
+      "alerta": "Warning"
     }
   },
   "Relatorios": {

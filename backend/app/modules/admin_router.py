@@ -269,6 +269,7 @@ def ultima_verificacao_integridade(
         "registros_conferidos": int(numeros.get("conferidos", 0)),
         "quantidade_com_problema": int(numeros.get("problemas", 0)),
         "quantidade_ordem_concorrente": int(numeros.get("ordem_concorrente", 0)),
+        "primeiro_problema_id": int(numeros["primeiro"]) if numeros.get("primeiro", "").isdigit() else None,
     }
 
 
@@ -314,9 +315,12 @@ def verificar_integridade_auditoria(
     integro = not problemas
     db.add(AuditLog(
         usuario_id=usuario.id, acao="verificacao_integridade_auditoria", entidade="audit_log",
-        resultado="sucesso" if integro else "erro",
+        # problema achado pela verificacao e ALERTA, nao erro do servidor
+        # (reteste do administrador, 01/11/2026)
+        resultado="sucesso" if integro else "alerta",
         detalhes=(f"conferidos={len(linhas)} problemas={len(problemas)} "
-                  f"ordem_concorrente={len(ordem_concorrente)}"),
+                  f"ordem_concorrente={len(ordem_concorrente)}"
+                  + (f" primeiro={problemas[0]}" if problemas else "")),
     ))
     db.commit()
     return {

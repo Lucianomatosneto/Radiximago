@@ -65,3 +65,21 @@ def test_texto_especial_nao_derruba_ficha_nem_busca(client, criar_usuario, criar
     assert client.get(f"/curation/{f.id}", headers=cab).status_code == 200
     for termo in ("texto:negrito", "texto:ação", "texto:%", "texto:\\"):
         assert client.get("/search", params={"termos": termo}, headers=cab).status_code == 200, termo
+
+
+def test_orthanc_fora_vira_502_claro(client, criar_usuario, criar_ficha, monkeypatch):
+    """Reteste do administrador: GET /curation/61/preview deu 500 com o
+    Orthanc ocupado. Agora: 502 'o servidor de imagens nao respondeu'."""
+    import httpx
+
+    from app.modules import orthanc_client
+
+    def falha(*a, **k):
+        raise httpx.ConnectError("Orthanc fora")
+    monkeypatch.setattr(orthanc_client, "obter_preview_instancia", falha)
+    f = criar_ficha()
+    cab = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.curador).email))
+    r = TestClient(app, raise_server_exceptions=False).get(
+        f"/curation/{f.orthanc_reference_id}/preview", headers=cab)
+    assert r.status_code == 502 and "servidor de imagens" in r.json()["detail"]
+    assert "Orthanc fora" not in r.text

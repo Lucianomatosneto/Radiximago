@@ -28,6 +28,8 @@ from __future__ import annotations
 
 import asyncio
 import uuid
+
+import httpx
 import logging
 import time
 
@@ -56,7 +58,9 @@ MENSAGEM_ERRO_GENERICA = "Erro interno. A equipe foi avisada pelo registro do si
 # mensagem (o mesmo fica no registro do servidor e na auditoria) e caso
 # proprio para "banco sem a atualizacao" - causa real dos erros 500 de
 # 01/11 (coluna nova no codigo antes do "alembic upgrade head").
-def _mensagem_de_erro(banco_desatualizado: bool, codigo: str) -> str:
+def _mensagem_de_erro(banco_desatualizado: bool, codigo: str, orthanc: bool = False) -> str:
+    if orthanc:
+        return f"O servidor de imagens não respondeu agora. Tente de novo em instantes (código {codigo})."
     if banco_desatualizado:
         return (
             "O sistema está sendo atualizado: falta aplicar a atualização do banco de dados. "
@@ -139,13 +143,16 @@ async def registrar_eventos_de_seguranca(request: Request, call_next):
             codigo = uuid.uuid4().hex[:8]
             logger.exception("Erro inesperado em %s (codigo %s)", rota, codigo)
             desatualizado = _banco_desatualizado(erro)
-            status = 503 if desatualizado else 500
-            motivo = " banco_desatualizado" if desatualizado else ""
+            # servidor de imagens (Orthanc) fora ou lento: 502 claro, nao 500
+            # (reteste do administrador: GET /curation/61/preview intermitente)
+            orthanc = isinstance(erro, httpx.HTTPError)
+            status = 503 if desatualizado else 502 if orthanc else 500
+            motivo = " banco_desatualizado" if desatualizado else " orthanc_indisponivel" if orthanc else ""
             await asyncio.to_thread(
                 _registrar_evento, "erro_inesperado", "erro", f"{rota} -> {status} codigo={codigo}{motivo}",
                 usuario_do_pedido(request),
             )
-            mensagem = _mensagem_de_erro(desatualizado, codigo)
+            mensagem = _mensagem_de_erro(desatualizado, codigo, orthanc)
             cabecalhos = {"Retry-After": "60"} if desatualizado else None
             return JSONResponse(status_code=status, content={"detail": mensagem, "codigo": codigo}, headers=cabecalhos)
 

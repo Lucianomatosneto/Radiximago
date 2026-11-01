@@ -30,10 +30,19 @@ export default function IntegridadeAuditoria({ compacto = false }: { compacto?: 
   const [erro, setErro] = useState('')
 
   useEffect(() => {
+    // reteste do administrador: se nunca verificou, se a ultima achou
+    // problema ou se faz mais de 24 h, refaz a verificacao sozinho (o aviso
+    // antigo ficava na tela ate alguem clicar)
     fetch(`${API}/admin/audit-logs/integridade/ultima`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d && setResultado(d))
+      .then((d: Resultado | null) => {
+        if (!d) return
+        setResultado(d)
+        const antiga = !d.verificado_em || Date.now() - new Date(d.verificado_em).getTime() > 24 * 3600 * 1000
+        if (antiga || !d.integro) verificar()
+      })
       .catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   async function verificar() {

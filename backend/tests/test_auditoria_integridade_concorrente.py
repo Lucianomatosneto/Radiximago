@@ -89,3 +89,22 @@ def test_ultima_verificacao_mostrada_sem_refazer(client, criar_usuario):
     assert "registros_conferidos" in r.json() and "quantidade_ordem_concorrente" in r.json()
     curador = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.curador).email))
     assert client.get("/admin/audit-logs/integridade/ultima", headers=curador).status_code == 403
+
+
+def test_problema_na_verificacao_e_alerta_com_numero(client, criar_usuario, db):
+    """Reteste do administrador: a verificacao que acha problema grava
+    'alerta' (nao 'erro') e a ultima verificacao informa o numero."""
+    cab = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.administrador).email))
+    db.add(AuditLog(acao="teste_alerta", resultado="sucesso", detalhes="a"))
+    db.add(AuditLog(acao="teste_alerta", resultado="sucesso", detalhes="b"))
+    db.commit()
+    ids = [r.id for r in db.query(AuditLog).filter(AuditLog.acao == "teste_alerta").order_by(AuditLog.id.desc()).limit(2)][::-1]
+    db.execute(text("SET LOCAL session_replication_role = replica"))
+    db.execute(text("UPDATE audit_logs SET detalhes = 'ADULTERADO' WHERE id = :i"), {"i": ids[1]})
+    db.commit()
+    res = _integridade(client, cab, ids[0])
+    assert res["integro"] is False
+    ultima = client.get("/admin/audit-logs/integridade/ultima", headers=cab).json()
+    assert ultima["primeiro_problema_id"] == ids[1] and ultima["integro"] is False
+    registro = db.query(AuditLog).filter(AuditLog.acao == "verificacao_integridade_auditoria").order_by(AuditLog.id.desc()).first()
+    assert registro.resultado == "alerta"

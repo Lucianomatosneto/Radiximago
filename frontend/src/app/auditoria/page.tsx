@@ -65,9 +65,10 @@ const CATEGORIAS_ACAO: { categoriaChave: string; itens: { valor: string; chave: 
 
 const TODAS_ACOES = CATEGORIAS_ACAO.flatMap((c) => c.itens)
 
-const OPCOES_RESULTADO = ['sucesso', 'negado', 'erro']
+const OPCOES_RESULTADO = ['sucesso', 'negado', 'alerta', 'erro']
 
 const CORES_RESULTADO: Record<string, string> = {
+  alerta: 'bg-amber-500/15 text-amber-300 border-amber-600/40',
   sucesso: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40',
   negado: 'bg-red-500/15 text-red-300 border-red-600/40',
   erro: 'bg-orange-500/15 text-orange-300 border-orange-600/40',
