@@ -92,6 +92,12 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - **Professor:** vê só as imagens DICOM que **ele mesmo enviou**. Quem enviou é identificado pelo registro de auditoria `upload_imagem`, sem coluna nova no banco. É o princípio do mínimo necessário (LGPD), decidido pelo Luciano no QA com perfil professor.
 - Nenhum desses perfis vê, pela lista, imagens ainda não aprovadas: a prévia continua bloqueada.
 
+### 1.7 Proteção das contas de administrador (01/11/2026)
+
+- Ninguém **bloqueia** nem **exclui a própria conta**. A API responde 422, e na tela a própria linha mostra "(você)" no lugar de Bloquear, Encerrar acessos e Excluir.
+- Ninguém bloqueia nem exclui o **último administrador ativo**: a API responde 409 "Cadastre outro administrador antes".
+- **Bloquear** e **Encerrar acessos** pedem confirmação, que diz quem será afetado e o que acontece. **Excluir** já tinha uma janela própria de confirmação. "Encerrar acessos de todos" também pede confirmação. Tudo fica na Auditoria.
+
 ### 1.5 Acesso negado (01/11/2026)
 
 Toda tela restrita leva à mesma página `/acesso-negado?de=<página>`. Ela mostra a página pedida e o "erro 403", e o botão volta para o início **do perfil**. Antes, `/usuarios` ia para o login e o botão levava ao painel do administrador.
@@ -191,3 +197,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.7 | 01/11/2026 | Erro técnico repetido (409), termo inativo fora da busca, teste Curadoria × Busca |
 | 1.8 | 01/11/2026 | Contagens explicadas em cada tela, página única de acesso negado, explicação de quem pode receber um compartilhamento |
 | 1.9 | 01/11/2026 | Professor vê em Imagens recebidas só o que enviou; texto "Só para mim" trocado (a equipe vê todas as pastas) |
+| 1.10 | 01/11/2026 | Proteção das contas de administrador (M1); só estudante é aprovado automaticamente (A3) |

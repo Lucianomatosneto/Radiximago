@@ -437,6 +437,23 @@ def redefinir_segundo_fator(
     return {"mensagem": "Segundo fator redefinido. A pessoa cadastra o aplicativo de novo no próximo login."}
 
 
+def _exigir_outro_administrador(db: Session, alvo: User, acao: str) -> None:
+    """Nunca deixar o sistema sem administrador ativo (M1, 01/11/2026)."""
+    if alvo.perfil != UserRole.administrador:
+        return
+    outros = (
+        db.query(User)
+        .filter(User.perfil == UserRole.administrador, User.id != alvo.id)
+        .filter(User.ativo.is_(True), User.bloqueado.is_(False), User.excluido.is_(False))
+        .count()
+    )
+    if outros == 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Não é possível {acao} o último administrador ativo. Cadastre outro administrador antes.",
+        )
+
+
 @router.patch("/{user_id}/block")
 def bloquear_usuario(
     user_id: int,
@@ -446,6 +463,11 @@ def bloquear_usuario(
     usuario = db.query(User).filter(User.id == user_id).first()
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
+    if not usuario.bloqueado:
+        # 01/11/2026 (auditoria do administrador, M1)
+        if usuario.id == usuario_atual.id:
+            raise HTTPException(status_code=422, detail="Você não pode bloquear a própria conta.")
+        _exigir_outro_administrador(db, usuario, "bloquear")
     usuario.bloqueado = not usuario.bloqueado
     estado = "bloqueado" if usuario.bloqueado else "desbloqueado"
     db.add(AuditLog(
@@ -475,6 +497,7 @@ def excluir_usuario(
         raise HTTPException(status_code=409, detail="Usuário já está excluído.")
     if usuario.id == usuario_atual.id:
         raise HTTPException(status_code=422, detail="Você não pode excluir a própria conta.")
+    _exigir_outro_administrador(db, usuario, "excluir")
 
     usuario.excluido = True
     usuario.excluido_em = datetime.utcnow()

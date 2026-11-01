@@ -148,6 +148,7 @@ export default function UsuariosPage() {
   const [usuariosExcluidos, setUsuariosExcluidos] = useState<UsuarioExcluido[]>([])
   const [carregandoExcluidos, setCarregandoExcluidos] = useState(false)
   const [erroExcluidos, setErroExcluidos] = useState('')
+  const [meuId, setMeuId] = useState<number | null>(null)
 
   useEffect(() => {
     async function buscarUsuarios() {
@@ -195,6 +196,7 @@ export default function UsuariosPage() {
         router.push('/acesso-negado?de=/usuarios')
         return
       }
+      setMeuId(sessao.id)
       setAutenticado(true)
       buscarUsuarios()
       buscarSolicitacoes()
@@ -220,6 +222,9 @@ export default function UsuariosPage() {
 
   async function alternarBloqueio(usuario: Usuario) {
     if (!autenticado) return
+    // M1 (01/11/2026): bloquear pede confirmacao dizendo quem e o que acontece
+    if (!usuario.bloqueado && !window.confirm(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }))) return
+    setAvisoAcessos('')
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
       method: 'PATCH',
       credentials: 'include',
@@ -229,7 +234,11 @@ export default function UsuariosPage() {
       router.push('/login')
       return
     }
-    if (!response.ok) return
+    if (!response.ok) {
+      // antes a recusa era silenciosa; agora a mensagem do servidor aparece
+      setAvisoAcessos(await extrairErro(response, t('erroBloquear')))
+      return
+    }
 
     setUsuarios((prev) =>
       prev.map((u) => (u.id === usuario.id ? { ...u, bloqueado: !u.bloqueado } : u))
@@ -241,6 +250,7 @@ export default function UsuariosPage() {
   async function encerrarAcessos(usuario: Usuario | null) {
     if (!autenticado) return
     if (!usuario && !window.confirm(t('confirmarEncerrarTodos'))) return
+    if (usuario && !window.confirm(t('confirmarEncerrarUm', { nome: usuario.nome }))) return
     setAvisoAcessos('')
     const caminho = usuario ? `/users/${usuario.id}/encerrar-sessoes` : '/admin/sessoes/encerrar-todas'
     try {
@@ -794,6 +804,11 @@ export default function UsuariosPage() {
                           >
                             {t('editar')}
                           </button>
+                          {usuario.id === meuId ? (
+                            // M1: a propria linha nao tem Bloquear/Encerrar/Excluir
+                            <span className="self-center text-xs text-slate-500">{t('voceMesmo')}</span>
+                          ) : (
+                          <>
                           <button
                             type="button"
                             onClick={() => alternarBloqueio(usuario)}
@@ -809,6 +824,8 @@ export default function UsuariosPage() {
                           >
                             {t('encerrarAcessos')}
                           </button>
+                          </>
+                          )}
                           <button
                             type="button"
                             onClick={() => redefinirSegundoFator(usuario)}
@@ -816,6 +833,7 @@ export default function UsuariosPage() {
                           >
                             {tSF('redefinir')}
                           </button>
+                          {usuario.id !== meuId && (
                           <button
                             type="button"
                             onClick={() => abrirExclusao(usuario)}
@@ -823,6 +841,7 @@ export default function UsuariosPage() {
                           >
                             {t('excluir')}
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>

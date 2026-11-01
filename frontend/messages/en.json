@@ -1712,7 +1712,11 @@
     "acessosEncerrados": "{quantidade, plural, =0 {{nome} had no open sessions.} one {1 session of {nome} ended.} other {# sessions of {nome} ended.}}",
     "acessosTodosEncerrados": "{quantidade, plural, =0 {No other session was open.} one {1 session ended. That person will need to sign in again.} other {# sessions ended. Everyone will need to sign in again.}}",
     "erroEncerrarAcessos": "Could not end the sessions. Please try again.",
-    "regraAprovacao": "Only students get in by themselves on confirming the e-mail. Professor, curator and researcher show up here and only get in with your approval. Approval records your name in the Audit log."
+    "regraAprovacao": "Only students get in by themselves on confirming the e-mail. Professor, curator and researcher show up here and only get in with your approval. Approval records your name in the Audit log.",
+    "confirmarBloquear": "Block {nome} ({email})? The person can no longer sign in to Rádix and their open sessions stop working. You can unblock later with “Activate”.",
+    "erroBloquear": "Could not block now.",
+    "confirmarEncerrarUm": "End the open sessions of {nome}? The person must sign in again (the account stays active).",
+    "voceMesmo": "(you)"
   },
   "Configuracoes": {
     "titulo": "Settings",
