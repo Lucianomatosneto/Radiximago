@@ -86,6 +86,16 @@ export default function Topbar({
     })
   }, [])
 
+  // Esc fecha o menu do usuario (teclado)
+  useEffect(() => {
+    if (!menuAberto) return
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === 'Escape') setMenuAberto(false)
+    }
+    document.addEventListener('keydown', aoTeclar)
+    return () => document.removeEventListener('keydown', aoTeclar)
+  }, [menuAberto])
+
   useEffect(() => {
     function aoClicarFora(evento: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(evento.target as Node)) {
@@ -231,7 +241,7 @@ export default function Topbar({
           onClick={() => setAjudaAberta(true)}
           aria-haspopup="dialog"
           aria-expanded={ajudaAberta}
-          className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-ink"
+          className="flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-sm text-slate-300 hover:bg-base-surface2 hover:text-ink"
         >
           <CircleHelp aria-hidden="true" className="h-4 w-4" /> {t('ajuda')}
         </button>
@@ -241,6 +251,9 @@ export default function Topbar({
           <button
             type="button"
             onClick={() => setMenuAberto((v) => !v)}
+            aria-haspopup="menu"
+            aria-expanded={menuAberto}
+            aria-controls="menu-usuario"
             className="flex items-center gap-2 rounded-full border border-base-border bg-base-surface py-1.5 pl-2 pr-3 text-sm hover:border-brand/50"
           >
             <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand/20 text-sm">
@@ -261,9 +274,10 @@ export default function Topbar({
           </button>
 
           {menuAberto && (
-            <div className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-base-border bg-base-surface shadow-glow">
+            <div id="menu-usuario" role="menu" aria-label={nome || t('visitante')} className="absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-xl border border-base-border bg-base-surface shadow-glow">
               <button
                 type="button"
+                role="menuitem"
                 onClick={abrirModalPerfil}
                 className="w-full px-4 py-3 text-left text-sm text-slate-200 hover:bg-brand/10 hover:text-brand-300"
               >
@@ -271,6 +285,7 @@ export default function Topbar({
               </button>
               <button
                 type="button"
+                role="menuitem"
                 onClick={handleSair}
                 className="w-full px-4 py-3 text-left text-sm text-red-400 hover:bg-red-950/40"
               >

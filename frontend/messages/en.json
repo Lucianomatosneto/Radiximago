@@ -232,7 +232,8 @@
     "maisModalidades": "And much more"
   },
   "Comum": {
-    "carregando": "Loading..."
+    "carregando": "Loading...",
+    "pularConteudo": "Skip to content"
   },
   "Sidebar": {
     "navegacao": "Navigation",
