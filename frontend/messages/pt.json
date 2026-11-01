@@ -1276,7 +1276,9 @@
     },
     "editarDepois": "Editar curadoria",
     "editarDepoisConfirmar": "Reabrir esta curadoria para editar? Ela sai da busca dos usuários até você aprovar de novo. A versão anterior fica no histórico.",
-    "editarDepoisErro": "Não foi possível reabrir a curadoria."
+    "editarDepoisErro": "Não foi possível reabrir a curadoria.",
+    "cancelarReabrir": "Cancelar",
+    "confirmarReabrir": "Sim, reabrir"
   },
   "SegundaOpiniaoPage": {
     "titulo": "Segunda opinião",
@@ -1716,7 +1718,8 @@
     "confirmarBloquear": "Bloquear {nome} ({email})? A pessoa não consegue mais entrar no Rádix e os acessos abertos dela deixam de valer. Dá para desbloquear depois com “Ativar”.",
     "erroBloquear": "Não foi possível bloquear agora.",
     "confirmarEncerrarUm": "Encerrar os acessos abertos de {nome}? A pessoa precisa entrar de novo (a conta continua ativa).",
-    "voceMesmo": "(você)"
+    "voceMesmo": "(você)",
+    "confirmarTitulo": "Confirmar ação"
   },
   "Configuracoes": {
     "titulo": "Configurações",

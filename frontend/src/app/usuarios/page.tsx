@@ -149,6 +149,17 @@ export default function UsuariosPage() {
   const [carregandoExcluidos, setCarregandoExcluidos] = useState(false)
   const [erroExcluidos, setErroExcluidos] = useState('')
   const [meuId, setMeuId] = useState<number | null>(null)
+  // CONFIRMACAO NA PROPRIA TELA (reteste do M1, 01/11/2026): a janela nativa
+  // do navegador (window.confirm) podia ser aceita sozinha por ferramentas e
+  // passar despercebida - agora e um quadro do Radix com Cancelar/Confirmar
+  const [confirmacao, setConfirmacao] = useState<{ texto: string; botao: string; responder: (sim: boolean) => void } | null>(null)
+  function pedirConfirmacao(texto: string, botao: string): Promise<boolean> {
+    return new Promise((responder) => setConfirmacao({ texto, botao, responder }))
+  }
+  function responderConfirmacao(sim: boolean) {
+    confirmacao?.responder(sim)
+    setConfirmacao(null)
+  }
 
   useEffect(() => {
     async function buscarUsuarios() {
@@ -223,7 +234,7 @@ export default function UsuariosPage() {
   async function alternarBloqueio(usuario: Usuario) {
     if (!autenticado) return
     // M1 (01/11/2026): bloquear pede confirmacao dizendo quem e o que acontece
-    if (!usuario.bloqueado && !window.confirm(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }))) return
+    if (!usuario.bloqueado && !(await pedirConfirmacao(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }), t('bloquear')))) return
     setAvisoAcessos('')
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
       method: 'PATCH',
@@ -249,8 +260,8 @@ export default function UsuariosPage() {
   // pessoa so precisa entrar de novo (para impedir o acesso, use Bloquear).
   async function encerrarAcessos(usuario: Usuario | null) {
     if (!autenticado) return
-    if (!usuario && !window.confirm(t('confirmarEncerrarTodos'))) return
-    if (usuario && !window.confirm(t('confirmarEncerrarUm', { nome: usuario.nome }))) return
+    if (!usuario && !(await pedirConfirmacao(t('confirmarEncerrarTodos'), t('encerrarAcessos')))) return
+    if (usuario && !(await pedirConfirmacao(t('confirmarEncerrarUm', { nome: usuario.nome }), t('encerrarAcessos')))) return
     setAvisoAcessos('')
     const caminho = usuario ? `/users/${usuario.id}/encerrar-sessoes` : '/admin/sessoes/encerrar-todas'
     try {
@@ -281,7 +292,7 @@ export default function UsuariosPage() {
   // de recuperacao): apaga o cadastro do aplicativo e encerra os acessos;
   // no proximo login ela cadastra de novo. Exige confirmar a identidade antes.
   async function redefinirSegundoFator(usuario: Usuario) {
-    if (!autenticado || !window.confirm(tSF('confirmarRedefinir', { nome: usuario.nome }))) return
+    if (!autenticado || !(await pedirConfirmacao(tSF('confirmarRedefinir', { nome: usuario.nome }), tSF('redefinir')))) return
     setAvisoAcessos('')
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/redefinir-segundo-fator`, {
@@ -996,6 +1007,29 @@ export default function UsuariosPage() {
               </button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {confirmacao && (
+        <Modal onFechar={() => responderConfirmacao(false)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('confirmarTitulo')}</h2>
+          <p className="mb-4 text-sm text-slate-400">{confirmacao.texto}</p>
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => responderConfirmacao(false)}
+              className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+            >
+              {t('cancelar')}
+            </button>
+            <button
+              type="button"
+              onClick={() => responderConfirmacao(true)}
+              className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
+            >
+              {confirmacao.botao}
+            </button>
+          </div>
         </Modal>
       )}
 

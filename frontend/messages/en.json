@@ -1276,7 +1276,9 @@
     },
     "editarDepois": "Edit curation",
     "editarDepoisConfirmar": "Reopen this curation for editing? It leaves the users' search until you approve it again. The previous version stays in the history.",
-    "editarDepoisErro": "Could not reopen the curation."
+    "editarDepoisErro": "Could not reopen the curation.",
+    "cancelarReabrir": "Cancel",
+    "confirmarReabrir": "Yes, reopen"
   },
   "SegundaOpiniaoPage": {
     "titulo": "Second opinion",
@@ -1716,7 +1718,8 @@
     "confirmarBloquear": "Block {nome} ({email})? The person can no longer sign in to Rádix and their open sessions stop working. You can unblock later with “Activate”.",
     "erroBloquear": "Could not block now.",
     "confirmarEncerrarUm": "End the open sessions of {nome}? The person must sign in again (the account stays active).",
-    "voceMesmo": "(you)"
+    "voceMesmo": "(you)",
+    "confirmarTitulo": "Confirm action"
   },
   "Configuracoes": {
     "titulo": "Settings",
