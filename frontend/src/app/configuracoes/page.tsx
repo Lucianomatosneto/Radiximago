@@ -165,7 +165,7 @@ export default function ConfiguracoesPage() {
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Secao titulo={t('secaoGeral')}>
               <dl className="space-y-3">
-                <Campo label={t('nomeSistema')} valor="Radix Imago" />
+                <Campo label={t('nomeSistema')} valor="Rádix Imago" />
                 <Campo label={t('ambiente')} valor={config?.environment ?? '—'} />
               </dl>
             </Secao>

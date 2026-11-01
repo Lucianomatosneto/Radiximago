@@ -221,7 +221,7 @@
     "aproximar": "Aproximar",
     "afastar": "Afastar",
     "redefinirVista": "Redefinir vista",
-    "conhecaRadix": "Conheça o Radix Imago"
+    "conhecaRadix": "Conheça o Rádix Imago"
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -1130,7 +1130,7 @@
       }
     },
     "guia": {
-      "titulo": "Como laudar no Rádix — passo a passo",
+      "titulo": "Como laudar no Rádix Imago — passo a passo",
       "fechar": "Fechar",
       "passoDe": "Passo {atual} de {total}",
       "oQueFazer": "O que fazer",
@@ -1466,7 +1466,7 @@
     "verificadoAgora": "Verificado agora.",
     "dockerIndiretoOk": "Os serviços que rodam no Docker (banco de dados e Orthanc) estão respondendo.",
     "dockerIndiretoFalha": "Algum serviço que roda no Docker não respondeu — veja os cartões acima.",
-    "dockerPorQue": "Checagem indireta, por segurança: o Radix não tem acesso ao controle do Docker.",
+    "dockerPorQue": "Checagem indireta, por segurança: o Rádix Imago não tem acesso ao controle do Docker.",
     "armazenamentoErro": "Não foi possível consultar o armazenamento agora.",
     "linhaDisco": "Disco: {livre} GB livres de {total} GB ({percentual}%).",
     "linhaOrthanc": "Imagens no Orthanc: {tamanho} ({instancias} imagens).",
@@ -1507,7 +1507,7 @@
   },
   "PainelAdmin": {
     "titulo": "Painel administrativo",
-    "subtitulo": "Controle geral da plataforma RÁDIX IMAGO.",
+    "subtitulo": "Controle geral da plataforma Rádix Imago.",
     "erroCarregar": "Não foi possível carregar os indicadores.",
     "erroCarregarPainel": "Não foi possível carregar o painel.",
     "totalImagens": "Total de imagens",
@@ -1926,7 +1926,7 @@
     "gravando": "Gravando…",
     "transcrevendo": "Transcrevendo no servidor local…",
     "instrucao": "Clique no microfone, fale e clique de novo.",
-    "privacidade": "O áudio é transcrito no próprio Rádix e não é guardado.",
+    "privacidade": "O áudio é transcrito no próprio Rádix Imago e não é guardado.",
     "ouvido": "Ouvido",
     "preenchido": "Preenchido pela voz",
     "conferirTudo": "Conferi tudo ✓",
@@ -2016,7 +2016,7 @@
   },
   "Ajuda": {
     "titulo": "Central de ajuda",
-    "subtitulo": "Pesquise qualquer recurso do Rádix e veja como usar.",
+    "subtitulo": "Pesquise qualquer recurso do Rádix Imago e veja como usar.",
     "placeholder": "O que você quer fazer? Ex.: apagar anotação",
     "exemplos": "Exemplos: busca avançada, imprimir, apagar imagem, compartilhar, dentes.",
     "resultados": "{total, plural, one {1 resultado} other {# resultados}}",
@@ -2070,7 +2070,7 @@
   },
   "SegundoFator": {
     "tituloCodigo": "Login em duas etapas",
-    "explicacaoCodigo": "Abra o aplicativo autenticador no celular e digite o código de 6 números do Radix Imago.",
+    "explicacaoCodigo": "Abra o aplicativo autenticador no celular e digite o código de 6 números do Rádix Imago.",
     "campoCodigo": "Código",
     "dicaRecuperacao": "Sem o celular? Digite um dos seus códigos de recuperação (ex.: ABCD-EFGH).",
     "confirmar": "Confirmar",
@@ -2086,7 +2086,7 @@
     "passo2": "No aplicativo, toque em \"+\" e leia o QR code abaixo com a câmera.",
     "passo3": "Digite o código de 6 números que aparecer no aplicativo.",
     "semCamera": "Não consegue ler o QR code? Digite esta chave no aplicativo:",
-    "altQr": "QR code para cadastrar o Radix Imago no aplicativo autenticador",
+    "altQr": "QR code para cadastrar o Rádix Imago no aplicativo autenticador",
     "tituloCodigos": "Guarde seus códigos de recuperação",
     "explicacaoCodigos": "Se você perder o celular, cada código abaixo permite entrar UMA vez. Guarde-os em lugar seguro (papel ou gerenciador de senhas): eles não serão mostrados de novo.",
     "copiar": "Copiar códigos",
@@ -2454,7 +2454,7 @@
   "Sugestoes": {
     "carregando": "Carregando...",
     "titulo": "Sugestões de melhoria",
-    "subtitulo": "Conte o que podemos melhorar no Radix Imago. Seu nome e seu perfil vão junto, e podemos entrar em contato para ouvir você.",
+    "subtitulo": "Conte o que podemos melhorar no Rádix Imago. Seu nome e seu perfil vão junto, e podemos entrar em contato para ouvir você.",
     "suaSugestao": "Sua sugestão",
     "exemplo": "Ex.: seria útil poder filtrar as imagens por turma.",
     "contato": "Contato preferido (opcional)",
@@ -2527,7 +2527,7 @@
     "enviadaComSucesso": "Pasta enviada. Ela também está em Minhas imagens.",
     "escolhaPessoa": "Escolha a pessoa",
     "tratamentoEscolhido": "Tratamento escolhido",
-    "emailSoLink": "O e-mail leva só o link da pasta (sem nome do paciente nem imagens); para abrir, a pessoa precisa entrar no Radix.",
+    "emailSoLink": "O e-mail leva só o link da pasta (sem nome do paciente nem imagens); para abrir, a pessoa precisa entrar no Rádix Imago.",
     "encaminharCuradorAjuda": "O curador vai validar e classificar o tratamento necessário para colocar o paciente na fila.",
     "notaOpcional": "Nota para o curador (opcional)",
     "classificarAjuda": "Marque o(s) tratamento(s) necessário(s). O paciente entra na fila de espera.",
@@ -2641,10 +2641,10 @@
       "modalidade": "Modalidade do exame",
       "professor": "Professor que vai ver",
       "soParaMim": "Só para mim (não enviar a professor)",
-      "descricao": "Descrição do caso",
+      "descricao": "Descrição clínica",
       "descricaoExemplo": "Queixa, achados clínicos e o que você quer que o professor veja.",
       "escolha": "Escolha...",
-      "dataAutomatica": "A data e a hora do envio são registradas automaticamente pelo Radix.",
+      "dataAutomatica": "A data e a hora do envio são registradas automaticamente pelo Rádix Imago.",
       "faltaFotos": "fotos",
       "faltaTermo": "termo assinado",
       "faltam": "Falta preencher: {lista}.",
@@ -2699,7 +2699,7 @@
     },
     "tratamentosLista": {
       "titulo": "Alunos e pacientes em tratamento",
-      "subtitulo": "Quem está tratando quem. Busque pelo nome do aluno ou do paciente para rastrear um caso.",
+      "subtitulo": "Quem está tratando quem. Busque pelo nome do aluno ou do paciente para encontrar o atendimento.",
       "buscar": "Buscar por nome do aluno ou do paciente",
       "situacao": "Situação",
       "todas": "Todas",

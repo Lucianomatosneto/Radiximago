@@ -221,7 +221,7 @@
     "aproximar": "Zoom in",
     "afastar": "Zoom out",
     "redefinirVista": "Reset view",
-    "conhecaRadix": "Discover Radix Imago"
+    "conhecaRadix": "Discover Rádix Imago"
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -1130,7 +1130,7 @@
       }
     },
     "guia": {
-      "titulo": "How to report in Rádix — step by step",
+      "titulo": "How to report in Rádix Imago — step by step",
       "fechar": "Close",
       "passoDe": "Step {atual} of {total}",
       "oQueFazer": "What to do",
@@ -1466,7 +1466,7 @@
     "verificadoAgora": "Checked just now.",
     "dockerIndiretoOk": "The services running in Docker (database and Orthanc) are responding.",
     "dockerIndiretoFalha": "A service running in Docker did not respond — see the cards above.",
-    "dockerPorQue": "Indirect check, for security: Radix has no access to Docker's control.",
+    "dockerPorQue": "Indirect check, for security: Rádix Imago has no access to Docker's control.",
     "armazenamentoErro": "Could not check storage right now.",
     "linhaDisco": "Disk: {livre} GB free of {total} GB ({percentual}%).",
     "linhaOrthanc": "Images in Orthanc: {tamanho} ({instancias} images).",
@@ -1781,7 +1781,7 @@
     "cabecalho": "Page {pagina} of {total} · {data}",
     "imagemNumero": "Image {numero}",
     "imagemIndisponivel": "Image unavailable",
-    "rodape": "Radix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis.",
+    "rodape": "Rádix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis.",
     "dicaPdf": "In the window that opens, set \"Destination\" to \"Save as PDF\" and click Save."
   },
   "DescricaoCuradoria": {
@@ -1806,7 +1806,7 @@
     "preparandoZip": "Preparing the file…",
     "salvo": "File saved.",
     "salvoComFalhas": "File saved, but {total, plural, one {1 image could not be included} other {# images could not be included}}.",
-    "leiaMe": "Radix Imago - Federal University of Santa Catarina (UFSC)\r\n\r\nFor teaching and research only. Images are anonymized (LGPD) and are not intended for diagnosis.\r\nDo not share outside the academic context.\r\n",
+    "leiaMe": "Rádix Imago - Federal University of Santa Catarina (UFSC)\r\n\r\nFor teaching and research only. Images are anonymized (LGPD) and are not intended for diagnosis.\r\nDo not share outside the academic context.\r\n",
     "salvarMinhas": "Save to My images",
     "ajudaMinhas": "Keeps the images in your personal list (My images menu). Images already there are not duplicated.",
     "salvandoMinhas": "Saving to My images…",
@@ -1926,7 +1926,7 @@
     "gravando": "Recording…",
     "transcrevendo": "Transcribing on the local server…",
     "instrucao": "Click the microphone, speak and click again.",
-    "privacidade": "Audio is transcribed inside Rádix and is not stored.",
+    "privacidade": "Audio is transcribed inside Rádix Imago and is not stored.",
     "ouvido": "Heard",
     "preenchido": "Filled by voice",
     "conferirTudo": "All reviewed ✓",
@@ -2016,7 +2016,7 @@
   },
   "Ajuda": {
     "titulo": "Help center",
-    "subtitulo": "Search any Rádix feature and see how to use it.",
+    "subtitulo": "Search any Rádix Imago feature and see how to use it.",
     "placeholder": "What do you want to do? E.g.: delete note",
     "exemplos": "Examples: advanced search, print, remove image, share, teeth.",
     "resultados": "{total, plural, one {1 result} other {# results}}",
@@ -2070,7 +2070,7 @@
   },
   "SegundoFator": {
     "tituloCodigo": "Two-step login",
-    "explicacaoCodigo": "Open the authenticator app on your phone and enter the 6-digit Radix Imago code.",
+    "explicacaoCodigo": "Open the authenticator app on your phone and enter the 6-digit Rádix Imago code.",
     "campoCodigo": "Code",
     "dicaRecuperacao": "No phone? Enter one of your recovery codes (e.g. ABCD-EFGH).",
     "confirmar": "Confirm",
@@ -2086,7 +2086,7 @@
     "passo2": "In the app, tap \"+\" and scan the QR code below with the camera.",
     "passo3": "Enter the 6-digit code shown in the app.",
     "semCamera": "Can't scan the QR code? Type this key in the app:",
-    "altQr": "QR code to add Radix Imago to the authenticator app",
+    "altQr": "QR code to add Rádix Imago to the authenticator app",
     "tituloCodigos": "Save your recovery codes",
     "explicacaoCodigos": "If you lose your phone, each code below lets you sign in ONCE. Keep them somewhere safe (paper or a password manager): they will not be shown again.",
     "copiar": "Copy codes",
@@ -2454,7 +2454,7 @@
   "Sugestoes": {
     "carregando": "Loading...",
     "titulo": "Improvement suggestions",
-    "subtitulo": "Tell us what we can improve in Radix Imago. Your name and role are sent along, and we may contact you to hear more.",
+    "subtitulo": "Tell us what we can improve in Rádix Imago. Your name and role are sent along, and we may contact you to hear more.",
     "suaSugestao": "Your suggestion",
     "exemplo": "E.g.: it would help to filter images by class.",
     "contato": "Preferred contact (optional)",
@@ -2527,7 +2527,7 @@
     "enviadaComSucesso": "Folder sent. It is also in My images.",
     "escolhaPessoa": "Choose the person",
     "tratamentoEscolhido": "Chosen treatment",
-    "emailSoLink": "The e-mail carries only the link (no patient name or images); the person must sign in to Radix to open it.",
+    "emailSoLink": "The e-mail carries only the link (no patient name or images); the person must sign in to Rádix Imago to open it.",
     "encaminharCuradorAjuda": "The curator will validate and classify the needed treatment to put the patient in the queue.",
     "notaOpcional": "Note for the curator (optional)",
     "classificarAjuda": "Tick the needed treatment(s). The patient enters the waiting queue.",
@@ -2641,10 +2641,10 @@
       "modalidade": "Exam type",
       "professor": "Professor who will review",
       "soParaMim": "Only for me (do not send to a professor)",
-      "descricao": "Case description",
+      "descricao": "Clinical description",
       "descricaoExemplo": "Complaint, clinical findings and what you want the professor to see.",
       "escolha": "Choose...",
-      "dataAutomatica": "Date and time are recorded automatically by Radix.",
+      "dataAutomatica": "Date and time are recorded automatically by Rádix Imago.",
       "faltaFotos": "photos",
       "faltaTermo": "signed form",
       "faltam": "Still missing: {lista}.",
@@ -2699,7 +2699,7 @@
     },
     "tratamentosLista": {
       "titulo": "Students and patients in treatment",
-      "subtitulo": "Who is treating whom. Search by student or patient name to track a case.",
+      "subtitulo": "Who is treating whom. Search by student or patient name to find the treatment.",
       "buscar": "Search by student or patient name",
       "situacao": "Status",
       "todas": "All",

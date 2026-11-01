@@ -103,7 +103,7 @@ export default function Logo({ variante, className = '' }: LogoProps) {
   return (
     <div
       className={`animar-logo-entrada flex items-center ${cfg.empilhado ? `flex-col text-center ${cfg.gapClasse}` : `flex-row ${cfg.gapClasse}`} ${className}`}
-      aria-label="RÁDIX IMAGO"
+      aria-label="Rádix Imago"
       role="img"
     >
       <Image
