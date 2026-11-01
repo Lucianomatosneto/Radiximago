@@ -18,7 +18,7 @@ import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCur
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECAO_DO_CAMPO, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
-import { achadosDaApi, achadosParaApi, comAchados, marcacoesSincronizadas } from '../../lib/achadosFicha'
+import { achadosDaApi, achadosParaApi, comAchados, marcacoesSincronizadas, regioesPadraoDoExame } from '../../lib/achadosFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo } from '../../lib/progressoFicha'
 import { SECOES_FICHA } from '../../lib/secoesCuradoria'
 import GuiaLaudo, { guiaJaVisto } from '../../components/curadoria/GuiaLaudo'
@@ -92,6 +92,7 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
     dentes: form.dentes,
     achados_detalhe: form.achados_detalhe,
     alteracoes_observadas: form.alteracoes_observadas,
+    regioes_imagem: form.regioes_imagem,
     descricao_didatica: form.descricao_didatica,
     observacoes_internas: form.observacoes_internas,
     anonimizacao_validada: form.anonimizacao_validada,
@@ -732,6 +733,9 @@ export default function CuradoriaPage() {
       marcacoes: ficha.marcacoes ?? [],
       achados_detalhe: ficha.achados_detalhe ?? '',
       alteracoes_observadas: ficha.alteracoes_observadas ?? [],
+      // ficha antiga (sem o campo): comeca com o padrao do exame, que e o
+      // mesmo que a busca ja usava para ela
+      regioes_imagem: Array.isArray(ficha.regioes_imagem) ? ficha.regioes_imagem : regioesPadraoDoExame(ficha.tipo_radiografia ?? 'periapical'),
       qualidade_tecnica: ficha.qualidade_tecnica ?? '',
       descricao_didatica: ficha.descricao_didatica ?? '',
       observacoes_internas: ficha.observacoes_internas ?? '',

@@ -17,6 +17,13 @@ from .router import router
 from .schemas import CurationCreate, CurationUpdate
 
 
+def _regioes_unicas(regioes) -> list[str] | None:
+    """Regioes que a imagem mostra, sem repetir e na ordem recebida."""
+    if regioes is None:
+        return None
+    return list(dict.fromkeys(_valor(r) for r in regioes))
+
+
 # ---------------------------------------------------------------------
 # POST /curation/{orthanc_reference_id}  -> cria a ficha
 # ---------------------------------------------------------------------
@@ -85,6 +92,7 @@ def criar_curadoria(
         achado_principal=_valor(dados.achado_principal),
         achados_detalhe=dados.achados_detalhe,
         alteracoes_observadas=[a.value for a in dados.alteracoes_observadas] if dados.alteracoes_observadas else None,
+        regioes_imagem=_regioes_unicas(dados.regioes_imagem),
         qualidade_tecnica=_valor(dados.qualidade_tecnica),
         dificuldade=_valor(dados.dificuldade),
         descricao_didatica=dados.descricao_didatica,
@@ -225,6 +233,8 @@ def editar_curadoria(
         ficha.achados_detalhe = dados.achados_detalhe
     if dados.alteracoes_observadas is not None:
         ficha.alteracoes_observadas = [a.value for a in dados.alteracoes_observadas]
+    if dados.regioes_imagem is not None:
+        ficha.regioes_imagem = _regioes_unicas(dados.regioes_imagem)
     if dados.qualidade_tecnica is not None:
         ficha.qualidade_tecnica = dados.qualidade_tecnica.value
     if dados.dificuldade is not None:
@@ -308,6 +318,7 @@ def editar_curadoria(
         "achado_principal": ficha.achado_principal,
         "achados_detalhe": ficha.achados_detalhe,
         "alteracoes_observadas": ficha.alteracoes_observadas,
+        "regioes_imagem": ficha.regioes_imagem,
         "qualidade_tecnica": ficha.qualidade_tecnica,
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,

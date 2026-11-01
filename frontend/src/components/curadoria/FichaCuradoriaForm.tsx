@@ -23,6 +23,9 @@ export interface FormularioFicha {
   marcacoes: Marcacao[]
   achados_detalhe: string
   alteracoes_observadas: string[]
+  // regioes anatomicas que a imagem mostra (01/11/2026) - filtro de regiao
+  // da Pesquisa avancada; sugeridas pelo tipo de exame (lib/achadosFicha.ts)
+  regioes_imagem: string[]
   qualidade_tecnica: string
   descricao_didatica: string
   observacoes_internas: string
@@ -49,6 +52,7 @@ export const FORM_VAZIO: FormularioFicha = {
   marcacoes: [],
   achados_detalhe: '',
   alteracoes_observadas: [],
+  regioes_imagem: [],
   qualidade_tecnica: '',
   descricao_didatica: '',
   observacoes_internas: '',

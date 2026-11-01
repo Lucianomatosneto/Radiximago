@@ -39,6 +39,11 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
   - alteração do seio maxilar → Seio maxilar.
 
   A escolha do curador sempre prevalece. A busca por região também acha as fichas antigas pelo mesmo mapa.
+- **Regiões que a imagem mostra:** a ficha tem o campo "Regiões que a imagem mostra" (`curations.regioes_imagem`), separado das regiões dos achados.
+  - Panorâmica e tomografia já vêm com as regiões do exame (`REGIOES_PADRAO_POR_EXAME`). Panorâmica: maxila, mandíbula, osso alveolar, canal mandibular, seio maxilar e ATM. Tomografia: maxila, mandíbula e osso alveolar, porque o campo de visão varia. O curador marca ou desmarca.
+  - Periapical, interproximal e oclusal começam vazias. Senão, toda periapical "teria" coroa e raiz, e o filtro não separaria nada.
+  - Ficha antiga, sem o campo: a busca usa o padrão do tipo de exame.
+  - O filtro "Região anatômica" da Pesquisa avançada e o termo `regiao:` usam a mesma regra: achado na região, região padrão do achado ou região que a imagem mostra.
 - **Relatório "Fichas por achado":** conta as **alterações observadas** marcadas na Curadoria. O antigo campo "achado principal" não é mais preenchido. Uma ficha com vários achados conta em cada um deles.
 - **"Dificuldade" removida do relatório:** a Curadoria não tem campo para preenchê-la, então o cartão mostrava sempre vazio. Se um dia for necessária, deve entrar primeiro como campo da ficha e filtro da busca.
 
@@ -131,3 +136,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.1 | 18/10/2026 | Grupo 4: limites de e-mail, ZIP, envio e sincronização; limite geral por conta; teto de ZIPs simultâneos; coerência de idade na busca e de marcações |
 | 1.2 | 20/10/2026 | Limite do giro de imagem na Curadoria; recorte da moldura branca |
 | 1.3 | 01/11/2026 | Vocabulário × busca, região anatômica padrão, relatório por achado, Dificuldade removida do relatório |
+| 1.4 | 01/11/2026 | Regiões que a imagem mostra (campo da Curadoria e padrão por tipo de exame) no filtro de região |

@@ -51,7 +51,7 @@ from app.modules.curations import (
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico, erros_por_ficha
 
 from app.modules.busca_texto import condicao_busca_texto, condicao_termo
-from app.modules.busca_termos import GRUPOS_ACHADO, MAX_CARACTERES_TOKEN, MAX_TERMOS_BUSCA, condicao_grupo, condicao_token
+from app.modules.busca_termos import GRUPOS_ACHADO, MAX_CARACTERES_TOKEN, MAX_TERMOS_BUSCA, condicao_grupo, condicao_regiao, condicao_token
 
 logger = logging.getLogger(__name__)
 
@@ -387,6 +387,12 @@ def pesquisar_imagens(
                 exists().where(and_(Achado.curation_id == Curation.id, Achado.tipo == achado.value)),
             )
         )
+    elif achado is None and regiao_anatomica is not None and not dentes_normalizados:
+        # 01/11/2026 - REGIAO SOZINHA: a mesma regra da busca por termos
+        # ("regiao:..."): achado marcado nessa regiao, regiao padrao do tipo
+        # de achado, ou a IMAGEM mostra a regiao (campo "Regioes da imagem"
+        # da Curadoria, ou padrao do exame - panoramica/tomografia).
+        consulta = consulta.filter(condicao_regiao(regiao_anatomica.value))
     elif achado is not None or regiao_anatomica is not None:
         # Achado + dente e/ou regiao, OU regiao sozinha: so o sistema
         # estruturado consegue representar essa correlacao (o legado nao

@@ -852,7 +852,9 @@
       "chaveIdade": "35",
       "chaveSexo": "m / f",
       "chaveDentes": "36 e 37",
-      "chaveQualidade": "boa"
+      "chaveQualidade": "boa",
+      "regioesImagem": "Regiões que a imagem mostra",
+      "regioesImagemAjuda": "Usadas pelo filtro “Região anatômica” da Pesquisa avançada. Panorâmica e tomografia já vêm sugeridas; marque ou desmarque conforme a imagem."
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Dente não identificado",

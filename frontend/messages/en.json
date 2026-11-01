@@ -852,7 +852,9 @@
       "chaveIdade": "35",
       "chaveSexo": "m / f",
       "chaveDentes": "36 and 37",
-      "chaveQualidade": "good"
+      "chaveQualidade": "good",
+      "regioesImagem": "Regions shown in the image",
+      "regioesImagemAjuda": "Used by the “Anatomical region” filter of Advanced search. Panoramic and CT come pre-filled; check or uncheck according to the image."
     },
     "seletorDentes": {
       "denteNaoIdentificado": "Tooth not identified",

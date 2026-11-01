@@ -434,6 +434,7 @@ def obter_ficha(
         "marcacoes": ficha.marcacoes,
         "achados_detalhe": ficha.achados_detalhe,
         "alteracoes_observadas": ficha.alteracoes_observadas,
+        "regioes_imagem": ficha.regioes_imagem,
         "qualidade_tecnica": ficha.qualidade_tecnica,
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,

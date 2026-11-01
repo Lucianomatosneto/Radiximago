@@ -218,6 +218,12 @@ class Curation(Base):
     marcacoes = Column(JSONB, nullable=False, server_default="[]")
     achados_detalhe = Column(Text, nullable=True)
     alteracoes_observadas = Column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
+    # 01/11/2026 - REGIOES ANATOMICAS QUE A IMAGEM MOSTRA (RegiaoAnatomica),
+    # independentes dos achados. Panoramica e tomografia cobrem varias
+    # regioes: a Curadoria ja sugere as do tipo de exame
+    # (achados.REGIOES_PADRAO_POR_EXAME) e o curador ajusta. None = ficha
+    # antiga, nunca revisada: a busca usa o padrao do tipo de exame.
+    regioes_imagem = Column(ARRAY(String(30)), nullable=True)
     qualidade_tecnica = Column(String(20), nullable=True)
     dificuldade = Column(String(20), nullable=True)
     descricao_didatica = Column(Text, nullable=True)

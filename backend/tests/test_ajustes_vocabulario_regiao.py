@@ -98,3 +98,35 @@ def test_relatorio_fichas_por_achado(client, db, criar_usuario, criar_ficha):
     assert "por_dificuldade" not in dados and "por_achado_principal" not in dados
     assert dados["por_achado"].get("calculo_dentario", 0) >= 1
     assert dados["por_achado"].get("lesao_periapical", 0) >= 1
+
+
+def test_regiao_da_imagem_panoramica_e_campo_da_curadoria(client, db, criar_usuario, criar_ficha):
+    """
+    01/11/2026: panoramica antiga (sem o campo) e achada pelo padrao do exame;
+    o campo "Regioes da imagem" marcado pelo curador vale no lugar do padrao;
+    periapical nao herda regiao nenhuma do tipo de exame.
+    """
+    pano_antiga = criar_ficha(tipo_radiografia="panoramica")
+    pano_revisada = criar_ficha(tipo_radiografia="panoramica")
+    db.get(Curation, pano_revisada.id).regioes_imagem = ["mandibula"]
+    peri = criar_ficha(tipo_radiografia="periapical")
+    peri_marcada = criar_ficha(tipo_radiografia="periapical")
+    db.get(Curation, peri_marcada.id).regioes_imagem = ["seio_maxilar"]
+    db.commit()
+    h = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.estudante).email))
+
+    seio = _ids(client, h, regiao_anatomica="seio_maxilar")
+    assert pano_antiga.id in seio and peri_marcada.id in seio
+    assert pano_revisada.id not in seio and peri.id not in seio
+    assert seio == _ids(client, h, termos="regiao:seio_maxilar")  # filtro e termo: mesma regra
+    assert pano_revisada.id in _ids(client, h, regiao_anatomica="mandibula")
+
+
+def test_curadoria_grava_regioes_da_imagem(client, db, criar_usuario, criar_ficha):
+    f = criar_ficha(status=StatusCuradoria.EM_ANALISE.value, tipo_radiografia="panoramica")
+    h = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.curador).email))
+    r = client.patch(f"/curation/{f.id}", json={"regioes_imagem": ["maxila", "atm", "maxila"]}, headers=h)
+    assert r.status_code == 200, r.text
+    assert r.json()["regioes_imagem"] == ["maxila", "atm"]
+    r = client.patch(f"/curation/{f.id}", json={"regioes_imagem": ["nao_existe"]}, headers=h)
+    assert r.status_code == 422

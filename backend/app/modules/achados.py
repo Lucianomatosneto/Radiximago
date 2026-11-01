@@ -134,6 +134,30 @@ REGIAO_PADRAO_POR_ACHADO: dict[str, str] = {
 }
 
 
+# 01/11/2026 - regioes que cada TIPO DE EXAME mostra por inteiro. So os
+# exames amplos: panoramica (as duas arcadas, seios, ATMs e canal
+# mandibular) e tomografia (TCFC - o campo de visao varia, por isso so o
+# que toda tomografia odontologica mostra; o curador acrescenta o resto).
+# Periapical, interproximal e oclusal mostram poucos dentes: a regiao vem do
+# curador ou dos achados, senao todo periapical "teria" coroa e raiz e o
+# filtro deixaria de separar alguma coisa.
+REGIOES_PADRAO_POR_EXAME: dict[str, list[str]] = {
+    "panoramica": [
+        RegiaoAnatomica.MAXILA.value,
+        RegiaoAnatomica.MANDIBULA.value,
+        RegiaoAnatomica.OSSO_ALVEOLAR.value,
+        RegiaoAnatomica.CANAL_MANDIBULAR.value,
+        RegiaoAnatomica.SEIO_MAXILAR.value,
+        RegiaoAnatomica.ATM.value,
+    ],
+    "tomografia": [
+        RegiaoAnatomica.MAXILA.value,
+        RegiaoAnatomica.MANDIBULA.value,
+        RegiaoAnatomica.OSSO_ALVEOLAR.value,
+    ],
+}
+
+
 def regiao_do_achado(tipo: str, escolhida: str | None) -> str | None:
     """A regiao escolhida pelo curador; sem escolha, a padrao do achado (ou nenhuma)."""
     return escolhida or REGIAO_PADRAO_POR_ACHADO.get(tipo)

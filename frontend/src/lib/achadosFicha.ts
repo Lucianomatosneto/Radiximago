@@ -60,6 +60,28 @@ export const REGIAO_PADRAO_POR_ACHADO: Record<string, string> = {
   alteracao_seio_maxilar: 'seio_maxilar',
 }
 
+/**
+ * 01/11/2026 - regioes que a IMAGEM mostra, sugeridas pelo tipo de exame
+ * (copia de backend/app/modules/achados.py: REGIOES_PADRAO_POR_EXAME).
+ * So os exames amplos; periapical/interproximal/oclusal comecam vazios.
+ */
+export const REGIOES_PADRAO_POR_EXAME: Record<string, string[]> = {
+  panoramica: ['maxila', 'mandibula', 'osso_alveolar', 'canal_mandibular', 'seio_maxilar', 'atm'],
+  tomografia: ['maxila', 'mandibula', 'osso_alveolar'],
+}
+
+export function regioesPadraoDoExame(tipo: string): string[] {
+  return [...(REGIOES_PADRAO_POR_EXAME[tipo] ?? [])]
+}
+
+/** ao trocar o tipo de exame: se o curador nao mexeu nas regioes (vazias ou
+ * iguais ao padrao do tipo anterior), passam a ser as do tipo novo */
+export function regioesAoTrocarExame(atuais: string[], tipoAnterior: string, tipoNovo: string): string[] {
+  const padraoAnterior = regioesPadraoDoExame(tipoAnterior)
+  const intocadas = atuais.length === 0 || (atuais.length === padraoAnterior.length && atuais.every((r) => padraoAnterior.includes(r)))
+  return intocadas ? regioesPadraoDoExame(tipoNovo) : atuais
+}
+
 export function regiaoDoAchado(a: Pick<AchadoFicha, 'tipo' | 'regiao'>): string {
   return a.regiao || REGIAO_PADRAO_POR_ACHADO[a.tipo] || ''
 }

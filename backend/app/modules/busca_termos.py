@@ -29,7 +29,7 @@ from fastapi import HTTPException
 from sqlalchemy import and_, exists, or_
 from sqlalchemy.orm import Session
 
-from app.modules.achados import REGIAO_PADRAO_POR_ACHADO, Achado, ErroTecnico, RegiaoAnatomica, TipoAchado
+from app.modules.achados import REGIAO_PADRAO_POR_ACHADO, REGIOES_PADRAO_POR_EXAME, Achado, ErroTecnico, RegiaoAnatomica, TipoAchado
 from app.modules.busca_texto import condicao_busca_texto, condicao_termo
 from app.modules.curations import Curation
 from app.modules.vocabulario import TermoVocabulario
@@ -128,6 +128,13 @@ def condicao_regiao(regiao: str):
         partes.append(exists().where(and_(Achado.curation_id == Curation.id, Achado.regiao_anatomica.is_(None),
                                           Achado.tipo.in_(tipos))))
         partes.append(Curation.alteracoes_observadas.overlap(tipos))
+    # 4) a IMAGEM mostra a regiao (01/11/2026): marcada pelo curador em
+    # "Regioes da imagem" ou, em ficha que nunca teve esse campo (None), o
+    # padrao do tipo de exame (panoramica/tomografia cobrem varias regioes)
+    partes.append(Curation.regioes_imagem.any(regiao))
+    exames = [e for e, regioes in REGIOES_PADRAO_POR_EXAME.items() if regiao in regioes]
+    if exames:
+        partes.append(and_(Curation.regioes_imagem.is_(None), Curation.tipo_radiografia.in_(exames)))
     return or_(*partes)
 
 

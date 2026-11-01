@@ -84,6 +84,8 @@ class CurationCreate(BaseModel):
     achado_principal: Optional[AchadoPrincipal] = None
     achados_detalhe: Optional[TextoLongo] = None
     alteracoes_observadas: Optional[List[AlteracaoObservada]] = Field(default=None, max_length=MAX_ALTERACOES)
+    # regioes que a imagem mostra (lista completa; substitui a anterior)
+    regioes_imagem: Optional[List[RegiaoAnatomica]] = Field(default=None, max_length=len(RegiaoAnatomica))
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[TextoLongo] = None
@@ -108,6 +110,8 @@ class CurationUpdate(BaseModel):
     marcacoes: Optional[List[Marcacao]] = Field(default=None, max_length=MAX_MARCACOES)
     achados_detalhe: Optional[TextoLongo] = None
     alteracoes_observadas: Optional[List[AlteracaoObservada]] = Field(default=None, max_length=MAX_ALTERACOES)
+    # regioes que a imagem mostra (lista completa; substitui a anterior)
+    regioes_imagem: Optional[List[RegiaoAnatomica]] = Field(default=None, max_length=len(RegiaoAnatomica))
     qualidade_tecnica: Optional[QualidadeTecnica] = None
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[TextoLongo] = None
