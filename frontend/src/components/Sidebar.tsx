@@ -85,6 +85,20 @@ const ITENS_MENU: ItemMenu[] = [
 export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean } = {}) {
   const t = useTranslations('Sidebar')
   const [recolhido, setRecolhido] = useState(recolhivel)
+  // celular e tablet estreito (<768px): o menu comeca recolhido em TODAS as
+  // telas (o menu aberto ocupava mais da metade da largura do celular)
+  const [telaEstreita, setTelaEstreita] = useState(false)
+  useEffect(() => {
+    const consulta = window.matchMedia('(max-width: 767px)')
+    const aplicar = () => {
+      setTelaEstreita(consulta.matches)
+      if (consulta.matches) setRecolhido(true)
+    }
+    aplicar()
+    consulta.addEventListener('change', aplicar)
+    return () => consulta.removeEventListener('change', aplicar)
+  }, [])
+  const podeRecolher = recolhivel || telaEstreita
   const router = useRouter()
   const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
@@ -181,7 +195,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // acesso.
   const itensVisiveis = ITENS_MENU.filter((item) => !item.perfis || (perfil !== null && item.perfis.includes(perfil)))
 
-  const botaoRecolher = recolhivel && (
+  const botaoRecolher = podeRecolher && (
     <button
       type="button"
       onClick={() => setRecolhido((v) => !v)}
@@ -204,7 +218,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
 
   // MENU RECOLHIDO (01/11/2026): os icones das secoes, com o nome numa dica
   // ao passar o mouse ou focar pelo teclado (e no aria-label)
-  if (recolhivel && recolhido) {
+  if (podeRecolher && recolhido) {
     return (
       <aside className="flex h-screen w-14 shrink-0 flex-col items-center justify-between border-r border-base-border bg-base py-4 print:hidden" aria-label={t('navegacao')}>
         <div className="flex flex-col items-center gap-3">
@@ -246,7 +260,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   }
 
   return (
-    <aside className="flex h-screen w-64 shrink-0 flex-col justify-between border-r border-base-border bg-base">
+    <aside className={`flex h-screen w-60 shrink-0 flex-col justify-between border-r border-base-border bg-base lg:w-64 ${telaEstreita ? 'fixed left-0 top-0 z-40 shadow-2xl' : ''}`}>
       <div>
         <div className="flex items-center justify-between border-b border-base-border px-6 py-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('navegacao')}</p>

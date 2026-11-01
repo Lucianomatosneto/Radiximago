@@ -323,3 +323,17 @@ html[data-largura="limitada"] .trilha-lista {
   max-width: 1200px;
   margin-inline: auto;
 }
+
+/* RESPONSIVIDADE (01/11/2026): margens do conteudo por tamanho de tela -
+   celular (<640px) mais justo, tablet (~768px) intermediario e telas
+   grandes (>=1280px) com mais respiro nas telas de leitura. O login (sem
+   data-fundo) nao e afetado. */
+@media (max-width: 639px) {
+  html[data-fundo] main { padding-left: 0.75rem !important; padding-right: 0.75rem !important; }
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  html[data-fundo] main { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+}
+@media (min-width: 1280px) {
+  html[data-largura="limitada"] main { padding-left: 2.5rem; padding-right: 2.5rem; }
+}

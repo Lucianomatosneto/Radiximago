@@ -23,6 +23,12 @@ const ICONE_PERFIL: Record<string, LucideIcon> = {
   suporte: Wrench,
 }
 
+function iniciais(nome: string): string {
+  const partes = nome.trim().split(/\s+/).filter(Boolean)
+  if (!partes.length) return '?'
+  return ((partes[0][0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')).toUpperCase()
+}
+
 function IconePerfil({ perfil, className = 'h-4 w-4' }: { perfil: string; className?: string }) {
   const Icone = ICONE_PERFIL[perfil] ?? UserRound
   return <Icone aria-hidden="true" className={className} />
@@ -220,7 +226,7 @@ export default function Topbar({
   return (
     <>
     <header
-      className={`flex h-20 items-center justify-between border-b border-base-border bg-base px-6 ${
+      className={`flex h-16 items-center justify-between gap-2 border-b border-base-border bg-base px-3 sm:h-20 sm:px-6 ${
         fixa ? 'sticky top-0 z-30 bg-base/90 backdrop-blur-md' : ''
       }`}
     >
@@ -232,7 +238,7 @@ export default function Topbar({
         {acao}
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-1 sm:gap-3 lg:gap-6">
         <ThemeToggle />
 
         {/* Central de ajuda: busca por qualquer recurso do sistema */}
@@ -243,7 +249,7 @@ export default function Topbar({
           aria-expanded={ajudaAberta}
           className="flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-sm text-slate-300 hover:bg-base-surface2 hover:text-ink"
         >
-          <CircleHelp aria-hidden="true" className="h-4 w-4" /> {t('ajuda')}
+          <CircleHelp aria-hidden="true" className="h-5 w-5 sm:h-4 sm:w-4" /> <span className="sr-only sm:not-sr-only">{t('ajuda')}</span>
         </button>
         <CentralAjuda aberta={ajudaAberta} onFechar={() => setAjudaAberta(false)} perfil={perfil || null} />
 
@@ -254,23 +260,27 @@ export default function Topbar({
             aria-haspopup="menu"
             aria-expanded={menuAberto}
             aria-controls="menu-usuario"
-            className="flex items-center gap-2 rounded-full border border-base-border bg-base-surface py-1.5 pl-2 pr-3 text-sm hover:border-brand/50"
+            className="flex min-h-[44px] items-center gap-2 rounded-full border border-base-border bg-base-surface p-1 text-sm hover:border-brand/50 sm:py-1.5 sm:pl-2 sm:pr-3"
           >
-            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full bg-brand/20 text-sm">
+            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-brand/20 text-sm sm:h-7 sm:w-7">
               {fotoPerfilUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={urlCompleta(fotoPerfilUrl)} alt="" className="h-full w-full object-cover" />
               ) : (
-                <IconePerfil perfil={perfil} />
+                <>
+                  {/* celular (<640px): iniciais do nome; maior: icone do perfil */}
+                  <span aria-hidden="true" className="text-xs font-semibold text-ink sm:hidden">{iniciais(nome)}</span>
+                  <span className="hidden sm:inline"><IconePerfil perfil={perfil} /></span>
+                </>
               )}
             </span>
-            <span className="text-left leading-tight">
+            <span className="sr-only text-left leading-tight sm:not-sr-only">
               <span className="block text-[11px] text-slate-400">{nome || t('visitante')}</span>
               <span className="block font-medium text-ink">
                 {perfil ? t(`perfis.${perfil}` as Parameters<typeof t>[0]) : '—'}
               </span>
             </span>
-            <ChevronDown aria-hidden="true" className={`h-4 w-4 text-slate-500 transition-transform ${menuAberto ? 'rotate-180' : ''}`} />
+            <ChevronDown aria-hidden="true" className={`hidden h-4 w-4 text-slate-500 sm:block transition-transform ${menuAberto ? 'rotate-180' : ''}`} />
           </button>
 
           {menuAberto && (

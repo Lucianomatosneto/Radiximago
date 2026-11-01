@@ -38,7 +38,8 @@ const CONFIG_POR_VARIANTE: Record<
   navbar: {
     empilhado: false,
     iconePx: 36,
-    tituloClasse: 'text-base font-bold tracking-tight text-ink sm:text-lg',
+    // celular (<640px): so o icone na barra superior (o texto voltava por cima da Ajuda)
+    tituloClasse: 'hidden text-base font-bold tracking-tight text-ink sm:inline sm:text-lg',
     tagline: false,
     gapClasse: 'gap-2.5',
   },
