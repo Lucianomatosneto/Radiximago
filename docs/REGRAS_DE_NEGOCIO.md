@@ -44,6 +44,8 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
   - Periapical, interproximal e oclusal começam vazias. Senão, toda periapical "teria" coroa e raiz, e o filtro não separaria nada.
   - Ficha antiga, sem o campo: a busca usa o padrão do tipo de exame.
   - O filtro "Região anatômica" da Pesquisa avançada e o termo `regiao:` usam a mesma regra: achado na região, região padrão do achado ou região que a imagem mostra.
+- **Termo inativo:** um termo desativado no Vocabulário sai da busca. O termo `vocab:` responde 422 ("está inativo"), a busca por texto ignora os seus sinônimos e a contagem "na busca" fica 0. As ligações com as fichas continuam guardadas.
+- **Curadoria × Busca:** o teste `tests/test_curadoria_x_busca.py` confere duas coisas: que as listas da Curadoria (achados, regiões, erros técnicos e grupos) são as mesmas da Busca e do servidor, e que cada valor gravado é encontrado pela `/search`.
 - **Relatório "Fichas por achado":** conta as **alterações observadas** marcadas na Curadoria. O antigo campo "achado principal" não é mais preenchido. Uma ficha com vários achados conta em cada um deles.
 - **"Dificuldade" removida do relatório:** a Curadoria não tem campo para preenchê-la, então o cartão mostrava sempre vazio. Se um dia for necessária, deve entrar primeiro como campo da ficha e filtro da busca.
 
@@ -72,6 +74,7 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
   - Os valores antigos (legado) continuam válidos nos exames intraorais e na panorâmica.
 - Erro incompatível recebe **422** com a mensagem "O erro técnico … não se aplica a …". Vale para o POST, para o PATCH do erro e para a lista completa no PATCH da ficha. Nunca há "sucesso sem salvar".
 - Ao trocar o tipo de exame na Curadoria, os erros que não valem para o novo tipo saem da ficha.
+- O mesmo erro técnico não pode ser registrado duas vezes na mesma ficha: a API responde **409**.
 
 ## 2. Fluxo da ficha (estados permitidos)
 
@@ -165,3 +168,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.4 | 01/11/2026 | Regiões que a imagem mostra (campo da Curadoria e padrão por tipo de exame) no filtro de região |
 | 1.5 | 01/11/2026 | Prancha por e-mail: confirmação com destino visível, destinatário cadastrado e aviso de erro de digitação |
 | 1.6 | 01/11/2026 | Erro técnico recusado (422) quando não combina com o tipo de exame |
+| 1.7 | 01/11/2026 | Erro técnico repetido (409), termo inativo fora da busca, teste Curadoria × Busca |

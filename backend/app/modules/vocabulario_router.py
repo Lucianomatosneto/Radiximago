@@ -167,7 +167,8 @@ def listar_vocabulario(
         return {"categorias": list(CATEGORIAS_TERMO), "termos": [_serializar(t, contagem.get(t.id, 0)) for t in termos]}
     aprovadas = _contagem_aprovadas(db)
     return {"categorias": list(CATEGORIAS_TERMO), "termos": [
-        _serializar(t, contagem.get(t.id, 0), aprovadas.get(t.id, 0), _contagem_na_busca(db, t.id)) for t in termos
+        _serializar(t, contagem.get(t.id, 0), aprovadas.get(t.id, 0), _contagem_na_busca(db, t.id) if t.ativo else 0)
+        for t in termos
     ]}
 
 

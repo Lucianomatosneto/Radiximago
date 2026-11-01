@@ -162,6 +162,9 @@ def condicao_vocabulario(db: Session, termo_id: int):
     termo = db.query(TermoVocabulario).filter(TermoVocabulario.id == termo_id).first()
     if not termo:
         raise HTTPException(status_code=422, detail="Termo do vocabulário não encontrado.")
+    if not termo.ativo:
+        # 01/11/2026 (QA item 8): termo desativado nao e mais pesquisavel
+        raise HTTPException(status_code=422, detail=f"O termo '{termo.termo}' está inativo no vocabulário.")
     texto = condicao_busca_texto(db, termo.termo)
     return or_(condicao_termo(termo_id), texto) if texto is not None else condicao_termo(termo_id)
 

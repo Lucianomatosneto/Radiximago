@@ -27,6 +27,17 @@ ROTULO_EXAME = {
 }
 
 
+def exigir_erro_nao_repetido(db: Session, curation_id: int, tipo_erro: str, exceto_id: int | None = None) -> None:
+    """409 quando a ficha ja tem esse erro tecnico (01/11/2026 - reteste do
+    QA: a API aceitava o mesmo erro duas vezes; a lista da ficha no PATCH ja
+    guardava um registro por tipo)."""
+    consulta = db.query(ErroTecnico.id).filter(ErroTecnico.curation_id == curation_id, ErroTecnico.tipo == tipo_erro)
+    if exceto_id is not None:
+        consulta = consulta.filter(ErroTecnico.id != exceto_id)
+    if consulta.first():
+        raise HTTPException(status_code=409, detail=f"A ficha já tem o erro técnico '{tipo_erro}'.")
+
+
 def exigir_erro_compativel(tipo_erro: str, tipo_radiografia: str | None) -> None:
     """422 quando o erro tecnico nao vale para o tipo de exame (01/11/2026 -
     QA item 4: antes a API aceitava e a tela apagava o registro no proximo
@@ -76,6 +87,7 @@ def criar_erro_tecnico(
     ficha = _buscar_ficha(db, curation_id)
     _exigir_ficha_editavel(ficha)
     exigir_erro_compativel(dados.tipo.value, ficha.tipo_radiografia)
+    exigir_erro_nao_repetido(db, ficha.id, dados.tipo.value)
 
     erro = ErroTecnico(
         curation_id=curation_id,
@@ -148,6 +160,7 @@ def atualizar_erro_tecnico(
 
     if dados.tipo is not None:
         exigir_erro_compativel(dados.tipo.value, ficha.tipo_radiografia)
+        exigir_erro_nao_repetido(db, ficha.id, dados.tipo.value, exceto_id=erro.id)
         erro.tipo = dados.tipo.value
     if dados.descricao is not None:
         erro.descricao = dados.descricao
