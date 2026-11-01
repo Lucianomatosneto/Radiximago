@@ -1582,7 +1582,7 @@
   },
   "SolicitarAcesso": {
     "titulo": "Solicitar acesso",
-    "subtitulo": "Preencha seus dados. Você vai receber um link para confirmar seu e-mail. Estudante, professor e pesquisador entram assim que confirmam; curador aguarda a aprovação do administrador.",
+    "subtitulo": "Preencha seus dados. Você vai receber um link para confirmar seu e-mail. Estudante entra assim que confirma; professor, curador e pesquisador aguardam a aprovação do administrador.",
     "erroCamposObrigatorios": "Preencha nome, e-mail e senha.",
     "erroSenhaCurta": "A senha deve ter ao menos 8 caracteres.",
     "erroSenhaComum": "Essa senha é muito comum ou fácil de adivinhar. Escolha outra (dica: uma frase curta).",
@@ -1623,7 +1623,7 @@
       "totalUsuarios": "Total de usuários",
       "docentes": "Docentes",
       "estudantes": "Estudantes",
-      "convitesPendentes": "Convites pendentes"
+      "convitesPendentes": "Solicitações pendentes"
     },
     "solicitacoesPendentesTitulo": "Solicitações de acesso pendentes ({total})",
     "tabela": {

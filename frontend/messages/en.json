@@ -1582,7 +1582,7 @@
   },
   "SolicitarAcesso": {
     "titulo": "Request access",
-    "subtitulo": "Fill in your details. You will get a link to confirm your e-mail. Students, teachers and researchers get in as soon as they confirm; curators wait for the administrator.",
+    "subtitulo": "Fill in your details. You will receive a link to confirm your e-mail. Students get in as soon as they confirm; professor, curator and researcher wait for the administrator's approval.",
     "erroCamposObrigatorios": "Fill in your name, email and password.",
     "erroSenhaCurta": "The password must be at least 8 characters long.",
     "erroSenhaComum": "This password is too common or easy to guess. Please choose another one (tip: a short phrase).",
@@ -1623,7 +1623,7 @@
       "totalUsuarios": "Total users",
       "docentes": "Instructors",
       "estudantes": "Students",
-      "convitesPendentes": "Pending invitations"
+      "convitesPendentes": "Pending requests"
     },
     "solicitacoesPendentesTitulo": "Pending access requests ({total})",
     "tabela": {
