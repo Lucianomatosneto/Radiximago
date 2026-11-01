@@ -571,7 +571,10 @@
       "tomografia": "Tomography (CBCT)"
     },
     "errosNenhum": "No error with those letters.",
-    "errosMaisUm": "Add another error…"
+    "errosMaisUm": "Add another error…",
+    "servidorOcupado": "The server is busy or restarting. We already retried automatically.",
+    "semConexao": "No connection to the server. Check the internet and try again.",
+    "tentarDeNovo": "Try again"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -1539,7 +1542,10 @@
       "relatorios": "Reports",
       "auditoria": "Audit",
       "integracoes": "Integrations"
-    }
+    },
+    "erros24h": "Errors in the last 24 h",
+    "erros24hDetalhe": "Unexpected server errors recorded in the Audit log (action “erro_inesperado”), each with a reference code.",
+    "migracaoPendente": "Warning: the database update has not been applied. Meanwhile, parts of the system may fail. On the server, run: docker compose exec radix-api alembic upgrade head"
   },
   "EsqueciSenha": {
     "titulo": "Forgot my password",

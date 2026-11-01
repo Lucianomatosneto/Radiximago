@@ -571,7 +571,10 @@
       "tomografia": "Tomografia (TCFC)"
     },
     "errosNenhum": "Nenhum erro com essas iniciais.",
-    "errosMaisUm": "Adicionar outro erro…"
+    "errosMaisUm": "Adicionar outro erro…",
+    "servidorOcupado": "O servidor está ocupado ou reiniciando. Já tentamos de novo automaticamente.",
+    "semConexao": "Sem conexão com o servidor. Verifique a internet e tente de novo.",
+    "tentarDeNovo": "Tentar de novo"
   },
   "AlteracoesObservadas": {
     "categorias": {
@@ -1539,7 +1542,10 @@
       "relatorios": "Relatórios",
       "auditoria": "Auditoria",
       "integracoes": "Integrações"
-    }
+    },
+    "erros24h": "Erros nas últimas 24 h",
+    "erros24hDetalhe": "Erros inesperados do servidor registrados na Auditoria (ação “erro_inesperado”), cada um com código de referência.",
+    "migracaoPendente": "Atenção: falta aplicar a atualização do banco de dados. Enquanto isso, partes do sistema podem dar erro. No servidor, rode: docker compose exec radix-api alembic upgrade head"
   },
   "EsqueciSenha": {
     "titulo": "Esqueci minha senha",

@@ -186,6 +186,12 @@ ainda não chegou. Espere o `dns.google` mostrar o IP e rode
 
 ## Atualizar o sistema (quando houver versão nova no GitHub)
 
+> **Sempre rode o `alembic upgrade head` logo depois de atualizar o código.**
+> Se o código novo usar uma coluna que o banco ainda não tem, as telas dão
+> erro até a atualização do banco. Foi o que aconteceu em 01/11/2026. Nesse
+> intervalo, a API responde "o sistema está sendo atualizado", e o Painel
+> administrativo avisa "falta aplicar a atualização do banco de dados".
+
 ```bash
 radix exec radix-backup sh -c 'ls -lh /backups | tail -3'   # confere o ultimo backup
 cd ~/radiximago && git pull

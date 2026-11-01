@@ -142,9 +142,11 @@ async def health_database():
         db = SessionLocal()
         try:
             db.execute(text("SELECT 1"))
+            from app.core.migracoes import estado_das_migracoes
+            migracao_pendente = estado_das_migracoes(db)["pendente"]
         finally:
             db.close()
-        return {"status": "ok", "database": "conectado"}
+        return {"status": "ok", "database": "conectado", "migracao_pendente": migracao_pendente}
     except Exception:
         logger.exception("Falha na checagem de saude do banco de dados.")
         return {"status": "erro", "database": "indisponivel"}

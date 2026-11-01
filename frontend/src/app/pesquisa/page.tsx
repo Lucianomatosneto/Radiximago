@@ -1,5 +1,6 @@
 'use client'
 
+import { errouServidor, lerComRepeticao } from '../../lib/repetir'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -486,6 +487,8 @@ function PesquisaConteudo() {
     setChaveSeletorDentes((c) => c + 1)
   }
 
+  const [podeTentarDeNovo, setPodeTentarDeNovo] = useState(false)
+
   async function pesquisar(filtrosParaUsar: Filtros = filtros) {
     if (!autenticado) return
     setPesquisando(true)
@@ -528,7 +531,8 @@ function PesquisaConteudo() {
     params.set('limit', '200')
 
     try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/search?${params.toString()}`, {
+      // repete sozinha 2 vezes se o servidor estiver reiniciando/ocupado
+      const resposta = await lerComRepeticao(`${process.env.NEXT_PUBLIC_API_URL}/search?${params.toString()}`, {
         credentials: 'include',
       })
       if (resposta.status === 401) {
@@ -536,15 +540,19 @@ function PesquisaConteudo() {
         return
       }
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, t('erroPesquisaGenerico')))
+        const motivo = await extrairErro(resposta, t('erroPesquisaGenerico'))
+        setPodeTentarDeNovo(errouServidor(resposta.status))
+        setErro(errouServidor(resposta.status) ? `${t('servidorOcupado')} ${motivo === t('erroPesquisaGenerico') ? '' : motivo}`.trim() : motivo)
         return
       }
+      setPodeTentarDeNovo(false)
       const dados = await resposta.json()
       setResultados(dados.itens ?? [])
       setTotalResultados(dados.total ?? (dados.itens ?? []).length)
       setSelecionados([])
     } catch {
-      setErro(t('erroPesquisaGenerico'))
+      setPodeTentarDeNovo(true)
+      setErro(t('semConexao'))
     } finally {
       setPesquisando(false)
     }
@@ -667,6 +675,16 @@ function PesquisaConteudo() {
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
                   {erro}
+                  {podeTentarDeNovo && (
+                    <button
+                      type="button"
+                      onClick={() => pesquisar()}
+                      disabled={pesquisando}
+                      className="ml-2 rounded-md border border-red-400/60 px-2 py-0.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {t('tentarDeNovo')}
+                    </button>
+                  )}
                 </p>
               )}
             </div>
@@ -932,6 +950,16 @@ function PesquisaConteudo() {
               {erro && (
                 <p className="text-sm text-red-400" role="alert">
                   {erro}
+                  {podeTentarDeNovo && (
+                    <button
+                      type="button"
+                      onClick={() => pesquisar()}
+                      disabled={pesquisando}
+                      className="ml-2 rounded-md border border-red-400/60 px-2 py-0.5 text-xs font-semibold text-red-500 hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      {t('tentarDeNovo')}
+                    </button>
+                  )}
                 </p>
               )}
             </div>

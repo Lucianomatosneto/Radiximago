@@ -27,6 +27,7 @@ so metodo, caminho e codigo da resposta.
 from __future__ import annotations
 
 import asyncio
+import uuid
 import logging
 import time
 
@@ -51,6 +52,27 @@ _ROTAS_COM_REGISTRO_PROPRIO = ("/visualizador/autorizar",)
 ACOES_REGISTRADAS = ("acesso_negado", "origem_recusada", "limite_excedido", "entrada_recusada", "erro_inesperado")
 
 MENSAGEM_ERRO_GENERICA = "Erro interno. A equipe foi avisada pelo registro do sistema."
+# 01/11/2026 (auditoria do administrador, A2): codigo de referencia na
+# mensagem (o mesmo fica no registro do servidor e na auditoria) e caso
+# proprio para "banco sem a atualizacao" - causa real dos erros 500 de
+# 01/11 (coluna nova no codigo antes do "alembic upgrade head").
+def _mensagem_de_erro(banco_desatualizado: bool, codigo: str) -> str:
+    if banco_desatualizado:
+        return (
+            "O sistema está sendo atualizado: falta aplicar a atualização do banco de dados. "
+            f"Tente de novo em alguns minutos; se continuar, avise o administrador (código {codigo})."
+        )
+    return (
+        f"Erro interno (código de referência {codigo}). Tente de novo em instantes; "
+        "se continuar, avise o administrador informando o código."
+    )
+# codigos do PostgreSQL: coluna inexistente / tabela inexistente
+_PGCODES_ESQUEMA = {"42703", "42P01"}
+
+
+def _banco_desatualizado(erro: BaseException) -> bool:
+    original = getattr(erro, "orig", None)
+    return getattr(original, "pgcode", None) in _PGCODES_ESQUEMA
 
 
 def _ip(request: Request) -> str:
@@ -110,14 +132,22 @@ async def registrar_eventos_de_seguranca(request: Request, call_next):
     try:
         try:
             resposta = await call_next(request)
-        except Exception:
+        except Exception as erro:
             # erro inesperado: detalhes tecnicos so na saida do servidor
             # (logger.exception); o usuario recebe mensagem generica (16.5.1)
-            logger.exception("Erro inesperado em %s", rota)
+            # com um CODIGO de referencia para achar o caso no registro
+            codigo = uuid.uuid4().hex[:8]
+            logger.exception("Erro inesperado em %s (codigo %s)", rota, codigo)
+            desatualizado = _banco_desatualizado(erro)
+            status = 503 if desatualizado else 500
+            motivo = " banco_desatualizado" if desatualizado else ""
             await asyncio.to_thread(
-                _registrar_evento, "erro_inesperado", "erro", f"{rota} -> 500", usuario_do_pedido(request)
+                _registrar_evento, "erro_inesperado", "erro", f"{rota} -> {status} codigo={codigo}{motivo}",
+                usuario_do_pedido(request),
             )
-            return JSONResponse(status_code=500, content={"detail": MENSAGEM_ERRO_GENERICA})
+            mensagem = _mensagem_de_erro(desatualizado, codigo)
+            cabecalhos = {"Retry-After": "60"} if desatualizado else None
+            return JSONResponse(status_code=status, content={"detail": mensagem, "codigo": codigo}, headers=cabecalhos)
 
         status = resposta.status_code
         if status not in (403, 422, 429) or request.url.path.startswith(_ROTAS_COM_REGISTRO_PROPRIO):

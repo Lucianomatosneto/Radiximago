@@ -10,7 +10,7 @@ Fornece a "materia-prima" numerica para os paineis do frontend.
 """
 
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, Query, Request
 from sqlalchemy import text, func
@@ -23,6 +23,8 @@ from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation, StatusCuradoria
+
+from app.core.migracoes import estado_das_migracoes  # noqa: E402
 
 router = APIRouter(prefix="/admin", tags=["Administracao"])
 
@@ -166,6 +168,12 @@ def obter_indicadores(
         # preenche-la (decisao de 01/11/2026 - docs/REGRAS_DE_NEGOCIO.md).
         "por_qualidade_tecnica": _contar_por(db, Curation.qualidade_tecnica),
         "por_curador": por_curador,
+        # 01/11/2026 (A2): saude do sistema para o Painel administrativo
+        "erros_24h": db.query(func.count(AuditLog.id)).filter(
+            AuditLog.acao == "erro_inesperado",
+            AuditLog.criado_em >= datetime.now(timezone.utc) - timedelta(hours=24),
+        ).scalar() or 0,
+        "migracao_pendente": estado_das_migracoes(db)["pendente"],
         # nomes de quem aparece em "Fichas por curador" (so esses) - antes a
         # tela buscava /users/, que o curador nao pode ver, e mostrava
         # "Usuario #1"

@@ -113,6 +113,9 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   useEffect(() => {
     let cancelado = false
     function contar() {
+      // 01/11/2026 (A2): com a aba escondida nao consulta (a tela chamava o
+      // servidor a cada minuto mesmo sem ninguem olhando)
+      if (document.visibilityState === 'hidden') return
       // imagens do banco compartilhadas + pastas de pacientes novas (professor/curador)
       const ler = (caminho: string) =>
         fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, { credentials: 'include' })
@@ -124,12 +127,14 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
       })
     }
     contar()
-    const id = setInterval(contar, 60000)
+    const id = setInterval(contar, 120000)
     window.addEventListener('radix-compartilhadas-vistas', contar)
+    document.addEventListener('visibilitychange', contar)
     return () => {
       cancelado = true
       clearInterval(id)
       window.removeEventListener('radix-compartilhadas-vistas', contar)
+      document.removeEventListener('visibilitychange', contar)
     }
   }, [])
 

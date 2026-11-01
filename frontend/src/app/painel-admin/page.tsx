@@ -36,6 +36,8 @@ interface StatsResponse {
   usuarios_ativos: number
   por_status: Record<string, number>
   imagens: ContagemImagens
+  erros_24h?: number
+  migracao_pendente?: boolean
 }
 
 interface AlertaLogin {
@@ -184,9 +186,21 @@ export default function PainelAdminPage() {
           {stats && (
             <>
               {/* mesma contagem do Inicio: total = soma exata das situacoes */}
+              {stats.migracao_pendente && (
+                <p className="mb-4 rounded-xl border border-red-500/50 bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-300" role="alert">
+                  {t('migracaoPendente')}
+                </p>
+              )}
               <ResumoImagens imagens={stats.imagens} />
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                 <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="purple" />
+                {/* A2: saude do sistema - erros inesperados (500/503) gravados na auditoria */}
+                <DashboardCard
+                  label={t('erros24h')}
+                  valor={stats.erros_24h ?? 0}
+                  cor={(stats.erros_24h ?? 0) > 0 ? 'red' : 'green'}
+                  detalhe={t('erros24hDetalhe')}
+                />
               </div>
             </>
           )}
