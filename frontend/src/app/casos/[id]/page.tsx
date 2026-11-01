@@ -88,7 +88,8 @@ export default function PastaPage() {
         const [p, c, a] = await Promise.all([
           apiJson<{ pessoas: Pessoa[] }>('/casos/pessoas?perfil=professor'),
           apiJson<{ pessoas: Pessoa[] }>('/casos/pessoas?perfil=curador'),
-          qual === 'link' ? apiJson<{ pessoas: Pessoa[] }>('/casos/pessoas?perfil=estudante') : Promise.resolve({ pessoas: [] as Pessoa[] }),
+          // link: so os alunos que podem abrir ESTA pasta (autor e o do tratamento)
+          qual === 'link' ? apiJson<{ pessoas: Pessoa[] }>(`/casos/pessoas?perfil=estudante&caso_id=${id}`) : Promise.resolve({ pessoas: [] as Pessoa[] }),
         ])
         setPessoas([...p.pessoas, ...c.pessoas, ...a.pessoas])
       }
@@ -262,7 +263,7 @@ export default function PastaPage() {
                   <h3 className="text-sm font-semibold text-ink">{painel === 'compartilhar' ? t('acoes.compartilhar') : painel === 'link' ? t('acoes.email') : t('acoes.encaminharAluno')}</h3>
                   {painel === 'link' && <p className="text-xs text-slate-500">{t('emailSoLink')}</p>}
                   {/* 01/11/2026 (QA item 11): dizer QUEM pode receber e por que a lista pode vir vazia */}
-                  {painel !== 'aluno' && <p className="text-xs text-slate-500">{t('quemPodeReceber')}</p>}
+                  {painel !== 'aluno' && <p className="text-xs text-slate-500">{painel === 'link' ? t('quemPodeReceberLink') : t('quemPodeReceber')}</p>}
                   {pessoas.length === 0 && (
                     <p className="text-xs text-amber-600 dark:text-amber-300" role="note">
                       {painel === 'aluno' ? t('nenhumAlunoCadastrado') : t('ninguemParaCompartilhar')}

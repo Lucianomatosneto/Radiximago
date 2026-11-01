@@ -236,6 +236,9 @@ def test_fila_de_tratamento_completa(client, criar_usuario, db):
     assert client.get("/casos/fila", headers=h_al).status_code == 403
     assert client.get(f"/casos/{cid}", headers=h_at).status_code == 404  # ainda nao e dele
 
+    # 01/11/2026: com caso_id, so os alunos que podem abrir a pasta (o autor, aqui)
+    da_pasta = client.get(f"/casos/pessoas?perfil=estudante&caso_id={cid}", headers=h_pr).json()["pessoas"]
+    assert [p["id"] for p in da_pasta] == [aluno.id]
     alunos = client.get("/casos/pessoas?perfil=estudante", headers=h_pr).json()["pessoas"]
     assert {"id": aluno_trat.id, "nome": aluno_trat.nome, "perfil": "estudante"} in alunos
     assert all("email" not in p for p in alunos)

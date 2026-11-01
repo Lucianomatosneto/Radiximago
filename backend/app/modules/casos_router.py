@@ -434,15 +434,22 @@ def recebidos_novos(usuario: User = Depends(obter_usuario_atual), db: Session = 
 @router.get("/pessoas")
 def pessoas(
     perfil: UserRole = Query(...),
+    caso_id: Optional[int] = Query(None, ge=1, description="So quem pode ver esta pasta (envio do link)"),
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """Nomes (sem e-mail) para escolher destinatario/aluno - so a equipe."""
+    """Nomes (sem e-mail) para escolher destinatario/aluno - so a equipe.
+    Com `caso_id` (01/11/2026, reteste do QA): so quem PODE ABRIR a pasta -
+    o link por e-mail so serve para essas pessoas (para aluno: o autor e o do
+    tratamento), e a lista nao oferece quem seria recusado."""
     _exigir_perfil(usuario, PERFIS_EQUIPE)
     if perfil not in (UserRole.professor, UserRole.curador, UserRole.estudante):
         raise HTTPException(status_code=422, detail="Perfil inválido.")
     lista = (db.query(User).filter(User.perfil == perfil, User.ativo.is_(True), User.bloqueado.is_(False),
                                    User.excluido.is_(False)).order_by(User.nome).limit(2000).all())
+    if caso_id is not None:
+        caso = _buscar_caso(db, caso_id, usuario)
+        lista = [u for u in lista if _pode_ver(u, caso)]
     return {"pessoas": [{"id": u.id, "nome": u.nome, "perfil": _perfil(u)} for u in lista if u.id != usuario.id]}
 
 

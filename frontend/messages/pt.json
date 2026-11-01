@@ -2791,7 +2791,8 @@
     "observacaoOpcional": "Observação (opcional)",
     "quemPodeReceber": "Só é possível escolher pessoas cadastradas no Rádix como professor ou curador.",
     "ninguemParaCompartilhar": "Nenhum outro professor ou curador está cadastrado ainda. Peça ao administrador para cadastrar a pessoa; ela aparece aqui depois.",
-    "nenhumAlunoCadastrado": "Nenhum aluno cadastrado ainda. Peça ao administrador para cadastrar o aluno."
+    "nenhumAlunoCadastrado": "Nenhum aluno cadastrado ainda. Peça ao administrador para cadastrar o aluno.",
+    "quemPodeReceberLink": "Só é possível escolher professores e curadores cadastrados e os alunos desta pasta (o autor e o do tratamento): são as pessoas que conseguem abrir o link."
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

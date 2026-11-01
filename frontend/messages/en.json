@@ -2791,7 +2791,8 @@
     "observacaoOpcional": "Note (optional)",
     "quemPodeReceber": "Only people registered in Rádix as professor or curator can be chosen.",
     "ninguemParaCompartilhar": "No other professor or curator is registered yet. Ask the administrator to register the person; they will show up here.",
-    "nenhumAlunoCadastrado": "No student registered yet. Ask the administrator to register the student."
+    "nenhumAlunoCadastrado": "No student registered yet. Ask the administrator to register the student.",
+    "quemPodeReceberLink": "You can choose registered professors and curators and the students of this folder (the author and the treating student): they are the ones who can open the link."
   },
   "Navegacao": {
     "trilha": "Breadcrumb",
