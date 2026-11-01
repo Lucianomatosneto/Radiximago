@@ -58,6 +58,13 @@ export function errosParaTipo(tipo: string): ErroTecnicoInfo[] {
   return ERROS_TECNICOS
 }
 
+/** o erro vale para o exame? Valor desconhecido aqui (legado) passa: o
+ * servidor decide (backend/app/modules/achados.py: erro_vale_para_exame) */
+export function erroCabeNoExame(valor: string, tipo: string): boolean {
+  if (!ERROS_TECNICOS.some((e) => e.valor === valor)) return true
+  return errosParaTipo(tipo).some((e) => e.valor === valor)
+}
+
 export function rotuloErro(valor: string): string {
   return ERROS_TECNICOS.find((e) => e.valor === valor)?.rotulo ?? valor
 }

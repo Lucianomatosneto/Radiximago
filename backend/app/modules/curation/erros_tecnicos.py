@@ -19,7 +19,27 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
-from app.modules.achados import ErroTecnico
+from app.modules.achados import ErroTecnico, erro_vale_para_exame
+
+ROTULO_EXAME = {
+    "periapical": "Periapical", "interproximal": "Interproximal", "oclusal": "Oclusal",
+    "panoramica": "Panorâmica", "tomografia": "Tomografia (TCFC)",
+}
+
+
+def exigir_erro_compativel(tipo_erro: str, tipo_radiografia: str | None) -> None:
+    """422 quando o erro tecnico nao vale para o tipo de exame (01/11/2026 -
+    QA item 4: antes a API aceitava e a tela apagava o registro no proximo
+    salvamento, parecendo "sucesso sem salvar")."""
+    if not erro_vale_para_exame(tipo_erro, tipo_radiografia):
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"O erro técnico '{tipo_erro}' não se aplica a "
+                f"{ROTULO_EXAME.get(tipo_radiografia, tipo_radiografia)}. "
+                "Escolha um erro da lista desse tipo de exame."
+            ),
+        )
 
 from .achados import _exigir_ficha_editavel  # reaproveitado, nao duplicado
 from .common import _buscar_ficha, _registrar_auditoria, _registrar_historico
@@ -55,6 +75,7 @@ def criar_erro_tecnico(
     """Cria um erro tecnico (0..N por ficha), independente de Achado."""
     ficha = _buscar_ficha(db, curation_id)
     _exigir_ficha_editavel(ficha)
+    exigir_erro_compativel(dados.tipo.value, ficha.tipo_radiografia)
 
     erro = ErroTecnico(
         curation_id=curation_id,
@@ -126,6 +147,7 @@ def atualizar_erro_tecnico(
     erro = _buscar_erro_tecnico(db, curation_id, erro_id)
 
     if dados.tipo is not None:
+        exigir_erro_compativel(dados.tipo.value, ficha.tipo_radiografia)
         erro.tipo = dados.tipo.value
     if dados.descricao is not None:
         erro.descricao = dados.descricao

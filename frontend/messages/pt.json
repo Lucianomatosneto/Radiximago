@@ -2774,14 +2774,15 @@
       "minhasPastasTitulo": "Nenhuma pasta de paciente ainda",
       "minhasPastasTexto": "Fotografe as radiografias no negatoscópio e envie ao professor; a pasta aparecerá aqui com as correções."
     },
-    "confirmarConcluirTitulo": "Concluir o tratamento?",
-    "confirmarReabrirTitulo": "Reabrir o tratamento?",
+    "confirmarConcluirTitulo": "Concluir o tratamento de {paciente} (aluno: {aluno})?",
+    "confirmarReabrirTitulo": "Reabrir o tratamento de {paciente} (aluno: {aluno})?",
     "confirmarReabrir": "O paciente volta para “Em tratamento”, com o mesmo aluno. A ação fica registrada no histórico da pasta.",
     "simConcluir": "Sim, concluir",
     "simReabrir": "Sim, reabrir",
     "cancelar": "Cancelar",
     "enviandoAcao": "Salvando…",
-    "reabertoOk": "Tratamento reaberto."
+    "reabertoOk": "Tratamento reaberto.",
+    "observacaoOpcional": "Observação (opcional)"
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

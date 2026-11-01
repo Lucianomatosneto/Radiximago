@@ -63,6 +63,16 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 
   Ele só avisa, **não bloqueia**, porque o domínio pode existir. A correção de um cadastro é feita pelo administrador.
 
+### 1.3 Erro técnico × tipo de exame (01/11/2026)
+
+- A API aceita só os erros técnicos do tipo de exame da ficha. A regra é a mesma da tela: `ERROS_POR_EXAME` em `app/modules/achados.py` e `errosParaTipo` em `lib/errosTecnicos.ts`, e um teste confere as duas.
+  - Periapical, interproximal e oclusal aceitam os erros gerais.
+  - A panorâmica aceita os gerais, menos o corte de cone, e mais os erros próprios da panorâmica.
+  - A tomografia aceita só os erros de tomografia.
+  - Os valores antigos (legado) continuam válidos nos exames intraorais e na panorâmica.
+- Erro incompatível recebe **422** com a mensagem "O erro técnico … não se aplica a …". Vale para o POST, para o PATCH do erro e para a lista completa no PATCH da ficha. Nunca há "sucesso sem salvar".
+- Ao trocar o tipo de exame na Curadoria, os erros que não valem para o novo tipo saem da ficha.
+
 ## 2. Fluxo da ficha (estados permitidos)
 
 ```
@@ -154,3 +164,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.3 | 01/11/2026 | Vocabulário × busca, região anatômica padrão, relatório por achado, Dificuldade removida do relatório |
 | 1.4 | 01/11/2026 | Regiões que a imagem mostra (campo da Curadoria e padrão por tipo de exame) no filtro de região |
 | 1.5 | 01/11/2026 | Prancha por e-mail: confirmação com destino visível, destinatário cadastrado e aviso de erro de digitação |
+| 1.6 | 01/11/2026 | Erro técnico recusado (422) quando não combina com o tipo de exame |

@@ -2774,14 +2774,15 @@
       "minhasPastasTitulo": "No patient folders yet",
       "minhasPastasTexto": "Photograph the radiographs on the light box and send them to a professor; the folder will appear here with the reviews."
     },
-    "confirmarConcluirTitulo": "Finish the treatment?",
-    "confirmarReabrirTitulo": "Reopen the treatment?",
+    "confirmarConcluirTitulo": "Finish the treatment of {paciente} (student: {aluno})?",
+    "confirmarReabrirTitulo": "Reopen the treatment of {paciente} (student: {aluno})?",
     "confirmarReabrir": "The patient goes back to “In treatment”, with the same student. The action is recorded in the folder history.",
     "simConcluir": "Yes, finish",
     "simReabrir": "Yes, reopen",
     "cancelar": "Cancel",
     "enviandoAcao": "Saving…",
-    "reabertoOk": "Treatment reopened."
+    "reabertoOk": "Treatment reopened.",
+    "observacaoOpcional": "Note (optional)"
   },
   "Navegacao": {
     "trilha": "Breadcrumb",

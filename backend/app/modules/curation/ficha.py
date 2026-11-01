@@ -280,6 +280,9 @@ def editar_curadoria(
         elif ficha.achado_principal == "normal":
             ficha.achado_principal = None
     if dados.erros_tecnicos is not None:
+        from .erros_tecnicos import exigir_erro_compativel  # evita import circular
+        for e in dados.erros_tecnicos:
+            exigir_erro_compativel(e.value, ficha.tipo_radiografia)
         # lista completa (substitui): um registro por tipo, sem repetir
         db.query(ErroTecnico).filter(ErroTecnico.curation_id == ficha.id).delete(synchronize_session=False)
         for tipo in dict.fromkeys(e.value for e in dados.erros_tecnicos):

@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import { REGIOES, regioesAoTrocarExame } from '../../lib/achadosFicha'
+import { errosParaTipo } from '../../lib/errosTecnicos'
 import type { EtapaFicha } from '../../lib/secoesCuradoria'
 
 // DADOS DA IMAGEM (secao 1 da ficha), um ITEM por vez no holofote: so o
@@ -176,6 +177,9 @@ export default function PainelDadosSobrepostos({
                     ...form,
                     tipo_radiografia: valor,
                     regioes_imagem: regioesAoTrocarExame(form.regioes_imagem, form.tipo_radiografia, valor),
+                    // erros tecnicos que nao valem para o novo tipo saem (a API
+                    // recusa com 422 - QA item 4)
+                    erros_tecnicos: form.erros_tecnicos.filter((e) => errosParaTipo(valor).some((x) => x.valor === e)),
                   })
                   escolhido('tipo')
                 }}

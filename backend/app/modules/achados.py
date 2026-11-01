@@ -217,6 +217,35 @@ class TipoErroTecnico(str, enum.Enum):
     PROCESSAMENTO_INADEQUADO = "processamento_inadequado"
 
 
+# 01/11/2026 (QA item 4) - quais erros tecnicos valem para cada TIPO DE
+# EXAME. A MESMA regra da tela (frontend/src/lib/errosTecnicos.ts:
+# errosParaTipo - um teste confere as duas). Antes a API aceitava, por
+# exemplo, "magnificacao" (intraoral) numa tomografia.
+_PANORAMICA = {
+    "imagem_fantasma", "lingua_afastada_palato", "labios_abertos", "posicionamento_ap_incorreto",
+    "rotacao_cabeca", "inclinacao_cabeca", "queixo_inadequado", "sobreposicao_coluna",
+}
+_LEGADO = {
+    "corte_apice", "corte_coroa", "angulacao_inadequada", "exposicao_inadequada",
+    "posicionamento_inadequado", "artefato", "processamento_inadequado",
+}
+_TOMOGRAFIA = {e.value for e in TipoErroTecnico if e.value.startswith("tc_")}
+_GERAIS = {e.value for e in TipoErroTecnico} - _PANORAMICA - _LEGADO - _TOMOGRAFIA
+ERROS_POR_EXAME: dict[str, set[str]] = {
+    "periapical": _GERAIS | _LEGADO,
+    "interproximal": _GERAIS | _LEGADO,
+    "oclusal": _GERAIS | _LEGADO,
+    "panoramica": (_GERAIS - {"corte_cone"}) | _PANORAMICA | _LEGADO,
+    "tomografia": set(_TOMOGRAFIA),
+}
+
+
+def erro_vale_para_exame(tipo_erro: str, tipo_radiografia: str | None) -> bool:
+    """Sem tipo de exame (ou tipo desconhecido): qualquer erro vale."""
+    permitidos = ERROS_POR_EXAME.get(tipo_radiografia or "")
+    return permitidos is None or tipo_erro in permitidos
+
+
 # ---------------------------------------------------------------------
 # Tabela: achado odontologico estruturado
 # ---------------------------------------------------------------------

@@ -18,6 +18,7 @@ import { FormularioFicha, FORM_VAZIO } from '../../components/curadoria/FichaCur
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECAO_DO_CAMPO, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { aplicarMacro, type CampoVoz, type MacroVoz } from '../../lib/vozCuradoria'
 import { conferirFicha } from '../../lib/conferenciaFicha'
+import { erroCabeNoExame } from '../../lib/errosTecnicos'
 import { achadosDaApi, achadosParaApi, comAchados, marcacoesSincronizadas, regioesPadraoDoExame } from '../../lib/achadosFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo } from '../../lib/progressoFicha'
 import { SECOES_FICHA } from '../../lib/secoesCuradoria'
@@ -743,7 +744,11 @@ export default function CuradoriaPage() {
       termos: ficha.termos ?? [],
       achados: achadosDaApi(ficha.achados, ficha.alteracoes_observadas),
       sem_alteracoes: !!ficha.sem_alteracoes,
-      erros_tecnicos: Array.isArray(ficha.erros_tecnicos) ? ficha.erros_tecnicos : [],
+      // erro de outro tipo de exame (gravado antes da validacao de
+      // 01/11/2026) nao aparece no painel nem volta para a API, que o recusaria
+      erros_tecnicos: Array.isArray(ficha.erros_tecnicos)
+        ? ficha.erros_tecnicos.filter((e: string) => erroCabeNoExame(e, ficha.tipo_radiografia ?? 'periapical'))
+        : [],
       origem: ficha.origem ?? '',
     })
   }

@@ -291,10 +291,14 @@ export default function PastaPage() {
               {(painel === 'concluir' || painel === 'reabrir') && (
                 <section role="alertdialog" aria-labelledby="titulo-confirmar-tratamento" className="space-y-2 rounded-2xl border border-amber-400/60 bg-base-surface p-3">
                   <h3 id="titulo-confirmar-tratamento" className="text-sm font-semibold text-ink">
-                    {painel === 'concluir' ? t('confirmarConcluirTitulo') : t('confirmarReabrirTitulo')}
+                    {/* nome do paciente e do aluno: confirma QUAL pasta (sugestao do reteste) */}
+                    {t(painel === 'concluir' ? 'confirmarConcluirTitulo' : 'confirmarReabrirTitulo', {
+                      paciente: caso.paciente.nome,
+                      aluno: caso.aluno_tratamento ?? '—',
+                    })}
                   </h3>
                   <p className="text-xs text-slate-500">{painel === 'concluir' ? t('confirmarConcluir') : t('confirmarReabrir')}</p>
-                  <textarea value={nota} rows={2} maxLength={2000} onChange={(e) => setNota(e.target.value)} className={campo} placeholder={t('notaOpcional')} disabled={enviando} />
+                  <textarea value={nota} rows={2} maxLength={2000} onChange={(e) => setNota(e.target.value)} className={campo} placeholder={t('observacaoOpcional')} disabled={enviando} />
                   <div className="flex gap-2">
                     <button type="button" className={botao} disabled={enviando} onClick={() => setPainel('')}>{t('cancelar')}</button>
                     <button
