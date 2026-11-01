@@ -4,6 +4,7 @@ import { GraduationCap, Printer } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
+import AvisoNaoDiagnostico from '../../../components/casos/AvisoNaoDiagnostico'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
 import { apiJson, dataHora } from '../../../lib/casos'
 
@@ -59,6 +60,7 @@ function Tabela() {
         <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-2 text-sm text-ink"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
       </div>
       {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600" role="alert">{erro}</p>}
+      {linhas && linhas.length > 0 && <AvisoNaoDiagnostico />}
       {linhas && linhas.length === 0 && <p className="py-8 text-center text-sm text-slate-500">{t('tratamentosLista.vazio')}</p>}
       {Array.from(porAluno.entries()).map(([aluno, lista]) => (
         <section key={aluno} className="rounded-2xl border border-base-border bg-base-surface p-3">

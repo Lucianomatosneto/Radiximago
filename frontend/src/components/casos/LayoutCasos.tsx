@@ -9,13 +9,14 @@ import AvisoNaoDiagnostico from './AvisoNaoDiagnostico'
 import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
 
 // Moldura comum das telas das pastas: confere login e perfil, menu,
-// titulo, aviso de "nao e diagnostico" e o conteudo.
+// titulo e o conteudo. O aviso de "nao e diagnostico" fica junto das
+// imagens/listas (ListaPacientes); `aviso` o poe tambem no topo.
 export default function LayoutCasos({
   perfis,
   titulo,
   subtitulo,
   children,
-  aviso = true,
+  aviso = false,
 }: {
   perfis: string[]
   titulo: string

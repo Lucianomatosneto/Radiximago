@@ -2,6 +2,7 @@
 
 import { Phone } from 'lucide-react'
 import Link from 'next/link'
+import AvisoNaoDiagnostico from './AvisoNaoDiagnostico'
 import { useTranslations } from 'next-intl'
 import { COR_ETAPA, data, urlFoto, type ResumoCaso } from '../../lib/casos'
 
@@ -9,8 +10,16 @@ import { COR_ETAPA, data, urlFoto, type ResumoCaso } from '../../lib/casos'
 // miniatura, dados importantes do paciente, CONTATO e tratamento.
 export default function ListaPacientes({ casos, vazio }: { casos: ResumoCaso[]; vazio: string }) {
   const t = useTranslations('Casos')
-  if (!casos.length) return <p className="py-8 text-center text-sm text-slate-500">{vazio}</p>
+  if (!casos.length)
+    return (
+      <div className="space-y-3 py-6 text-center">
+        <p className="text-sm text-slate-500">{vazio}</p>
+        <AvisoNaoDiagnostico compacto />
+      </div>
+    )
   return (
+    <>
+    <AvisoNaoDiagnostico />
     <ul className="space-y-2">
       {casos.map((c) => (
         <li key={c.id} className="flex flex-col gap-3 rounded-2xl border border-base-border bg-base-surface p-3 sm:flex-row sm:items-center">
@@ -43,5 +52,6 @@ export default function ListaPacientes({ casos, vazio }: { casos: ResumoCaso[]; 
         </li>
       ))}
     </ul>
+    </>
   )
 }

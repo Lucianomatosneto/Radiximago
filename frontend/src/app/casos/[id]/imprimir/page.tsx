@@ -44,7 +44,7 @@ export default function ImprimirPastaPage() {
         </div>
         <button type="button" onClick={() => window.print()} className="rounded border px-3 py-1 text-sm print:hidden"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
       </div>
-      <p className="rounded border border-amber-500 p-2 text-xs"><TriangleAlert aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('aviso')}</p>
+      <p className="rounded border border-amber-500 p-2 text-[14px]"><TriangleAlert aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('aviso')}</p>
       <p className="whitespace-pre-wrap text-sm"><b>{t('novo.descricao')}:</b> {caso.descricao}</p>
       {caso.revisao?.comentario && <p className="whitespace-pre-wrap text-sm"><b>{t('comentarioGeral')} ({caso.revisao.autor}, {t('versaoN', { n: caso.revisao.versao })}):</b> {caso.revisao.comentario}</p>}
       {caso.imagens.map((img, i) => {
