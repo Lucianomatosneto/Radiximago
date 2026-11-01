@@ -220,7 +220,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // ao passar o mouse ou focar pelo teclado (e no aria-label)
   if (podeRecolher && recolhido) {
     return (
-      <aside className="flex h-screen w-14 shrink-0 flex-col items-center justify-between border-r border-base-border bg-base py-4 print:hidden" aria-label={t('navegacao')}>
+      <aside className="relative z-40 flex h-screen w-14 shrink-0 flex-col items-center justify-between border-r border-base-border bg-base py-4 print:hidden" aria-label={t('navegacao')}>
         <div className="flex flex-col items-center gap-3">
           {botaoRecolher}
           <nav className="flex flex-col items-center gap-1">
@@ -241,7 +241,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
                   {item.chave === 'compartilhadasComigo' && novasCompartilhadas > 0 && (
                     <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-400" />
                   )}
-                  <span role="tooltip" className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
+                  <span role="tooltip" className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
                     {rotulo}
                   </span>
                 </Link>
@@ -251,7 +251,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
         </div>
         <button type="button" onClick={handleSair} aria-label={t('sair')} className="group relative flex h-10 w-10 items-center justify-center rounded-lg text-status-danger hover:bg-red-950/30">
           <LogOut aria-hidden="true" className="h-5 w-5" />
-          <span role="tooltip" className="pointer-events-none absolute left-full z-50 ml-2 hidden whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
+          <span role="tooltip" className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
             {t('sair')}
           </span>
         </button>
