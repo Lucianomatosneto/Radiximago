@@ -264,6 +264,8 @@ export default function NovaPastaPage() {
                   <option value="">{t('novo.soParaMim')}</option>
                   {opcoes?.professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                 </select>
+                {/* 01/11/2026 (QA perfil professor): deixar claro quem ve a pasta */}
+                <p className="mt-1 text-xs text-slate-500">{t('novo.quemVePasta')}</p>
               </div>
               <div className="sm:col-span-2">
                 <label htmlFor="p-desc" className={rotulo}>{t('novo.descricao')} *</label>

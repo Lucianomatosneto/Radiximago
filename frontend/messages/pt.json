@@ -2668,7 +2668,7 @@
       "outrosDadosExemplo": "Ex.: responsável, alergias informadas, observações do atendimento",
       "modalidade": "Modalidade do exame",
       "professor": "Professor que vai ver",
-      "soParaMim": "Só para mim (não enviar a professor)",
+      "soParaMim": "Não avisar nenhum professor agora (a pasta fica visível para os professores e curadores da clínica)",
       "descricao": "Descrição clínica",
       "descricaoExemplo": "Queixa, achados clínicos e o que você quer que o professor veja.",
       "escolha": "Escolha...",
@@ -2679,7 +2679,9 @@
       "erroEnviar": "Não foi possível enviar a pasta.",
       "enviando": "Enviando...",
       "enviarProfessor": "Enviar ao professor",
-      "salvarParaMim": "Salvar em Minhas imagens"
+      "salvarParaMim": "Salvar em Minhas imagens",
+      "quemVePasta": "Professores e curadores da clínica-escola podem abrir todas as pastas (fila de tratamento). Escolher um professor só faz a pasta chegar para ele em “Compartilhadas comigo”.",
+      "semProfessor": "Nenhum professor escolhido (a equipe da clínica vê a pasta)"
     },
     "estudo": {
       "titulo": "Ver estudos",

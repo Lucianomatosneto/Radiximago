@@ -44,3 +44,25 @@ def test_fila_informa_quantas_aguardam_recorte(client, db, criar_usuario):
         db.delete(pronta)
         db.delete(sem_recorte)
         db.commit()
+
+
+def test_professor_ve_so_as_imagens_que_enviou(client, db, criar_usuario):
+    """01/11/2026 (QA perfil professor): minimo necessario na lista."""
+    from app.modules.audit_logs import AuditLog
+
+    professor = criar_usuario(perfil=UserRole.professor)
+    curador = criar_usuario(perfil=UserRole.curador)
+    minha, alheia = _ref(db, RECORTADA), _ref(db, RECORTADA)
+    db.add(AuditLog(usuario_id=professor.id, acao="upload_imagem", entidade="orthanc_reference",
+                    entidade_id=minha.id, resultado="sucesso", detalhes="teste"))
+    db.commit()
+    try:
+        ids_prof = {i["id"] for i in client.get("/images/", headers=cabecalho_auth(obter_token(client, professor.email))).json()}
+        assert minha.id in ids_prof and alheia.id not in ids_prof
+        ids_cur = {i["id"] for i in client.get("/images/", headers=cabecalho_auth(obter_token(client, curador.email))).json()}
+        assert {minha.id, alheia.id} <= ids_cur
+    finally:
+        # o registro de auditoria nao pode ser apagado (ASVS 16.4.2) - fica
+        db.delete(minha)
+        db.delete(alheia)
+        db.commit()

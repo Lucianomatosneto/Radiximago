@@ -35,7 +35,7 @@ Versão 1.0, de 31/10/2026. A especificação completa está no documento "Radix
   - o aluno do tratamento;
   - professores e curadores.
 
-  Todo acesso fica na auditoria.
+  Todo acesso fica na auditoria. A regra vale **mesmo quando o aluno não escolhe professor**: essa opção agora se chama "Não avisar nenhum professor agora (a pasta fica visível para os professores e curadores da clínica)". Antes ela se chamava "Só para mim", e o QA de 01/11/2026 mostrou que esse nome enganava. A equipe precisa ver todas as pastas para a fila de tratamento funcionar. Escolher um professor só faz a pasta chegar a ele em "Compartilhadas comigo".
 - **E-mail só com o link.** A mensagem não leva o nome do paciente nem imagens; quem recebe precisa entrar no Radix.
 
 ## Para usar com pacientes reais

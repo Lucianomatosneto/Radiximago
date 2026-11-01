@@ -22,6 +22,7 @@ import httpx
 import pydicom
 from pydicom.errors import InvalidDicomError
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
+from sqlalchemy import and_, exists
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -29,7 +30,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA, PERFIS_ENVIO_IMAGENS
-from app.modules.users import User
+from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference, OrigemImagem
 from app.modules.curations import Curation
 from app.modules import orthanc_client
@@ -221,12 +222,22 @@ def listar_imagens(
     mesmos acabaram de enviar - mas nao gerenciam a ingestao/remocao de
     imagens de terceiros.
     """
-    imagens = (
-        db.query(OrthancReference)
-        .filter(OrthancReference.ativo == True)
-        .order_by(OrthancReference.id)
-        .all()
-    )
+    consulta = db.query(OrthancReference).filter(OrthancReference.ativo == True)
+    # 01/11/2026 (QA com perfil professor - decisao do Luciano): o PROFESSOR
+    # ve so as imagens que ELE enviou (minimo necessario); curador,
+    # administrador e suporte continuam vendo todas. Quem enviou vem do
+    # registro de auditoria do envio (upload_imagem), sem coluna nova.
+    if usuario.perfil == UserRole.professor:
+        consulta = consulta.filter(
+            exists().where(and_(
+                AuditLog.entidade == "orthanc_reference",
+                AuditLog.entidade_id == OrthancReference.id,
+                AuditLog.acao == "upload_imagem",
+                AuditLog.resultado == "sucesso",
+                AuditLog.usuario_id == usuario.id,
+            ))
+        )
+    imagens = consulta.order_by(OrthancReference.id).all()
 
     ids = [imagem.id for imagem in imagens]
     status_mais_recente_por_imagem: dict[int, str] = {}

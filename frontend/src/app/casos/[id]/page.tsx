@@ -212,7 +212,7 @@ export default function PastaPage() {
                 {caso.paciente.prontuario && <p><span className="text-slate-500">{t('novo.prontuario')}:</span> <span className="text-ink">{caso.paciente.prontuario}</span></p>}
                 {caso.paciente.observacoes && <p className="whitespace-pre-wrap"><span className="text-slate-500">{t('novo.outrosDados')}:</span> <span className="text-ink">{caso.paciente.observacoes}</span></p>}
                 <p className="whitespace-pre-wrap"><span className="text-slate-500">{t('novo.descricao')}:</span> <span className="text-ink">{caso.descricao}</span></p>
-                <p><span className="text-slate-500">{t('novo.professor')}:</span> <span className="text-ink">{caso.professor ?? t('novo.soParaMim')}</span></p>
+                <p><span className="text-slate-500">{t('novo.professor')}:</span> <span className="text-ink">{caso.professor ?? t('novo.semProfessor')}</span></p>
                 {caso.tratamentos.length > 0 && <p><span className="text-slate-500">{t('tratamentoNecessario')}:</span> <span className="text-ink">{caso.tratamentos.map((x) => t(`tratamentos.${x}`)).join(', ')}</span></p>}
                 {caso.aluno_tratamento && <p><span className="text-slate-500">{t('emTratamentoCom')}:</span> <span className="text-ink">{caso.aluno_tratamento} ({t(`tratamentos.${caso.tratamento_escolhido}`)})</span></p>}
                 {caso.nota_encaminhamento && <p className="whitespace-pre-wrap"><span className="text-slate-500">{t('notaEncaminhamento')}:</span> <span className="text-ink">{caso.nota_encaminhamento}</span></p>}

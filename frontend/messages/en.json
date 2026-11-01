@@ -2668,7 +2668,7 @@
       "outrosDadosExemplo": "E.g. guardian, reported allergies, visit notes",
       "modalidade": "Exam type",
       "professor": "Professor who will review",
-      "soParaMim": "Only for me (do not send to a professor)",
+      "soParaMim": "Do not notify any professor now (the folder is visible to the clinic's professors and curators)",
       "descricao": "Clinical description",
       "descricaoExemplo": "Complaint, clinical findings and what you want the professor to see.",
       "escolha": "Choose...",
@@ -2679,7 +2679,9 @@
       "erroEnviar": "Could not send the folder.",
       "enviando": "Sending...",
       "enviarProfessor": "Send to the professor",
-      "salvarParaMim": "Save to My images"
+      "salvarParaMim": "Save to My images",
+      "quemVePasta": "Professors and curators of the teaching clinic can open every folder (treatment queue). Choosing a professor only delivers it to them in “Shared with me”.",
+      "semProfessor": "No professor chosen (the clinic team can see the folder)"
     },
     "estudo": {
       "titulo": "View studies",
