@@ -620,6 +620,26 @@ def confirmar_email(
             "aprovado": True,
         }
 
+    if ja_existe:
+        # M2 (01/11/2026): o e-mail ja tem conta - o pedido nao vai para a
+        # fila do administrador (seria uma conta duplicada ou uma troca de
+        # perfil disfarcada). A pessoa ja provou que e dona do e-mail (link +
+        # senha), entao pode saber que a conta existe.
+        pedido.status = StatusSolicitacaoAcesso.rejeitada
+        pedido.revisado_em = datetime.now(timezone.utc)
+        pedido.motivo_rejeicao = "Este e-mail já tem conta no Rádix Imago."
+        db.add(AuditLog(
+            usuario_id=None, acao="solicitacao_duplicada_descartada", entidade="access_request",
+            entidade_id=pedido.id, resultado="sucesso",
+            detalhes="E-mail confirmado, mas já existe conta com este e-mail; pedido não foi para a fila.",
+        ))
+        db.commit()
+        return {
+            "mensagem": "Este e-mail já tem conta no Rádix Imago. Entre com ele ou use “Esqueci a senha”. "
+                        "Para mudar de perfil, fale com o administrador.",
+            "aprovado": False,
+        }
+
     db.add(AuditLog(
         usuario_id=None, acao="confirmacao_email_solicitacao", entidade="access_request",
         entidade_id=pedido.id, resultado="sucesso",

@@ -217,3 +217,50 @@ def test_demais_perfis_esperam_o_administrador(client, db, links_enviados, email
     r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
     assert r.status_code == 200 and r.json()["aprovado"] is False
     assert db.query(User).filter(User.email == email_novo).count() == 0
+
+
+def test_m2_pedido_de_quem_ja_tem_conta_nao_vai_para_a_fila(client, db, links_enviados, email_novo, criar_usuario):
+    """M2 (01/11/2026): pedido feito ANTES de a conta existir (ex.: o
+    administrador criou a conta depois) e confirmado com conta ja ativa -
+    nao vai para a fila, fica rejeitado com o motivo, e a lista avisa."""
+    _solicitar(client, email_novo, perfil="estudante")
+    existente = criar_usuario(perfil=UserRole.curador)
+    db.query(User).filter(User.id == existente.id).update({"email": email_novo})
+    db.commit()
+    # a lista do administrador avisa (antes da confirmacao o pedido nem aparece)
+    r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
+    assert r.status_code == 200 and r.json()["aprovado"] is False and "já tem conta" in r.json()["mensagem"]
+    db.expire_all()
+    pedido = db.query(AccessRequest).filter(AccessRequest.email == email_novo).one()
+    assert pedido.status.value == "rejeitada" and "já tem conta" in pedido.motivo_rejeicao
+    assert db.query(User).filter(User.email == email_novo).count() == 1  # nenhuma conta nova
+    assert db.query(AuditLog).filter(AuditLog.acao == "solicitacao_duplicada_descartada",
+                                     AuditLog.entidade_id == pedido.id).count() == 1
+
+
+def test_m2_lista_avisa_conta_existente(client, db, links_enviados, email_novo, criar_usuario):
+    _solicitar(client, email_novo, perfil="professor")
+    client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
+    admin = criar_usuario(perfil=UserRole.administrador)
+    cab = cabecalho_auth(obter_token(client, admin.email))
+    item = next(p for p in client.get("/users/access-requests", headers=cab).json() if p["email"] == email_novo)
+    assert item["conta_existente_perfil"] is None
+    # depois alguem cria a conta com o mesmo e-mail: a lista avisa e aprovar e recusado
+    outro = criar_usuario(perfil=UserRole.curador)
+    db.query(User).filter(User.id == outro.id).update({"email": email_novo})
+    db.commit()
+    item = next(p for p in client.get("/users/access-requests", headers=cab).json() if p["email"] == email_novo)
+    assert item["conta_existente_perfil"] == "curador"
+    r = client.post(f"/users/access-requests/{item['id']}/approve", json={"perfil_concedido": "estudante"}, headers=cab)
+    assert r.status_code == 409
+
+
+def test_desbloqueio_tem_acao_propria(client, db, criar_usuario):
+    admin = criar_usuario(perfil=UserRole.administrador)
+    alvo = criar_usuario()
+    cab = cabecalho_auth(obter_token(client, admin.email))
+    client.patch(f"/users/{alvo.id}/block", headers=cab)
+    client.patch(f"/users/{alvo.id}/block", headers=cab)
+    acoes = [a.acao for a in db.query(AuditLog).filter(AuditLog.entidade == "user", AuditLog.entidade_id == alvo.id)
+             .order_by(AuditLog.id)]
+    assert acoes[-2:] == ["bloqueio_usuario", "desbloqueio_usuario"]

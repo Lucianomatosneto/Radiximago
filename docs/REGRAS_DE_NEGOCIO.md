@@ -98,6 +98,11 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - Ninguém bloqueia nem exclui o **último administrador ativo**: a API responde 409 "Cadastre outro administrador antes".
 - **Bloquear** e **Encerrar acessos** pedem confirmação, que diz quem será afetado e o que acontece. **Excluir** já tinha uma janela própria de confirmação. "Encerrar acessos de todos" também pede confirmação. Tudo fica na Auditoria.
 
+### 1.8 Pedido de acesso de quem já tem conta (01/11/2026, M2)
+
+- Um pedido feito antes de a conta existir e confirmado depois, com a conta já ativa, **não vai para a fila**: fica "rejeitado" com o motivo "Este e-mail já tem conta" (auditoria `solicitacao_duplicada_descartada`). A pessoa recebe a orientação de entrar com a conta existente ou usar "Esqueci a senha".
+- Na tela Usuários, um pedido pendente cujo e-mail já tem conta mostra "Este e-mail já tem conta (perfil)", e o botão **Aprovar** fica desligado. Aprovar criaria uma conta duplicada ou trocaria o perfil por esse caminho. Para mudar o perfil, edite a conta existente.
+
 ### 1.5 Acesso negado (01/11/2026)
 
 Toda tela restrita leva à mesma página `/acesso-negado?de=<página>`. Ela mostra a página pedida e o "erro 403", e o botão volta para o início **do perfil**. Antes, `/usuarios` ia para o login e o botão levava ao painel do administrador.

@@ -1401,7 +1401,7 @@
       "falhaTrocaSenha": "Password change failure",
       "criacaoUsuario": "User creation",
       "edicaoUsuario": "User edit",
-      "bloqueioUsuario": "User block/unblock",
+      "bloqueioUsuario": "User blocked",
       "importacaoOrthanc": "Orthanc import",
       "uploadImagem": "Image upload",
       "uploadSemPreambuloDicom": "Upload without DICOM preamble",
@@ -1412,7 +1412,9 @@
       "descarte": "Discard",
       "descartePosSegundaOpiniao": "Discard after second opinion",
       "solicitacaoSegundaOpiniao": "Second opinion request",
-      "respostaSegundaOpiniao": "Second opinion response"
+      "respostaSegundaOpiniao": "Second opinion response",
+      "desbloqueioUsuario": "User reactivated",
+      "solicitacaoDuplicadaDescartada": "Duplicate access request discarded"
     },
     "resultados": {
       "sucesso": "Success",
@@ -1722,7 +1724,9 @@
     "confirmarTitulo": "Confirm action",
     "simBloquear": "Yes, block",
     "simEncerrar": "Yes, end sessions",
-    "simRedefinir": "Yes, reset"
+    "simRedefinir": "Yes, reset",
+    "jaTemConta": "This e-mail already has an account ({perfil}). Reject the request if it is a duplicate.",
+    "jaTemContaDica": "Cannot approve: the e-mail already has an account. To change the profile, edit the existing account."
   },
   "Configuracoes": {
     "titulo": "Settings",

@@ -1401,7 +1401,7 @@
       "falhaTrocaSenha": "Falha na troca de senha",
       "criacaoUsuario": "Criação de usuário",
       "edicaoUsuario": "Edição de usuário",
-      "bloqueioUsuario": "Bloqueio/desbloqueio de usuário",
+      "bloqueioUsuario": "Usuário bloqueado",
       "importacaoOrthanc": "Importação do Orthanc",
       "uploadImagem": "Upload de imagem",
       "uploadSemPreambuloDicom": "Upload sem preâmbulo DICOM",
@@ -1412,7 +1412,9 @@
       "descarte": "Descarte",
       "descartePosSegundaOpiniao": "Descarte pós segunda opinião",
       "solicitacaoSegundaOpiniao": "Solicitação de segunda opinião",
-      "respostaSegundaOpiniao": "Resposta de segunda opinião"
+      "respostaSegundaOpiniao": "Resposta de segunda opinião",
+      "desbloqueioUsuario": "Usuário reativado",
+      "solicitacaoDuplicadaDescartada": "Pedido de acesso duplicado descartado"
     },
     "resultados": {
       "sucesso": "Sucesso",
@@ -1722,7 +1724,9 @@
     "confirmarTitulo": "Confirmar ação",
     "simBloquear": "Sim, bloquear",
     "simEncerrar": "Sim, encerrar acessos",
-    "simRedefinir": "Sim, redefinir"
+    "simRedefinir": "Sim, redefinir",
+    "jaTemConta": "Este e-mail já tem conta ({perfil}). Rejeite o pedido se for duplicado.",
+    "jaTemContaDica": "Não é possível aprovar: o e-mail já tem conta. Para mudar o perfil, edite a conta existente."
   },
   "Configuracoes": {
     "titulo": "Configurações",

@@ -54,6 +54,8 @@ interface SolicitacaoAcesso {
   status: string
   motivo_rejeicao: string | null
   criado_em?: string
+  /** M2: o e-mail ja tem conta ativa (perfil dela) */
+  conta_existente_perfil?: string | null
 }
 
 function formatarData(valor: string | undefined, idioma: string): string {
@@ -646,7 +648,15 @@ export default function UsuariosPage() {
                     {solicitacoes.map((solicitacao) => (
                       <tr key={solicitacao.id} className="text-slate-200">
                         <td className="px-4 py-3">{solicitacao.nome}</td>
-                        <td className="px-4 py-3 text-slate-400">{solicitacao.email}<AvisoEmail email={solicitacao.email} /></td>
+                        <td className="px-4 py-3 text-slate-400">
+                          {solicitacao.email}
+                          <AvisoEmail email={solicitacao.email} />
+                          {solicitacao.conta_existente_perfil && (
+                            <span className="mt-1 block text-xs font-semibold text-amber-600 dark:text-amber-300" role="note">
+                              {t('jaTemConta', { perfil: t(`perfis.${solicitacao.conta_existente_perfil}` as Parameters<typeof t>[0]) })}
+                            </span>
+                          )}
+                        </td>
                         <td className="px-4 py-3">
                           {t(`perfis.${solicitacao.perfil_solicitado}` as Parameters<typeof t>[0])}
                         </td>
@@ -660,7 +670,9 @@ export default function UsuariosPage() {
                             <button
                               type="button"
                               onClick={() => abrirAprovacao(solicitacao)}
-                              disabled={processandoSolicitacaoId === solicitacao.id}
+                              // M2: nao aprova pedido de quem ja tem conta (duplicaria ou trocaria o perfil)
+                              disabled={processandoSolicitacaoId === solicitacao.id || !!solicitacao.conta_existente_perfil}
+                              title={solicitacao.conta_existente_perfil ? t('jaTemContaDica') : undefined}
                               className="rounded-md border border-emerald-700 px-3 py-1 text-xs text-emerald-300 hover:bg-emerald-900/30 disabled:opacity-60"
                             >
                               {t('aprovar')}

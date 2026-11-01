@@ -38,6 +38,8 @@ const CATEGORIAS_ACAO: { categoriaChave: string; itens: { valor: string; chave: 
       { valor: 'criacao_usuario', chave: 'criacaoUsuario' },
       { valor: 'edicao_usuario', chave: 'edicaoUsuario' },
       { valor: 'bloqueio_usuario', chave: 'bloqueioUsuario' },
+      { valor: 'desbloqueio_usuario', chave: 'desbloqueioUsuario' },
+      { valor: 'solicitacao_duplicada_descartada', chave: 'solicitacaoDuplicadaDescartada' },
     ],
   },
   {
@@ -115,7 +117,10 @@ export default function AuditoriaPage() {
   const locale = useLocale()
   const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
 
-  function rotularAcao(valor: string): string {
+  function rotularAcao(valor: string, detalhes?: string | null): string {
+    // registros antigos (antes de 01/11/2026): a reativacao tambem era
+    // "bloqueio_usuario", com "foi desbloqueado" nos detalhes
+    if (valor === 'bloqueio_usuario' && (detalhes ?? '').includes('desbloqueado')) return t('acoes.desbloqueioUsuario')
     const item = TODAS_ACOES.find((a) => a.valor === valor)
     if (!item) return valor
     return t(`acoes.${item.chave}`)
@@ -356,7 +361,7 @@ export default function AuditoriaPage() {
                     <tr className="text-slate-200">
                       <td className="px-4 py-3 text-slate-400">{formatarData(item.criado_em, tagLocale)}</td>
                       <td className="px-4 py-3">{nomeUsuario(item.usuario_id)}</td>
-                      <td className="px-4 py-3">{rotularAcao(item.acao)}</td>
+                      <td className="px-4 py-3">{rotularAcao(item.acao, item.detalhes)}</td>
                       <td className="px-4 py-3 text-slate-400">
                         {item.entidade}
                         {item.entidade_id !== null ? ` #${item.entidade_id}` : ''}

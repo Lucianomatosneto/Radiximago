@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
 from typing import Optional
@@ -101,6 +102,9 @@ class SolicitacaoAcessoResposta(BaseModel):
     motivo_rejeicao: Optional[str]
     criado_em: Optional[datetime] = None
     email_confirmado_em: Optional[datetime] = None
+    # M2 (01/11/2026): o e-mail ja tem conta ativa? (perfil dela) - a tela
+    # avisa e nao deixa aprovar (seria conta duplicada ou troca de perfil)
+    conta_existente_perfil: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -206,7 +210,18 @@ def listar_solicitacoes_acesso(
         # So pedidos com e-mail ja confirmado chegam para analise - os que
         # ainda aguardam confirmacao nao sao "pedidos de verdade" ainda.
         query = query.filter(AccessRequest.email_confirmado_em.isnot(None))
-    return query.order_by(AccessRequest.criado_em.desc()).all()
+    pedidos = query.order_by(AccessRequest.criado_em.desc()).all()
+    emails = {p.email.lower() for p in pedidos}
+    contas = {
+        (u.email or "").lower(): (u.perfil.value if hasattr(u.perfil, "value") else str(u.perfil))
+        for u in db.query(User).filter(func.lower(User.email).in_(emails), User.excluido.is_(False))
+    } if emails else {}
+    saida = []
+    for p in pedidos:
+        item = SolicitacaoAcessoResposta.model_validate(p)
+        item.conta_existente_perfil = contas.get(p.email.lower())
+        saida.append(item)
+    return saida
 
 
 @router.post("/access-requests/{request_id}/approve", response_model=UsuarioResposta)
@@ -470,8 +485,10 @@ def bloquear_usuario(
         _exigir_outro_administrador(db, usuario, "bloquear")
     usuario.bloqueado = not usuario.bloqueado
     estado = "bloqueado" if usuario.bloqueado else "desbloqueado"
+    # 01/11/2026 (reteste do M1): reativacao tem acao propria na auditoria
     db.add(AuditLog(
-        usuario_id=usuario_atual.id, acao="bloqueio_usuario", entidade="user", entidade_id=usuario.id,
+        usuario_id=usuario_atual.id, acao="bloqueio_usuario" if usuario.bloqueado else "desbloqueio_usuario",
+        entidade="user", entidade_id=usuario.id,
         resultado="sucesso", detalhes=f"Usuario {usuario.email} foi {estado}.",
     ))
     db.commit()
