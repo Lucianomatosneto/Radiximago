@@ -4772,6 +4772,27 @@
   },
   {
    "type": "library",
+   "name": "lucide-react",
+   "version": "1.66.0",
+   "purl": "pkg:npm/lucide-react@1.66.0",
+   "properties": [
+    {
+     "name": "radix:parte",
+     "value": "frontend"
+    },
+    {
+     "name": "radix:dependencia",
+     "value": "direta"
+    },
+    {
+     "name": "radix:uso",
+     "value": "producao"
+    }
+   ],
+   "bom-ref": "pkg:npm/lucide-react@1.66.0|frontend"
+  },
+  {
+   "type": "library",
    "name": "next-intl",
    "version": "4.14.9",
    "purl": "pkg:npm/next-intl@4.14.9",
