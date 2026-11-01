@@ -87,8 +87,19 @@ async function extrairErro(response: Response, generica: string): Promise<string
 }
 
 function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFechar: () => void; fecharRotulo: string }) {
+  // Esc fecha (= cancelar); clique fora tambem (reteste do M1, 01/11/2026)
+  useEffect(() => {
+    function aoTeclar(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        e.stopPropagation()
+        onFechar()
+      }
+    }
+    document.addEventListener('keydown', aoTeclar, true)
+    return () => document.removeEventListener('keydown', aoTeclar, true)
+  }, [onFechar])
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" role="dialog" aria-modal="true">
       <div className="w-full max-w-md rounded-xl border border-base-border bg-base-surface p-6 shadow-2xl">
         {children}
       </div>
@@ -234,7 +245,7 @@ export default function UsuariosPage() {
   async function alternarBloqueio(usuario: Usuario) {
     if (!autenticado) return
     // M1 (01/11/2026): bloquear pede confirmacao dizendo quem e o que acontece
-    if (!usuario.bloqueado && !(await pedirConfirmacao(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }), t('bloquear')))) return
+    if (!usuario.bloqueado && !(await pedirConfirmacao(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }), t('simBloquear')))) return
     setAvisoAcessos('')
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
       method: 'PATCH',
@@ -260,8 +271,8 @@ export default function UsuariosPage() {
   // pessoa so precisa entrar de novo (para impedir o acesso, use Bloquear).
   async function encerrarAcessos(usuario: Usuario | null) {
     if (!autenticado) return
-    if (!usuario && !(await pedirConfirmacao(t('confirmarEncerrarTodos'), t('encerrarAcessos')))) return
-    if (usuario && !(await pedirConfirmacao(t('confirmarEncerrarUm', { nome: usuario.nome }), t('encerrarAcessos')))) return
+    if (!usuario && !(await pedirConfirmacao(t('confirmarEncerrarTodos'), t('simEncerrar')))) return
+    if (usuario && !(await pedirConfirmacao(t('confirmarEncerrarUm', { nome: usuario.nome }), t('simEncerrar')))) return
     setAvisoAcessos('')
     const caminho = usuario ? `/users/${usuario.id}/encerrar-sessoes` : '/admin/sessoes/encerrar-todas'
     try {
@@ -292,7 +303,7 @@ export default function UsuariosPage() {
   // de recuperacao): apaga o cadastro do aplicativo e encerra os acessos;
   // no proximo login ela cadastra de novo. Exige confirmar a identidade antes.
   async function redefinirSegundoFator(usuario: Usuario) {
-    if (!autenticado || !(await pedirConfirmacao(tSF('confirmarRedefinir', { nome: usuario.nome }), tSF('redefinir')))) return
+    if (!autenticado || !(await pedirConfirmacao(tSF('confirmarRedefinir', { nome: usuario.nome }), t('simRedefinir')))) return
     setAvisoAcessos('')
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/redefinir-segundo-fator`, {
@@ -1017,6 +1028,8 @@ export default function UsuariosPage() {
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
+              data-acao="cancelar"
+              autoFocus
               onClick={() => responderConfirmacao(false)}
               className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
             >
@@ -1024,6 +1037,7 @@ export default function UsuariosPage() {
             </button>
             <button
               type="button"
+              data-acao="confirmar"
               onClick={() => responderConfirmacao(true)}
               className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
             >

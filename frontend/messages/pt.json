@@ -1719,7 +1719,10 @@
     "erroBloquear": "Não foi possível bloquear agora.",
     "confirmarEncerrarUm": "Encerrar os acessos abertos de {nome}? A pessoa precisa entrar de novo (a conta continua ativa).",
     "voceMesmo": "(você)",
-    "confirmarTitulo": "Confirmar ação"
+    "confirmarTitulo": "Confirmar ação",
+    "simBloquear": "Sim, bloquear",
+    "simEncerrar": "Sim, encerrar acessos",
+    "simRedefinir": "Sim, redefinir"
   },
   "Configuracoes": {
     "titulo": "Configurações",

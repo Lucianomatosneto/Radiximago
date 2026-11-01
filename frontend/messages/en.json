@@ -1719,7 +1719,10 @@
     "erroBloquear": "Could not block now.",
     "confirmarEncerrarUm": "End the open sessions of {nome}? The person must sign in again (the account stays active).",
     "voceMesmo": "(you)",
-    "confirmarTitulo": "Confirm action"
+    "confirmarTitulo": "Confirm action",
+    "simBloquear": "Yes, block",
+    "simEncerrar": "Yes, end sessions",
+    "simRedefinir": "Yes, reset"
   },
   "Configuracoes": {
     "titulo": "Settings",
