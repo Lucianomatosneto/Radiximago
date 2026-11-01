@@ -573,6 +573,8 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
             "encaminhar_aluno": equipe and caso.etapa == EtapaCaso.NA_FILA.value,
             "concluir": caso.etapa == EtapaCaso.EM_TRATAMENTO.value and (
                 equipe or usuario.id == caso.aluno_tratamento_id),
+            "reabrir_tratamento": equipe and caso.etapa == EtapaCaso.CONCLUIDO.value
+            and caso.aluno_tratamento_id is not None,
             "editar_paciente": True,
         },
     }
@@ -801,7 +803,14 @@ def encaminhar_aluno(caso_id: int, dados: EncaminhamentoAluno, usuario: User = D
 
 
 @router.post("/{caso_id}/concluir")
-def concluir(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+def concluir(
+    caso_id: int,
+    dados: Optional[Encaminhamento] = None,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """A tela pede CONFIRMACAO antes (01/11/2026 - QA item 3); `nota`
+    opcional vai para o historico da pasta. Desfazer: /reabrir-tratamento."""
     caso = _buscar_caso(db, caso_id, usuario)
     if caso.etapa != EtapaCaso.EM_TRATAMENTO.value:
         raise HTTPException(status_code=409, detail="Esta pasta não está em tratamento.")
@@ -810,8 +819,35 @@ def concluir(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Ses
     caso.etapa = EtapaCaso.CONCLUIDO.value
     caso.concluido_por_id = usuario.id
     caso.concluido_em = datetime.now(timezone.utc)
-    _historico(db, caso, usuario, "tratamento_concluido")
+    nota = ((dados.nota if dados else None) or "").strip() or None
+    _historico(db, caso, usuario, "tratamento_concluido", nota)
     _auditar(db, usuario, "caso_concluido", caso.id)
+    db.commit()
+    return {"etapa": caso.etapa}
+
+
+@router.post("/{caso_id}/reabrir-tratamento")
+def reabrir_tratamento(
+    caso_id: int,
+    dados: Optional[Encaminhamento] = None,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """DESFAZ o "tratamento concluido" (01/11/2026 - QA item 3): volta para
+    "em tratamento" com o MESMO aluno. So professor/curador; fica no
+    historico e na auditoria."""
+    _exigir_perfil(usuario, PERFIS_EQUIPE)
+    caso = _buscar_caso(db, caso_id, usuario)
+    if caso.etapa != EtapaCaso.CONCLUIDO.value:
+        raise HTTPException(status_code=409, detail="Esta pasta não está com o tratamento concluído.")
+    if not caso.aluno_tratamento_id:
+        raise HTTPException(status_code=409, detail="Esta pasta não tem aluno de tratamento para retomar.")
+    caso.etapa = EtapaCaso.EM_TRATAMENTO.value
+    caso.concluido_por_id = None
+    caso.concluido_em = None
+    nota = ((dados.nota if dados else None) or "").strip() or None
+    _historico(db, caso, usuario, "tratamento_reaberto", nota)
+    _auditar(db, usuario, "caso_tratamento_reaberto", caso.id)
     db.commit()
     return {"etapa": caso.etapa}
 

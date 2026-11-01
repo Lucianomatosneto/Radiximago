@@ -2559,7 +2559,7 @@
     "encaminhadaAlunoOk": "Paciente encaminhado ao aluno. Ele saiu da fila.",
     "encaminhadaCuradorOk": "Pasta encaminhada ao curador.",
     "classificadaOk": "Tratamento classificado. O paciente está na fila.",
-    "confirmarConcluir": "Marcar o tratamento deste paciente como concluído?",
+    "confirmarConcluir": "Tem certeza? O status do paciente passa para “Concluído” e ele sai de “Meus pacientes em tratamento”. Um professor ou curador pode reabrir depois, se preciso.",
     "concluidoOk": "Tratamento concluído.",
     "historico": "Histórico",
     "historicoVersoes": "Versões das anotações",
@@ -2578,7 +2578,8 @@
       "encaminharAluno": "Encaminhar a um aluno",
       "concluir": "Tratamento concluído",
       "versoes": "Versões ({n})",
-      "acessos": "Registro de acessos"
+      "acessos": "Registro de acessos",
+      "reabrirTratamento": "Reabrir tratamento"
     },
     "etapas": {
       "enviado": "Enviada",
@@ -2628,7 +2629,8 @@
       "encaminhada_curador": "pediu revisão ao curador",
       "classificada": "classificou o tratamento",
       "encaminhada_aluno": "encaminhou ao aluno",
-      "tratamento_concluido": "concluiu o tratamento"
+      "tratamento_concluido": "concluiu o tratamento",
+      "tratamento_reaberto": "reabriu o tratamento"
     },
     "novo": {
       "titulo": "Upload pela câmera",
@@ -2771,7 +2773,15 @@
       "acessosTexto": "Cada vez que alguém abrir uma pasta de paciente, o acesso aparecerá aqui.",
       "minhasPastasTitulo": "Nenhuma pasta de paciente ainda",
       "minhasPastasTexto": "Fotografe as radiografias no negatoscópio e envie ao professor; a pasta aparecerá aqui com as correções."
-    }
+    },
+    "confirmarConcluirTitulo": "Concluir o tratamento?",
+    "confirmarReabrirTitulo": "Reabrir o tratamento?",
+    "confirmarReabrir": "O paciente volta para “Em tratamento”, com o mesmo aluno. A ação fica registrada no histórico da pasta.",
+    "simConcluir": "Sim, concluir",
+    "simReabrir": "Sim, reabrir",
+    "cancelar": "Cancelar",
+    "enviandoAcao": "Salvando…",
+    "reabertoOk": "Tratamento reaberto."
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

@@ -269,6 +269,19 @@ def test_fila_de_tratamento_completa(client, criar_usuario, db):
     hist = [x["acao"] for x in client.get(f"/casos/{cid}", headers=h_pr).json()["historico"]]
     assert hist == ["pasta_enviada", "encaminhada_curador", "classificada", "encaminhada_aluno", "tratamento_concluido"]
 
+    # 01/11/2026 (QA item 3): desfazer o "concluido" - so professor/curador,
+    # volta para "em tratamento" com o mesmo aluno, fica no historico
+    assert client.get(f"/casos/{cid}", headers=h_pr).json()["pode"]["reabrir_tratamento"] is True
+    assert client.get(f"/casos/{cid}", headers=h_at).json()["pode"]["reabrir_tratamento"] is False
+    assert client.post(f"/casos/{cid}/reabrir-tratamento", headers=h_at, json={}).status_code == 403
+    r = client.post(f"/casos/{cid}/reabrir-tratamento", headers=h_cu, json={"nota": "Faltou o retorno"})
+    assert r.status_code == 200 and r.json()["etapa"] == "em_tratamento"
+    assert client.post(f"/casos/{cid}/reabrir-tratamento", headers=h_cu, json={}).status_code == 409
+    assert [c["id"] for c in client.get("/casos/meus-tratamentos", headers=h_at).json()["casos"]] == [cid]
+    detalhe = client.get(f"/casos/{cid}", headers=h_pr).json()
+    assert detalhe["historico"][-1]["acao"] == "tratamento_reaberto"
+    assert client.post(f"/casos/{cid}/concluir", headers=h_at, json={"nota": "Alta"}).status_code == 200
+
 
 def test_curadoria_geral_pode_ser_editada_depois_do_envio(client, criar_usuario, criar_ficha, db):
     from app.modules.curations import CurationHistory

@@ -2559,7 +2559,7 @@
     "encaminhadaAlunoOk": "Patient referred to the student and removed from the queue.",
     "encaminhadaCuradorOk": "Folder sent to the curator.",
     "classificadaOk": "Treatment classified. The patient is in the queue.",
-    "confirmarConcluir": "Mark this patient's treatment as completed?",
+    "confirmarConcluir": "Are you sure? The patient status becomes “Finished” and leaves “My patients in treatment”. A professor or curator can reopen it later if needed.",
     "concluidoOk": "Treatment completed.",
     "historico": "History",
     "historicoVersoes": "Note versions",
@@ -2578,7 +2578,8 @@
       "encaminharAluno": "Refer to a student",
       "concluir": "Treatment completed",
       "versoes": "Versions ({n})",
-      "acessos": "Access log"
+      "acessos": "Access log",
+      "reabrirTratamento": "Reopen treatment"
     },
     "etapas": {
       "enviado": "Sent",
@@ -2628,7 +2629,8 @@
       "encaminhada_curador": "asked the curator for review",
       "classificada": "classified the treatment",
       "encaminhada_aluno": "referred to the student",
-      "tratamento_concluido": "completed the treatment"
+      "tratamento_concluido": "completed the treatment",
+      "tratamento_reaberto": "reopened the treatment"
     },
     "novo": {
       "titulo": "Camera upload",
@@ -2771,7 +2773,15 @@
       "acessosTexto": "Every time someone opens a patient folder, the access will appear here.",
       "minhasPastasTitulo": "No patient folders yet",
       "minhasPastasTexto": "Photograph the radiographs on the light box and send them to a professor; the folder will appear here with the reviews."
-    }
+    },
+    "confirmarConcluirTitulo": "Finish the treatment?",
+    "confirmarReabrirTitulo": "Reopen the treatment?",
+    "confirmarReabrir": "The patient goes back to “In treatment”, with the same student. The action is recorded in the folder history.",
+    "simConcluir": "Yes, finish",
+    "simReabrir": "Yes, reopen",
+    "cancelar": "Cancel",
+    "enviandoAcao": "Saving…",
+    "reabertoOk": "Treatment reopened."
   },
   "Navegacao": {
     "trilha": "Breadcrumb",

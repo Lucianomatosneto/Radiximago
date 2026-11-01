@@ -33,7 +33,9 @@ export default function PastaPage() {
   const [indice, setIndice] = useState(0)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState(busca.get('enviada') ? 'enviada' : '')
-  const [painel, setPainel] = useState<'' | 'editar' | 'compartilhar' | 'link' | 'curador' | 'classificar' | 'aluno' | 'versoes'>('')
+  const [painel, setPainel] = useState<'' | 'editar' | 'compartilhar' | 'link' | 'curador' | 'classificar' | 'aluno' | 'versoes' | 'concluir' | 'reabrir'>('')
+  // trava contra clique duplo nas confirmacoes (concluir/reabrir)
+  const [enviando, setEnviando] = useState(false)
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [destino, setDestino] = useState('')
   const [nota, setNota] = useState('')
@@ -229,7 +231,11 @@ export default function PastaPage() {
                 {caso.pode.encaminhar_curador && <button type="button" className={botao} onClick={() => abrirPainel('curador')}>{t('acoes.encaminharCurador')}</button>}
                 {caso.pode.classificar && <button type="button" className={botaoForte} onClick={() => abrirPainel('classificar')}>{t('acoes.classificar')}</button>}
                 {caso.pode.encaminhar_aluno && <button type="button" className={botaoForte} onClick={() => abrirPainel('aluno')}>{t('acoes.encaminharAluno')}</button>}
-                {caso.pode.concluir && <button type="button" className={botao} onClick={() => confirm(t('confirmarConcluir')) && acao(`/casos/${caso.id}/concluir`, {}, t('concluidoOk'))}><Check aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.concluir')}</button>}
+                {/* 01/11/2026 (QA item 3): "Tratamento concluido" abre uma CONFIRMACAO
+                    na propria tela (a janela nativa do navegador podia passar
+                    despercebida); "Reabrir tratamento" desfaz */}
+                {caso.pode.concluir && <button type="button" className={botao} aria-expanded={painel === 'concluir'} onClick={() => { setNota(''); abrirPainel('concluir') }}><Check aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.concluir')}</button>}
+                {caso.pode.reabrir_tratamento && <button type="button" className={botao} aria-expanded={painel === 'reabrir'} onClick={() => { setNota(''); abrirPainel('reabrir') }}>{t('acoes.reabrirTratamento')}</button>}
                 {caso.versoes > 0 && <button type="button" className={botao} onClick={() => abrirPainel('versoes')}>{t('acoes.versoes', { n: caso.versoes })}</button>}
                 {equipe && <Link href={`/casos/acessos?caso=${caso.id}`} className={botao}>{t('acoes.acessos')}</Link>}
               </section>
@@ -279,6 +285,40 @@ export default function PastaPage() {
                   >
                     {t('confirmar')}
                   </button>
+                </section>
+              )}
+
+              {(painel === 'concluir' || painel === 'reabrir') && (
+                <section role="alertdialog" aria-labelledby="titulo-confirmar-tratamento" className="space-y-2 rounded-2xl border border-amber-400/60 bg-base-surface p-3">
+                  <h3 id="titulo-confirmar-tratamento" className="text-sm font-semibold text-ink">
+                    {painel === 'concluir' ? t('confirmarConcluirTitulo') : t('confirmarReabrirTitulo')}
+                  </h3>
+                  <p className="text-xs text-slate-500">{painel === 'concluir' ? t('confirmarConcluir') : t('confirmarReabrir')}</p>
+                  <textarea value={nota} rows={2} maxLength={2000} onChange={(e) => setNota(e.target.value)} className={campo} placeholder={t('notaOpcional')} disabled={enviando} />
+                  <div className="flex gap-2">
+                    <button type="button" className={botao} disabled={enviando} onClick={() => setPainel('')}>{t('cancelar')}</button>
+                    <button
+                      type="button"
+                      className={botaoForte}
+                      disabled={enviando}
+                      aria-busy={enviando}
+                      onClick={async () => {
+                        if (enviando) return
+                        setEnviando(true)
+                        try {
+                          await acao(
+                            painel === 'concluir' ? `/casos/${caso.id}/concluir` : `/casos/${caso.id}/reabrir-tratamento`,
+                            { nota },
+                            painel === 'concluir' ? t('concluidoOk') : t('reabertoOk'),
+                          )
+                        } finally {
+                          setEnviando(false)
+                        }
+                      }}
+                    >
+                      {enviando ? t('enviandoAcao') : painel === 'concluir' ? t('simConcluir') : t('simReabrir')}
+                    </button>
+                  </div>
                 </section>
               )}
 

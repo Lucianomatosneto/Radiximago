@@ -17,7 +17,8 @@ Versão 1.0, de 31/10/2026. A especificação completa está no documento "Radix
 | Professor | **Pasta** | Edita os dados do paciente e compartilha com outro professor ou curador. Envia o link por e-mail (só o link). Imprime ou salva em PDF, baixa a imagem e pede revisão ao curador. |
 | Curador | **Aguardando tratamento** | Na aba "Para classificar", **classifica o tratamento** de cada pasta (obrigatório), e ela entra na fila. |
 | Professor | **Aguardando tratamento** | Usa a busca avançada por tipo de tratamento, nome ou modalidade, abre a pasta e **encaminha a um aluno**. O paciente sai da fila. |
-| Aluno | **Meus pacientes em tratamento** | Vê os pacientes encaminhados a ele, com o contato. Marca "tratamento concluído". |
+| Aluno | **Meus pacientes em tratamento** | Vê os pacientes encaminhados a ele, com o contato. Marca "tratamento concluído". A tela pede confirmação antes, e é possível deixar uma observação. |
+| Professor e curador | **Pasta** | **Reabrir tratamento**: desfaz um "concluído" por engano. O paciente volta para "em tratamento" com o mesmo aluno, e a ação fica no histórico e na auditoria (`caso_tratamento_reaberto`). |
 | Professor e curador | **Alunos e pacientes** | Veem quem trata quem e buscam pelo nome do aluno ou do paciente. |
 | Administrador, curador e professor | **Registro de acessos** | Veem quem abriu cada pasta e quando, sem o nome do paciente. |
 | Curador | **Tela da imagem → Editar curadoria** | Reabre uma curadoria já aprovada para corrigir. Ela sai da busca até ser aprovada de novo, e o histórico guarda tudo. |
