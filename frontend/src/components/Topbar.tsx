@@ -4,18 +4,26 @@ import { useEffect, useRef, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
+import { BookOpen, ChevronDown, CircleHelp, GraduationCap, Microscope, Settings, ShieldCheck, UserRound, Wrench, type LucideIcon } from 'lucide-react'
 import Logo from './Logo'
 import ThemeToggle from './ThemeToggle'
 import { obterSessaoAtual } from '../lib/sessao'
 import CentralAjuda from './ajuda/CentralAjuda'
 
-const ICONE_PERFIL: Record<string, string> = {
-  administrador: '⚙️',
-  curador: '🛡️',
-  professor: '📘',
-  estudante: '🎓',
-  pesquisador: '🔬',
-  suporte: '🛠️',
+// Icones do perfil (lucide-react, 01/11/2026 - antes eram emojis): um
+// conjunto unico de icones, decorativos (aria-hidden; o perfil vai escrito)
+const ICONE_PERFIL: Record<string, LucideIcon> = {
+  administrador: Settings,
+  curador: ShieldCheck,
+  professor: BookOpen,
+  estudante: GraduationCap,
+  pesquisador: Microscope,
+  suporte: Wrench,
+}
+
+function IconePerfil({ perfil, className = 'h-4 w-4' }: { perfil: string; className?: string }) {
+  const Icone = ICONE_PERFIL[perfil] ?? UserRound
+  return <Icone aria-hidden="true" className={className} />
 }
 
 const TIPOS_ACEITOS = ['image/jpeg', 'image/png', 'image/webp']
@@ -211,7 +219,7 @@ export default function Topbar({
           aria-expanded={ajudaAberta}
           className="flex items-center gap-1.5 text-sm text-slate-300 hover:text-ink"
         >
-          <span aria-hidden="true">❓</span> {t('ajuda')}
+          <CircleHelp aria-hidden="true" className="h-4 w-4" /> {t('ajuda')}
         </button>
         <CentralAjuda aberta={ajudaAberta} onFechar={() => setAjudaAberta(false)} perfil={perfil || null} />
 
@@ -226,7 +234,7 @@ export default function Topbar({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={urlCompleta(fotoPerfilUrl)} alt="" className="h-full w-full object-cover" />
               ) : (
-                (ICONE_PERFIL[perfil] ?? '👤')
+                <IconePerfil perfil={perfil} />
               )}
             </span>
             <span className="text-left leading-tight">
@@ -235,9 +243,7 @@ export default function Topbar({
                 {perfil ? t(`perfis.${perfil}` as Parameters<typeof t>[0]) : '—'}
               </span>
             </span>
-            <span className="text-slate-500" aria-hidden="true">
-              {menuAberto ? '▲' : '▼'}
-            </span>
+            <ChevronDown aria-hidden="true" className={`h-4 w-4 text-slate-500 transition-transform ${menuAberto ? 'rotate-180' : ''}`} />
           </button>
 
           {menuAberto && (
@@ -276,7 +282,7 @@ export default function Topbar({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={urlCompleta(fotoPerfilUrl)} alt="" className="h-full w-full object-cover" />
                 ) : (
-                  (ICONE_PERFIL[perfil] ?? '👤')
+                  <IconePerfil perfil={perfil} className="h-10 w-10" />
                 )}
               </span>
             </div>

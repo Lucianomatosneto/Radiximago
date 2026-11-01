@@ -1,5 +1,6 @@
 'use client'
 
+import { Phone } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import { COR_ETAPA, data, urlFoto, type ResumoCaso } from '../../lib/casos'
@@ -22,7 +23,7 @@ export default function ListaPacientes({ casos, vazio }: { casos: ResumoCaso[]; 
           <div className="min-w-0 flex-1 text-sm">
             <p className="font-semibold text-ink">{c.paciente.nome}</p>
             <p className="text-slate-500">
-              {c.paciente.idade} {t('anos')} · {t(`generos.${c.paciente.genero}`)} · 📞 <span className="text-ink">{c.paciente.contato}</span>
+              {c.paciente.idade} {t('anos')} · {t(`generos.${c.paciente.genero}`)} · <Phone aria-hidden="true" className="inline h-3.5 w-3.5 align-[-2px]" /> <span className="text-ink">{c.paciente.contato}</span>
             </p>
             <p className="text-slate-500">
               {t(`modalidades.${c.modalidade}`)} · {t('alunoX', { aluno: c.aluno ?? '' })}

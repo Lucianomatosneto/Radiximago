@@ -1,5 +1,6 @@
 'use client'
 
+import { Check, ChevronLeft, ChevronRight, Download, FileText, Mail, Pencil, Printer } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
@@ -160,9 +161,9 @@ export default function PastaPage() {
             {/* imagens */}
             <section className="space-y-2 rounded-2xl border border-base-border bg-base-surface p-3">
               <div className="flex items-center justify-between gap-2">
-                <button type="button" className={botao} onClick={() => setIndice((i) => Math.max(i - 1, 0))} disabled={indice === 0} aria-label={t('anterior')}>◀</button>
+                <button type="button" className={botao} onClick={() => setIndice((i) => Math.max(i - 1, 0))} disabled={indice === 0} aria-label={t('anterior')}><ChevronLeft aria-hidden="true" className="h-4 w-4" /></button>
                 <span className="text-sm text-ink">{t('imagemDe', { n: Math.min(indice + 1, imagens.length), total: imagens.length })}</span>
-                <button type="button" className={botao} onClick={() => setIndice((i) => Math.min(i + 1, imagens.length - 1))} disabled={indice >= imagens.length - 1} aria-label={t('proxima')}>▶</button>
+                <button type="button" className={botao} onClick={() => setIndice((i) => Math.min(i + 1, imagens.length - 1))} disabled={indice >= imagens.length - 1} aria-label={t('proxima')}><ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
               </div>
               <div className="h-[55vh] min-h-[280px] rounded-xl bg-black">
                 {atual && <ImagemPrincipalMarcada key={atual.id} curationId={0} alt={t('imagemDe', { n: indice + 1, total: imagens.length })} marcacoes={anotacao?.marcacoes ?? []} srcPreCarregado={urlFoto(caso.id, atual.id)} />}
@@ -214,21 +215,21 @@ export default function PastaPage() {
                 {caso.nota_encaminhamento && <p className="whitespace-pre-wrap"><span className="text-slate-500">{t('notaEncaminhamento')}:</span> <span className="text-ink">{caso.nota_encaminhamento}</span></p>}
                 {caso.compartilhado_com.length > 0 && <p><span className="text-slate-500">{t('compartilhadaCom')}:</span> <span className="text-ink">{caso.compartilhado_com.join(', ')}</span></p>}
                 {caso.termo[0] && (
-                  <a href={urlFoto(caso.id, caso.termo[0].id)} target="_blank" rel="noopener noreferrer" className="inline-block pt-1 text-sm text-brand underline">📄 {t('verTermo')}</a>
+                  <a href={urlFoto(caso.id, caso.termo[0].id)} target="_blank" rel="noopener noreferrer" className="inline-block pt-1 text-sm text-brand underline"><FileText aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('verTermo')}</a>
                 )}
               </section>
 
               <section className="flex flex-wrap gap-2 rounded-2xl border border-base-border bg-base-surface p-3">
-                {equipe && <Link href={`/casos/estudo?sel=${imagens.map((i) => `${caso.id}-${i.id}`).join(',')}&inicio=${indice}`} className={botaoForte}>✏️ {t('acoes.revisar')}</Link>}
+                {equipe && <Link href={`/casos/estudo?sel=${imagens.map((i) => `${caso.id}-${i.id}`).join(',')}&inicio=${indice}`} className={botaoForte}><Pencil aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.revisar')}</Link>}
                 <button type="button" className={botao} onClick={() => abrirPainel('editar')}>{t('acoes.editarPaciente')}</button>
                 {caso.pode.compartilhar && <button type="button" className={botao} onClick={() => abrirPainel('compartilhar')}>{t('acoes.compartilhar')}</button>}
-                {equipe && <button type="button" className={botao} onClick={() => abrirPainel('link')}>✉️ {t('acoes.email')}</button>}
-                <Link href={`/casos/${caso.id}/imprimir`} className={botao}>🖨️ {t('acoes.imprimir')}</Link>
-                {atual && <a href={urlFoto(caso.id, atual.id, { baixar: true })} className={botao}>⬇️ {t('acoes.baixar')}</a>}
+                {equipe && <button type="button" className={botao} onClick={() => abrirPainel('link')}><Mail aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.email')}</button>}
+                <Link href={`/casos/${caso.id}/imprimir`} className={botao}><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</Link>
+                {atual && <a href={urlFoto(caso.id, atual.id, { baixar: true })} className={botao}><Download aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.baixar')}</a>}
                 {caso.pode.encaminhar_curador && <button type="button" className={botao} onClick={() => abrirPainel('curador')}>{t('acoes.encaminharCurador')}</button>}
                 {caso.pode.classificar && <button type="button" className={botaoForte} onClick={() => abrirPainel('classificar')}>{t('acoes.classificar')}</button>}
                 {caso.pode.encaminhar_aluno && <button type="button" className={botaoForte} onClick={() => abrirPainel('aluno')}>{t('acoes.encaminharAluno')}</button>}
-                {caso.pode.concluir && <button type="button" className={botao} onClick={() => confirm(t('confirmarConcluir')) && acao(`/casos/${caso.id}/concluir`, {}, t('concluidoOk'))}>✔ {t('acoes.concluir')}</button>}
+                {caso.pode.concluir && <button type="button" className={botao} onClick={() => confirm(t('confirmarConcluir')) && acao(`/casos/${caso.id}/concluir`, {}, t('concluidoOk'))}><Check aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.concluir')}</button>}
                 {caso.versoes > 0 && <button type="button" className={botao} onClick={() => abrirPainel('versoes')}>{t('acoes.versoes', { n: caso.versoes })}</button>}
                 {equipe && <Link href={`/casos/acessos?caso=${caso.id}`} className={botao}>{t('acoes.acessos')}</Link>}
               </section>

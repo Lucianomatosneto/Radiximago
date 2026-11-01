@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -142,9 +143,9 @@ function Estudo() {
             <div className="grid gap-3 xl:grid-cols-[1fr_360px]">
               <section className="space-y-2 rounded-2xl border border-base-border bg-base-surface p-3">
                 <div className="flex items-center justify-between gap-2">
-                  <button type="button" onClick={() => setIndice((i) => Math.max(i - 1, 0))} disabled={indice === 0} className="rounded-lg border border-base-border px-3 py-1.5 text-sm disabled:opacity-30" aria-label={t('anterior')}>◀</button>
+                  <button type="button" onClick={() => setIndice((i) => Math.max(i - 1, 0))} disabled={indice === 0} className="rounded-lg border border-base-border px-3 py-1.5 text-sm disabled:opacity-30" aria-label={t('anterior')}><ChevronLeft aria-hidden="true" className="h-4 w-4" /></button>
                   <span className="text-sm text-ink">{t('imagemDe', { n: indice + 1, total: itens.length })}</span>
-                  <button type="button" onClick={() => setIndice((i) => Math.min(i + 1, itens.length - 1))} disabled={indice >= itens.length - 1} className="rounded-lg border border-base-border px-3 py-1.5 text-sm disabled:opacity-30" aria-label={t('proxima')}>▶</button>
+                  <button type="button" onClick={() => setIndice((i) => Math.min(i + 1, itens.length - 1))} disabled={indice >= itens.length - 1} className="rounded-lg border border-base-border px-3 py-1.5 text-sm disabled:opacity-30" aria-label={t('proxima')}><ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
                 </div>
                 <div className="h-[62vh] min-h-[320px]">
                   <MarcadorAchado

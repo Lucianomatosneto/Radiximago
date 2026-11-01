@@ -1,5 +1,6 @@
 'use client'
 
+import { Moon, Sun } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import {
@@ -59,7 +60,7 @@ export default function ThemeToggle() {
       title={dica}
       className="relative flex h-9 w-9 items-center justify-center rounded-full border border-base-border bg-base-surface text-sm text-ink-3 transition-colors hover:border-brand/50 hover:text-ink"
     >
-      {tema === 'dark' ? '🌙' : '☀️'}
+      {tema === 'dark' ? <Moon aria-hidden="true" className="h-4 w-4" /> : <Sun aria-hidden="true" className="h-4 w-4" />}
       {preferencia === 'auto' && (
         <span
           aria-hidden="true"

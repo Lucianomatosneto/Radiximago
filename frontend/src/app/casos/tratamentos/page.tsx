@@ -1,5 +1,6 @@
 'use client'
 
+import { GraduationCap, Printer } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -55,13 +56,13 @@ function Tabela() {
           <option value="em_tratamento">{t('etapas.em_tratamento')}</option>
           <option value="concluido">{t('etapas.concluido')}</option>
         </select>
-        <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-2 text-sm text-ink">🖨️ {t('acoes.imprimir')}</button>
+        <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-2 text-sm text-ink"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
       </div>
       {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600" role="alert">{erro}</p>}
       {linhas && linhas.length === 0 && <p className="py-8 text-center text-sm text-slate-500">{t('tratamentosLista.vazio')}</p>}
       {Array.from(porAluno.entries()).map(([aluno, lista]) => (
         <section key={aluno} className="rounded-2xl border border-base-border bg-base-surface p-3">
-          <h2 className="mb-2 text-sm font-semibold text-ink">🎓 {aluno} <span className="font-normal text-slate-500">({lista.length})</span></h2>
+          <h2 className="mb-2 text-sm font-semibold text-ink"><GraduationCap aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{aluno} <span className="font-normal text-slate-500">({lista.length})</span></h2>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-left text-sm">
               <thead>

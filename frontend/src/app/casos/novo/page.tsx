@@ -1,5 +1,6 @@
 'use client'
 
+import { ArrowDown, ArrowUp, Camera, FileText, Images, X } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -173,10 +174,10 @@ export default function NovaPastaPage() {
             <p className="text-xs text-slate-500">{t('novo.fotosAjuda')}</p>
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => camera.current?.click()} className="flex items-center gap-2 rounded-xl bg-brand px-4 py-3 text-base font-semibold text-white" aria-label={t('novo.abrirCamera')}>
-                <span aria-hidden="true" className="text-2xl">📷</span> {t('novo.abrirCamera')}
+                <Camera aria-hidden="true" className="h-6 w-6" /> {t('novo.abrirCamera')}
               </button>
               <button type="button" onClick={() => galeria.current?.click()} className="rounded-xl border border-base-border px-4 py-3 text-sm text-ink">
-                🖼️ {t('novo.escolherGaleria')}
+                <Images aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('novo.escolherGaleria')}
               </button>
             </div>
             <input ref={camera} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { adicionar(e.target.files); e.target.value = '' }} data-teste="camera" />
@@ -192,9 +193,9 @@ export default function NovaPastaPage() {
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold text-ink">{t('novo.fotoN', { n: i + 1 })}</span>
                       <span className="flex gap-1">
-                        <button type="button" onClick={() => mover(i, -1)} disabled={i === 0} className="rounded border border-base-border px-2 text-sm disabled:opacity-30" aria-label={t('novo.subir')}>↑</button>
-                        <button type="button" onClick={() => mover(i, 1)} disabled={i === fotos.length - 1} className="rounded border border-base-border px-2 text-sm disabled:opacity-30" aria-label={t('novo.descer')}>↓</button>
-                        <button type="button" onClick={() => setFotos((l) => l.filter((x) => x.chave !== f.chave))} className="rounded border border-red-400/50 px-2 text-sm text-red-500" aria-label={t('novo.remover')}>✕</button>
+                        <button type="button" onClick={() => mover(i, -1)} disabled={i === 0} className="rounded border border-base-border px-2 text-sm disabled:opacity-30" aria-label={t('novo.subir')}><ArrowUp aria-hidden="true" className="h-4 w-4" /></button>
+                        <button type="button" onClick={() => mover(i, 1)} disabled={i === fotos.length - 1} className="rounded border border-base-border px-2 text-sm disabled:opacity-30" aria-label={t('novo.descer')}><ArrowDown aria-hidden="true" className="h-4 w-4" /></button>
+                        <button type="button" onClick={() => setFotos((l) => l.filter((x) => x.chave !== f.chave))} className="rounded border border-red-400/50 px-2 text-sm text-red-500" aria-label={t('novo.remover')}><X aria-hidden="true" className="h-4 w-4" /></button>
                       </span>
                     </div>
                     <input value={f.dentes} onChange={(e) => mudarFoto(f.chave, { dentes: e.target.value })} className={campo} placeholder={t('novo.dentesExemplo')} aria-label={t('novo.dentes')} inputMode="numeric" />
@@ -210,7 +211,7 @@ export default function NovaPastaPage() {
             <h2 className="text-base font-semibold text-ink">2. {t('novo.termoTitulo')}</h2>
             <p className="text-xs text-slate-500">{t('novo.termoAjuda')}</p>
             <button type="button" onClick={() => cameraTermo.current?.click()} className="rounded-xl border border-brand px-4 py-3 text-sm font-semibold text-brand">
-              📄 {termo ? t('novo.trocarTermo') : t('novo.fotografarTermo')}
+              <FileText aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{termo ? t('novo.trocarTermo') : t('novo.fotografarTermo')}
             </button>
             <input ref={cameraTermo} type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => { definirTermo(e.target.files); e.target.value = '' }} data-teste="termo" />
             {termo && (

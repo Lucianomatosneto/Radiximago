@@ -1,5 +1,6 @@
 'use client'
 
+import { ChevronLeft, ChevronRight, Folder, ZoomIn, X } from 'lucide-react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
@@ -74,7 +75,7 @@ export default function GradePastas({
                     aria-label={t('grade.lupa')}
                     aria-pressed={!!(lupa?.fixa && lupa.caso === c.id)}
                   >
-                    🔍
+                    <ZoomIn aria-hidden="true" className="h-4 w-4" />
                   </button>
                   <span className="relative">
                     <button type="button" className="peer flex h-7 w-7 items-center justify-center rounded-md bg-black/60 text-sm font-bold text-white" aria-label={t('grade.informacoes')}>
@@ -94,15 +95,15 @@ export default function GradePastas({
                 </div>
                 {c.imagens.length > 1 && (
                   <>
-                    <button type="button" onClick={() => passar(c, -1)} className="absolute left-1 top-1/2 flex h-7 w-6 -translate-y-1/2 items-center justify-center rounded bg-black/50 text-xs text-white" aria-label={t('anterior')}>◀</button>
-                    <button type="button" onClick={() => passar(c, 1)} className="absolute right-1 top-1/2 flex h-7 w-6 -translate-y-1/2 items-center justify-center rounded bg-black/50 text-xs text-white" aria-label={t('proxima')}>▶</button>
+                    <button type="button" onClick={() => passar(c, -1)} className="absolute left-1 top-1/2 flex h-7 w-6 -translate-y-1/2 items-center justify-center rounded bg-black/50 text-xs text-white" aria-label={t('anterior')}><ChevronLeft aria-hidden="true" className="h-4 w-4" /></button>
+                    <button type="button" onClick={() => passar(c, 1)} className="absolute right-1 top-1/2 flex h-7 w-6 -translate-y-1/2 items-center justify-center rounded bg-black/50 text-xs text-white" aria-label={t('proxima')}><ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
                   </>
                 )}
                 <span className="absolute bottom-1 right-2 rounded bg-black/60 px-1.5 text-[11px] text-white">{i + 1}/{c.imagens.length}</span>
               </div>
               <Link href={`/casos/${c.id}`} className="flex flex-1 flex-col gap-1 p-2.5 hover:bg-base-surface2">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="truncate text-sm font-semibold text-ink">📁 {c.aluno}</span>
+                  <span className="truncate text-sm font-semibold text-ink"><Folder aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{c.aluno}</span>
                   {c.nova && <span className="rounded-full bg-brand px-1.5 text-[10px] font-semibold text-white">{t('grade.nova')}</span>}
                   {c.corrigida && <span className="rounded-full bg-violet-500 px-1.5 text-[10px] font-semibold text-white">{t('grade.corrigida')}</span>}
                 </div>
@@ -122,9 +123,9 @@ export default function GradePastas({
             <span>{casoLupa.aluno} · {(indices[casoLupa.id] ?? 0) + 1}/{casoLupa.imagens.length}</span>
             {lupa?.fixa && (
               <span className="flex gap-1">
-                <button type="button" onClick={() => passar(casoLupa, -1)} className="rounded bg-white/20 px-2" aria-label={t('anterior')}>◀</button>
-                <button type="button" onClick={() => passar(casoLupa, 1)} className="rounded bg-white/20 px-2" aria-label={t('proxima')}>▶</button>
-                <button type="button" onClick={() => setLupa(null)} className="rounded bg-white/20 px-2" aria-label={t('fechar')}>✕</button>
+                <button type="button" onClick={() => passar(casoLupa, -1)} className="rounded bg-white/20 px-2" aria-label={t('anterior')}><ChevronLeft aria-hidden="true" className="h-4 w-4" /></button>
+                <button type="button" onClick={() => passar(casoLupa, 1)} className="rounded bg-white/20 px-2" aria-label={t('proxima')}><ChevronRight aria-hidden="true" className="h-4 w-4" /></button>
+                <button type="button" onClick={() => setLupa(null)} className="rounded bg-white/20 px-2" aria-label={t('fechar')}><X aria-hidden="true" className="h-4 w-4" /></button>
               </span>
             )}
           </div>

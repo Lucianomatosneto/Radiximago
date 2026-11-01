@@ -1,5 +1,6 @@
 'use client'
 
+import { Pencil } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -34,7 +35,7 @@ export default function BotaoEditarCuradoria({ curationId }: { curationId: numbe
   return (
     <span className="inline-flex items-center gap-2">
       <button type="button" onClick={reabrir} className="rounded-lg border border-violet-400/60 px-3 py-1.5 text-sm font-semibold text-violet-700 transition hover:bg-violet-500/10 dark:text-violet-200">
-        ✏️ {t('editarDepois')}
+        <Pencil aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('editarDepois')}
       </button>
       {erro && <span className="text-xs text-red-500" role="alert">{erro}</span>}
     </span>

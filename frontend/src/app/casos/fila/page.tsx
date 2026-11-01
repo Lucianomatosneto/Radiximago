@@ -1,5 +1,6 @@
 'use client'
 
+import { Printer, Search } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
@@ -60,7 +61,7 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
         </div>
       )}
       <section className="space-y-2 rounded-2xl border border-base-border bg-base-surface p-3 print:hidden" aria-label={t('fila.buscaAvancada')}>
-        <h2 className="text-sm font-semibold text-ink">🔎 {t('fila.buscaAvancada')}</h2>
+        <h2 className="text-sm font-semibold text-ink"><Search aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('fila.buscaAvancada')}</h2>
         <div className="flex flex-wrap gap-2">
           <select value={tratamento} onChange={(e) => setTratamento(e.target.value)} className={campo} aria-label={t('fila.tipoTratamento')}>
             <option value="">{t('fila.todosTratamentos')}</option>
@@ -71,7 +72,7 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
             {opcoes.modalidades.map((m) => <option key={m} value={m}>{t(`modalidades.${m}`)}</option>)}
           </select>
           <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={100} placeholder={t('fila.nomePaciente')} aria-label={t('fila.nomePaciente')} className={`${campo} min-w-[200px] flex-1`} />
-          <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink">🖨️ {t('acoes.imprimir')}</button>
+          <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
         </div>
         <div className="flex flex-wrap gap-1">
           {opcoes.tratamentos.map((x) => (

@@ -1,5 +1,6 @@
 'use client'
 
+import { Printer, TriangleAlert } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -41,9 +42,9 @@ export default function ImprimirPastaPage() {
           <p className="text-sm">{t('pasta', { id: caso.id })} · {data(caso.paciente.nascimento)} ({caso.paciente.idade} {t('anos')}) · {t(`generos.${caso.paciente.genero}`)} · {caso.paciente.contato}</p>
           <p className="text-sm">{t(`modalidades.${caso.modalidade}`)} · {t('enviadaPor', { aluno: caso.aluno ?? '—', quando: dataHora(caso.criado_em) })}</p>
         </div>
-        <button type="button" onClick={() => window.print()} className="rounded border px-3 py-1 text-sm print:hidden">🖨️ {t('acoes.imprimir')}</button>
+        <button type="button" onClick={() => window.print()} className="rounded border px-3 py-1 text-sm print:hidden"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
       </div>
-      <p className="rounded border border-amber-500 p-2 text-xs">⚠️ {t('aviso')}</p>
+      <p className="rounded border border-amber-500 p-2 text-xs"><TriangleAlert aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('aviso')}</p>
       <p className="whitespace-pre-wrap text-sm"><b>{t('novo.descricao')}:</b> {caso.descricao}</p>
       {caso.revisao?.comentario && <p className="whitespace-pre-wrap text-sm"><b>{t('comentarioGeral')} ({caso.revisao.autor}, {t('versaoN', { n: caso.revisao.versao })}):</b> {caso.revisao.comentario}</p>}
       {caso.imagens.map((img, i) => {
