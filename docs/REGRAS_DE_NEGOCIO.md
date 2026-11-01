@@ -118,7 +118,7 @@ pendente ─┐
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
 **Outras regras de negócio:**
-- Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 28/10/2026, **estudante, professor e pesquisador** entram assim que confirmam o e-mail (auditoria `aprovacao_automatica_solicitacao`); só **curador** continua dependendo da aprovação do administrador. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
+- Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 01/11/2026 (auditoria do administrador, A3, decisão do Luciano), **só estudante** entra assim que confirma o e-mail (auditoria `aprovacao_automatica_solicitacao`, quem aprovou: o sistema). **Professor, curador e pesquisador** sempre dependem da aprovação do administrador (`aprovacao_solicitacao_acesso`, com o nome de quem aprovou), porque professor e curador veem as pastas de pacientes. Entre 28/10 e 01/11, professor e pesquisador também entravam sozinhos. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
 - Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
 - Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
 

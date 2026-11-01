@@ -191,9 +191,9 @@ def test_pedido_ja_confirmado_nao_e_substituido(client, db, links_enviados, emai
     assert pedido.email_confirmado_em is not None
 
 
-@pytest.mark.parametrize("perfil", ["estudante", "professor", "pesquisador"])
-def test_estudante_professor_pesquisador_entram_ao_confirmar(client, db, links_enviados, email_novo, perfil):
-    """28/10/2026: so curador depende do administrador; os outros entram ao confirmar o e-mail."""
+@pytest.mark.parametrize("perfil", ["estudante"])
+def test_estudante_entra_ao_confirmar(client, db, links_enviados, email_novo, perfil):
+    """01/11/2026 (A3): so ESTUDANTE entra sozinho ao confirmar o e-mail."""
     _solicitar(client, email_novo, perfil=perfil)
     r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
     assert r.status_code == 200, r.text
@@ -208,8 +208,12 @@ def test_estudante_professor_pesquisador_entram_ao_confirmar(client, db, links_e
     assert login.status_code == 200, login.text
 
 
-def test_curador_continua_esperando_o_administrador(client, db, links_enviados, email_novo):
-    _solicitar(client, email_novo, perfil="curador")
+@pytest.mark.parametrize("perfil", ["curador", "professor", "pesquisador"])
+def test_demais_perfis_esperam_o_administrador(client, db, links_enviados, email_novo, perfil):
+    """01/11/2026 (A3, decisao do Luciano): professor, curador e pesquisador
+    so entram com a aprovacao do administrador - nenhuma conta e criada ao
+    confirmar o e-mail."""
+    _solicitar(client, email_novo, perfil=perfil)
     r = client.post("/auth/confirm-email", json={"token": _token(links_enviados[0]), "senha": SENHA})
     assert r.status_code == 200 and r.json()["aprovado"] is False
     assert db.query(User).filter(User.email == email_novo).count() == 0

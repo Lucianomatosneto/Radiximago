@@ -152,7 +152,7 @@
     },
     "ctaFinal": {
       "titulo": "Pronto para estudar com imagens de qualidade?",
-      "texto": "Crie sua conta e confirme o seu e-mail. Estudantes, professores e pesquisadores entram na hora; o perfil de curador é liberado pelo administrador.",
+      "texto": "Crie sua conta e confirme o seu e-mail. Estudantes entram na hora; professor, curador e pesquisador são liberados pelo administrador.",
       "botao": "Solicitar acesso"
     },
     "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC).",
@@ -1602,7 +1602,7 @@
     "instituicaoOpcional": "Instituição (opcional)",
     "instituicaoPlaceholder": "Universidade, clínica, hospital...",
     "tipoAcesso": "Tipo de acesso",
-    "ajudaTipoAcesso": "É uma preferência - o administrador decide o perfil liberado na aprovação.",
+    "ajudaTipoAcesso": "Só estudante entra na hora, ao confirmar o e-mail. Professor, curador e pesquisador dependem da aprovação do administrador, que decide o perfil liberado.",
     "motivoOpcional": "Motivo do acesso (opcional)",
     "motivoPlaceholder": "Conte brevemente como pretende usar a plataforma",
     "enviando": "Enviando...",
@@ -1711,7 +1711,8 @@
     "confirmarEncerrarTodos": "Desconectar TODOS os usuários (menos você)? Todos precisarão entrar de novo.",
     "acessosEncerrados": "{quantidade, plural, =0 {{nome} não tinha acessos abertos.} one {1 acesso de {nome} encerrado.} other {# acessos de {nome} encerrados.}}",
     "acessosTodosEncerrados": "{quantidade, plural, =0 {Nenhum outro acesso estava aberto.} one {1 acesso encerrado. A pessoa precisará entrar de novo.} other {# acessos encerrados. Todos precisarão entrar de novo.}}",
-    "erroEncerrarAcessos": "Não foi possível encerrar os acessos. Tente de novo."
+    "erroEncerrarAcessos": "Não foi possível encerrar os acessos. Tente de novo.",
+    "regraAprovacao": "Só estudante entra sozinho ao confirmar o e-mail. Professor, curador e pesquisador aparecem aqui e só entram com a sua aprovação. A aprovação registra o seu nome na Auditoria."
   },
   "Configuracoes": {
     "titulo": "Configurações",
@@ -1774,7 +1775,7 @@
     "ajudaSenha": "É a mesma senha que você escolheu ao preencher o formulário. Ela comprova que foi você quem fez o pedido.",
     "confirmar": "Confirmar e-mail",
     "confirmando": "Confirmando...",
-    "sucessoMensagem": "E-mail confirmado! Como você pediu o perfil de curador, o pedido foi enviado para análise do administrador. Você receberá um e-mail quando o acesso for liberado.",
+    "sucessoMensagem": "E-mail confirmado! Como você pediu um perfil que depende do administrador (professor, curador ou pesquisador), o pedido foi enviado para análise. Você receberá um e-mail quando o acesso for liberado.",
     "irParaLogin": "Ir para o login",
     "solicitarNovamente": "Fazer o pedido novamente",
     "voltarLogin": "Voltar para o login",

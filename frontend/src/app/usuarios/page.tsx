@@ -595,6 +595,8 @@ export default function UsuariosPage() {
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
                 {t('solicitacoesPendentesTitulo', { total: solicitacoes.length })}
               </h2>
+              {/* A3 (01/11/2026): a regra de aprovacao, visivel para o administrador */}
+              <p className="mb-3 text-xs text-slate-500">{t('regraAprovacao')}</p>
               <div className="overflow-x-auto rounded-xl border border-base-border">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-base-surface text-slate-400">

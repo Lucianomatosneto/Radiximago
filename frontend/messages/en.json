@@ -152,7 +152,7 @@
     },
     "ctaFinal": {
       "titulo": "Ready to study with quality images?",
-      "texto": "Create your account and confirm your e-mail. Students, teachers and researchers get in right away; the curator profile is granted by the administrator.",
+      "texto": "Create your account and confirm your e-mail. Students get in right away; professor, curator and researcher are released by the administrator.",
       "botao": "Request access"
     },
     "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC).",
@@ -1602,7 +1602,7 @@
     "instituicaoOpcional": "Institution (optional)",
     "instituicaoPlaceholder": "University, clinic, hospital...",
     "tipoAcesso": "Access type",
-    "ajudaTipoAcesso": "This is a preference - the administrator decides the granted role upon approval.",
+    "ajudaTipoAcesso": "Only students get in right away, on confirming the e-mail. Professor, curator and researcher depend on the administrator's approval, who decides the granted profile.",
     "motivoOpcional": "Reason for access (optional)",
     "motivoPlaceholder": "Briefly describe how you plan to use the platform",
     "enviando": "Sending...",
@@ -1711,7 +1711,8 @@
     "confirmarEncerrarTodos": "Sign out ALL users (except you)? Everyone will need to sign in again.",
     "acessosEncerrados": "{quantidade, plural, =0 {{nome} had no open sessions.} one {1 session of {nome} ended.} other {# sessions of {nome} ended.}}",
     "acessosTodosEncerrados": "{quantidade, plural, =0 {No other session was open.} one {1 session ended. That person will need to sign in again.} other {# sessions ended. Everyone will need to sign in again.}}",
-    "erroEncerrarAcessos": "Could not end the sessions. Please try again."
+    "erroEncerrarAcessos": "Could not end the sessions. Please try again.",
+    "regraAprovacao": "Only students get in by themselves on confirming the e-mail. Professor, curator and researcher show up here and only get in with your approval. Approval records your name in the Audit log."
   },
   "Configuracoes": {
     "titulo": "Settings",
@@ -1774,7 +1775,7 @@
     "ajudaSenha": "It is the same password you chose when filling in the form. It proves you made the request.",
     "confirmar": "Confirm email",
     "confirmando": "Confirming...",
-    "sucessoMensagem": "E-mail confirmed! Since you asked for the curator profile, your request was sent to the administrator. You will get an e-mail when access is granted.",
+    "sucessoMensagem": "E-mail confirmed! You asked for a profile that depends on the administrator (professor, curator or researcher), so the request was sent for review. You will get an e-mail when access is released.",
     "irParaLogin": "Go to login",
     "solicitarNovamente": "Request access again",
     "voltarLogin": "Back to login",

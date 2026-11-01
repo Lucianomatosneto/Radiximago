@@ -152,9 +152,7 @@ docker compose -f docker-compose.yml -f docker-compose.tunel.yml logs --tail 30 
 
 ## Cadastro de novas pessoas
 
-Estudante, professor e pesquisador são **aprovados automaticamente** depois
-de confirmar o e-mail. Com o link público, **qualquer pessoa** pode se
-cadastrar e ver as imagens de teste.
+Só **estudante** é aprovado automaticamente depois de confirmar o e-mail. Professor, curador e pesquisador esperam a aprovação do administrador na tela **Usuários**. Com o link público, qualquer pessoa pode se cadastrar como estudante e ver as imagens de teste aprovadas.
 
 Se quiser restringir na fase de demonstração, há duas saídas:
 

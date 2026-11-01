@@ -513,9 +513,13 @@ def solicitar_acesso(
     return mensagem_generica
 
 
-# perfis liberados assim que a pessoa confirma o e-mail (sem o administrador);
-# "curador" continua dependendo da aprovacao do administrador
-PERFIS_APROVACAO_AUTOMATICA = {"estudante", "professor", "pesquisador"}
+# perfis liberados assim que a pessoa confirma o e-mail (sem o administrador).
+# 01/11/2026 (auditoria do administrador, A3 - decisao do Luciano): SO
+# ESTUDANTE. Professor e curador veem pastas de pacientes (dados
+# identificados) e pesquisador ve dados de pesquisa: todos esses dependem da
+# aprovacao do administrador. Antes (28/10) professor e pesquisador tambem
+# entravam sozinhos - qualquer pessoa com um e-mail podia virar professor.
+PERFIS_APROVACAO_AUTOMATICA = {"estudante"}
 
 
 class ConfirmarEmail(BaseModel):
@@ -583,10 +587,10 @@ def confirmar_email(
     pedido.token_confirmacao_expira_em = None
     pedido.tentativas_confirmacao = 0
 
-    # APROVACAO AUTOMATICA (28/10/2026): estudante, professor e pesquisador
-    # entram assim que confirmam o e-mail; so CURADOR (que aprova imagens)
-    # continua passando pelo administrador. O administrador pode bloquear ou
-    # mudar o perfil depois, e tudo fica na auditoria.
+    # APROVACAO AUTOMATICA: so ESTUDANTE entra assim que confirma o e-mail
+    # (01/11/2026, A3); os outros perfis vao para a fila do administrador.
+    # O administrador pode bloquear ou mudar o perfil depois, e tudo fica na
+    # auditoria (quem aprovou: "sistema" aqui, a pessoa na aprovacao manual).
     perfil = pedido.perfil_solicitado.value if hasattr(pedido.perfil_solicitado, "value") else str(pedido.perfil_solicitado)
     ja_existe = db.query(User).filter(User.email == pedido.email, User.excluido.is_(False)).first()
     if perfil in PERFIS_APROVACAO_AUTOMATICA and not ja_existe:
