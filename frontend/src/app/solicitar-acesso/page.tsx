@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import Logo from '../../components/Logo'
+import AvisoEmail from '../../components/AvisoEmail'
 
 // Valores reais do enum IntencaoPerfil no backend - so a preferencia do
 // solicitante, o perfil de fato concedido e decidido pelo admin na
@@ -36,6 +37,7 @@ export default function SolicitarAcessoPage() {
   const [erro, setErro] = useState('')
   const [carregando, setCarregando] = useState(false)
   const [perfilSolicitado, setPerfilSolicitado] = useState('')
+  const [emailDigitado, setEmailDigitado] = useState('')
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -149,7 +151,9 @@ export default function SolicitarAcessoPage() {
                 type="email"
                 className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('emailPlaceholder')}
+                onChange={(e) => setEmailDigitado(e.target.value)}
               />
+              <AvisoEmail email={emailDigitado} />
             </div>
 
             <div className="grid grid-cols-2 gap-3">

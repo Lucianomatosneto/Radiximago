@@ -2151,7 +2151,16 @@
       "imprimir": "Print sheet with information…",
       "email": "E-mail sheet…"
     },
-    "opcaoMenuDica": "2 or 3 images per page, with the information beside them"
+    "opcaoMenuDica": "2 or 3 images per page, with the information beside them",
+    "confirmarTitulo": "Confirm sending by e-mail",
+    "carregandoDestinos": "Loading recipients…",
+    "destinatario": "Send to",
+    "euMesmo": "Myself – {nome}",
+    "vaiPara": "The sheet goes to:",
+    "oQueVai": "Attachment: 1 PDF with {imagens} image(s) on {folhas} page(s).",
+    "emailSuspeito": "Warning: this e-mail looks mistyped. Did you mean {sugerido}? Ask the administrator to fix the account before sending.",
+    "cancelar": "Cancel",
+    "confirmarEnvio": "Confirm sending"
   },
   "SegundaOpiniao": {
     "titulo": "Second opinion",
@@ -2798,5 +2807,8 @@
       "verEstudos": "View studies",
       "imprimir": "Print"
     }
+  },
+  "AvisoEmail": {
+    "vocequisdizer": "Possible typo: did you mean {sugerido}?"
   }
 }

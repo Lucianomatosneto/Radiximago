@@ -2151,7 +2151,16 @@
       "imprimir": "Imprimir prancha com informações…",
       "email": "Enviar prancha por e-mail…"
     },
-    "opcaoMenuDica": "2 ou 3 imagens por folha, com as informações ao lado"
+    "opcaoMenuDica": "2 ou 3 imagens por folha, com as informações ao lado",
+    "confirmarTitulo": "Confirmar o envio por e-mail",
+    "carregandoDestinos": "Carregando destinatários…",
+    "destinatario": "Enviar para",
+    "euMesmo": "Eu mesmo(a) – {nome}",
+    "vaiPara": "A prancha vai para:",
+    "oQueVai": "Anexo: 1 PDF com {imagens} imagem(ns) em {folhas} folha(s).",
+    "emailSuspeito": "Atenção: este e-mail parece ter erro de digitação. Você quis dizer {sugerido}? Peça ao administrador para corrigir o cadastro antes de enviar.",
+    "cancelar": "Cancelar",
+    "confirmarEnvio": "Confirmar envio"
   },
   "SegundaOpiniao": {
     "titulo": "Segunda opinião",
@@ -2798,5 +2807,8 @@
       "verEstudos": "Ver estudos",
       "imprimir": "Imprimir"
     }
+  },
+  "AvisoEmail": {
+    "vocequisdizer": "Possível erro de digitação: você quis dizer {sugerido}?"
   }
 }

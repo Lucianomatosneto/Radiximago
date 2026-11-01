@@ -171,7 +171,7 @@ def test_prancha_por_email_vai_para_o_proprio_usuario_em_pdf(client, criar_usuar
     fichas = [criar_ficha(descricao_didatica=f"prancha-email-{i}") for i in range(2)]
     monkeypatch.setattr(prancha_router.orthanc_client, "obter_preview_instancia", lambda i: _png())
     enviados = []
-    monkeypatch.setattr(prancha_router, "enviar_email_prancha", lambda *a: enviados.append(a))
+    monkeypatch.setattr(prancha_router, "enviar_email_prancha", lambda *a, **k: enviados.append(a))
 
     r = client.post("/prancha/email", headers=cabecalho_auth(token),
                     json={"curation_ids": [f.id for f in fichas], "por_folha": 3})

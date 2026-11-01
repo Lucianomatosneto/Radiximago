@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
+import { sugestaoDeEmail } from '../../lib/emailDigitacao'
 
 // PRANCHA COM INFORMACOES (pedido de 20/10/2026)
 // Folha A4 com as imagens EMPILHADAS na metade esquerda e as informacoes de
@@ -100,6 +101,14 @@ export default function MenuPrancha({
       {aberto && <DialogoPrancha grupos={gruposComItens} onFechar={() => setAberto(false)} />}
     </>
   )
+}
+
+interface PessoaDestino {
+  id: number
+  nome: string
+  perfil: string
+  email: string
+  email_sugerido: string | null
 }
 
 export type ModoPrancha = 'baixar' | 'imprimir' | 'email'
@@ -245,6 +254,12 @@ export function DialogoPrancha({
   const [ocupado, setOcupado] = useState<Acao | null>(null)
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
+  // 01/11/2026 (QA item 2): o e-mail so sai depois de CONFIRMAR, vendo o
+  // endereco completo do destinatario e o que vai junto
+  const [confirmandoEmail, setConfirmandoEmail] = useState(false)
+  const [destinos, setDestinos] = useState<PessoaDestino[] | null>(null)
+  const [paraId, setParaId] = useState<number | null>(null)
+  const travaRef = useRef(false)
   const quadroImpressao = useRef<HTMLIFrameElement | null>(null)
   const urlImpressao = useRef<string | null>(null)
 
@@ -284,8 +299,30 @@ export function DialogoPrancha({
     })
   }
 
+  async function abrirConfirmacaoEmail() {
+    setErro('')
+    setMensagem('')
+    setConfirmandoEmail(true)
+    if (destinos) return
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/destinatarios`, { credentials: 'include' })
+      if (!r.ok) {
+        setErro(await mensagemDeErro(r, t('erro')))
+        return
+      }
+      const dados: { proprio: PessoaDestino; outros: PessoaDestino[] } = await r.json()
+      setDestinos([dados.proprio, ...dados.outros])
+      setParaId(dados.proprio.id)
+    } catch {
+      setErro(t('erro'))
+    }
+  }
+
   async function executar(acao: Acao) {
-    if (!grupo || ocupado) return
+    // a trava em ref vale ja no 2o clique rapido (o estado so muda na
+    // proxima renderizacao)
+    if (!grupo || ocupado || travaRef.current) return
+    travaRef.current = true
     setOcupado(acao)
     setErro('')
     setMensagem('')
@@ -295,7 +332,7 @@ export function DialogoPrancha({
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: corpo('pdf'),
+          body: JSON.stringify({ ...JSON.parse(corpo('pdf')), para_id: paraId }),
         })
         if (!r.ok) {
           setErro(await mensagemDeErro(r, t('erro')))
@@ -303,6 +340,7 @@ export function DialogoPrancha({
         }
         const dados = await r.json()
         setMensagem(dados.mensagem ?? t('emailEnviado'))
+        setConfirmandoEmail(false)
         return
       }
       const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/arquivo`, {
@@ -353,6 +391,7 @@ export function DialogoPrancha({
     } catch {
       setErro(t('erro'))
     } finally {
+      travaRef.current = false
       setOcupado(null)
     }
   }
@@ -469,12 +508,78 @@ export function DialogoPrancha({
               className={botaoAcao}
               disabled={!!ocupado || demaisEmail || total === 0}
               title={demaisEmail ? t('limiteEmail', { maximo: MAX_IMAGENS_EMAIL }) : undefined}
-              onClick={() => executar('email')}
+              onClick={abrirConfirmacaoEmail}
             >
               {ocupado === 'email' ? t('enviando') : `✉ ${t('email')}`}
             </button>
           )}
         </div>
+
+        {confirmandoEmail && (
+          <div role="group" aria-label={t('confirmarTitulo')} className="mt-3 rounded-lg border border-brand/50 bg-brand/10 p-3 text-sm">
+            <p className="mb-2 font-semibold text-slate-100">{t('confirmarTitulo')}</p>
+            {!destinos ? (
+              !erro && <p className="text-xs text-slate-400">{t('carregandoDestinos')}</p>
+            ) : (
+              <>
+                {destinos.length > 1 && (
+                  <label className="mb-2 block text-xs text-slate-300">
+                    {t('destinatario')}
+                    <select
+                      value={paraId ?? ''}
+                      onChange={(e) => setParaId(Number(e.target.value))}
+                      disabled={!!ocupado}
+                      className="mt-1 block w-full rounded-md border border-base-border bg-base-surface2 px-2 py-1 text-sm text-slate-100"
+                    >
+                      {destinos.map((p, i) => (
+                        <option key={p.id} value={p.id} className="bg-white text-slate-900">
+                          {i === 0 ? t('euMesmo', { nome: p.nome }) : `${p.nome} (${p.perfil})`}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {(() => {
+                  const destino = destinos.find((p) => p.id === paraId) ?? destinos[0]
+                  const sugerido = destino.email_sugerido ?? sugestaoDeEmail(destino.email)
+                  return (
+                    <>
+                      <p className="text-xs text-slate-300">
+                        {t('vaiPara')} <strong className="break-all text-slate-100">{destino.email}</strong>
+                      </p>
+                      <p className="mt-1 text-xs text-slate-300">{t('oQueVai', { imagens: total, folhas })}</p>
+                      {sugerido && (
+                        <p className="mt-2 text-xs text-amber-300" role="alert">
+                          {t('emailSuspeito', { sugerido })}
+                        </p>
+                      )}
+                    </>
+                  )
+                })()}
+                <div className="mt-3 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    className="rounded-md border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-40"
+                    disabled={!!ocupado}
+                    onClick={() => setConfirmandoEmail(false)}
+                  >
+                    {t('cancelar')}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    // desabilitado durante o envio: um segundo clique nao manda de novo
+                    disabled={!!ocupado || paraId === null}
+                    aria-busy={ocupado === 'email'}
+                    onClick={() => executar('email')}
+                  >
+                    {ocupado === 'email' ? t('enviando') : t('confirmarEnvio')}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
 
         <div aria-live="polite" className="mt-3 min-h-[1.25rem] text-xs">
           {mensagem && <span className="text-emerald-400">{mensagem}</span>}

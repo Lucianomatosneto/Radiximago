@@ -1,5 +1,6 @@
 'use client'
 
+import AvisoEmail from '../../components/AvisoEmail'
 import { useEffect, useState, FormEvent, ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
@@ -602,7 +603,7 @@ export default function UsuariosPage() {
                     {solicitacoes.map((solicitacao) => (
                       <tr key={solicitacao.id} className="text-slate-200">
                         <td className="px-4 py-3">{solicitacao.nome}</td>
-                        <td className="px-4 py-3 text-slate-400">{solicitacao.email}</td>
+                        <td className="px-4 py-3 text-slate-400">{solicitacao.email}<AvisoEmail email={solicitacao.email} /></td>
                         <td className="px-4 py-3">
                           {t(`perfis.${solicitacao.perfil_solicitado}` as Parameters<typeof t>[0])}
                         </td>
@@ -729,7 +730,7 @@ export default function UsuariosPage() {
                       usuariosExcluidos.map((usuario) => (
                         <tr key={usuario.id} className="text-slate-400">
                           <td className="px-4 py-3 text-slate-300">{usuario.nome}</td>
-                          <td className="px-4 py-3">{usuario.email}</td>
+                          <td className="px-4 py-3">{usuario.email}<AvisoEmail email={usuario.email} /></td>
                           <td className="px-4 py-3">{t(`perfis.${usuario.perfil}` as Parameters<typeof t>[0])}</td>
                           <td className="px-4 py-3">{usuario.instituicao || '—'}</td>
                           <td className="px-4 py-3">{formatarData(usuario.excluido_em, idioma)}</td>
@@ -762,7 +763,7 @@ export default function UsuariosPage() {
                   return (
                     <tr key={usuario.id} className="text-slate-200">
                       <td className="px-4 py-3">{usuario.nome}</td>
-                      <td className="px-4 py-3 text-slate-400">{usuario.email}</td>
+                      <td className="px-4 py-3 text-slate-400">{usuario.email}<AvisoEmail email={usuario.email} /></td>
                       <td className="px-4 py-3">{t(`perfis.${usuario.perfil}` as Parameters<typeof t>[0])}</td>
                       <td className="px-4 py-3">
                         <span
@@ -903,6 +904,7 @@ export default function UsuariosPage() {
                 onChange={(e) => setFormCriacao({ ...formCriacao, email: e.target.value })}
                 className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
               />
+              <AvisoEmail email={formCriacao.email} />
             </div>
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoSenha')}</label>

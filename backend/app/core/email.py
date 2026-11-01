@@ -192,11 +192,14 @@ def enviar_email_imagens_pesquisa_lote(
 
 
 def enviar_email_prancha(
-    destinatario: str, nome: str, total_imagens: int, total_folhas: int, anexo_pdf: bytes, anexo_nome: str
+    destinatario: str, nome: str, total_imagens: int, total_folhas: int, anexo_pdf: bytes, anexo_nome: str,
+    remetente: str | None = None,
 ) -> None:
     """Prancha (folhas com as imagens e as informacoes ao lado) em PDF."""
+    de_quem = f"<p>{escape(remetente)} enviou esta prancha para você pelo Rádix Imago.</p>" if remetente else ""
     corpo_html = f"""
     <p>Olá, {escape(nome)}.</p>
+    {de_quem}
     <p>Segue em anexo (PDF) a prancha com {total_imagens} imagem(ns) em {total_folhas} folha(s),
     com as informações da curadoria ao lado de cada imagem.</p>
     <p>Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.</p>

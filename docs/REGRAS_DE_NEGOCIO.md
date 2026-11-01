@@ -47,6 +47,22 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 - **Relatório "Fichas por achado":** conta as **alterações observadas** marcadas na Curadoria. O antigo campo "achado principal" não é mais preenchido. Uma ficha com vários achados conta em cada um deles.
 - **"Dificuldade" removida do relatório:** a Curadoria não tem campo para preenchê-la, então o cartão mostrava sempre vazio. Se um dia for necessária, deve entrar primeiro como campo da ficha e filtro da busca.
 
+### 1.2 Envio da prancha por e-mail (01/11/2026)
+
+- **Confirmação antes de enviar:** a tela mostra o e-mail do destinatário. O próprio e-mail aparece **completo**; o de outra pessoa aparece **mascarado** (`g•••o@hotmail.com`), com o domínio inteiro para conferir erros de digitação. A regra geral do sistema é que nenhuma tela mostra o e-mail completo de outro usuário (`test_exposicao_de_dados.py`). A tela mostra também o que vai anexado o que vai anexado (1 PDF, N imagens, F folhas). O envio só sai depois de clicar em **Confirmar envio**. O botão fica desabilitado durante o envio, para não mandar duas vezes.
+- **Para quem:**
+  - o estudante, o pesquisador e o administrador enviam só para o próprio e-mail;
+  - o professor e o curador também podem escolher outro professor ou curador **cadastrado e ativo**.
+
+  Nunca há e-mail digitado livre, para evitar o envio de imagens a terceiros. O registro de auditoria `prancha_enviada_email` guarda o destinatário (`para_id`).
+- **Provável erro de digitação:** domínios como `hotmai.com` ou `gmial.com` geram o aviso "você quis dizer …?". A lista fica em `app/core/email_digitacao.py` e `lib/emailDigitacao.ts`, e um teste confere que as duas são iguais. O aviso aparece:
+  - no cadastro;
+  - na criação de usuário;
+  - na lista de usuários, para cadastros que já existem;
+  - na confirmação da prancha.
+
+  Ele só avisa, **não bloqueia**, porque o domínio pode existir. A correção de um cadastro é feita pelo administrador.
+
 ## 2. Fluxo da ficha (estados permitidos)
 
 ```
@@ -137,3 +153,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.2 | 20/10/2026 | Limite do giro de imagem na Curadoria; recorte da moldura branca |
 | 1.3 | 01/11/2026 | Vocabulário × busca, região anatômica padrão, relatório por achado, Dificuldade removida do relatório |
 | 1.4 | 01/11/2026 | Regiões que a imagem mostra (campo da Curadoria e padrão por tipo de exame) no filtro de região |
+| 1.5 | 01/11/2026 | Prancha por e-mail: confirmação com destino visível, destinatário cadastrado e aviso de erro de digitação |
