@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules import orthanc_client
-from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis
 from app.modules.geometria_imagem import FormatoNaoSuportado, girar_dicom, girar_marcacoes, girar_ponto
 from app.modules.curations import Curation
 from app.modules.orthanc_references import OrthancReference
@@ -48,7 +48,7 @@ def girar_imagem(
     request: Request,
     orthanc_reference_id: int,
     dados: PedidoGiro,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     return _girar(db, orthanc_reference_id, dados.graus, usuario)
@@ -60,7 +60,7 @@ def girar_imagem_da_ficha(
     request: Request,
     curation_id: int,
     dados: PedidoGiro,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     ficha = db.query(Curation).filter(Curation.id == curation_id).first()

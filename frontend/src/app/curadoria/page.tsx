@@ -31,7 +31,7 @@ import PainelVoz from '../../components/curadoria/PainelVoz'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
 import { obterSessaoAtual } from '../../lib/sessao'
 
-const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
+const PERFIS_PERMITIDOS = ['administrador', 'curador'] // suporte: so leitura na API (02/11/2026)
 
 // Usados so pra rotular tipo_radiografia/achado_principal nos cards de
 // "Aguardando sua decisao" (mesmos rotulos usados em toda a Curadoria e em

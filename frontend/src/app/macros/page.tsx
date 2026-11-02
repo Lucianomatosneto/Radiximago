@@ -20,7 +20,7 @@ import { DENTES_FDI, itensDoVocabulario, normalizarBusca, type ItemCatalogo, typ
 // termos do vocabulario e dentes - e a tela tem "Voltar".
 
 const API = process.env.NEXT_PUBLIC_API_URL
-const PERFIS_PERMITIDOS = ['administrador', 'curador', 'suporte']
+const PERFIS_PERMITIDOS = ['administrador', 'curador']
 const TIPOS = ['periapical', 'panoramica', 'oclusal', 'interproximal', 'tomografia']
 const QUALIDADES = ['otima', 'boa', 'regular', 'insatisfatoria']
 

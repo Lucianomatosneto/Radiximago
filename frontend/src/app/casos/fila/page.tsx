@@ -22,6 +22,8 @@ const campo = 'rounded-lg border border-base-border bg-base-surface2 px-2.5 py-1
 function Fila({ sessao }: { sessao: SessaoUsuario }) {
   const t = useTranslations('Casos')
   const curador = sessao.perfil === 'curador'
+  // administrador: so supervisao (02/11/2026) - o servidor oculta os dados do paciente e recusa a busca por nome
+  const supervisao = sessao.perfil === 'administrador'
   const [aba, setAba] = useState<'aguardando_classificacao' | 'na_fila'>(curador ? 'aguardando_classificacao' : 'na_fila')
   const [tratamento, setTratamento] = useState('')
   const [modalidade, setModalidade] = useState('')
@@ -74,7 +76,7 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
             <option value="">{t('fila.todasModalidades')}</option>
             {opcoes.modalidades.map((m) => <option key={m} value={m}>{t(`modalidades.${m}`)}</option>)}
           </select>
-          <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={100} placeholder={t('fila.nomePaciente')} aria-label={t('fila.nomePaciente')} className={`${campo} min-w-[200px] flex-1`} />
+          {!supervisao && <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={100} placeholder={t('fila.nomePaciente')} aria-label={t('fila.nomePaciente')} className={`${campo} min-w-[200px] flex-1`} />}
           <button type="button" onClick={() => window.print()} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink"><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</button>
         </div>
         <div className="flex flex-wrap gap-1">
@@ -109,7 +111,7 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
 export default function FilaPage() {
   const t = useTranslations('Casos')
   return (
-    <LayoutCasos perfis={['professor', 'curador']} titulo={t('fila.titulo')} subtitulo={t('fila.subtitulo')}>
+    <LayoutCasos perfis={['administrador', 'professor', 'curador']} titulo={t('fila.titulo')} subtitulo={t('fila.subtitulo')}>
       {(s) => <Fila sessao={s} />}
     </LayoutCasos>
   )

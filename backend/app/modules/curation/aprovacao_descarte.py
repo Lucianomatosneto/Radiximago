@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User
 
 from .common import (
@@ -25,7 +25,7 @@ from .schemas import CurationApprove, CurationDiscard
 def aprovar_curadoria(
     curation_id: int,
     dados: CurationApprove,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Aprova a ficha. Regra LGPD: so libera com anonimizacao validada."""
@@ -57,7 +57,7 @@ def aprovar_curadoria(
 def descartar_curadoria(
     curation_id: int,
     dados: CurationDiscard,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Descarta a ficha (a imagem nao sera usada). Exige justificativa."""
@@ -88,7 +88,7 @@ def descartar_curadoria(
 @router.post("/{curation_id}/reabrir")
 def reabrir_para_edicao(
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """

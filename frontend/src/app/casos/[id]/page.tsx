@@ -34,6 +34,9 @@ export default function PastaPage() {
   const [caso, setCaso] = useState<DetalheCaso | null>(null)
   const [indice, setIndice] = useState(0)
   const [erro, setErro] = useState('')
+  // administrador: abre a pasta so depois de informar o motivo (somente leitura, 30 min, auditado)
+  const [precisaMotivo, setPrecisaMotivo] = useState(false)
+  const [motivo, setMotivo] = useState('')
   const [aviso, setAviso] = useState(busca.get('enviada') ? 'enviada' : '')
   const [painel, setPainel] = useState<'' | 'editar' | 'compartilhar' | 'link' | 'curador' | 'classificar' | 'aluno' | 'versoes' | 'concluir' | 'reabrir'>('')
   // trava contra clique duplo nas confirmacoes (concluir/reabrir)
@@ -61,7 +64,8 @@ export default function PastaPage() {
     obterSessaoAtual().then((s) => {
       if (!s) return router.push('/login')
       setSessao(s)
-      carregar()
+      if (s.perfil === 'administrador') setPrecisaMotivo(true)
+      else carregar()
       apiJson<{ tratamentos: string[] }>('/casos/opcoes').then((o) => setListaTratamentos(o.tratamentos)).catch(() => {})
     })
   }, [router, carregar])
@@ -99,9 +103,9 @@ export default function PastaPage() {
       if (qual === 'versoes') setVersoes((await apiJson<{ revisoes: RevisaoCaso[] }>(`/casos/${id}/revisoes`)).revisoes)
       if (qual === 'editar' && caso) {
         setEdicao({
-          nome: caso.paciente.nome, nascimento: caso.paciente.nascimento || '', genero: caso.paciente.genero,
-          contato: caso.paciente.contato, prontuario: caso.paciente.prontuario || '', observacoes: caso.paciente.observacoes || '',
-          descricao: caso.descricao,
+          nome: caso.paciente.nome, nascimento: caso.paciente.nascimento || '', genero: caso.paciente.genero ?? '',
+          contato: caso.paciente.contato ?? '', prontuario: caso.paciente.prontuario || '', observacoes: caso.paciente.observacoes || '',
+          descricao: caso.descricao ?? '',
         })
       }
     } catch (e) {
@@ -139,6 +143,43 @@ export default function PastaPage() {
     } catch (e) {
       setErro((e as Error).message)
     }
+  }
+
+  if (sessao && precisaMotivo && !caso) {
+    return (
+      <div className="flex min-h-screen bg-base">
+        <Sidebar recolhivel />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar />
+          <main className="flex-1 p-3 sm:p-6">
+            <form
+              className="mx-auto max-w-xl space-y-3 rounded-2xl border border-base-border bg-base-surface p-5"
+              onSubmit={async (e) => {
+                e.preventDefault()
+                setErro('')
+                try {
+                  await apiJson(`/casos/${id}/justificar-acesso`, { method: 'POST', body: JSON.stringify({ motivo }) })
+                  setPrecisaMotivo(false)
+                  carregar()
+                } catch (x) {
+                  setErro((x as Error).message)
+                }
+              }}
+            >
+              <h1 className="titulo-pagina">{t('justificativa.titulo')} #{id}</h1>
+              <p className="text-sm text-slate-500">{t('justificativa.texto')}</p>
+              <label className="block text-sm text-ink">
+                {t('justificativa.campo')}
+                <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} minLength={10} maxLength={300} rows={3} required className="mt-1 w-full rounded-lg border border-base-border bg-base-surface2 p-2 text-sm text-ink" />
+              </label>
+              {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-300" role="alert">{erro}</p>}
+              <button type="submit" disabled={motivo.trim().length < 10} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{t('justificativa.botao')}</button>
+              <p className="text-xs text-slate-500"><AvisoNaoDiagnostico compacto /></p>
+            </form>
+          </main>
+        </div>
+      </div>
+    )
   }
 
   if (!sessao || (!caso && !erro)) {
@@ -270,11 +311,11 @@ export default function PastaPage() {
 
               <section className="flex flex-wrap gap-2 rounded-2xl border border-base-border bg-base-surface p-3">
                 {equipe && <Link href={`/casos/estudo?sel=${imagens.map((i) => `${caso.id}-${i.id}`).join(',')}&inicio=${indice}`} className={botaoForte}><Pencil aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.revisar')}</Link>}
-                <button type="button" className={botao} onClick={() => abrirPainel('editar')}>{t('acoes.editarPaciente')}</button>
+                {caso.pode.editar_paciente && <button type="button" className={botao} onClick={() => abrirPainel('editar')}>{t('acoes.editarPaciente')}</button>}
                 {caso.pode.compartilhar && <button type="button" className={botao} onClick={() => abrirPainel('compartilhar')}>{t('acoes.compartilhar')}</button>}
                 {equipe && <button type="button" className={botao} onClick={() => abrirPainel('link')}><Mail aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.email')}</button>}
                 <Link href={`/casos/${caso.id}/imprimir`} className={botao}><Printer aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.imprimir')}</Link>
-                {atual && <a href={urlFoto(caso.id, atual.id, { baixar: true })} className={botao}><Download aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.baixar')}</a>}
+                {atual && caso.pode.editar_paciente && <a href={urlFoto(caso.id, atual.id, { baixar: true })} className={botao}><Download aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('acoes.baixar')}</a>}
                 {caso.pode.encaminhar_curador && <button type="button" className={botao} onClick={() => abrirPainel('curador')}>{t('acoes.encaminharCurador')}</button>}
                 {caso.pode.classificar && <button type="button" className={botaoForte} onClick={() => abrirPainel('classificar')}>{t('acoes.classificar')}</button>}
                 {caso.pode.encaminhar_aluno && <button type="button" className={botaoForte} onClick={() => abrirPainel('aluno')}>{t('acoes.encaminharAluno')}</button>}

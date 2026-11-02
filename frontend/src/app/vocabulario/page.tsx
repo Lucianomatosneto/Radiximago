@@ -15,7 +15,7 @@ import { obterSessaoAtual } from '../../lib/sessao'
 //    por voz. Ver backend/app/modules/vocabulario_router.py.
 
 const API = process.env.NEXT_PUBLIC_API_URL
-const PERFIS_PERMITIDOS = ['administrador', 'curador', 'suporte']
+const PERFIS_PERMITIDOS = ['administrador', 'curador']
 const CATEGORIAS = ['achado', 'alteracao', 'outro'] as const
 
 interface TermoLivre {

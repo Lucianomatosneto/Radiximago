@@ -376,3 +376,14 @@ def obter_token(client: TestClient, email: str, senha: str = SENHA_TESTE) -> str
 
 def cabecalho_auth(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
+
+
+def completar_ficha(db, ficha):
+    """Preenche os campos MINIMOS para a ficha poder ser aprovada (02/11/2026:
+    o servidor recusa aprovacao incompleta). Usado pelos testes que aprovam."""
+    ficha.dentes = ficha.dentes or [36]
+    ficha.alteracoes_observadas = ficha.alteracoes_observadas or ["carie_dentina"]
+    ficha.qualidade_tecnica = ficha.qualidade_tecnica or "boa"
+    ficha.descricao_didatica = ficha.descricao_didatica or "Descricao didatica de teste."
+    db.commit()
+    return ficha

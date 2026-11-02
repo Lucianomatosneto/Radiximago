@@ -10,7 +10,7 @@ import { obterSessaoAtual } from '../../lib/sessao'
 // aprovada para corrigir. Ela volta para "em analise" (sai da busca ate ser
 // aprovada de novo) e abre na tela de Curadoria. Historico guardado.
 // Backend: POST /curation/{id}/reabrir (curation/aprovacao_descarte.py)
-const PERFIS = ['administrador', 'curador', 'suporte']
+const PERFIS = ['administrador', 'curador']
 
 export default function BotaoEditarCuradoria({ curationId }: { curationId: number }) {
   const t = useTranslations('Curadoria')

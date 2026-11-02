@@ -2,9 +2,11 @@
 Rotas das PASTAS DE PACIENTES (ver app/modules/casos.py).
 
 Quem pode ver uma pasta (_pode_ver): o aluno autor, o aluno que recebeu o
-tratamento, professores e curadores. Administrador, suporte e pesquisador
-NAO veem as imagens nem os dados do paciente (o administrador ve so o
-registro de acessos). Toda abertura de pasta e de foto fica na auditoria
+tratamento, professores e curadores. Suporte e pesquisador NAO veem. O
+administrador (02/11/2026) acompanha fila e tratamentos SEM dados do paciente
+("Pasta #N") e so ABRE uma pasta (dados e fotos, somente leitura) depois de
+informar o motivo em POST /casos/{id}/justificar-acesso (vale 30 min, so para
+essa pasta, fica na auditoria). Toda abertura de pasta e de foto fica na auditoria
 (caso_visualizado).
 
 Aluno (e professor/curador, que tambem podem cadastrar):
@@ -70,7 +72,13 @@ router = APIRouter(prefix="/casos", tags=["Pastas de pacientes"])
 MAX_FOTOS_POR_PASTA = 30
 PERFIS_EQUIPE = {UserRole.professor, UserRole.curador}            # veem todas as pastas
 PERFIS_CADASTRO = {UserRole.estudante, UserRole.professor, UserRole.curador}
+# Supervisao (02/11/2026): o administrador ACOMPANHA a fila e os tratamentos
+# (etapa, aluno, professor, tempo parado) para ver se o fluxo anda e onde ha
+# erro, mas SEM dados do paciente (nome, contato, idade, genero, descricao,
+# fotos) - minimizacao de dados (LGPD art. 6, III). Cada consulta e auditada.
+PERFIS_SUPERVISAO = {UserRole.administrador}
 PERFIS_REGISTRO_ACESSOS = {UserRole.administrador, UserRole.curador, UserRole.professor}
+JANELA_JUSTIFICATIVA = timedelta(minutes=30)  # administrador: quanto tempo vale a justificativa para abrir uma pasta
 JANELA_ABERTURA_PASTA = timedelta(seconds=30)  # uma "abriu a pasta" por pessoa a cada 30 s
 JANELA_REGISTRO_FOTO = timedelta(minutes=10)  # uma linha de auditoria por pessoa/pasta a cada 10 min nas fotos
 
@@ -85,6 +93,22 @@ def _pode_ver(usuario: User, caso: CasoClinico) -> bool:
     return False
 
 
+def _supervisao_justificada(db: Session, usuario: User, caso_id: int) -> bool:
+    """Administrador so ABRE uma pasta (dados e fotos do paciente) se justificou o motivo
+    nos ultimos JANELA_JUSTIFICATIVA (decisao de 02/11/2026). Somente leitura."""
+    if usuario.perfil not in PERFIS_SUPERVISAO:
+        return False
+    return db.query(AuditLog.id).filter(
+        AuditLog.usuario_id == usuario.id, AuditLog.entidade == "caso", AuditLog.entidade_id == caso_id,
+        AuditLog.acao == "caso_acesso_justificado", AuditLog.resultado == "sucesso",
+        AuditLog.criado_em >= datetime.now(timezone.utc) - JANELA_JUSTIFICATIVA).first() is not None
+
+
+def _exigir_leitura_e_escrita(usuario: User) -> None:
+    if usuario.perfil in PERFIS_SUPERVISAO:
+        raise HTTPException(status_code=403, detail="Acesso negado para o seu perfil: somente leitura.")
+
+
 def _exigir_perfil(usuario: User, perfis: set) -> None:
     if usuario.perfil not in perfis:
         raise HTTPException(status_code=403, detail="Acesso negado para o seu perfil.")
@@ -92,7 +116,7 @@ def _exigir_perfil(usuario: User, perfis: set) -> None:
 
 def _buscar_caso(db: Session, caso_id: int, usuario: User, acao_negada: str = "caso_acesso_negado") -> CasoClinico:
     caso = db.query(CasoClinico).filter(CasoClinico.id == caso_id).first()
-    if not caso or not _pode_ver(usuario, caso):
+    if not caso or not (_pode_ver(usuario, caso) or _supervisao_justificada(db, usuario, caso_id)):
         # 404 tambem para "existe mas nao e sua" - nao revela que a pasta existe
         if caso:
             db.add(AuditLog(usuario_id=usuario.id, acao=acao_negada, entidade="caso", entidade_id=caso_id,
@@ -223,6 +247,18 @@ class EdicaoPaciente(BaseModel):
         return v
 
 
+class JustificativaAcesso(BaseModel):
+    motivo: str = Field(min_length=10, max_length=300)
+
+    @field_validator("motivo")
+    @classmethod
+    def _motivo_limpo(cls, v: str) -> str:
+        v = " ".join(v.split())
+        if len(v) < 10:
+            raise ValueError("Explique o motivo com pelo menos 10 caracteres.")
+        return v
+
+
 class Destino(BaseModel):
     para_id: int
 
@@ -261,16 +297,19 @@ def _dados_imagem(i: CasoImagem) -> dict:
 
 def _resumo(db: Session, caso: CasoClinico, usuario: User) -> dict:
     """Linha das grades/listas: paciente, aluno, etapa e as RADIOGRAFIAS (sem o termo)."""
-    radiografias = [i for i in caso.imagens if i.tipo == TipoImagemCaso.RADIOGRAFIA.value]
+    supervisao = usuario.perfil in PERFIS_SUPERVISAO
+    radiografias = [] if supervisao else [i for i in caso.imagens if i.tipo == TipoImagemCaso.RADIOGRAFIA.value]
     versoes = db.query(func.count(CasoRevisao.id)).filter(CasoRevisao.caso_id == caso.id).scalar() or 0
+    paciente = ({"nome": f"Pasta #{caso.id}", "idade": None, "genero": None, "contato": None} if supervisao else
+                {"nome": caso.paciente_nome, "idade": _idade(caso.paciente_nascimento),
+                 "genero": caso.paciente_genero, "contato": caso.paciente_contato})
     return {
         "id": caso.id,
-        "paciente": {"nome": caso.paciente_nome, "idade": _idade(caso.paciente_nascimento),
-                     "genero": caso.paciente_genero, "contato": caso.paciente_contato},
+        "paciente": paciente,
         "aluno": _nome(caso.aluno),
         "professor": _nome(caso.professor),
         "modalidade": caso.modalidade,
-        "descricao": caso.descricao,
+        "descricao": None if supervisao else caso.descricao,
         "etapa": caso.etapa,
         "tratamentos": caso.tratamentos or [],
         "tratamento_escolhido": caso.tratamento_escolhido,
@@ -465,8 +504,15 @@ def fila(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """Curador: aguardando classificacao + na fila. Professor: na fila (Aguardando tratamento)."""
-    _exigir_perfil(usuario, PERFIS_EQUIPE)
+    """Curador: aguardando classificacao + na fila. Professor: na fila (Aguardando tratamento).
+    Administrador: a mesma fila, so para supervisao (paciente anonimizado, sem busca por nome)."""
+    _exigir_perfil(usuario, PERFIS_EQUIPE | PERFIS_SUPERVISAO)
+    supervisao = usuario.perfil in PERFIS_SUPERVISAO
+    if supervisao and busca:
+        raise HTTPException(status_code=422, detail="A busca por nome de paciente não está disponível para o seu perfil.")
+    if supervisao:
+        _auditar(db, usuario, "caso_fila_supervisao", None)
+        db.commit()
     etapas = [EtapaCaso.AGUARDANDO_CLASSIFICACAO.value, EtapaCaso.NA_FILA.value]
     if etapa is not None:
         if etapa.value not in etapas:
@@ -490,20 +536,26 @@ def alunos_e_pacientes(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    """Alunos e os pacientes que estao tratando - busca pelo nome do aluno OU do paciente."""
-    _exigir_perfil(usuario, PERFIS_EQUIPE)
+    """Alunos e os pacientes que estao tratando - busca pelo nome do aluno OU do paciente.
+    Administrador: so supervisao (paciente e contato ocultos; busca so pelo aluno)."""
+    _exigir_perfil(usuario, PERFIS_EQUIPE | PERFIS_SUPERVISAO)
+    supervisao = usuario.perfil in PERFIS_SUPERVISAO
+    if supervisao:
+        _auditar(db, usuario, "caso_tratamentos_supervisao", None)
+        db.commit()
     etapas = [situacao] if situacao else [EtapaCaso.EM_TRATAMENTO.value, EtapaCaso.CONCLUIDO.value]
     consulta = (db.query(CasoClinico).join(User, User.id == CasoClinico.aluno_tratamento_id)
                 .filter(CasoClinico.etapa.in_(etapas)))
     if busca and busca.strip():
         termo = f"%{busca.strip()}%"
-        consulta = consulta.filter(or_(CasoClinico.paciente_nome.ilike(termo), User.nome.ilike(termo)))
+        consulta = consulta.filter(User.nome.ilike(termo) if supervisao else
+                                   or_(CasoClinico.paciente_nome.ilike(termo), User.nome.ilike(termo)))
     lista = consulta.order_by(User.nome.asc(), CasoClinico.encaminhado_tratamento_em.desc()).limit(1000).all()
     saida = []
     for c in lista:
         saida.append({
-            "id": c.id, "aluno": _nome(c.aluno_tratamento), "paciente": c.paciente_nome,
-            "contato": c.paciente_contato, "tratamento": c.tratamento_escolhido,
+            "id": c.id, "aluno": _nome(c.aluno_tratamento), "paciente": f"Pasta #{c.id}" if supervisao else c.paciente_nome,
+            "contato": None if supervisao else c.paciente_contato, "tratamento": c.tratamento_escolhido,
             "encaminhado_por": _nome(c.encaminhado_tratamento_por),
             "encaminhado_em": _iso(c.encaminhado_tratamento_em), "situacao": c.etapa,
             "concluido_em": _iso(c.concluido_em),
@@ -599,7 +651,7 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
                 equipe or usuario.id == caso.aluno_tratamento_id),
             "reabrir_tratamento": equipe and caso.etapa == EtapaCaso.CONCLUIDO.value
             and caso.aluno_tratamento_id is not None,
-            "editar_paciente": True,
+            "editar_paciente": usuario.perfil not in PERFIS_SUPERVISAO,
         },
     }
 
@@ -613,6 +665,8 @@ def foto(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
+    if baixar:
+        _exigir_leitura_e_escrita(usuario)  # administrador so olha; nao baixa a foto do paciente
     caso = _buscar_caso(db, caso_id, usuario)
     imagem = db.query(CasoImagem).filter(CasoImagem.id == imagem_id, CasoImagem.caso_id == caso.id).first()
     if not imagem:
@@ -634,6 +688,19 @@ def foto(
     nome = f"pasta-{caso.id}-imagem-{imagem.ordem + 1}.jpg"
     return Response(content=conteudo, media_type="image/jpeg", headers={
         "Cache-Control": "private, no-store", "Content-Disposition": disposicao_de_arquivo(nome, baixar=baixar)})
+
+
+@router.post("/{caso_id}/justificar-acesso")
+def justificar_acesso(caso_id: int, dados: JustificativaAcesso, usuario: User = Depends(obter_usuario_atual),
+                      db: Session = Depends(get_db)):
+    """Administrador: registra o MOTIVO para abrir uma pasta (somente leitura, 30 min).
+    Nao escreva dados do paciente no motivo - ele fica na auditoria."""
+    _exigir_perfil(usuario, PERFIS_SUPERVISAO)
+    if not db.query(CasoClinico.id).filter(CasoClinico.id == caso_id).first():
+        raise HTTPException(status_code=404, detail="Pasta não encontrada.")
+    _auditar(db, usuario, "caso_acesso_justificado", caso_id, dados.motivo)
+    db.commit()
+    return {"valido_por_minutos": int(JANELA_JUSTIFICATIVA.total_seconds() // 60)}
 
 
 @router.get("/{caso_id}/revisoes")
@@ -683,6 +750,7 @@ def editar_paciente(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
+    _exigir_leitura_e_escrita(usuario)
     caso = _buscar_caso(db, caso_id, usuario)
     campos = {
         "nome": "paciente_nome", "nascimento": "paciente_nascimento", "genero": "paciente_genero",
@@ -869,6 +937,7 @@ def concluir(
 ):
     """A tela pede CONFIRMACAO antes (01/11/2026 - QA item 3); `nota`
     opcional vai para o historico da pasta. Desfazer: /reabrir-tratamento."""
+    _exigir_leitura_e_escrita(usuario)  # administrador so le
     caso = _buscar_caso(db, caso_id, usuario)
     if caso.etapa != EtapaCaso.EM_TRATAMENTO.value:
         raise HTTPException(status_code=409, detail="Esta pasta não está em tratamento.")

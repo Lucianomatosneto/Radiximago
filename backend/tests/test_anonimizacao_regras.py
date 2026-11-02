@@ -132,6 +132,10 @@ def test_curador_ve_o_resultado_e_aprovacao_registra_a_conferencia(client, criar
     assert dados["texto_na_imagem"] == TARJADO and dados["texto_regioes"] == 3
     # sem marcar "anonimizacao validada" nao aprova
     assert client.post(f"/curation/{ficha.id}/approve", json={"anonimizacao_validada": False}, headers=cab).status_code == 422
+    # 02/11/2026: ficha incompleta tambem nao libera
+    assert client.post(f"/curation/{ficha.id}/approve", json={"anonimizacao_validada": True}, headers=cab).status_code == 422
+    from tests.conftest import completar_ficha
+    completar_ficha(db, ficha)
     r = client.post(f"/curation/{ficha.id}/approve", json={"anonimizacao_validada": True}, headers=cab)
     assert r.status_code == 200, r.text
     log = (db.query(AuditLog).filter(AuditLog.entidade_id == ficha.id, AuditLog.resultado == "sucesso")

@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, exigir_perfis, obter_usuario_atual
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis, obter_usuario_atual
 from app.modules.busca_texto import condicao_busca_texto
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.users import User
@@ -225,7 +225,7 @@ def termos_livres(
 @router.post("/termos")
 def criar_termo(
     dados: TermoEntrada,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     normalizado = normalizar(dados.termo)
@@ -260,7 +260,7 @@ def criar_termo(
 def editar_termo(
     termo_id: int,
     dados: TermoEdicao,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     termo = _buscar_termo(db, termo_id)
@@ -287,7 +287,7 @@ def editar_termo(
 def adicionar_sinonimo(
     termo_id: int,
     dados: SinonimoEntrada,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     termo = _buscar_termo(db, termo_id)
@@ -306,7 +306,7 @@ def adicionar_sinonimo(
 @router.delete("/sinonimos/{sinonimo_id}")
 def remover_sinonimo(
     sinonimo_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     sinonimo = db.query(SinonimoTermo).filter(SinonimoTermo.id == sinonimo_id).first()
@@ -360,7 +360,7 @@ def fichas_candidatas(
 def vincular_fichas(
     termo_id: int,
     dados: VinculoEntrada,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     termo = _buscar_termo(db, termo_id)
@@ -381,7 +381,7 @@ def vincular_fichas(
 def desvincular_ficha(
     termo_id: int,
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     ligacao = (

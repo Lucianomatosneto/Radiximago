@@ -43,7 +43,7 @@ def test_achados_unificados_derivam_resumo_e_busca(client, criar_usuario, criar_
     assert db.query(Achado).filter(Achado.curation_id == ficha.id).count() == 1
 
     # aprovada: busca achado + dente (correlacionada) encontra
-    client.patch(f"/curation/{ficha.id}", headers=h, json={"anonimizacao_validada": True})
+    client.patch(f"/curation/{ficha.id}", headers=h, json={"anonimizacao_validada": True, "qualidade_tecnica": "boa"})
     assert client.post(f"/curation/{ficha.id}/approve", headers=h, json={"anonimizacao_validada": True}).status_code == 200
     ids = {i["curation_id"] for i in client.get("/search", headers=h, params={"achado": "cisto", "dentes": [36], "limit": 200}).json()["itens"]}
     assert ficha.id in ids
@@ -103,6 +103,7 @@ def test_estudante_ve_erro_tecnico_so_quando_registrado(client, criar_usuario, c
     for ficha, erros in ((com_erro, ["imagem_fantasma", "rotacao_cabeca"]), (sem_erro, [])):
         client.patch(f"/curation/{ficha.id}", headers=h, json={
             "tipo_radiografia": "panoramica", "anonimizacao_validada": True, "erros_tecnicos": erros,
+            "dentes": [36], "alteracoes_observadas": ["carie_dentina"], "qualidade_tecnica": "boa",
         })
         assert client.post(f"/curation/{ficha.id}/approve", headers=h, json={"anonimizacao_validada": True}).status_code == 200
 

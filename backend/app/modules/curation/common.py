@@ -87,6 +87,24 @@ def _exigir_fora_de_segunda_opiniao(ficha: Curation, curation_id: int) -> None:
         )
 
 
+def _campos_minimos_faltando(ficha) -> list:
+    """Campos minimos para LIBERAR uma imagem (Bloco 6, secao 10; decisao de
+    02/11/2026: quem cura e o curador e a regra vale no servidor, nao so na
+    tela). Devolve os nomes (em portugues) do que falta."""
+    faltando = []
+    if not ficha.tipo_radiografia:
+        faltando.append("tipo de radiografia")
+    if not (ficha.dentes or ficha.regioes_imagem):
+        faltando.append("dente ou região anatômica")
+    if not (ficha.achado_principal or ficha.alteracoes_observadas or getattr(ficha, "achados", None)):
+        faltando.append("achado radiográfico")
+    if not ficha.qualidade_tecnica:
+        faltando.append("qualidade técnica")
+    if not (ficha.descricao_didatica or "").strip():
+        faltando.append("descrição didática")
+    return faltando
+
+
 def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, acao="aprovacao", origem=""):
     """
     Aplica a aprovacao a uma ficha. Regra LGPD: so libera com anonimizacao validada.
@@ -101,6 +119,18 @@ def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, 
         raise HTTPException(
             status_code=422,
             detail="Aprovacao bloqueada: a anonimizacao precisa estar validada para liberar a imagem.",
+        )
+
+    faltando = _campos_minimos_faltando(ficha)
+    if faltando:
+        _registrar_auditoria(
+            db, usuario.id, acao, ficha.id, "negado",
+            f"Tentativa de aprovar com campos minimos faltando: {', '.join(faltando)}.{origem}",
+        )
+        db.commit()
+        raise HTTPException(
+            status_code=422,
+            detail="Aprovacao bloqueada: preencha antes de liberar a imagem: " + ", ".join(faltando) + ".",
         )
 
     status_anterior = ficha.status

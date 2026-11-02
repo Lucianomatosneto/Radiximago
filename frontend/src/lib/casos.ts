@@ -31,11 +31,11 @@ export interface RevisaoCaso {
 
 export interface ResumoCaso {
   id: number
-  paciente: { nome: string; idade: number; genero: string; contato: string; nascimento?: string; prontuario?: string | null; observacoes?: string | null }
+  paciente: { nome: string; idade: number | null; genero: string | null; contato: string | null; nascimento?: string; prontuario?: string | null; observacoes?: string | null }
   aluno: string | null
   professor: string | null
   modalidade: string
-  descricao: string
+  descricao: string | null
   etapa: 'enviado' | 'aguardando_classificacao' | 'na_fila' | 'em_tratamento' | 'concluido'
   tratamentos: string[]
   tratamento_escolhido: string | null

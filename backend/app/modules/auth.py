@@ -208,7 +208,11 @@ def obter_usuario_atual(request: Request, token: str | None = Depends(obter_toke
 # consultar aqui para saber "quem pode fazer o que" (ex.: auditoria de LGPD).
 PERFIS_ADMIN = (UserRole.administrador,)
 PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
+# Curadoria: LEITURA (ver fichas, fila, indicadores) inclui o suporte; ESCRITA
+# (aprovar, descartar, editar, achados, vocabulario, macros, voz) NAO: o suporte
+# mantem o ambiente e nao interfere na curadoria cientifica (decisao 02/11/2026).
 PERFIS_CURADORIA = (UserRole.administrador, UserRole.suporte, UserRole.curador)
+PERFIS_CURADORIA_ESCRITA = (UserRole.administrador, UserRole.curador)
 # Quem pode ENVIAR (POST /images/upload) e VER a fila de imagens recebidas -
 # mais amplo que PERFIS_IMAGENS de proposito: professor e curador podem
 # incluir imagens novas e conferir o que ja enviaram, mas continuam SEM

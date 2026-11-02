@@ -37,7 +37,7 @@ import {
 } from '../../components/segundaOpiniao/tipos'
 import { obterSessaoAtual } from '../../lib/sessao'
 
-const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador']
+const PERFIS_PERMITIDOS = ['administrador', 'curador']
 type Aba = 'revisar' | 'devolvidas'
 
 export default function SegundaOpiniaoPage() {

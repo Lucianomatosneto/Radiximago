@@ -95,10 +95,12 @@ def test_aprovar_exige_anonimizacao_validada(client, criar_usuario, criar_ficha)
     assert resposta.status_code == 422
 
 
-def test_aprovar_com_anonimizacao_validada(client, criar_usuario, criar_ficha):
+def test_aprovar_com_anonimizacao_validada(client, criar_usuario, criar_ficha, db):
     usuario = criar_usuario(perfil=UserRole.curador)
     token = obter_token(client, usuario.email)
     ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+    from tests.conftest import completar_ficha
+    completar_ficha(db, ficha)
 
     resposta = client.post(
         f"/curation/{ficha.id}/approve",
@@ -197,13 +199,15 @@ def test_reviews_answered_so_lista_do_proprio_solicitante(client, criar_usuario,
     assert resposta.json()["itens"] == []
 
 
-def test_reviews_answered_some_da_lista_apos_decisao_final(client, criar_usuario, criar_ficha):
+def test_reviews_answered_some_da_lista_apos_decisao_final(client, criar_usuario, criar_ficha, db):
     solicitante = criar_usuario(perfil=UserRole.curador)
     revisor = criar_usuario(perfil=UserRole.curador)
     token_solicitante = obter_token(client, solicitante.email)
     token_revisor = obter_token(client, revisor.email)
 
     ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+    from tests.conftest import completar_ficha
+    completar_ficha(db, ficha)
 
     resposta = client.post(
         f"/curation/{ficha.id}/request-review",

@@ -2835,7 +2835,10 @@
         "caso_encaminhado_aluno": "encaminhou ao aluno",
         "caso_concluido": "concluiu o tratamento",
         "caso_tratamento_reaberto": "reabriu o tratamento",
-        "caso_compartilhamento_removido": "deixou de compartilhar"
+        "caso_compartilhamento_removido": "deixou de compartilhar",
+        "caso_acesso_justificado": "informou o motivo para abrir a pasta",
+        "caso_fila_supervisao": "consultou a fila (supervisão)",
+        "caso_tratamentos_supervisao": "consultou os tratamentos (supervisão)"
       }
     },
     "vazios": {
@@ -2877,7 +2880,14 @@
       "cancelar": "Cancelar",
       "ok": "Deixou de compartilhar com {nome}.",
       "botao": "Deixar de compartilhar com {nome}"
-    }
+    },
+    "justificativa": {
+      "titulo": "Abrir pasta de paciente",
+      "texto": "Esta pasta contém dados e fotos identificados do paciente. Informe o motivo do acesso (sem escrever dados do paciente). O acesso é somente leitura, vale por 30 minutos e fica registrado na auditoria.",
+      "campo": "Motivo do acesso (mínimo 10 caracteres)",
+      "botao": "Registrar motivo e abrir"
+    },
+    "abrirComMotivo": "Abrir com justificativa"
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

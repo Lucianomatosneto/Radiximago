@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis
 from app.modules.achados import TipoErroTecnico
 from app.modules.busca_termos import DENTES_VALIDOS
 from app.modules.curations import AlteracaoObservada, QualidadeTecnica, TipoRadiografia
@@ -179,7 +179,7 @@ def listar_macros(
 @router_macros.post("")
 def criar_macro(
     dados: MacroEntrada,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     normalizado = _nome_valido(db, dados.nome)
@@ -202,7 +202,7 @@ def criar_macro(
 def editar_macro(
     macro_id: int,
     dados: MacroEdicao,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     macro = db.query(MacroCuradoria).filter(MacroCuradoria.id == macro_id).first()
@@ -234,7 +234,7 @@ def editar_macro(
 @router_macros.delete("/{macro_id}")
 def desativar_macro(
     macro_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     macro = db.query(MacroCuradoria).filter(MacroCuradoria.id == macro_id).first()
@@ -259,7 +259,7 @@ def listar_frases(
 @router_frases.post("")
 def ensinar_frase(
     dados: FraseEntrada,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     normalizada = normalizar(dados.frase)
@@ -304,7 +304,7 @@ def ensinar_frase(
 @router_frases.delete("/{frase_id}")
 def esquecer_frase(
     frase_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     frase = db.query(FraseAprendida).filter(FraseAprendida.id == frase_id).first()

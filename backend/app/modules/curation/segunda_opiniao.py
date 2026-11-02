@@ -20,7 +20,7 @@ from sqlalchemy.sql import func
 
 from app.core.database import get_db
 from app.core.limites import MAX_ACHADOS, TEXTO_LONGO_MAX
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User, UserRole
 from app.modules.curations import (
     AchadoPrincipal,
@@ -129,7 +129,7 @@ def _anotacao_para_json(n: CurationReviewNote) -> dict:
 def solicitar_segunda_opiniao(
     curation_id: int,
     dados: ReviewRequest,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Solicita segunda opiniao para uma ficha. Exige justificativa."""
@@ -219,7 +219,7 @@ def solicitar_segunda_opiniao(
 def responder_segunda_opiniao(
     review_id: int,
     dados: ReviewRespond,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -330,7 +330,7 @@ def responder_segunda_opiniao(
 def aplicar_decisao_revisao(
     curation_id: int,
     dados: AplicarDecisaoRevisao,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -497,7 +497,7 @@ def _juntar_texto(atual: str | None, acrescimo: str) -> str:
 def incorporar_anotacao(
     review_id: int,
     nota_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     review, nota, ficha = _carregar_para_resolver(db, review_id, nota_id, usuario)
@@ -546,7 +546,7 @@ def incorporar_anotacao(
 def dispensar_anotacao(
     review_id: int,
     nota_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     review, nota, ficha = _carregar_para_resolver(db, review_id, nota_id, usuario)

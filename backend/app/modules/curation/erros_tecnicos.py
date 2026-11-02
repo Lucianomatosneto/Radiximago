@@ -17,7 +17,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User
 from app.modules.achados import ErroTecnico, erro_vale_para_exame
 
@@ -80,7 +80,7 @@ def _buscar_erro_tecnico(db: Session, curation_id: int, erro_id: int) -> ErroTec
 def criar_erro_tecnico(
     curation_id: int,
     dados: ErroTecnicoCreate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Cria um erro tecnico (0..N por ficha), independente de Achado."""
@@ -151,7 +151,7 @@ def atualizar_erro_tecnico(
     curation_id: int,
     erro_id: int,
     dados: ErroTecnicoUpdate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     ficha = _buscar_ficha(db, curation_id)
@@ -186,7 +186,7 @@ def atualizar_erro_tecnico(
 def excluir_erro_tecnico(
     curation_id: int,
     erro_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     ficha = _buscar_ficha(db, curation_id)

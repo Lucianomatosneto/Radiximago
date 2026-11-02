@@ -2835,7 +2835,10 @@
         "caso_encaminhado_aluno": "referred to student",
         "caso_concluido": "completed treatment",
         "caso_tratamento_reaberto": "reopened the treatment",
-        "caso_compartilhamento_removido": "stopped sharing"
+        "caso_compartilhamento_removido": "stopped sharing",
+        "caso_acesso_justificado": "gave a reason to open the folder",
+        "caso_fila_supervisao": "viewed the queue (oversight)",
+        "caso_tratamentos_supervisao": "viewed the treatments (oversight)"
       }
     },
     "vazios": {
@@ -2877,7 +2880,14 @@
       "cancelar": "Cancel",
       "ok": "Stopped sharing with {nome}.",
       "botao": "Stop sharing with {nome}"
-    }
+    },
+    "justificativa": {
+      "titulo": "Open patient folder",
+      "texto": "This folder contains identified patient data and photos. State the reason for access (without writing patient data). Access is read-only, lasts 30 minutes and is recorded in the audit log.",
+      "campo": "Reason for access (at least 10 characters)",
+      "botao": "Record reason and open"
+    },
+    "abrirComMotivo": "Open with reason"
   },
   "Navegacao": {
     "trilha": "Breadcrumb",

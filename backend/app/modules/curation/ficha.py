@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
@@ -31,7 +31,7 @@ def _regioes_unicas(regioes) -> list[str] | None:
 def criar_curadoria(
     orthanc_reference_id: int,
     dados: CurationCreate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Cria a ficha de curadoria de uma imagem (status inicial: em_analise)."""
@@ -173,7 +173,7 @@ def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id
 def editar_curadoria(
     curation_id: int,
     dados: CurationUpdate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """

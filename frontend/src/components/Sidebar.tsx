@@ -66,8 +66,8 @@ const ITENS_MENU: ItemMenu[] = [
   // Pastas de pacientes (fotos do negatoscopio) - 31/10/2026
   { chave: 'uploadCamera', href: '/casos/novo', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador'], cor: COR_TEAL },
   { chave: 'meusPacientes', href: '/casos/meus-tratamentos', ativo: true, icone: Stethoscope, perfis: ['estudante'], cor: COR_CYAN },
-  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, icone: Hourglass, perfis: ['professor', 'curador'], cor: COR_CYAN },
-  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, icone: GraduationCap, perfis: ['professor', 'curador'], cor: COR_TEAL },
+  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, icone: Hourglass, perfis: ['administrador', 'professor', 'curador'], cor: COR_CYAN },
+  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, icone: GraduationCap, perfis: ['administrador', 'professor', 'curador'], cor: COR_TEAL },
   { chave: 'registroAcessos', href: '/casos/acessos', ativo: true, icone: History, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD },
   { chave: 'vocabulario', href: '/vocabulario', ativo: true, icone: Tags, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
   { chave: 'macros', href: '/macros', ativo: true, icone: Zap, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },

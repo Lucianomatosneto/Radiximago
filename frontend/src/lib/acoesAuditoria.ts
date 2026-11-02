@@ -171,6 +171,9 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('caso_encaminhado_aluno', 'Paciente encaminhado ao aluno', 'Patient referred to student'),
       a('caso_concluido', 'Tratamento concluído', 'Treatment finished'),
       a('caso_tratamento_reaberto', 'Tratamento reaberto', 'Treatment reopened'),
+      a('caso_acesso_justificado', 'Motivo informado para abrir a pasta', 'Reason given to open the folder'),
+      a('caso_fila_supervisao', 'Fila de pastas consultada (supervisão)', 'Folder queue viewed (oversight)'),
+      a('caso_tratamentos_supervisao', 'Tratamentos consultados (supervisão)', 'Treatments viewed (oversight)'),
     ],
   },
   {

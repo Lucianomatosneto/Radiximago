@@ -27,7 +27,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis
 from app.modules.users import User
 from app.modules.vocabulario import SinonimoTermo, TermoVocabulario
 
@@ -107,7 +107,7 @@ def saude_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
 
 
 @router.post("/aquecer")
-def aquecer_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA))):
+def aquecer_voz(usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA))):
     """O curador abriu o microfone: pede ao servico local que carregue o
     modelo agora, para a 1a fala ja ser transcrita rapido. Sem audio e sem
     dado pessoal - so um aviso. Falha aqui nao atrapalha a curadoria."""
@@ -126,7 +126,7 @@ def transcrever(
     arquivo: UploadFile = File(...),
     rapido: bool = Form(default=False),
     etapa: str = Form(default="", max_length=40),
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     tipo = (arquivo.content_type or "").split(";")[0].strip().lower()

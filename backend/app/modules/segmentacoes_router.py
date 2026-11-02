@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import PERFIS_CURADORIA, obter_usuario_atual
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, obter_usuario_atual
 from app.modules.compartilhamentos import CompartilhamentoImagem
 from app.modules.curation.common import STATUS_EDITAVEIS, _registrar_auditoria
 from app.modules.curations import Curation, DENTES_PERMANENTES, StatusCuradoria
@@ -117,8 +117,12 @@ def _ficha(db: Session, curation_id: int) -> Curation:
     return ficha
 
 
+def _eh_curadoria_escrita(usuario: User) -> bool:
+    return _perfil(usuario) in {p.value for p in PERFIS_CURADORIA_ESCRITA}
+
+
 def _exigir_pintor(usuario: User, ficha: Curation) -> None:
-    if not _eh_curadoria(usuario):
+    if not _eh_curadoria_escrita(usuario):
         raise HTTPException(status_code=403, detail="Somente a curadoria pode pintar estruturas.")
     if ficha.status not in STATUS_EDITAVEIS:
         raise HTTPException(status_code=409, detail="A ficha já foi finalizada e não pode mais ser pintada.")

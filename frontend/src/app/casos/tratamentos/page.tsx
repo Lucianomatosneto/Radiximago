@@ -89,7 +89,7 @@ function Tabela() {
               <tbody>
                 {lista.map((l) => (
                   <tr key={l.id} className="border-b border-base-border/60">
-                    <td className="px-2 py-1.5"><Link href={`/casos/${l.id}`} className="font-medium text-brand hover:underline">{l.paciente}</Link></td>
+                    <td className="px-2 py-1.5"><Link href={`/casos/${l.id}`} className="font-medium text-brand hover:underline" title={l.contato === null ? t('abrirComMotivo') : undefined}>{l.paciente}{l.contato === null ? ` · ${t('abrirComMotivo')}` : ''}</Link></td>
                     <td className="px-2 py-1.5 text-ink">{l.contato}</td>
                     <td className="px-2 py-1.5 text-ink">{l.tratamento ? t(`tratamentos.${l.tratamento}`) : '—'}</td>
                     <td className="px-2 py-1.5 text-slate-500">{l.encaminhado_por} · {dataHora(l.encaminhado_em)}</td>
@@ -108,7 +108,7 @@ function Tabela() {
 export default function TratamentosPage() {
   const t = useTranslations('Casos')
   return (
-    <LayoutCasos perfis={['professor', 'curador']} titulo={t('tratamentosLista.titulo')} subtitulo={t('tratamentosLista.subtitulo')}>
+    <LayoutCasos perfis={['administrador', 'professor', 'curador']} titulo={t('tratamentosLista.titulo')} subtitulo={t('tratamentosLista.subtitulo')}>
       {() => <Tabela />}
     </LayoutCasos>
   )

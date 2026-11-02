@@ -7,7 +7,17 @@ o log em vez de uma caixa de entrada real.
 
 import logging
 
+import pytest
+
+from app.core.config import settings
 from app.core.email import enviar_email_redefinicao_senha
+
+
+@pytest.fixture(autouse=True)
+def _sem_smtp_real(monkeypatch):
+    """Garante que o teste nunca envia e-mail de verdade, mesmo com SMTP no .env."""
+    monkeypatch.setattr(settings, "SMTP_HOST", "")
+    monkeypatch.setattr(settings, "ENVIRONMENT", "development")
 
 
 def test_email_redefinicao_senha_em_portugues(caplog):

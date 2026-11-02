@@ -54,6 +54,11 @@ def test_curador_conta_propria_ficha_e_aprovacao_no_mes(client, criar_usuario, c
     assert resposta_meio["curadorias_no_mes"] == 1
     assert resposta_meio["aprovadas_no_mes"] == 0
 
+    client.patch(
+        f"/curation/{criada['curation_id']}",
+        headers=cabecalho_auth(token),
+        json={"dentes": [36], "alteracoes_observadas": ["carie_dentina"], "qualidade_tecnica": "boa", "descricao_didatica": "Teste."},
+    )
     client.post(
         f"/curation/{criada['curation_id']}/approve",
         headers=cabecalho_auth(token),
