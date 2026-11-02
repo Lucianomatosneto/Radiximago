@@ -193,6 +193,7 @@ def consultar_auditoria(
     resultado: Optional[str] = Query(None, max_length=20, description="sucesso, negado ou erro"),
     data_de: Optional[datetime] = Query(None, description="A partir desta data/hora (ISO)"),
     data_ate: Optional[datetime] = Query(None, description="Ate esta data/hora (ISO)"),
+    agrupar: bool = Query(False, description="Juntar registros IGUAIS no mesmo segundo (mostra quantas vezes)"),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
@@ -201,7 +202,12 @@ def consultar_auditoria(
     """
     Consulta os registros de auditoria com filtros opcionais.
     Base para a tela de auditoria (Bloco 4, Tela 12).
+    `agrupar` (01/11/2026, M3): uma pagina que dispara 7 "acesso negado" no
+    mesmo segundo vira UMA linha com "7 vezes" - so na leitura; os registros
+    continuam todos gravados.
     """
+    if agrupar:
+        return _auditoria_agrupada(db, usuario_id, acao, resultado, data_de, data_ate, skip, limit)
     consulta = db.query(AuditLog)
 
     if usuario_id is not None:
@@ -242,6 +248,51 @@ def consultar_auditoria(
         "quantidade_retornada": len(itens),
         "itens": itens,
     }
+
+
+def _auditoria_agrupada(db, usuario_id, acao, resultado, data_de, data_ate, skip, limit) -> dict:
+    segundo = func.date_trunc("second", AuditLog.criado_em).label("segundo")
+    campos = (AuditLog.usuario_id, AuditLog.acao, AuditLog.entidade, AuditLog.entidade_id,
+              AuditLog.resultado, AuditLog.detalhes, AuditLog.rota)
+    consulta = db.query(
+        func.max(AuditLog.id).label("id"), *campos, segundo,
+        func.count(AuditLog.id).label("vezes"), func.max(AuditLog.ip).label("ip"),
+        func.max(AuditLog.criado_em).label("criado_em"),
+    )
+    if usuario_id is not None:
+        consulta = consulta.filter(AuditLog.usuario_id == usuario_id)
+    if acao is not None:
+        consulta = consulta.filter(AuditLog.acao == acao)
+    if resultado is not None:
+        consulta = consulta.filter(AuditLog.resultado == resultado)
+    if data_de is not None:
+        consulta = consulta.filter(AuditLog.criado_em >= data_de)
+    if data_ate is not None:
+        consulta = consulta.filter(AuditLog.criado_em <= data_ate)
+    consulta = consulta.group_by(*campos, segundo)
+    total = consulta.count()
+    linhas = consulta.order_by(func.max(AuditLog.id).desc()).offset(skip).limit(limit).all()
+    itens = [
+        {
+            "id": l.id, "usuario_id": l.usuario_id, "acao": l.acao, "entidade": l.entidade,
+            "entidade_id": l.entidade_id, "resultado": l.resultado, "detalhes": l.detalhes,
+            "criado_em": l.criado_em.isoformat() if l.criado_em else None,
+            "ip": l.ip, "rota": l.rota, "vezes": l.vezes,
+        }
+        for l in linhas
+    ]
+    return {"total": total, "skip": skip, "limit": limit, "quantidade_retornada": len(itens), "itens": itens}
+
+
+@router.get("/audit-logs/acoes")
+def acoes_registradas(
+    db: Session = Depends(get_db),
+    usuario: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
+):
+    """Todas as acoes que existem no registro, com quantas vezes cada uma
+    aparece - o filtro da tela fica sempre completo (M3, 01/11/2026)."""
+    linhas = db.query(AuditLog.acao, func.count(AuditLog.id)).group_by(AuditLog.acao).all()
+    return {"acoes": {acao: total for acao, total in linhas}}
 
 
 JANELA_ORDEM_CONCORRENTE = 20  # quantos registros antes/depois procurar o elo

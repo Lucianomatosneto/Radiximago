@@ -44,6 +44,14 @@
 
 A lista acima é conferida automaticamente com o código (`tests/test_documentacao_confere.py`): ação nova sem documentação faz o teste falhar.
 
+**Na tela Auditoria (01/11/2026, M3):**
+- Toda ação aparece com nome em português, como "Pasta aberta" ou "Usuário reativado", em vez do código. Os nomes ficam em `frontend/src/lib/acoesAuditoria.ts`, e o teste `test_auditoria_legivel.py` falha se uma ação documentada acima ficar sem nome.
+- O filtro agrupa as ações por tema e mostra quantas vezes cada uma aparece. Ações antigas fora desta lista entram em "Outras".
+- Também dá para filtrar por usuário e por período.
+- "Agrupar registros iguais no mesmo segundo" junta, só na leitura, eventos repetidos, como várias recusas de acesso disparadas por uma mesma página. Todos os registros continuam gravados.
+- A coluna "Sobre o quê" usa nomes padronizados, como "Ficha nº 12" ou "Pasta de paciente nº 1".
+- Os detalhes aparecem rotulados: o que aconteceu, o pedido (rota), o endereço de rede e o número do registro.
+
 ## 3. O que **nunca** vai para os registros (ASVS 16.2.5)
 
 - senhas (nem erradas);

@@ -1421,7 +1421,16 @@
       "negado": "Denied",
       "erro": "Error",
       "alerta": "Warning"
-    }
+    },
+    "outrasAcoes": "Others (old records)",
+    "campoUsuario": "User",
+    "agruparRepetidos": "Group identical records in the same second",
+    "vezes": "{n}×",
+    "vezesDica": "Identical records written in the same second, shown as one line (all are still stored).",
+    "detalheTexto": "What happened",
+    "detalheRota": "Request",
+    "detalheIp": "Network address",
+    "detalheRegistro": "Record"
   },
   "Relatorios": {
     "titulo": "Reports and metrics",

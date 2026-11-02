@@ -1421,7 +1421,16 @@
       "negado": "Negado",
       "erro": "Erro",
       "alerta": "Alerta"
-    }
+    },
+    "outrasAcoes": "Outras (registros antigos)",
+    "campoUsuario": "Usuário",
+    "agruparRepetidos": "Agrupar registros iguais no mesmo segundo",
+    "vezes": "{n}×",
+    "vezesDica": "Registros iguais gravados no mesmo segundo, mostrados numa linha só (todos continuam guardados).",
+    "detalheTexto": "O que aconteceu",
+    "detalheRota": "Pedido",
+    "detalheIp": "Endereço de rede",
+    "detalheRegistro": "Registro"
   },
   "Relatorios": {
     "titulo": "Relatórios e indicadores",

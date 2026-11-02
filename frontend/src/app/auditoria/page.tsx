@@ -7,65 +7,13 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { GRUPOS_ACOES, conhecida, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
 const LIMIT = 50
 
 const TAG_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US' }
-
-// Os 19 valores de "acao" que de fato existem na tabela audit_logs, agrupados
-// por categoria (confirmado em auth.py, users_router.py, images_router.py e
-// curation_router.py). "edicao" foi excluida de proposito: so existe em
-// curation_history, nunca em audit_logs. `categoriaChave`/`chave` referenciam
-// o namespace de traducao Auditoria.categorias/Auditoria.acoes - os valores
-// crus (`categoria`/`valor`) continuam existindo so pra bater com o que a
-// API salva/filtra.
-const CATEGORIAS_ACAO: { categoriaChave: string; itens: { valor: string; chave: string }[] }[] = [
-  {
-    categoriaChave: 'acesso',
-    itens: [
-      { valor: 'login', chave: 'login' },
-      { valor: 'falha_login', chave: 'falhaLogin' },
-      { valor: 'logout', chave: 'logout' },
-      { valor: 'troca_senha', chave: 'trocaSenha' },
-      { valor: 'falha_troca_senha', chave: 'falhaTrocaSenha' },
-    ],
-  },
-  {
-    categoriaChave: 'usuarios',
-    itens: [
-      { valor: 'criacao_usuario', chave: 'criacaoUsuario' },
-      { valor: 'edicao_usuario', chave: 'edicaoUsuario' },
-      { valor: 'bloqueio_usuario', chave: 'bloqueioUsuario' },
-      { valor: 'desbloqueio_usuario', chave: 'desbloqueioUsuario' },
-      { valor: 'solicitacao_duplicada_descartada', chave: 'solicitacaoDuplicadaDescartada' },
-    ],
-  },
-  {
-    categoriaChave: 'imagens',
-    itens: [
-      { valor: 'importacao_orthanc', chave: 'importacaoOrthanc' },
-      { valor: 'upload_imagem', chave: 'uploadImagem' },
-      { valor: 'upload_sem_preambulo_dicom', chave: 'uploadSemPreambuloDicom' },
-    ],
-  },
-  {
-    categoriaChave: 'curadoria',
-    itens: [
-      { valor: 'criacao', chave: 'criacao' },
-      { valor: 'edicao_curadoria', chave: 'edicaoCuradoria' },
-      { valor: 'aprovacao', chave: 'aprovacao' },
-      { valor: 'aprovacao_pos_segunda_opiniao', chave: 'aprovacaoPosSegundaOpiniao' },
-      { valor: 'descarte', chave: 'descarte' },
-      { valor: 'descarte_pos_segunda_opiniao', chave: 'descartePosSegundaOpiniao' },
-      { valor: 'solicitacao_segunda_opiniao', chave: 'solicitacaoSegundaOpiniao' },
-      { valor: 'resposta_segunda_opiniao', chave: 'respostaSegundaOpiniao' },
-    ],
-  },
-]
-
-const TODAS_ACOES = CATEGORIAS_ACAO.flatMap((c) => c.itens)
 
 const OPCOES_RESULTADO = ['sucesso', 'negado', 'alerta', 'erro']
 
@@ -85,6 +33,10 @@ interface AuditLogItem {
   resultado: string
   detalhes: string | null
   criado_em: string | null
+  ip?: string | null
+  rota?: string | null
+  /** quantos registros iguais no mesmo segundo (com "agrupar repetidos") */
+  vezes?: number
 }
 
 interface Usuario {
@@ -117,14 +69,8 @@ export default function AuditoriaPage() {
   const locale = useLocale()
   const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
 
-  function rotularAcao(valor: string, detalhes?: string | null): string {
-    // registros antigos (antes de 01/11/2026): a reativacao tambem era
-    // "bloqueio_usuario", com "foi desbloqueado" nos detalhes
-    if (valor === 'bloqueio_usuario' && (detalhes ?? '').includes('desbloqueado')) return t('acoes.desbloqueioUsuario')
-    const item = TODAS_ACOES.find((a) => a.valor === valor)
-    if (!item) return valor
-    return t(`acoes.${item.chave}`)
-  }
+  // M3 (01/11/2026): rotulos de TODAS as acoes vem de lib/acoesAuditoria.ts
+  const rotularAcao = (valor: string, detalhes?: string | null) => rotuloAcao(valor, locale, detalhes)
 
   function rotularResultado(valor: string): string {
     if (!OPCOES_RESULTADO.includes(valor)) return valor
@@ -135,6 +81,10 @@ export default function AuditoriaPage() {
   const [carregando, setCarregando] = useState(true)
 
   const [filtroAcao, setFiltroAcao] = useState('')
+  const [filtroUsuario, setFiltroUsuario] = useState('')
+  const [agrupar, setAgrupar] = useState(true)
+  // quantas vezes cada acao aparece (o filtro mostra todas, inclusive antigas)
+  const [contagemAcoes, setContagemAcoes] = useState<Record<string, number>>({})
   const [filtroResultado, setFiltroResultado] = useState('')
   const [dataDe, setDataDe] = useState('')
   const [dataAte, setDataAte] = useState('')
@@ -160,6 +110,10 @@ export default function AuditoriaPage() {
       }
       setAutenticado(true)
       carregarUsuarios()
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/acoes`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d?.acoes && setContagemAcoes(d.acoes))
+        .catch(() => {})
       buscarLogs(0)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -186,6 +140,8 @@ export default function AuditoriaPage() {
 
     const params = new URLSearchParams()
     if (filtroAcao) params.set('acao', filtroAcao)
+    if (filtroUsuario) params.set('usuario_id', filtroUsuario)
+    if (agrupar) params.set('agrupar', 'true')
     if (filtroResultado) params.set('resultado', filtroResultado)
     if (dataDe) params.set('data_de', `${dataDe}T00:00:00`)
     if (dataAte) params.set('data_ate', `${dataAte}T23:59:59`)
@@ -268,7 +224,7 @@ export default function AuditoriaPage() {
           <IntegridadeAuditoria />
 
           <section className="rounded-xl border border-base-border bg-base-surface p-4">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoAcao')}</label>
                 <select
@@ -277,15 +233,46 @@ export default function AuditoriaPage() {
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
                 >
                   <option value="">{tPesquisa('opcaoTodas')}</option>
-                  {CATEGORIAS_ACAO.map((grupo) => (
-                    <optgroup key={grupo.categoriaChave} label={t(`categorias.${grupo.categoriaChave}`)}>
+                  {GRUPOS_ACOES.map((grupo) => (
+                    <optgroup key={grupo.chave} label={locale === 'en' ? grupo.en : grupo.pt}>
                       {grupo.itens.map((item) => (
                         <option key={item.valor} value={item.valor}>
-                          {t(`acoes.${item.chave}`)}
+                          {locale === 'en' ? item.en : item.pt}
+                          {contagemAcoes[item.valor] ? ` (${contagemAcoes[item.valor]})` : ''}
                         </option>
                       ))}
                     </optgroup>
                   ))}
+                  {Object.keys(contagemAcoes).some((v) => !conhecida(v)) && (
+                    <optgroup label={t('outrasAcoes')}>
+                      {Object.keys(contagemAcoes)
+                        .filter((v) => !conhecida(v))
+                        .sort()
+                        .map((v) => (
+                          <option key={v} value={v}>
+                            {textoLegivel(v)} ({contagemAcoes[v]})
+                          </option>
+                        ))}
+                    </optgroup>
+                  )}
+                </select>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoUsuario')}</label>
+                <select
+                  value={filtroUsuario}
+                  onChange={(e) => setFiltroUsuario(e.target.value)}
+                  className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
+                >
+                  <option value="">{tPesquisa('campoTodos')}</option>
+                  {Object.entries(mapaUsuarios)
+                    .sort((x, y) => x[1].localeCompare(y[1], 'pt-BR'))
+                    .map(([id, nome]) => (
+                      <option key={id} value={id}>
+                        {nome}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -326,7 +313,11 @@ export default function AuditoriaPage() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center gap-3">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-xs text-slate-400">
+                <input type="checkbox" checked={agrupar} onChange={(e) => setAgrupar(e.target.checked)} className="h-4 w-4 accent-teal-500" />
+                {t('agruparRepetidos')}
+              </label>
               <button
                 type="button"
                 onClick={pesquisar}
@@ -361,11 +352,15 @@ export default function AuditoriaPage() {
                     <tr className="text-slate-200">
                       <td className="px-4 py-3 text-slate-400">{formatarData(item.criado_em, tagLocale)}</td>
                       <td className="px-4 py-3">{nomeUsuario(item.usuario_id)}</td>
-                      <td className="px-4 py-3">{rotularAcao(item.acao, item.detalhes)}</td>
-                      <td className="px-4 py-3 text-slate-400">
-                        {item.entidade}
-                        {item.entidade_id !== null ? ` #${item.entidade_id}` : ''}
+                      <td className="px-4 py-3">
+                        {rotularAcao(item.acao, item.detalhes)}
+                        {(item.vezes ?? 1) > 1 && (
+                          <span className="ml-2 rounded-full border border-slate-600/50 px-1.5 text-[11px] text-slate-400" title={t('vezesDica')}>
+                            {t('vezes', { n: item.vezes ?? 1 })}
+                          </span>
+                        )}
                       </td>
+                      <td className="px-4 py-3 text-slate-400">{rotuloEntidade(item.entidade, item.entidade_id, locale)}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
@@ -389,7 +384,28 @@ export default function AuditoriaPage() {
                     {expandidos.has(item.id) && (
                       <tr className="bg-base-surface/60">
                         <td colSpan={6} className="px-4 py-3 text-xs text-slate-400">
-                          {item.detalhes || t('semDetalhes')}
+                          {/* M3: detalhes legiveis, rotulados */}
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+                            <dt className="font-semibold text-slate-500">{t('detalheTexto')}</dt>
+                            <dd className="whitespace-pre-wrap break-words text-ink">{item.detalhes || t('semDetalhes')}</dd>
+                            {item.rota && (
+                              <>
+                                <dt className="font-semibold text-slate-500">{t('detalheRota')}</dt>
+                                <dd className="font-mono">{item.rota}</dd>
+                              </>
+                            )}
+                            {item.ip && (
+                              <>
+                                <dt className="font-semibold text-slate-500">{t('detalheIp')}</dt>
+                                <dd className="font-mono">{item.ip}</dd>
+                              </>
+                            )}
+                            <dt className="font-semibold text-slate-500">{t('detalheRegistro')}</dt>
+                            <dd>
+                              nº {item.id}
+                              {(item.vezes ?? 1) > 1 ? ` · ${t('vezesDica')}` : ''}
+                            </dd>
+                          </dl>
                         </td>
                       </tr>
                     )}
