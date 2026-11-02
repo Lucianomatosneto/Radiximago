@@ -1374,7 +1374,7 @@
     "colData": "Data/hora",
     "colUsuario": "Usuário",
     "colAcao": "Ação",
-    "colEntidade": "Entidade",
+    "colEntidade": "Sobre o quê",
     "colResultado": "Resultado",
     "colDetalhes": "Detalhes",
     "ocultar": "Ocultar",

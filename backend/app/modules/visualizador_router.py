@@ -80,7 +80,10 @@ def autorizar_imagem(
             acao="acesso_imagem_negado",
             entidade="imagem",
             resultado="negado",
-            detalhes=f"{x_original_method[:10]} {x_original_uri[:200]}",
+            # reteste do M3 (01/11/2026): so o CAMINHO, sem a busca (?...) -
+            # a busca do visualizador pode levar o identificador do paciente
+            # (tag DICOM 00100020), mesmo pseudonimizado (LGPD: minimo necessario)
+            detalhes=f"Visualizador pediu {x_original_method[:10]} {x_original_uri.split('?', 1)[0][:200]}",
         ))
         db.commit()
         raise HTTPException(status_code=403, detail="Sem permissão para esta imagem.")

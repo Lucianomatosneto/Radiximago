@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
-import { GRUPOS_ACOES, conhecida, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
+import { GRUPOS_ACOES, conhecida, detalhesLegiveis, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -387,11 +387,11 @@ export default function AuditoriaPage() {
                           {/* M3: detalhes legiveis, rotulados */}
                           <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
                             <dt className="font-semibold text-slate-500">{t('detalheTexto')}</dt>
-                            <dd className="whitespace-pre-wrap break-words text-ink">{item.detalhes || t('semDetalhes')}</dd>
+                            <dd className="whitespace-pre-wrap break-words text-ink">{detalhesLegiveis(item.detalhes) || t('semDetalhes')}</dd>
                             {item.rota && (
                               <>
                                 <dt className="font-semibold text-slate-500">{t('detalheRota')}</dt>
-                                <dd className="font-mono">{item.rota}</dd>
+                                <dd className="font-mono">{detalhesLegiveis(item.rota)}</dd>
                               </>
                             )}
                             {item.ip && (

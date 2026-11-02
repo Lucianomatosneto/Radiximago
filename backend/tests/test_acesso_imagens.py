@@ -101,8 +101,14 @@ def test_estudante_ve_aprovada_e_compartilhada_mas_nao_pendente(client, db, cria
     assert _pedir(client, token, "/instances").status_code == 403
     assert _pedir(client, token, f"/dicom-web/studies/{uid_aprovada}", "DELETE").status_code == 403
     # negacoes ficam na auditoria
+    # reteste do M3 (01/11/2026): a busca (?...) nao vai para a auditoria - pode
+    # levar o identificador do paciente (tag 00100020)
+    assert _pedir(client, token, "/dicom-web/studies?00100020=paciente-teste&limit=101").status_code == 403
+    ultimo = (db.query(AuditLog).filter(AuditLog.usuario_id == estudante.id, AuditLog.acao == "acesso_imagem_negado")
+              .order_by(AuditLog.id.desc()).first())
+    assert "00100020" not in ultimo.detalhes and "paciente-teste" not in ultimo.detalhes
     negados = db.query(AuditLog).filter(AuditLog.usuario_id == estudante.id, AuditLog.acao == "acesso_imagem_negado").count()
-    assert negados == 5
+    assert negados == 6  # 5 de antes + o da busca com identificador
 
 
 def test_curador_ve_cadastradas_e_admin_tudo(client, db, criar_usuario, criar_ficha):

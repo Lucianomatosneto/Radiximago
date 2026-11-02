@@ -241,3 +241,11 @@ export function rotuloEntidade(entidade: string | null, id: number | null, idiom
   const nome = par ? (idioma === 'en' ? par[1] : par[0]) : textoLegivel(entidade)
   return id !== null && id !== undefined ? `${nome} nº ${id}` : nome
 }
+
+/** Detalhes para MOSTRAR: tira a parte de busca (?...) de enderecos tecnicos
+ * gravados antes de 01/11/2026 (podiam levar o identificador DICOM do
+ * paciente, 00100020). O registro guardado nao muda. */
+export function detalhesLegiveis(texto: string | null | undefined): string {
+  if (!texto) return ''
+  return texto.replace(/(\/[^\s?]*)\?[^\s]*/g, '$1 (parâmetros de busca ocultos)')
+}

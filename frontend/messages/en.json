@@ -1374,7 +1374,7 @@
     "colData": "Date/time",
     "colUsuario": "User",
     "colAcao": "Action",
-    "colEntidade": "Entity",
+    "colEntidade": "About what",
     "colResultado": "Result",
     "colDetalhes": "Details",
     "ocultar": "Hide",
