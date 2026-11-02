@@ -1559,14 +1559,17 @@
     },
     "erros24h": "Errors in the last 24 h",
     "erros24hDetalhe": "Unexpected server errors recorded in the Audit log (action “erro_inesperado”), each with a reference code.",
-    "migracaoPendente": "Warning: the database update has not been applied. Meanwhile, parts of the system may fail. On the server, run: docker compose exec radix-api alembic upgrade head"
+    "migracaoPendente": "Warning: the database update has not been applied. Meanwhile, parts of the system may fail. On the server, run: docker compose exec radix-api alembic upgrade head",
+    "falhasEmail": "E-mail delivery failures (7 days)",
+    "falhasEmailUltima": "Last: {quando} – {detalhes}. The system already retries twice; if it continues, check the e-mail service in Integrations.",
+    "falhasEmailNenhuma": "No delivery failure in the last 7 days."
   },
   "EsqueciSenha": {
     "titulo": "Forgot my password",
     "subtitulo": "Enter your email and we'll send instructions to reset your password",
     "erroEmailObrigatorio": "Enter your email.",
     "erroGenerico": "Couldn't process the request. Please try again later.",
-    "sucessoMensagem": "If that email is registered, we've sent reset instructions. Check your inbox.",
+    "sucessoMensagem": "If this e-mail is registered, we sent reset instructions. Check your inbox and spam folder. If nothing arrives within 10 minutes, try again; if it still doesn't arrive, tell the administrator.",
     "voltarLogin": "Back to login",
     "email": "Email",
     "emailPlaceholder": "your.email@example.com",

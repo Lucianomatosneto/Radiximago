@@ -10,6 +10,7 @@ SMTP_HOST/SMTP_USER/SMTP_PASSWORD no .env pra envio de verdade.
 import logging
 from html import escape
 import smtplib
+import time
 from email.mime.application import MIMEApplication
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
@@ -65,10 +66,34 @@ def enviar_email(
         anexo.add_header("Content-Disposition", "attachment", filename=nome_arquivo)
         mensagem.attach(anexo)
 
-    with abrir_conexao_smtp(timeout=15) as servidor:
-        if settings.SMTP_USER:
-            servidor.login(settings.SMTP_USER, senha_smtp())
-        servidor.sendmail(settings.SMTP_FROM, [destinatario], mensagem.as_string())
+    # 01/11/2026 (auditoria do administrador, M4): falha PASSAGEIRA do
+    # servidor de e-mail (desconexao, tempo esgotado, "tente mais tarde" 4xx)
+    # tenta de novo mais 2 vezes, 1 s e 3 s depois. Senha errada ou endereco
+    # recusado (5xx) nao adianta repetir: falha na hora.
+    for tentativa, espera in enumerate((*ESPERAS_REENVIO_S, None)):
+        try:
+            with abrir_conexao_smtp(timeout=15) as servidor:
+                if settings.SMTP_USER:
+                    servidor.login(settings.SMTP_USER, senha_smtp())
+                servidor.sendmail(settings.SMTP_FROM, [destinatario], mensagem.as_string())
+            return
+        except Exception as erro:  # noqa: BLE001 - decide abaixo se repete
+            if espera is None or not erro_passageiro(erro):
+                raise
+            logger.warning("Envio de e-mail falhou (%s), tentativa %d; tentando de novo.", type(erro).__name__, tentativa + 1)
+            time.sleep(espera)
+
+
+ESPERAS_REENVIO_S = (1, 3)
+
+
+def erro_passageiro(erro: BaseException) -> bool:
+    """Vale tentar de novo? Desconexao/tempo esgotado/4xx sim; senha errada ou 5xx nao."""
+    if isinstance(erro, (smtplib.SMTPServerDisconnected, smtplib.SMTPConnectError, TimeoutError, ConnectionError)):
+        return True
+    if isinstance(erro, smtplib.SMTPResponseException):
+        return 400 <= erro.smtp_code < 500
+    return False
 
 
 def senha_smtp() -> str:

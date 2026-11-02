@@ -1559,14 +1559,17 @@
     },
     "erros24h": "Erros nas últimas 24 h",
     "erros24hDetalhe": "Erros inesperados do servidor registrados na Auditoria (ação “erro_inesperado”), cada um com código de referência.",
-    "migracaoPendente": "Atenção: falta aplicar a atualização do banco de dados. Enquanto isso, partes do sistema podem dar erro. No servidor, rode: docker compose exec radix-api alembic upgrade head"
+    "migracaoPendente": "Atenção: falta aplicar a atualização do banco de dados. Enquanto isso, partes do sistema podem dar erro. No servidor, rode: docker compose exec radix-api alembic upgrade head",
+    "falhasEmail": "Falhas de envio de e-mail (7 dias)",
+    "falhasEmailUltima": "Última: {quando} – {detalhes}. O sistema já tenta de novo sozinho 2 vezes; se continuar, confira a Brevo em Integrações.",
+    "falhasEmailNenhuma": "Nenhuma falha de envio nos últimos 7 dias."
   },
   "EsqueciSenha": {
     "titulo": "Esqueci minha senha",
     "subtitulo": "Informe seu e-mail e enviaremos instruções para redefinir sua senha",
     "erroEmailObrigatorio": "Informe seu e-mail.",
     "erroGenerico": "Não foi possível processar o pedido. Tente novamente mais tarde.",
-    "sucessoMensagem": "Se esse e-mail estiver cadastrado, enviamos instruções de redefinição. Confira sua caixa de entrada.",
+    "sucessoMensagem": "Se esse e-mail estiver cadastrado, enviamos instruções de redefinição. Confira sua caixa de entrada e a pasta de spam. Se não chegar em 10 minutos, tente de novo; se continuar sem chegar, avise o administrador.",
     "voltarLogin": "Voltar para o login",
     "email": "E-mail",
     "emailPlaceholder": "seu.email@exemplo.com",

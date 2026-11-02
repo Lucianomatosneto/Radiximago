@@ -37,6 +37,8 @@ interface StatsResponse {
   por_status: Record<string, number>
   imagens: ContagemImagens
   erros_24h?: number
+  falhas_email_7d?: number
+  ultima_falha_email?: { quando: string | null; detalhes: string | null } | null
   migracao_pendente?: boolean
 }
 
@@ -200,6 +202,20 @@ export default function PainelAdminPage() {
                   valor={stats.erros_24h ?? 0}
                   cor={(stats.erros_24h ?? 0) > 0 ? 'red' : 'green'}
                   detalhe={t('erros24hDetalhe')}
+                />
+                {/* M4: falhas de envio de e-mail (redefinicao de senha, confirmacao...) */}
+                <DashboardCard
+                  label={t('falhasEmail')}
+                  valor={stats.falhas_email_7d ?? 0}
+                  cor={(stats.falhas_email_7d ?? 0) > 0 ? 'red' : 'green'}
+                  detalhe={
+                    stats.ultima_falha_email
+                      ? t('falhasEmailUltima', {
+                          quando: stats.ultima_falha_email.quando ? new Date(stats.ultima_falha_email.quando).toLocaleString('pt-BR') : '—',
+                          detalhes: stats.ultima_falha_email.detalhes ?? '',
+                        })
+                      : t('falhasEmailNenhuma')
+                  }
                 />
               </div>
             </>

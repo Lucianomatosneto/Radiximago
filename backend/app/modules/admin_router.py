@@ -44,6 +44,19 @@ def _contar_por_achado(db) -> dict:
     return contagem
 
 
+def _falhas_email(db) -> dict:
+    desde = datetime.now(timezone.utc) - timedelta(days=7)
+    consulta = db.query(AuditLog).filter(AuditLog.acao == "falha_envio_email", AuditLog.criado_em >= desde)
+    ultima = consulta.order_by(AuditLog.id.desc()).first()
+    return {
+        "falhas_email_7d": consulta.count(),
+        "ultima_falha_email": {
+            "quando": ultima.criado_em.isoformat() if ultima.criado_em else None,
+            "detalhes": ultima.detalhes,
+        } if ultima else None,
+    }
+
+
 def _contar_por(db, coluna):
     """Conta fichas de curadoria agrupadas por uma coluna. Retorna dict {valor: total}."""
     linhas = (
@@ -174,6 +187,8 @@ def obter_indicadores(
             AuditLog.criado_em >= datetime.now(timezone.utc) - timedelta(hours=24),
         ).scalar() or 0,
         "migracao_pendente": estado_das_migracoes(db)["pendente"],
+        # M4: falhas de envio de e-mail nos ultimos 7 dias (e a mais recente)
+        **_falhas_email(db),
         # nomes de quem aparece em "Fichas por curador" (so esses) - antes a
         # tela buscava /users/, que o curador nao pode ver, e mostrava
         # "Usuario #1"
