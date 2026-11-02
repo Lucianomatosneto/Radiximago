@@ -26,7 +26,11 @@ const PERFIS_PERMITIDOS = ['administrador', 'suporte', 'curador', 'professor']
 
 // Chaves usadas nos selects de filtro - os rotulos (label) vem da traducao
 // (namespace ImagensRecebidas.statusAnonimizacao / .statusCuradoriaFiltro).
-const OPCOES_ANONIMIZACAO = ['aguardando', 'validada', 'falha']
+// 01/11/2026 (auditoria do administrador, M5): os valores REAIS gravados
+// (images_router.py grava "concluida"; o padrao do banco e "aguardando").
+// Antes o filtro oferecia "validada", que nunca existe - dava 0 imagens.
+const OPCOES_ANONIMIZACAO = ['concluida', 'aguardando', 'falha']
+const POR_PAGINA = 50
 
 const OPCOES_CURADORIA = [
   'pendente',
@@ -39,6 +43,7 @@ const OPCOES_CURADORIA = [
 ]
 
 const CLASSES_ANONIMIZACAO: Record<string, string> = {
+  concluida: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40',
   aguardando: 'bg-slate-500/15 text-slate-300 border-slate-600/40',
   validada: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40',
   falha: 'bg-red-500/15 text-red-300 border-red-600/40',
@@ -72,6 +77,9 @@ export default function ImagensPage() {
   const [autenticado, setAutenticado] = useState(false)
   const [imagens, setImagens] = useState<Imagem[]>([])
   const [carregando, setCarregando] = useState(true)
+  const [busca, setBusca] = useState('')
+  const [dataEntrada, setDataEntrada] = useState('')
+  const [pagina, setPagina] = useState(1)
   const [filtroAnonimizacao, setFiltroAnonimizacao] = useState('')
   const [filtroCuradoria, setFiltroCuradoria] = useState('')
 
@@ -209,8 +217,17 @@ export default function ImagensPage() {
         ? imagem.status_curadoria === null
         : imagem.status_curadoria === filtroCuradoria)
 
-    return bateAnonimizacao && bateCuradoria
+    // M5: busca pelo numero curto, pelo ID do Orthanc ou pela data de entrada
+    const termo = busca.trim().toLowerCase()
+    const bateBusca =
+      !termo || String(imagem.id) === termo.replace(/^n[ºo°]?\s*/, '') || imagem.orthanc_id.toLowerCase().includes(termo)
+    const bateData = !dataEntrada || (imagem.criado_em ?? '').slice(0, 10) === dataEntrada
+
+    return bateAnonimizacao && bateCuradoria && bateBusca && bateData
   })
+  const totalPaginas = Math.max(1, Math.ceil(imagensFiltradas.length / POR_PAGINA))
+  const paginaAtual = Math.min(pagina, totalPaginas)
+  const imagensDaPagina = imagensFiltradas.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA)
 
   if (carregando) {
     return (
@@ -295,9 +312,35 @@ export default function ImagensPage() {
           </section>
 
           <div className="mb-4 flex flex-wrap items-center gap-3">
+            <input
+              type="search"
+              value={busca}
+              onChange={(e) => {
+                setBusca(e.target.value)
+                setPagina(1)
+              }}
+              placeholder={t('buscaPlaceholder')}
+              aria-label={t('buscaPlaceholder')}
+              className="w-64 rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
+            />
+            <label className="flex items-center gap-2 text-xs text-slate-400">
+              {t('filtroData')}
+              <input
+                type="date"
+                value={dataEntrada}
+                onChange={(e) => {
+                  setDataEntrada(e.target.value)
+                  setPagina(1)
+                }}
+                className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
+              />
+            </label>
             <select
               value={filtroAnonimizacao}
-              onChange={(e) => setFiltroAnonimizacao(e.target.value)}
+              onChange={(e) => {
+                setFiltroAnonimizacao(e.target.value)
+                setPagina(1)
+              }}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('filtroAnonimizacaoTodos')}</option>
@@ -310,7 +353,10 @@ export default function ImagensPage() {
 
             <select
               value={filtroCuradoria}
-              onChange={(e) => setFiltroCuradoria(e.target.value)}
+              onChange={(e) => {
+                setFiltroCuradoria(e.target.value)
+                setPagina(1)
+              }}
               className="rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
             >
               <option value="">{t('filtroCuradoriaTodos')}</option>
@@ -326,6 +372,7 @@ export default function ImagensPage() {
             <table className="w-full text-left text-sm">
               <thead className="bg-base-surface text-slate-400">
                 <tr>
+                  <th className="px-4 py-3 font-medium">{t('colunaNumero')}</th>
                   <th className="px-4 py-3 font-medium">{t('colunaIdOrthanc')}</th>
                   <th className="px-4 py-3 font-medium">{t('colunaTipo')}</th>
                   <th className="px-4 py-3 font-medium">{t('colunaStatusAnonimizacao')}</th>
@@ -334,17 +381,21 @@ export default function ImagensPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 bg-base">
-                {imagensFiltradas.map((imagem) => {
+                {imagensDaPagina.map((imagem) => {
                   const classeAnonimizacao =
                     CLASSES_ANONIMIZACAO[imagem.anonimizacao_status] ??
                     'bg-slate-500/15 text-slate-300 border-slate-600/40'
 
                   return (
                     <tr key={imagem.id} className="text-slate-200">
-                      <td className="max-w-[220px] break-all px-4 py-3 font-mono text-xs text-slate-300">
-                        {imagem.orthanc_id}
+                      <td className="px-4 py-3 font-semibold text-ink">nº {imagem.id}</td>
+                      {/* ID longo do Orthanc encurtado; o completo aparece ao passar o mouse */}
+                      <td className="px-4 py-3 font-mono text-xs text-slate-400" title={imagem.orthanc_id}>
+                        {imagem.orthanc_id.slice(0, 8)}…
                       </td>
-                      <td className="px-4 py-3">{imagem.resource_type}</td>
+                      <td className="px-4 py-3">
+                        {t.has(`tipoRecurso.${imagem.resource_type}`) ? t(`tipoRecurso.${imagem.resource_type}`) : imagem.resource_type}
+                      </td>
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${classeAnonimizacao}`}
@@ -372,13 +423,45 @@ export default function ImagensPage() {
 
                 {imagensFiltradas.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-slate-500">
+                    <td colSpan={6} className="px-4 py-6 text-center text-slate-500">
                       {t('nenhumaImagem')}
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
+          </div>
+
+          {/* M5: paginas de 50 (antes as 454 imagens numa tabela so) */}
+          <div className="mt-4 flex items-center justify-between text-sm text-slate-400">
+            <span>
+              {imagensFiltradas.length > 0
+                ? t('mostrando', {
+                    de: (paginaAtual - 1) * POR_PAGINA + 1,
+                    ate: Math.min(paginaAtual * POR_PAGINA, imagensFiltradas.length),
+                    total: imagensFiltradas.length,
+                  })
+                : ''}
+            </span>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setPagina(Math.max(1, paginaAtual - 1))}
+                disabled={paginaAtual <= 1}
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
+              >
+                {t('anterior')}
+              </button>
+              <span>{t('paginaDe', { atual: paginaAtual, total: totalPaginas })}</span>
+              <button
+                type="button"
+                onClick={() => setPagina(Math.min(totalPaginas, paginaAtual + 1))}
+                disabled={paginaAtual >= totalPaginas}
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500 disabled:opacity-50"
+              >
+                {t('proxima')}
+              </button>
+            </div>
           </div>
         </main>
       </div>

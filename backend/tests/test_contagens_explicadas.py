@@ -66,3 +66,17 @@ def test_professor_ve_so_as_imagens_que_enviou(client, db, criar_usuario):
         db.delete(minha)
         db.delete(alheia)
         db.commit()
+
+
+def test_filtro_de_anonimizacao_usa_os_valores_reais():
+    """M5 (01/11/2026): o filtro oferecia 'validada', que nunca e gravado
+    (o sistema grava 'concluida') - 'Validada' devolvia 0 imagens."""
+    import re
+    from pathlib import Path
+
+    raiz = Path(__file__).resolve().parents[2]
+    gravados = set(re.findall(r'anonimizacao_status="([a-z_]+)"', (raiz / "backend/app/modules/images_router.py").read_text()))
+    gravados |= set(re.findall(r"default=\"([a-z_]+)\"", (raiz / "backend/app/modules/orthanc_references.py").read_text().split("anonimizacao_status", 1)[1][:200]))
+    tela = (raiz / "frontend/src/app/imagens/page.tsx").read_text(encoding="utf-8")
+    opcoes = set(re.findall(r"'([a-z_]+)'", re.search(r"OPCOES_ANONIMIZACAO = \[(.*?)\]", tela).group(1)))
+    assert gravados and gravados <= opcoes, (gravados, opcoes)

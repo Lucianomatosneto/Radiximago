@@ -394,7 +394,8 @@
     "statusAnonimizacao": {
       "aguardando": "Aguardando",
       "validada": "Validada",
-      "falha": "Falha"
+      "falha": "Falha",
+      "concluida": "Concluída"
     },
     "statusCuradoriaFiltro": {
       "pendente": "Pendente",
@@ -405,7 +406,19 @@
       "descartada": "Descartada",
       "sem_ficha": "Sem ficha"
     },
-    "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila."
+    "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila.",
+    "colunaNumero": "Nº",
+    "buscaPlaceholder": "Buscar por nº ou ID do Orthanc",
+    "filtroData": "Entrada em",
+    "mostrando": "Mostrando {de}–{ate} de {total}",
+    "anterior": "Anterior",
+    "proxima": "Próxima",
+    "paginaDe": "Página {atual} de {total}",
+    "tipoRecurso": {
+      "instance": "Imagem (instância DICOM)",
+      "series": "Série",
+      "study": "Estudo"
+    }
   },
   "MiniaturaImagem": {
     "semPreview": "Sem preview"

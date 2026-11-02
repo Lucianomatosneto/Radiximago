@@ -392,9 +392,10 @@
     "semFicha": "No record",
     "nenhumaImagem": "No images found.",
     "statusAnonimizacao": {
-      "aguardando": "Pending",
+      "aguardando": "Waiting",
       "validada": "Validated",
-      "falha": "Failed"
+      "falha": "Failed",
+      "concluida": "Completed"
     },
     "statusCuradoriaFiltro": {
       "pendente": "Pending",
@@ -405,7 +406,19 @@
       "descartada": "Discarded",
       "sem_ficha": "No record"
     },
-    "totalAguardandoDetalhe": "No record, pending and under review. {fila} are in the Curation queue (or already being curated) and {recorte} still wait for the white frame to be cropped, so they are not in the queue yet."
+    "totalAguardandoDetalhe": "No record, pending and under review. {fila} are in the Curation queue (or already being curated) and {recorte} still wait for the white frame to be cropped, so they are not in the queue yet.",
+    "colunaNumero": "No.",
+    "buscaPlaceholder": "Search by no. or Orthanc ID",
+    "filtroData": "Received on",
+    "mostrando": "Showing {de}–{ate} of {total}",
+    "anterior": "Previous",
+    "proxima": "Next",
+    "paginaDe": "Page {atual} of {total}",
+    "tipoRecurso": {
+      "instance": "Image (DICOM instance)",
+      "series": "Series",
+      "study": "Study"
+    }
   },
   "MiniaturaImagem": {
     "semPreview": "No preview"
