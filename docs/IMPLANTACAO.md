@@ -199,6 +199,23 @@ radix up -d --build
 radix exec radix-api alembic upgrade head
 ```
 
+### Ensaio de restauração do backup (sem risco)
+
+Um backup que nunca foi restaurado não é garantia. O script `scripts/testar-restauracao.sh`
+restaura o backup mais recente do banco **num banco temporário** (apagado no fim), compara com o
+sistema e confere a versão do esquema, as tabelas principais, a proteção da auditoria e a
+abertura e tamanho do último backup do Orthanc (a leitura completa, que demora, é opcional com `COMPLETO=1`). **Não altera o banco do sistema.** Faça-o depois de
+cada mudança no backup e de tempos em tempos (por exemplo, uma vez por mês):
+
+```bash
+docker compose cp scripts/testar-restauracao.sh radix-backup:/tmp/testar-restauracao.sh
+docker compose exec radix-backup sh /tmp/testar-restauracao.sh
+```
+
+Termina com "ENSAIO APROVADO" ou lista os `[ERRO]`. **Não cobre** as fotos cifradas das pastas de
+pacientes: para elas, guarde a `CASOS_CHAVE` fora do servidor e ensaie a cópia completa
+(`scripts/copia-completa.sh` e `scripts/restaurar-copia.sh`) numa máquina de teste.
+
 ## Cópias de segurança (backup)
 
 - O serviço `radix-backup` grava, uma vez por dia, uma cópia do banco e das
