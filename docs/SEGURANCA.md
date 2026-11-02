@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.10 — 19/10/2026 |
+| Versão do documento | 1.12 — 02/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -139,8 +139,8 @@ Uma única função (`app/core/politica_senha.py`) decide se uma senha **nova** 
 
 | Perfil | Situação |
 |---|---|
-| Administrador, suporte, curador | **obrigatório**: no 1º login depois da atualização, a pessoa cadastra um aplicativo autenticador (Google ou Microsoft Authenticator) lendo um QR code |
-| Professor, pesquisador, estudante | **opcional**: liga e desliga em "Meus acessos" (desligar exige senha **e** código) |
+| Administrador, suporte, curador, **professor** (desde 02/11/2026, por ver pastas de pacientes) | **obrigatório**: no 1º login depois da atualização, a pessoa cadastra um aplicativo autenticador (Google ou Microsoft Authenticator) lendo um QR code |
+| Pesquisador, estudante | **opcional**: liga e desliga em "Meus acessos" (desligar exige senha **e** código) |
 
 Como funciona:
 1. **Senha certa** → em vez da sessão, a pessoa recebe um "vale" de 5 minutos, que **não abre nada** no sistema;
@@ -318,6 +318,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.12 | 02/11/2026 | Login em duas etapas **obrigatório também para o professor** (ele vê as pastas de pacientes); pesquisador e estudante seguem opcionais (seção 3.4) |
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; administrador supervisiona a fila de pastas sem dados do paciente; curador só acrescenta observações na pasta (5.1) |
 | 1.10 | 19/10/2026 | Tailwind 4: fim dos 7 avisos das ferramentas de montagem (seção 7) |
 | 1.9 | 19/10/2026 | Grupo 6: Argon2id e senhas de até 128 caracteres, lista de senhas vazadas (3.3), login em duas etapas (3.4), antivírus como risco aceito até a implantação (9) |

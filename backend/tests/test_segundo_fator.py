@@ -2,7 +2,8 @@
 Login em duas etapas (app/modules/mfa.py, mfa_router.py) - OWASP ASVS 6.3.3
 e apoio a 6.5.x (codigos de uso unico) e 6.4.x (recuperacao).
 Decisao do responsavel (19/10/2026): obrigatorio para administrador, suporte
-e curadoria; opcional para os demais.
+e curadoria; opcional para os demais. Em 02/11/2026 o professor tambem passou
+a ser obrigatorio (ele ve as pastas de pacientes, dado identificado).
 """
 
 import re
@@ -179,3 +180,18 @@ def test_administrador_redefine_o_segundo_fator_de_outra_pessoa(criar_usuario, d
     assert _senha(_novo_cliente(), curador.email).json()["segundo_fator"] == "cadastro"
     # o proprio admin usa o roteiro do servidor (nao ha quem confira a identidade)
     assert _novo_cliente().post(f"/users/{admin.id}/redefinir-segundo-fator", headers=cab_adm).status_code == 409
+
+
+def test_professor_tem_segundo_fator_obrigatorio_e_nao_desliga(criar_usuario):
+    """02/11/2026: o professor ve pastas de pacientes (N4) - nao entra so com a senha."""
+    professor = criar_usuario(perfil=UserRole.professor)
+    assert UserRole.professor in mfa.PERFIS_MFA_OBRIGATORIO
+    dados = _senha(_novo_cliente(), professor.email).json()
+    assert dados["segundo_fator"] == "cadastro" and "access_token" not in dados
+    cliente = TestClient(app)
+    cab = cabecalho_auth(obter_token(cliente, professor.email))
+    assert cliente.get("/auth/mfa", headers=cab).json()["obrigatorio"] is True
+    r = cliente.post("/auth/mfa/desativar", headers=cab, json={"senha": SENHA_TESTE, "codigo": "000000"})
+    assert r.status_code == 403
+    # pesquisador e estudante continuam opcionais
+    assert UserRole.pesquisador not in mfa.PERFIS_MFA_OBRIGATORIO and UserRole.estudante not in mfa.PERFIS_MFA_OBRIGATORIO
