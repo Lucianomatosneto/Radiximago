@@ -1937,7 +1937,7 @@
     "tituloPrefixo": "Shared",
     "tituloDestaque": "with me",
     "subtitulo": "Images other users shared with you, with their notes.",
-    "vazio": "No one has shared an image with you yet.",
+    "vazio": "No loose images have been shared with you (patient folders appear above).",
     "erroCarregar": "Could not load the shared images.",
     "erroRemover": "Could not remove the image.",
     "imagem": "Image {numero}",

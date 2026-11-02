@@ -1937,7 +1937,7 @@
     "tituloPrefixo": "Compartilhadas",
     "tituloDestaque": "comigo",
     "subtitulo": "Imagens que outros usuários compartilharam com você, com as anotações deles.",
-    "vazio": "Ainda não compartilharam nenhuma imagem com você.",
+    "vazio": "Nenhuma imagem avulsa foi compartilhada com você (as pastas de pacientes aparecem acima).",
     "erroCarregar": "Não foi possível carregar as imagens compartilhadas.",
     "erroRemover": "Não foi possível remover a imagem.",
     "imagem": "Imagem {numero}",
