@@ -68,6 +68,25 @@ Até lá, use só dados de teste.
 ## Instalação (servidor)
 
 - Rodar `alembic upgrade head`. Isso cria as tabelas `sugestoes`, `casos_clinicos`, `casos_imagens`, `casos_revisoes`, `casos_compartilhamentos` e `casos_historico`.
-- Definir a `CASOS_CHAVE` no `.env` **uma única vez**. Trocar a chave depois deixa ilegíveis as fotos já guardadas.
+- Definir a `CASOS_CHAVE` no `.env` **desde o início**. Se ela ficar vazia, o sistema usa a `JWT_SECRET_KEY`; aí, trocar a senha de login (o que se faz após um incidente) deixaria as fotos ilegíveis.
+- **Para trocar a chave com segurança** (ex.: após suspeita de vazamento), use o procedimento da seção "Troca da chave das fotos" abaixo. Nunca altere a `CASOS_CHAVE` direto no `.env`.
 - A cópia completa (`scripts/copia-completa.sh`) inclui a pasta `dados_clinicos/`. O backup diário a inclui **no servidor** (`docker-compose.prod.yml`); no computador de desenvolvimento ela não é copiada pelo backup diário.
 - Antes de usar dados reais, ver o checklist de LGPD do projeto (base legal, encarregado, CEP, RIPD, retenção e teste de restauração do backup).
+
+## Troca da chave das fotos
+
+Quando fazer: suspeita de vazamento da chave, saída de alguém que a conhecia, ou rotina anual. A rotina lê cada foto com a chave antiga, regrava com a nova e **só substitui depois de conferir** (se faltar luz no meio, é só rodar de novo).
+
+1. **Backup antes de tudo** (fotos e banco). Guarde também a chave antiga em lugar seguro, fora do servidor, até terminar.
+2. Gere a chave nova (64 caracteres aleatórios) e a guarde fora do servidor.
+3. Simulação (não altera nada):
+   `docker compose exec -e CASOS_CHAVE_NOVA=<chave-nova> radix-api python scripts/rotacionar_chave_casos.py`
+   Confira: "Ilegíveis" deve ser 0 e "Abrem com a chave antiga" deve bater com o número de fotos esperado.
+4. Para valer:
+   `docker compose exec -e CASOS_CHAVE_NOVA=<chave-nova> radix-api python scripts/rotacionar_chave_casos.py --aplicar`
+   Se a chave em uso hoje for a `JWT_SECRET_KEY` (porque `CASOS_CHAVE` está vazia), não é preciso informar a antiga.
+5. Coloque a chave nova em `CASOS_CHAVE` no `.env` e reinicie a API (`docker compose up -d --no-deps --force-recreate radix-api`).
+6. Abra uma pasta com foto para conferir. Registre a troca na ficha do incidente (ou no diário de manutenção).
+7. Backups feitos antes da troca continuam na chave antiga: guarde a chave antiga enquanto esses backups existirem (até 14 dias).
+
+Se aparecer "Ilegíveis" maior que 0: **pare**, não mude o `.env` e investigue (provável chave antiga errada ou arquivo corrompido).
