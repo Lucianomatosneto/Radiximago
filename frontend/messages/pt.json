@@ -2791,7 +2791,8 @@
         "caso_encaminhado_curador": "encaminhou ao curador",
         "caso_classificado": "classificou",
         "caso_encaminhado_aluno": "encaminhou ao aluno",
-        "caso_concluido": "concluiu o tratamento"
+        "caso_concluido": "concluiu o tratamento",
+        "caso_tratamento_reaberto": "reabriu o tratamento"
       }
     },
     "vazios": {

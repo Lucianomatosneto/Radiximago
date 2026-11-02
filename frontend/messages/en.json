@@ -2791,7 +2791,8 @@
         "caso_encaminhado_curador": "sent to curator",
         "caso_classificado": "classified",
         "caso_encaminhado_aluno": "referred to student",
-        "caso_concluido": "completed treatment"
+        "caso_concluido": "completed treatment",
+        "caso_tratamento_reaberto": "reopened the treatment"
       }
     },
     "vazios": {

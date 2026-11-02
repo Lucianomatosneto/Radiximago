@@ -2,7 +2,8 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useLocale, useTranslations } from 'next-intl'
+import { rotuloAcao } from '../../../lib/acoesAuditoria'
 import { History } from 'lucide-react'
 import EstadoVazio from '../../../components/EstadoVazio'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
@@ -24,6 +25,7 @@ interface Acesso {
 
 function Tabela() {
   const t = useTranslations('Casos')
+  const locale = useLocale()
   const busca = useSearchParams()
   const [caso, setCaso] = useState(busca.get('caso') || '')
   const [linhas, setLinhas] = useState<Acesso[] | null>(null)
@@ -52,7 +54,7 @@ function Tabela() {
               <tr key={i} className={`border-b border-base-border/60 ${a.resultado === 'negado' ? 'bg-red-500/5' : ''}`}>
                 <td className="whitespace-nowrap px-3 py-1.5 text-slate-500">{dataHora(a.quando)}</td>
                 <td className="px-3 py-1.5 text-ink">{a.quem} <span className="text-xs text-slate-500">({a.perfil ? t(`perfis.${a.perfil}`) : '—'})</span></td>
-                <td className="px-3 py-1.5 text-ink">{t(`acessos.acoes.${a.acao}`)}</td>
+                <td className="px-3 py-1.5 text-ink">{t.has(`acessos.acoes.${a.acao}`) ? t(`acessos.acoes.${a.acao}`) : rotuloAcao(a.acao, locale)}</td>
                 <td className="px-3 py-1.5 text-ink">#{a.caso_id} · {a.aluno_autor}</td>
                 <td className="px-3 py-1.5 text-xs text-slate-500">{a.ip}</td>
               </tr>
