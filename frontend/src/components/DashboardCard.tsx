@@ -25,7 +25,7 @@ interface DashboardCardProps {
 export default function DashboardCard({ label, valor, cor = 'teal', detalhe, onClick, ativo }: DashboardCardProps) {
   const conteudo = (
     <>
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="text-sm leading-snug text-slate-400 [overflow-wrap:anywhere]">{label}</p>
       <p className={`mt-2 text-3xl font-bold ${CORES_DESTAQUE[cor]}`}>{valor}</p>
       {detalhe && <p className="mt-1 text-xs leading-snug text-slate-500">{detalhe}</p>}
     </>

@@ -614,7 +614,7 @@ export default function UsuariosPage() {
 
           {/* B1 (01/11/2026): os cartoes usam os MESMOS nomes do filtro "Perfil"
               (antes "Docentes" contava so professores) e clicar filtra a lista */}
-          <div className="mb-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="mb-2 grid grid-cols-2 gap-4 sm:grid-cols-3 2xl:grid-cols-6">
             <DashboardCard
               label={t('cards.totalUsuarios')}
               valor={usuarios.length}

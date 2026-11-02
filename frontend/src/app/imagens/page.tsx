@@ -295,10 +295,13 @@ export default function ImagensPage() {
               Sidebar.tsx (blue -> sky -> cyan -> teal -> emerald), so que
               em ordem invertida da esquerda pra direita. */}
           {/* reteste M5 (01/11/2026): no tema claro o degrade escuro deixava o
-              texto quase ilegivel - agora cada tema tem seu fundo e texto */}
+              texto quase ilegivel - agora cada tema tem seu fundo. ATENCAO: neste
+              projeto as cores "slate-*" sao trocadas pelo tema (globals.css:
+              slate-700 = cor de BORDA, quase branca no tema claro); para texto,
+              usar as cores do tema (text-ink, text-ink-2) */}
           <section className="mb-6 rounded-xl border border-teal-300 bg-linear-to-r from-emerald-50 via-teal-50 to-blue-50 p-4 dark:border-teal-700/40 dark:from-emerald-950/50 dark:via-teal-950/40 dark:to-blue-950/50">
             <h2 className="mb-1 text-sm font-semibold text-teal-800 dark:text-teal-300">{t('enviarTitulo')}</h2>
-            <p className="mb-3 text-xs text-slate-700 dark:text-slate-400">
+            <p className="mb-3 text-xs text-ink-2">
               {t('enviarDescricao')}
             </p>
             <form onSubmit={enviarImagem} className="flex flex-wrap items-center gap-3">
@@ -307,7 +310,7 @@ export default function ImagensPage() {
                 type="file"
                 accept=".dcm,application/dicom"
                 required
-                className="text-sm text-slate-800 dark:text-slate-300 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-medium file:text-white file:transition-colors file:hover:bg-brand-hover"
+                className="text-sm text-ink file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-medium file:text-white file:transition-colors file:hover:bg-brand-hover"
               />
               <button
                 type="submit"

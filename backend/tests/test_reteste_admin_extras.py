@@ -77,3 +77,19 @@ def test_imagens_busca_numero_exato_primeiro_e_cartao_legivel():
     assert "function numeroBuscado" in tela and "imagensFiltradas.sort(" in tela
     secao = tela[tela.index("{t('enviarTitulo')}") - 400:tela.index("{t('enviarTitulo')}")]
     assert "from-emerald-50" in secao and "dark:from-emerald-950/50" in secao
+
+
+def test_cartao_de_envio_usa_cores_de_texto_do_tema():
+    """slate-700 e a cor de BORDA no tema claro (globals.css): texto sumia (contraste 1,39)."""
+    tela = _ler("src/app/imagens/page.tsx")
+    inicio = tela.index("{t('enviarTitulo')}")
+    secao = tela[inicio:tela.index("</section>", inicio)]
+    assert "text-slate-700" not in secao and "text-slate-800" not in secao
+    assert "text-ink-2" in secao
+    css = _ler("src/app/globals.css")
+    assert "--color-slate-700: rgb(var(--rgb-base-border))" in css  # o motivo da regra
+
+
+def test_cartoes_de_usuarios_nao_estouram_a_borda():
+    assert "2xl:grid-cols-6" in _ler("src/app/usuarios/page.tsx")
+    assert "[overflow-wrap:anywhere]" in _ler("src/components/DashboardCard.tsx")
