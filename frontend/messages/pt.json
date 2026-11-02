@@ -2828,6 +2828,7 @@
         "caso_acesso_negado": "tentou abrir sem permissão",
         "caso_foto_baixada": "baixou uma imagem",
         "caso_impresso": "imprimiu ou salvou a pasta em PDF",
+        "caso_eliminado": "eliminou a pasta (prazo ou pedido)",
         "caso_revisado": "salvou correção",
         "caso_dados_alterados": "alterou dados",
         "caso_compartilhado": "compartilhou",

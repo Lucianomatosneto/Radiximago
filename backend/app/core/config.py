@@ -48,6 +48,10 @@ class Settings(BaseSettings):
     # JWT_SECRET_KEY). Ver app/modules/casos_arquivos.py e docs/CRIPTOGRAFIA.md
     CASOS_PASTA: str = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "dados_clinicos")
     CASOS_CHAVE: str = ""
+    # Eliminacao das pastas de pacientes (LGPD art. 15 e 16): meses depois da
+    # conclusao (ou da ultima acao) em que a pasta e apagada. 0 = desligado.
+    # Ver app/modules/casos_eliminacao.py. O numero final e decisao do DPO/CEP.
+    CASOS_RETENCAO_MESES: int = 12
     # servico de transcricao de voz (container radix-whisper, rede interna)
     WHISPER_URL: str = "http://radix-whisper:9000"
     # chave compartilhada com o servico de voz (cabecalho X-Radix-Chave -

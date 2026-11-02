@@ -37,6 +37,8 @@ Professor e curador:
 Registro de acessos:
 - GET   /casos/{id}/acessos           (professor, curador, administrador)
 - GET   /casos/registro-acessos       (administrador, curador, professor) - sem dados do paciente
+- GET   /casos/a-vencer               (professor, curador) - pastas que serao eliminadas em ate 30 dias
+- POST  /casos/{id}/eliminar          (professor) - elimina a pedido (com motivo)
 """
 
 from __future__ import annotations
@@ -57,6 +59,7 @@ from app.core.database import get_db
 from app.core.email import enviar_email
 from app.core.rate_limit import LIMITE_CASO_LINK_EMAIL, LIMITE_CASO_NOVO, limiter
 from app.modules import casos_arquivos as arquivos
+from app.modules import casos_eliminacao
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import obter_usuario_atual
 from app.modules.busca_termos import DENTES_VALIDOS
@@ -592,6 +595,24 @@ def registro_de_acessos(
     } for a in linhas]}
 
 
+@router.get("/a-vencer")
+def pastas_a_vencer(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    """Pastas que serao ELIMINADAS por prazo em ate AVISO_DIAS dias (02/11/2026,
+    LGPD art. 15/16). So professor e curador (quem ve os dados do paciente)."""
+    _exigir_perfil(usuario, PERFIS_EQUIPE)
+    agora = datetime.now(timezone.utc)
+    limite = agora + timedelta(days=casos_eliminacao.AVISO_DIAS)
+    return {
+        "retencao_meses": settings.CASOS_RETENCAO_MESES,
+        "aviso_dias": casos_eliminacao.AVISO_DIAS,
+        "pastas": [
+            {"id": c.id, "paciente": c.paciente_nome, "etapa": c.etapa, "vence_em": _iso(venc),
+             "dias_restantes": max((venc - agora).days, 0)}
+            for c, venc in casos_eliminacao.pastas_com_vencimento_ate(db, limite)
+        ],
+    }
+
+
 # --- uma pasta -------------------------------------------------------------------
 
 @router.get("/{caso_id}")
@@ -655,7 +676,9 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
             and caso.aluno_tratamento_id is not None,
             "editar_paciente": usuario.perfil not in PERFIS_SUPERVISAO,
             "editar_dados_completos": usuario.perfil not in PERFIS_SUPERVISAO and usuario.perfil != UserRole.curador,
+            "eliminar": usuario.perfil == UserRole.professor,
         },
+        "eliminacao_prevista_em": _iso(casos_eliminacao.vencimento(db, caso)) if equipe else None,
     }
 
 
@@ -935,6 +958,22 @@ def encaminhar_aluno(caso_id: int, dados: EncaminhamentoAluno, usuario: User = D
     _auditar(db, usuario, "caso_encaminhado_aluno", caso.id, f"aluno_id={aluno.id}; {dados.tratamento.value}")
     db.commit()
     return {"etapa": caso.etapa}
+
+
+class PedidoEliminar(BaseModel):
+    motivo: str = Field(min_length=10, max_length=300)
+
+
+@router.post("/{caso_id}/eliminar")
+def eliminar_a_pedido(caso_id: int, dados: PedidoEliminar, usuario: User = Depends(obter_usuario_atual),
+                      db: Session = Depends(get_db)):
+    """Elimina a pasta A PEDIDO (02/11/2026, LGPD art. 18): ex.: o paciente
+    retirou a autorizacao. So o professor; o motivo (10 a 300 caracteres, SEM
+    dados do paciente) vai para a auditoria. Nao tem volta."""
+    _exigir_perfil(usuario, {UserRole.professor})
+    caso = _buscar_caso(db, caso_id, usuario)
+    resultado = casos_eliminacao.eliminar_pasta(db, caso, "pedido", usuario.id, f"justificativa={dados.motivo.strip()}")
+    return {"eliminada": True, **resultado}
 
 
 @router.post("/{caso_id}/impressao")

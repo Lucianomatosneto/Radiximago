@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.5 — 02/11/2026 |
+| Versão do documento | 1.6 — 02/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -41,7 +41,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Vocabulário, macros, frases de voz | `termos_vocabulario`, `sinonimos_termo`, `macros_curadoria`, `frases_aprendidas_voz` | N1 | permanente |
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
 | Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
-| **Pastas de pacientes** (31/10/2026): nome completo, nascimento, gênero, contato, nº do prontuário e observações do paciente; modalidade e descrição do caso; anotações e versões; histórico; tratamento | `casos_clinicos`, `casos_revisoes`, `casos_historico`, `casos_compartilhamentos` — **identificados, não passam pelo Orthanc nem pela anonimização** | **N4** | prazo legal do prontuário (20 anos após o último registro, a confirmar com a clínica-escola); exclusão a pedido do titular a definir |
+| **Pastas de pacientes** (31/10/2026): nome completo, nascimento, gênero, contato, nº do prontuário e observações do paciente; modalidade e descrição do caso; anotações e versões; histórico; tratamento | `casos_clinicos`, `casos_revisoes`, `casos_historico`, `casos_compartilhamentos` — **identificados, não passam pelo Orthanc nem pela anonimização** | **N4** | **eliminada 12 meses depois da conclusão** do tratamento (ou da última ação, se nunca concluída; `CASOS_RETENCAO_MESES`, 0 desliga; número final a confirmar com o DPO/CEP); o prontuário legal fica na clínica-escola, não no Radix; **eliminação a pedido** pelo professor |
 | Fotos das pastas (radiografias no negatoscópio e termo de aceitação assinado) | `dados_clinicos/` no servidor, **cifradas (AES-256-GCM)**, nome aleatório; reduzidas a 2.400 px e **sem metadados** (GPS e modelo do celular apagados); referência em `casos_imagens` | **N4** | junto com a pasta |
 | Cópias de segurança | `./backups` no servidor (Postgres e Orthanc), diárias, 14 mais recentes | igual à origem (até N3) | 14 dias; **sem criptografia e sem cópia fora do servidor** (pendente) |
 
@@ -150,3 +150,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |
 | 1.4 | 31/10/2026 | Pastas de pacientes (dados identificados, N4): quem vê — aluno autor, aluno do tratamento, professores e curadores; administrador só o registro de acessos (`casos_router.py`, `_pode_ver`) |
 | 1.5 | 02/11/2026 | Pastas de pacientes: o **administrador** vê a fila e os tratamentos **sem dados do paciente** ("Pasta #n") e só abre uma pasta com **justificativa** (10–300 caracteres; somente leitura por 30 min; auditado); o **suporte** não acessa pastas; o **curador** só acrescenta observações (`casos_router.py`) |
+| 1.6 | 02/11/2026 | Pastas de pacientes: **eliminação por prazo** (12 meses após a conclusão; copia de trabalho, não é prontuário) e **a pedido** pelo professor; sobra só a auditoria `caso_eliminado`. Cópias de segurança guardam a pasta até 14 dias (`casos_eliminacao.py`) |
