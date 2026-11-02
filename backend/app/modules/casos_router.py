@@ -295,9 +295,11 @@ def _dados_imagem(i: CasoImagem) -> dict:
             "observacao": i.observacao, "largura": i.largura, "altura": i.altura}
 
 
-def _resumo(db: Session, caso: CasoClinico, usuario: User) -> dict:
-    """Linha das grades/listas: paciente, aluno, etapa e as RADIOGRAFIAS (sem o termo)."""
-    supervisao = usuario.perfil in PERFIS_SUPERVISAO
+def _resumo(db: Session, caso: CasoClinico, usuario: User, aberta: bool = False) -> dict:
+    """Linha das grades/listas: paciente, aluno, etapa e as RADIOGRAFIAS (sem o termo).
+    Para o administrador, as listas sao mascaradas; `aberta=True` (pasta aberta com
+    justificativa, ja validada por _buscar_caso) devolve imagens e descricao."""
+    supervisao = usuario.perfil in PERFIS_SUPERVISAO and not aberta
     radiografias = [] if supervisao else [i for i in caso.imagens if i.tipo == TipoImagemCaso.RADIOGRAFIA.value]
     versoes = db.query(func.count(CasoRevisao.id)).filter(CasoRevisao.caso_id == caso.id).scalar() or 0
     paciente = ({"nome": f"Pasta #{caso.id}", "idade": None, "genero": None, "contato": None} if supervisao else
@@ -626,7 +628,7 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
         for c, u in linhas_compartilhamento
     ]
     return {
-        **_resumo(db, caso, usuario),
+        **_resumo(db, caso, usuario, aberta=True),
         "paciente": {
             "nome": caso.paciente_nome, "nascimento": caso.paciente_nascimento.isoformat(),
             "idade": _idade(caso.paciente_nascimento), "genero": caso.paciente_genero,

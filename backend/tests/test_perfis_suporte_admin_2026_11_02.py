@@ -193,6 +193,8 @@ def test_admin_abre_pasta_so_com_justificativa_e_somente_leitura(client, criar_u
     # com justificativa: le a pasta (so leitura)
     r = client.get(f"/casos/{cid}", headers=h_ad)
     assert r.status_code == 200
+    # pasta aberta com justificativa mostra imagens e descricao (so as LISTAS sao mascaradas)
+    assert len(r.json()["imagens"]) == 1 and r.json()["descricao"] == "Dor no 36."
     assert client.get(f"/casos/{cid}/revisoes", headers=h_ad).status_code == 200
     assert client.patch(f"/casos/{cid}/paciente", headers=h_ad, json={"observacoes": "x"}).status_code == 403
     assert client.post(f"/casos/{cid}/compartilhar", headers=h_ad, json={"para_id": professor.id}).status_code == 403
