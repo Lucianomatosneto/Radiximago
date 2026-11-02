@@ -2802,7 +2802,8 @@
     },
     "tratamentosLista": {
       "titulo": "Alunos e pacientes em tratamento",
-      "subtitulo": "Quem está tratando quem. Busque pelo nome do aluno ou do paciente para encontrar o atendimento.",
+      "subtitulo": "Quem está tratando quem. Use a busca para encontrar o atendimento.",
+      "buscarAluno": "Buscar por nome do aluno",
       "buscar": "Buscar por nome do aluno ou do paciente",
       "situacao": "Situação",
       "todas": "Todas",

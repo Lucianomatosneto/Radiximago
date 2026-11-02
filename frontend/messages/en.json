@@ -2802,7 +2802,8 @@
     },
     "tratamentosLista": {
       "titulo": "Students and patients in treatment",
-      "subtitulo": "Who is treating whom. Search by student or patient name to find the treatment.",
+      "subtitulo": "Who is treating whom. Use the search to find the treatment.",
+      "buscarAluno": "Search by student name",
       "buscar": "Search by student or patient name",
       "situacao": "Status",
       "todas": "All",

@@ -24,7 +24,7 @@ interface Linha {
   concluido_em: string | null
 }
 
-function Tabela() {
+function Tabela({ supervisao }: { supervisao: boolean }) {
   const t = useTranslations('Casos')
   const [busca, setBusca] = useState('')
   const [situacao, setSituacao] = useState('')
@@ -53,7 +53,7 @@ function Tabela() {
   return (
     <>
       <div className="flex flex-wrap gap-2 print:hidden">
-        <input value={busca} onChange={(e) => setBusca(e.target.value)} maxLength={100} placeholder={t('tratamentosLista.buscar')} aria-label={t('tratamentosLista.buscar')} className="min-w-[260px] flex-1 rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-ink" />
+        <input value={busca} onChange={(e) => setBusca(e.target.value)} maxLength={100} placeholder={t(supervisao ? 'tratamentosLista.buscarAluno' : 'tratamentosLista.buscar')} aria-label={t(supervisao ? 'tratamentosLista.buscarAluno' : 'tratamentosLista.buscar')} className="min-w-[260px] flex-1 rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-ink" />
         <select value={situacao} onChange={(e) => setSituacao(e.target.value)} className="rounded-lg border border-base-border bg-base-surface2 px-2 py-2 text-sm text-ink" aria-label={t('tratamentosLista.situacao')}>
           <option value="">{t('tratamentosLista.todas')}</option>
           <option value="em_tratamento">{t('etapas.em_tratamento')}</option>
@@ -109,7 +109,7 @@ export default function TratamentosPage() {
   const t = useTranslations('Casos')
   return (
     <LayoutCasos perfis={['administrador', 'professor', 'curador']} titulo={t('tratamentosLista.titulo')} subtitulo={t('tratamentosLista.subtitulo')}>
-      {() => <Tabela />}
+      {(sessao) => <Tabela supervisao={sessao.perfil === 'administrador'} />}
     </LayoutCasos>
   )
 }
