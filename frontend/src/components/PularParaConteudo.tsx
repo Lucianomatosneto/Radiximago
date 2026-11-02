@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
 // "PULAR PARA O CONTEUDO" (01/11/2026): primeiro item da pagina ao usar o
@@ -7,6 +9,24 @@ import { useTranslations } from 'next-intl'
 // da tela (todas as telas tem um), pulando menu e barra superior.
 export default function PularParaConteudo() {
   const t = useTranslations('Comum')
+  const caminho = usePathname()
+  const primeira = useRef(true)
+
+  // Troca de pagina (navegacao do Next sem recarregar): o navegador perde o ponto de
+  // partida do Tab e o teclado cai no meio do menu. Repomos o foco no inicio da pagina,
+  // para o proximo Tab chegar neste link (WCAG 2.4.3 - ordem do foco).
+  useEffect(() => {
+    if (primeira.current) {
+      primeira.current = false
+      return
+    }
+    const ativo = document.activeElement
+    if (ativo instanceof HTMLElement) ativo.blur()
+    document.body.setAttribute('tabindex', '-1')
+    document.body.focus({ preventScroll: true })
+    document.body.removeAttribute('tabindex')
+  }, [caminho])
+
   function pular(e: React.MouseEvent<HTMLAnchorElement>) {
     const principal = document.querySelector('main')
     if (!principal) return
