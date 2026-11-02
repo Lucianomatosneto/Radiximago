@@ -2752,7 +2752,7 @@
       "erroEnviar": "Não foi possível enviar a pasta.",
       "enviando": "Enviando...",
       "enviarProfessor": "Enviar ao professor",
-      "salvarParaMim": "Salvar em Minhas imagens",
+      "salvarParaMim": "Enviar pasta sem escolher professor",
       "quemVePasta": "Professores e curadores da clínica-escola podem abrir todas as pastas (fila de tratamento). Escolher um professor só faz a pasta chegar para ele em “Compartilhadas comigo”.",
       "semProfessor": "Nenhum professor escolhido (a equipe da clínica vê a pasta)"
     },

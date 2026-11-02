@@ -2752,7 +2752,7 @@
       "erroEnviar": "Could not send the folder.",
       "enviando": "Sending...",
       "enviarProfessor": "Send to the professor",
-      "salvarParaMim": "Save to My images",
+      "salvarParaMim": "Send folder without choosing a professor",
       "quemVePasta": "Professors and curators of the teaching clinic can open every folder (treatment queue). Choosing a professor only delivers it to them in “Shared with me”.",
       "semProfessor": "No professor chosen (the clinic team can see the folder)"
     },
