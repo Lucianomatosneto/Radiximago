@@ -50,7 +50,7 @@ Versão 1.1, de 02/11/2026 (perfis: administrador, suporte e curador). A especif
 O Radix **não é o prontuário** da clínica-escola; a pasta é uma **cópia de trabalho**. Por isso ela é **eliminada 12 meses depois da conclusão** do tratamento (ou da última ação, se nunca foi concluída). O número fica em `CASOS_RETENCAO_MESES` (0 desliga); o valor final é decisão do encarregado (DPO) e do CEP.
 
 - **Aviso:** professor e curador veem as pastas que serão eliminadas nos próximos 30 dias (rota `GET /casos/a-vencer`) e a data prevista dentro de cada pasta.
-- **A pedido:** o **professor** pode eliminar uma pasta informando o motivo (10 a 300 caracteres, sem dados do paciente), por exemplo se o paciente retirou a autorização. Não tem volta.
+- **A pedido:** o **professor** ou o **curador** podem eliminar uma pasta informando o motivo (10 a 300 caracteres, sem dados do paciente), por exemplo se o paciente retirou a autorização. Não tem volta.
 - **O que some:** ficha do paciente, fotos cifradas, versões do professor, compartilhamentos e histórico.
 - **O que fica:** só o registro de auditoria `caso_eliminado` (número da pasta, motivo e quem pediu, nunca o nome do paciente).
 - **Cópias de segurança** feitas antes guardam a pasta por até 14 dias.

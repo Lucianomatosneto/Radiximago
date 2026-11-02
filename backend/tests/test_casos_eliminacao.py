@@ -109,14 +109,15 @@ def test_aviso_lista_pastas_a_vencer_so_para_professor_e_curador(client, criar_u
     assert client.get(f"/casos/{caso_id}", headers=h_aluno).json()["eliminacao_prevista_em"] is None
 
 
-def test_eliminar_a_pedido_so_professor_com_motivo(client, criar_usuario, db):
+def test_eliminar_a_pedido_professor_ou_curador_com_motivo(client, criar_usuario, db):
     aluno, professor, caso_id = _pasta(client, criar_usuario, db)
     h_aluno = cabecalho_auth(obter_token(client, aluno.email))
     h_prof = cabecalho_auth(obter_token(client, professor.email))
-    h_cur = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.curador).email))
+    curador = criar_usuario(perfil=UserRole.curador)
+    h_cur = cabecalho_auth(obter_token(client, curador.email))
     h_adm = cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.administrador).email))
     corpo = {"motivo": "Paciente retirou a autorizacao"}
-    for cab in (h_aluno, h_cur, h_adm):
+    for cab in (h_aluno, h_adm):
         assert client.post(f"/casos/{caso_id}/eliminar", headers=cab, json=corpo).status_code == 403
     assert client.post(f"/casos/{caso_id}/eliminar", headers=h_prof, json={"motivo": "curto"}).status_code == 422
     assert db.query(CasoClinico).filter(CasoClinico.id == caso_id).count() == 1
@@ -129,3 +130,16 @@ def test_eliminar_a_pedido_so_professor_com_motivo(client, criar_usuario, db):
     assert registro.usuario_id == professor.id and "motivo=pedido" in registro.detalhes
     assert "retirou a autorizacao" in registro.detalhes and "Maria" not in registro.detalhes
     assert client.get(f"/casos/{caso_id}", headers=h_prof).status_code == 404
+
+
+def test_curador_tambem_pode_eliminar_a_pedido(client, criar_usuario, db):
+    _aluno, _professor, caso_id = _pasta(client, criar_usuario, db)
+    curador = criar_usuario(perfil=UserRole.curador)
+    h_cur = cabecalho_auth(obter_token(client, curador.email))
+    assert client.get(f"/casos/{caso_id}", headers=h_cur).json()["pode"]["eliminar"] is True
+    r = client.post(f"/casos/{caso_id}/eliminar", headers=h_cur, json={"motivo": "Paciente retirou a autorizacao"})
+    assert r.status_code == 200
+    db.expire_all()
+    assert db.query(CasoClinico).filter(CasoClinico.id == caso_id).count() == 0
+    registro = db.query(AuditLog).filter(AuditLog.acao == "caso_eliminado", AuditLog.entidade_id == caso_id).one()
+    assert registro.usuario_id == curador.id

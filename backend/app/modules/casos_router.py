@@ -38,7 +38,7 @@ Registro de acessos:
 - GET   /casos/{id}/acessos           (professor, curador, administrador)
 - GET   /casos/registro-acessos       (administrador, curador, professor) - sem dados do paciente
 - GET   /casos/a-vencer               (professor, curador) - pastas que serao eliminadas em ate 30 dias
-- POST  /casos/{id}/eliminar          (professor) - elimina a pedido (com motivo)
+- POST  /casos/{id}/eliminar          (professor ou curador) - elimina a pedido (com motivo)
 """
 
 from __future__ import annotations
@@ -676,7 +676,7 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
             and caso.aluno_tratamento_id is not None,
             "editar_paciente": usuario.perfil not in PERFIS_SUPERVISAO,
             "editar_dados_completos": usuario.perfil not in PERFIS_SUPERVISAO and usuario.perfil != UserRole.curador,
-            "eliminar": usuario.perfil == UserRole.professor,
+            "eliminar": usuario.perfil in (UserRole.professor, UserRole.curador),
         },
         "eliminacao_prevista_em": _iso(casos_eliminacao.vencimento(db, caso)) if equipe else None,
     }
@@ -968,9 +968,9 @@ class PedidoEliminar(BaseModel):
 def eliminar_a_pedido(caso_id: int, dados: PedidoEliminar, usuario: User = Depends(obter_usuario_atual),
                       db: Session = Depends(get_db)):
     """Elimina a pasta A PEDIDO (02/11/2026, LGPD art. 18): ex.: o paciente
-    retirou a autorizacao. So o professor; o motivo (10 a 300 caracteres, SEM
+    retirou a autorizacao. Professor ou curador (decisao de 02/11/2026); o motivo (10 a 300 caracteres, SEM
     dados do paciente) vai para a auditoria. Nao tem volta."""
-    _exigir_perfil(usuario, {UserRole.professor})
+    _exigir_perfil(usuario, {UserRole.professor, UserRole.curador})
     caso = _buscar_caso(db, caso_id, usuario)
     resultado = casos_eliminacao.eliminar_pasta(db, caso, "pedido", usuario.id, f"justificativa={dados.motivo.strip()}")
     return {"eliminada": True, **resultado}
