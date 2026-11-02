@@ -2,13 +2,15 @@ import './globals.css'
 import { NextIntlClientProvider } from 'next-intl'
 import FundoAplicacao from '../components/fundo/FundoAplicacao'
 import PularParaConteudo from '../components/PularParaConteudo'
+import TituloDaPagina from '../components/TituloDaPagina'
 import { SCRIPT_TEMA_INICIAL } from '../lib/tema'
 import { getLocale, getTranslations } from 'next-intl/server'
 
 // Descricao do <meta> segue o mesmo idioma detectado pra pagina (ver
 // i18n/request.ts) - reaproveita Inicio.subtitulo em vez de duplicar o
-// texto aqui. O titulo da aba ("Rádix Imago") e nome proprio da marca,
-// entao continua igual nos dois idiomas de proposito.
+// texto aqui. A marca ("Rádix Imago") e nome proprio e continua igual nos dois
+// idiomas; o titulo de cada tela e acrescentado no navegador por
+// components/TituloDaPagina.tsx (a partir do <h1> da pagina).
 export async function generateMetadata() {
   const t = await getTranslations('Inicio')
   return {
@@ -54,6 +56,7 @@ export default async function RootLayout({
       <body>
         <NextIntlClientProvider>
           <PularParaConteudo />
+          <TituloDaPagina />
           {/* mapa-mundi de fundo (padrao visual de todas as telas - ver FundoAplicacao) */}
           <FundoAplicacao intensity="subtle" />
           {children}

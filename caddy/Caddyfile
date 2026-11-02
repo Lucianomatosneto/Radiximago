@@ -27,6 +27,12 @@ app.radiximago.com.br {
 api.radiximago.com.br {
 	encode zstd gzip
 	header Strict-Transport-Security "max-age=31536000"
+	# Saude detalhada (banco, migracoes, Orthanc) e so para uso interno: na internet
+	# so responde o simples /health. Evita mostrar o estado da infraestrutura a
+	# qualquer visitante (OWASP ASVS 13.4). Dentro do servidor, use:
+	#   docker compose exec radix-api python -c "import urllib.request as u;print(u.urlopen('http://localhost:8000/health/database').read())"
+	@saude_interna path /health/database /health/orthanc
+	respond @saude_interna 404
 	reverse_proxy radix-api:8000
 }
 

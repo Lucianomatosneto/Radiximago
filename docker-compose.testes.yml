@@ -14,6 +14,7 @@ services:
       - ./docs:/docs:ro
       - ./orthanc:/orthanc:ro
       - ./whisper:/whisper:ro
+      - ./caddy:/caddy:ro
       - ./docker-compose.yml:/docker-compose.yml:ro
       - ./docker-compose.prod.yml:/docker-compose.prod.yml:ro
       - ./docker-compose.tunel.yml:/docker-compose.tunel.yml:ro

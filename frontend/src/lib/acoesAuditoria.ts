@@ -174,6 +174,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('caso_acesso_justificado', 'Motivo informado para abrir a pasta', 'Reason given to open the folder'),
       a('caso_fila_supervisao', 'Fila de pastas consultada (supervisão)', 'Folder queue viewed (oversight)'),
       a('caso_tratamentos_supervisao', 'Tratamentos consultados (supervisão)', 'Treatments viewed (oversight)'),
+      a('limpeza_dados_demo', 'Dados de demonstração removidos', 'Demo data removed'),
     ],
   },
   {

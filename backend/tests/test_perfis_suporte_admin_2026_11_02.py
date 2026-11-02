@@ -248,3 +248,68 @@ def test_curador_so_acrescenta_observacoes_na_pasta(client, criar_usuario, db):
     assert client.get(f"/casos/{cid}", headers=h_al).json()["pode"]["editar_dados_completos"] is True
     assert client.patch(f"/casos/{cid}/paciente", headers=h_al, json={"contato": "48 98888-0000"}).status_code == 200
     assert client.patch(f"/casos/{cid}/paciente", headers=h_pr, json={"descricao": "Dor no 36, ha 3 dias."}).status_code == 200
+
+
+# --- Script de limpeza dos dados DEMO -----------------------------------------
+
+def test_limpeza_demo_simula_apaga_so_o_demo_e_preserva_auditoria(client, criar_usuario, db):
+    import uuid
+
+    from app.modules import casos_arquivos
+    from app.modules.casos import CasoClinico, CasoImagem
+    from scripts.limpar_dados_demo import ACAO_AUDITORIA, executar, planejar
+
+    professor = criar_usuario(perfil=UserRole.professor)
+    aluno_demo = criar_usuario()
+    aluno_demo.email = f"demo-{uuid.uuid4().hex[:8]}@radiximago.example.com"
+    aluno_real = criar_usuario()
+    db.commit()
+    h_demo = cabecalho_auth(obter_token(client, aluno_demo.email))
+    h_real = cabecalho_auth(obter_token(client, aluno_real.email))
+
+    def nova_pasta(headers, nome):
+        dados = {"paciente": {"nome": nome, "nascimento": "1990-05-20", "genero": "feminino", "contato": "48 90000-0000"},
+                 "modalidade": "periapical", "descricao": "Pasta de teste.",
+                 "professor_id": professor.id, "fotos": [{"dentes": [36], "observacao": "f"}]}
+        arquivos = [("fotos", ("f.jpg", _foto(), "image/jpeg")), ("termo", ("t.jpg", _foto(), "image/jpeg"))]
+        r = client.post("/casos", headers=headers, data={"dados": json.dumps(dados)}, files=arquivos)
+        assert r.status_code in (200, 201), r.text
+        return r.json()["id"]
+
+    demo_id = nova_pasta(h_demo, "Paciente Ficticio da Demo")
+    real_id = nova_pasta(h_real, "Maria da Silva")
+    nomes_arquivos = [n for i in db.query(CasoImagem).filter(CasoImagem.caso_id == demo_id).all() for n in (i.arquivo, i.miniatura)]
+    assert nomes_arquivos and all((casos_arquivos.pasta_casos() / n).exists() for n in nomes_arquivos)
+
+    # SIMULACAO: levanta o plano e nao muda nada
+    plano = planejar(db)
+    assert aluno_demo.id in [u.id for u in plano["usuarios"]] and aluno_real.id not in [u.id for u in plano["usuarios"]]
+    assert demo_id in [c.id for c in plano["casos"]] and real_id not in [c.id for c in plano["casos"]]
+    db.refresh(aluno_demo)
+    assert aluno_demo.excluido is False and db.get(CasoClinico, demo_id) is not None
+
+    # pasta extra pedida pelo numero entra no plano; numero inexistente e avisado
+    extra = planejar(db, [real_id, 987654321])
+    assert real_id in [c.id for c in extra["casos"]] and extra["pastas_inexistentes"] == [987654321]
+
+    # EXECUTAR: apaga so a pasta demo (com os arquivos do disco) e exclui o usuario demo
+    antes = db.query(AuditLog).filter(AuditLog.usuario_id == aluno_demo.id).count()
+    assert antes >= 1
+    resumo = executar(db, plano)
+    assert resumo["pastas"] >= 1 and resumo["arquivos"] >= len(nomes_arquivos)
+    db.expire_all()
+    assert db.get(CasoClinico, demo_id) is None
+    assert db.get(CasoClinico, real_id) is not None
+    assert not any((casos_arquivos.pasta_casos() / n).exists() for n in nomes_arquivos)
+    aluno_demo = db.get(type(aluno_demo), aluno_demo.id)
+    assert aluno_demo.excluido is True and aluno_demo.ativo is False and aluno_demo.excluido_em is not None
+    # a auditoria continua inteira e a propria limpeza fica registrada
+    assert db.query(AuditLog).filter(AuditLog.usuario_id == aluno_demo.id).count() >= antes
+    linha = db.query(AuditLog).filter(AuditLog.acao == ACAO_AUDITORIA).order_by(AuditLog.id.desc()).first()
+    assert linha is not None and "pastas=" in linha.detalhes
+
+    # arruma o que o teste criou (a limpeza nao apaga a pasta "real"). A linha de auditoria da
+    # propria limpeza FICA: o banco proibe apagar auditoria (ASVS 16.4.2) - e isso e o desejado.
+    for i in db.query(CasoImagem).filter(CasoImagem.caso_id == real_id).all():
+        casos_arquivos.apagar(i.arquivo)
+        casos_arquivos.apagar(i.miniatura)
