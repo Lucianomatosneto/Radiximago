@@ -654,6 +654,7 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
             "reabrir_tratamento": equipe and caso.etapa == EtapaCaso.CONCLUIDO.value
             and caso.aluno_tratamento_id is not None,
             "editar_paciente": usuario.perfil not in PERFIS_SUPERVISAO,
+            "editar_dados_completos": usuario.perfil not in PERFIS_SUPERVISAO and usuario.perfil != UserRole.curador,
         },
     }
 
@@ -754,6 +755,12 @@ def editar_paciente(
 ):
     _exigir_leitura_e_escrita(usuario)
     caso = _buscar_caso(db, caso_id, usuario)
+    # Decisao de 02/11/2026: identificacao do paciente e editada so por aluno e professor;
+    # o curador apenas acrescenta observacoes.
+    if usuario.perfil == UserRole.curador and (dados.model_fields_set - {"observacoes"}):
+        _auditar(db, usuario, "caso_acesso_negado", caso.id, "curador tentou editar dados de identificacao")
+        db.commit()
+        raise HTTPException(status_code=403, detail="O curador só pode acrescentar observações.")
     campos = {
         "nome": "paciente_nome", "nascimento": "paciente_nascimento", "genero": "paciente_genero",
         "contato": "paciente_contato", "prontuario": "paciente_prontuario",

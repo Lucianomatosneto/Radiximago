@@ -211,3 +211,40 @@ def test_admin_abre_pasta_so_com_justificativa_e_somente_leitura(client, criar_u
     assert ("caso_acesso_justificado", cid) in acoes and ("caso_visualizado", cid) in acoes
     motivo = db.query(AuditLog).filter(AuditLog.acao == "caso_acesso_justificado", AuditLog.entidade_id == cid).one().detalhes
     assert "fila parada" in motivo
+
+
+# --- Curador so acrescenta observacoes; identificacao e do aluno/professor ------
+
+def test_curador_so_acrescenta_observacoes_na_pasta(client, criar_usuario, db):
+    aluno = criar_usuario()
+    professor = criar_usuario(perfil=UserRole.professor)
+    curador = criar_usuario(perfil=UserRole.curador)
+    h_al = cabecalho_auth(obter_token(client, aluno.email))
+    h_pr = cabecalho_auth(obter_token(client, professor.email))
+    h_cu = cabecalho_auth(obter_token(client, curador.email))
+    dados = {
+        "paciente": {"nome": "Maria Segredo da Silva", "nascimento": "1990-05-20", "genero": "feminino",
+                     "contato": "48 99999-1111"},
+        "modalidade": "periapical", "descricao": "Dor no 36.",
+        "professor_id": professor.id, "fotos": [{"dentes": [36], "observacao": "f"}],
+    }
+    arquivos = [("fotos", ("f.jpg", _foto(), "image/jpeg")), ("termo", ("t.jpg", _foto(), "image/jpeg"))]
+    cid = client.post("/casos", headers=h_al, data={"dados": json.dumps(dados)}, files=arquivos).json()["id"]
+
+    pode = client.get(f"/casos/{cid}", headers=h_cu).json()["pode"]
+    assert pode["editar_paciente"] is True and pode["editar_dados_completos"] is False
+
+    # curador NAO altera identificacao nem descricao
+    for corpo in ({"nome": "Outro Nome"}, {"contato": "48 90000-0000"}, {"descricao": "Nova descricao"},
+                  {"nome": "Outro Nome", "observacoes": "x"}):
+        assert client.patch(f"/casos/{cid}/paciente", headers=h_cu, json=corpo).status_code == 403
+    # ... mas acrescenta observacoes
+    r = client.patch(f"/casos/{cid}/paciente", headers=h_cu, json={"observacoes": "Radiografia com sobreposicao."})
+    assert r.status_code == 200 and r.json()["mudados"] == ["observacoes"]
+    negadas = db.query(AuditLog).filter(AuditLog.usuario_id == curador.id, AuditLog.resultado == "negado").count()
+    assert negadas == 4
+
+    # aluno e professor continuam editando tudo
+    assert client.get(f"/casos/{cid}", headers=h_al).json()["pode"]["editar_dados_completos"] is True
+    assert client.patch(f"/casos/{cid}/paciente", headers=h_al, json={"contato": "48 98888-0000"}).status_code == 200
+    assert client.patch(f"/casos/{cid}/paciente", headers=h_pr, json={"descricao": "Dor no 36, ha 3 dias."}).status_code == 200

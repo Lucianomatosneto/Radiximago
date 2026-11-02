@@ -196,6 +196,7 @@ Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/
 | Curadoria — **gravar** (editar fichas, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário) | ✅ | — | ✅ | — | — | — |
 | Curadoria — **só ler** (fichas, fila, indicadores) | ✅ | ✅ | ✅ | — | — | — |
 | Pastas de pacientes — **supervisão** da fila e dos tratamentos (sem nome, contato, fotos; cada consulta auditada) | ✅ | — | ✅ | ✅ | — | — |
+| Pastas de pacientes — **editar identificação** (nome, nascimento, contato, prontuário, descrição); o curador só acrescenta observações | — | — | observações | ✅ | ✅ (o que enviou) | — |
 | Indicadores e relatórios | ✅ | ✅ | ✅ | — | — | — |
 | Auditoria | ✅ | — | — | — | — | — |
 | Pesquisar, visualizar, salvar, anotar e compartilhar imagens aprovadas | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -317,7 +318,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
-| 1.11 | 02/11/2026 | Suporte só lê a curadoria; administrador supervisiona a fila de pastas sem dados do paciente (5.1) |
+| 1.11 | 02/11/2026 | Suporte só lê a curadoria; administrador supervisiona a fila de pastas sem dados do paciente; curador só acrescenta observações na pasta (5.1) |
 | 1.10 | 19/10/2026 | Tailwind 4: fim dos 7 avisos das ferramentas de montagem (seção 7) |
 | 1.9 | 19/10/2026 | Grupo 6: Argon2id e senhas de até 128 caracteres, lista de senhas vazadas (3.3), login em duas etapas (3.4), antivírus como risco aceito até a implantação (9) |
 | 1.8 | 18/10/2026 | Grupo 4: CSP completa nas telas (5.1), nome de arquivo definido pelo servidor (6), chave do serviço de voz (9.1); limites em `REGRAS_DE_NEGOCIO.md` |

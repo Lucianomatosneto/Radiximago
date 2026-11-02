@@ -174,7 +174,7 @@ export default function PastaPage() {
               </label>
               {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-300" role="alert">{erro}</p>}
               <button type="submit" disabled={motivo.trim().length < 10} className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{t('justificativa.botao')}</button>
-              <p className="text-xs text-slate-500"><AvisoNaoDiagnostico compacto /></p>
+              <div className="text-xs text-slate-500"><AvisoNaoDiagnostico compacto /></div>
             </form>
           </main>
         </div>
@@ -331,6 +331,7 @@ export default function PastaPage() {
               {painel === 'editar' && (
                 <section className="space-y-2 rounded-2xl border border-brand/40 bg-base-surface p-3">
                   <h3 className="text-sm font-semibold text-ink">{t('acoes.editarPaciente')}</h3>
+                  {caso.pode.editar_dados_completos && (<>
                   {(['nome', 'contato', 'prontuario'] as const).map((k) => (
                     <input key={k} value={edicao[k] ?? ''} onChange={(e) => setEdicao({ ...edicao, [k]: e.target.value })} className={campo} aria-label={t(`novo.${k}`)} placeholder={t(`novo.${k}`)} />
                   ))}
@@ -338,9 +339,10 @@ export default function PastaPage() {
                   <select value={edicao.genero ?? ''} onChange={(e) => setEdicao({ ...edicao, genero: e.target.value })} className={campo} aria-label={t('novo.genero')}>
                     {['feminino', 'masculino', 'outro', 'nao_informado'].map((g) => <option key={g} value={g}>{t(`generos.${g}`)}</option>)}
                   </select>
+                  </>)}
                   <textarea value={edicao.observacoes ?? ''} rows={2} onChange={(e) => setEdicao({ ...edicao, observacoes: e.target.value })} className={campo} aria-label={t('novo.outrosDados')} placeholder={t('novo.outrosDados')} />
-                  <textarea value={edicao.descricao ?? ''} rows={3} onChange={(e) => setEdicao({ ...edicao, descricao: e.target.value })} className={campo} aria-label={t('novo.descricao')} />
-                  <button type="button" className={botaoForte} onClick={() => acao(`/casos/${caso.id}/paciente`, { ...edicao, prontuario: edicao.prontuario || null, observacoes: edicao.observacoes || null }, t('dadosSalvos'))}>{t('salvar')}</button>
+                  {caso.pode.editar_dados_completos && <textarea value={edicao.descricao ?? ''} rows={3} onChange={(e) => setEdicao({ ...edicao, descricao: e.target.value })} className={campo} aria-label={t('novo.descricao')} />}
+                  <button type="button" className={botaoForte} onClick={() => acao(`/casos/${caso.id}/paciente`, caso.pode.editar_dados_completos ? { ...edicao, prontuario: edicao.prontuario || null, observacoes: edicao.observacoes || null } : { observacoes: edicao.observacoes || null }, t('dadosSalvos'))}>{t('salvar')}</button>
                   <p className="text-[11px] text-slate-500">{t('edicaoHistorico')}</p>
                 </section>
               )}

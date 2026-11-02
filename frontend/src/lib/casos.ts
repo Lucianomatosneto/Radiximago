@@ -66,6 +66,7 @@ export interface DetalheCaso extends ResumoCaso {
     concluir: boolean
     reabrir_tratamento?: boolean
     editar_paciente: boolean
+    editar_dados_completos: boolean
   }
 }
 
