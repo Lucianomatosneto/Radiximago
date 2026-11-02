@@ -27,10 +27,19 @@ fazer_backup() {
   carimbo=$(date +%Y%m%d-%H%M%S)
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] Iniciando backup $carimbo"
 
-  if pg_dump --format=custom --file="/backups/postgres/radix-imago-$carimbo.dump"; then
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Postgres OK: radix-imago-$carimbo.dump"
+  # Grava num arquivo PROVISORIO e so o promove a backup se ficou completo e
+  # legivel (02/11/2026). Antes, o arquivo era criado vazio no inicio: se o
+  # computador ou o Docker parasse no meio, sobrava um .dump de 0 bytes que
+  # ainda contava entre os N guardados e empurrava backups bons para fora.
+  destino="/backups/postgres/radix-imago-$carimbo.dump"
+  provisorio="$destino.parcial"
+  if pg_dump --format=custom --file="$provisorio" && [ -s "$provisorio" ] \
+     && pg_restore --list "$provisorio" >/dev/null 2>&1; then
+    mv "$provisorio" "$destino"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Postgres OK: radix-imago-$carimbo.dump ($(wc -c < "$destino") bytes)"
   else
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERRO no backup do Postgres" >&2
+    rm -f "$provisorio"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERRO no backup do Postgres (arquivo descartado)" >&2
   fi
 
   if tar -czf "/backups/orthanc/orthanc-dados-$carimbo.tar.gz" -C / orthanc_data; then
@@ -50,6 +59,10 @@ fazer_backup() {
     manter_recentes /backups/dados_clinicos '*.tar.gz' "$RETENCAO"
   fi
 
+  # backups vazios (de interrupcoes antigas) nao servem para nada e nao podem
+  # ocupar a cota de retencao
+  find /backups/postgres -name '*.dump' -size 0 -delete 2>/dev/null || true
+  find /backups/postgres -name '*.dump.parcial' -mmin +120 -delete 2>/dev/null || true
   manter_recentes /backups/postgres '*.dump' "$RETENCAO"
   manter_recentes /backups/orthanc '*.tar.gz' "$RETENCAO"
 
