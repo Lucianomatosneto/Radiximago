@@ -38,12 +38,13 @@ export default function PastaPage() {
   const [precisaMotivo, setPrecisaMotivo] = useState(false)
   const [motivo, setMotivo] = useState('')
   const [aviso, setAviso] = useState(busca.get('enviada') ? 'enviada' : '')
-  const [painel, setPainel] = useState<'' | 'editar' | 'compartilhar' | 'link' | 'curador' | 'classificar' | 'aluno' | 'versoes' | 'concluir' | 'reabrir'>('')
+  const [painel, setPainel] = useState<'' | 'editar' | 'compartilhar' | 'link' | 'curador' | 'classificar' | 'aluno' | 'versoes' | 'concluir' | 'reabrir' | 'eliminar'>('')
   // trava contra clique duplo nas confirmacoes (concluir/reabrir)
   const [enviando, setEnviando] = useState(false)
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [destino, setDestino] = useState('')
   const [nota, setNota] = useState('')
+  const [motivoEliminar, setMotivoEliminar] = useState('')
   const [tratamentos, setTratamentos] = useState<string[]>([])
   const [listaTratamentos, setListaTratamentos] = useState<string[]>([])
   const [tratamentoAluno, setTratamentoAluno] = useState('')
@@ -220,6 +221,7 @@ export default function PastaPage() {
             <span className={`rounded-full border px-3 py-1 text-sm font-semibold ${COR_ETAPA[caso.etapa]}`}>{t(`etapas.${caso.etapa}`)}</span>
           </div>
           <AvisoNaoDiagnostico />
+          {equipe && caso.eliminacao_prevista_em && <p className="text-xs text-slate-500">{t('eliminacaoPrevista', { data: data(caso.eliminacao_prevista_em) })}</p>}
           {aviso && <p className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300" role="status">{aviso === 'enviada' ? t('enviadaComSucesso') : aviso}</p>}
           {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-600 dark:text-red-300" role="alert">{erro}</p>}
 
@@ -326,6 +328,7 @@ export default function PastaPage() {
                 {caso.pode.reabrir_tratamento && <button type="button" className={botao} aria-expanded={painel === 'reabrir'} onClick={() => { setNota(''); abrirPainel('reabrir') }}>{t('acoes.reabrirTratamento')}</button>}
                 {caso.versoes > 0 && <button type="button" className={botao} onClick={() => abrirPainel('versoes')}>{t('acoes.versoes', { n: caso.versoes })}</button>}
                 {equipe && <Link href={`/casos/acessos?caso=${caso.id}`} className={botao}>{t('acoes.acessos')}</Link>}
+                {caso.pode.eliminar && <button type="button" className={botao} aria-expanded={painel === 'eliminar'} onClick={() => { setMotivoEliminar(''); abrirPainel('eliminar') }}>{t('acoes.eliminar')}</button>}
               </section>
 
               {painel === 'editar' && (
@@ -418,6 +421,38 @@ export default function PastaPage() {
                       }}
                     >
                       {enviando ? t('enviandoAcao') : painel === 'concluir' ? t('simConcluir') : t('simReabrir')}
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {painel === 'eliminar' && (
+                <section role="alertdialog" aria-labelledby="titulo-eliminar-pasta" className="space-y-2 rounded-2xl border border-red-400/60 bg-base-surface p-3">
+                  <h3 id="titulo-eliminar-pasta" className="text-sm font-semibold text-ink">{t('eliminarTitulo', { id: caso.id, paciente: caso.paciente.nome })}</h3>
+                  <p className="text-xs text-slate-500">{t('eliminarAjuda')}</p>
+                  <label htmlFor="motivo-eliminar" className="text-xs text-slate-500">{t('eliminarMotivo')}</label>
+                  <textarea id="motivo-eliminar" value={motivoEliminar} rows={2} minLength={10} maxLength={300} onChange={(e) => setMotivoEliminar(e.target.value)} className={campo} disabled={enviando} />
+                  <div className="flex gap-2">
+                    <button type="button" className={botao} disabled={enviando} onClick={() => setPainel('')}>{t('cancelar')}</button>
+                    <button
+                      type="button"
+                      className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                      disabled={enviando || motivoEliminar.trim().length < 10}
+                      aria-busy={enviando}
+                      onClick={async () => {
+                        if (enviando) return
+                        setEnviando(true)
+                        setErro('')
+                        try {
+                          await apiJson(`/casos/${caso.id}/eliminar`, { method: 'POST', body: JSON.stringify({ motivo: motivoEliminar.trim() }) })
+                          router.push('/casos/fila')
+                        } catch (e) {
+                          setErro((e as Error).message)
+                          setEnviando(false)
+                        }
+                      }}
+                    >
+                      {enviando ? t('enviandoAcao') : t('simEliminar')}
                     </button>
                   </div>
                 </section>

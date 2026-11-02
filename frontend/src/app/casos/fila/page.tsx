@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { Hourglass } from 'lucide-react'
 import EstadoVazio from '../../../components/EstadoVazio'
 import AvisoNaoDiagnostico from '../../../components/casos/AvisoNaoDiagnostico'
+import AvisoPastasAVencer from '../../../components/casos/AvisoPastasAVencer'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
 import ListaPacientes from '../../../components/casos/ListaPacientes'
 import { apiJson, type ResumoCaso } from '../../../lib/casos'
@@ -56,6 +57,7 @@ function Fila({ sessao }: { sessao: SessaoUsuario }) {
 
   return (
     <>
+      {!supervisao && <AvisoPastasAVencer />}
       {curador && (
         <div className="flex gap-2" role="tablist">
           {(['aguardando_classificacao', 'na_fila'] as const).map((a) => (

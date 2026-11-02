@@ -2657,7 +2657,8 @@
       "concluir": "Tratamento concluído",
       "versoes": "Versões ({n})",
       "acessos": "Registro de acessos",
-      "reabrirTratamento": "Reabrir tratamento"
+      "reabrirTratamento": "Reabrir tratamento",
+      "eliminar": "Eliminar pasta"
     },
     "etapas": {
       "enviado": "Enviada",
@@ -2868,6 +2869,15 @@
     "confirmarReabrir": "O paciente volta para “Em tratamento”, com o mesmo aluno. A ação fica registrada no histórico da pasta.",
     "simConcluir": "Sim, concluir",
     "simReabrir": "Sim, reabrir",
+    "eliminarTitulo": "Eliminar a pasta nº {id} de {paciente} para sempre?",
+    "eliminarAjuda": "Somem a ficha do paciente, as fotos, as versões do professor e o histórico. Não tem volta. Fica só o registro de auditoria, sem o nome do paciente. Use, por exemplo, quando o paciente retirar a autorização.",
+    "eliminarMotivo": "Motivo (10 a 300 caracteres). Não escreva dados do paciente.",
+    "simEliminar": "Sim, eliminar para sempre",
+    "eliminadaOk": "Pasta eliminada.",
+    "eliminacaoPrevista": "Eliminação automática prevista para {data} (a pasta é uma cópia de trabalho, não o prontuário).",
+    "aVencerTitulo": "{n} pasta(s) serão eliminadas nos próximos {dias} dias",
+    "aVencerItem": "Pasta nº {id} · {paciente}",
+    "aVencerDias": "{n} dia(s)",
     "cancelar": "Cancelar",
     "enviandoAcao": "Salvando…",
     "reabertoOk": "Tratamento reaberto.",

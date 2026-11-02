@@ -67,7 +67,11 @@ export interface DetalheCaso extends ResumoCaso {
     reabrir_tratamento?: boolean
     editar_paciente: boolean
     editar_dados_completos: boolean
+    /** so o professor elimina a pasta a pedido (02/11/2026) */
+    eliminar?: boolean
   }
+  /** data da eliminacao automatica (so equipe; null se desligada) */
+  eliminacao_prevista_em?: string | null
 }
 
 export const urlFoto = (casoId: number, imagemId: number, opcoes: { miniatura?: boolean; baixar?: boolean } = {}) => {

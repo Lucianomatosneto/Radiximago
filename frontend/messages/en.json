@@ -2657,7 +2657,8 @@
       "concluir": "Treatment completed",
       "versoes": "Versions ({n})",
       "acessos": "Access log",
-      "reabrirTratamento": "Reopen treatment"
+      "reabrirTratamento": "Reopen treatment",
+      "eliminar": "Delete folder"
     },
     "etapas": {
       "enviado": "Sent",
@@ -2868,6 +2869,15 @@
     "confirmarReabrir": "The patient goes back to “In treatment”, with the same student. The action is recorded in the folder history.",
     "simConcluir": "Yes, finish",
     "simReabrir": "Yes, reopen",
+    "eliminarTitulo": "Permanently delete folder no. {id} of {paciente}?",
+    "eliminarAjuda": "The patient record, photos, professor versions and history are removed. This cannot be undone. Only the audit record stays, without the patient name. Use it, for example, when the patient withdraws authorization.",
+    "eliminarMotivo": "Reason (10 to 300 characters). Do not write patient data.",
+    "simEliminar": "Yes, delete permanently",
+    "eliminadaOk": "Folder deleted.",
+    "eliminacaoPrevista": "Automatic deletion scheduled for {data} (the folder is a working copy, not the medical record).",
+    "aVencerTitulo": "{n} folder(s) will be deleted in the next {dias} days",
+    "aVencerItem": "Folder no. {id} · {paciente}",
+    "aVencerDias": "{n} day(s)",
     "cancelar": "Cancel",
     "enviandoAcao": "Saving…",
     "reabertoOk": "Treatment reopened.",
