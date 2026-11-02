@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.3 — 20/10/2026 |
+| Versão do documento | 1.5 — 02/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -149,3 +149,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.2 | 19/10/2026 | Senhas em Argon2id; dados do login em duas etapas |
 | 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |
 | 1.4 | 31/10/2026 | Pastas de pacientes (dados identificados, N4): quem vê — aluno autor, aluno do tratamento, professores e curadores; administrador só o registro de acessos (`casos_router.py`, `_pode_ver`) |
+| 1.5 | 02/11/2026 | Pastas de pacientes: o **administrador** vê a fila e os tratamentos **sem dados do paciente** ("Pasta #n") e só abre uma pasta com **justificativa** (10–300 caracteres; somente leitura por 30 min; auditado); o **suporte** não acessa pastas; o **curador** só acrescenta observações (`casos_router.py`) |

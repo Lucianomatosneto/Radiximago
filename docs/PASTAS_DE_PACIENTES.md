@@ -1,6 +1,6 @@
 # Pastas de pacientes (fotos do negatoscópio)
 
-Versão 1.0, de 31/10/2026. A especificação completa está no documento "Radix Imago – Especificação: fotos dos alunos, revisão do professor e fila de tratamento".
+Versão 1.1, de 02/11/2026 (perfis: administrador, suporte e curador). A especificação completa está no documento "Radix Imago – Especificação: fotos dos alunos, revisão do professor e fila de tratamento".
 
 > As imagens originais estão arquivadas. O Radix **não emite diagnóstico**:
 > é apenas um organizador para análise posterior do profissional, com
@@ -20,6 +20,10 @@ Versão 1.0, de 31/10/2026. A especificação completa está no documento "Radix
 | Aluno | **Meus pacientes em tratamento** | Vê os pacientes encaminhados a ele, com o contato. Marca "tratamento concluído". A tela pede confirmação antes, e é possível deixar uma observação. |
 | Professor e curador | **Pasta** | **Reabrir tratamento**: desfaz um "concluído" por engano. O paciente volta para "em tratamento" com o mesmo aluno, e a ação fica no histórico e na auditoria (`caso_tratamento_reaberto`). |
 | Professor e curador | **Alunos e pacientes** | Veem quem trata quem e buscam pelo nome do aluno ou do paciente. |
+| Curador | **Pasta** | Vê a pasta inteira, mas **só acrescenta observações**: nome, nascimento, contato, prontuário e descrição são do aluno que enviou e do professor. Se tentar alterar, o servidor recusa (403) e registra na auditoria. |
+| Administrador | **Aguardando tratamento** e **Alunos e pacientes** | **Supervisiona** se a fila anda e onde há erro, **sem ver dados do paciente**: a pasta aparece como "Pasta #n", sem nome, idade, contato, descrição nem fotos, e a busca é só pelo nome do aluno. Cada consulta fica na auditoria (`caso_fila_supervisao`, `caso_tratamentos_supervisao`). |
+| Administrador | **Pasta** (abrir) | Para abrir uma pasta, informa o **motivo** (10 a 300 caracteres, sem escrever dados do paciente). O acesso vale **30 minutos**, só para aquela pasta, é **somente leitura** (não edita, não compartilha, não baixa, não conclui) e fica na auditoria (`caso_acesso_justificado`). |
+| Suporte | — | **Não acessa pastas de pacientes** (a pasta responde "não encontrada"), nem a fila. |
 | Administrador, curador e professor | **Registro de acessos** | Veem quem abriu cada pasta e quando, sem o nome do paciente. |
 | Curador | **Tela da imagem → Editar curadoria** | Reabre uma curadoria já aprovada para corrigir. Ela sai da busca até ser aprovada de novo, e o histórico guarda tudo. |
 
@@ -33,7 +37,10 @@ Versão 1.0, de 31/10/2026. A especificação completa está no documento "Radix
 - **Quem vê uma pasta:**
   - o aluno autor;
   - o aluno do tratamento;
-  - professores e curadores.
+  - professores e curadores;
+  - o administrador, **só depois de justificar** o motivo (somente leitura, 30 minutos).
+
+  Não veem: pesquisadores, suporte e os demais alunos.
 
   Todo acesso fica na auditoria. A regra vale **mesmo quando o aluno não escolhe professor**: essa opção agora se chama "Não avisar nenhum professor agora (a pasta fica visível para os professores e curadores da clínica)". Antes ela se chamava "Só para mim", e o QA de 01/11/2026 mostrou que esse nome enganava. A equipe precisa ver todas as pastas para a fila de tratamento funcionar. Escolher um professor só faz a pasta chegar a ele em "Compartilhadas comigo".
 - **E-mail só com o link.** A mensagem não leva o nome do paciente nem imagens; quem recebe precisa entrar no Radix.
@@ -52,4 +59,5 @@ Até lá, use só dados de teste.
 
 - Rodar `alembic upgrade head`. Isso cria as tabelas `sugestoes`, `casos_clinicos`, `casos_imagens`, `casos_revisoes`, `casos_compartilhamentos` e `casos_historico`.
 - Definir a `CASOS_CHAVE` no `.env` **uma única vez**. Trocar a chave depois deixa ilegíveis as fotos já guardadas.
-- A cópia completa (`scripts/copia-completa.sh`) e o backup diário incluem a pasta `dados_clinicos/`.
+- A cópia completa (`scripts/copia-completa.sh`) inclui a pasta `dados_clinicos/`. O backup diário a inclui **no servidor** (`docker-compose.prod.yml`); no computador de desenvolvimento ela não é copiada pelo backup diário.
+- Antes de usar dados reais, ver o checklist de LGPD do projeto (base legal, encarregado, CEP, RIPD, retenção e teste de restauração do backup).

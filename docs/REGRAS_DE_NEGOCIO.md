@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.2 — 20/10/2026 |
+| Versão do documento | 1.11 — 02/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -121,6 +121,8 @@ pendente ─┐
 |---|---|
 | Só se edita ficha **pendente** ou **em análise** | `curation/common.py` (`STATUS_EDITAVEIS`) |
 | **Aprovar exige "anonimização validada"** marcada pelo curador (LGPD) | `curation/common.py` (`_executar_aprovacao`) |
+| **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
+| **Só administrador e curador gravam na curadoria** (editar ficha, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário). O **suporte só lê** (02/11/2026) | `auth.py` (`PERFIS_CURADORIA_ESCRITA`) |
 | Descartar exige justificativa | `curation/common.py` |
 | Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
 | Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
@@ -203,3 +205,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.8 | 01/11/2026 | Contagens explicadas em cada tela, página única de acesso negado, explicação de quem pode receber um compartilhamento |
 | 1.9 | 01/11/2026 | Professor vê em Imagens recebidas só o que enviou; texto "Só para mim" trocado (a equipe vê todas as pastas) |
 | 1.10 | 01/11/2026 | Proteção das contas de administrador (M1); só estudante é aprovado automaticamente (A3) |
+| 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor; regras das pastas de pacientes em `PASTAS_DE_PACIENTES.md` |
