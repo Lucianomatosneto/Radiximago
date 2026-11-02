@@ -937,6 +937,19 @@ def encaminhar_aluno(caso_id: int, dados: EncaminhamentoAluno, usuario: User = D
     return {"etapa": caso.etapa}
 
 
+@router.post("/{caso_id}/impressao")
+def registrar_impressao(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    """A versao para imprimir / salvar em PDF leva nome e dados do paciente
+    para FORA do sistema (02/11/2026): cada abertura dessa versao fica na
+    auditoria (`caso_impresso`), como ja ocorre com o download da foto. O
+    administrador so le: nao imprime (mesma regra do download)."""
+    _exigir_leitura_e_escrita(usuario)
+    caso = _buscar_caso(db, caso_id, usuario)
+    _auditar(db, usuario, "caso_impresso", caso.id, "versao para imprimir ou salvar em PDF")
+    db.commit()
+    return {"registrado": True}
+
+
 @router.post("/{caso_id}/concluir")
 def concluir(
     caso_id: int,

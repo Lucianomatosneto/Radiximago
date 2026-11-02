@@ -161,6 +161,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('caso_visualizado', 'Pasta aberta', 'Folder opened'),
       a('caso_acesso_negado', 'Acesso à pasta negado', 'Folder access denied'),
       a('caso_foto_baixada', 'Foto da pasta baixada', 'Folder photo downloaded'),
+      a('caso_impresso', 'Pasta impressa ou salva em PDF', 'Folder printed or saved as PDF'),
       a('caso_revisado', 'Pasta revisada (nova versão)', 'Folder reviewed'),
       a('caso_dados_alterados', 'Dados do paciente alterados', 'Patient data changed'),
       a('caso_compartilhado', 'Pasta compartilhada', 'Folder shared'),

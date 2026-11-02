@@ -20,7 +20,12 @@ export default function ImprimirPastaPage() {
   const [carregadas, setCarregadas] = useState(0)
 
   useEffect(() => {
-    apiJson<DetalheCaso>(`/casos/${params.id}`).then(setCaso).catch((e) => setErro((e as Error).message))
+    // 02/11/2026: a impressao leva dados do paciente para fora do sistema; o
+    // servidor registra na auditoria (caso_impresso) ANTES de entregar a pagina.
+    apiJson(`/casos/${params.id}/impressao`, { method: 'POST' })
+      .then(() => apiJson<DetalheCaso>(`/casos/${params.id}`))
+      .then(setCaso)
+      .catch((e) => setErro((e as Error).message))
   }, [params.id])
 
   useEffect(() => {

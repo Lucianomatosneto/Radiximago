@@ -373,3 +373,29 @@ def test_deixar_de_compartilhar(client, criar_usuario, db):
     assert sum(1 for h in det["historico"] if h["acao"] == "compartilhamento_removido") == 3
     assert db.query(AuditLog).filter(AuditLog.acao == "caso_compartilhamento_removido",
                                      AuditLog.entidade_id == caso["id"]).count() == 3
+
+
+def test_impressao_da_pasta_fica_na_auditoria_e_administrador_nao_imprime(client, criar_usuario, db):
+    """02/11/2026: imprimir / salvar em PDF leva dados do paciente para fora do sistema."""
+    aluno = criar_usuario()
+    professor = criar_usuario(perfil=UserRole.professor)
+    pesquisador = criar_usuario(perfil=UserRole.pesquisador)
+    admin = criar_usuario(perfil=UserRole.administrador)
+    h_aluno = cabecalho_auth(obter_token(client, aluno.email))
+    caso_id = _criar(client, h_aluno, _dados(professor_id=professor.id)).json()["id"]
+
+    h_prof = cabecalho_auth(obter_token(client, professor.email))
+    assert client.post(f"/casos/{caso_id}/impressao", headers=h_prof).status_code == 200
+    registro = db.query(AuditLog).filter(AuditLog.acao == "caso_impresso", AuditLog.entidade_id == caso_id).all()
+    assert len(registro) == 1 and registro[0].usuario_id == professor.id and registro[0].resultado == "sucesso"
+    # a trilha nunca guarda o nome do paciente
+    assert "Maria" not in (registro[0].detalhes or "")
+
+    # quem nao ve a pasta: 404 (e nada de impressao registrada)
+    h_pesq = cabecalho_auth(obter_token(client, pesquisador.email))
+    assert client.post(f"/casos/{caso_id}/impressao", headers=h_pesq).status_code == 404
+    # administrador so le: 403, sem registro de impressao
+    h_admin = cabecalho_auth(obter_token(client, admin.email))
+    assert client.post(f"/casos/{caso_id}/impressao", headers=h_admin).status_code == 403
+    db.expire_all()
+    assert db.query(AuditLog).filter(AuditLog.acao == "caso_impresso", AuditLog.entidade_id == caso_id).count() == 1

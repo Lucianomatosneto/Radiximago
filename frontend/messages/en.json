@@ -2827,6 +2827,7 @@
         "caso_visualizado": "opened the folder",
         "caso_acesso_negado": "tried to open without permission",
         "caso_foto_baixada": "downloaded an image",
+        "caso_impresso": "printed or saved the folder as PDF",
         "caso_revisado": "saved a review",
         "caso_dados_alterados": "changed data",
         "caso_compartilhado": "shared",
