@@ -249,3 +249,14 @@ export function detalhesLegiveis(texto: string | null | undefined): string {
   if (!texto) return ''
   return texto.replace(/(\/[^\s?]*)\?[^\s]*/g, '$1 (parâmetros de busca ocultos)')
 }
+
+/** M6 (01/11/2026): endereco de rede legivel. Os internos do Docker
+ * (172.16-31.x, 10.x, 192.168.x, 127.x) significam "este computador / a
+ * rede interna": no computador de desenvolvimento o Docker nao repassa o
+ * endereco real. No servidor e no tunel o endereco real e gravado. */
+export function ipLegivel(ip: string | null | undefined, idioma: string): string {
+  if (!ip) return '—'
+  const interno = /^(10\.|127\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(ip)
+  if (!interno) return ip
+  return `${ip} (${idioma === 'en' ? 'internal Docker network – local access' : 'rede interna do Docker – acesso local'})`
+}

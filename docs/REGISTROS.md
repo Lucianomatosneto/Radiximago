@@ -44,6 +44,12 @@
 
 A lista acima é conferida automaticamente com o código (`tests/test_documentacao_confere.py`): ação nova sem documentação faz o teste falhar.
 
+**Endereço de rede (01/11/2026, M6):**
+- No **servidor** e no **túnel**, a API grava o endereço real de quem acessou. Ela confia no endereço informado pelo Caddy ou pela Cloudflare (`FORWARDED_ALLOW_IPS`), porque só esses intermediários alcançam a API.
+- O Nginx do visualizador agora repassa esse endereço na conferência de acesso às imagens. Antes, a auditoria do visualizador gravava o endereço do próprio Nginx (172.18.0.2).
+- No **computador de desenvolvimento**, o Docker não repassa o endereço real, e todos os acessos aparecem como 172.18.0.1. A tela mostra esses endereços com "(rede interna do Docker – acesso local)".
+- **"Abriu a pasta"** é gravado no máximo uma vez a cada 30 segundos por pessoa e por pasta. A tela pede a pasta de novo logo depois de cada ação, e isso gerava registros duplicados no mesmo segundo.
+
 **Na tela Auditoria (01/11/2026, M3):**
 - Toda ação aparece com nome em português, como "Pasta aberta" ou "Usuário reativado", em vez do código. Os nomes ficam em `frontend/src/lib/acoesAuditoria.ts`, e o teste `test_auditoria_legivel.py` falha se uma ação documentada acima ficar sem nome.
 - O filtro agrupa as ações por tema e mostra quantas vezes cada uma aparece. Ações antigas fora desta lista entram em "Outras".

@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
-import { GRUPOS_ACOES, conhecida, detalhesLegiveis, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
+import { GRUPOS_ACOES, conhecida, detalhesLegiveis, ipLegivel, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -397,7 +397,7 @@ export default function AuditoriaPage() {
                             {item.ip && (
                               <>
                                 <dt className="font-semibold text-slate-500">{t('detalheIp')}</dt>
-                                <dd className="font-mono">{item.ip}</dd>
+                                <dd className="font-mono">{ipLegivel(item.ip, locale)}</dd>
                               </>
                             )}
                             <dt className="font-semibold text-slate-500">{t('detalheRegistro')}</dt>

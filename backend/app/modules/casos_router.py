@@ -69,6 +69,7 @@ MAX_FOTOS_POR_PASTA = 30
 PERFIS_EQUIPE = {UserRole.professor, UserRole.curador}            # veem todas as pastas
 PERFIS_CADASTRO = {UserRole.estudante, UserRole.professor, UserRole.curador}
 PERFIS_REGISTRO_ACESSOS = {UserRole.administrador, UserRole.curador, UserRole.professor}
+JANELA_ABERTURA_PASTA = timedelta(seconds=30)  # uma "abriu a pasta" por pessoa a cada 30 s
 JANELA_REGISTRO_FOTO = timedelta(minutes=10)  # uma linha de auditoria por pessoa/pasta a cada 10 min nas fotos
 
 
@@ -546,7 +547,15 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
     db.query(CasoCompartilhamento).filter(CasoCompartilhamento.caso_id == caso.id,
                                           CasoCompartilhamento.para_id == usuario.id,
                                           CasoCompartilhamento.visto_em.is_(None)).update({"visto_em": agora})
-    _auditar(db, usuario, "caso_visualizado", caso.id)
+    # M6 (01/11/2026): a tela pede a pasta de novo logo depois de cada acao;
+    # uma abertura por pessoa a cada JANELA_ABERTURA_PASTA (antes: "abriu a
+    # pasta" 2x no mesmo segundo)
+    recente = (db.query(AuditLog.id).filter(
+        AuditLog.usuario_id == usuario.id, AuditLog.entidade == "caso", AuditLog.entidade_id == caso.id,
+        AuditLog.acao == "caso_visualizado",
+        AuditLog.criado_em >= agora - JANELA_ABERTURA_PASTA).first())
+    if not recente:
+        _auditar(db, usuario, "caso_visualizado", caso.id)
     db.commit()
     db.refresh(caso)
     revisao = _revisao_atual(db, caso.id)

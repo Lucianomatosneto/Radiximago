@@ -302,3 +302,30 @@ def test_curadoria_geral_pode_ser_editada_depois_do_envio(client, criar_usuario,
     assert client.patch(f"/curation/{ficha.id}", headers=h_cu, json={"descricao_didatica": "Corrigida depois do envio"}).status_code == 200
     hist = db.query(CurationHistory).filter(CurationHistory.curation_id == ficha.id).all()
     assert any(h.acao == "reabertura_edicao" and h.status_anterior == "aprovada" for h in hist)
+
+
+def test_m6_abrir_a_pasta_duas_vezes_seguidas_grava_uma_vez(client, criar_usuario, db):
+    """M6 (01/11/2026): "abriu a pasta" aparecia 2x no mesmo segundo."""
+    aluno = criar_usuario()
+    professor = criar_usuario(perfil=UserRole.professor)
+    h_al = cabecalho_auth(obter_token(client, aluno.email))
+    h_pr = cabecalho_auth(obter_token(client, professor.email))
+    cid = _criar(client, h_al, _dados(professor.id)).json()["id"]
+    for _ in range(3):
+        assert client.get(f"/casos/{cid}", headers=h_pr).status_code == 200
+    vezes = db.query(AuditLog).filter(AuditLog.acao == "caso_visualizado", AuditLog.entidade_id == cid,
+                                      AuditLog.usuario_id == professor.id).count()
+    assert vezes == 1
+
+
+def test_m6_endereco_real_repassado_pelos_intermediarios():
+    """O Nginx do visualizador repassa o endereco de quem pediu, e no servidor
+    e no tunel a API confia no endereco informado pelo Caddy/Cloudflare."""
+    from pathlib import Path
+
+    raiz = Path(__file__).resolve().parents[2]
+    nginx = (raiz / "orthanc" / "cors-proxy.conf.template").read_text(encoding="utf-8")
+    bloco = nginx.split("location = /_radix_autorizar", 1)[1].split("}", 1)[0]
+    assert "X-Forwarded-For" in bloco
+    for arquivo in ("docker-compose.prod.yml", "docker-compose.tunel.yml"):
+        assert "FORWARDED_ALLOW_IPS" in (raiz / arquivo).read_text(encoding="utf-8"), arquivo

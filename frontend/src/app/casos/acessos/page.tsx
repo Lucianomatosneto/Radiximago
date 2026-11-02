@@ -3,7 +3,7 @@
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
-import { rotuloAcao } from '../../../lib/acoesAuditoria'
+import { ipLegivel, rotuloAcao } from '../../../lib/acoesAuditoria'
 import { History } from 'lucide-react'
 import EstadoVazio from '../../../components/EstadoVazio'
 import LayoutCasos from '../../../components/casos/LayoutCasos'
@@ -56,7 +56,7 @@ function Tabela() {
                 <td className="px-3 py-1.5 text-ink">{a.quem} <span className="text-xs text-slate-500">({a.perfil ? t(`perfis.${a.perfil}`) : '—'})</span></td>
                 <td className="px-3 py-1.5 text-ink">{t.has(`acessos.acoes.${a.acao}`) ? t(`acessos.acoes.${a.acao}`) : rotuloAcao(a.acao, locale)}</td>
                 <td className="px-3 py-1.5 text-ink">#{a.caso_id} · {a.aluno_autor}</td>
-                <td className="px-3 py-1.5 text-xs text-slate-500">{a.ip}</td>
+                <td className="px-3 py-1.5 text-xs text-slate-500">{ipLegivel(a.ip, locale)}</td>
               </tr>
             ))}
           </tbody>
