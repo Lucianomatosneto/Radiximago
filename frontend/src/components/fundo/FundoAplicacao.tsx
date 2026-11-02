@@ -147,7 +147,7 @@ html.light[data-fundo]{
   --rgb-base-border: 212 219 229;
   --rgb-ink-2: 30 41 59;
   --rgb-ink-3: 71 85 105;
-  --rgb-ink-4: 100 116 139;
+  --rgb-ink-4: 92 105 126; /* contraste AA (>= 4,5:1) sobre o fundo claro */
 }
 
 /* 1. Fundo da pagina transparente (o mapa aparece) - inclui as telas de "carregando" */

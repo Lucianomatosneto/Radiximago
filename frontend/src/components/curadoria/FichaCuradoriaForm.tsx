@@ -127,8 +127,9 @@ export default function FichaCuradoriaForm({
       <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label className={campoLabel}>{t('descricaoDidatica')}</label>
+            <label htmlFor="ficha-descricao-didatica" className={campoLabel}>{t('descricaoDidatica')}</label>
             <textarea
+              id="ficha-descricao-didatica"
               maxLength={8000}
               value={form.descricao_didatica}
               onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
@@ -138,8 +139,9 @@ export default function FichaCuradoriaForm({
           </div>
 
           <div>
-            <label className={campoLabel}>{t('observacoesInternas')}</label>
+            <label htmlFor="ficha-observacoes-internas" className={campoLabel}>{t('observacoesInternas')}</label>
             <textarea
+              id="ficha-observacoes-internas"
               maxLength={8000}
               value={form.observacoes_internas}
               onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}

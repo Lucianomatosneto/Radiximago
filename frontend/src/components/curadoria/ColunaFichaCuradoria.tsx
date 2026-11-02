@@ -394,6 +394,7 @@ export default function ColunaFichaCuradoria({
             value={form.descricao_didatica}
             onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
             data-campo-texto="descricao"
+            aria-label={tSecoes('descricao')}
             rows={4}
             className={campoTexto}
           />
@@ -405,6 +406,7 @@ export default function ColunaFichaCuradoria({
             value={form.observacoes_internas}
             onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
             data-campo-texto="observacoes"
+            aria-label={tSecoes('observacoes')}
             rows={3}
             className={campoTexto}
           />
