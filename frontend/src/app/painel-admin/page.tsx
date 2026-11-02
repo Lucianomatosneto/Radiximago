@@ -12,8 +12,10 @@ import ResumoImagens, { type ContagemImagens } from '../../components/ResumoImag
 import {
   CORES_STATUS,
   ResultadoChecagem,
+  StatusServico,
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
+import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes } from '../../lib/servicosSistema'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
@@ -92,6 +94,11 @@ export default function PainelAdminPage() {
     descricao: tIntegracoes('verificando'),
   })
 
+  // B2 (01/11/2026): os mesmos servicos da tela Integracoes
+  const [ohif, setOhif] = useState<StatusServico>('aguardando')
+  const [email, setEmail] = useState<StatusServico>('aguardando')
+  const [armazenamento, setArmazenamento] = useState<StatusServico>('aguardando')
+
   const [totalAlertas, setTotalAlertas] = useState(0)
   const [alertas, setAlertas] = useState<AlertaLogin[]>([])
 
@@ -112,8 +119,18 @@ export default function PainelAdminPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
+  // nao segura a tela: o e-mail (login no servidor SMTP) pode levar uns segundos
+  function carregarServicosExtras() {
+    lerStatusIntegracoes().then(async (dados) => {
+      setArmazenamento(dados?.armazenamento?.status ?? 'instavel')
+      setOhif((await avaliarOhif(dados)).status)
+    })
+    lerStatusEmail().then((r) => setEmail(r.status))
+  }
+
   async function carregarDados() {
     setCarregando(true)
+    carregarServicosExtras()
     setErro('')
     try {
       const [respostaStats, resultadoBanco, resultadoOrthanc, respostaAlertas] =
@@ -239,23 +256,32 @@ export default function PainelAdminPage() {
 
             <section className="rounded-xl border border-base-border bg-base-surface p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-200">{t('statusServicos')}</h2>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2">
-                  <span className="text-sm text-slate-300">PostgreSQL</span>
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[banco.status]}`}
+              <div className="space-y-2" data-teste="servicos-painel">
+                {(
+                  [
+                    ['FastAPI', 'online'],
+                    ['PostgreSQL', banco.status],
+                    ['Orthanc', orthanc.status],
+                    ['Next.js', 'online'],
+                    ['OHIF', ohif],
+                    ['DICOMWeb (via Orthanc)', orthanc.status],
+                    ['Docker', avaliarDocker(banco.status, orthanc.status)],
+                    [tIntegracoes('servicoEmail'), email],
+                    [tIntegracoes('servicoArmazenamento'), armazenamento],
+                  ] as [string, StatusServico][]
+                ).map(([nome, status]) => (
+                  <div
+                    key={nome}
+                    className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2"
                   >
-                    {tStatus(banco.status)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2">
-                  <span className="text-sm text-slate-300">Orthanc</span>
-                  <span
-                    className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[orthanc.status]}`}
-                  >
-                    {tStatus(orthanc.status)}
-                  </span>
-                </div>
+                    <span className="text-sm text-slate-300">{nome}</span>
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[status]}`}
+                    >
+                      {status === 'aguardando' ? tIntegracoes('verificando') : tStatus(status)}
+                    </span>
+                  </div>
+                ))}
               </div>
               <Link
                 href="/integracoes"

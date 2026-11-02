@@ -7,10 +7,33 @@ Postgres (ARRAY, .overlap()). Por isso: cada teste cria seus proprios
 usuarios/fichas com identificadores unicos (uuid) e os remove no teardown -
 nunca reaproveita nem apaga dados que ja existiam no banco.
 
-Roda de dentro do container radix-api (`docker exec radix-api pytest`),
-onde DATABASE_URL/ORTHANC_URL ja apontam pros hostnames certos da rede
-Docker.
+Roda de dentro do container radix-api, mas NUM BANCO SEPARADO (B3 da
+auditoria do administrador, 01/11/2026):
+    docker compose exec radix-api python scripts/rodar_testes.py
+O script cria/usa <banco>_teste. Rodar `pytest` direto apontando para o
+banco do sistema e RECUSADO logo abaixo (antes deixava usuarios e registros
+de teste misturados com os dados reais).
 """
+
+import os
+import re
+import sys
+
+from sqlalchemy.engine import make_url
+
+from app.core.config import settings as _config
+
+
+def _banco_e_de_teste(url: str) -> bool:
+    return bool(re.search(r"test", make_url(url).database or "", re.IGNORECASE))
+
+
+if not _banco_e_de_teste(_config.DATABASE_URL) and os.environ.get("RADIX_PERMITIR_TESTES_NO_BANCO") != "sim":
+    sys.exit(
+        "RECUSADO: os testes nao rodam no banco do sistema "
+        f"({make_url(_config.DATABASE_URL).database}). Use: "
+        "docker compose exec radix-api python scripts/rodar_testes.py"
+    )
 
 import uuid
 from datetime import datetime, timezone, timedelta

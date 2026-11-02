@@ -39,6 +39,7 @@ const CHAVE_TIPO_RADIOGRAFIA: Record<string, string> = {
   panoramica: 'panoramica',
   interproximal: 'interproximal',
   oclusal: 'oclusal',
+  tomografia: 'tomografia',
 }
 
 // next-intl usa 'pt'/'en' - toLocaleDateString espera uma tag de idioma

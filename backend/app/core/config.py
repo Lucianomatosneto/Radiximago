@@ -34,6 +34,10 @@ class Settings(BaseSettings):
     ORTHANC_PASSWORD: str
     DICOMWEB_URL: str = "http://radix-orthanc:8042/dicom-web"
     OHIF_BASE_URL: str = "http://localhost:3001"
+    # Endereco do OHIF DENTRO da rede do Docker (ex.: http://radix-ohif), so
+    # para a tela Integracoes/Painel conferir se o visualizador responde
+    # (B2, 01/11/2026). Vazio = a checagem fica so com o navegador.
+    OHIF_URL: str = ""
     # Dominio do cookie de login na internet (ex.: ".radiximago.com.br"): as
     # telas (app.), a API (api.) e o visualizador (viewer.) ficam em
     # subdominios diferentes e todos precisam do mesmo login. Vazio = so o

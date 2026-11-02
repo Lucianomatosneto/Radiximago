@@ -12,9 +12,10 @@ gerada por macro tem ate 4000 caracteres (macros_router.py), e a ficha
 aceita o dobro para o curador completar.
 """
 
-from typing import Annotated
+import re
+from typing import Annotated, Optional
 
-from pydantic import EmailStr, Field
+from pydantic import AfterValidator, EmailStr, Field
 
 # --- textos ------------------------------------------------------------
 NOME_MAX = 150          # = coluna users.nome / access_requests.nome
@@ -27,7 +28,32 @@ SENHA_MAX = 256         # a politica de senha (politica_senha.py) e mais estrita
 CODIGO_MAX = 200        # codigos de link (redefinicao, confirmacao de e-mail)
 
 Nome = Annotated[str, Field(min_length=1, max_length=NOME_MAX)]
-Instituicao = Annotated[str, Field(max_length=INSTITUICAO_MAX)]
+
+
+# B1 da auditoria do administrador (01/11/2026): a lista de usuarios tinha
+# "UFSC", "ufsc" e "Ufsc" como se fossem instituicoes diferentes. Regra
+# simples e previsivel: tira espacos sobrando e, quando o texto e uma SIGLA
+# (uma palavra so, ate 10 letras/numeros), escreve em maiusculas. Nomes por
+# extenso ("Universidade Federal de Santa Catarina") ficam como digitados.
+_SIGLA = re.compile(r"[0-9A-Za-zÀ-ÿ]{2,10}")
+
+
+def normalizar_instituicao(valor: Optional[str]) -> Optional[str]:
+    if valor is None:
+        return None
+    limpo = " ".join(valor.split())
+    if not limpo:
+        return None
+    if _SIGLA.fullmatch(limpo) and any(c.isalpha() for c in limpo):
+        return limpo.upper()
+    return limpo
+
+
+Instituicao = Annotated[
+    str, Field(max_length=INSTITUICAO_MAX), AfterValidator(normalizar_instituicao)
+]
+# para RESPOSTAS: mostra igual mesmo os cadastros antigos (sem mudar o banco)
+InstituicaoLida = Annotated[Optional[str], AfterValidator(normalizar_instituicao)]
 Email = Annotated[EmailStr, Field(max_length=EMAIL_MAX)]
 TextoCurto = Annotated[str, Field(max_length=TEXTO_CURTO_MAX)]
 TextoMedio = Annotated[str, Field(max_length=TEXTO_MEDIO_MAX)]

@@ -10,7 +10,7 @@ from typing import Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.core.politica_senha import problema_na_senha
-from app.core.limites import Email, Instituicao, Nome, Senha, TextoMedio
+from app.core.limites import Email, Instituicao, InstituicaoLida, Nome, Senha, TextoMedio
 from app.core.email import enviar_email_acesso_aprovado, enviar_email_acesso_rejeitado
 from app.modules.users import User, UserRole
 from app.modules.auth import exigir_perfis, obter_usuario_atual, PERFIS_ADMIN
@@ -67,7 +67,7 @@ class UsuarioResposta(BaseModel):
     nome: str
     email: str
     perfil: str
-    instituicao: Optional[str]
+    instituicao: InstituicaoLida
     ativo: bool
     bloqueado: bool
     foto_perfil_url: Optional[str] = None
@@ -86,7 +86,7 @@ class UsuarioExcluidoResposta(BaseModel):
     nome: str
     email: str
     perfil: str
-    instituicao: Optional[str]
+    instituicao: InstituicaoLida
     excluido_em: Optional[datetime] = None
     excluido_por: Optional[str] = None
 
@@ -95,7 +95,7 @@ class SolicitacaoAcessoResposta(BaseModel):
     id: int
     nome: str
     email: str
-    instituicao: Optional[str]
+    instituicao: InstituicaoLida
     perfil_solicitado: str
     motivo: Optional[str]
     status: str

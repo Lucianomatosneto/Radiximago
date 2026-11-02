@@ -609,20 +609,29 @@ export default function UsuariosPage() {
             </p>
           )}
 
-          <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <DashboardCard label={t('cards.totalUsuarios')} valor={usuarios.length} cor="blue" />
+          {/* B1 (01/11/2026): os cartoes usam os MESMOS nomes do filtro "Perfil"
+              (antes "Docentes" contava so professores) e clicar filtra a lista */}
+          <div className="mb-2 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             <DashboardCard
-              label={t('cards.docentes')}
-              valor={usuarios.filter((u) => u.perfil === 'professor').length}
-              cor="teal"
+              label={t('cards.totalUsuarios')}
+              valor={usuarios.length}
+              cor="blue"
+              onClick={() => setFiltroPerfil('')}
+              ativo={filtroPerfil === ''}
             />
-            <DashboardCard
-              label={t('cards.estudantes')}
-              valor={usuarios.filter((u) => u.perfil === 'estudante').length}
-              cor="green"
-            />
+            {(['administrador', 'curador', 'professor', 'estudante'] as const).map((perfil) => (
+              <DashboardCard
+                key={perfil}
+                label={t(`cards.porPerfil.${perfil}`)}
+                valor={usuarios.filter((u) => u.perfil === perfil).length}
+                cor={perfil === 'administrador' ? 'purple' : perfil === 'curador' ? 'orange' : perfil === 'professor' ? 'teal' : 'green'}
+                onClick={() => setFiltroPerfil(filtroPerfil === perfil ? '' : perfil)}
+                ativo={filtroPerfil === perfil}
+              />
+            ))}
             <DashboardCard label={t('cards.convitesPendentes')} valor={solicitacoes.length} cor="amber" />
           </div>
+          <p className="mb-8 text-xs text-slate-500">{t('cards.dicaFiltro')}</p>
 
           {!carregandoSolicitacoes && solicitacoes.length > 0 && (
             <div className="mb-8">

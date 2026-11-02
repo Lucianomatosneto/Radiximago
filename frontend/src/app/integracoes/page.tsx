@@ -12,6 +12,7 @@ import {
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes } from '../../lib/servicosSistema'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte']
 
@@ -175,72 +176,26 @@ export default function IntegracoesPage() {
   // backend conecta e faz login SEM enviar nada (GET /integracoes/email)
   async function verificarEmail() {
     setEmail(null)
-    try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integracoes/email`, { credentials: 'include', cache: 'no-store' })
-      if (!r.ok) throw new Error()
-      setEmail(await r.json())
-    } catch {
-      setEmail({ status: 'instavel', etapa: 'consulta', erro: 'consulta' })
-    }
+    setEmail(await lerStatusEmail())
   }
 
-  // OHIF e Armazenamento: o backend informa o endereco do OHIF que o
-  // sistema REALMENTE usa (o mesmo das telas de imagem) e a situacao do
-  // disco e dos backups (GET /integracoes/status)
+  // OHIF e Armazenamento (GET /integracoes/status): o SERVIDOR confere o
+  // OHIF pela rede interna (B2, 01/11/2026 - lib/servicosSistema.ts)
   async function verificarInfraestrutura() {
     setErroStatus(false)
-    let ohifUrl: string | null = null
-    try {
-      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/integracoes/status`, {
-        credentials: 'include',
-        cache: 'no-store',
-      })
-      if (!r.ok) throw new Error(String(r.status))
-      const dados = await r.json()
-      ohifUrl = dados.ohif_url ?? null
-      setArmazenamento(dados.armazenamento ?? null)
-    } catch {
-      setErroStatus(true)
-      setArmazenamento(null)
-    }
-    await verificarOhif(ohifUrl)
-  }
-
-  async function verificarOhif(ohifUrl: string | null) {
-    if (!ohifUrl) {
-      setOhif({
-        status: 'instavel',
-        descricao: t('ohifSemEndereco'),
-      })
-      return
-    }
-
-    try {
-      // mode: 'no-cors' evita que a politica de CORS do OHIF derrube a
-      // requisicao so por falta de header - assim so falha de verdade
-      // (host inalcancavel) cai no catch. Mesmo assim e uma checagem
-      // best-effort: a resposta e opaca, nao da pra validar o conteudo.
-      await fetch(ohifUrl, { mode: 'no-cors', cache: 'no-store' })
-      setOhif({
-        status: 'online',
-        descricao: t('ohifRespondeu', { url: ohifUrl }),
-      })
-    } catch {
-      setOhif({
-        status: 'instavel',
-        descricao: t('ohifNaoRespondeu'),
-      })
-    }
+    const dados = await lerStatusIntegracoes()
+    if (!dados) setErroStatus(true)
+    setArmazenamento((dados?.armazenamento as SituacaoArmazenamento | undefined) ?? null)
+    const r = await avaliarOhif(dados)
+    setOhif({
+      status: r.status,
+      descricao: t(r.motivo, { url: r.url ?? '', codigo: r.codigo ?? '—' }),
+    })
   }
 
   // Docker: checagem INDIRETA (sem acesso ao Docker, por seguranca) - se os
   // servicos que rodam dentro dele respondem, ele esta funcionando
-  const servicosNoDocker = [banco.status, orthanc.status]
-  const statusDocker: StatusServico = servicosNoDocker.every((s) => s === 'online')
-    ? 'online'
-    : servicosNoDocker.some((s) => s === 'online')
-      ? 'instavel'
-      : 'offline'
+  const statusDocker: StatusServico = avaliarDocker(banco.status, orthanc.status)
 
   const formatarData = (iso: string) =>
     new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })

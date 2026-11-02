@@ -9,7 +9,15 @@ import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
-const MODALIDADES_RADIOGRAFIA = ['periapical', 'panoramica', 'interproximal', 'oclusal']
+// Mesma lista do backend (TipoRadiografia em backend/app/modules/curations.py)
+// - o teste test_configuracoes_valores_fixos.py confere que nao divergem.
+const MODALIDADES_RADIOGRAFIA = [
+  'periapical',
+  'panoramica',
+  'interproximal',
+  'oclusal',
+  'tomografia',
+]
 
 const STATUS_CURADORIA = [
   'pendente',
@@ -67,7 +75,15 @@ function Campo({ label, valor }: { label: string; valor: string }) {
   )
 }
 
-function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: string[] }) {
+function ListaValoresFixos({
+  titulo,
+  valores,
+  rotulo,
+}: {
+  titulo: string
+  valores: string[]
+  rotulo: (valor: string) => string
+}) {
   return (
     <div>
       <dt className="mb-1.5 text-xs text-slate-500">{titulo}</dt>
@@ -75,9 +91,10 @@ function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: strin
         {valores.map((valor) => (
           <span
             key={valor}
+            title={valor}
             className="rounded-full border border-slate-700 bg-base-surface2 px-2.5 py-0.5 text-xs text-slate-300"
           >
-            {valor}
+            {rotulo(valor)}
           </span>
         ))}
       </dd>
@@ -88,6 +105,9 @@ function ListaValoresFixos({ titulo, valores }: { titulo: string; valores: strin
 export default function ConfiguracoesPage() {
   const t = useTranslations('Configuracoes')
   const tComum = useTranslations('Comum')
+  const tTipo = useTranslations('Pesquisa.opcoes.tipoRadiografia')
+  const tStatus = useTranslations('ImagensRecebidas.statusCuradoriaFiltro')
+  const tPerfil = useTranslations('Usuarios.perfis')
   const router = useRouter()
   const [carregando, setCarregando] = useState(true)
 
@@ -166,8 +186,28 @@ export default function ConfiguracoesPage() {
             <Secao titulo={t('secaoGeral')}>
               <dl className="space-y-3">
                 <Campo label={t('nomeSistema')} valor="Rádix Imago" />
-                <Campo label={t('ambiente')} valor={config?.environment ?? '—'} />
+                <Campo
+                  label={t('ambiente')}
+                  valor={
+                    !config
+                      ? '—'
+                      : config.environment === 'production'
+                        ? t('ambienteProducao')
+                        : config.environment === 'development'
+                          ? t('ambienteDesenvolvimento')
+                          : t('ambienteOutro', { nome: config.environment })
+                  }
+                />
               </dl>
+              {config && config.environment !== 'production' && (
+                <p
+                  role="note"
+                  data-teste="aviso-ambiente"
+                  className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200"
+                >
+                  {t('avisoAmbienteDesenvolvimento')}
+                </p>
+              )}
             </Secao>
 
             <Secao titulo={t('secaoSeguranca')}>
@@ -206,9 +246,18 @@ export default function ConfiguracoesPage() {
                   <ListaValoresFixos
                     titulo={t('modalidadesRadiografia')}
                     valores={MODALIDADES_RADIOGRAFIA}
+                    rotulo={(v) => (tTipo.has(v) ? tTipo(v) : v)}
                   />
-                  <ListaValoresFixos titulo={t('statusCuradoria')} valores={STATUS_CURADORIA} />
-                  <ListaValoresFixos titulo={t('perfisUsuario')} valores={PERFIS_USUARIO} />
+                  <ListaValoresFixos
+                    titulo={t('statusCuradoria')}
+                    valores={STATUS_CURADORIA}
+                    rotulo={(v) => (tStatus.has(v) ? tStatus(v) : v)}
+                  />
+                  <ListaValoresFixos
+                    titulo={t('perfisUsuario')}
+                    valores={PERFIS_USUARIO}
+                    rotulo={(v) => (tPerfil.has(v) ? tPerfil(v) : v)}
+                  />
                 </dl>
               </Secao>
             </div>

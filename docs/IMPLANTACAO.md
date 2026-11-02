@@ -279,6 +279,40 @@ scp root@IP_DO_SERVIDOR:/root/radiximago/copias/radix-copia-completa-DATA.tar.gz
 > servidor e confira que tudo continua lá. Faça isso antes de precisar
 > de verdade.
 
+## Modo desenvolvimento x versão compilada (erro "Unexpected end of JSON input")
+
+No computador de desenvolvimento as telas rodam em **modo desenvolvimento**
+(`next dev`): cada arquivo alterado é recompilado na hora. Enquanto
+recompila, o Next.js às vezes mostra a tela de erro *"Runtime SyntaxError:
+Unexpected end of JSON input"* (`loadManifest`). Isso acontece porque ele
+tentou ler um arquivo interno que estava sendo regravado. O erro some ao
+recarregar a página e **não é um defeito do Rádix**.
+
+No servidor (`docker-compose.prod.yml`) e no túnel (`docker-compose.tunel.yml`)
+as telas são **compiladas** uma vez só, antes de ligar (`Dockerfile.prod`:
+`next build` e depois `next start`). Sem recompilação, esse erro não tem como
+acontecer. Conferido em 01/11/2026 (B4 da auditoria do administrador):
+`next build` sem erros, e 200 aberturas seguidas de Usuários, Painel,
+Configurações, Integrações e Auditoria na versão compilada, todas com
+resposta 200 e nenhum `loadManifest` no registro.
+
+Para usar a versão compilada **no próprio computador** (localhost), no
+PowerShell:
+
+```powershell
+cd C:\Users\lmnvo\Radiximago
+docker compose -f docker-compose.yml -f docker-compose.telas-compiladas.yml up -d --build radix-frontend
+```
+
+Para voltar ao modo desenvolvimento:
+
+```powershell
+docker compose up -d --build radix-frontend
+```
+
+Na versão compilada, alterações nas telas só aparecem depois de rodar o
+primeiro comando de novo.
+
 ## O que fica fora desta primeira versão (de propósito)
 
 - **Voz (Whisper):** desligado para economizar memória. Para ligar depois:

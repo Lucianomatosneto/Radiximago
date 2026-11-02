@@ -5,9 +5,12 @@ Antes, OHIF, Docker e Armazenamento apareciam sempre como "Aguardando
 configuracao": nao havia checagem nenhuma. Esta rota fornece o que faltava,
 SEM ampliar a superficie de ataque:
 
-  - OHIF: devolve o endereco que o sistema realmente usa (OHIF_BASE_URL);
-    quem testa e o NAVEGADOR (o endereco e o do navegador, ex.:
-    localhost:3001 - de dentro do container ele nao vale).
+  - OHIF: desde 01/11/2026 (B2 da auditoria do administrador) quem confere
+    e o SERVIDOR, pelo endereco interno do Docker (OHIF_URL, ex.:
+    http://radix-ohif). Antes so o navegador testava, e qualquer bloqueio
+    dele (pagina https chamando http, rede, extensao) aparecia como
+    "Instavel" mesmo com o visualizador funcionando - um falso alarme.
+    Sem OHIF_URL, a tela volta a testar pelo navegador (OHIF_BASE_URL).
   - Docker: NAO e consultado diretamente. Ler o Docker exigiria montar o
     "painel de controle" dele (/var/run/docker.sock) no radix-api, o que
     daria a quem invadisse a API o controle do computador inteiro (OWASP:
@@ -31,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import httpx
 from fastapi import APIRouter, Depends
 
 from app.core.config import settings
@@ -131,12 +135,34 @@ def situacao_armazenamento(pasta_backups: Path = PASTA_BACKUPS) -> dict:
     }
 
 
+OHIF_TEMPO_LIMITE_S = 3.0
+
+
+def situacao_ohif() -> dict:
+    """
+    O visualizador responde? Pede a pagina inicial do OHIF pela rede
+    interna (nao envia login nem dado nenhum; so le o codigo de resposta).
+    "nao_verificado" = OHIF_URL nao configurado (a tela testa pelo navegador).
+    """
+    if not (settings.OHIF_URL or "").strip():
+        return {"status": "nao_verificado", "codigo": None}
+    try:
+        # endereco SO da configuracao (.env) - nada vindo do usuario (SSRF)
+        url = settings.OHIF_URL.rstrip("/") + "/"
+        resposta = httpx.get(url, timeout=OHIF_TEMPO_LIMITE_S, follow_redirects=True)
+    except httpx.HTTPError as erro:
+        logger.warning("OHIF nao respondeu pela rede interna: %s", type(erro).__name__)
+        return {"status": "offline", "codigo": None}
+    return {"status": "online" if resposta.status_code < 400 else "offline", "codigo": resposta.status_code}
+
+
 @router.get("/status")
 def status_integracoes(
     usuario: User = Depends(exigir_perfis(*PERFIS_INFRAESTRUTURA)),
 ):
     return {
         "ohif_url": settings.OHIF_BASE_URL,
+        "ohif": situacao_ohif(),
         "armazenamento": situacao_armazenamento(),
     }
 

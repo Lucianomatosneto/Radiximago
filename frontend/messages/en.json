@@ -329,7 +329,8 @@
       "periapical": "Periapical",
       "panoramica": "Panoramic",
       "interproximal": "Interproximal",
-      "oclusal": "Occlusal"
+      "oclusal": "Occlusal",
+      "tomografia": "CBCT"
     }
   },
   "BancoImagens": {
@@ -1483,8 +1484,8 @@
     "descricaoNextjs": "The frontend is running — you're looking at this page.",
     "servicoArmazenamento": "Storage",
     "descricaoDicomweb": "Same status as Orthanc — DICOMWeb is a plugin of it, not a separate check. {descricaoOrthanc}",
-    "ohifRespondeu": "Responded at {url} (browser check, content not validated).",
-    "ohifNaoRespondeu": "Didn't respond — could be a real failure or just CORS/local network. Best-effort check.",
+    "ohifRespondeu": "Answered at {url} (test made by your browser).",
+    "ohifNaoRespondeu": "Your browser could not test the viewer at {url}. It may be a browser or network block, not a real failure — open an image to confirm.",
     "status": {
       "online": "Online",
       "erro": "Error",
@@ -1540,7 +1541,9 @@
       "login": "login (user and app password)",
       "ok": "ok"
     },
-    "emailDetalhe": "Server answer: {detalhe}"
+    "emailDetalhe": "Server answer: {detalhe}",
+    "ohifServidorOk": "The server just confirmed: the viewer answered on the internal network.",
+    "ohifServidorFalhou": "The server could NOT reach the viewer (code: {codigo}). Images may not open — check the radix-ohif container."
   },
   "PainelAdmin": {
     "titulo": "Admin panel",
@@ -1650,9 +1653,14 @@
     "subtitulo": "Manage instructors, students and administrators of the platform.",
     "cards": {
       "totalUsuarios": "Total users",
-      "docentes": "Instructors",
-      "estudantes": "Students",
-      "convitesPendentes": "Pending requests"
+      "convitesPendentes": "Pending requests",
+      "porPerfil": {
+        "administrador": "Administrators",
+        "curador": "Curators",
+        "professor": "Professors",
+        "estudante": "Students"
+      },
+      "dicaFiltro": "Click a card to show only that profile in the list below (click again to show all). Researcher and Support are in the \"Profile\" filter."
     },
     "solicitacoesPendentesTitulo": "Pending access requests ({total})",
     "tabela": {
@@ -1775,7 +1783,11 @@
     "tamanhoMaximoUploadMb": "{mb} MB",
     "modalidadesRadiografia": "Radiograph modalities",
     "statusCuradoria": "Curation statuses",
-    "perfisUsuario": "User roles"
+    "perfisUsuario": "User roles",
+    "ambienteProducao": "Production (official version)",
+    "ambienteDesenvolvimento": "Development (test version)",
+    "ambienteOutro": "{nome} (not recognized)",
+    "avisoAmbienteDesenvolvimento": "Warning: this server is running in DEVELOPMENT mode. Some protections of the official version are off (for example, the session cookie without the \"Secure\" flag). Use only with test or anonymized data — do not use with real patient data."
   },
   "AcessoNegado": {
     "titulo": "Access not authorized",

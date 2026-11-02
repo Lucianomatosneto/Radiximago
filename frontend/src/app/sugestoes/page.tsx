@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Lightbulb } from 'lucide-react'
+import AvisoEmail from '../../components/AvisoEmail'
 import EstadoVazio from '../../components/EstadoVazio'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -177,6 +178,8 @@ export default function SugestoesPage() {
             <div>
               <label htmlFor="sug-contato" className="mb-1 block text-sm font-medium text-ink">{t('contato')}</label>
               <input id="sug-contato" maxLength={200} value={contato} onChange={(e) => setContato(e.target.value)} className={campo} placeholder={t('contatoExemplo')} />
+              {/* B1 (01/11/2026): mesmo aviso de digitacao do cadastro */}
+              {contato.includes('@') && <AvisoEmail email={contato} />}
               <p className="mt-1 text-xs text-slate-500">{t('contatoAjuda')}</p>
             </div>
             <p className="text-xs text-slate-500">{t('identificacao', { nome: sessao.nome, perfil: tPerfil(sessao.perfil) })}</p>
@@ -234,7 +237,12 @@ export default function SugestoesPage() {
                         <td className="px-2 py-2">
                           <div className="font-medium text-ink">{s.nome}</div>
                           <div className="text-xs font-semibold text-brand">{tPerfil(s.perfil || 'estudante')}</div>
-                          {s.contato && <div className="text-xs text-slate-500">{s.contato}</div>}
+                          {s.contato && (
+                            <div className="text-xs text-slate-500">
+                              {s.contato}
+                              {s.contato.includes('@') && <AvisoEmail email={s.contato} />}
+                            </div>
+                          )}
                         </td>
                         <td className="max-w-md whitespace-pre-wrap px-2 py-2 text-ink">{s.texto}</td>
                         <td className="w-56 px-2 py-2">

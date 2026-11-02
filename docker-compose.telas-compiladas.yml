@@ -1,0 +1,30 @@
+# TELAS COMPILADAS NO SEU COMPUTADOR (localhost) - B4 da auditoria do
+# administrador, 01/11/2026.
+#
+# No dia a dia as telas rodam em MODO DESENVOLVIMENTO (next dev): cada
+# arquivo alterado e recompilado na hora. Enquanto recompila, o Next.js as
+# vezes mostra a tela de erro "Unexpected end of JSON input (loadManifest)" -
+# ele tentou ler um arquivo que estava sendo regravado. Some ao recarregar.
+# Na versao COMPILADA (next build + next start, a mesma do servidor e do
+# tunel) os arquivos sao gerados uma vez so, antes de ligar: nao ha
+# recompilacao e esse erro nao acontece.
+#
+# Ligar as telas compiladas (demora uns minutos na 1a vez):
+#   docker compose -f docker-compose.yml -f docker-compose.telas-compiladas.yml up -d --build radix-frontend
+# Voltar ao modo desenvolvimento:
+#   docker compose up -d --build radix-frontend
+# Depois de alterar telas, as compiladas so mudam rodando o "Ligar" de novo.
+
+services:
+  radix-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_OHIF_URL: http://localhost:3001
+    env_file: !reset []
+    environment: !override
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_OHIF_URL=http://localhost:3001
+    volumes: !reset []

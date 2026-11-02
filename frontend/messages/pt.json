@@ -329,7 +329,8 @@
       "periapical": "Periapical",
       "panoramica": "Panorâmica",
       "interproximal": "Interproximal",
-      "oclusal": "Oclusal"
+      "oclusal": "Oclusal",
+      "tomografia": "Tomografia (TCFC)"
     }
   },
   "BancoImagens": {
@@ -1483,8 +1484,8 @@
     "descricaoNextjs": "O frontend está rodando — você está vendo esta página.",
     "servicoArmazenamento": "Armazenamento",
     "descricaoDicomweb": "Mesmo status do Orthanc — DICOMWeb é um plugin dele, não uma checagem separada. {descricaoOrthanc}",
-    "ohifRespondeu": "Respondeu em {url} (checagem pelo navegador, sem validar o conteúdo).",
-    "ohifNaoRespondeu": "Não respondeu — pode ser falha real ou apenas CORS/rede local. Checagem best-effort.",
+    "ohifRespondeu": "Respondeu em {url} (teste feito pelo seu navegador).",
+    "ohifNaoRespondeu": "Seu navegador não conseguiu testar o visualizador em {url}. Pode ser bloqueio do navegador ou da rede, e não falha real — abra uma imagem para confirmar.",
     "status": {
       "online": "Online",
       "erro": "Erro",
@@ -1540,7 +1541,9 @@
       "login": "login (usuário e senha de app)",
       "ok": "ok"
     },
-    "emailDetalhe": "Resposta do servidor: {detalhe}"
+    "emailDetalhe": "Resposta do servidor: {detalhe}",
+    "ohifServidorOk": "O servidor confirmou agora: o visualizador respondeu pela rede interna.",
+    "ohifServidorFalhou": "O servidor NÃO conseguiu falar com o visualizador (código: {codigo}). As imagens podem não abrir — verifique o container radix-ohif."
   },
   "PainelAdmin": {
     "titulo": "Painel administrativo",
@@ -1650,9 +1653,14 @@
     "subtitulo": "Gerencie docentes, estudantes e administradores da plataforma.",
     "cards": {
       "totalUsuarios": "Total de usuários",
-      "docentes": "Docentes",
-      "estudantes": "Estudantes",
-      "convitesPendentes": "Solicitações pendentes"
+      "convitesPendentes": "Solicitações pendentes",
+      "porPerfil": {
+        "administrador": "Administradores",
+        "curador": "Curadores",
+        "professor": "Professores",
+        "estudante": "Estudantes"
+      },
+      "dicaFiltro": "Clique num cartão para mostrar só aquele perfil na lista abaixo (clique de novo para mostrar todos). Pesquisador e Suporte aparecem no filtro \"Perfil\"."
     },
     "solicitacoesPendentesTitulo": "Solicitações de acesso pendentes ({total})",
     "tabela": {
@@ -1762,7 +1770,7 @@
     "secaoIntegracoesTecnicas": "Integrações técnicas",
     "secaoUpload": "Upload",
     "secaoValoresFixos": "Valores fixos do sistema",
-    "notaValoresFixos": "Não vêm da API — são os mesmos vocabulários já usados nas telas de Curadoria, Pesquisa e Usuários, mostrados aqui só como referência.",
+    "notaValoresFixos": "Não vêm da API — são os mesmos vocabulários usados nas telas de Curadoria, Pesquisa e Usuários, mostrados aqui só como referência. Passe o mouse sobre um valor para ver o código interno.",
     "nomeSistema": "Nome do sistema",
     "ambiente": "Ambiente",
     "algoritmoToken": "Algoritmo de token",
@@ -1775,7 +1783,11 @@
     "tamanhoMaximoUploadMb": "{mb} MB",
     "modalidadesRadiografia": "Modalidades de radiografia",
     "statusCuradoria": "Status de curadoria",
-    "perfisUsuario": "Perfis de usuário"
+    "perfisUsuario": "Perfis de usuário",
+    "ambienteProducao": "Produção (versão oficial)",
+    "ambienteDesenvolvimento": "Desenvolvimento (versão de testes)",
+    "ambienteOutro": "{nome} (não reconhecido)",
+    "avisoAmbienteDesenvolvimento": "Atenção: este servidor está em modo de DESENVOLVIMENTO. Algumas proteções da versão oficial ficam desligadas (por exemplo, o cookie de sessão sem a marca \"Secure\"). Use só com dados de teste ou anonimizados — não usar com dados reais de pacientes."
   },
   "AcessoNegado": {
     "titulo": "Acesso não autorizado",
