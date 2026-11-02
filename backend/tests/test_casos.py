@@ -329,3 +329,47 @@ def test_m6_endereco_real_repassado_pelos_intermediarios():
     assert "X-Forwarded-For" in bloco
     for arquivo in ("docker-compose.prod.yml", "docker-compose.tunel.yml"):
         assert "FORWARDED_ALLOW_IPS" in (raiz / arquivo).read_text(encoding="utf-8"), arquivo
+
+
+def test_deixar_de_compartilhar(client, criar_usuario, db):
+    """Extra da auditoria do administrador (01/11/2026): desfazer o compartilhamento."""
+    aluno = criar_usuario()
+    professor = criar_usuario(perfil=UserRole.professor)
+    professor2 = criar_usuario(perfil=UserRole.professor)
+    professor3 = criar_usuario(perfil=UserRole.professor)
+    curador = criar_usuario(perfil=UserRole.curador)
+    h_al = cabecalho_auth(obter_token(client, aluno.email))
+    h_pr = cabecalho_auth(obter_token(client, professor.email))
+    h_pr2 = cabecalho_auth(obter_token(client, professor2.email))
+    h_pr3 = cabecalho_auth(obter_token(client, professor3.email))
+    h_cu = cabecalho_auth(obter_token(client, curador.email))
+    caso = _criar(client, h_al, _dados(professor.id)).json()
+    url = f"/casos/{caso['id']}/compartilhar"
+    assert client.post(url, headers=h_pr, json={"para_id": professor2.id}).status_code == 200
+
+    # a tela recebe quem pode desfazer
+    det = client.get(f"/casos/{caso['id']}", headers=h_pr).json()
+    assert det["compartilhamentos"] == [{"para_id": professor2.id, "nome": professor2.nome, "pode_remover": True}]
+    assert client.get(f"/casos/{caso['id']}", headers=h_pr3).json()["compartilhamentos"][0]["pode_remover"] is False
+    assert client.get(f"/casos/{caso['id']}", headers=h_al).json()["compartilhamentos"][0]["pode_remover"] is False
+
+    assert any(c["id"] == caso["id"] for c in client.get("/casos/recebidos", headers=h_pr2).json()["casos"])
+    # aluno e professor que nao participou: nao podem
+    assert client.delete(f"{url}/{professor2.id}", headers=h_al).status_code == 403
+    assert client.delete(f"{url}/{professor2.id}", headers=h_pr3).status_code == 403
+    # quem compartilhou pode; some de "Compartilhadas comigo" de quem recebeu
+    assert client.delete(f"{url}/{professor2.id}", headers=h_pr).status_code == 200
+    assert all(c["id"] != caso["id"] for c in client.get("/casos/recebidos", headers=h_pr2).json()["casos"])
+    assert client.delete(f"{url}/{professor2.id}", headers=h_pr).status_code == 404  # ja desfeito
+    # quem recebeu tira da propria lista; curador tambem pode desfazer
+    client.post(url, headers=h_pr, json={"para_id": professor2.id})
+    assert client.delete(f"{url}/{professor2.id}", headers=h_pr2).status_code == 200
+    client.post(url, headers=h_pr, json={"para_id": professor2.id})
+    assert client.delete(f"{url}/{professor2.id}", headers=h_cu).status_code == 200
+
+    # historico e auditoria (nada da pasta e apagado)
+    det = client.get(f"/casos/{caso['id']}", headers=h_pr).json()
+    assert det["compartilhamentos"] == []
+    assert sum(1 for h in det["historico"] if h["acao"] == "compartilhamento_removido") == 3
+    assert db.query(AuditLog).filter(AuditLog.acao == "caso_compartilhamento_removido",
+                                     AuditLog.entidade_id == caso["id"]).count() == 3

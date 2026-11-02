@@ -23,6 +23,8 @@ Professor e curador:
 - GET   /casos/recebidos/novos        quantas ainda nao abri
 - POST  /casos/{id}/revisoes          nova versao das anotacoes (editar depois do envio = nova versao)
 - POST  /casos/{id}/compartilhar      com outro professor/curador
+- DELETE /casos/{id}/compartilhar/{para_id}  deixar de compartilhar (quem compartilhou,
+                                      quem recebeu ou curador)
 - POST  /casos/{id}/enviar-link       e-mail SO com o link (exige login), para usuario que pode ver
 - POST  /casos/{id}/encaminhar-curador
 - GET   /casos/fila                   aguardando classificacao / na fila (filtro por tratamento)
@@ -561,11 +563,16 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
     revisao = _revisao_atual(db, caso.id)
     historico = (db.query(CasoHistorico).filter(CasoHistorico.caso_id == caso.id)
                  .order_by(CasoHistorico.id.asc()).all())
-    compartilhado_com = [
-        _nome(u) for u in db.query(User).join(CasoCompartilhamento, CasoCompartilhamento.para_id == User.id)
-        .filter(CasoCompartilhamento.caso_id == caso.id)
-    ]
     equipe = usuario.perfil in PERFIS_EQUIPE
+    linhas_compartilhamento = (
+        db.query(CasoCompartilhamento, User).join(User, CasoCompartilhamento.para_id == User.id)
+        .filter(CasoCompartilhamento.caso_id == caso.id).order_by(CasoCompartilhamento.id.asc()).all()
+    )
+    compartilhado_com = [_nome(u) for _, u in linhas_compartilhamento]
+    compartilhamentos = [
+        {"para_id": u.id, "nome": _nome(u), "pode_remover": equipe and _pode_remover_compartilhamento(usuario, c)}
+        for c, u in linhas_compartilhamento
+    ]
     return {
         **_resumo(db, caso, usuario),
         "paciente": {
@@ -579,6 +586,7 @@ def detalhe(caso_id: int, usuario: User = Depends(obter_usuario_atual), db: Sess
         "historico": [{"quando": _iso(h.criado_em), "quem": _nome(h.usuario), "acao": h.acao,
                        "detalhes": h.detalhes} for h in historico],
         "compartilhado_com": compartilhado_com,
+        "compartilhamentos": compartilhamentos,
         "nota_encaminhamento": caso.nota_encaminhamento,
         "pode": {
             "revisar": equipe,
@@ -722,6 +730,40 @@ def compartilhar(caso_id: int, dados: Destino, usuario: User = Depends(obter_usu
     _auditar(db, usuario, "caso_compartilhado", caso.id, f"para_id={destino.id}")
     db.commit()
     return {"mensagem": f"Compartilhada com {destino.nome}."}
+
+
+def _pode_remover_compartilhamento(usuario: User, comp: CasoCompartilhamento) -> bool:
+    """Quem compartilhou, quem recebeu (tira da propria lista) ou um curador."""
+    return usuario.id in (comp.de_id, comp.para_id) or usuario.perfil == UserRole.curador
+
+
+@router.delete("/{caso_id}/compartilhar/{para_id}")
+def deixar_de_compartilhar(caso_id: int, para_id: int, usuario: User = Depends(obter_usuario_atual),
+                           db: Session = Depends(get_db)):
+    """
+    Extra da auditoria do administrador (01/11/2026): desfaz um
+    compartilhamento. A pasta sai de "Compartilhadas comigo" da pessoa e ela
+    deixa de ser avisada. Professores e curadores continuam podendo abrir a
+    pasta pela lista geral (regra de 01/11: a equipe ve todas as pastas).
+    Fica no historico da pasta e na auditoria; nada da pasta e apagado.
+    """
+    _exigir_perfil(usuario, PERFIS_EQUIPE)
+    caso = _buscar_caso(db, caso_id, usuario)
+    comp = db.query(CasoCompartilhamento).filter(CasoCompartilhamento.caso_id == caso.id,
+                                                 CasoCompartilhamento.para_id == para_id).first()
+    if not comp:
+        raise HTTPException(status_code=404, detail="Esta pasta não está compartilhada com essa pessoa.")
+    if not _pode_remover_compartilhamento(usuario, comp):
+        raise HTTPException(
+            status_code=403,
+            detail="Só quem compartilhou, quem recebeu ou um curador pode desfazer este compartilhamento.",
+        )
+    pessoa = db.get(User, para_id)
+    db.delete(comp)
+    _historico(db, caso, usuario, "compartilhamento_removido", f"com {pessoa.nome if pessoa else para_id}")
+    _auditar(db, usuario, "caso_compartilhamento_removido", caso.id, f"para_id={para_id}")
+    db.commit()
+    return {"mensagem": f"Deixou de compartilhar com {pessoa.nome if pessoa else 'essa pessoa'}."}
 
 
 @router.post("/{caso_id}/enviar-link")

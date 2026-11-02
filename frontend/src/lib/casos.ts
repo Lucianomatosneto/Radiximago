@@ -54,6 +54,8 @@ export interface DetalheCaso extends ResumoCaso {
   revisao: RevisaoCaso | null
   historico: { quando: string | null; quem: string | null; acao: string; detalhes: string | null }[]
   compartilhado_com: string[]
+  /** com quem esta compartilhada e se EU posso desfazer (quem compartilhou, quem recebeu ou curador) */
+  compartilhamentos?: { para_id: number; nome: string | null; pode_remover: boolean }[]
   nota_encaminhamento: string | null
   pode: {
     revisar: boolean

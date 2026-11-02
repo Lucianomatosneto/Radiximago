@@ -1,12 +1,13 @@
 'use client'
 
-import { Check, ChevronLeft, ChevronRight, Download, FileText, Mail, Pencil, Printer } from 'lucide-react'
+import { Check, ChevronLeft, ChevronRight, Download, FileText, Mail, Pencil, Printer, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '../../../components/Sidebar'
 import Topbar from '../../../components/Topbar'
+import { useConfirmacao } from '../../../components/useConfirmacao'
 import AvisoNaoDiagnostico from '../../../components/casos/AvisoNaoDiagnostico'
 import ImagemPrincipalMarcada from '../../../components/detalhe/ImagemPrincipalMarcada'
 import { obterSessaoAtual, type SessaoUsuario } from '../../../lib/sessao'
@@ -28,6 +29,7 @@ export default function PastaPage() {
   const busca = useSearchParams()
   const id = Number(params.id)
   const t = useTranslations('Casos')
+  const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const [sessao, setSessao] = useState<SessaoUsuario | null>(null)
   const [caso, setCaso] = useState<DetalheCaso | null>(null)
   const [indice, setIndice] = useState(0)
@@ -113,6 +115,26 @@ export default function PastaPage() {
       await apiJson(caminho, { method: caminho.endsWith('/paciente') ? 'PATCH' : 'POST', body: JSON.stringify(corpo ?? {}) })
       setAviso(mensagem)
       setPainel('')
+      carregar()
+    } catch (e) {
+      setErro((e as Error).message)
+    }
+  }
+
+  // extra da auditoria (01/11/2026): deixar de compartilhar, com confirmacao na pagina
+  async function deixarDeCompartilhar(paraId: number, nome: string) {
+    if (!caso) return
+    const sim = await pedirConfirmacao({
+      titulo: t('deixarCompartilhar.titulo'),
+      texto: t('deixarCompartilhar.texto', { nome }),
+      botao: t('deixarCompartilhar.sim'),
+      cancelar: t('deixarCompartilhar.cancelar'),
+    })
+    if (!sim) return
+    setErro('')
+    try {
+      await apiJson(`/casos/${caso.id}/compartilhar/${paraId}`, { method: 'DELETE' })
+      setAviso(t('deixarCompartilhar.ok', { nome }))
       carregar()
     } catch (e) {
       setErro((e as Error).message)
@@ -216,7 +238,31 @@ export default function PastaPage() {
                 {caso.tratamentos.length > 0 && <p><span className="text-slate-500">{t('tratamentoNecessario')}:</span> <span className="text-ink">{caso.tratamentos.map((x) => t(`tratamentos.${x}`)).join(', ')}</span></p>}
                 {caso.aluno_tratamento && <p><span className="text-slate-500">{t('emTratamentoCom')}:</span> <span className="text-ink">{caso.aluno_tratamento} ({t(`tratamentos.${caso.tratamento_escolhido}`)})</span></p>}
                 {caso.nota_encaminhamento && <p className="whitespace-pre-wrap"><span className="text-slate-500">{t('notaEncaminhamento')}:</span> <span className="text-ink">{caso.nota_encaminhamento}</span></p>}
-                {caso.compartilhado_com.length > 0 && <p><span className="text-slate-500">{t('compartilhadaCom')}:</span> <span className="text-ink">{caso.compartilhado_com.join(', ')}</span></p>}
+                {caso.compartilhamentos && caso.compartilhamentos.length > 0 ? (
+                  <div data-teste="compartilhada-com">
+                    <span className="text-slate-500">{t('compartilhadaCom')}:</span>
+                    <ul className="mt-1 flex flex-wrap gap-1.5">
+                      {caso.compartilhamentos.map((c) => (
+                        <li key={c.para_id} className="inline-flex items-center gap-1 rounded-full border border-base-border bg-base-surface2 px-2 py-0.5 text-xs text-ink">
+                          {c.nome ?? '—'}
+                          {c.pode_remover && (
+                            <button
+                              type="button"
+                              onClick={() => deixarDeCompartilhar(c.para_id, c.nome ?? '—')}
+                              aria-label={t('deixarCompartilhar.botao', { nome: c.nome ?? '—' })}
+                              title={t('deixarCompartilhar.botao', { nome: c.nome ?? '—' })}
+                              className="rounded-full p-0.5 text-slate-400 hover:bg-rose-500/15 hover:text-rose-500"
+                            >
+                              <X aria-hidden="true" className="h-3 w-3" />
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  caso.compartilhado_com.length > 0 && <p><span className="text-slate-500">{t('compartilhadaCom')}:</span> <span className="text-ink">{caso.compartilhado_com.join(', ')}</span></p>
+                )}
                 {caso.termo[0] && (
                   <a href={urlFoto(caso.id, caso.termo[0].id)} target="_blank" rel="noopener noreferrer" className="inline-block pt-1 text-sm text-brand underline"><FileText aria-hidden="true" className="mr-1 inline h-4 w-4 align-[-2px]" />{t('verTermo')}</a>
                 )}
@@ -392,6 +438,7 @@ export default function PastaPage() {
           </div>
         </main>
       </div>
+      {quadroConfirmacao}
     </div>
   )
 }

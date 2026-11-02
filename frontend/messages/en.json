@@ -788,7 +788,13 @@
       "erro": "The image could not be rotated."
     },
     "baixarEstaImagem": "⬇ This image",
-    "enviarEstaImagem": "✉ This image to my e-mail"
+    "enviarEstaImagem": "✉ This image to my e-mail",
+    "erroBaixarServidor": "Could not download now — the server did not answer (it may be restarting). We already retried 2 times.",
+    "tentarDeNovo": "Try again",
+    "confirmarEmailTitulo": "Send by e-mail?",
+    "confirmarEmailUma": "This image goes to the e-mail registered in your account. Confirm sending?",
+    "simEnviar": "Yes, send",
+    "cancelarEnvio": "Cancel"
   },
   "Curadoria": {
     "inicio": "Home",
@@ -1347,7 +1353,11 @@
     "confirmarRemover": "Remove {quantidade, plural, one {# image} other {# images}} from My images?",
     "sim": "Yes, remove",
     "nao": "Cancel",
-    "email": "✉ E-mail"
+    "email": "✉ E-mail",
+    "confirmarEmailTitulo": "Send by e-mail?",
+    "confirmarEmailLote": "{quantidade, plural, one {The selected image goes} other {The # selected images go}} to the e-mail registered in your account. Confirm sending?",
+    "simEnviar": "Yes, send",
+    "cancelarEnvio": "Cancel"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",
@@ -2261,7 +2271,8 @@
       "detalhe": "Could not open this request.",
       "enviar": "Could not send the opinion.",
       "anotacao": "Could not record your choice.",
-      "decisao": "Could not apply the decision."
+      "decisao": "Could not apply the decision.",
+      "enviarServidor": "The opinion was NOT sent — the server did not answer. What you wrote is still here; click \"Try again\"."
     },
     "avisos": {
       "parecerEnviado": "Opinion sent to {nome}.",
@@ -2395,7 +2406,8 @@
       "mudar": "change item",
       "proximo": "next",
       "proximoItem": "Next item"
-    }
+    },
+    "tentarDeNovo": "Try again"
   },
   "Segmentacao": {
     "abaFormas": "Shapes (circle, arrow)",
@@ -2695,7 +2707,8 @@
       "classificada": "classified the treatment",
       "encaminhada_aluno": "referred to the student",
       "tratamento_concluido": "completed the treatment",
-      "tratamento_reaberto": "reopened the treatment"
+      "tratamento_reaberto": "reopened the treatment",
+      "compartilhamento_removido": "stopped sharing the folder"
     },
     "novo": {
       "titulo": "Camera upload",
@@ -2820,7 +2833,8 @@
         "caso_classificado": "classified",
         "caso_encaminhado_aluno": "referred to student",
         "caso_concluido": "completed treatment",
-        "caso_tratamento_reaberto": "reopened the treatment"
+        "caso_tratamento_reaberto": "reopened the treatment",
+        "caso_compartilhamento_removido": "stopped sharing"
       }
     },
     "vazios": {
@@ -2854,7 +2868,15 @@
     "quemPodeReceber": "Only people registered in Rádix as professor or curator can be chosen.",
     "ninguemParaCompartilhar": "No other professor or curator is registered yet. Ask the administrator to register the person; they will show up here.",
     "nenhumAlunoCadastrado": "No student registered yet. Ask the administrator to register the student.",
-    "quemPodeReceberLink": "You can choose registered professors and curators and the students of this folder (the author and the treating student): they are the ones who can open the link."
+    "quemPodeReceberLink": "You can choose registered professors and curators and the students of this folder (the author and the treating student): they are the ones who can open the link.",
+    "deixarCompartilhar": {
+      "titulo": "Stop sharing?",
+      "texto": "The folder leaves the \"Shared with me\" list of {nome}, who will no longer be notified about it. Professors and curators can still open it from the general list. This stays in the history.",
+      "sim": "Yes, stop sharing",
+      "cancelar": "Cancel",
+      "ok": "Stopped sharing with {nome}.",
+      "botao": "Stop sharing with {nome}"
+    }
   },
   "Navegacao": {
     "trilha": "Breadcrumb",

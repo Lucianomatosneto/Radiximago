@@ -19,6 +19,8 @@ import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhada
 import { textoMarcacao } from '../lib/descricaoCuradoria'
 import { girarMarcacoes } from '../lib/orientacao'
 import { obterSessaoAtual } from '../lib/sessao'
+import { errouServidor, lerComRepeticao } from '../lib/repetir'
+import { useConfirmacao } from './useConfirmacao'
 
 // Os campos de classificacao sao opcionais porque nem toda tela que abre
 // este visualizador tem todos disponiveis (Minhas imagens hoje nao manda
@@ -143,6 +145,10 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   const t = useTranslations('Visualizador')
   const tDescricao = useTranslations('DescricaoCuradoria')
   const containerRef = useRef<HTMLDivElement>(null)
+  const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
+  // extra da auditoria (01/11/2026): o ultimo download que falhou por culpa do
+  // servidor, para o botao "Tentar de novo"
+  const [downloadComFalha, setDownloadComFalha] = useState<(() => void) | null>(null)
   const [indice, setIndice] = useState(indiceInicial)
   const [enviando, setEnviando] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -727,12 +733,21 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   ) {
     setCarregando(true)
     setErro('')
+    setDownloadComFalha(null)
+    const repetir = () => baixarArquivo(caminho, nomeArquivo, setCarregando)
     try {
-      const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, {
+      // leitura: se o servidor estiver reiniciando (502/503/504) ou a rede
+      // piscar, tenta sozinho mais 2 vezes antes de mostrar o erro
+      const resposta = await lerComRepeticao(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, {
         credentials: 'include',
       })
       if (!resposta.ok) {
-        setErro(t('erroBaixar'))
+        if (errouServidor(resposta.status)) {
+          setErro(t('erroBaixarServidor'))
+          setDownloadComFalha(() => repetir)
+        } else {
+          setErro(t('erroBaixar'))
+        }
         return
       }
       const blob = await resposta.blob()
@@ -745,7 +760,8 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
       link.remove()
       URL.revokeObjectURL(url)
     } catch {
-      setErro(t('erroBaixar'))
+      setErro(t('erroBaixarServidor'))
+      setDownloadComFalha(() => repetir)
     } finally {
       setCarregando(false)
     }
@@ -811,6 +827,14 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   }
 
   async function enviarPorEmail() {
+    // extra da auditoria (01/11/2026): confirma ANTES de enviar
+    const confirmou = await pedirConfirmacao({
+      titulo: t('confirmarEmailTitulo'),
+      texto: t('confirmarEmailUma'),
+      botao: t('simEnviar'),
+      cancelar: t('cancelarEnvio'),
+    })
+    if (!confirmou) return
     setEnviando(true)
     setErro('')
     try {
@@ -854,6 +878,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           tambem e o elemento que entra em tela cheia), atras de tudo. As
           areas das imagens continuam pretas, para a leitura. */}
       <FundoMapaMundi intensidade="leitura" />
+      {quadroConfirmacao}
       <div className="relative z-40 flex items-center justify-between border-b border-base-border bg-base/60 px-4 py-3 backdrop-blur-md sm:px-6">
         <div className="flex items-center gap-4">
           {/* Este visualizador cobre a tela inteira (fixed inset-0), inclusive
@@ -1159,6 +1184,16 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
               <span className="truncate text-xs text-red-400" role="alert">
                 {erro}
               </span>
+            )}
+            {erro && downloadComFalha && (
+              <button
+                type="button"
+                data-teste="repetir-download"
+                onClick={() => downloadComFalha()}
+                className="shrink-0 rounded-md border border-red-400/50 px-2 py-0.5 text-xs text-red-300 hover:bg-red-500/10"
+              >
+                {t('tentarDeNovo')}
+              </button>
             )}
           </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">

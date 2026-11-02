@@ -164,6 +164,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('caso_revisado', 'Pasta revisada (nova versão)', 'Folder reviewed'),
       a('caso_dados_alterados', 'Dados do paciente alterados', 'Patient data changed'),
       a('caso_compartilhado', 'Pasta compartilhada', 'Folder shared'),
+      a('caso_compartilhamento_removido', 'Deixou de compartilhar a pasta', 'Folder sharing removed'),
       a('caso_link_enviado', 'Link da pasta enviado por e-mail', 'Folder link e-mailed'),
       a('caso_encaminhado_curador', 'Pasta enviada ao curador', 'Folder sent to curator'),
       a('caso_classificado', 'Tratamento classificado', 'Treatment classified'),

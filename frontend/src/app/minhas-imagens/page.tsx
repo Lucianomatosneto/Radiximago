@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useConfirmacao } from '../../components/useConfirmacao'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
@@ -66,6 +67,7 @@ const MAX_IMAGENS_EMAIL_LOTE = 10
 export default function MinhasImagensPage() {
   const router = useRouter()
   const t = useTranslations('MinhasImagens')
+  const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const tComum = useTranslations('Comum')
   const tPesquisa = useTranslations('Pesquisa')
   const tMarcacoes = useTranslations('Visualizador.marcacoes')
@@ -188,6 +190,14 @@ export default function MinhasImagensPage() {
       setErro(t('limiteLote', { maximo: MAX_IMAGENS_EMAIL_LOTE }))
       return
     }
+    // extra da auditoria (01/11/2026): confirma ANTES de enviar
+    const confirmou = await pedirConfirmacao({
+      titulo: t('confirmarEmailTitulo'),
+      texto: t('confirmarEmailLote', { quantidade: selecionados.length }),
+      botao: t('simEnviar'),
+      cancelar: t('cancelarEnvio'),
+    })
+    if (!confirmou) return
     setEnviandoLote(true)
     try {
       const resposta = await fetch(`${API}/search/send-email-lote`, {
@@ -690,6 +700,7 @@ export default function MinhasImagensPage() {
       {indiceVisualizador !== null && itensSelecionados.length > 0 && (
         <VisualizadorSequencial itens={itensSelecionados} indiceInicial={indiceVisualizador} onFechar={() => setIndiceVisualizador(null)} />
       )}
+      {quadroConfirmacao}
     </div>
   )
 }

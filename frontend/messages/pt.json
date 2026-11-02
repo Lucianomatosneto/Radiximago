@@ -788,7 +788,13 @@
       "erro": "Não foi possível girar a imagem."
     },
     "baixarEstaImagem": "⬇ Esta imagem",
-    "enviarEstaImagem": "✉ Esta imagem para o meu e-mail"
+    "enviarEstaImagem": "✉ Esta imagem para o meu e-mail",
+    "erroBaixarServidor": "Não foi possível baixar agora — o servidor não respondeu (pode estar reiniciando). Já tentamos de novo 2 vezes.",
+    "tentarDeNovo": "Tentar de novo",
+    "confirmarEmailTitulo": "Enviar por e-mail?",
+    "confirmarEmailUma": "Esta imagem vai para o e-mail cadastrado na sua conta. Confirma o envio?",
+    "simEnviar": "Sim, enviar",
+    "cancelarEnvio": "Cancelar"
   },
   "Curadoria": {
     "inicio": "Início",
@@ -1347,7 +1353,11 @@
     "confirmarRemover": "Tirar {quantidade, plural, one {# imagem} other {# imagens}} de Minhas imagens?",
     "sim": "Sim, tirar",
     "nao": "Cancelar",
-    "email": "✉ E-mail"
+    "email": "✉ E-mail",
+    "confirmarEmailTitulo": "Enviar por e-mail?",
+    "confirmarEmailLote": "{quantidade, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para o e-mail cadastrado na sua conta. Confirma o envio?",
+    "simEnviar": "Sim, enviar",
+    "cancelarEnvio": "Cancelar"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",
@@ -2261,7 +2271,8 @@
       "detalhe": "Não foi possível abrir este pedido.",
       "enviar": "Não foi possível enviar o parecer.",
       "anotacao": "Não foi possível registrar a sua escolha.",
-      "decisao": "Não foi possível aplicar a decisão."
+      "decisao": "Não foi possível aplicar a decisão.",
+      "enviarServidor": "O parecer NÃO foi enviado — o servidor não respondeu. O que você escreveu continua aqui; clique em \"Tentar de novo\"."
     },
     "avisos": {
       "parecerEnviado": "Parecer enviado para {nome}.",
@@ -2395,7 +2406,8 @@
       "mudar": "mudar de item",
       "proximo": "próximo",
       "proximoItem": "Próximo item"
-    }
+    },
+    "tentarDeNovo": "Tentar de novo"
   },
   "Segmentacao": {
     "abaFormas": "Formas (círculo, seta)",
@@ -2695,7 +2707,8 @@
       "classificada": "classificou o tratamento",
       "encaminhada_aluno": "encaminhou ao aluno",
       "tratamento_concluido": "concluiu o tratamento",
-      "tratamento_reaberto": "reabriu o tratamento"
+      "tratamento_reaberto": "reabriu o tratamento",
+      "compartilhamento_removido": "deixou de compartilhar a pasta"
     },
     "novo": {
       "titulo": "Upload pela câmera",
@@ -2820,7 +2833,8 @@
         "caso_classificado": "classificou",
         "caso_encaminhado_aluno": "encaminhou ao aluno",
         "caso_concluido": "concluiu o tratamento",
-        "caso_tratamento_reaberto": "reabriu o tratamento"
+        "caso_tratamento_reaberto": "reabriu o tratamento",
+        "caso_compartilhamento_removido": "deixou de compartilhar"
       }
     },
     "vazios": {
@@ -2854,7 +2868,15 @@
     "quemPodeReceber": "Só é possível escolher pessoas cadastradas no Rádix como professor ou curador.",
     "ninguemParaCompartilhar": "Nenhum outro professor ou curador está cadastrado ainda. Peça ao administrador para cadastrar a pessoa; ela aparece aqui depois.",
     "nenhumAlunoCadastrado": "Nenhum aluno cadastrado ainda. Peça ao administrador para cadastrar o aluno.",
-    "quemPodeReceberLink": "Só é possível escolher professores e curadores cadastrados e os alunos desta pasta (o autor e o do tratamento): são as pessoas que conseguem abrir o link."
+    "quemPodeReceberLink": "Só é possível escolher professores e curadores cadastrados e os alunos desta pasta (o autor e o do tratamento): são as pessoas que conseguem abrir o link.",
+    "deixarCompartilhar": {
+      "titulo": "Deixar de compartilhar?",
+      "texto": "A pasta sai da lista \"Compartilhadas comigo\" de {nome}, e essa pessoa não recebe mais avisos dela. Professores e curadores continuam podendo abrir a pasta pela lista geral. Fica registrado no histórico.",
+      "sim": "Sim, deixar de compartilhar",
+      "cancelar": "Cancelar",
+      "ok": "Deixou de compartilhar com {nome}.",
+      "botao": "Deixar de compartilhar com {nome}"
+    }
   },
   "Navegacao": {
     "trilha": "Trilha de navegação",

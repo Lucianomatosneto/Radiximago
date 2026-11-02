@@ -63,6 +63,9 @@ export default function SegundaOpiniaoPage() {
   const [rascunho, setRascunho] = useState<Record<string, AnotacaoRascunho>>({})
   const [classificacao, setClassificacao] = useState<Classificacao | null>(null)
   const [parecer, setParecer] = useState('')
+  // extra da auditoria (01/11/2026): envio que falhou por culpa do servidor.
+  // GRAVACAO: nao repete sozinho (poderia enviar duas vezes) - so oferece o botao
+  const [envioFalhou, setEnvioFalhou] = useState(false)
   // holofote do revisor: item aceso (ver PainelParecer)
   const [etapa, setEtapa] = useState(0)
   const [enviando, setEnviando] = useState(false)
@@ -213,6 +216,7 @@ export default function SegundaOpiniaoPage() {
     if (!detalhe || !classificacao) return
     setEnviando(true)
     setErro('')
+    setEnvioFalhou(false)
     const anotacoes = itens
       .map((item) => ({ item, r: rascunho[item.chave] }))
       .filter(({ r }) => r && r.avaliacao !== 'concordo')
@@ -230,7 +234,12 @@ export default function SegundaOpiniaoPage() {
         body: JSON.stringify({ classificacao, parecer_revisor: parecer.trim() || null, anotacoes }),
       })
       if (!resposta.ok) {
-        setErro(await extrairErro(resposta, t('erros.enviar')))
+        if (resposta.status >= 500) {
+          setErro(t('erros.enviarServidor'))
+          setEnvioFalhou(true)
+        } else {
+          setErro(await extrairErro(resposta, t('erros.enviar')))
+        }
         return
       }
       setAviso(t('avisos.parecerEnviado', { nome: detalhe.solicitante?.nome ?? '—' }))
@@ -244,7 +253,8 @@ export default function SegundaOpiniaoPage() {
         setViewer(null)
       }
     } catch {
-      setErro(t('erros.enviar'))
+      setErro(t('erros.enviarServidor'))
+      setEnvioFalhou(true)
     } finally {
       setEnviando(false)
     }
@@ -457,6 +467,17 @@ export default function SegundaOpiniaoPage() {
               {erro && (
                 <p role="alert" className="rounded-lg border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-sm text-rose-700 dark:text-rose-200">
                   {erro}
+                  {envioFalhou && (
+                    <button
+                      type="button"
+                      data-teste="repetir-parecer"
+                      onClick={() => enviarParecer()}
+                      disabled={!podeEnviar}
+                      className="ml-3 rounded-md border border-rose-400/60 px-2 py-0.5 text-xs font-medium hover:bg-rose-500/10 disabled:opacity-50"
+                    >
+                      {t('tentarDeNovo')}
+                    </button>
+                  )}
                 </p>
               )}
               {ativo && detalhe && (
