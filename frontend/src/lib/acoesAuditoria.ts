@@ -246,9 +246,15 @@ export function rotuloEntidade(entidade: string | null, id: number | null, idiom
 /** Detalhes para MOSTRAR: tira a parte de busca (?...) de enderecos tecnicos
  * gravados antes de 01/11/2026 (podiam levar o identificador DICOM do
  * paciente, 00100020). O registro guardado nao muda. */
+// registros ANTIGOS gravados sem acento (a auditoria e selada: nao se
+// reescreve o banco, so a forma de mostrar) - reteste de 01/11/2026
+const SEM_ACENTO: [RegExp, string][] = [[/\bnao cadastrado\b/g, 'não cadastrado']]
+
 export function detalhesLegiveis(texto: string | null | undefined): string {
   if (!texto) return ''
-  return texto.replace(/(\/[^\s?]*)\?[^\s]*/g, '$1 (parâmetros de busca ocultos)')
+  let legivel = texto.replace(/(\/[^\s?]*)\?[^\s]*/g, '$1 (parâmetros de busca ocultos)')
+  for (const [errado, certo] of SEM_ACENTO) legivel = legivel.replace(errado, certo)
+  return legivel
 }
 
 /** M6 (01/11/2026): endereco de rede legivel. Os internos do Docker

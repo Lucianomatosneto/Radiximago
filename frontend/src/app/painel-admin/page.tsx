@@ -16,6 +16,7 @@ import {
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
 import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes } from '../../lib/servicosSistema'
+import { detalhesLegiveis } from '../../lib/acoesAuditoria'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 const PERFIS_PERMITIDOS = ['administrador']
@@ -229,7 +230,8 @@ export default function PainelAdminPage() {
                     stats.ultima_falha_email
                       ? t('falhasEmailUltima', {
                           quando: stats.ultima_falha_email.quando ? new Date(stats.ultima_falha_email.quando).toLocaleString('pt-BR') : '—',
-                          detalhes: stats.ultima_falha_email.detalhes ?? '',
+                          // sem o ponto final do registro: o texto ja continua com '. O sistema...'
+                          detalhes: (stats.ultima_falha_email.detalhes ?? '').replace(/[.\s]+$/, ''),
                         })
                       : t('falhasEmailNenhuma')
                   }
@@ -307,7 +309,7 @@ export default function PainelAdminPage() {
                 <ul className="mt-3 space-y-1.5">
                   {alertas.map((alerta) => (
                     <li key={alerta.id} className="text-xs text-slate-500">
-                      {formatarData(alerta.criado_em, tagLocale)} — {alerta.detalhes || t('semDetalhes')}
+                      {formatarData(alerta.criado_em, tagLocale)} — {detalhesLegiveis(alerta.detalhes) || t('semDetalhes')}
                     </li>
                   ))}
                 </ul>

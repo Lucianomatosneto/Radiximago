@@ -51,6 +51,15 @@ const CATEGORIAS: Categoria[] = [
     destaque: '#6366F1',
   },
   {
+    // 01/11/2026 (reteste B1): sem este cartao a soma dos tipos nao fechava
+    // com o total (a tomografia aprovada ficava de fora)
+    chaveTitulo: 'tomografias',
+    chaveRotulo: 'tipoRadiografia',
+    parametro: 'tipo_radiografia',
+    valor: 'tomografia',
+    destaque: '#8B5CF6',
+  },
+  {
     chaveTitulo: 'anatomiaNormal',
     chaveRotulo: 'achadoPrincipal',
     parametro: 'termos',

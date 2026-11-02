@@ -104,7 +104,7 @@ def login(
     if not usuario:
         db.add(AuditLog(
             usuario_id=None, acao="falha_login", entidade="user", resultado="negado",
-            detalhes=f"Tentativa de login com e-mail nao cadastrado: {form_data.username}",
+            detalhes=f"Tentativa de login com e-mail não cadastrado: {form_data.username}",
         ))
         db.commit()
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")

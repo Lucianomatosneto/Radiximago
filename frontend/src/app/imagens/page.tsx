@@ -68,6 +68,12 @@ interface Imagem {
   aguarda_recorte?: boolean
 }
 
+/** "61", "nº 61", "no 61" -> "61"; qualquer outra coisa -> "" */
+function numeroBuscado(termo: string): string {
+  const semPrefixo = termo.replace(/^n[ºo°.]?\s*/, '')
+  return /^\d+$/.test(semPrefixo) ? String(Number(semPrefixo)) : ''
+}
+
 export default function ImagensPage() {
   const router = useRouter()
   const t = useTranslations('ImagensRecebidas')
@@ -220,11 +226,17 @@ export default function ImagensPage() {
     // M5: busca pelo numero curto, pelo ID do Orthanc ou pela data de entrada
     const termo = busca.trim().toLowerCase()
     const bateBusca =
-      !termo || String(imagem.id) === termo.replace(/^n[ºo°]?\s*/, '') || imagem.orthanc_id.toLowerCase().includes(termo)
+      !termo || String(imagem.id) === numeroBuscado(termo) || imagem.orthanc_id.toLowerCase().includes(termo)
     const bateData = !dataEntrada || (imagem.criado_em ?? '').slice(0, 10) === dataEntrada
 
     return bateAnonimizacao && bateCuradoria && bateBusca && bateData
   })
+  // reteste M5 (01/11/2026): buscando "61", a imagem nº 61 vem PRIMEIRO; os IDs
+  // do Orthanc que tem "61" no meio aparecem depois dela
+  const numeroExato = numeroBuscado(busca.trim().toLowerCase())
+  if (numeroExato) {
+    imagensFiltradas.sort((a, b) => Number(String(b.id) === numeroExato) - Number(String(a.id) === numeroExato))
+  }
   const totalPaginas = Math.max(1, Math.ceil(imagensFiltradas.length / POR_PAGINA))
   const paginaAtual = Math.min(pagina, totalPaginas)
   const imagensDaPagina = imagensFiltradas.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA)
@@ -282,9 +294,11 @@ export default function ImagensPage() {
               (direita), por pedido - usa o mesmo caminho de tons do
               Sidebar.tsx (blue -> sky -> cyan -> teal -> emerald), so que
               em ordem invertida da esquerda pra direita. */}
-          <section className="mb-6 rounded-xl border border-teal-700/40 bg-linear-to-r from-emerald-950/50 via-teal-950/40 to-blue-950/50 p-4">
-            <h2 className="mb-1 text-sm font-semibold text-teal-300">{t('enviarTitulo')}</h2>
-            <p className="mb-3 text-xs text-slate-500">
+          {/* reteste M5 (01/11/2026): no tema claro o degrade escuro deixava o
+              texto quase ilegivel - agora cada tema tem seu fundo e texto */}
+          <section className="mb-6 rounded-xl border border-teal-300 bg-linear-to-r from-emerald-50 via-teal-50 to-blue-50 p-4 dark:border-teal-700/40 dark:from-emerald-950/50 dark:via-teal-950/40 dark:to-blue-950/50">
+            <h2 className="mb-1 text-sm font-semibold text-teal-800 dark:text-teal-300">{t('enviarTitulo')}</h2>
+            <p className="mb-3 text-xs text-slate-700 dark:text-slate-400">
               {t('enviarDescricao')}
             </p>
             <form onSubmit={enviarImagem} className="flex flex-wrap items-center gap-3">
@@ -293,7 +307,7 @@ export default function ImagensPage() {
                 type="file"
                 accept=".dcm,application/dicom"
                 required
-                className="text-sm text-slate-300 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-medium file:text-white file:transition-colors file:hover:bg-brand-hover"
+                className="text-sm text-slate-800 dark:text-slate-300 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand file:px-3 file:py-2 file:text-sm file:font-medium file:text-white file:transition-colors file:hover:bg-brand-hover"
               />
               <button
                 type="submit"
@@ -303,9 +317,9 @@ export default function ImagensPage() {
                 {enviando ? t('enviando') : t('enviarBotao')}
               </button>
             </form>
-            {mensagemEnvio && <p className="mt-3 text-sm text-emerald-400">{mensagemEnvio}</p>}
+            {mensagemEnvio && <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-400">{mensagemEnvio}</p>}
             {erroEnvio && (
-              <p className="mt-3 text-sm text-red-400" role="alert">
+              <p className="mt-3 text-sm text-red-700 dark:text-red-400" role="alert">
                 {erroEnvio}
               </p>
             )}

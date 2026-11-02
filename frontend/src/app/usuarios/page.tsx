@@ -585,10 +585,13 @@ export default function UsuariosPage() {
     <div className="flex min-h-screen bg-base">
       <Sidebar />
 
-      <div className="flex flex-1 flex-col">
+      {/* min-w-0: sem isto a tabela larga empurrava a pagina para alem da tela
+          (rolagem para os lados e menu do usuario escondido - reteste 01/11/2026);
+          agora so a TABELA rola para os lados, dentro do quadro dela */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="min-w-0 flex-1 overflow-y-auto p-8">
           <h1 className="titulo-pagina tela-entra mb-1">{t('titulo')}</h1>
           <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <p className="text-sm text-slate-500">
@@ -629,12 +632,22 @@ export default function UsuariosPage() {
                 ativo={filtroPerfil === perfil}
               />
             ))}
-            <DashboardCard label={t('cards.convitesPendentes')} valor={solicitacoes.length} cor="amber" />
+            <DashboardCard
+              label={t('cards.convitesPendentes')}
+              valor={solicitacoes.length}
+              cor="amber"
+              // leva ate a lista de pedidos (so faz sentido quando ha algum)
+              onClick={
+                solicitacoes.length > 0
+                  ? () => document.getElementById('solicitacoes-pendentes')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                  : undefined
+              }
+            />
           </div>
           <p className="mb-8 text-xs text-slate-500">{t('cards.dicaFiltro')}</p>
 
           {!carregandoSolicitacoes && solicitacoes.length > 0 && (
-            <div className="mb-8">
+            <div id="solicitacoes-pendentes" className="mb-8 scroll-mt-4">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-400">
                 {t('solicitacoesPendentesTitulo', { total: solicitacoes.length })}
               </h2>

@@ -359,7 +359,8 @@
       "dentesInclusos": "Dentes inclusos",
       "tratamentoEndodontico": "Tratamento endodôntico",
       "errosTecnicos": "Erros técnicos",
-      "altaQualidade": "Imagens de alta qualidade didática"
+      "altaQualidade": "Imagens de alta qualidade didática",
+      "tomografias": "Tomografias (TCFC)"
     },
     "totalSingular": "imagem disponível no total",
     "totalPlural": "imagens disponíveis no total",
@@ -1584,7 +1585,7 @@
       "integracoes": "Integrações"
     },
     "erros24h": "Erros nas últimas 24 h",
-    "erros24hDetalhe": "Erros inesperados do servidor registrados na Auditoria (ação “erro_inesperado”), cada um com código de referência.",
+    "erros24hDetalhe": "Erros inesperados do servidor nas últimas 24 horas. Cada um tem um código de referência e aparece na Auditoria como “Erro inesperado do servidor”.",
     "migracaoPendente": "Atenção: falta aplicar a atualização do banco de dados. Enquanto isso, partes do sistema podem dar erro. No servidor, rode: docker compose exec radix-api alembic upgrade head",
     "falhasEmail": "Falhas de envio de e-mail (7 dias)",
     "falhasEmailUltima": "Última: {quando} – {detalhes}. O sistema já tenta de novo sozinho 2 vezes; se continuar, confira a Brevo em Integrações.",

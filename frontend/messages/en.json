@@ -359,7 +359,8 @@
       "dentesInclusos": "Impacted teeth",
       "tratamentoEndodontico": "Endodontic treatment",
       "errosTecnicos": "Technical errors",
-      "altaQualidade": "High teaching-quality images"
+      "altaQualidade": "High teaching-quality images",
+      "tomografias": "CBCT scans"
     },
     "totalSingular": "image available in total",
     "totalPlural": "images available in total",
@@ -1584,7 +1585,7 @@
       "integracoes": "Integrations"
     },
     "erros24h": "Errors in the last 24 h",
-    "erros24hDetalhe": "Unexpected server errors recorded in the Audit log (action “erro_inesperado”), each with a reference code.",
+    "erros24hDetalhe": "Unexpected server errors in the last 24 hours. Each one has a reference code and appears in the Audit log as “Unexpected server error”.",
     "migracaoPendente": "Warning: the database update has not been applied. Meanwhile, parts of the system may fail. On the server, run: docker compose exec radix-api alembic upgrade head",
     "falhasEmail": "E-mail delivery failures (7 days)",
     "falhasEmailUltima": "Last: {quando} – {detalhes}. The system already retries twice; if it continues, check the e-mail service in Integrations.",
