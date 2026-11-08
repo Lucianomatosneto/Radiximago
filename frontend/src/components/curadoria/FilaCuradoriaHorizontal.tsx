@@ -10,6 +10,10 @@ export interface ImagemPendente {
   orthanc_id: string
   resource_type: string
   dicomweb_url: string | null
+  /** etapa C: ficha ja comecada (rascunho do professor ou sugestao enviada) */
+  curation_id?: number | null
+  /** nome do professor que mandou a sugestao (fila do curador) */
+  sugerida_por?: string | null
 }
 
 interface EmFoco {
@@ -228,6 +232,14 @@ export default function FilaCuradoriaHorizontal({
                     className="h-full w-full overflow-hidden rounded-lg bg-base-surface2"
                     habilitado={permitirCarregarMiniaturas}
                   />
+                  {imagem.sugerida_por && (
+                    <span
+                      title={imagem.sugerida_por}
+                      className="absolute bottom-0 left-0 right-0 truncate rounded-b-lg bg-violet-700/85 px-1 text-[10px] font-medium text-white"
+                    >
+                      {imagem.sugerida_por}
+                    </span>
+                  )}
                 </button>
 
                 {criandoId === imagem.orthanc_reference_id && (

@@ -833,7 +833,9 @@
       "aprovando": "Approving...",
       "solicitarSegundaOpiniao": "Request second opinion",
       "descartar": "Discard",
-      "explicacaoFila": "The queue shows only images WITHOUT a record and already without frame. {recorte} image(s) still wait for frame cropping and come in later. Records already open (under review) are not counted here."
+      "explicacaoFila": "The queue shows only images WITHOUT a record and already without frame. {recorte} image(s) still wait for frame cropping and come in later. Records already open (under review) are not counted here.",
+      "enviarAoCurador": "Send to curator",
+      "guardarMinhasImagens": "Keep in My images"
     },
     "ficha": {
       "titulo": "Curation record",
@@ -845,7 +847,11 @@
       "erroCarregarFichaCriada": "Couldn't load the created record.",
       "erroAprovar": "Couldn't approve the record.",
       "erroCarregarFila": "Couldn't load the curation queue.",
-      "erroConexao": "Couldn't connect to the server. Please check your connection and try again."
+      "erroConexao": "Couldn't connect to the server. Please check your connection and try again.",
+      "erroSugestao": "Could not complete. Try again.",
+      "sugestaoEnviada": "Sent to the curator, who checks your markings and decides whether to publish it in the image bank.",
+      "sugestaoGuardada": "Kept in My images with your markings. You can continue and send it to the curator later.",
+      "avisoModoProfessor": "You are marking the images you sent. Fill in the record and drawings, then choose \"Send to curator\" (they check and publish it in the image bank) or \"Keep in My images\" (only you see it)."
     },
     "achados": {
       "alteracoesObservadas": "Observed changes",

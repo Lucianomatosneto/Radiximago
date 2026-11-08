@@ -133,7 +133,7 @@ def solicitar_segunda_opiniao(
     db: Session = Depends(get_db),
 ):
     """Solicita segunda opiniao para uma ficha. Exige justificativa."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario)
 
     if ficha.status in STATUS_FINAIS:
         raise HTTPException(
@@ -337,7 +337,7 @@ def aplicar_decisao_revisao(
     Fecha o ciclo da segunda opiniao: aplica a decisao final (aprovar ou
     descartar) a ficha, depois que a review mais recente ja foi respondida.
     """
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario)
 
     if ficha.status in STATUS_FINAIS:
         raise HTTPException(

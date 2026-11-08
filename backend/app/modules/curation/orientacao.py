@@ -23,14 +23,15 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules import orthanc_client
-from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_ESCRITA, exigir_perfis
 from app.modules.geometria_imagem import FormatoNaoSuportado, girar_dicom, girar_marcacoes, girar_ponto
-from app.modules.curations import Curation
+from app.modules.curations import Curation, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference
 from app.modules.segmentacoes import girar_mascara
 from app.modules.substituir_instancia import ImagemDeVolume, conferir_pode_ajustar, substituir_arquivo
 from app.modules.users import User
 
+from .common import _buscar_ficha, _perfil_de
 from .router import router
 
 logger = logging.getLogger(__name__)
@@ -48,9 +49,16 @@ def girar_imagem(
     request: Request,
     orthanc_reference_id: int,
     dados: PedidoGiro,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
+    if _perfil_de(usuario) == "professor":
+        # etapa C: o professor gira so imagens que ele enviou e que nao estao no banco geral
+        ref = db.get(OrthancReference, orthanc_reference_id)
+        aprovada = ref is not None and db.query(Curation.id).filter(
+            Curation.orthanc_reference_id == ref.id, Curation.status == StatusCuradoria.APROVADA.value).first()
+        if not ref or ref.enviado_por_id != usuario.id or aprovada:
+            raise HTTPException(status_code=404, detail="Imagem não encontrada.")
     return _girar(db, orthanc_reference_id, dados.graus, usuario)
 
 
@@ -60,12 +68,10 @@ def girar_imagem_da_ficha(
     request: Request,
     curation_id: int,
     dados: PedidoGiro,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    ficha = db.query(Curation).filter(Curation.id == curation_id).first()
-    if not ficha:
-        raise HTTPException(status_code=404, detail="Ficha não encontrada.")
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     return _girar(db, ficha.orthanc_reference_id, dados.graus, usuario)
 
 

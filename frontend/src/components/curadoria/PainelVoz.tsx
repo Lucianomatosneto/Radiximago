@@ -62,8 +62,11 @@ export default function PainelVoz({
   onNadaRegistrar,
   continuo = false,
   aoLado,
+  semVoz = false,
 }: {
   fichaId: number
+  /** professor (etapa C-2): o ditado por voz e so da curadoria; nao consulta o servico */
+  semVoz?: boolean
   form: FormularioFicha
   /** aplica o novo formulario e salva como rascunho (origem: voz) */
   onAplicar: (novo: FormularioFicha) => void
@@ -147,12 +150,16 @@ export default function PainelVoz({
 
   // servico de voz no ar? + vocabulario controlado
   useEffect(() => {
-    fetch(`${API}/voz/saude`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { disponivel: false }))
-      .then((d) => setDisponivel(Boolean(d.disponivel)))
-      .catch(() => setDisponivel(false))
+    if (semVoz) {
+      setDisponivel(false)
+    } else {
+      fetch(`${API}/voz/saude`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : { disponivel: false }))
+        .then((d) => setDisponivel(Boolean(d.disponivel)))
+        .catch(() => setDisponivel(false))
+    }
     carregarVocabulario()
-  }, [carregarVocabulario])
+  }, [carregarVocabulario, semVoz])
 
   useEffect(() => {
     onDuvidas?.(duvidas.length)

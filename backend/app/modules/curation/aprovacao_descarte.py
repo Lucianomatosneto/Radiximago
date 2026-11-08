@@ -29,7 +29,7 @@ def aprovar_curadoria(
     db: Session = Depends(get_db),
 ):
     """Aprova a ficha. Regra LGPD: so libera com anonimizacao validada."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario)
 
     if ficha.status in STATUS_FINAIS:
         raise HTTPException(
@@ -61,7 +61,7 @@ def descartar_curadoria(
     db: Session = Depends(get_db),
 ):
     """Descarta a ficha (a imagem nao sera usada). Exige justificativa."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario)
 
     if ficha.status in STATUS_FINAIS:
         raise HTTPException(
@@ -103,7 +103,7 @@ def reabrir_para_edicao(
 
     from .common import _registrar_historico
 
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario)
     if ficha.status not in STATUS_FINAIS:
         raise HTTPException(status_code=409, detail="Esta ficha já está em edição.")
     anterior = ficha.status

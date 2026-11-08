@@ -59,14 +59,44 @@ def _registrar_auditoria(db, usuario_id, acao, entidade_id, resultado, detalhes,
     ))
 
 
-def _buscar_ficha(db, curation_id) -> Curation:
-    """Busca a ficha ou levanta 404."""
+def _perfil_de(usuario) -> str:
+    return usuario.perfil.value if hasattr(usuario.perfil, "value") else str(usuario.perfil)
+
+
+def e_rascunho_do_professor(ficha: Curation) -> bool:
+    """Ficha comecada por um professor e ainda nao enviada ao curador."""
+    return bool(ficha.sugerida_por_id) and ficha.sugestao_enviada_em is None
+
+
+def conferir_acesso_ficha(ficha: Curation, usuario, escrita: bool) -> None:
+    """
+    Etapa C (08/11/2026) - quem mexe em qual ficha:
+    - PROFESSOR: so nas fichas que ELE comecou (sugestao); edita enquanto
+      nao enviou ao curador; nunca aprova nem descarta (rotas so do curador);
+    - CURADOR: nao ve o rascunho de um professor antes de ele enviar;
+    - administrador e suporte: como sempre (suporte so le).
+    """
+    perfil = _perfil_de(usuario)
+    if perfil == "professor":
+        if ficha.sugerida_por_id != usuario.id:
+            raise HTTPException(status_code=404, detail=f"Ficha de curadoria {ficha.id} nao encontrada.")
+        if escrita and (ficha.sugestao_enviada_em is not None or ficha.status not in STATUS_EDITAVEIS):
+            raise HTTPException(status_code=409, detail="Esta sugestao ja foi enviada ao curador e nao pode mais ser editada.")
+        return
+    if e_rascunho_do_professor(ficha) and perfil not in ("administrador", "suporte"):
+        raise HTTPException(status_code=404, detail=f"Ficha de curadoria {ficha.id} nao encontrada.")
+
+
+def _buscar_ficha(db, curation_id, usuario=None, escrita: bool = False) -> Curation:
+    """Busca a ficha ou levanta 404. Com `usuario`, confere quem pode ver/editar."""
     ficha = db.query(Curation).filter(Curation.id == curation_id).first()
     if not ficha:
         raise HTTPException(
             status_code=404,
             detail=f"Ficha de curadoria {curation_id} nao encontrada.",
         )
+    if usuario is not None:
+        conferir_acesso_ficha(ficha, usuario, escrita)
     return ficha
 
 

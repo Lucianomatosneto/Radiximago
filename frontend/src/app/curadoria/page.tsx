@@ -31,7 +31,9 @@ import PainelVoz from '../../components/curadoria/PainelVoz'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
 import { obterSessaoAtual } from '../../lib/sessao'
 
-const PERFIS_PERMITIDOS = ['administrador', 'curador'] // suporte: so leitura na API (02/11/2026)
+// suporte: so leitura na API (02/11/2026); professor (08/11/2026): so as
+// imagens que ELE enviou, como sugestao ao curador (nao aprova)
+const PERFIS_PERMITIDOS = ['administrador', 'curador', 'professor']
 
 // Usados so pra rotular tipo_radiografia/achado_principal nos cards de
 // "Aguardando sua decisao" (mesmos rotulos usados em toda a Curadoria e em
@@ -277,6 +279,11 @@ export default function CuradoriaPage() {
   // volta pra /curation/pending nesse estado (ver comentario em
   // carregarReviewSegundaOpiniao acima).
   const [reviewsRespondidas, setReviewsRespondidas] = useState<ReviewRespondidaItem[]>([])
+  // etapa C (08/11/2026): professor marca as proprias imagens como sugestao
+  const [ehProfessor, setEhProfessor] = useState(false)
+  const ehProfessorRef = useRef(false)
+  const [enviandoSugestao, setEnviandoSugestao] = useState(false)
+  const [avisoSugestao, setAvisoSugestao] = useState('')
   const [erroReviewsRespondidas, setErroReviewsRespondidas] = useState('')
   const [painelReviewsAberto, setPainelReviewsAberto] = useState(false)
 
@@ -306,8 +313,11 @@ export default function CuradoriaPage() {
         return
       }
       setAutenticado(true)
+      const professor = sessao.perfil === 'professor'
+      ehProfessorRef.current = professor
+      setEhProfessor(professor)
       carregarFila()
-      carregarReviewsRespondidas()
+      if (!professor) carregarReviewsRespondidas()
       // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
       // ficha e mandou para ca - abre ESSA ficha em vez da 1a da fila
       const q = new URLSearchParams(window.location.search)
@@ -408,7 +418,9 @@ export default function CuradoriaPage() {
     try {
       const skip = opcoes?.skip ?? 0
       const resposta = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50`,
+        ehProfessorRef.current
+          ? `${process.env.NEXT_PUBLIC_API_URL}/curation/professor/fila`
+          : `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50`,
         { credentials: 'include' }
       )
       if (resposta.status === 401) {
@@ -917,8 +929,34 @@ export default function CuradoriaPage() {
     if (ok) irParaProxima()
   }
 
-  async function aprovar() {
+  // etapa C: "Enviar ao curador" / "Guardar em Minhas imagens" (professor)
+  async function concluirSugestao(acao: 'enviar-sugestao' | 'guardar-para-mim') {
     if (!fichaAtiva || !autenticado) return
+    const salvou = await salvarRascunho({ silencioso: true })
+    if (!salvou) return
+    setEnviandoSugestao(true)
+    setErroFormulario('')
+    try {
+      const resposta = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/curation/${fichaAtiva.curationId}/${acao}`,
+        { method: 'POST', credentials: 'include' }
+      )
+      if (!resposta.ok) {
+        setErroFormulario(await extrairErro(resposta, t('ficha.erroSugestao')))
+        return
+      }
+      setAvisoSugestao(t(acao === 'enviar-sugestao' ? 'ficha.sugestaoEnviada' : 'ficha.sugestaoGuardada'))
+      setTimeout(() => setAvisoSugestao(''), 5000)
+      await irParaProxima()
+    } catch {
+      setErroFormulario(t('ficha.erroSugestao'))
+    } finally {
+      setEnviandoSugestao(false)
+    }
+  }
+
+  async function aprovar() {
+    if (!fichaAtiva || !autenticado || ehProfessorRef.current) return
     const salvou = await salvarRascunho({ silencioso: true })
     if (!salvou) return
 
@@ -1309,11 +1347,26 @@ export default function CuradoriaPage() {
       destacarAprovar={etapaAtiva === 'aprovar'}
       parte="acoes"
       semDescartar
+      modoProfessor={ehProfessor ? {
+        onEnviarCurador: () => concluirSugestao('enviar-sugestao'),
+        onGuardar: () => concluirSugestao('guardar-para-mim'),
+        enviando: enviandoSugestao,
+      } : undefined}
     />
   ) : null
 
   return (
     <div className="flex h-screen flex-col bg-base">
+      {avisoSugestao && (
+        <p role="status" className="fixed bottom-4 right-4 z-50 max-w-sm rounded-lg bg-emerald-600 px-4 py-3 text-sm text-white shadow-lg">
+          {avisoSugestao}
+        </p>
+      )}
+      {ehProfessor && (
+        <p className="mx-4 mt-3 rounded-lg border border-violet-400/50 bg-violet-500/10 px-3 py-2 text-xs text-ink-2" data-teste="aviso-modo-professor">
+          {t('ficha.avisoModoProfessor')}
+        </p>
+      )}
       {/* Topbar e o cabecalho abaixo somem em tela cheia - o alvo da
           Fullscreen API e document.documentElement (o <html> inteiro),
           entao a pagina inteira fica visivel automaticamente; se o alvo
@@ -1573,6 +1626,7 @@ export default function CuradoriaPage() {
                   topo={
                     <PainelVoz
                       embutido
+                      semVoz={ehProfessor}
                       fichaId={fichaAtiva.curationId}
                       form={form}
                       onAplicar={aplicarVoz}
@@ -1628,6 +1682,7 @@ export default function CuradoriaPage() {
           escondida) ele volta a flutuar no canto da tela. */}
       {fichaAtiva && !fichaVisivel && (
         <PainelVoz
+          semVoz={ehProfessor}
           fichaId={fichaAtiva.curationId}
           form={form}
           onAplicar={aplicarVoz}

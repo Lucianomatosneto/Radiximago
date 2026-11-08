@@ -833,7 +833,9 @@
       "aprovando": "Aprovando...",
       "solicitarSegundaOpiniao": "Solicitar segunda opinião",
       "descartar": "Descartar",
-      "explicacaoFila": "A fila mostra só as imagens SEM ficha e já sem moldura. {recorte} imagem(ns) ainda esperam o recorte da moldura e entram depois. Fichas já abertas (em análise) não contam aqui."
+      "explicacaoFila": "A fila mostra só as imagens SEM ficha e já sem moldura. {recorte} imagem(ns) ainda esperam o recorte da moldura e entram depois. Fichas já abertas (em análise) não contam aqui.",
+      "enviarAoCurador": "Enviar ao curador",
+      "guardarMinhasImagens": "Guardar em Minhas imagens"
     },
     "ficha": {
       "titulo": "Ficha de curadoria",
@@ -845,7 +847,11 @@
       "erroCarregarFichaCriada": "Não foi possível carregar a ficha criada.",
       "erroAprovar": "Não foi possível aprovar a ficha.",
       "erroCarregarFila": "Não foi possível carregar a fila de curadoria.",
-      "erroConexao": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente."
+      "erroConexao": "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.",
+      "erroSugestao": "Não foi possível concluir. Tente de novo.",
+      "sugestaoEnviada": "Enviada ao curador. Ele confere as suas marcações e decide se publica no banco de imagens.",
+      "sugestaoGuardada": "Guardada em Minhas imagens com as suas marcações. Você pode continuar e enviar ao curador depois.",
+      "avisoModoProfessor": "Você está marcando as imagens que você enviou. Preencha a ficha e os desenhos e escolha \"Enviar ao curador\" (ele confere e publica no banco de imagens) ou \"Guardar em Minhas imagens\" (fica só com você)."
     },
     "achados": {
       "alteracoesObservadas": "Alterações observadas",

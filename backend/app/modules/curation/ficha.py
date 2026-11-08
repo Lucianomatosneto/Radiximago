@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
@@ -12,7 +12,7 @@ from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, regiao_do_achado
 from app.modules.curations import AlteracaoObservada
 
-from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico, _valor
+from .common import STATUS_EDITAVEIS, _buscar_ficha, _perfil_de, e_rascunho_do_professor, _registrar_auditoria, _registrar_historico, _valor
 from .router import router
 from .schemas import CurationCreate, CurationUpdate
 
@@ -31,10 +31,19 @@ def _regioes_unicas(regioes) -> list[str] | None:
 def criar_curadoria(
     orthanc_reference_id: int,
     dados: CurationCreate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    """Cria a ficha de curadoria de uma imagem (status inicial: em_analise)."""
+    """Cria a ficha de curadoria de uma imagem (status inicial: em_analise).
+
+    Etapa C (08/11/2026):
+    - PROFESSOR comeca a ficha so de imagens que ELE enviou (fila ou "so para
+      mim"); ela fica como rascunho dele (sugerida_por_id) ate ele enviar ao
+      curador. Abrir de novo devolve o mesmo rascunho.
+    - CURADOR que abre uma sugestao ja enviada por um professor assume a
+      ficha (vira o curador dela) e encontra tudo preenchido.
+    """
+    professor = _perfil_de(usuario) == "professor"
 
     imagem = (
         db.query(OrthancReference)
@@ -51,7 +60,10 @@ def criar_curadoria(
             status_code=409,
             detail=f"Imagem {orthanc_reference_id} esta desativada e nao pode receber uma nova ficha.",
         )
-    if imagem.destino != DestinoImagem.FILA.value:
+    if professor:
+        if imagem.enviado_por_id != usuario.id or imagem.destino == DestinoImagem.ANALISE.value:
+            raise HTTPException(status_code=404, detail=f"Imagem {orthanc_reference_id} nao encontrada.")
+    elif imagem.destino != DestinoImagem.FILA.value:
         # etapa B (08/11/2026): so imagens da fila de curadoria recebem ficha
         raise HTTPException(
             status_code=409,
@@ -63,6 +75,17 @@ def criar_curadoria(
         .filter(Curation.orthanc_reference_id == orthanc_reference_id)
         .first()
     )
+    if ja_existe and professor and ja_existe.sugerida_por_id == usuario.id and e_rascunho_do_professor(ja_existe):
+        return _resposta_criacao(ja_existe, "Rascunho de sugestao aberto.")
+    if (ja_existe and not professor and ja_existe.sugerida_por_id and ja_existe.sugestao_enviada_em is not None
+            and ja_existe.curador_id is None and ja_existe.status in STATUS_EDITAVEIS):
+        ja_existe.curador_id = usuario.id
+        _registrar_historico(
+            db, ja_existe.id, usuario.id, "sugestao_assumida",
+            ja_existe.status, ja_existe.status, "Curador abriu a sugestao enviada pelo professor.",
+        )
+        db.commit()
+        return _resposta_criacao(ja_existe, "Sugestao do professor aberta.")
     if ja_existe:
         raise HTTPException(
             status_code=409,
@@ -105,7 +128,9 @@ def criar_curadoria(
         observacoes_internas=dados.observacoes_internas,
         status=StatusCuradoria.EM_ANALISE.value,
         anonimizacao_validada=False,
-        curador_id=usuario.id,
+        # o rascunho do professor ainda nao tem curador (quem assumir vira o curador)
+        curador_id=None if professor else usuario.id,
+        sugerida_por_id=usuario.id if professor else None,
     )
     db.add(ficha)
     db.flush()
@@ -117,13 +142,18 @@ def criar_curadoria(
     db.commit()
     db.refresh(ficha)
 
+    return _resposta_criacao(ficha, "Ficha de curadoria criada com sucesso.")
+
+
+def _resposta_criacao(ficha: Curation, mensagem: str) -> dict:
     return {
-        "mensagem": "Ficha de curadoria criada com sucesso.",
+        "mensagem": mensagem,
         "curation_id": ficha.id,
         "orthanc_reference_id": ficha.orthanc_reference_id,
         "status": ficha.status,
         "tipo_radiografia": ficha.tipo_radiografia,
         "dentes": ficha.dentes,
+        "sugerida_por_id": ficha.sugerida_por_id,
     }
 
 
@@ -179,7 +209,7 @@ def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id
 def editar_curadoria(
     curation_id: int,
     dados: CurationUpdate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -188,7 +218,7 @@ def editar_curadoria(
     approve/discard/request-review/apply-review-decision. So permite editar
     fichas ainda 'pendente' ou 'em_analise'.
     """
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
 
     if ficha.status not in STATUS_EDITAVEIS:
         raise HTTPException(

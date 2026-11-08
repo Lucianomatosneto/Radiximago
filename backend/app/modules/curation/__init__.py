@@ -57,6 +57,6 @@ campos legados via PATCH /curation/{curation_id}.
 """
 
 from .router import router
-from . import consultas, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos, orientacao  # noqa: F401 - registram as rotas no router compartilhado
+from . import consultas, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos, orientacao, sugestao_professor  # noqa: F401 - registram as rotas no router compartilhado
 
 __all__ = ["router"]

@@ -8,13 +8,13 @@ ficha.
 from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Query, Response
-from sqlalchemy import or_, func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.config import settings
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
 from app.modules import orthanc_client
@@ -65,10 +65,17 @@ def listar_pendentes(
     pelo recorte (roteiro recortar_molduras.py) - ver geometria_imagem.py.
     """
 
+    # etapa C (08/11/2026): entram tambem as SUGESTOES de professor ja
+    # enviadas e ainda nao assumidas por um curador (ficha ja preenchida)
+    sugestao_aguardando = and_(
+        Curation.sugestao_enviada_em.isnot(None),
+        Curation.status == StatusCuradoria.EM_ANALISE.value,
+        Curation.curador_id.is_(None),
+    )
     consulta_base = (
-        db.query(OrthancReference)
+        db.query(OrthancReference, Curation.id, Curation.sugerida_por_id)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
-        .filter(Curation.id.is_(None))
+        .filter(or_(Curation.id.is_(None), sugestao_aguardando))
         .filter(OrthancReference.ativo.is_(True))
         # etapa B (08/11/2026): imagens "so para mim" e em analise nao entram
         .filter(OrthancReference.destino == DestinoImagem.FILA.value)
@@ -91,8 +98,12 @@ def listar_pendentes(
     )
     registros = consulta_base.offset(skip).limit(limit).all()
 
+    nomes = {u.id: u.nome for u in db.query(User).filter(
+        User.id.in_({sid for _, _, sid in registros if sid}))} if registros else {}
     itens = [
         {
+            "curation_id": curation_id,
+            "sugerida_por": nomes.get(sugerida_por_id),
             "orthanc_reference_id": ref.id,
             "orthanc_id": ref.orthanc_id,
             "study_instance_uid": ref.study_instance_uid,
@@ -101,7 +112,7 @@ def listar_pendentes(
             "resource_type": ref.resource_type,
             "dicomweb_url": ref.dicomweb_url,
         }
-        for ref in registros
+        for ref, curation_id, sugerida_por_id in registros
     ]
 
     return {
@@ -241,7 +252,7 @@ def listar_reviews_respondidas(
 @router.get("/{orthanc_reference_id}/viewer-url")
 def obter_link_visualizador(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -301,7 +312,7 @@ def obter_link_visualizador(
 @router.get("/{orthanc_reference_id}/series")
 def obter_series_do_estudo_pendente(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -334,7 +345,7 @@ def obter_series_do_estudo_pendente(
 @router.get("/{orthanc_reference_id}/preview")
 def obter_preview_pendente(
     orthanc_reference_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """
@@ -435,11 +446,11 @@ def obter_minhas_estatisticas(
 @router.get("/{curation_id}")
 def obter_ficha(
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """Busca uma ficha de curadoria especifica, com todos os campos."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=False)
 
     return {
         "id": ficha.id,
@@ -498,11 +509,11 @@ def obter_ficha(
 @router.get("/{curation_id}/reviews")
 def listar_reviews_da_ficha(
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """Lista o historico de segundas opinioes (CurationReview) de uma ficha."""
-    _buscar_ficha(db, curation_id)
+    _buscar_ficha(db, curation_id, usuario, escrita=False)
 
     reviews = (
         db.query(CurationReview)

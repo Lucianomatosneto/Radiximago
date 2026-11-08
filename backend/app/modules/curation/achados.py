@@ -24,7 +24,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.curations import DENTES_PERMANENTES
 from app.modules.achados import Achado, TipoAchado, regiao_do_achado
@@ -121,11 +121,11 @@ def _marcacoes_para_dict(marcacoes) -> list:
 def criar_achado(
     curation_id: int,
     dados: AchadoCreate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Cria um achado (0..N por ficha) vinculado a uma ficha de curadoria."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
 
     dentes_normalizados = _normalizar_dentes(dados.dentes, dados.dente_nao_identificado)
@@ -163,11 +163,11 @@ def criar_achado(
 @router.get("/{curation_id}/achados", response_model=List[AchadoOut])
 def listar_achados(
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """Lista todos os achados de uma ficha (qualquer status - so leitura)."""
-    _buscar_ficha(db, curation_id)
+    _buscar_ficha(db, curation_id, usuario, escrita=False)
     return (
         db.query(Achado)
         .filter(Achado.curation_id == curation_id)
@@ -183,10 +183,10 @@ def listar_achados(
 def obter_achado(
     curation_id: int,
     achado_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
-    _buscar_ficha(db, curation_id)
+    _buscar_ficha(db, curation_id, usuario, escrita=False)
     return _buscar_achado(db, curation_id, achado_id)
 
 
@@ -198,10 +198,10 @@ def atualizar_achado(
     curation_id: int,
     achado_id: int,
     dados: AchadoUpdate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
     achado = _buscar_achado(db, curation_id, achado_id)
 
@@ -260,10 +260,10 @@ def atualizar_achado(
 def excluir_achado(
     curation_id: int,
     achado_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
     achado = _buscar_achado(db, curation_id, achado_id)
 

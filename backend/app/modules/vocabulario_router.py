@@ -28,7 +28,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis, obter_usuario_atual
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, exigir_perfis, obter_usuario_atual
 from app.modules.busca_texto import condicao_busca_texto
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.users import User
@@ -174,7 +174,7 @@ def listar_vocabulario(
 
 @router.get("/termos-livres")
 def termos_livres(
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     """

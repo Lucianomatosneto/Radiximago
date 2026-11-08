@@ -195,6 +195,7 @@ Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/
 | Enviar imagens e ver a fila do que enviou | ✅ | ✅ | ✅ | ✅ | — | — |
 | Enviar imagem pela tela "Enviar imagem" (arquivo ou câmera do celular): estudante escolhe "só para mim" ou "para análise" de um professor/curador; professor, curador e admin mandam para a fila (desde 08/11/2026) | ✅ | — | ✅ | ✅ | ✅ | — |
 | Criar os próprios grupos de envio e mandar imagens a pessoas e grupos (quem recebe vê a imagem; ela continua na fila de curadoria) | ✅ | — | ✅ | ✅ | — | — |
+| Preencher a ficha de curadoria (tipo, região, achados, desenhos, descrição) **só das imagens que enviou**, como sugestão: enviar ao curador ou guardar em Minhas imagens. Não aprova nem descarta | ✅ | — | ✅ | ✅ | — | — |
 | Analisar imagens enviadas por estudantes (colocar na fila de curadoria ou devolver com recado) — só quem foi escolhido | — | — | ✅ | ✅ | — | — |
 | Curadoria — **gravar** (editar fichas, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário) | ✅ | — | ✅ | — | — | — |
 | Curadoria — **só ler** (fichas, fila, indicadores) | ✅ | ✅ | ✅ | — | — | — |
@@ -319,6 +320,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.16 | 08/11/2026 | Professor preenche fichas como sugestão (só das imagens dele); o curador não vê o rascunho antes do envio; só o curador aprova (conferir_acesso_ficha) |
 | 1.15 | 08/11/2026 | Grupos de envio (cada professor/curador cuida dos seus; membros não se veem) e envio de imagens a pessoas; portaria passa a liberar a imagem para quem a recebeu |
 | 1.14 | 08/11/2026 | Envio de imagens por todos os perfis (seção 5.1): imagens "só para mim" e em análise ficam fora da fila, da pesquisa e da portaria do curador; só quem enviou e quem foi escolhido as veem |
 | 1.13 | 08/11/2026 | Pastas de pacientes **retiradas** do Radix Imago (separação Radix Imago / Radix Clínica). O login em duas etapas do professor volta a ser **opcional** (decisão do Luciano) |

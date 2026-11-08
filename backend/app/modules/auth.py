@@ -213,6 +213,11 @@ PERFIS_IMAGENS = (UserRole.administrador, UserRole.suporte)
 # mantem o ambiente e nao interfere na curadoria cientifica (decisao 02/11/2026).
 PERFIS_CURADORIA = (UserRole.administrador, UserRole.suporte, UserRole.curador)
 PERFIS_CURADORIA_ESCRITA = (UserRole.administrador, UserRole.curador)
+# Etapa C (08/11/2026): o professor tambem preenche fichas, mas SO as que ele
+# comecou como sugestao (conferir_acesso_ficha em curation/common.py) e nunca
+# aprova/descarta - essas rotas continuam com PERFIS_CURADORIA_ESCRITA.
+PERFIS_FICHA_LEITURA = (UserRole.administrador, UserRole.suporte, UserRole.curador, UserRole.professor)
+PERFIS_FICHA_ESCRITA = (UserRole.administrador, UserRole.curador, UserRole.professor)
 # Quem pode ENVIAR (POST /images/upload) e VER a fila de imagens recebidas -
 # mais amplo que PERFIS_IMAGENS de proposito: professor e curador podem
 # incluir imagens novas e conferir o que ja enviaram, mas continuam SEM

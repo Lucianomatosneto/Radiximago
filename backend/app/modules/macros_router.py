@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, exigir_perfis
 from app.modules.achados import TipoErroTecnico
 from app.modules.busca_termos import DENTES_VALIDOS
 from app.modules.curations import AlteracaoObservada, QualidadeTecnica, TipoRadiografia
@@ -167,7 +167,7 @@ def _nome_valido(db: Session, nome: str, ignorar_id: int | None = None) -> str:
 @router_macros.get("")
 def listar_macros(
     incluir_inativas: bool = False,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     q = db.query(MacroCuradoria)
@@ -249,7 +249,7 @@ def desativar_macro(
 # -------------------------------------------------------- frases aprendidas
 @router_frases.get("")
 def listar_frases(
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
     frases = db.query(FraseAprendida).order_by(FraseAprendida.frase).all()

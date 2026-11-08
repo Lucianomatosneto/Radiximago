@@ -56,7 +56,7 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'painelAdministrativo', href: '/painel-admin', ativo: true, icone: Settings, perfis: PERFIS_ADMIN_APENAS, cor: COR_SKY },
   { chave: 'usuarios', href: '/usuarios', ativo: true, icone: Users, perfis: PERFIS_ADMIN_APENAS, cor: COR_CYAN },
   { chave: 'imagensRecebidas', href: '/imagens', ativo: true, icone: Inbox, perfis: PERFIS_ENVIO_IMAGENS, cor: COR_TEAL },
-  { chave: 'curadoria', href: '/curadoria', ativo: true, icone: ClipboardList, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_EMERALD },
+  { chave: 'curadoria', href: '/curadoria', ativo: true, icone: ClipboardList, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD }, // professor: so as imagens dele, como sugestao (08/11/2026),
   { chave: 'segundaOpiniao', href: '/segunda-opiniao', ativo: true, icone: MessagesSquare, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_GREEN },
   // "Pesquisa avancada" saiu do menu: ja e acessada pelo Banco de imagens
   // (cartoes e botao) e por Minhas imagens

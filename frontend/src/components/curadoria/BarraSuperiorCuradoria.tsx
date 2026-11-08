@@ -26,6 +26,7 @@ export default function BarraSuperiorCuradoria({
   destacarAprovar = false,
   parte = 'tudo',
   semDescartar = false,
+  modoProfessor,
 }: {
   posicaoAtual: number | null
   totalFila: number
@@ -53,6 +54,9 @@ export default function BarraSuperiorCuradoria({
   parte?: 'tudo' | 'navegacao' | 'acoes'
   /** sem o botao Descartar (na curadoria ele fica ao lado de Macros) */
   semDescartar?: boolean
+  /** etapa C (08/11/2026): o PROFESSOR nao aprova - envia a sugestao ao
+   * curador ou guarda a imagem marcada em Minhas imagens */
+  modoProfessor?: { onEnviarCurador: () => void; onGuardar: () => void; enviando: boolean }
 }) {
   const t = useTranslations('Curadoria.barraSuperior')
   return (
@@ -97,6 +101,29 @@ export default function BarraSuperiorCuradoria({
         >
           {salvando ? t('salvando') : t('salvar')}
         </button>
+        {modoProfessor ? (
+          <>
+            <button
+              type="button"
+              data-teste="enviar-ao-curador"
+              onClick={modoProfessor.onEnviarCurador}
+              disabled={modoProfessor.enviando || salvando}
+              className="rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50"
+            >
+              {t('enviarAoCurador')}
+            </button>
+            <button
+              type="button"
+              data-teste="guardar-para-mim"
+              onClick={modoProfessor.onGuardar}
+              disabled={modoProfessor.enviando || salvando}
+              className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink hover:border-brand disabled:opacity-50"
+            >
+              {t('guardarMinhasImagens')}
+            </button>
+          </>
+        ) : (
+        <>
         <button
           type="button"
           onClick={onAprovar}
@@ -123,6 +150,8 @@ export default function BarraSuperiorCuradoria({
         >
           {t('descartar')}
         </button>
+        )}
+        </>
         )}
         {extra}
       </div>

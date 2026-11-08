@@ -235,6 +235,12 @@ class Curation(Base):
 
     # Autoria e datas
     curador_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    # Etapa C (08/11/2026): ficha comecada pelo PROFESSOR como sugestao para o
+    # curador. Enquanto `sugestao_enviada_em` estiver vazio e um rascunho so
+    # dele; ao enviar, entra na fila do curador ja preenchida. So o curador
+    # aprova (publica no banco geral).
+    sugerida_por_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    sugestao_enviada_em = Column(DateTime(timezone=True), nullable=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
     atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
 

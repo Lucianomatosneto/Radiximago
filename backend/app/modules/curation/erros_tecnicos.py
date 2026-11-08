@@ -17,7 +17,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.achados import ErroTecnico, erro_vale_para_exame
 
@@ -80,11 +80,11 @@ def _buscar_erro_tecnico(db: Session, curation_id: int, erro_id: int) -> ErroTec
 def criar_erro_tecnico(
     curation_id: int,
     dados: ErroTecnicoCreate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
     """Cria um erro tecnico (0..N por ficha), independente de Achado."""
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
     exigir_erro_compativel(dados.tipo.value, ficha.tipo_radiografia)
     exigir_erro_nao_repetido(db, ficha.id, dados.tipo.value)
@@ -117,10 +117,10 @@ def criar_erro_tecnico(
 @router.get("/{curation_id}/erros-tecnicos", response_model=List[ErroTecnicoOut])
 def listar_erros_tecnicos(
     curation_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
-    _buscar_ficha(db, curation_id)
+    _buscar_ficha(db, curation_id, usuario, escrita=False)
     return (
         db.query(ErroTecnico)
         .filter(ErroTecnico.curation_id == curation_id)
@@ -136,10 +136,10 @@ def listar_erros_tecnicos(
 def obter_erro_tecnico(
     curation_id: int,
     erro_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
     db: Session = Depends(get_db),
 ):
-    _buscar_ficha(db, curation_id)
+    _buscar_ficha(db, curation_id, usuario, escrita=False)
     return _buscar_erro_tecnico(db, curation_id, erro_id)
 
 
@@ -151,10 +151,10 @@ def atualizar_erro_tecnico(
     curation_id: int,
     erro_id: int,
     dados: ErroTecnicoUpdate,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
     erro = _buscar_erro_tecnico(db, curation_id, erro_id)
 
@@ -186,10 +186,10 @@ def atualizar_erro_tecnico(
 def excluir_erro_tecnico(
     curation_id: int,
     erro_id: int,
-    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    ficha = _buscar_ficha(db, curation_id)
+    ficha = _buscar_ficha(db, curation_id, usuario, escrita=True)
     _exigir_ficha_editavel(ficha)
     erro = _buscar_erro_tecnico(db, curation_id, erro_id)
 

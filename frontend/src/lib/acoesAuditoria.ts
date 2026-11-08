@@ -105,6 +105,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('grupo_envio_criado', 'Grupo de envio criado', 'Sending group created'),
       a('grupo_envio_editado', 'Grupo de envio alterado', 'Sending group changed'),
       a('grupo_envio_apagado', 'Grupo de envio apagado', 'Sending group deleted'),
+      a('sugestao_professor_enviada', 'Professor enviou a ficha ao curador', 'Professor sent the record to the curator'),
+      a('sugestao_professor_guardada', 'Professor guardou a imagem marcada em Minhas imagens', 'Professor kept the marked image in My images'),
       a('upload_sem_preambulo_dicom', 'DICOM sem cabeçalho padrão aceito', 'DICOM without preamble accepted'),
       a('importacao_orthanc', 'Importação do Orthanc', 'Orthanc import'),
       a('anonimizacao_automatica', 'Anonimização automática', 'Automatic anonymization'),
@@ -208,6 +210,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     en: 'Improvement suggestions',
     itens: [
       a('sugestao_enviada', 'Sugestão enviada', 'Suggestion sent'),
+      a('sugestao_assumida', 'Curador assumiu a sugestão do professor', 'Curator took over the professor suggestion'),
+      a('envio_ao_curador', 'Professor enviou a ficha ao curador (histórico)', 'Professor sent the record to the curator (history)'),
       a('sugestao_andamento_alterado', 'Andamento da sugestão alterado', 'Suggestion status changed'),
     ],
   },
