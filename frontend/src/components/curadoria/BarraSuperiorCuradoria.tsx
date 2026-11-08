@@ -8,6 +8,9 @@ import { useTranslations } from 'next-intl'
 // aprovar, abrir modal de descarte/segunda opiniao) - nada de logica nova
 // aqui. A navegacao fica no topo da coluna e as acoes no FIM da ficha
 // (depois de Observacoes internas), onde o holofote chega no passo Aprovar.
+// destaque do ultimo passo (holofote): a acao que o Enter vai fazer
+const DESTAQUE = 'relative z-10 scale-110 ring-4 ring-teal-300 shadow-[0_0_28px_rgba(45,212,191,.8)]'
+
 export default function BarraSuperiorCuradoria({
   posicaoAtual,
   totalFila,
@@ -24,6 +27,7 @@ export default function BarraSuperiorCuradoria({
   aprovando,
   extra,
   destacarAprovar = false,
+  acaoEscolhida = 'aprovar',
   parte = 'tudo',
   semDescartar = false,
   modoProfessor,
@@ -48,6 +52,8 @@ export default function BarraSuperiorCuradoria({
   extra?: ReactNode
   /** holofote no Aprovar (ultimo passo da ficha): botao aceso + "Enter" */
   destacarAprovar?: boolean
+  /** ultimo passo: qual das tres acoes as setas ← → escolheram (Enter faz) */
+  acaoEscolhida?: 'salvar' | 'aprovar' | 'segunda'
   /** 'navegacao' = so "← Imagem X de Y →" (topo da coluna); 'acoes' = so
    * Salvar/Aprovar/2a opiniao/Descartar (no FIM da ficha, depois da
    * ultima caixa de curadoria); 'tudo' = os dois juntos */
@@ -97,9 +103,13 @@ export default function BarraSuperiorCuradoria({
           type="button"
           onClick={onSalvar}
           disabled={salvando || aprovando}
-          className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50"
+          data-teste="acao-salvar"
+          className={`flex items-center gap-1.5 rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50 ${
+            destacarAprovar && acaoEscolhida === 'salvar' ? DESTAQUE : ''
+          }`}
         >
           {salvando ? t('salvando') : t('salvar')}
+          {destacarAprovar && acaoEscolhida === 'salvar' && <kbd className="rounded-sm border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
         </button>
         {modoProfessor ? (
           <>
@@ -128,19 +138,24 @@ export default function BarraSuperiorCuradoria({
           type="button"
           onClick={onAprovar}
           disabled={aprovando || salvando}
+          data-teste="acao-aprovar"
           className={`flex items-center gap-1.5 rounded-lg bg-brand hover:bg-brand-hover px-3 py-1.5 text-sm font-medium text-white shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50 ${
-            destacarAprovar ? 'relative z-10 scale-110 ring-4 ring-teal-300 shadow-[0_0_28px_rgba(45,212,191,.8)]' : ''
+            destacarAprovar && acaoEscolhida === 'aprovar' ? DESTAQUE : ''
           }`}
         >
           {aprovando ? t('aprovando') : t('aprovar')}
-          {destacarAprovar && <kbd className="rounded-sm border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
+          {destacarAprovar && acaoEscolhida === 'aprovar' && <kbd className="rounded-sm border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
         </button>
         <button
           type="button"
           onClick={onSolicitarSegundaOpiniao}
-          className="rounded-lg border border-purple-800/60 px-3 py-1.5 text-sm text-purple-300 hover:bg-purple-950/40"
+          data-teste="acao-segunda"
+          className={`flex items-center gap-1.5 rounded-lg border border-purple-800/60 px-3 py-1.5 text-sm text-purple-300 hover:bg-purple-950/40 ${
+            destacarAprovar && acaoEscolhida === 'segunda' ? DESTAQUE : ''
+          }`}
         >
           {t('solicitarSegundaOpiniao')}
+          {destacarAprovar && acaoEscolhida === 'segunda' && <kbd className="rounded-sm border border-white/50 px-1 font-mono text-[10px]">Enter</kbd>}
         </button>
 {!semDescartar && (
         <button

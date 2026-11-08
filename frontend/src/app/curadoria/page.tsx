@@ -1169,16 +1169,36 @@ export default function CuradoriaPage() {
 
   // HOLOFOTE NO "APROVAR" (ultimo passo): Enter faz a aprovacao final
   // (passando pela conferencia automatica, como o clique no botao)
+  // 08/11/2026: as setas ← → escolhem entre Salvar, Aprovar e Segunda
+  // opiniao (comeca no Aprovar); Enter faz a acao escolhida
   const pedirAprovacaoRef = useRef<() => void>(() => {})
+  const acoesTecladoRef = useRef<{ salvar: () => void; segunda: () => void }>({ salvar: () => {}, segunda: () => {} })
+  const [acaoEscolhida, setAcaoEscolhida] = useState<'salvar' | 'aprovar' | 'segunda'>('aprovar')
+  const acaoEscolhidaRef = useRef(acaoEscolhida)
+  acaoEscolhidaRef.current = acaoEscolhida
   const teclasLivres = !modalMotivo && !descarteFinalAlvo && !conferenciaAberta && !guiaAberto
   useEffect(() => {
+    if (etapaAtiva === 'aprovar') setAcaoEscolhida('aprovar')
+  }, [etapaAtiva])
+  useEffect(() => {
     if (etapaAtiva !== 'aprovar' || !teclasLivres) return
+    const ordem = ['salvar', 'aprovar', 'segunda'] as const
     function tecla(e: KeyboardEvent) {
-      if (e.key !== 'Enter' || e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
+      if (e.repeat || e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return
       const alvo = document.activeElement
       if (alvo instanceof HTMLElement && (['INPUT', 'TEXTAREA', 'SELECT'].includes(alvo.tagName) || alvo.isContentEditable)) return
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        const passo = e.key === 'ArrowRight' ? 1 : -1
+        setAcaoEscolhida((atual) => ordem[(ordem.indexOf(atual) + passo + ordem.length) % ordem.length])
+        return
+      }
+      if (e.key !== 'Enter') return
       e.preventDefault()
-      pedirAprovacaoRef.current()
+      const atual = acaoEscolhidaRef.current
+      if (atual === 'salvar') acoesTecladoRef.current.salvar()
+      else if (atual === 'segunda') acoesTecladoRef.current.segunda()
+      else pedirAprovacaoRef.current()
     }
     document.addEventListener('keydown', tecla)
     return () => document.removeEventListener('keydown', tecla)
@@ -1337,6 +1357,7 @@ export default function CuradoriaPage() {
       extra={badgeReviewsRespondidas}
     />
   ) : null
+  acoesTecladoRef.current = { salvar: aoClicarSalvar, segunda: () => abrirModalMotivo('segunda_opiniao') }
   // acoes da ficha (Salvar/Aprovar/...) no fim da coluna, depois das caixas
   const acoesFicha = fichaAtiva ? (
     <BarraSuperiorCuradoria
@@ -1354,6 +1375,7 @@ export default function CuradoriaPage() {
       salvando={salvandoRascunho}
       aprovando={aprovando}
       destacarAprovar={etapaAtiva === 'aprovar'}
+      acaoEscolhida={acaoEscolhida}
       parte="acoes"
       semDescartar
       modoProfessor={ehProfessor ? {
