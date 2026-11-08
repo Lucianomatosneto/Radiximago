@@ -96,6 +96,11 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     en: 'Images',
     itens: [
       a('upload_imagem', 'Imagem DICOM enviada', 'DICOM image uploaded'),
+      a('foto_convertida_dicom', 'Foto convertida em DICOM', 'Photo converted to DICOM'),
+      a('imagem_enviada_analise', 'Imagem enviada para análise', 'Image sent for review'),
+      a('imagem_analise_para_fila', 'Imagem analisada colocada na fila de curadoria', 'Reviewed image sent to curation queue'),
+      a('imagem_analise_devolvida', 'Imagem analisada devolvida com recado', 'Reviewed image returned with a note'),
+      a('imagem_pessoal_retirada', 'Imagem pessoal retirada pelo dono', 'Personal image removed by owner'),
       a('upload_sem_preambulo_dicom', 'DICOM sem cabeçalho padrão aceito', 'DICOM without preamble accepted'),
       a('importacao_orthanc', 'Importação do Orthanc', 'Orthanc import'),
       a('anonimizacao_automatica', 'Anonimização automática', 'Automatic anonymization'),

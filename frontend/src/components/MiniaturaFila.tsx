@@ -31,11 +31,14 @@ export default function MiniaturaFila({
   alt,
   className,
   habilitado = true,
+  caminho,
 }: {
   orthancReferenceId: number
   alt: string
   className?: string
   habilitado?: boolean
+  /** outro endereco da API para a miniatura (ex.: /envios/{id}/preview) */
+  caminho?: string
 }) {
   const [src, setSrc] = useState('')
   const [erro, setErro] = useState(false)
@@ -78,7 +81,7 @@ export default function MiniaturaFila({
     async function carregar() {
       try {
         const resposta = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`,
+          `${process.env.NEXT_PUBLIC_API_URL}${caminho ?? `/curation/${orthancReferenceId}/preview`}`,
           // "priority" (Fetch Priority API) e ignorado silenciosamente em
           // navegadores sem suporte - nao precisa de feature-detection.
           { credentials: 'include', priority: 'low' } as RequestInit
@@ -100,7 +103,7 @@ export default function MiniaturaFila({
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)
     }
-  }, [visivel, habilitado, orthancReferenceId])
+  }, [visivel, habilitado, orthancReferenceId, caminho])
 
   return (
     <div ref={containerRef} className={className}>

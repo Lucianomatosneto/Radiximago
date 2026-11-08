@@ -22,16 +22,17 @@ import httpx
 import pydicom
 from pydicom.errors import InvalidDicomError
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
-from sqlalchemy import and_, exists
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User, UserRole
-from app.modules.orthanc_references import OrthancReference, OrigemImagem
+from app.modules.orthanc_references import DestinoImagem, OrigemImagem, OrthancReference
 from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
@@ -224,19 +225,19 @@ def listar_imagens(
     """
     consulta = db.query(OrthancReference).filter(OrthancReference.ativo == True)
     # 01/11/2026 (QA com perfil professor - decisao do Luciano): o PROFESSOR
-    # ve so as imagens que ELE enviou (minimo necessario); curador,
-    # administrador e suporte continuam vendo todas. Quem enviou vem do
-    # registro de auditoria do envio (upload_imagem), sem coluna nova.
+    # ve so as imagens que ELE enviou (minimo necessario). 08/11/2026 (etapa
+    # B): quem enviou passou a ficar na propria imagem (enviado_por_id); o
+    # CURADOR ve a fila de curadoria e as imagens que mandaram para ele
+    # analisar - imagens "so para mim" de estudantes nao aparecem para ele.
     if usuario.perfil == UserRole.professor:
-        consulta = consulta.filter(
-            exists().where(and_(
-                AuditLog.entidade == "orthanc_reference",
-                AuditLog.entidade_id == OrthancReference.id,
-                AuditLog.acao == "upload_imagem",
-                AuditLog.resultado == "sucesso",
-                AuditLog.usuario_id == usuario.id,
-            ))
-        )
+        consulta = consulta.filter(OrthancReference.enviado_por_id == usuario.id)
+    elif usuario.perfil == UserRole.curador:
+        consulta = consulta.filter(or_(
+            OrthancReference.destino == DestinoImagem.FILA.value,
+            OrthancReference.enviado_por_id == usuario.id,
+            and_(OrthancReference.destino == DestinoImagem.ANALISE.value,
+                 OrthancReference.analise_destinatario_id == usuario.id),
+        ))
     imagens = consulta.order_by(OrthancReference.id).all()
 
     ids = [imagem.id for imagem in imagens]
@@ -270,6 +271,7 @@ def listar_imagens(
             # na fila da Curadoria; sem ficha e moldura pendente = aguarda recorte
             "aguarda_recorte": imagem.id not in status_mais_recente_por_imagem
             and imagem.enquadramento not in ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA,
+            "destino": imagem.destino,
         }
         for imagem in imagens
     ]
@@ -353,12 +355,16 @@ def upload_imagem(
     (usuario.id) e a imagem (ref.id/orthanc_id), permitindo saber sempre
     quem incluiu qual imagem.
     """
-    limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
-    pedaco_bytes = 1024 * 1024  # 1MB por leitura
+    conteudo = ler_arquivo_limitado(arquivo)
+    return receber_dicom(db, usuario, conteudo)
 
+
+def ler_arquivo_limitado(arquivo: UploadFile) -> bytes:
+    """Le o arquivo enviado em pedacos de 1MB, recusando acima do limite (413)."""
+    limite_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
     partes = bytearray()
     while True:
-        pedaco = arquivo.file.read(pedaco_bytes)
+        pedaco = arquivo.file.read(1024 * 1024)
         if not pedaco:
             break
         partes.extend(pedaco)
@@ -367,9 +373,24 @@ def upload_imagem(
                 status_code=413,
                 detail=f"Arquivo maior que o limite permitido ({settings.MAX_UPLOAD_SIZE_MB}MB).",
             )
-    conteudo = bytes(partes)
-    del partes  # libera o bytearray imediatamente, nao esperar o fim da funcao
+    return bytes(partes)
 
+
+def receber_dicom(
+    db: Session,
+    usuario: User,
+    conteudo: bytes,
+    destino: str = DestinoImagem.FILA.value,
+    destinatario_id: int | None = None,
+    nota: str | None = None,
+) -> dict:
+    """
+    Caminho UNICO de entrada de um arquivo DICOM enviado por alguem (tela
+    Imagens recebidas ou tela Enviar imagem): confere que e DICOM, manda ao
+    Orthanc, anonimiza e registra. `destino` diz se a imagem vai para a fila
+    de curadoria, so para o dono ou para a analise de uma pessoa (etapa B,
+    08/11/2026). Uma imagem que ja existia nao muda de destino nem de dono.
+    """
     # Arquivos compactados sao recusados ANTES de chegar ao Orthanc: o
     # Orthanc abre .zip sozinho e importaria tudo que estiver dentro (sem
     # limite de tamanho descompactado nem de quantidade - "bomba de
@@ -414,6 +435,14 @@ def upload_imagem(
 
     try:
         ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
+        if criada:
+            ref.enviado_por_id = usuario.id
+            ref.destino = destino
+            if destino == DestinoImagem.ANALISE.value:
+                ref.analise_destinatario_id = destinatario_id
+                ref.analise_nota = nota
+                ref.analise_em = func.now()
+            db.commit()
     except IntegrityError:
         # orthanc_id e unico no banco: se a insercao colidiu, e porque um
         # upload concorrente do mesmo arquivo ja registrou a referencia
@@ -442,7 +471,8 @@ def upload_imagem(
     db.add(AuditLog(
         usuario_id=usuario.id, acao="upload_imagem", entidade="orthanc_reference", entidade_id=ref.id,
         resultado="sucesso",
-        detalhes=f"Upload direto: orthanc_id={orthanc_id}, {'nova imagem' if criada else 'imagem ja existente'}.",
+        detalhes=(f"Upload direto: orthanc_id={orthanc_id}, {'nova imagem' if criada else 'imagem ja existente'}, "
+                  f"destino={ref.destino}."),
     ))
     if preambulo_ausente:
         db.add(AuditLog(

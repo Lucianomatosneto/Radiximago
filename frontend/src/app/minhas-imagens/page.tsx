@@ -19,6 +19,7 @@ import { MenuSalvarComo } from '../../components/impressao/MenuSalvar'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
+import SecaoEnvios from '../../components/envios/SecaoEnvios'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 // "MINHAS IMAGENS" no MESMO PADRAO da Pesquisa avancada e de "Compartilhadas
@@ -326,6 +327,8 @@ export default function MinhasImagensPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
+          {/* etapa B (08/11/2026): imagens que EU enviei (so para mim, em analise, na fila) */}
+          <SecaoEnvios modo="meus" />
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">

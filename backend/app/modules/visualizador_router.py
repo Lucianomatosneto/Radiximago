@@ -22,6 +22,7 @@ nao devolve imagem nem dado.
 """
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Response
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.acesso_imagens import classificar_pedido, decidir
@@ -30,7 +31,7 @@ from app.modules.audit_logs import AuditLog
 from app.modules.auth import PERFIS_CURADORIA, obter_usuario_atual
 from app.modules.compartilhamentos import CompartilhamentoImagem
 from app.modules.curations import Curation, StatusCuradoria
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.users import User
 
 router = APIRouter(prefix="/visualizador", tags=["Visualizador (portaria das imagens)"])
@@ -46,9 +47,19 @@ def _uids_permitidos(db: Session, usuario: User, uids: frozenset[str]) -> set[st
         OrthancReference.study_instance_uid.in_(list(uids)),
         OrthancReference.ativo.is_(True),
     )
+    # etapa B (08/11/2026): as proprias imagens enviadas e as que mandaram
+    # para esta pessoa analisar (ainda fora do banco geral)
+    proprias = {
+        u for (u,) in ativos.filter(or_(
+            OrthancReference.enviado_por_id == usuario.id,
+            and_(OrthancReference.destino == DestinoImagem.ANALISE.value,
+                 OrthancReference.analise_destinatario_id == usuario.id),
+        )).all()
+    }
     if usuario.perfil in PERFIS_CURADORIA:
-        # curador: qualquer estudo cadastrado no Radix (ja anonimizado)
-        return {u for (u,) in ativos.all()}
+        # curador: estudos da fila de curadoria (ja anonimizados); imagens
+        # "so para mim" e em analise de outra pessoa ficam de fora
+        return {u for (u,) in ativos.filter(OrthancReference.destino == DestinoImagem.FILA.value).all()} | proprias
     aprovados = {
         u
         for (u,) in ativos.join(Curation, Curation.orthanc_reference_id == OrthancReference.id)
@@ -62,7 +73,7 @@ def _uids_permitidos(db: Session, usuario: User, uids: frozenset[str]) -> set[st
         .filter(CompartilhamentoImagem.destinatario_id == usuario.id)
         .all()
     }
-    return aprovados | compartilhados
+    return aprovados | compartilhados | proprias
 
 
 @router.get("/autorizar", status_code=204, include_in_schema=False)

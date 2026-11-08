@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, regiao_do_achado
@@ -50,6 +50,12 @@ def criar_curadoria(
         raise HTTPException(
             status_code=409,
             detail=f"Imagem {orthanc_reference_id} esta desativada e nao pode receber uma nova ficha.",
+        )
+    if imagem.destino != DestinoImagem.FILA.value:
+        # etapa B (08/11/2026): so imagens da fila de curadoria recebem ficha
+        raise HTTPException(
+            status_code=409,
+            detail="Esta imagem nao esta na fila de curadoria (e pessoal ou esta em analise).",
         )
 
     ja_existe = (

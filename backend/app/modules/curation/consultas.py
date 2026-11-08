@@ -16,7 +16,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA
 from app.modules.users import User
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
 from app.modules import orthanc_client
 from app.modules.geometria_imagem import RECORTADA, SEM_BORDA
 from app.modules.curations import (
@@ -38,6 +38,11 @@ def _nomes_usuarios(db: Session, ids: set[int]) -> dict[int, str]:
     if not ids:
         return {}
     return dict(db.query(User.id, User.nome).filter(User.id.in_(ids)).all())
+
+
+
+def _perfil(usuario: User) -> str:
+    return usuario.perfil.value if hasattr(usuario.perfil, "value") else str(usuario.perfil)
 
 
 # ---------------------------------------------------------------------
@@ -65,6 +70,8 @@ def listar_pendentes(
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(Curation.id.is_(None))
         .filter(OrthancReference.ativo.is_(True))
+        # etapa B (08/11/2026): imagens "so para mim" e em analise nao entram
+        .filter(OrthancReference.destino == DestinoImagem.FILA.value)
         .filter(OrthancReference.enquadramento.in_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA))
         .order_by(OrthancReference.id)
     )
@@ -76,7 +83,8 @@ def listar_pendentes(
     aguardando_recorte = (
         db.query(OrthancReference.id)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
-        .filter(Curation.id.is_(None), OrthancReference.ativo.is_(True))
+        .filter(Curation.id.is_(None), OrthancReference.ativo.is_(True),
+                OrthancReference.destino == DestinoImagem.FILA.value)
         .filter(or_(OrthancReference.enquadramento.is_(None),
                     OrthancReference.enquadramento.notin_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA)))
         .count()
@@ -249,7 +257,7 @@ def obter_link_visualizador(
         .filter(OrthancReference.id == orthanc_reference_id)
         .first()
     )
-    if not imagem:
+    if not imagem or not visivel_para(imagem, usuario.id, _perfil(usuario)):
         raise HTTPException(
             status_code=404,
             detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
@@ -307,7 +315,7 @@ def obter_series_do_estudo_pendente(
         .filter(OrthancReference.id == orthanc_reference_id)
         .first()
     )
-    if not imagem:
+    if not imagem or not visivel_para(imagem, usuario.id, _perfil(usuario)):
         raise HTTPException(
             status_code=404,
             detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",
@@ -339,7 +347,7 @@ def obter_preview_pendente(
         .filter(OrthancReference.id == orthanc_reference_id)
         .first()
     )
-    if not imagem:
+    if not imagem or not visivel_para(imagem, usuario.id, _perfil(usuario)):
         raise HTTPException(
             status_code=404,
             detail=f"Imagem {orthanc_reference_id} nao encontrada em orthanc_references.",

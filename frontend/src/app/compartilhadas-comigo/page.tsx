@@ -17,6 +17,7 @@ import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impres
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
+import SecaoEnvios from '../../components/envios/SecaoEnvios'
 import { obterSessaoAtual } from '../../lib/sessao'
 
 // "COMPARTILHADAS COMIGO" no MESMO PADRAO da Pesquisa avancada (pedido de
@@ -85,6 +86,7 @@ export default function CompartilhadasComigoPage() {
   const [barraRolada, setBarraRolada] = useState(false)
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
+  const [analisa, setAnalisa] = useState(false)
 
   useEffect(() => {
     obterSessaoAtual().then((sessao) => {
@@ -92,6 +94,7 @@ export default function CompartilhadasComigoPage() {
         router.push('/login')
         return
       }
+      setAnalisa(sessao.perfil === 'professor' || sessao.perfil === 'curador')
       carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -257,6 +260,8 @@ export default function CompartilhadasComigoPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
+          {/* etapa B (08/11/2026): imagens de estudantes para EU analisar */}
+          {analisa && <SecaoEnvios modo="analisar" />}
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">

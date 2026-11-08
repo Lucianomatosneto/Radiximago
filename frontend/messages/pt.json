@@ -255,7 +255,8 @@
       "compartilhadasComigo": "Compartilhadas comigo",
       "vocabulario": "Vocabulário",
       "macros": "Macros",
-      "sugestoes": "Sugestões"
+      "sugestoes": "Sugestões",
+      "enviarImagem": "Enviar imagem"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -2613,7 +2614,8 @@
       "configuracoes": "Configurações",
       "sugestoes": "Sugestões",
       "meusAcessos": "Meus acessos",
-      "imagem": "Banco de imagens"
+      "imagem": "Banco de imagens",
+      "enviarImagem": "Enviar imagem"
     }
   },
   "AvisoEmail": {
@@ -2628,5 +2630,84 @@
     "verificarAgora": "Verificar agora",
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
+  },
+  "EnviarImagem": {
+    "titulo": "Enviar imagem",
+    "carregando": "Carregando...",
+    "subtituloEstudante": "Envie uma radiografia do computador ou tire uma foto com o celular. Escolha se ela fica só com você ou se vai para um professor ou curador analisar.",
+    "subtituloEquipe": "Envie arquivos DICOM ou fotos de radiografias. Elas vão para a fila de curadoria, onde o curador decide o que entra no banco de imagens.",
+    "passo1": "1. Escolha a imagem",
+    "tirarFoto": "Tirar foto com a câmera",
+    "escolherArquivo": "Escolher arquivo",
+    "ajudaArquivo": "Aceita DICOM (.dcm), JPG e PNG, até 20 arquivos por vez. A foto é convertida em DICOM e os dados do celular (data, aparelho, localização) são descartados.",
+    "tirarDaLista": "Tirar {nome} da lista",
+    "passo2": "2. Para onde vai",
+    "destinos": {
+      "pessoal": {
+        "titulo": "Só para mim",
+        "explica": "Fica apenas no seu usuário, em Minhas imagens, para você estudar. Ninguém mais vê."
+      },
+      "analise": {
+        "titulo": "Enviar para análise",
+        "explica": "Vai só para o professor ou curador que você escolher. Ele decide colocar na fila de curadoria ou devolver com um recado."
+      },
+      "fila": {
+        "titulo": "Fila de curadoria",
+        "explica": "Vai para a fila do curador. Só o curador publica a imagem no banco de imagens, para todos."
+      }
+    },
+    "quemAnalisa": "Quem vai analisar",
+    "escolhaPessoa": "Escolha um professor ou curador",
+    "recado": "Recado (opcional)",
+    "recadoExemplo": "Ex.: professor, isto é uma lesão periapical?",
+    "perfis": {
+      "professor": "professor",
+      "curador": "curador"
+    },
+    "avisoDados": "Antes de enviar, confira se não aparece nome, data de nascimento ou outro dado do paciente na imagem. O sistema anonimiza os dados do arquivo, mas um nome escrito no filme precisa ser coberto.",
+    "escolhaArquivo": "Escolha pelo menos uma imagem.",
+    "escolhaAnalista": "Escolha quem vai analisar.",
+    "enviando": "Enviando...",
+    "enviar": "{quantidade, plural, =0 {Enviar} one {Enviar 1 imagem} other {Enviar # imagens}}",
+    "enviado": {
+      "pessoal": "guardada em Minhas imagens (só você vê).",
+      "analise": "enviada para análise.",
+      "fila": "enviada para a fila de curadoria."
+    },
+    "erroEnviar": "Não foi possível enviar esta imagem.",
+    "erroConexao": "Sem conexão com o servidor. Tente de novo.",
+    "verMinhasImagens": "Ver em Minhas imagens",
+    "lista": {
+      "tituloMeus": "Imagens enviadas por mim",
+      "explicaMeus": "O que você enviou e onde cada imagem está agora.",
+      "tituloAnalisar": "Para analisar",
+      "explicaAnalisar": "Imagens que estudantes enviaram para você. Coloque na fila de curadoria ou devolva com um recado.",
+      "vazioMeus": "Você ainda não enviou nenhuma imagem. Use \"Enviar imagem\" no menu.",
+      "imagemN": "Imagem nº {id}",
+      "situacoes": {
+        "so_para_mim": "Só para mim",
+        "devolvida": "Devolvida",
+        "em_analise": "Em análise",
+        "na_fila": "Na fila de curadoria",
+        "no_banco": "No banco de imagens"
+      },
+      "enviadaPor": "Enviada por {nome}",
+      "comQuem": "Com {nome}",
+      "motivoDevolucao": "Recado",
+      "quemAnalisa": "Quem vai analisar",
+      "recadoOpcional": "Recado (opcional)",
+      "enviarAnalise": "Enviar",
+      "mandarParaAnalise": "Enviar para análise",
+      "retirar": "Retirar",
+      "cancelar": "Cancelar",
+      "retirarTitulo": "Retirar esta imagem?",
+      "retirarTexto": "Ela sai de Minhas imagens. Fica registrado na auditoria quem retirou.",
+      "retirarSim": "Sim, retirar",
+      "colocarNaFila": "Colocar na fila de curadoria",
+      "devolver": "Devolver com recado",
+      "recadoDevolucao": "Por que está devolvendo? (o estudante vai ler)",
+      "confirmarDevolucao": "Devolver",
+      "erro": "Não foi possível concluir."
+    }
   }
 }

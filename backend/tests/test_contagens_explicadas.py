@@ -47,14 +47,12 @@ def test_fila_informa_quantas_aguardam_recorte(client, db, criar_usuario):
 
 
 def test_professor_ve_so_as_imagens_que_enviou(client, db, criar_usuario):
-    """01/11/2026 (QA perfil professor): minimo necessario na lista."""
-    from app.modules.audit_logs import AuditLog
-
+    """01/11/2026 (QA perfil professor): minimo necessario na lista. Desde
+    08/11/2026 quem enviou fica na propria imagem (enviado_por_id)."""
     professor = criar_usuario(perfil=UserRole.professor)
     curador = criar_usuario(perfil=UserRole.curador)
     minha, alheia = _ref(db, RECORTADA), _ref(db, RECORTADA)
-    db.add(AuditLog(usuario_id=professor.id, acao="upload_imagem", entidade="orthanc_reference",
-                    entidade_id=minha.id, resultado="sucesso", detalhes="teste"))
+    minha.enviado_por_id = professor.id
     db.commit()
     try:
         ids_prof = {i["id"] for i in client.get("/images/", headers=cabecalho_auth(obter_token(client, professor.email))).json()}

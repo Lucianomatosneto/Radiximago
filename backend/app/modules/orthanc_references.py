@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -16,6 +16,21 @@ class OrigemImagem(str, enum.Enum):
     """
     UFSC = "ufsc"        # chegou por envio direto do equipamento (protocolo DICOM/C-STORE)
     EXTERNA = "externa"  # chegou por upload manual (API REST) - inclusive de fora da UFSC
+
+
+class DestinoImagem(str, enum.Enum):
+    """
+    Para onde a imagem enviada vai (etapa B da separacao, 08/11/2026):
+    - FILA: fila de curadoria (padrao para professor, curador e equipamentos);
+    - PESSOAL: so o dono ve, em Minhas imagens ("so para mim" do estudante);
+    - ANALISE: so o dono e a pessoa escolhida (professor ou curador), que
+      decide colocar na fila de curadoria ou devolver.
+    Nenhuma imagem PESSOAL ou em ANALISE aparece na fila, na pesquisa ou no
+    banco geral; so o curador publica no banco geral.
+    """
+    FILA = "fila"
+    PESSOAL = "pessoal"
+    ANALISE = "analise"
 
 
 class OrthancReference(Base):
@@ -53,5 +68,34 @@ class OrthancReference(Base):
     # acumulado). O giro e gravado no proprio arquivo; aqui fica so o registro.
     giro_graus = Column(Integer, nullable=False, default=0, server_default=text("0"))
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    # quem enviou (NULL = chegou pelo equipamento em rede ou antes de 08/11/2026)
+    enviado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    destino = Column(String(10), nullable=False, default=DestinoImagem.FILA.value,
+                     server_default=text("'fila'"), index=True)
+    analise_destinatario_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    analise_nota = Column(String(500), nullable=True)   # recado de quem pediu a analise
+    analise_em = Column(DateTime(timezone=True), nullable=True)
+    devolucao_nota = Column(String(500), nullable=True)  # motivo de quem devolveu
 
     curations = relationship("Curation", back_populates="orthanc_reference")
+
+
+def visivel_para(ref: "OrthancReference", usuario_id: int, perfil: str) -> bool:
+    """
+    Quem pode ver uma imagem que AINDA NAO esta no banco geral (sem ficha
+    aprovada), pelo destino dela (etapa B, 08/11/2026):
+    - administrador e suporte: todas;
+    - quem enviou: as proprias;
+    - destino "analise": tambem a pessoa escolhida para analisar;
+    - destino "fila": a curadoria (como sempre foi).
+    Imagens "pessoal" e em "analise" nunca aparecem para o restante.
+    """
+    if perfil in ("administrador", "suporte"):
+        return True
+    if ref.enviado_por_id == usuario_id:
+        return True
+    if ref.destino == DestinoImagem.ANALISE.value:
+        return ref.analise_destinatario_id == usuario_id
+    if ref.destino == DestinoImagem.FILA.value:
+        return perfil == "curador"
+    return False

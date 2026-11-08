@@ -255,7 +255,8 @@
       "compartilhadasComigo": "Shared with me",
       "vocabulario": "Vocabulary",
       "macros": "Macros",
-      "sugestoes": "Suggestions"
+      "sugestoes": "Suggestions",
+      "enviarImagem": "Send image"
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
@@ -2613,7 +2614,8 @@
       "configuracoes": "Settings",
       "sugestoes": "Suggestions",
       "meusAcessos": "My sessions",
-      "imagem": "Image bank"
+      "imagem": "Image bank",
+      "enviarImagem": "Send image"
     }
   },
   "AvisoEmail": {
@@ -2628,5 +2630,84 @@
     "verificarAgora": "Verify now",
     "verificando": "Verifying…",
     "erro": "Could not verify now. Try again in a moment."
+  },
+  "EnviarImagem": {
+    "titulo": "Send image",
+    "carregando": "Loading...",
+    "subtituloEstudante": "Send a radiograph from your computer or take a photo with your phone. Choose whether it stays with you or goes to a professor or curator for review.",
+    "subtituloEquipe": "Send DICOM files or photos of radiographs. They go to the curation queue, where the curator decides what enters the image bank.",
+    "passo1": "1. Choose the image",
+    "tirarFoto": "Take a photo with the camera",
+    "escolherArquivo": "Choose file",
+    "ajudaArquivo": "Accepts DICOM (.dcm), JPG and PNG, up to 20 files at a time. Photos are converted to DICOM and phone data (date, device, location) is discarded.",
+    "tirarDaLista": "Remove {nome} from the list",
+    "passo2": "2. Where it goes",
+    "destinos": {
+      "pessoal": {
+        "titulo": "Only for me",
+        "explica": "Stays only in your account, in My images, for you to study. Nobody else sees it."
+      },
+      "analise": {
+        "titulo": "Send for review",
+        "explica": "Goes only to the professor or curator you choose. They decide to send it to the curation queue or return it with a note."
+      },
+      "fila": {
+        "titulo": "Curation queue",
+        "explica": "Goes to the curator's queue. Only the curator publishes the image in the image bank, for everyone."
+      }
+    },
+    "quemAnalisa": "Who will review",
+    "escolhaPessoa": "Choose a professor or curator",
+    "recado": "Note (optional)",
+    "recadoExemplo": "E.g.: professor, is this a periapical lesion?",
+    "perfis": {
+      "professor": "professor",
+      "curador": "curator"
+    },
+    "avisoDados": "Before sending, check that no name, date of birth or other patient data shows in the image. The system anonymizes the file data, but a name written on the film must be covered.",
+    "escolhaArquivo": "Choose at least one image.",
+    "escolhaAnalista": "Choose who will review.",
+    "enviando": "Sending...",
+    "enviar": "{quantidade, plural, =0 {Send} one {Send 1 image} other {Send # images}}",
+    "enviado": {
+      "pessoal": "saved in My images (only you see it).",
+      "analise": "sent for review.",
+      "fila": "sent to the curation queue."
+    },
+    "erroEnviar": "This image could not be sent.",
+    "erroConexao": "No connection to the server. Try again.",
+    "verMinhasImagens": "See in My images",
+    "lista": {
+      "tituloMeus": "Images I sent",
+      "explicaMeus": "What you sent and where each image is now.",
+      "tituloAnalisar": "To review",
+      "explicaAnalisar": "Images students sent to you. Send them to the curation queue or return them with a note.",
+      "vazioMeus": "You have not sent any image yet. Use \"Send image\" in the menu.",
+      "imagemN": "Image #{id}",
+      "situacoes": {
+        "so_para_mim": "Only for me",
+        "devolvida": "Returned",
+        "em_analise": "Under review",
+        "na_fila": "In curation queue",
+        "no_banco": "In image bank"
+      },
+      "enviadaPor": "Sent by {nome}",
+      "comQuem": "With {nome}",
+      "motivoDevolucao": "Note",
+      "quemAnalisa": "Who will review",
+      "recadoOpcional": "Note (optional)",
+      "enviarAnalise": "Send",
+      "mandarParaAnalise": "Send for review",
+      "retirar": "Remove",
+      "cancelar": "Cancel",
+      "retirarTitulo": "Remove this image?",
+      "retirarTexto": "It leaves My images. The audit log records who removed it.",
+      "retirarSim": "Yes, remove",
+      "colocarNaFila": "Send to curation queue",
+      "devolver": "Return with a note",
+      "recadoDevolucao": "Why are you returning it? (the student will read it)",
+      "confirmarDevolucao": "Return",
+      "erro": "Could not complete."
+    }
   }
 }
