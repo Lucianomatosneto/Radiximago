@@ -1559,7 +1559,17 @@
     },
     "emailDetalhe": "Server answer: {detalhe}",
     "ohifServidorOk": "The server just confirmed: the viewer answered on the internal network.",
-    "ohifServidorFalhou": "The server could NOT reach the viewer (code: {codigo}). Images may not open — check the radix-ohif container."
+    "ohifServidorFalhou": "The server could NOT reach the viewer (code: {codigo}). Images may not open — check the radix-ohif container.",
+    "servicoAparelhos": "Network devices",
+    "aparelhosNenhum": "None allowed",
+    "aparelhosLiberados": "{n, plural, one {1 allowed} other {# allowed}}",
+    "aparelhosDescricaoNenhum": "No X-ray device allowed: Radix refuses every network send (port 4242). Uploading through the screens still works.",
+    "aparelhosDescricaoOk": "{n, plural, one {1 device allowed} other {# devices allowed}}; the image server list matches Radix.",
+    "aparelhosDescricaoInstavel": "The image server (Orthanc) did not answer or its list still differs from Radix. It is reapplied automatically within 1 minute.",
+    "aparelhosBloqueados": "{n, plural, =0 {None blocked} one {1 blocked} other {# blocked}}",
+    "aparelhosUltima": "Last image received: {quando}",
+    "aparelhosNenhumaChegada": "No image received over the network yet",
+    "aparelhosAbrir": "Manage network devices →"
   },
   "PainelAdmin": {
     "titulo": "Admin panel",

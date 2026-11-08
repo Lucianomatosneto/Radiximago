@@ -15,7 +15,7 @@ import {
   StatusServico,
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
-import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes } from '../../lib/servicosSistema'
+import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes, type SituacaoAparelhos } from '../../lib/servicosSistema'
 import { detalhesLegiveis } from '../../lib/acoesAuditoria'
 import { obterSessaoAtual } from '../../lib/sessao'
 
@@ -99,6 +99,7 @@ export default function PainelAdminPage() {
   const [ohif, setOhif] = useState<StatusServico>('aguardando')
   const [email, setEmail] = useState<StatusServico>('aguardando')
   const [armazenamento, setArmazenamento] = useState<StatusServico>('aguardando')
+  const [aparelhos, setAparelhos] = useState<SituacaoAparelhos | null>(null)
 
   const [totalAlertas, setTotalAlertas] = useState(0)
   const [alertas, setAlertas] = useState<AlertaLogin[]>([])
@@ -124,6 +125,7 @@ export default function PainelAdminPage() {
   function carregarServicosExtras() {
     lerStatusIntegracoes().then(async (dados) => {
       setArmazenamento(dados?.armazenamento?.status ?? 'instavel')
+      setAparelhos(dados?.aparelhos ?? null)
       setOhif((await avaliarOhif(dados)).status)
     })
     lerStatusEmail().then((r) => setEmail(r.status))
@@ -259,6 +261,23 @@ export default function PainelAdminPage() {
             <section className="rounded-xl border border-base-border bg-base-surface p-5">
               <h2 className="mb-4 text-sm font-semibold text-slate-200">{t('statusServicos')}</h2>
               <div className="space-y-2" data-teste="servicos-painel">
+                {/* etapa D (08/11/2026): aparelhos de raio X da rede - leva a tela deles */}
+                <Link
+                  href="/aparelhos"
+                  data-teste="painel-aparelhos"
+                  className="flex items-center justify-between rounded-lg border border-base-border bg-base-surface2/50 px-3 py-2 hover:border-brand"
+                >
+                  <span className="text-sm text-slate-300">{tIntegracoes('servicoAparelhos')}</span>
+                  <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CORES_STATUS[aparelhos?.status ?? 'aguardando']}`}>
+                    {!aparelhos
+                      ? tIntegracoes('verificando')
+                      : aparelhos.liberados === 0
+                        ? tIntegracoes('aparelhosNenhum')
+                        : aparelhos.status === 'online'
+                          ? tIntegracoes('aparelhosLiberados', { n: aparelhos.liberados })
+                          : tStatus('instavel')}
+                  </span>
+                </Link>
                 {(
                   [
                     ['FastAPI', 'online'],

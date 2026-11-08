@@ -1559,7 +1559,17 @@
     },
     "emailDetalhe": "Resposta do servidor: {detalhe}",
     "ohifServidorOk": "O servidor confirmou agora: o visualizador respondeu pela rede interna.",
-    "ohifServidorFalhou": "O servidor NÃO conseguiu falar com o visualizador (código: {codigo}). As imagens podem não abrir — verifique o container radix-ohif."
+    "ohifServidorFalhou": "O servidor NÃO conseguiu falar com o visualizador (código: {codigo}). As imagens podem não abrir — verifique o container radix-ohif.",
+    "servicoAparelhos": "Aparelhos da rede",
+    "aparelhosNenhum": "Nenhum liberado",
+    "aparelhosLiberados": "{n, plural, one {1 liberado} other {# liberados}}",
+    "aparelhosDescricaoNenhum": "Nenhum aparelho de raio X liberado: o Radix recusa todos os envios pela rede (porta 4242). O envio pela tela continua funcionando.",
+    "aparelhosDescricaoOk": "{n, plural, one {1 aparelho liberado} other {# aparelhos liberados}}; a lista do servidor de imagens confere com a do Radix.",
+    "aparelhosDescricaoInstavel": "O servidor de imagens (Orthanc) não respondeu ou a lista dele ainda está diferente da do Radix. Ela é reaplicada sozinha em até 1 minuto.",
+    "aparelhosBloqueados": "{n, plural, =0 {Nenhum bloqueado} one {1 bloqueado} other {# bloqueados}}",
+    "aparelhosUltima": "Última imagem recebida: {quando}",
+    "aparelhosNenhumaChegada": "Nenhuma imagem recebida pela rede ainda",
+    "aparelhosAbrir": "Gerenciar aparelhos da rede →"
   },
   "PainelAdmin": {
     "titulo": "Painel administrativo",

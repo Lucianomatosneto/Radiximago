@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import {
@@ -12,7 +13,7 @@ import {
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
 import { obterSessaoAtual } from '../../lib/sessao'
-import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes } from '../../lib/servicosSistema'
+import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes, type SituacaoAparelhos } from '../../lib/servicosSistema'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte']
 
@@ -137,6 +138,7 @@ export default function IntegracoesPage() {
   })
   const [armazenamento, setArmazenamento] = useState<SituacaoArmazenamento | null>(null)
   const [erroStatus, setErroStatus] = useState(false)
+  const [aparelhos, setAparelhos] = useState<SituacaoAparelhos | null>(null)
   const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string; detalhe?: string } | null>(null)
 
   useEffect(() => {
@@ -186,6 +188,7 @@ export default function IntegracoesPage() {
     const dados = await lerStatusIntegracoes()
     if (!dados) setErroStatus(true)
     setArmazenamento((dados?.armazenamento as SituacaoArmazenamento | undefined) ?? null)
+    setAparelhos(dados?.aparelhos ?? null)
     const r = await avaliarOhif(dados)
     setOhif({
       status: r.status,
@@ -308,6 +311,30 @@ export default function IntegracoesPage() {
               detalhes={detalhesArmazenamento}
               alertas={(armazenamento?.alertas ?? []).map((a) => (ALERTAS_CONHECIDOS.includes(a) ? t(`alertas.${a}`) : a))}
             />
+            <CardServico
+              nome={t('servicoAparelhos')}
+              status={erroStatus ? 'instavel' : (aparelhos?.status ?? 'aguardando')}
+              descricao={
+                erroStatus || !aparelhos
+                  ? t('verificando')
+                  : aparelhos.liberados === 0
+                    ? t('aparelhosDescricaoNenhum')
+                    : aparelhos.status === 'online'
+                      ? t('aparelhosDescricaoOk', { n: aparelhos.liberados })
+                      : t('aparelhosDescricaoInstavel')
+              }
+              detalhes={
+                aparelhos
+                  ? [
+                      t('aparelhosBloqueados', { n: aparelhos.bloqueados }),
+                      aparelhos.ultimo_recebimento_em
+                        ? t('aparelhosUltima', { quando: new Date(aparelhos.ultimo_recebimento_em).toLocaleString('pt-BR') })
+                        : t('aparelhosNenhumaChegada'),
+                    ]
+                  : []
+              }
+            />
+            <Link href="/aparelhos" className="text-sm text-brand-300 hover:text-brand-hover sm:col-span-2">{t('aparelhosAbrir')}</Link>
           </div>
         </main>
       </div>

@@ -36,8 +36,10 @@ from typing import Optional
 
 import httpx
 from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.core.database import get_db
 from app.core.email import abrir_conexao_smtp, senha_smtp
 from app.modules import orthanc_client
 from app.modules.auth import exigir_perfis
@@ -156,14 +158,49 @@ def situacao_ohif() -> dict:
     return {"status": "online" if resposta.status_code < 400 else "offline", "codigo": resposta.status_code}
 
 
+def situacao_aparelhos(db: Session) -> dict:
+    """
+    Aparelhos de raio X da rede (etapa D, 08/11/2026) no Painel e em
+    Integracoes: quantos estao liberados e se a lista do Orthanc confere com a
+    do Radix. So LE (a sincronizacao fica com aparelhos_router).
+    - aguardando: nenhum aparelho liberado (a porta 4242 recusa tudo)
+    - online: liberados e a lista do Orthanc confere
+    - instavel: o Orthanc nao respondeu ou a lista dele ainda esta diferente
+      (a anonimizacao automatica reaplica em ate 1 minuto)
+    """
+    from sqlalchemy import func
+
+    from app.modules.aparelhos import AparelhoRede, chave_orthanc
+
+    liberados = db.query(AparelhoRede).filter(AparelhoRede.liberado.is_(True)).all()
+    bloqueados = db.query(AparelhoRede).filter(AparelhoRede.liberado.is_(False)).count()
+    ultimo = db.query(func.max(AparelhoRede.ultimo_recebimento_em)).scalar()
+    situacao = {
+        "liberados": len(liberados),
+        "bloqueados": bloqueados,
+        "ultimo_recebimento_em": ultimo.isoformat() if ultimo else None,
+        "lista_confere": None,
+    }
+    if not liberados:
+        return {**situacao, "status": "aguardando"}
+    try:
+        no_orthanc = {n for n in orthanc_client.listar_modalidades() if n.startswith("radix-")}
+        situacao["lista_confere"] = no_orthanc == {chave_orthanc(a.id) for a in liberados}
+    except Exception:
+        return {**situacao, "status": "instavel"}
+    return {**situacao, "status": "online" if situacao["lista_confere"] else "instavel"}
+
+
 @router.get("/status")
 def status_integracoes(
     usuario: User = Depends(exigir_perfis(*PERFIS_INFRAESTRUTURA)),
+    db: Session = Depends(get_db),
 ):
     return {
         "ohif_url": settings.OHIF_BASE_URL,
         "ohif": situacao_ohif(),
         "armazenamento": situacao_armazenamento(),
+        "aparelhos": situacao_aparelhos(db),
     }
 
 

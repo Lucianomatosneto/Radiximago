@@ -12,6 +12,16 @@ export interface StatusIntegracoes {
   ohif_url: string | null
   ohif?: { status: 'online' | 'offline' | 'nao_verificado'; codigo: number | null }
   armazenamento: { status: StatusServico; alertas: string[] } | null
+  /** aparelhos de raio X da rede (etapa D) */
+  aparelhos?: SituacaoAparelhos
+}
+
+export interface SituacaoAparelhos {
+  status: StatusServico
+  liberados: number
+  bloqueados: number
+  ultimo_recebimento_em: string | null
+  lista_confere: boolean | null
 }
 
 export interface ResultadoOhif {

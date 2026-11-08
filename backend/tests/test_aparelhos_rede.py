@@ -202,3 +202,20 @@ def test_imagem_que_chega_guarda_de_qual_aparelho_veio(
         AuditLog.acao == "anonimizacao_automatica", AuditLog.entidade_id.in_([r.id for r in refs.values()]))]
     assert any("Raio X periapical sala 1" in d for d in detalhes)
     assert any("NAO cadastrado" in d for d in detalhes)
+
+
+def test_painel_mostra_situacao_dos_aparelhos(client, criar_usuario, orthanc_aparelhos, limpar_aparelhos):
+    lista, estado = orthanc_aparelhos
+    adm = criar_usuario(perfil=UserRole.administrador)
+    cab = _cab(client, adm)
+    vazio = client.get("/integracoes/status", headers=cab).json()["aparelhos"]
+    assert vazio["status"] == "aguardando" and vazio["liberados"] == 0
+
+    ap = client.post("/aparelhos", headers=cab, json=_novo()).json()["aparelho"]
+    ok = client.get("/integracoes/status", headers=cab).json()["aparelhos"]
+    assert ok["status"] == "online" and ok["liberados"] == 1 and ok["lista_confere"] is True
+
+    lista.pop(f"radix-{ap['id']}")          # Orthanc perdeu a lista
+    assert client.get("/integracoes/status", headers=cab).json()["aparelhos"]["status"] == "instavel"
+    estado["no_ar"] = False                 # Orthanc fora do ar
+    assert client.get("/integracoes/status", headers=cab).json()["aparelhos"]["status"] == "instavel"
