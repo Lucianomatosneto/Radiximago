@@ -519,8 +519,8 @@ def solicitar_acesso(
 
 # perfis liberados assim que a pessoa confirma o e-mail (sem o administrador).
 # 01/11/2026 (auditoria do administrador, A3 - decisao do Luciano): SO
-# ESTUDANTE. Professor e curador veem pastas de pacientes (dados
-# identificados) e pesquisador ve dados de pesquisa: todos esses dependem da
+# ESTUDANTE. Professor e curador enviam e classificam imagens e o
+# pesquisador ve dados de pesquisa: todos esses dependem da
 # aprovacao do administrador. Antes (28/10) professor e pesquisador tambem
 # entravam sozinhos - qualquer pessoa com um e-mail podia virar professor.
 PERFIS_APROVACAO_AUTOMATICA = {"estudante"}

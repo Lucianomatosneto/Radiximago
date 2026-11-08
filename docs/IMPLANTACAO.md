@@ -212,9 +212,7 @@ docker compose cp scripts/testar-restauracao.sh radix-backup:/tmp/testar-restaur
 docker compose exec radix-backup sh /tmp/testar-restauracao.sh
 ```
 
-Termina com "ENSAIO APROVADO" ou lista os `[ERRO]`. **Não cobre** as fotos cifradas das pastas de
-pacientes: para elas, guarde a `CASOS_CHAVE` fora do servidor e ensaie a cópia completa
-(`scripts/copia-completa.sh` e `scripts/restaurar-copia.sh`) numa máquina de teste.
+Termina com "ENSAIO APROVADO" ou lista os `[ERRO]`.
 
 ## Cópias de segurança (backup)
 

@@ -36,8 +36,8 @@
 | Achados e erros técnicos | `criacao_achado`, `edicao_achado`, `exclusao_achado`, `criacao_erro_tecnico`, `edicao_erro_tecnico`, `exclusao_erro_tecnico` |
 | Segmentação (pintura de estruturas) | `segmentacao_criada`, `segmentacao_alterada`, `segmentacao_apagada` (estrutura, dente e quantos pixels foram pintados — **sem a imagem**) |
 | Vocabulário e macros | `vocabulario_termo_criado`, `vocabulario_termo_editado`, `vocabulario_sinonimo_criado`, `vocabulario_sinonimo_removido`, `vocabulario_fichas_vinculadas`, `vocabulario_ficha_desvinculada`, `macro_criada`, `macro_editada`, `macro_desativada` |
-| Pastas de pacientes (dados identificados) | `caso_criado`, `caso_visualizado` (cada abertura da pasta; nas fotos, no máximo uma linha a cada 10 min por pessoa), `caso_acesso_negado`, `caso_foto_baixada`, `caso_eliminado` (pasta apagada, por prazo ou a pedido do professor; guarda só o número, o motivo e quem pediu, nunca o nome do paciente), `caso_impresso` (abriu a versão para imprimir ou salvar em PDF; administrador não imprime), `caso_revisado` (versão), `caso_dados_alterados` (quais campos, nunca os valores), `caso_compartilhado`, `caso_compartilhamento_removido` (deixar de compartilhar; quem compartilhou, quem recebeu ou curador), `caso_link_enviado`, `caso_encaminhado_curador`, `caso_classificado`, `caso_encaminhado_aluno`, `caso_concluido`, `caso_tratamento_reaberto` (desfaz o "concluído"; só professor/curador), `caso_acesso_justificado` (administrador informa o motivo para abrir uma pasta; o motivo vai nos detalhes; vale 30 min, só aquela pasta, somente leitura), `caso_fila_supervisao` e `caso_tratamentos_supervisao` (administrador consultou a fila e os tratamentos, sem dados do paciente). Consultados em `/casos/registro-acessos` (administrador, curador, professor), sem o nome do paciente |
-| Limpeza de dados de demonstração | `limpeza_dados_demo` (gravada pelo script `scripts/limpar_dados_demo.py` quando roda com `--executar`; detalhes: quantos usuários, pastas, compartilhamentos e arquivos saíram — nunca nomes) |
+| Pastas de pacientes — **módulo retirado em 08/11/2026** | As ações `caso_*` (por exemplo `caso_criado`, `caso_visualizado`) não são mais gravadas. Registros antigos continuam na auditoria, selados, e a tela Auditoria ainda os mostra com nome legível. O módulo segue no futuro Radix Clínica (ramo `radix-clinica-base`) |
+| Limpeza de dados de demonstração | `limpeza_dados_demo` (gravada pelo script `scripts/limpar_dados_demo.py` quando roda com `--executar`; detalhes: quantos usuários e compartilhamentos saíram — nunca nomes) |
 | Curadoria reaberta | `curadoria_reaberta` e, no histórico da ficha, `reabertura_edicao` (curador reabre uma ficha aprovada ou descartada para editar depois do envio; status anterior e novo) |
 | Sugestões de melhoria | `sugestao_enviada` (com o perfil de quem enviou), `sugestao_andamento_alterado` (administrador; andamento anterior e novo) |
 | Compartilhamento | `compartilhamento_imagem`, `resposta_compartilhamento`, `compartilhamento_desfeito` |
@@ -56,7 +56,7 @@ A lista acima é conferida automaticamente com o código (`tests/test_documentac
 - O filtro agrupa as ações por tema e mostra quantas vezes cada uma aparece. Ações antigas fora desta lista entram em "Outras".
 - Também dá para filtrar por usuário e por período.
 - "Agrupar registros iguais no mesmo segundo" junta, só na leitura, eventos repetidos, como várias recusas de acesso disparadas por uma mesma página. Todos os registros continuam gravados.
-- A coluna "Sobre o quê" usa nomes padronizados, como "Ficha nº 12" ou "Pasta de paciente nº 1".
+- A coluna "Sobre o quê" usa nomes padronizados, como "Ficha nº 12" ou "Imagem nº 3".
 - Os detalhes aparecem rotulados: o que aconteceu, o pedido (rota), o endereço de rede e o número do registro.
 
 ## 3. O que **nunca** vai para os registros (ASVS 16.2.5)
@@ -103,3 +103,4 @@ Isso é comprovado por:
 | 1.1 | 18/10/2026 | Grupo 2: ip/rota, eventos de segurança, lacre e proteção, JSON, retenção |
 | 1.2 | 19/10/2026 | Ações do login em duas etapas |
 | 1.3 | 20/10/2026 | Giro da imagem pelo curador e recorte da moldura branca |
+| 1.4 | 08/11/2026 | Pastas de pacientes retiradas: ações `caso_*` deixam de ser gravadas (antigas continuam legíveis) |

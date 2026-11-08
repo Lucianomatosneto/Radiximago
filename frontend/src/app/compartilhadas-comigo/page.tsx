@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import SecaoPastas from '../../components/casos/SecaoPastas'
 import MiniaturaImagem from '../../components/MiniaturaImagem'
 import CamadaMarcacoes from '../../components/detalhe/CamadaMarcacoes'
 import BotaoHolofote from '../../components/detalhe/BotaoHolofote'
@@ -257,10 +256,6 @@ export default function CompartilhadasComigoPage() {
               {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
             </h1>
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
-          </div>
-          {/* pastas de pacientes (fotos do negatoscopio) - 31/10/2026 */}
-          <div className="mt-4">
-            <SecaoPastas modo="recebidas" />
           </div>
 
           {erro && (

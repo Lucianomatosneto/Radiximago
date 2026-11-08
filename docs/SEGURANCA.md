@@ -195,8 +195,6 @@ Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/
 | Enviar imagens e ver a fila do que enviou | ✅ | ✅ | ✅ | ✅ | — | — |
 | Curadoria — **gravar** (editar fichas, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário) | ✅ | — | ✅ | — | — | — |
 | Curadoria — **só ler** (fichas, fila, indicadores) | ✅ | ✅ | ✅ | — | — | — |
-| Pastas de pacientes — **supervisão** da fila e dos tratamentos (sem nome, contato, fotos; cada consulta auditada) | ✅ | — | ✅ | ✅ | — | — |
-| Pastas de pacientes — **editar identificação** (nome, nascimento, contato, prontuário, descrição); o curador só acrescenta observações | — | — | observações | ✅ | ✅ (o que enviou) | — |
 | Indicadores e relatórios | ✅ | ✅ | ✅ | — | — | — |
 | Auditoria | ✅ | — | — | — | — | — |
 | Pesquisar, visualizar, salvar, anotar e compartilhar imagens aprovadas | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
@@ -318,6 +316,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.13 | 08/11/2026 | Pastas de pacientes **retiradas** do Radix Imago (separação Radix Imago / Radix Clínica). O login em duas etapas do professor **continua obrigatório** (decisão a confirmar) |
 | 1.12 | 02/11/2026 | Login em duas etapas **obrigatório também para o professor** (ele vê as pastas de pacientes); pesquisador e estudante seguem opcionais (seção 3.4) |
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; administrador supervisiona a fila de pastas sem dados do paciente; curador só acrescenta observações na pasta (5.1) |
 | 1.10 | 19/10/2026 | Tailwind 4: fim dos 7 avisos das ferramentas de montagem (seção 7) |

@@ -154,8 +154,10 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
   },
   {
     chave: 'pastas',
-    pt: 'Pastas de pacientes',
-    en: 'Patient folders',
+    // historico: modulo retirado em 08/11/2026 (futuro Radix Clinica); registros
+    // antigos continuam na auditoria e precisam de nome legivel
+    pt: 'Pastas de pacientes (antigo)',
+    en: 'Patient folders (former)',
     itens: [
       a('caso_criado', 'Pasta criada', 'Folder created'),
       a('caso_visualizado', 'Pasta aberta', 'Folder opened'),

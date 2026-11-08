@@ -20,8 +20,6 @@
 #      novos registros depois do backup, entao o banco real pode ter MAIS linhas);
 #   5. a protecao da auditoria (registros nao podem ser apagados) voltou junto;
 #   6. o arquivo mais recente do Orthanc abre e tem tamanho coerente (leitura completa: COMPLETO=1).
-# Fotos cifradas das pastas de pacientes (dados_clinicos) e a CASOS_CHAVE NAO
-# sao verificadas aqui: ver docs/IMPLANTACAO.md.
 set -u
 
 TEMP_DB="radix_restauracao_teste"
@@ -62,7 +60,7 @@ if [ "$V_REAL" = "$V_REST" ] && [ -n "$V_REST" ]; then ok "versao do esquema igu
 
 # 4. tabelas principais
 echo "  Tabela                    backup   sistema agora"
-for T in users audit_logs curations casos_clinicos casos_imagens casos_historico compartilhamentos_imagem sessoes_usuario; do
+for T in users audit_logs curations compartilhamentos_imagem sessoes_usuario; do
   N_REST=$(q "$TEMP_DB" "SELECT count(*) FROM $T")
   N_REAL=$(q "$REAL_DB" "SELECT count(*) FROM $T")
   printf "  %-24s %7s   %7s\n" "$T" "${N_REST:-?}" "${N_REAL:-?}"

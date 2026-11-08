@@ -4,7 +4,8 @@ ASVS 6.3.3 - decisao do responsavel em 19/10/2026 (grupo 6 do Nivel 2):
 
 - OBRIGATORIO para quem tem poder no sistema ou ve dados de pacientes:
   administrador, suporte, curadoria e professor (PERFIS_MFA_OBRIGATORIO;
-  o professor entrou em 02/11/2026, por ver as pastas de pacientes);
+  o professor entrou em 02/11/2026, quando via as pastas de pacientes -
+  mantido apos a retirada das pastas em 08/11/2026);
 - OPCIONAL para os demais (estudante, pesquisador), que podem ligar em
   "Meus acessos".
 

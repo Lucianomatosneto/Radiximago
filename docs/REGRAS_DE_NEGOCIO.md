@@ -157,8 +157,6 @@ pendente ─┐
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
 | **Sugestão de melhoria** | 10 por hora | conta | `sugestoes.py` |
-| **Pasta de paciente nova** (fotos do negatoscópio) | 30 por hora; até 30 fotos por pasta | conta | `casos_router.py` |
-| **E-mail com o link de uma pasta de paciente** (só o link, que exige login) | 10 por hora | conta | `casos_router.py` |
 | **Girar imagem** (Curadoria) | 30 por minuto; um giro por vez em cada imagem | conta (curadoria) | `curation/orientacao.py` |
 | Foto de perfil | 5 MB; JPG/PNG/WebP | por pedido | `users_router.py` |
 | Busca | até 200 resultados por página | por pedido | `search_router.py` |
@@ -206,3 +204,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.9 | 01/11/2026 | Professor vê em Imagens recebidas só o que enviou; texto "Só para mim" trocado (a equipe vê todas as pastas) |
 | 1.10 | 01/11/2026 | Proteção das contas de administrador (M1); só estudante é aprovado automaticamente (A3) |
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor; regras das pastas de pacientes em `PASTAS_DE_PACIENTES.md` |
+| 1.12 | 08/11/2026 | Pastas de pacientes retiradas do Radix Imago (separação Radix Imago / Radix Clínica); limites das pastas removidos |

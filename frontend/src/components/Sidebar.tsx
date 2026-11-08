@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
-import { type LucideIcon, Camera, ChartColumn, ClipboardList, GraduationCap, History, Hourglass, Inbox, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Stethoscope, Tags, Users, Zap } from 'lucide-react'
+import { type LucideIcon, ChartColumn, ClipboardList, Inbox, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -63,12 +63,6 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, icone: Library, cor: COR_BLUE },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
-  // Pastas de pacientes (fotos do negatoscopio) - 31/10/2026
-  { chave: 'uploadCamera', href: '/casos/novo', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador'], cor: COR_TEAL },
-  { chave: 'meusPacientes', href: '/casos/meus-tratamentos', ativo: true, icone: Stethoscope, perfis: ['estudante'], cor: COR_CYAN },
-  { chave: 'aguardandoTratamento', href: '/casos/fila', ativo: true, icone: Hourglass, perfis: ['administrador', 'professor', 'curador'], cor: COR_CYAN },
-  { chave: 'alunosPacientes', href: '/casos/tratamentos', ativo: true, icone: GraduationCap, perfis: ['administrador', 'professor', 'curador'], cor: COR_TEAL },
-  { chave: 'registroAcessos', href: '/casos/acessos', ativo: true, icone: History, perfis: ['administrador', 'curador', 'professor'], cor: COR_EMERALD },
   { chave: 'vocabulario', href: '/vocabulario', ativo: true, icone: Tags, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
   { chave: 'macros', href: '/macros', ativo: true, icone: Zap, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'relatorios', href: '/relatorios', ativo: true, icone: ChartColumn, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
@@ -116,14 +110,14 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
       // 01/11/2026 (A2): com a aba escondida nao consulta (a tela chamava o
       // servidor a cada minuto mesmo sem ninguem olhando)
       if (document.visibilityState === 'hidden') return
-      // imagens do banco compartilhadas + pastas de pacientes novas (professor/curador)
+      // imagens do banco compartilhadas comigo e ainda nao vistas
       const ler = (caminho: string) =>
         fetch(`${process.env.NEXT_PUBLIC_API_URL}${caminho}`, { credentials: 'include' })
           .then((r) => (r.ok ? r.json() : null))
           .then((dados) => (dados?.quantidade as number) ?? 0)
           .catch(() => 0)
-      Promise.all([ler('/shares/recebidas/novas'), ler('/casos/recebidos/novos')]).then(([a, b]) => {
-        if (!cancelado) setNovasCompartilhadas(a + b)
+      ler('/shares/recebidas/novas').then((a) => {
+        if (!cancelado) setNovasCompartilhadas(a)
       })
     }
     contar()

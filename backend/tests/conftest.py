@@ -57,7 +57,6 @@ from app.modules.audit_logs import AuditLog
 from app.modules.sessoes import SessaoUsuario
 from app.modules.access_requests import AccessRequest, IntencaoPerfil
 from app.modules.sugestoes import Sugestao
-from app.modules.casos import CasoClinico, CasoCompartilhamento, CasoHistorico, CasoImagem, CasoRevisao
 
 SENHA_TESTE = "TesteSuite123!"
 # Hash bcrypt e caro (~200ms) - calculado uma unica vez pra suite inteira,
@@ -89,29 +88,6 @@ def limiter_limpo():
     """
     app.state.limiter.reset()
     yield
-
-
-def _limpar_casos_do_usuario(db, usuario_id):
-    """Pastas de pacientes criadas pelo usuario (e os vinculos dele com as dos outros)."""
-    from app.modules import casos_arquivos
-
-    ids = [c.id for c in db.query(CasoClinico.id).filter(CasoClinico.aluno_id == usuario_id)]
-    for img in db.query(CasoImagem).filter(CasoImagem.caso_id.in_(ids)) if ids else []:
-        casos_arquivos.apagar(img.arquivo)
-        casos_arquivos.apagar(img.miniatura)
-    if ids:
-        for modelo in (CasoImagem, CasoRevisao, CasoCompartilhamento, CasoHistorico):
-            db.query(modelo).filter(modelo.caso_id.in_(ids)).delete(synchronize_session=False)
-        db.query(CasoClinico).filter(CasoClinico.id.in_(ids)).delete(synchronize_session=False)
-    db.query(CasoRevisao).filter(CasoRevisao.autor_id == usuario_id).delete(synchronize_session=False)
-    db.query(CasoHistorico).filter(CasoHistorico.usuario_id == usuario_id).delete(synchronize_session=False)
-    db.query(CasoCompartilhamento).filter(
-        (CasoCompartilhamento.de_id == usuario_id) | (CasoCompartilhamento.para_id == usuario_id)
-    ).delete(synchronize_session=False)
-    for coluna in ("professor_id", "encaminhado_curador_por_id", "classificado_por_id", "aluno_tratamento_id",
-                   "encaminhado_tratamento_por_id", "concluido_por_id"):
-        db.query(CasoClinico).filter(getattr(CasoClinico, coluna) == usuario_id).update(
-            {coluna: None}, synchronize_session=False)
 
 
 @pytest.fixture()
@@ -160,7 +136,6 @@ def criar_usuario(db):
         db.query(SavedImage).filter(SavedImage.user_id == usuario_id).delete()
         db.query(Sugestao).filter(Sugestao.atualizado_por_id == usuario_id).update({"atualizado_por_id": None})
         db.query(Sugestao).filter(Sugestao.usuario_id == usuario_id).delete()
-        _limpar_casos_do_usuario(db, usuario_id)
         # a auditoria e protegida contra apagamento (gatilho, ASVS 16.4.2): so a
         # LIMPEZA DOS TESTES desliga os gatilhos, e so nesta transacao
         db.execute(text("SET LOCAL session_replication_role = replica"))

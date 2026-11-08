@@ -51,15 +51,3 @@ def test_agrupar_repetidos_no_mesmo_segundo(client, db, criar_usuario):
     assert sum(i["vezes"] for i in agrupados["itens"]) == 7 and agrupados["total"] < 7  # mesmo segundo -> juntos
     contagem = client.get("/admin/audit-logs/acoes", headers=cab).json()["acoes"]
     assert contagem["teste_repetido"] >= 7
-
-
-def test_registro_de_acessos_das_pastas_tem_todas_as_acoes_traduzidas():
-    """Reteste do M3: 'caso_tratamento_reaberto' aparecia como chave crua em
-    /casos/acessos. Toda acao caso_* documentada precisa de texto em pt e en."""
-    import json
-
-    casos = {a for a in _acoes_documentadas() if a.startswith("caso_")}
-    for idioma in ("pt", "en"):
-        mensagens = json.loads((RAIZ / "frontend" / "messages" / f"{idioma}.json").read_text(encoding="utf-8"))
-        faltando = casos - set(mensagens["Casos"]["acessos"]["acoes"])
-        assert not faltando, f"{idioma}: {sorted(faltando)}"

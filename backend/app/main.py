@@ -32,7 +32,6 @@ from app.modules.visualizador_router import router as visualizador_router
 from app.modules.integracoes_router import router as integracoes_router
 from app.modules.segmentacoes_router import router as segmentacoes_router
 from app.modules.sugestoes import router as sugestoes_router
-from app.modules.casos_router import router as casos_router
 
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
@@ -130,7 +129,6 @@ app.include_router(visualizador_router)
 app.include_router(integracoes_router)
 app.include_router(segmentacoes_router)
 app.include_router(sugestoes_router)
-app.include_router(casos_router)
 
 @app.get("/health")
 async def health():

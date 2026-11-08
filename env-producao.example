@@ -23,13 +23,6 @@ SESSAO_MAXIMA_HORAS=12
 # vale para app., api. e viewer. (o visualizador recebe o login)
 COOKIE_DOMAIN=.radiximago.com.br
 
-# --- Pastas de pacientes: chave que CIFRA as fotos (48+ caracteres) ---
-# Gere uma vez e NUNCA troque: trocar torna as fotos guardadas ilegiveis.
-CASOS_CHAVE=
-# Meses depois da conclusao (ou da ultima acao) em que a pasta de paciente e ELIMINADA
-# (LGPD art. 15 e 16). 0 desliga. Padrao: 12. Numero final: decisao do DPO/CEP.
-CASOS_RETENCAO_MESES=12
-
 # --- Orthanc (servidor de imagens; fica fechado para a internet) ---
 ORTHANC_URL=http://radix-orthanc:8042
 ORTHANC_USERNAME=admin

@@ -7,16 +7,15 @@ export const paginaInicial = (perfil: string | null | undefined) =>
 
 /** Telas de texto, lista e formulario: conteudo com no maximo ~1200px,
  * centralizado. As telas de imagem (Pesquisa, Banco de imagens, Minhas
- * imagens, Compartilhadas, pasta, Ver estudos, Curadoria, visualizador)
+ * imagens, Compartilhadas, Curadoria, visualizador)
  * continuam com a largura toda. */
 export const ROTAS_LARGURA_LIMITADA = [
-  '/sugestoes', '/casos/novo', '/casos/meus-tratamentos', '/casos/fila', '/casos/tratamentos',
-  '/casos/acessos', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
+  '/sugestoes', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
   '/integracoes', '/meus-acessos', '/relatorios', '/dashboard',
 ]
 
 /** Rotas sem trilha (telas de tela cheia). */
-export const ROTAS_SEM_TRILHA = ['/curadoria', '/casos/estudo']
+export const ROTAS_SEM_TRILHA = ['/curadoria']
 
 export const casaRota = (rota: string, lista: string[]) =>
   lista.some((r) => rota === r || rota.startsWith(`${r}/`))
@@ -28,6 +27,4 @@ export const SEGMENTOS: Record<string, string> = {
   'minhas-imagens': 'minhasImagens', 'compartilhadas-comigo': 'compartilhadasComigo', vocabulario: 'vocabulario',
   macros: 'macros', relatorios: 'relatorios', auditoria: 'auditoria', integracoes: 'integracoes',
   configuracoes: 'configuracoes', sugestoes: 'sugestoes', 'meus-acessos': 'meusAcessos', visualizar: 'imagem',
-  casos: 'pacientes', novo: 'uploadCamera', 'meus-tratamentos': 'meusPacientes', fila: 'aguardandoTratamento',
-  tratamentos: 'alunosPacientes', acessos: 'registroAcessos', estudo: 'verEstudos', imprimir: 'imprimir',
 }

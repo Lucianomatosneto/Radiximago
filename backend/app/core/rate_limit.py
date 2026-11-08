@@ -51,8 +51,6 @@ LIMITE_IMPORTACAO_ORTHANC = "10/hour"   # sincronizacao em lote com o Orthanc (v
 LIMITE_PRANCHA = "60/hour"              # prancha (folha com imagens e informacoes) para baixar/imprimir
 LIMITE_PRANCHA_EMAIL = "5/hour"         # prancha por e-mail (mesmo teto do envio em lote)
 LIMITE_SUGESTAO = "10/hour"             # sugestoes de melhoria enviadas por uma conta
-LIMITE_CASO_NOVO = "30/hour"            # pastas de paciente (fotos do negatoscopio) criadas por uma conta
-LIMITE_CASO_LINK_EMAIL = "10/hour"      # e-mails com o link de uma pasta de paciente
 
 # --- quantidade ---------------------------------------------------------
 MAX_IMAGENS_EMAIL_LOTE = 10   # anexos por e-mail (servidores de e-mail recusam mensagens grandes)

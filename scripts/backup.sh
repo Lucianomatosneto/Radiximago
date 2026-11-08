@@ -48,16 +48,6 @@ fazer_backup() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERRO no backup do Orthanc" >&2
   fi
 
-  # fotos CIFRADAS das pastas de pacientes (so no servidor - docker-compose.prod.yml)
-  if [ -d /dados_clinicos ]; then
-    mkdir -p /backups/dados_clinicos
-    if tar -czf "/backups/dados_clinicos/dados-clinicos-$carimbo.tar.gz" -C / dados_clinicos; then
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] Pastas de pacientes OK: dados-clinicos-$carimbo.tar.gz"
-    else
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERRO no backup das pastas de pacientes" >&2
-    fi
-    manter_recentes /backups/dados_clinicos '*.tar.gz' "$RETENCAO"
-  fi
 
   # backups vazios (de interrupcoes antigas) nao servem para nada e nao podem
   # ocupar a cota de retencao

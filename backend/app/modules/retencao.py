@@ -7,9 +7,7 @@ Uma vez por dia, enquanto o servidor estiver ligado:
   O banco so permite apagar registros acima desse prazo (gatilho
   radix_auditoria_protegida, migracao a4c8e2f6b1d9) - os dois valores
   precisam ser iguais (conferido em tests/test_registros_seguranca.py);
-- sessoes encerradas ha mais de 30 dias sao apagadas;
-- pastas de pacientes passadas do prazo (CASOS_RETENCAO_MESES) sao eliminadas
-  (app/modules/casos_eliminacao.py).
+- sessoes encerradas ha mais de 30 dias sao apagadas.
 Referencia do prazo: 5 anos, o mesmo exigido para a guarda de dados de
 pesquisa (Resolucao CNS 466/2012, item XI.2.f).
 """
@@ -47,9 +45,7 @@ def limpar_registros_vencidos() -> dict:
             .delete(synchronize_session=False)
         )
         db.commit()
-        from app.modules.casos_eliminacao import eliminar_vencidas
-        pastas = eliminar_vencidas(db, agora)
-        return {"auditoria": auditoria, "sessoes": sessoes, "pastas": pastas}
+        return {"auditoria": auditoria, "sessoes": sessoes}
     finally:
         db.close()
 

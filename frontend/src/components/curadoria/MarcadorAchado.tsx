@@ -78,8 +78,7 @@ export default function MarcadorAchado({
   semRecorte = false,
 }: {
   orthancReferenceId?: number
-  /** Outra imagem no lugar do preview da curadoria (ex.: foto de uma pasta
-   * de paciente - /casos/{id}/imagens/{img}). */
+  /** Outra imagem no lugar do preview da curadoria (endereco completo). */
   urlImagem?: string
   /** Nao recortar borda branca (foto do negatoscopio: o fundo claro e da luz). */
   semRecorte?: boolean

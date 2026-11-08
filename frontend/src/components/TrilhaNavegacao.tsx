@@ -6,9 +6,9 @@ import { useTranslations } from 'next-intl'
 import { ChevronRight, House } from 'lucide-react'
 import { ROTAS_SEM_TRILHA, SEGMENTOS, casaRota, paginaInicial } from '../lib/navegacao'
 
-// TRILHA DE NAVEGACAO (breadcrumb, 01/11/2026): "Inicio › Pacientes › Meus
-// pacientes em tratamento", montada a partir do endereco da tela. Os
-// numeros (ex.: /casos/12) viram "Pasta nº 12" ou "Imagem nº 12".
+// TRILHA DE NAVEGACAO (breadcrumb, 01/11/2026): "Inicio › Minhas imagens",
+// montada a partir do endereco da tela. Os numeros (ex.: /visualizar/12)
+// viram "Imagem nº 12".
 export default function TrilhaNavegacao({ perfil }: { perfil: string }) {
   const rota = usePathname() || '/'
   const t = useTranslations('Navegacao')
@@ -21,13 +21,12 @@ export default function TrilhaNavegacao({ perfil }: { perfil: string }) {
   partes.forEach((p, i) => {
     const href = `/${partes.slice(0, i + 1).join('/')}`
     if (/^\d+$/.test(p)) {
-      itens.push({ rotulo: t(partes[i - 1] === 'casos' ? 'pastaN' : 'itemN', { id: p }), href })
+      itens.push({ rotulo: t('itemN', { id: p }), href })
       return
     }
     const chave = SEGMENTOS[p]
     if (!chave) return
-    // "Pacientes" nao tem tela propria: aponta para a lista mais util do perfil
-    const destino = p === 'casos' ? (perfil === 'estudante' ? '/casos/meus-tratamentos' : '/casos/fila') : p === 'visualizar' ? '/banco-imagens' : href
+    const destino = p === 'visualizar' ? '/banco-imagens' : href
     itens.push({ rotulo: t(`segmentos.${chave}`), href: destino })
   })
   if (!itens.length) return null
