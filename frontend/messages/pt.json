@@ -854,7 +854,7 @@
       "sugestaoEnviada": "Enviada ao curador. Ele confere as suas marcações e decide se publica no banco de imagens.",
       "sugestaoGuardada": "Guardada em Minhas imagens com as suas marcações. Você pode continuar e enviar ao curador depois.",
       "avisoModoProfessor": "Você está marcando as imagens que você enviou. Preencha a ficha e os desenhos e escolha \"Enviar ao curador\" (ele confere e publica no banco de imagens) ou \"Guardar em Minhas imagens\" (fica só com você).",
-      "erroSemResposta": "O servidor não respondeu. Confira se a API está ligada e se o banco foi atualizado (alembic upgrade head)."
+      "erroSemResposta": "O servidor não respondeu ou teve um erro interno. Se continuar, avise o suporte (registro: docker compose logs radix-api)."
     },
     "achados": {
       "alteracoesObservadas": "Alterações observadas",

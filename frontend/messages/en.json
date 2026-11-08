@@ -854,7 +854,7 @@
       "sugestaoEnviada": "Sent to the curator, who checks your markings and decides whether to publish it in the image bank.",
       "sugestaoGuardada": "Kept in My images with your markings. You can continue and send it to the curator later.",
       "avisoModoProfessor": "You are marking the images you sent. Fill in the record and drawings, then choose \"Send to curator\" (they check and publish it in the image bank) or \"Keep in My images\" (only you see it).",
-      "erroSemResposta": "The server did not answer. Check that the API is running and the database is up to date (alembic upgrade head)."
+      "erroSemResposta": "The server did not answer or had an internal error. If it continues, tell support (log: docker compose logs radix-api)."
     },
     "achados": {
       "alteracoesObservadas": "Observed changes",

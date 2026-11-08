@@ -203,6 +203,9 @@ def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id
             marcacoes=[m.model_dump(mode="json") for m in (item.marcacoes or [])],
         ))
 
+    # grava antes o que a lista "termos" ja ligou nesta mesma edicao: sem
+    # isso o mesmo termo era inserido duas vezes e o banco recusava (500)
+    db.flush()
     ligados = {t for (t,) in db.query(CurationTermo.termo_id).filter(CurationTermo.curation_id == ficha.id)}
     for termo_id in ids_termos - ligados:
         db.add(CurationTermo(curation_id=ficha.id, termo_id=termo_id, vinculado_por_id=usuario_id))

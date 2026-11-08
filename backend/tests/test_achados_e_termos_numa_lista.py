@@ -105,3 +105,28 @@ def test_marcacao_com_termo_liga_a_ficha_e_aparece_na_busca(client, criar_usuari
     codigo, _ = _ids(client, h, termos=f"vocab:{privado['id']}")
     assert codigo == 422
     _limpar(db, [ficha.id], [termo["id"], privado["id"]])
+
+
+def test_salvar_como_a_tela_com_termos_e_achados_juntos(client, criar_usuario, criar_ficha, db):
+    """Regressao (08/11/2026): a tela manda a lista "termos" E a marcacao com
+    o mesmo termo; o termo era ligado duas vezes e o salvar dava erro 500."""
+    curador = criar_usuario(perfil=UserRole.curador)
+    h = cabecalho_auth(obter_token(client, curador.email))
+    termo = client.post("/vocabulario/termos", headers=h, json={"termo": f"Termo tela {uuid.uuid4().hex[:6]}"}).json()
+    ficha = criar_ficha(status=StatusCuradoria.EM_ANALISE.value)
+    m1 = {"id": "m1", "tipo": "oval", "x": 0.1, "y": 0.1, "largura": 0.1, "altura": 0.1,
+          "achado": "outro", "achado_descricao": termo["termo"]}
+    corpo = {
+        "tipo_radiografia": "periapical", "dentes": [36], "regioes_imagem": ["regiao_periapical"],
+        "descricao_didatica": "texto", "observacoes_internas": "obs", "anonimizacao_validada": False,
+        "marcacoes": [m1], "sem_alteracoes": False, "erros_tecnicos": [],
+        "achados": [{"tipo": "outro", "termo_id": termo["id"], "descricao": termo["termo"], "dentes": [36], "marcacoes": [m1]}],
+        "termos": [termo["id"]], "qualidade_tecnica": "boa",
+    }
+    for _ in range(2):
+        r = client.patch(f"/curation/{ficha.id}", headers=h, json=corpo)
+        assert r.status_code == 200, r.text
+    r = client.patch(f"/curation/{ficha.id}", headers=h, json=dict(corpo, achados=[], marcacoes=[], termos=[]))
+    assert r.status_code == 200, r.text
+    assert not db.query(CurationTermo).filter(CurationTermo.curation_id == ficha.id).count()
+    _limpar(db, [ficha.id], [termo["id"]])
