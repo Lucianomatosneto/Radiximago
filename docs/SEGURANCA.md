@@ -139,8 +139,8 @@ Uma única função (`app/core/politica_senha.py`) decide se uma senha **nova** 
 
 | Perfil | Situação |
 |---|---|
-| Administrador, suporte, curador, **professor** (desde 02/11/2026, por ver pastas de pacientes) | **obrigatório**: no 1º login depois da atualização, a pessoa cadastra um aplicativo autenticador (Google ou Microsoft Authenticator) lendo um QR code |
-| Pesquisador, estudante | **opcional**: liga e desliga em "Meus acessos" (desligar exige senha **e** código) |
+| Administrador, suporte, curador | **obrigatório**: no 1º login depois da atualização, a pessoa cadastra um aplicativo autenticador (Google ou Microsoft Authenticator) lendo um QR code |
+| Professor (desde 08/11/2026, com a retirada das pastas de pacientes), pesquisador, estudante | **opcional**: liga e desliga em "Meus acessos" (desligar exige senha **e** código) |
 
 Como funciona:
 1. **Senha certa** → em vez da sessão, a pessoa recebe um "vale" de 5 minutos, que **não abre nada** no sistema;
@@ -316,7 +316,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
-| 1.13 | 08/11/2026 | Pastas de pacientes **retiradas** do Radix Imago (separação Radix Imago / Radix Clínica). O login em duas etapas do professor **continua obrigatório** (decisão a confirmar) |
+| 1.13 | 08/11/2026 | Pastas de pacientes **retiradas** do Radix Imago (separação Radix Imago / Radix Clínica). O login em duas etapas do professor volta a ser **opcional** (decisão do Luciano) |
 | 1.12 | 02/11/2026 | Login em duas etapas **obrigatório também para o professor** (ele vê as pastas de pacientes); pesquisador e estudante seguem opcionais (seção 3.4) |
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; administrador supervisiona a fila de pastas sem dados do paciente; curador só acrescenta observações na pasta (5.1) |
 | 1.10 | 19/10/2026 | Tailwind 4: fim dos 7 avisos das ferramentas de montagem (seção 7) |

@@ -2,11 +2,11 @@
 Login em duas etapas (MFA - "autenticacao de multiplos fatores"), OWASP
 ASVS 6.3.3 - decisao do responsavel em 19/10/2026 (grupo 6 do Nivel 2):
 
-- OBRIGATORIO para quem tem poder no sistema ou ve dados de pacientes:
-  administrador, suporte, curadoria e professor (PERFIS_MFA_OBRIGATORIO;
-  o professor entrou em 02/11/2026, quando via as pastas de pacientes -
-  mantido apos a retirada das pastas em 08/11/2026);
-- OPCIONAL para os demais (estudante, pesquisador), que podem ligar em
+- OBRIGATORIO para quem tem poder no sistema: administrador, suporte e
+  curadoria (PERFIS_MFA_OBRIGATORIO). O professor foi obrigatorio de
+  02/11/2026 a 08/11/2026, enquanto via as pastas de pacientes; com a
+  retirada das pastas voltou a ser OPCIONAL (decisao do Luciano, 08/11);
+- OPCIONAL para os demais (professor, estudante, pesquisador), que podem ligar em
   "Meus acessos".
 
 Como funciona (TOTP, RFC 6238 - o padrao do Google/Microsoft Authenticator):
@@ -46,7 +46,7 @@ from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from app.core.config import settings
 from app.modules.users import User, UserRole
 
-PERFIS_MFA_OBRIGATORIO = (UserRole.administrador, UserRole.suporte, UserRole.curador, UserRole.professor)
+PERFIS_MFA_OBRIGATORIO = (UserRole.administrador, UserRole.suporte, UserRole.curador)
 NOME_NO_APLICATIVO = "Radix Imago"
 QUANTIDADE_CODIGOS_RECUPERACAO = 8
 TENTATIVAS_POR_DESAFIO = 5

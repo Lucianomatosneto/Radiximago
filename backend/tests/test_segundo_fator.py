@@ -3,7 +3,8 @@ Login em duas etapas (app/modules/mfa.py, mfa_router.py) - OWASP ASVS 6.3.3
 e apoio a 6.5.x (codigos de uso unico) e 6.4.x (recuperacao).
 Decisao do responsavel (19/10/2026): obrigatorio para administrador, suporte
 e curadoria; opcional para os demais. Em 02/11/2026 o professor tambem passou
-a ser obrigatorio (ele ve as pastas de pacientes, dado identificado).
+a ser obrigatorio (via as pastas de pacientes); em 08/11/2026, com a
+retirada das pastas, voltou a ser opcional.
 """
 
 import re
@@ -182,16 +183,17 @@ def test_administrador_redefine_o_segundo_fator_de_outra_pessoa(criar_usuario, d
     assert _novo_cliente().post(f"/users/{admin.id}/redefinir-segundo-fator", headers=cab_adm).status_code == 409
 
 
-def test_professor_tem_segundo_fator_obrigatorio_e_nao_desliga(criar_usuario):
-    """02/11/2026: o professor ve pastas de pacientes (N4) - nao entra so com a senha."""
+def test_professor_tem_segundo_fator_opcional(criar_usuario):
+    """08/11/2026: sem as pastas de pacientes, o professor volta a entrar so
+    com a senha e pode ligar as 2 etapas em Meus acessos (decisao do Luciano)."""
     professor = criar_usuario(perfil=UserRole.professor)
-    assert UserRole.professor in mfa.PERFIS_MFA_OBRIGATORIO
+    assert UserRole.professor not in mfa.PERFIS_MFA_OBRIGATORIO
     dados = _senha(_novo_cliente(), professor.email).json()
-    assert dados["segundo_fator"] == "cadastro" and "access_token" not in dados
+    assert "access_token" in dados or dados.get("segundo_fator") is None
     cliente = TestClient(app)
     cab = cabecalho_auth(obter_token(cliente, professor.email))
-    assert cliente.get("/auth/mfa", headers=cab).json()["obrigatorio"] is True
-    r = cliente.post("/auth/mfa/desativar", headers=cab, json={"senha": SENHA_TESTE, "codigo": "000000"})
-    assert r.status_code == 403
-    # pesquisador e estudante continuam opcionais
+    assert cliente.get("/auth/mfa", headers=cab).json()["obrigatorio"] is False
+    # administracao continua obrigatoria; pesquisador e estudante opcionais
+    assert {UserRole.administrador, UserRole.suporte, UserRole.curador} <= set(mfa.PERFIS_MFA_OBRIGATORIO)
     assert UserRole.pesquisador not in mfa.PERFIS_MFA_OBRIGATORIO and UserRole.estudante not in mfa.PERFIS_MFA_OBRIGATORIO
+
