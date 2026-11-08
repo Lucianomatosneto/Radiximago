@@ -54,6 +54,11 @@ class TermoVocabulario(Base):
     # codigo do descritor no DeCS/MeSH (opcional), ex.: "D012086"
     codigo_decs = Column(String(30), nullable=True)
     ativo = Column(Boolean, nullable=False, default=True)
+    # 08/11/2026: o curador escolhe, ao acrescentar um termo em "Outros",
+    # se ele aparece nas opcoes da Pesquisa avancada e se fica como opcao
+    # nas proximas curadorias
+    na_busca = Column(Boolean, nullable=False, default=True, server_default="true")
+    nas_curadorias = Column(Boolean, nullable=False, default=True, server_default="true")
     criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now())
 

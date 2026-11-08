@@ -1249,7 +1249,20 @@
       "semMarcacaoAntigos": "Findings without marking (older records):",
       "textoAntigo": "Old free text (detailed findings):",
       "chaveNormal": "no changes",
-      "regiaoPadrao": "Default region for this finding. Change it if different."
+      "regiaoPadrao": "Default region for this finding. Change it if different.",
+      "outrosOpcao": "Other: add a term that is not on the list…",
+      "outrosComTexto": "Other: add “{texto}”…",
+      "outrosTitulo": "Add new term",
+      "outrosNome": "Term name",
+      "outrosNaBusca": "Show as an option in Advanced search",
+      "outrosNasCuradorias": "Keep as an option in future curations",
+      "outrosAjuda": "Recorded in the audit log. You can change these choices later on the Vocabulary screen.",
+      "outrosAcrescentar": "Add",
+      "outrosCancelar": "Cancel",
+      "outrosErro": "Could not add the term. Try again.",
+      "nenhumaOpcao": "No option with these letters.",
+      "termosSemMarcacao": "Terms linked to this image without a marking (from before):",
+      "removerTermo": "Remove {nome}"
     },
     "errosFicha": {
       "paraTipo": "Possible errors for {tipo}:",
@@ -2013,7 +2026,9 @@
     "naBusca": "{quantidade} in search",
     "ligadasNaoAprovadas": "{quantidade} linked record(s) not yet approved (or with an inactive image): they only appear in search after approval in Curation.",
     "buscaPorTexto": "+{quantidade} image(s) found by the name or synonym written in the record, even without the linked term.",
-    "aprovadas": "{quantidade} approved"
+    "aprovadas": "{quantidade} approved",
+    "opcaoNaBusca": "Option in Advanced search",
+    "opcaoNasCuradorias": "Option in curations"
   },
   "Voz": {
     "titulo": "Voice curation",

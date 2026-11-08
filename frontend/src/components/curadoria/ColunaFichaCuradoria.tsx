@@ -7,7 +7,6 @@ import PainelDadosSobrepostos from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import SeletorTermosFicha from './SeletorTermosFicha'
 import { ETAPA_INICIAL, SECAO_DA_ETAPA, SECOES_FICHA, etapaVizinha, primeiraEtapa, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
@@ -133,6 +132,7 @@ export default function ColunaFichaCuradoria({
   revisadas = [],
   onNadaRegistrar,
   acoesFinais,
+  podeCriarTermo = true,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -157,6 +157,8 @@ export default function ColunaFichaCuradoria({
   onNadaRegistrar?: (secao: SecaoFicha) => void
   /** Salvar/Aprovar/2a opiniao/Descartar: no fim, depois da ultima caixa */
   acoesFinais?: ReactNode
+  /** "Outros" nos achados (acrescentar termo ao vocabulario): curador e administrador */
+  podeCriarTermo?: boolean
 }) {
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
@@ -298,7 +300,6 @@ export default function ColunaFichaCuradoria({
   }, [teclasAtivas, irPara])
 
   const tFicha = useTranslations('Curadoria.ficha')
-  const tItensAchado = useTranslations('AlteracoesObservadas.itens')
 
   function ativarPorClique(etapa: EtapaFicha) {
     porCliqueRef.current = true
@@ -375,13 +376,7 @@ export default function ColunaFichaCuradoria({
             </button>
           }
         >
-          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} />
-          {/* termos padronizados (vocabulario): o que a Pesquisa avancada encontra */}
-          <SeletorTermosFicha
-            termos={form.termos}
-            onChange={(termos) => onChange({ ...form, termos })}
-            textoFicha={[form.descricao_didatica, ...form.alteracoes_observadas.map((a) => (tItensAchado.has(a) ? tItensAchado(a) : a.replace(/_/g, ' ')))].join(' ')}
-          />
+          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} podeCriarTermo={podeCriarTermo} />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>

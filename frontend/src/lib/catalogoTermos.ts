@@ -124,11 +124,17 @@ export interface TermoVocabularioApi {
   id: number
   termo: string
   categoria: string
+  ativo?: boolean
+  /** aparece nas opcoes da Pesquisa avancada (08/11/2026) */
+  na_busca?: boolean
+  /** aparece como opcao nas proximas curadorias (08/11/2026) */
+  nas_curadorias?: boolean
   sinonimos?: { id: number; sinonimo: string }[]
 }
 
 export function itensDoVocabulario(termos: TermoVocabularioApi[], rotuloSinonimo: (s: string) => string): ItemCatalogo[] {
-  return termos.map((t) => {
+  // so os termos que o curador deixou aparecer na Pesquisa avancada
+  return termos.filter((t) => t.na_busca !== false && t.ativo !== false).map((t) => {
     const sinonimos = (t.sinonimos ?? []).map((s) => s.sinonimo)
     return {
       tipo: 'vocab' as const,

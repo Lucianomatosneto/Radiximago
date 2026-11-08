@@ -197,6 +197,8 @@ class AchadoCreate(BaseModel):
     dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     dente_nao_identificado: bool = False
     descricao: Optional[TextoMedio] = None
+    # termo do vocabulario escolhido para esta marcacao (tipo "outro")
+    termo_id: Optional[int] = Field(default=None, ge=1)
     # Mesmo formato geometrico ja usado em Curation.marcacoes - reaproveita
     # `Marcacao` (acima) sem inventar um novo formato. Os subcampos
     # achado/achado_descricao de Marcacao ficam sem uso aqui de proposito
@@ -223,6 +225,7 @@ class AchadoOut(BaseModel):
     dentes: Optional[List[int]] = None
     dente_nao_identificado: bool
     descricao: Optional[str] = None
+    termo_id: Optional[int] = None
     marcacoes: list
     criado_em: Optional[datetime] = None
     atualizado_em: Optional[datetime] = None

@@ -257,6 +257,9 @@ class Achado(Base):
     curation = relationship("Curation", back_populates="achados")
 
     tipo = Column(String(60), nullable=False)  # TipoAchado
+    # 08/11/2026: achado que e um termo do vocabulario (tipo "outro" + nome
+    # do termo na descricao) guarda qual termo e
+    termo_id = Column(Integer, ForeignKey("termos_vocabulario.id", ondelete="SET NULL"), nullable=True, index=True)
     regiao_anatomica = Column(String(30), nullable=True)  # RegiaoAnatomica
 
     # Numeros FDI (11-48) relacionados ESPECIFICAMENTE a este achado - nao

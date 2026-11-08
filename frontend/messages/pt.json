@@ -1245,11 +1245,24 @@
       "resumo": "Resumo automático da imagem (usado pela Pesquisa):",
       "semMarcacoes": "Nenhuma marcação. Desenhe as lesões na imagem (ela abre sozinha nesta seção) ou marque a imagem como normal.",
       "marcacaoN": "Marcação {numero}",
-      "qualAchado": "achado da marcação {numero}? (digite ou fale)",
+      "qualAchado": "achado da marcação {numero}? (digite as iniciais ou fale)",
       "semMarcacaoAntigos": "Achados sem marcação (fichas anteriores):",
       "textoAntigo": "Texto livre antigo (achados detalhados):",
       "chaveNormal": "sem alterações",
-      "regiaoPadrao": "Região padrão deste achado. Troque se for outra."
+      "regiaoPadrao": "Região padrão deste achado. Troque se for outra.",
+      "outrosOpcao": "Outros: acrescentar um termo que não está na lista…",
+      "outrosComTexto": "Outros: acrescentar “{texto}”…",
+      "outrosTitulo": "Acrescentar termo novo",
+      "outrosNome": "Nome do termo",
+      "outrosNaBusca": "Aparecer como opção na Pesquisa avançada",
+      "outrosNasCuradorias": "Deixar como opção nas próximas curadorias",
+      "outrosAjuda": "Fica registrado na auditoria. Dá para mudar essas escolhas depois, na tela Vocabulário.",
+      "outrosAcrescentar": "Acrescentar",
+      "outrosCancelar": "Cancelar",
+      "outrosErro": "Não foi possível acrescentar o termo. Tente de novo.",
+      "nenhumaOpcao": "Nenhuma opção com essas letras.",
+      "termosSemMarcacao": "Termos ligados a esta imagem sem marcação (de antes):",
+      "removerTermo": "Tirar {nome}"
     },
     "errosFicha": {
       "paraTipo": "Erros possíveis para {tipo}:",
@@ -2013,7 +2026,9 @@
     "naBusca": "{quantidade} na busca",
     "ligadasNaoAprovadas": "{quantidade} ficha(s) ligada(s) ainda não aprovada(s) (ou com a imagem inativa): só entram na busca depois de aprovadas na Curadoria.",
     "buscaPorTexto": "+{quantidade} imagem(ns) encontrada(s) pelo nome ou sinônimo escrito na ficha, mesmo sem o termo ligado.",
-    "aprovadas": "{quantidade} aprovada(s)"
+    "aprovadas": "{quantidade} aprovada(s)",
+    "opcaoNaBusca": "Opção na Pesquisa avançada",
+    "opcaoNasCuradorias": "Opção nas curadorias"
   },
   "Voz": {
     "titulo": "Curadoria por voz",

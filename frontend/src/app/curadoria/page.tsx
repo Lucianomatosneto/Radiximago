@@ -1608,6 +1608,7 @@ export default function CuradoriaPage() {
                 <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
+                  podeCriarTermo={!ehProfessor}
                   form={form}
                   onChange={setForm}
                   statusFicha={statusFicha}

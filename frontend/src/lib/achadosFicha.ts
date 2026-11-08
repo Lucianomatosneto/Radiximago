@@ -20,6 +20,10 @@ export interface AchadoFicha {
   regiao: string
   /** ids das marcacoes (form.marcacoes) ligadas a este achado */
   marcacoes: string[]
+  /** 08/11/2026: achado que e um TERMO do vocabulario (tipo "outro") */
+  termo_id?: number
+  /** nome do termo (mostrado na tela e na marcacao) */
+  rotulo?: string
 }
 
 export interface FichaComAchados {
@@ -28,6 +32,8 @@ export interface FichaComAchados {
   alteracoes_observadas: string[]
   dentes: number[]
   marcacoes: Marcacao[]
+  /** termos do vocabulario ligados a ficha (os dos achados entram sozinhos) */
+  termos?: number[]
 }
 
 /** os 26 tipos da lista padronizada, com rotulo e categoria */
@@ -103,14 +109,27 @@ export const REGIOES = [
 
 /** resumo legado: tipos dos achados, sem repetir, na ordem em que entraram */
 export function resumoAlteracoes(achados: AchadoFicha[]): string[] {
-  return Array.from(new Set(achados.map((a) => a.tipo)))
+  // termos do vocabulario nao entram no resumo legado (a busca os acha pelo termo)
+  return Array.from(new Set(achados.filter((a) => !a.termo_id).map((a) => a.tipo)))
+}
+
+/** ids dos termos do vocabulario usados nos achados */
+export function termosDosAchados(achados: AchadoFicha[]): number[] {
+  return Array.from(new Set(achados.flatMap((a) => (a.termo_id ? [a.termo_id] : []))))
 }
 
 /** aplica uma lista nova de achados e refaz os campos derivados */
 export function comAchados<F extends FichaComAchados>(f: F, achados: AchadoFicha[]): F {
   const dentes = Array.from(new Set([...f.dentes, ...achados.flatMap((a) => a.dentes)])).sort((a, b) => a - b)
+  // 08/11/2026: os termos dos achados ficam LIGADOS a ficha (e o que a
+  // Pesquisa avancada encontra); os ligados antes sem marcacao continuam
+  const antigosDosAchados = termosDosAchados(f.achados ?? [])
+  const termos = f.termos
+    ? Array.from(new Set([...f.termos.filter((t) => !antigosDosAchados.includes(t)), ...termosDosAchados(achados)]))
+    : undefined
   return {
     ...f,
+    ...(termos ? { termos } : {}),
     achados,
     alteracoes_observadas: resumoAlteracoes(achados),
     // marcacao ligada a um achado mostra o achado dele (cor e rotulo)
@@ -176,6 +195,7 @@ export function marcacoesSincronizadas(marcacoes: Marcacao[], achados: AchadoFic
   return marcacoes.map((m) => {
     const dono = achados.find((a) => a.marcacoes.includes(m.id))
     if (!dono) return m
+    if (dono.termo_id) return { ...m, achado: 'outro', achado_descricao: dono.rotulo ?? null }
     const equivalente = EQUIVALENTE_MARCACAO[dono.tipo]
     return equivalente
       ? { ...m, achado: equivalente, achado_descricao: null }
@@ -186,7 +206,8 @@ export function marcacoesSincronizadas(marcacoes: Marcacao[], achados: AchadoFic
 /** achados no formato da API (PATCH /curation/{id} -> achados) */
 export function achadosParaApi(achados: AchadoFicha[], marcacoes: Marcacao[]) {
   return achados.map((a) => ({
-    tipo: a.tipo,
+    tipo: a.termo_id ? 'outro' : a.tipo,
+    ...(a.termo_id ? { termo_id: a.termo_id, descricao: a.rotulo ?? null } : {}),
     dentes: a.dentes,
     regiao_anatomica: regiaoDoAchado(a) || null,
     marcacoes: marcacoes.filter((m) => a.marcacoes.includes(m.id)),
@@ -195,6 +216,8 @@ export function achadosParaApi(achados: AchadoFicha[], marcacoes: Marcacao[]) {
 
 interface AchadoApi {
   tipo: string
+  termo_id?: number | null
+  descricao?: string | null
   dentes?: number[] | null
   regiao_anatomica?: string | null
   marcacoes?: { id?: string }[] | null
@@ -208,9 +231,10 @@ interface AchadoApi {
 export function achadosDaApi(api: AchadoApi[] | undefined, legado: string[] | undefined): AchadoFicha[] {
   const tiposValidos = new Set(TIPOS_ACHADO_FICHA.map((t) => t.valor))
   const lista = (api ?? [])
-    .filter((a) => tiposValidos.has(a.tipo))
+    .filter((a) => tiposValidos.has(a.tipo) || !!a.termo_id)
     .map((a) => ({
       tipo: a.tipo,
+      ...(a.termo_id ? { termo_id: a.termo_id, rotulo: a.descricao ?? undefined } : {}),
       dentes: a.dentes ?? [],
       regiao: a.regiao_anatomica ?? '',
       marcacoes: (a.marcacoes ?? []).map((m) => m.id).filter((id): id is string => !!id),

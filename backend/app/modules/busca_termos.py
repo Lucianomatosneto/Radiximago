@@ -165,6 +165,9 @@ def condicao_vocabulario(db: Session, termo_id: int):
     if not termo.ativo:
         # 01/11/2026 (QA item 8): termo desativado nao e mais pesquisavel
         raise HTTPException(status_code=422, detail=f"O termo '{termo.termo}' está inativo no vocabulário.")
+    if termo.na_busca is False:
+        # 08/11/2026: o curador escolheu nao oferecer este termo na Pesquisa avancada
+        raise HTTPException(status_code=422, detail=f"O termo '{termo.termo}' não está disponível na Pesquisa avançada.")
     texto = condicao_busca_texto(db, termo.termo)
     return or_(condicao_termo(termo_id), texto) if texto is not None else condicao_termo(termo_id)
 

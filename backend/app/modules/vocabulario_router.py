@@ -8,7 +8,8 @@ curadoria por voz):
 Gestao (administrador, suporte e curador):
 - GET    /vocabulario/termos-livres           -> textos livres ("Outro") mais repetidos
 - POST   /vocabulario/termos                  -> promove um texto a termo oficial
-- PATCH  /vocabulario/termos/{id}             -> edita (nome, categoria, DeCS, ativo)
+- PATCH  /vocabulario/termos/{id}             -> edita (nome, categoria, DeCS, ativo,
+                                                 na_busca, nas_curadorias)
 - POST   /vocabulario/termos/{id}/sinonimos   -> acrescenta sinonimo
 - DELETE /vocabulario/sinonimos/{id}          -> remove sinonimo
 - GET    /vocabulario/termos/{id}/candidatas  -> fichas cujo texto bate com o termo (para conferir)
@@ -50,6 +51,10 @@ class TermoEntrada(BaseModel):
     categoria: Categoria = "achado"
     codigo_decs: Optional[str] = Field(default=None, max_length=30)
     sinonimos: List[str] = Field(default_factory=list, max_length=30)
+    # 08/11/2026 ("Outros" da curadoria): aparece nas opcoes da Pesquisa
+    # avancada? fica como opcao nas proximas curadorias?
+    na_busca: bool = True
+    nas_curadorias: bool = True
 
 
 class TermoEdicao(BaseModel):
@@ -57,6 +62,8 @@ class TermoEdicao(BaseModel):
     categoria: Optional[Categoria] = None
     codigo_decs: Optional[str] = Field(default=None, max_length=30)
     ativo: Optional[bool] = None
+    na_busca: Optional[bool] = None
+    nas_curadorias: Optional[bool] = None
 
 
 class SinonimoEntrada(BaseModel):
@@ -92,6 +99,8 @@ def _serializar(termo: TermoVocabulario, quantidade: int = 0, aprovadas: int | N
         "categoria": termo.categoria,
         "codigo_decs": termo.codigo_decs,
         "ativo": termo.ativo,
+        "na_busca": termo.na_busca is not False,
+        "nas_curadorias": termo.nas_curadorias is not False,
         "sinonimos": [{"id": s.id, "sinonimo": s.sinonimo} for s in termo.sinonimos],
         # fichas LIGADAS ao termo (qualquer situacao: rascunho, em analise, aprovada...)
         "quantidade_fichas": quantidade,
@@ -167,7 +176,7 @@ def listar_vocabulario(
         return {"categorias": list(CATEGORIAS_TERMO), "termos": [_serializar(t, contagem.get(t.id, 0)) for t in termos]}
     aprovadas = _contagem_aprovadas(db)
     return {"categorias": list(CATEGORIAS_TERMO), "termos": [
-        _serializar(t, contagem.get(t.id, 0), aprovadas.get(t.id, 0), _contagem_na_busca(db, t.id) if t.ativo else 0)
+        _serializar(t, contagem.get(t.id, 0), aprovadas.get(t.id, 0), _contagem_na_busca(db, t.id) if t.ativo and t.na_busca is not False else 0)
         for t in termos
     ]}
 
@@ -239,6 +248,8 @@ def criar_termo(
         termo_normalizado=normalizado,
         categoria=dados.categoria,
         codigo_decs=(dados.codigo_decs or "").strip() or None,
+        na_busca=dados.na_busca,
+        nas_curadorias=dados.nas_curadorias,
         criado_por_id=usuario.id,
     )
     db.add(termo)
@@ -250,7 +261,8 @@ def criar_termo(
             continue
         vistos.add(ns)
         termo.sinonimos.append(SinonimoTermo(sinonimo=s.strip(), sinonimo_normalizado=ns))
-    _auditar(db, usuario.id, "vocabulario_termo_criado", termo.id, f"termo='{termo.termo}' categoria={termo.categoria}")
+    _auditar(db, usuario.id, "vocabulario_termo_criado", termo.id, f"termo='{termo.termo}' categoria={termo.categoria} "
+            f"na_busca={'sim' if termo.na_busca else 'nao'} nas_curadorias={'sim' if termo.nas_curadorias else 'nao'}")
     db.commit()
     db.refresh(termo)
     return _serializar(termo)
@@ -277,7 +289,12 @@ def editar_termo(
         termo.codigo_decs = dados.codigo_decs.strip() or None
     if dados.ativo is not None:
         termo.ativo = dados.ativo
-    _auditar(db, usuario.id, "vocabulario_termo_editado", termo.id, f"termo='{termo.termo}' ativo={termo.ativo}")
+    if dados.na_busca is not None:
+        termo.na_busca = dados.na_busca
+    if dados.nas_curadorias is not None:
+        termo.nas_curadorias = dados.nas_curadorias
+    _auditar(db, usuario.id, "vocabulario_termo_editado", termo.id,
+             f"termo='{termo.termo}' ativo={termo.ativo} na_busca={termo.na_busca} nas_curadorias={termo.nas_curadorias}")
     db.commit()
     db.refresh(termo)
     return _serializar(termo, _contagem_fichas(db).get(termo.id, 0))

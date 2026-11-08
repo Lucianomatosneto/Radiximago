@@ -29,6 +29,10 @@ interface Termo {
   categoria: string
   codigo_decs: string | null
   ativo: boolean
+  /** aparece nas opcoes da Pesquisa avancada (08/11/2026) */
+  na_busca?: boolean
+  /** aparece como opcao nas proximas curadorias (08/11/2026) */
+  nas_curadorias?: boolean
   sinonimos: { id: number; sinonimo: string }[]
   quantidade_fichas: number
   /** ligadas que ja estao aprovadas (com imagem ativa) */
@@ -136,7 +140,7 @@ export default function VocabularioPage() {
     abrirConferencia(termo)
   }
 
-  async function editar(termo: Termo, dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string }>) {
+  async function editar(termo: Termo, dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string; na_busca: boolean; nas_curadorias: boolean }>) {
     const r = await fetch(`${API}/vocabulario/termos/${termo.id}`, {
       method: 'PATCH',
       credentials: 'include',
@@ -441,6 +445,17 @@ export default function VocabularioPage() {
                             if (e.key === 'Enter') adicionarSinonimo(termo)
                           }}
                         />
+                      </div>
+                      {/* 08/11/2026: onde o termo aparece como opcao */}
+                      <div className="mt-2 flex flex-wrap gap-4 text-xs text-ink-2">
+                        <label className="flex cursor-pointer items-center gap-1.5">
+                          <input type="checkbox" checked={termo.na_busca !== false} onChange={(e) => editar(termo, { na_busca: e.target.checked })} className="h-3.5 w-3.5 accent-teal-400" />
+                          {t('opcaoNaBusca')}
+                        </label>
+                        <label className="flex cursor-pointer items-center gap-1.5">
+                          <input type="checkbox" checked={termo.nas_curadorias !== false} onChange={(e) => editar(termo, { nas_curadorias: e.target.checked })} className="h-3.5 w-3.5 accent-teal-400" />
+                          {t('opcaoNasCuradorias')}
+                        </label>
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button type="button" className="text-xs text-teal-200 hover:underline" onClick={() => abrirConferencia(termo)}>

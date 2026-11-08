@@ -492,6 +492,7 @@ def obter_ficha(
                 "dentes": a.dentes or [],
                 "dente_nao_identificado": a.dente_nao_identificado,
                 "descricao": a.descricao,
+                "termo_id": a.termo_id,
                 "marcacoes": a.marcacoes or [],
             }
             for a in db.query(Achado).filter(Achado.curation_id == ficha.id).order_by(Achado.id).all()

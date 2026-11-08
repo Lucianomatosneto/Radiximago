@@ -175,19 +175,45 @@ def _sincronizar_achados(db: Session, ficha: Curation, achados: list, usuario_id
     """
     from .achados import _normalizar_dentes, _validar_outros  # evita import circular
 
+    # 08/11/2026: achados que sao termos do vocabulario (lista unica de
+    # achados + termos). O termo precisa existir; o nome dele vira a
+    # descricao do "outro" e a ficha fica LIGADA ao termo (e isso que faz a
+    # imagem aparecer na Pesquisa avancada por esse termo).
+    ids_termos = {item.termo_id for item in achados if item.termo_id}
+    termos = {t.id: t for t in db.query(TermoVocabulario).filter(TermoVocabulario.id.in_(ids_termos))} if ids_termos else {}
+    faltando = sorted(ids_termos - set(termos))
+    if faltando:
+        raise HTTPException(status_code=422, detail=f"Termos do vocabulário inexistentes: {faltando}")
+
     novos = []
     for item in achados:
         dentes = _normalizar_dentes(item.dentes, item.dente_nao_identificado)
-        _validar_outros(item.tipo.value, item.descricao)
+        termo = termos.get(item.termo_id) if item.termo_id else None
+        tipo = "outro" if termo else item.tipo.value
+        descricao = item.descricao or (termo.termo if termo else None)
+        _validar_outros(tipo, descricao)
         novos.append(Achado(
             curation_id=ficha.id,
-            tipo=item.tipo.value,
-            regiao_anatomica=regiao_do_achado(item.tipo.value, item.regiao_anatomica.value if item.regiao_anatomica else None),
+            termo_id=termo.id if termo else None,
+            tipo=tipo,
+            regiao_anatomica=regiao_do_achado(tipo, item.regiao_anatomica.value if item.regiao_anatomica else None),
             dentes=dentes,
             dente_nao_identificado=item.dente_nao_identificado,
-            descricao=item.descricao,
+            descricao=descricao,
             marcacoes=[m.model_dump(mode="json") for m in (item.marcacoes or [])],
         ))
+
+    ligados = {t for (t,) in db.query(CurationTermo.termo_id).filter(CurationTermo.curation_id == ficha.id)}
+    for termo_id in ids_termos - ligados:
+        db.add(CurationTermo(curation_id=ficha.id, termo_id=termo_id, vinculado_por_id=usuario_id))
+    # termo que so estava ligado por uma marcacao que saiu: desliga tambem
+    # (senao a imagem continuaria aparecendo na busca por esse termo)
+    antes = {t for (t,) in db.query(Achado.termo_id).filter(Achado.curation_id == ficha.id, Achado.termo_id.isnot(None))}
+    saiu = antes - ids_termos
+    if saiu:
+        db.query(CurationTermo).filter(
+            CurationTermo.curation_id == ficha.id, CurationTermo.termo_id.in_(saiu)
+        ).delete(synchronize_session=False)
 
     db.query(Achado).filter(Achado.curation_id == ficha.id).delete(synchronize_session=False)
     for a in novos:
