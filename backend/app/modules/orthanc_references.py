@@ -76,6 +76,8 @@ class OrthancReference(Base):
     analise_nota = Column(String(500), nullable=True)   # recado de quem pediu a analise
     analise_em = Column(DateTime(timezone=True), nullable=True)
     devolucao_nota = Column(String(500), nullable=True)  # motivo de quem devolveu
+    # de qual aparelho da rede a imagem chegou (etapa D, 08/11/2026)
+    aparelho_id = Column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
 
     curations = relationship("Curation", back_populates="orthanc_reference")
 
@@ -99,3 +101,8 @@ def visivel_para(ref: "OrthancReference", usuario_id: int, perfil: str) -> bool:
     if ref.destino == DestinoImagem.FILA.value:
         return perfil == "curador"
     return False
+
+
+# a tabela aparelhos_rede precisa estar registrada sempre que esta for usada
+# (chave estrangeira aparelho_id) - inclusive em roteiros avulsos
+from app.modules import aparelhos as _aparelhos  # noqa: E402,F401

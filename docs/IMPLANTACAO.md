@@ -334,5 +334,8 @@ primeiro comando de novo.
   `radix --profile voz up -d --build`.
 - **Porta DICOM 4242** (envio direto do aparelho): fechada. As imagens entram
   pelo envio na própria tela do sistema.
+  Para abrir depois: cadastrar cada aparelho na tela **Aparelhos da rede**
+  (só o administrador; o Radix recusa os demais) e liberar a porta 4242 no
+  firewall **só** para os IPs desses aparelhos.
 - **Dados reais de pacientes:** só depois de revisar a LGPD, o termo do
   Comitê de Ética e o contrato com o provedor (operador de dados).

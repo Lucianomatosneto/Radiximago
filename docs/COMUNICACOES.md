@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.1 — 18/10/2026 |
+| Versão do documento | 1.2 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 13.1.1 (documentar todas as comunicações), apoio a 13.2.x e 12.3.x |
 | Conferido com | `docker-compose.yml`, `orthanc/cors-proxy.conf.template`, `ohif/radix-dicomweb.conf`, `backend/app/core/config.py`, `whisper/app.py`, `frontend/.env.example`, `frontend/next.config.mjs` |
 
@@ -36,7 +36,7 @@
 | 7 | API → Orthanc | HTTP interno :8042 | usuário/senha (`ORTHANC_PASSWORD`) | não (rede interna) | enviar, anonimizar e ler imagens |
 | 8 | API → PostgreSQL | TCP interno :5432 | usuário/senha (`POSTGRES_PASSWORD`) | não (rede interna) | dados |
 | 9 | API → serviço de voz | HTTP interno :9000 | **chave compartilhada** no cabeçalho `X-Radix-Chave` (`WHISPER_CHAVE` do `.env`, ao menos 32 caracteres), comparada em tempo constante; sem chave configurada o serviço recusa tudo (503), e a produção não liga sem ela | não (rede interna) | transcrição |
-| 10 | Aparelho → Orthanc | DICOM :4242 | **nenhuma**: o Orthanc aceita envio de qualquer equipamento que alcance a porta | não | receber exames |
+| 10 | Aparelho → Orthanc | DICOM :4242 | **lista de aparelhos liberados** (tela "Aparelhos da rede", só o administrador): o Orthanc confere o nome DICOM (AE Title) **e** o endereço IP; os demais são recusados (`DicomAlwaysAllowStore=false`, `DicomCheckModalityHost=true`). Nome e IP podem ser imitados por quem já está dentro da rede, por isso a porta também deve ficar fechada no firewall para os outros endereços | não (DICOM sem TLS na rede local) | receber exames |
 | 11 | Backup → PostgreSQL / volume do Orthanc | interno | usuário/senha do banco | não | cópia diária |
 | 12 | API → servidor de e-mail | SMTP :587 | usuário/senha (`SMTP_PASSWORD`) | **STARTTLS** | redefinição de senha, confirmação, imagens pedidas pelo próprio usuário |
 | 13 | Montagem (build) → PyPI, npm, Docker Hub | HTTPS | — | sim | baixar componentes (só ao montar; ver `docs/sbom/`) |
@@ -55,7 +55,7 @@
 | Ponto | Risco | Encaminhamento |
 |---|---|---|
 | Portas 3000, 8000, 3001, 8042 e 4242 abertas em **todas as interfaces** do computador | qualquer máquina da mesma rede alcança os serviços | na implantação: só a porta 443 (HTTPS) pública; 4242 restrita ao IP do aparelho |
-| DICOM :4242 aceita qualquer equipamento | alguém na rede pode enviar imagens. Elas são anonimizadas na chegada, mas entram no acervo | na implantação: lista de aparelhos permitidos no Orthanc (`DicomAlwaysAllowStore: false` + `DicomModalities`) e firewall |
+| DICOM :4242: nome DICOM e IP podem ser imitados dentro da rede | uma máquina da rede que copie o nome e o IP de um aparelho liberado consegue enviar imagens (que ainda são anonimizadas na chegada e passam pela curadoria) | **resolvido em parte em 08/11/2026** (só aparelhos liberados); na implantação: firewall deixando a 4242 aberta só para os IPs dos aparelhos |
 | Sem TLS na rede interna | quem controlar o servidor lê o tráfego interno | grupo de implantação (ASVS 12.3.x) |
 | Telas e API em portas diferentes do mesmo endereço | mesma "origem de site" para o navegador | grupo de implantação: nomes de host separados ou proxy único (ASVS 3.5.4) |
 
@@ -65,3 +65,4 @@
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2) |
 | 1.1 | 18/10/2026 | Serviço de voz autenticado (ASVS 13.2.1); política de conteúdo das telas |
+| 1.2 | 08/11/2026 | Aparelhos da rede: só os cadastrados e liberados enviam pela porta 4242 |

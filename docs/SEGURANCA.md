@@ -197,6 +197,7 @@ Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/
 | Criar os próprios grupos de envio e mandar imagens a pessoas e grupos (quem recebe vê a imagem; ela continua na fila de curadoria) | ✅ | — | ✅ | ✅ | — | — |
 | Preencher a ficha de curadoria (tipo, região, achados, desenhos, descrição) **só das imagens que enviou**, como sugestão: enviar ao curador ou guardar em Minhas imagens. Não aprova nem descarta | ✅ | — | ✅ | ✅ | — | — |
 | Analisar imagens enviadas por estudantes (colocar na fila de curadoria ou devolver com recado) — só quem foi escolhido | — | — | ✅ | ✅ | — | — |
+| Cadastrar, liberar e bloquear **aparelhos de raio X da rede** (tela "Aparelhos da rede"); o suporte só vê a lista e testa a conexão. Aparelho não cadastrado ou bloqueado tem o envio **recusado** pelo Orthanc (nome DICOM e IP conferidos) | ✅ | só vê e testa | — | — | — | — |
 | Curadoria — **gravar** (editar fichas, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário) | ✅ | — | ✅ | — | — | — |
 | Curadoria — **só ler** (fichas, fila, indicadores) | ✅ | ✅ | ✅ | — | — | — |
 | Indicadores e relatórios | ✅ | ✅ | ✅ | — | — | — |
@@ -239,7 +240,7 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 | Envio | Quem | Tipos aceitos | Extensão esperada | Tamanho máximo | Tamanho descompactado | Validação e destino |
 |---|---|---|---|---|---|---|
 | Imagem DICOM (tela) | administrador, suporte, curador, professor | DICOM (Part 10; sem cabeçalho "DICM" só se tiver SOPClassUID e SOPInstanceUID) | `.dcm` ou sem extensão (a extensão **não** decide; o conteúdo decide) | 50 MB (`MAX_UPLOAD_SIZE_MB`) | **arquivos compactados (.zip, .rar, .7z, .gz) são recusados** antes do Orthanc. A imagem DICOM comprimida (JPEG) só é descompactada na memória para o OCR; não há limite explícito de dimensões (risco baixo, limitado pelos 50 MB) | lido pelo `pydicom`; anonimizado; texto tarjado; original apagado |
-| Imagem DICOM (aparelho, porta 4242) | equipamento na rede | DICOM | — | o que o Orthanc aceitar | o Orthanc não descompacta nada no protocolo DICOM | anonimizada automaticamente em até 60 s |
+| Imagem DICOM (aparelho, porta 4242) | só aparelho cadastrado e liberado (nome DICOM + IP) | DICOM | — | o que o Orthanc aceitar | o Orthanc não descompacta nada no protocolo DICOM | anonimizada automaticamente em até 60 s |
 | Foto de perfil | o próprio usuário | JPG, PNG, WebP | qualquer (o nome enviado é ignorado; o servidor gera nome e extensão) | 5 MB | não se aplica | conteúdo real conferido pela assinatura do arquivo; servida com `nosniff` e CSP `sandbox` |
 | Áudio da curadoria por voz | curadoria | áudio do navegador | — | 10 MB | não se aplica | só na memória; vira texto e é descartado |
 
@@ -320,6 +321,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.17 | 08/11/2026 | Aparelhos da rede: só aparelhos cadastrados e liberados pelo administrador enviam imagens pela porta 4242 (`DicomAlwaysAllowStore=false`, `DicomCheckModalityHost=true`); lista mantida pelo Radix (`aparelhos_router.py`) |
 | 1.16 | 08/11/2026 | Professor preenche fichas como sugestão (só das imagens dele); o curador não vê o rascunho antes do envio; só o curador aprova (conferir_acesso_ficha) |
 | 1.15 | 08/11/2026 | Grupos de envio (cada professor/curador cuida dos seus; membros não se veem) e envio de imagens a pessoas; portaria passa a liberar a imagem para quem a recebeu |
 | 1.14 | 08/11/2026 | Envio de imagens por todos os perfis (seção 5.1): imagens "só para mim" e em análise ficam fora da fila, da pesquisa e da portaria do curador; só quem enviou e quem foi escolhido as veem |

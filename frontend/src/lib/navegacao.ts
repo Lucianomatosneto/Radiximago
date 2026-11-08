@@ -10,7 +10,7 @@ export const paginaInicial = (perfil: string | null | undefined) =>
  * imagens, Compartilhadas, Curadoria, visualizador)
  * continuam com a largura toda. */
 export const ROTAS_LARGURA_LIMITADA = [
-  '/sugestoes', '/enviar-imagem', '/grupos', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
+  '/sugestoes', '/enviar-imagem', '/grupos', '/aparelhos', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
   '/integracoes', '/meus-acessos', '/relatorios', '/dashboard',
 ]
 
@@ -26,5 +26,5 @@ export const SEGMENTOS: Record<string, string> = {
   curadoria: 'curadoria', 'segunda-opiniao': 'segundaOpiniao', 'banco-imagens': 'bancoImagens', pesquisa: 'pesquisa',
   'minhas-imagens': 'minhasImagens', 'compartilhadas-comigo': 'compartilhadasComigo', vocabulario: 'vocabulario',
   macros: 'macros', relatorios: 'relatorios', auditoria: 'auditoria', integracoes: 'integracoes',
-  configuracoes: 'configuracoes', sugestoes: 'sugestoes', 'meus-acessos': 'meusAcessos', visualizar: 'imagem', 'enviar-imagem': 'enviarImagem', grupos: 'grupos',
+  configuracoes: 'configuracoes', sugestoes: 'sugestoes', 'meus-acessos': 'meusAcessos', visualizar: 'imagem', 'enviar-imagem': 'enviarImagem', grupos: 'grupos', aparelhos: 'aparelhos',
 }

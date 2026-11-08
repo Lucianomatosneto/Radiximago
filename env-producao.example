@@ -34,6 +34,13 @@ FRONTEND_URL=https://app.radiximago.com.br
 OHIF_BASE_URL=https://viewer.radiximago.com.br
 OHIF_URL=http://radix-ohif
 
+# Aparelhos de raio X da rede (etapa D): nome DICOM do Radix (o mesmo vai
+# para o Orthanc), porta DICOM e o IP deste computador na rede da clinica/
+# faculdade (aparece na tela "Aparelhos da rede" para configurar o aparelho)
+ORTHANC_AET=RADIXIMAGO
+DICOM_PORTA=4242
+DICOM_ENDERECO_SERVIDOR=
+
 # --- E-mail (Brevo) - os mesmos valores que ja funcionam no computador ---
 SMTP_HOST=smtp-relay.brevo.com
 SMTP_PORT=587

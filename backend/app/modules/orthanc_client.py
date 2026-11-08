@@ -350,3 +350,43 @@ def enviar_instancia(conteudo: bytes) -> dict:
     resposta = _client.post(url, content=conteudo, headers={"Content-Type": "application/dicom"})
     resposta.raise_for_status()
     return resposta.json()
+
+
+# --- Aparelhos da rede (etapa D, 08/11/2026) ---------------------------------
+# A lista de aparelhos que podem enviar fica no Orthanc ("modalities"),
+# gravada no banco dele (ORTHANC__DICOM_MODALITIES_IN_DATABASE=true). Com
+# ORTHANC__DICOM_ALWAYS_ALLOW_STORE=false e ORTHANC__DICOM_CHECK_MODALITY_HOST=true
+# o Orthanc so aceita imagens de quem esta na lista, com o AE Title E o IP
+# certos. Quem mantem a lista e o Radix (aparelhos_router.py).
+
+def listar_modalidades() -> dict:
+    """{nome: {AET, Host, Port, AllowStore, ...}} de todos os aparelhos do Orthanc."""
+    resposta = _client.get(f"{settings.ORTHANC_URL}/modalities", params={"expand": ""}, timeout=10.0)
+    resposta.raise_for_status()
+    dados = resposta.json()
+    return dados if isinstance(dados, dict) else {}
+
+
+def gravar_modalidade(nome: str, aet: str, ip: str, porta: int) -> None:
+    """Cria ou atualiza um aparelho no Orthanc: so pode ENVIAR imagens e testar (echo)."""
+    corpo = {
+        "AET": aet, "Host": ip, "Port": porta,
+        "AllowEcho": True, "AllowStore": True,
+        "AllowFind": False, "AllowGet": False, "AllowMove": False,
+        "AllowStorageCommitment": False,
+    }
+    resposta = _client.put(f"{settings.ORTHANC_URL}/modalities/{nome}", json=corpo, timeout=10.0)
+    resposta.raise_for_status()
+
+
+def remover_modalidade(nome: str) -> None:
+    resposta = _client.delete(f"{settings.ORTHANC_URL}/modalities/{nome}", timeout=10.0)
+    if resposta.status_code != 404:
+        resposta.raise_for_status()
+
+
+def testar_modalidade(nome: str, segundos: int = 5) -> bool:
+    """O Orthanc 'chama' o aparelho (DICOM C-ECHO). True = o aparelho respondeu."""
+    resposta = _client.post(f"{settings.ORTHANC_URL}/modalities/{nome}/echo",
+                            json={"Timeout": segundos}, timeout=segundos + 10.0)
+    return resposta.status_code == 200

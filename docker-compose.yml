@@ -71,6 +71,15 @@ services:
       - ORTHANC__REGISTERED_USERS={"admin":"${ORTHANC_PASSWORD}"}
       - ORTHANC__DICOM_WEB__ENABLE=true
       - ORTHANC__DICOM_WEB__ROOT=/dicom-web/
+      # APARELHOS DA REDE (etapa D, 08/11/2026): so os aparelhos cadastrados
+      # e liberados na tela "Aparelhos da rede" conseguem mandar imagens pela
+      # porta 4242 - o Orthanc confere o nome DICOM (AE Title) E o IP. Quem
+      # mantem a lista e o Radix (backend/app/modules/aparelhos_router.py).
+      - ORTHANC__DICOM_AET=${ORTHANC_AET:-RADIXIMAGO}
+      - ORTHANC__DICOM_MODALITIES_IN_DATABASE=true
+      - ORTHANC__DICOM_ALWAYS_ALLOW_STORE=false
+      - ORTHANC__DICOM_ALWAYS_ALLOW_ECHO=false
+      - ORTHANC__DICOM_CHECK_MODALITY_HOST=true
     volumes:
       - orthanc_data:/var/lib/orthanc/db
     networks:

@@ -38,6 +38,14 @@ class Settings(BaseSettings):
     # para a tela Integracoes/Painel conferir se o visualizador responde
     # (B2, 01/11/2026). Vazio = a checagem fica so com o navegador.
     OHIF_URL: str = ""
+    # Aparelhos de raio X da rede (etapa D, 08/11/2026): o que a tela
+    # "Aparelhos da rede" mostra para configurar o aparelho. ORTHANC_AET e o
+    # nome DICOM do Radix (o mesmo do Orthanc, ORTHANC__DICOM_AET no
+    # docker-compose); DICOM_ENDERECO_SERVIDOR e o IP deste computador na rede
+    # (vazio = a tela pede para o administrador conferir).
+    ORTHANC_AET: str = "RADIXIMAGO"
+    DICOM_PORTA: int = 4242
+    DICOM_ENDERECO_SERVIDOR: str = ""
     # Dominio do cookie de login na internet (ex.: ".radiximago.com.br"): as
     # telas (app.), a API (api.) e o visualizador (viewer.) ficam em
     # subdominios diferentes e todos precisam do mesmo login. Vazio = so o

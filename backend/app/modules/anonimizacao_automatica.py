@@ -21,10 +21,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from datetime import datetime, timezone
 
 from app.core.config import settings
 from app.core.database import SessionLocal
 from app.modules import orthanc_client
+from app.modules.aparelhos_router import aparelho_da_chegada, sincronizar_no_orthanc
 from app.modules.audit_logs import AuditLog
 from app.modules.orthanc_references import OrthancReference
 
@@ -72,13 +74,27 @@ def processar_chegadas() -> int:
             try:
                 if orthanc_client.obter_metadado_instancia(orthanc_id, "Origin") != "DicomProtocol":
                     continue
+                # de qual aparelho veio (etapa D): lido ANTES da anonimizacao,
+                # que cria uma copia nova e apaga o original
+                aparelho = aparelho_da_chegada(
+                    db,
+                    orthanc_client.obter_metadado_instancia(orthanc_id, "RemoteAET"),
+                    orthanc_client.obter_metadado_instancia(orthanc_id, "RemoteIP"),
+                )
                 ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
                 if criada:
                     tratadas += 1
+                    if aparelho is not None:
+                        ref.aparelho_id = aparelho.id
+                        aparelho.total_recebidas = (aparelho.total_recebidas or 0) + 1
+                        aparelho.ultimo_recebimento_em = datetime.now(timezone.utc)
+                        de_onde = f"do aparelho '{aparelho.nome}'"
+                    else:
+                        de_onde = "de aparelho NAO cadastrado"
                     db.add(AuditLog(
                         usuario_id=None, acao="anonimizacao_automatica", entidade="orthanc_reference",
                         entidade_id=ref.id, resultado="sucesso",
-                        detalhes=f"Imagem do aparelho anonimizada na chegada. Texto na imagem: {ref.texto_na_imagem}.",
+                        detalhes=f"Imagem {de_onde} anonimizada na chegada. Texto na imagem: {ref.texto_na_imagem}.",
                     ))
                     db.commit()
             except Exception:
@@ -94,6 +110,14 @@ def processar_chegadas() -> int:
     return tratadas
 
 
+def sincronizar_aparelhos() -> int:
+    db = SessionLocal()
+    try:
+        return sincronizar_no_orthanc(db)
+    finally:
+        db.close()
+
+
 async def vigiar_chegadas() -> None:
     """Laco que roda junto com o servidor (iniciado em app/main.py)."""
     intervalo = settings.ANONIMIZACAO_AUTOMATICA_SEGUNDOS
@@ -102,6 +126,12 @@ async def vigiar_chegadas() -> None:
         return
     while True:
         await asyncio.sleep(intervalo)
+        try:
+            # lista de aparelhos liberados (etapa D): reaplicada a cada ciclo,
+            # para o caso de o Orthanc ter estado fora do ar numa mudanca
+            await asyncio.to_thread(sincronizar_aparelhos)
+        except Exception:
+            logger.warning("Aparelhos da rede: Orthanc nao respondeu; nova tentativa em %ss.", intervalo)
         try:
             tratadas = await asyncio.to_thread(processar_chegadas)
             if tratadas:

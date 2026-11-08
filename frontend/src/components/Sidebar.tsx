@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
-import { type LucideIcon, Camera, ChartColumn, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
+import { type LucideIcon, Camera, ChartColumn, Cpu, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -72,6 +72,8 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'relatorios', href: '/relatorios', ativo: true, icone: ChartColumn, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'auditoria', href: '/auditoria', ativo: true, icone: ScrollText, perfis: PERFIS_ADMIN_APENAS, cor: COR_TEAL },
   { chave: 'integracoes', href: '/integracoes', ativo: true, icone: Plug, perfis: PERFIS_ADMIN_APENAS, cor: COR_EMERALD },
+  // etapa D (08/11/2026): aparelhos de raio X da rede (so o administrador libera; suporte ve e testa)
+  { chave: 'aparelhos', href: '/aparelhos', ativo: true, icone: Cpu, perfis: ['administrador', 'suporte'], cor: COR_SKY },
   { chave: 'configuracoes', href: '/configuracoes', ativo: true, icone: SlidersHorizontal, perfis: PERFIS_ADMIN_APENAS, cor: COR_GREEN },
   // Sugestoes de melhoria (30/10/2026): todos enviam; o administrador ve a lista completa
   { chave: 'sugestoes', href: '/sugestoes', ativo: true, icone: Lightbulb, cor: COR_LIME },
