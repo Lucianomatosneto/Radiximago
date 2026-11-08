@@ -262,6 +262,8 @@ export default function CompartilhadasComigoPage() {
           </div>
           {/* etapa B (08/11/2026): imagens de estudantes para EU analisar */}
           {analisa && <SecaoEnvios modo="analisar" />}
+          {/* etapa C (08/11/2026): imagens que colegas me enviaram */}
+          <SecaoEnvios modo="recebidas" />
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">

@@ -67,6 +67,7 @@ const MAX_IMAGENS_EMAIL_LOTE = 10
 export default function MinhasImagensPage() {
   const router = useRouter()
   const t = useTranslations('MinhasImagens')
+  const [equipe, setEquipe] = useState(false)
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const tComum = useTranslations('Comum')
   const tPesquisa = useTranslations('Pesquisa')
@@ -108,6 +109,7 @@ export default function MinhasImagensPage() {
         router.push('/login')
         return
       }
+      setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
       carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -328,7 +330,7 @@ export default function MinhasImagensPage() {
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
           {/* etapa B (08/11/2026): imagens que EU enviei (so para mim, em analise, na fila) */}
-          <SecaoEnvios modo="meus" />
+          <SecaoEnvios modo="meus" equipe={equipe} />
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">

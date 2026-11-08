@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
-import { type LucideIcon, Camera, ChartColumn, ClipboardList, Inbox, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
+import { type LucideIcon, Camera, ChartColumn, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -63,6 +63,8 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, icone: Library, cor: COR_BLUE },
   // etapa B (08/11/2026): arquivo ou camera do celular, para todos que enviam
   { chave: 'enviarImagem', href: '/enviar-imagem', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador', 'administrador'], cor: COR_TEAL },
+  // etapa C (08/11/2026): grupos de envio (cada um cuida dos seus)
+  { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, perfis: ['professor', 'curador', 'administrador'], cor: COR_CYAN },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
   { chave: 'vocabulario', href: '/vocabulario', ativo: true, icone: Tags, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },

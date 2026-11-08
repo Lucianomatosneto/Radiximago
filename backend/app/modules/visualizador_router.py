@@ -30,6 +30,7 @@ from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import PERFIS_CURADORIA, obter_usuario_atual
 from app.modules.compartilhamentos import CompartilhamentoImagem
+from app.modules.grupos import EnvioDestinatario
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.users import User
@@ -54,6 +55,11 @@ def _uids_permitidos(db: Session, usuario: User, uids: frozenset[str]) -> set[st
             OrthancReference.enviado_por_id == usuario.id,
             and_(OrthancReference.destino == DestinoImagem.ANALISE.value,
                  OrthancReference.analise_destinatario_id == usuario.id),
+            # etapa C: imagens que um colega enviou para esta pessoa
+            OrthancReference.id.in_(
+                db.query(EnvioDestinatario.orthanc_reference_id)
+                .filter(EnvioDestinatario.destinatario_id == usuario.id)
+            ),
         )).all()
     }
     if usuario.perfil in PERFIS_CURADORIA:

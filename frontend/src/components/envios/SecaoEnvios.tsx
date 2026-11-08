@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import MiniaturaFila from '../MiniaturaFila'
+import SeletorPessoasGrupos, { type Pessoa } from './SeletorPessoasGrupos'
 import { useConfirmacao } from '../useConfirmacao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -22,6 +23,9 @@ type Item = {
   analise_nota: string | null
   devolucao_nota: string | null
   curation_id: number | null
+  viewer_url: string | null
+  enviada_para?: number
+  nova?: boolean
 }
 type Analista = { id: number; nome: string; perfil: string }
 
@@ -43,7 +47,7 @@ async function lerErro(r: Response, padrao: string) {
   return padrao
 }
 
-export default function SecaoEnvios({ modo }: { modo: 'meus' | 'analisar' }) {
+export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | 'analisar' | 'recebidas'; equipe?: boolean }) {
   const t = useTranslations('EnviarImagem.lista')
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const [itens, setItens] = useState<Item[] | null>(null)
@@ -53,11 +57,20 @@ export default function SecaoEnvios({ modo }: { modo: 'meus' | 'analisar' }) {
   const [aberto, setAberto] = useState<number | null>(null)
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
+  const [enviarPara, setEnviarPara] = useState<number | null>(null)
+  const [pessoas, setPessoas] = useState<Pessoa[]>([])
+  const [grupos, setGrupos] = useState<number[]>([])
 
   const carregar = useCallback(async () => {
     try {
-      const r = await fetch(`${API}/envios/${modo === 'meus' ? 'meus' : 'para-analisar'}`, { credentials: 'include' })
-      setItens(r.ok ? (await r.json()).itens : [])
+      const caminho = modo === 'meus' ? 'meus' : modo === 'analisar' ? 'para-analisar' : 'recebidas'
+      const r = await fetch(`${API}/envios/${caminho}`, { credentials: 'include' })
+      const lista: Item[] = r.ok ? (await r.json()).itens : []
+      setItens(lista)
+      // recebidas: ao abrir a tela, as novas passam a "vistas"
+      if (modo === 'recebidas' && lista.some((i) => i.nova)) {
+        fetch(`${API}/envios/recebidas/vistas`, { method: 'POST', credentials: 'include' }).catch(() => undefined)
+      }
     } catch {
       setItens([])
     }
@@ -103,12 +116,23 @@ export default function SecaoEnvios({ modo }: { modo: 'meus' | 'analisar' }) {
   }
 
   if (itens === null) return null
-  if (!itens.length && modo === 'analisar') return null
+  if (!itens.length && modo !== 'meus') return null
+
+  const titulo = modo === 'meus' ? 'tituloMeus' : modo === 'analisar' ? 'tituloAnalisar' : 'tituloRecebidas'
+  const explica = modo === 'meus' ? 'explicaMeus' : modo === 'analisar' ? 'explicaAnalisar' : 'explicaRecebidas'
+
+  async function mandar(item: Item) {
+    if (await chamar(`/envios/${item.id}/enviar-para`, 'POST', { pessoas_ids: pessoas.map((p) => p.id), grupos_ids: grupos })) {
+      setEnviarPara(null)
+      setPessoas([])
+      setGrupos([])
+    }
+  }
 
   return (
-    <section className="mt-6" data-teste={modo === 'meus' ? 'secao-meus-envios' : 'secao-para-analisar'}>
-      <h2 className="mb-1 text-lg font-semibold text-ink">{t(modo === 'meus' ? 'tituloMeus' : 'tituloAnalisar')}</h2>
-      <p className="mb-3 text-xs text-ink-2">{t(modo === 'meus' ? 'explicaMeus' : 'explicaAnalisar')}</p>
+    <section className="mt-6" data-teste={`secao-envios-${modo}`}>
+      <h2 className="mb-1 text-lg font-semibold text-ink">{t(titulo)}</h2>
+      <p className="mb-3 text-xs text-ink-2">{t(explica)}</p>
       {mensagem && <p role="status" className="mb-3 rounded-lg bg-emerald-500/10 p-2 text-sm text-emerald-800 dark:text-emerald-300">{mensagem}</p>}
       {erro && <p role="alert" className="mb-3 rounded-lg bg-red-500/10 p-2 text-sm text-red-700 dark:text-red-300">{erro}</p>}
       {!itens.length ? (
@@ -124,7 +148,28 @@ export default function SecaoEnvios({ modo }: { modo: 'meus' | 'analisar' }) {
                   <span className="text-ink">{t('imagemN', { id: item.id })}</span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CORES[item.situacao]}`}>{t(`situacoes.${item.situacao}`)}</span>
                 </div>
-                {modo === 'analisar' && item.enviado_por && <p className="text-xs text-ink-2">{t('enviadaPor', { nome: item.enviado_por })}</p>}
+                {modo !== 'meus' && item.enviado_por && (
+                  <p className="text-xs text-ink-2">{t('enviadaPor', { nome: item.enviado_por })}{item.nova ? ` · ${t('nova')}` : ''}</p>
+                )}
+                {modo === 'meus' && !!item.enviada_para && <p className="text-xs text-ink-2">{t('enviadaParaN', { n: item.enviada_para })}</p>}
+                {item.viewer_url && (
+                  <a href={item.viewer_url} target="_blank" rel="noopener noreferrer" className="inline-block text-xs text-brand underline">{t('abrir')}</a>
+                )}
+                {modo === 'meus' && equipe && (
+                  enviarPara === item.id ? (
+                    <div className="space-y-2 rounded-lg border border-base-border p-2">
+                      <SeletorPessoasGrupos pessoas={pessoas} grupos={grupos} aoMudar={(p, g) => { setPessoas(p); setGrupos(g) }} />
+                      <div className="flex gap-2">
+                        <button type="button" disabled={!pessoas.length && !grupos.length} onClick={() => mandar(item)}
+                                className="rounded bg-brand px-3 py-1 text-xs text-white disabled:opacity-50">{t('enviar')}</button>
+                        <button type="button" onClick={() => setEnviarPara(null)} className="text-xs text-ink-3">{t('cancelar')}</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => { setEnviarPara(item.id); setPessoas([]); setGrupos([]) }}
+                            className="block text-xs text-brand underline">{t('enviarPessoas')}</button>
+                  )
+                )}
                 {item.situacao === 'em_analise' && modo === 'meus' && item.analista && (
                   <p className="text-xs text-ink-2">{t('comQuem', { nome: item.analista })}</p>
                 )}

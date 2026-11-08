@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { Camera, FileUp, Send } from 'lucide-react'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
+import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
 import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -47,6 +48,8 @@ export default function EnviarImagemPage() {
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [analistaId, setAnalistaId] = useState('')
   const [nota, setNota] = useState('')
+  const [pessoas, setPessoas] = useState<Pessoa[]>([])
+  const [grupos, setGrupos] = useState<number[]>([])
   const [enviando, setEnviando] = useState(false)
   const [resultados, setResultados] = useState<Resultado[]>([])
   const [erro, setErro] = useState('')
@@ -111,10 +114,15 @@ export default function EnviarImagemPage() {
         dados.append('analista_id', analistaId)
         if (nota.trim()) dados.append('nota', nota.trim())
       }
+      if (!ehEstudante) {
+        if (pessoas.length) dados.append('pessoas', pessoas.map((p) => p.id).join(','))
+        if (grupos.length) dados.append('grupos', grupos.join(','))
+      }
       try {
         const r = await fetch(`${API}/envios`, { method: 'POST', credentials: 'include', body: dados })
+        const corpo = r.ok ? await r.json() : null
         saida.push(r.ok
-          ? { nome: arquivo.name, ok: true, texto: t(`enviado.${destino}`) }
+          ? { nome: arquivo.name, ok: true, texto: t(`enviado.${destino}`) + (corpo?.enviada_para ? ` ${t('enviadoPessoas', { n: corpo.enviada_para })}` : '') }
           : { nome: arquivo.name, ok: false, texto: await lerErro(r, t('erroEnviar')) })
       } catch {
         saida.push({ nome: arquivo.name, ok: false, texto: t('erroConexao') })
@@ -225,6 +233,14 @@ export default function EnviarImagemPage() {
                             className={campo} placeholder={t('recadoExemplo')} />
                 </div>
               </div>
+            )}
+
+            {!ehEstudante && (
+              <fieldset>
+                <legend className="mb-1 text-sm font-medium text-ink">{t('passo3')}</legend>
+                <p className="mb-2 text-xs text-ink-2">{t('passo3Explica')}</p>
+                <SeletorPessoasGrupos pessoas={pessoas} grupos={grupos} aoMudar={(p, g) => { setPessoas(p); setGrupos(g) }} />
+              </fieldset>
             )}
 
             <p className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-ink-2">{t('avisoDados')}</p>

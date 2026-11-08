@@ -188,5 +188,5 @@ def test_telas_enviar_imagem_camera_e_listas():
     assert "['pessoal', 'analise']" in tela and "['fila', 'pessoal']" in tela
     menu = (front / "components/Sidebar.tsx").read_text(encoding="utf-8")
     assert "href: '/enviar-imagem'" in menu
-    assert '<SecaoEnvios modo="meus" />' in (front / "app/minhas-imagens/page.tsx").read_text(encoding="utf-8")
+    assert "<SecaoEnvios modo=\"meus\"" in (front / "app/minhas-imagens/page.tsx").read_text(encoding="utf-8")
     assert '<SecaoEnvios modo="analisar" />' in (front / "app/compartilhadas-comigo/page.tsx").read_text(encoding="utf-8")

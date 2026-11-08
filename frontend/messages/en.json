@@ -256,7 +256,8 @@
       "vocabulario": "Vocabulary",
       "macros": "Macros",
       "sugestoes": "Suggestions",
-      "enviarImagem": "Send image"
+      "enviarImagem": "Send image",
+      "grupos": "Groups"
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
@@ -2615,7 +2616,8 @@
       "sugestoes": "Suggestions",
       "meusAcessos": "My sessions",
       "imagem": "Image bank",
-      "enviarImagem": "Send image"
+      "enviarImagem": "Send image",
+      "grupos": "Groups"
     }
   },
   "AvisoEmail": {
@@ -2707,7 +2709,53 @@
       "devolver": "Return with a note",
       "recadoDevolucao": "Why are you returning it? (the student will read it)",
       "confirmarDevolucao": "Return",
-      "erro": "Could not complete."
-    }
+      "erro": "Could not complete.",
+      "tituloRecebidas": "Received from colleagues",
+      "explicaRecebidas": "Images professors and curators sent you, even before they enter the image bank.",
+      "nova": "new",
+      "enviadaParaN": "Sent to {n, plural, one {1 person} other {# people}}",
+      "abrir": "Open in viewer",
+      "enviarPessoas": "Send to people or groups",
+      "enviar": "Send"
+    },
+    "seletor": {
+      "grupos": "My groups",
+      "semGrupos": "You have no groups yet. Create them in \"Groups\" in the menu.",
+      "pessoas": "People",
+      "buscar": "Type at least 2 letters of the name or e-mail",
+      "tirar": "Remove {nome}",
+      "perfis": {
+        "administrador": "administrator",
+        "suporte": "support",
+        "curador": "curator",
+        "professor": "professor",
+        "estudante": "student",
+        "pesquisador": "researcher"
+      }
+    },
+    "passo3": "3. Also send to (optional)",
+    "passo3Explica": "Choose groups or people who will receive the image now. It still goes to the curation queue; only the curator publishes it in the image bank.",
+    "enviadoPessoas": "Received by {n, plural, one {1 person} other {# people}}."
+  },
+  "Grupos": {
+    "titulo": "Groups",
+    "subtitulo": "Build lists of people (e.g. a class) to send images at once. Only you see and change your groups; members do not see who else is in them.",
+    "carregando": "Loading...",
+    "novo": "New group",
+    "nome": "Group name",
+    "nomeExemplo": "E.g.: Radiology 2026/1 – Class A",
+    "salvar": "Save",
+    "cancelar": "Cancel",
+    "salvo": "Group saved.",
+    "apagado": "Group deleted.",
+    "erro": "Could not save the group.",
+    "vazio": "You have no groups yet.",
+    "membros": "{n, plural, one {1 person} other {# people}}",
+    "semMembros": "No people yet.",
+    "editar": "Edit",
+    "apagar": "Delete",
+    "apagarTitulo": "Delete group {nome}?",
+    "apagarTexto": "Images you already sent to these people stay with them. This is recorded in the audit log.",
+    "apagarSim": "Yes, delete"
   }
 }

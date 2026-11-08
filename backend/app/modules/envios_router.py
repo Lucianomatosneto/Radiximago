@@ -10,7 +10,9 @@ Radix Clinica (08/11/2026, documento "Separacao Radix Imago e Radix Clinica").
 - POST   /envios/{id}/analise         dono manda uma imagem pessoal para analise
 - POST   /envios/{id}/decidir         quem analisa: colocar na fila ou devolver
 - DELETE /envios/{id}                 dono retira uma imagem pessoal
-- GET    /envios/{id}/preview         miniatura (dono, quem analisa, curadoria)
+- GET    /envios/{id}/preview         miniatura (dono, quem analisa, quem recebeu, curadoria)
+- POST   /envios/{id}/enviar-para     professor/curador manda a imagem a pessoas e grupos (etapa C)
+- GET    /envios/recebidas            imagens que colegas me enviaram (etapa C)
 
 REGRAS (decisoes do Luciano, 08/11/2026):
 - ESTUDANTE escolhe "so para mim" (fica so com ele, em Minhas imagens) ou
@@ -40,7 +42,10 @@ from app.core.rate_limit import LIMITE_UPLOAD_DICOM, limiter
 from app.modules import foto_para_dicom, orthanc_client
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import exigir_perfis, obter_usuario_atual
+from app.core.config import settings
 from app.modules.curations import Curation
+from app.modules.grupos import EnvioDestinatario
+from app.modules.grupos_router import membros_dos_grupos, pessoas_validas
 from app.modules.images_router import ler_arquivo_limitado, receber_dicom
 from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
 from app.modules.users import User, UserRole
@@ -105,7 +110,45 @@ def _item(db: Session, ref: OrthancReference) -> dict:
         "devolucao_nota": ref.devolucao_nota,
         "texto_na_imagem": ref.texto_na_imagem,
         "curation_id": curadoria.id if curadoria and curadoria.status == "aprovada" else None,
+        # abrir no visualizador (a portaria das imagens confere quem pode ver)
+        "viewer_url": (f"{settings.OHIF_BASE_URL}/viewer?StudyInstanceUIDs={ref.study_instance_uid}"
+                       if ref.study_instance_uid else None),
+        "enviada_para": db.query(EnvioDestinatario).filter(EnvioDestinatario.orthanc_reference_id == ref.id).count(),
     }
+
+
+PERFIS_QUE_ENVIAM_A_PESSOAS = (UserRole.professor, UserRole.curador, UserRole.administrador)
+DESTINATARIOS_MAX = 300
+
+
+def _ids(texto: str | None) -> list[int]:
+    """'3,8, 12' -> [3, 8, 12] (formulario de envio)."""
+    try:
+        return [int(p) for p in (texto or "").replace(" ", "").split(",") if p][:DESTINATARIOS_MAX]
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Lista de pessoas ou grupos invalida.")
+
+
+def enviar_a_pessoas(db: Session, ref: OrthancReference, remetente: User,
+                     pessoas_ids: list[int], grupos_ids: list[int]) -> int:
+    """Grava o envio da imagem para as pessoas e os membros dos grupos (so
+    grupos do proprio remetente). Devolve quantas pessoas NOVAS receberam."""
+    alvo = set(pessoas_ids) | membros_dos_grupos(db, remetente.id, grupos_ids)
+    alvo.discard(remetente.id)
+    ja = {d for (d,) in db.query(EnvioDestinatario.destinatario_id)
+          .filter(EnvioDestinatario.orthanc_reference_id == ref.id)}
+    novos = [u for u in pessoas_validas(db, list(alvo)) if u.id not in ja]
+    for u in novos:
+        db.add(EnvioDestinatario(orthanc_reference_id=ref.id, remetente_id=remetente.id, destinatario_id=u.id))
+    if novos:
+        _auditar(db, remetente, "imagem_enviada_pessoas", ref,
+                 f"{len(novos)} pessoa(s); grupos usados: {len(set(grupos_ids))}")
+    return len(novos)
+
+
+def recebeu(db: Session, ref: OrthancReference, usuario_id: int) -> bool:
+    return db.query(EnvioDestinatario.id).filter(EnvioDestinatario.orthanc_reference_id == ref.id,
+                                                 EnvioDestinatario.destinatario_id == usuario_id).first() is not None
 
 
 def _buscar(db: Session, imagem_id: int) -> OrthancReference:
@@ -128,6 +171,8 @@ def enviar_imagem(
     destino: str = Form(..., max_length=10),
     analista_id: int | None = Form(None, ge=1),
     nota: str | None = Form(None, max_length=NOTA_MAX),
+    pessoas: str | None = Form(None, max_length=4000),
+    grupos: str | None = Form(None, max_length=4000),
     usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
     db: Session = Depends(get_db),
 ):
@@ -135,6 +180,9 @@ def enviar_imagem(
     if destino not in DESTINOS_POR_PERFIL.get(usuario.perfil, set()):
         raise HTTPException(status_code=422, detail="Destino nao permitido para o seu perfil.")
     nota_limpa = _nota(nota)
+    pessoas_ids, grupos_ids = _ids(pessoas), _ids(grupos)
+    if (pessoas_ids or grupos_ids) and usuario.perfil not in PERFIS_QUE_ENVIAM_A_PESSOAS:
+        raise HTTPException(status_code=403, detail="Seu perfil nao envia imagens para pessoas ou grupos.")
     destinatario_id = None
     if destino == DestinoImagem.ANALISE.value:
         destinatario_id = _analista_valido(db, analista_id, usuario).id
@@ -156,9 +204,61 @@ def enviar_imagem(
         ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
         _auditar(db, usuario, "imagem_enviada_analise", ref, f"para usuario_id={destinatario_id}")
         db.commit()
+    resultado["enviada_para"] = 0
+    if pessoas_ids or grupos_ids:
+        ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
+        if ref.enviado_por_id == usuario.id:
+            resultado["enviada_para"] = enviar_a_pessoas(db, ref, usuario, pessoas_ids, grupos_ids)
+            db.commit()
     resultado["destino"] = destino
     resultado["foto_convertida"] = era_foto
     return resultado
+
+
+class PedidoEnvioPessoas(BaseModel):
+    pessoas_ids: list[int] = Field(default_factory=list, max_length=DESTINATARIOS_MAX)
+    grupos_ids: list[int] = Field(default_factory=list, max_length=100)
+
+
+@router.post("/{imagem_id}/enviar-para")
+def enviar_para(imagem_id: int, pedido: PedidoEnvioPessoas,
+                usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM_A_PESSOAS)), db: Session = Depends(get_db)):
+    """Quem enviou a imagem a manda para mais pessoas e grupos."""
+    ref = _buscar(db, imagem_id)
+    if ref.enviado_por_id != usuario.id:
+        raise HTTPException(status_code=404, detail="Imagem nao encontrada.")
+    n = enviar_a_pessoas(db, ref, usuario, pedido.pessoas_ids, pedido.grupos_ids)
+    db.commit()
+    return {"mensagem": f"Imagem enviada para {n} pessoa(s)." if n else "Essas pessoas ja tinham recebido a imagem.",
+            "enviada_para": n}
+
+
+@router.get("/recebidas")
+def recebidas(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    """Imagens que colegas me enviaram (antes ou depois de entrar no banco geral)."""
+    linhas = (db.query(OrthancReference, EnvioDestinatario)
+              .join(EnvioDestinatario, EnvioDestinatario.orthanc_reference_id == OrthancReference.id)
+              .filter(EnvioDestinatario.destinatario_id == usuario.id, OrthancReference.ativo.is_(True))
+              .order_by(EnvioDestinatario.id.desc()).limit(500).all())
+    itens = []
+    for ref, envio in linhas:
+        item = _item(db, ref)
+        item["recebida_em"] = envio.criado_em.isoformat() if envio.criado_em else None
+        item["nova"] = envio.visto_em is None
+        item.pop("analise_nota", None)
+        item.pop("devolucao_nota", None)
+        item.pop("enviada_para", None)
+        itens.append(item)
+    return {"itens": itens}
+
+
+@router.post("/recebidas/vistas")
+def marcar_vistas(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    db.query(EnvioDestinatario).filter(EnvioDestinatario.destinatario_id == usuario.id,
+                                       EnvioDestinatario.visto_em.is_(None)).update(
+        {EnvioDestinatario.visto_em: func.now()}, synchronize_session=False)
+    db.commit()
+    return {"mensagem": "ok"}
 
 
 @router.get("/meus")
@@ -259,7 +359,7 @@ def retirar_imagem(imagem_id: int, usuario: User = Depends(obter_usuario_atual),
 @router.get("/{imagem_id}/preview")
 def miniatura(imagem_id: int, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
     ref = _buscar(db, imagem_id)
-    if not visivel_para(ref, usuario.id, _perfil(usuario)):
+    if not (visivel_para(ref, usuario.id, _perfil(usuario)) or recebeu(db, ref, usuario.id)):
         raise HTTPException(status_code=404, detail="Imagem nao encontrada.")
     conteudo = orthanc_client.obter_preview_instancia(ref.orthanc_id)
     return Response(content=conteudo, media_type="image/png",
