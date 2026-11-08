@@ -1,6 +1,5 @@
 """
-ENVIO DE IMAGENS POR TODOS OS PERFIS - etapa B da separacao Radix Imago /
-Radix Clinica (08/11/2026, documento "Separacao Radix Imago e Radix Clinica").
+ENVIO DE IMAGENS POR TODOS OS PERFIS - etapa B (08/11/2026).
 
 - POST   /envios                      envia arquivo DICOM ou foto (JPG/PNG,
                                       inclusive pela camera do celular)

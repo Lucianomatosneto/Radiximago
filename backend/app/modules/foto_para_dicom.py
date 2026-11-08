@@ -1,5 +1,5 @@
 """
-FOTO -> DICOM (etapa B da separacao, 08/11/2026).
+FOTO -> DICOM (etapa B, 08/11/2026).
 
 O estudante (e o professor) podem enviar a foto de uma radiografia tirada
 pela camera do celular, ou uma imagem JPG/PNG do computador. O Radix so

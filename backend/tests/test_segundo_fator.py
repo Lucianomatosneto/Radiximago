@@ -2,9 +2,7 @@
 Login em duas etapas (app/modules/mfa.py, mfa_router.py) - OWASP ASVS 6.3.3
 e apoio a 6.5.x (codigos de uso unico) e 6.4.x (recuperacao).
 Decisao do responsavel (19/10/2026): obrigatorio para administrador, suporte
-e curadoria; opcional para os demais. Em 02/11/2026 o professor tambem passou
-a ser obrigatorio (via as pastas de pacientes); em 08/11/2026, com a
-retirada das pastas, voltou a ser opcional.
+e curadoria; opcional para os demais (inclusive o professor).
 """
 
 import re
@@ -184,8 +182,8 @@ def test_administrador_redefine_o_segundo_fator_de_outra_pessoa(criar_usuario, d
 
 
 def test_professor_tem_segundo_fator_opcional(criar_usuario):
-    """08/11/2026: sem as pastas de pacientes, o professor volta a entrar so
-    com a senha e pode ligar as 2 etapas em Meus acessos (decisao do Luciano)."""
+    """O professor entra so com a senha e pode ligar as 2 etapas em Meus
+    acessos (decisao do Luciano)."""
     professor = criar_usuario(perfil=UserRole.professor)
     assert UserRole.professor not in mfa.PERFIS_MFA_OBRIGATORIO
     dados = _senha(_novo_cliente(), professor.email).json()

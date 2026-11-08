@@ -1,5 +1,5 @@
 """
-Etapa D da separacao (08/11/2026): aparelhos de raio X da rede.
+Etapa D (08/11/2026): aparelhos de raio X da rede.
 
 Regras do Luciano: so o ADMINISTRADOR cadastra, libera e bloqueia; aparelho
 nao cadastrado ou bloqueado e RECUSADO (o Orthanc so recebe a lista dos

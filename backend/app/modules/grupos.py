@@ -1,6 +1,5 @@
 """
-GRUPOS DE ENVIO e IMAGENS ENVIADAS A PESSOAS - etapa C da separacao Radix
-Imago / Radix Clinica (08/11/2026).
+GRUPOS DE ENVIO e IMAGENS ENVIADAS A PESSOAS - etapa C (08/11/2026).
 
 - GrupoEnvio: lista de pessoas que um professor ou curador monta para enviar
   imagens de uma vez (por exemplo, uma turma). Cada um cuida dos PROPRIOS

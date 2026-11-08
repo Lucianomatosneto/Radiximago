@@ -1,5 +1,5 @@
 """
-Etapa C da separacao (08/11/2026): professor e curador montam os PROPRIOS
+Etapa C (08/11/2026): professor e curador montam os PROPRIOS
 grupos e enviam imagens a pessoas e grupos. A imagem enviada pelo professor
 continua indo para a fila de curadoria; quem recebeu consegue ver.
 """

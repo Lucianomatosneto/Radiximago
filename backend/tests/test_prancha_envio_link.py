@@ -1,5 +1,5 @@
 """
-Etapa E da separacao (08/11/2026): a prancha para OUTRAS pessoas vai so
+Etapa E (08/11/2026): a prancha para OUTRAS pessoas vai so
 como LINK que exige login (decisao do Luciano); qualquer perfil envia para
 qualquer usuario cadastrado e ativo. Em todas as saidas a pessoa escolhe
 1, 2 ou 3 por folha e QUAIS dados acompanham a imagem.

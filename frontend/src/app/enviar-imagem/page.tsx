@@ -1,6 +1,6 @@
 'use client'
 
-// ENVIAR IMAGEM (etapa B da separacao Radix Imago / Radix Clinica, 08/11/2026)
+// ENVIAR IMAGEM (etapa B, 08/11/2026)
 // Arquivo do computador (DICOM, JPG ou PNG) ou foto pela camera do celular.
 // - Estudante: "So para mim" (fica em Minhas imagens) ou "Enviar para
 //   analise" de UM professor ou curador, que decide colocar na fila de

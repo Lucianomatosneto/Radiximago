@@ -1,6 +1,6 @@
 """envio de imagens por todos os perfis (estudante: so para mim / analise)
 
-Separacao Radix Imago / Radix Clinica, etapa B (08/11/2026). Acrescenta em
+Etapa B (08/11/2026). Acrescenta em
 orthanc_references QUEM enviou a imagem e PARA ONDE ela vai:
 - destino "fila"    -> fila de curadoria (como sempre foi; padrao das
                        imagens ja existentes);

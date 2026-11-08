@@ -77,5 +77,3 @@ Proibidos no código (conferido por `test_11_4_3_e_11_5_1`):
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2). Também passou a vigorar: chave do JWT com 32 bytes ou mais obrigatória em produção, e regravação automática de senhas em padrão antigo |
 | 1.1 | 19/10/2026 | Senhas em Argon2id (bcrypt só para conferir as antigas); segredos do login em duas etapas cifrados; `WHISPER_CHAVE` na política de segredos |
-| 1.2 | 31/10/2026 | Fotos das pastas de pacientes cifradas com AES-256-GCM (`CASOS_CHAVE`) |
-| 1.3 | 08/11/2026 | Pastas de pacientes **retiradas do Radix Imago** (vão para o futuro Radix Clínica; código guardado no ramo `radix-clinica-base`). A cifra das fotos (`CASOS_CHAVE`) deixa de existir aqui |

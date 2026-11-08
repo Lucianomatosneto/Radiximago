@@ -3,9 +3,7 @@ Login em duas etapas (MFA - "autenticacao de multiplos fatores"), OWASP
 ASVS 6.3.3 - decisao do responsavel em 19/10/2026 (grupo 6 do Nivel 2):
 
 - OBRIGATORIO para quem tem poder no sistema: administrador, suporte e
-  curadoria (PERFIS_MFA_OBRIGATORIO). O professor foi obrigatorio de
-  02/11/2026 a 08/11/2026, enquanto via as pastas de pacientes; com a
-  retirada das pastas voltou a ser OPCIONAL (decisao do Luciano, 08/11);
+  curadoria (PERFIS_MFA_OBRIGATORIO);
 - OPCIONAL para os demais (professor, estudante, pesquisador), que podem ligar em
   "Meus acessos".
 

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.13 — 08/11/2026 |
+| Versão do documento | 1.12 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -132,7 +132,7 @@ pendente ─┐
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
 **Outras regras de negócio:**
-- Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 01/11/2026 (auditoria do administrador, A3, decisão do Luciano), **só estudante** entra assim que confirma o e-mail (auditoria `aprovacao_automatica_solicitacao`, quem aprovou: o sistema). **Professor, curador e pesquisador** sempre dependem da aprovação do administrador (`aprovacao_solicitacao_acesso`, com o nome de quem aprovou), porque professor e curador veem as pastas de pacientes. Entre 28/10 e 01/11, professor e pesquisador também entravam sozinhos. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
+- Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 01/11/2026 (auditoria do administrador, A3, decisão do Luciano), **só estudante** entra assim que confirma o e-mail (auditoria `aprovacao_automatica_solicitacao`, quem aprovou: o sistema). **Professor, curador e pesquisador** sempre dependem da aprovação do administrador (`aprovacao_solicitacao_acesso`, com o nome de quem aprovou), porque professor e curador trabalham com a curadoria e o envio de imagens. Entre 28/10 e 01/11, professor e pesquisador também entravam sozinhos. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
 - Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
 - Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
 
@@ -204,6 +204,5 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.8 | 01/11/2026 | Contagens explicadas em cada tela, página única de acesso negado, explicação de quem pode receber um compartilhamento |
 | 1.9 | 01/11/2026 | Professor vê em Imagens recebidas só o que enviou; texto "Só para mim" trocado (a equipe vê todas as pastas) |
 | 1.10 | 01/11/2026 | Proteção das contas de administrador (M1); só estudante é aprovado automaticamente (A3) |
-| 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor; regras das pastas de pacientes em `PASTAS_DE_PACIENTES.md` |
-| 1.12 | 08/11/2026 | Pastas de pacientes retiradas do Radix Imago (separação Radix Imago / Radix Clínica); limites das pastas removidos |
-| 1.13 | 08/11/2026 | Prancha: escolha dos dados e 1 por folha; envio a qualquer usuário só por link com login (seção 1.2) |
+| 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor |
+| 1.12 | 08/11/2026 | Prancha: escolha dos dados e 1 por folha; envio a qualquer usuário só por link com login (seção 1.2) |

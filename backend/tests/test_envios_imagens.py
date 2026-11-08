@@ -1,5 +1,5 @@
 """
-Etapa B da separacao Radix Imago / Radix Clinica (08/11/2026): todos os
+Etapa B (08/11/2026): todos os
 perfis enviam imagens. Estudante: "so para mim" ou "enviar para analise"
 (SO para o professor/curador escolhido, que poe na fila ou devolve).
 Professor e curador: fila de curadoria. So o curador publica no banco geral.

@@ -1,5 +1,5 @@
 """
-PRANCHA ENVIADA A OUTRA PESSOA (etapa E da separacao, 08/11/2026).
+PRANCHA ENVIADA A OUTRA PESSOA (etapa E, 08/11/2026).
 
 Decisao do Luciano: para OUTRA pessoa, o e-mail leva so um LINK que exige
 login - a imagem nao sai do sistema. Para o proprio e-mail, continua indo o

@@ -1,6 +1,5 @@
 """
-APARELHOS DA REDE - etapa D da separacao Radix Imago / Radix Clinica
-(08/11/2026).
+APARELHOS DA REDE - etapa D (08/11/2026).
 
 Aparelhos de raio X ligados na rede que mandam as imagens DICOM direto para
 o Radix (protocolo DICOM, porta 4242), sem ninguem precisar enviar arquivo.

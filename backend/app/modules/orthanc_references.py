@@ -20,7 +20,7 @@ class OrigemImagem(str, enum.Enum):
 
 class DestinoImagem(str, enum.Enum):
     """
-    Para onde a imagem enviada vai (etapa B da separacao, 08/11/2026):
+    Para onde a imagem enviada vai (etapa B, 08/11/2026):
     - FILA: fila de curadoria (padrao para professor, curador e equipamentos);
     - PESSOAL: so o dono ve, em Minhas imagens ("so para mim" do estudante);
     - ANALISE: so o dono e a pessoa escolhida (professor ou curador), que

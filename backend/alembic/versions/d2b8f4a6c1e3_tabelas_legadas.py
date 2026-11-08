@@ -1,4 +1,4 @@
-"""pastas de pacientes (fotos do negatoscopio, revisao, fila de tratamento)
+"""tabelas legadas de um modulo retirado (mantidas no banco; nao usadas)
 
 Revision ID: d2b8f4a6c1e3
 Revises: c1a7e3f9b5d2

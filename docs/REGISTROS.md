@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.3 — 20/10/2026 |
+| Versão do documento | 1.8 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -41,7 +41,6 @@
 | Achados e erros técnicos | `criacao_achado`, `edicao_achado`, `exclusao_achado`, `criacao_erro_tecnico`, `edicao_erro_tecnico`, `exclusao_erro_tecnico` |
 | Segmentação (pintura de estruturas) | `segmentacao_criada`, `segmentacao_alterada`, `segmentacao_apagada` (estrutura, dente e quantos pixels foram pintados — **sem a imagem**) |
 | Vocabulário e macros | `vocabulario_termo_criado`, `vocabulario_termo_editado`, `vocabulario_sinonimo_criado`, `vocabulario_sinonimo_removido`, `vocabulario_fichas_vinculadas`, `vocabulario_ficha_desvinculada`, `macro_criada`, `macro_editada`, `macro_desativada` |
-| Pastas de pacientes — **módulo retirado em 08/11/2026** | As ações `caso_*` (por exemplo `caso_criado`, `caso_visualizado`) não são mais gravadas. Registros antigos continuam na auditoria, selados, e a tela Auditoria ainda os mostra com nome legível. O módulo segue no futuro Radix Clínica (ramo `radix-clinica-base`) |
 | Limpeza de dados de demonstração | `limpeza_dados_demo` (gravada pelo script `scripts/limpar_dados_demo.py` quando roda com `--executar`; detalhes: quantos usuários e compartilhamentos saíram — nunca nomes) |
 | Curadoria reaberta | `curadoria_reaberta` e, no histórico da ficha, `reabertura_edicao` (curador reabre uma ficha aprovada ou descartada para editar depois do envio; status anterior e novo) |
 | Sugestões de melhoria | `sugestao_enviada` (com o perfil de quem enviou), `sugestao_andamento_alterado` (administrador; andamento anterior e novo) |
@@ -54,10 +53,9 @@ A lista acima é conferida automaticamente com o código (`tests/test_documentac
 - No **servidor** e no **túnel**, a API grava o endereço real de quem acessou. Ela confia no endereço informado pelo Caddy ou pela Cloudflare (`FORWARDED_ALLOW_IPS`), porque só esses intermediários alcançam a API.
 - O Nginx do visualizador agora repassa esse endereço na conferência de acesso às imagens. Antes, a auditoria do visualizador gravava o endereço do próprio Nginx (172.18.0.2).
 - No **computador de desenvolvimento**, o Docker não repassa o endereço real, e todos os acessos aparecem como 172.18.0.1. A tela mostra esses endereços com "(rede interna do Docker – acesso local)".
-- **"Abriu a pasta"** é gravado no máximo uma vez a cada 30 segundos por pessoa e por pasta. A tela pede a pasta de novo logo depois de cada ação, e isso gerava registros duplicados no mesmo segundo.
 
 **Na tela Auditoria (01/11/2026, M3):**
-- Toda ação aparece com nome em português, como "Pasta aberta" ou "Usuário reativado", em vez do código. Os nomes ficam em `frontend/src/lib/acoesAuditoria.ts`, e o teste `test_auditoria_legivel.py` falha se uma ação documentada acima ficar sem nome.
+- Toda ação aparece com nome em português, como "Imagem girada" ou "Usuário reativado", em vez do código. Os nomes ficam em `frontend/src/lib/acoesAuditoria.ts`, e o teste `test_auditoria_legivel.py` falha se uma ação documentada acima ficar sem nome.
 - O filtro agrupa as ações por tema e mostra quantas vezes cada uma aparece. Ações antigas fora desta lista entram em "Outras".
 - Também dá para filtrar por usuário e por período.
 - "Agrupar registros iguais no mesmo segundo" junta, só na leitura, eventos repetidos, como várias recusas de acesso disparadas por uma mesma página. Todos os registros continuam gravados.
@@ -108,9 +106,8 @@ Isso é comprovado por:
 | 1.1 | 18/10/2026 | Grupo 2: ip/rota, eventos de segurança, lacre e proteção, JSON, retenção |
 | 1.2 | 19/10/2026 | Ações do login em duas etapas |
 | 1.3 | 20/10/2026 | Giro da imagem pelo curador e recorte da moldura branca |
-| 1.4 | 08/11/2026 | Pastas de pacientes retiradas: ações `caso_*` deixam de ser gravadas (antigas continuam legíveis) |
-| 1.5 | 08/11/2026 | Envio de imagens por todos os perfis (estudante: só para mim / análise) |
-| 1.6 | 08/11/2026 | Grupos de envio e imagens enviadas a pessoas |
-| 1.7 | 08/11/2026 | Sugestão do professor na ficha de curadoria |
-| 1.8 | 08/11/2026 | Aparelhos de raio X da rede: cadastro, liberação, bloqueio e teste |
-| 1.9 | 08/11/2026 | Prancha enviada a outras pessoas por link com login |
+| 1.4 | 08/11/2026 | Envio de imagens por todos os perfis (estudante: só para mim / análise) |
+| 1.5 | 08/11/2026 | Grupos de envio e imagens enviadas a pessoas |
+| 1.6 | 08/11/2026 | Sugestão do professor na ficha de curadoria |
+| 1.7 | 08/11/2026 | Aparelhos de raio X da rede: cadastro, liberação, bloqueio e teste |
+| 1.8 | 08/11/2026 | Prancha enviada a outras pessoas por link com login |
