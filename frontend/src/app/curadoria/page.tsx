@@ -83,6 +83,14 @@ async function extrairErro(response: Response, generica: string): Promise<string
   try {
     const dados = await response.json()
     if (typeof dados?.detail === 'string') return dados.detail
+    // 422 de validacao: mostra o primeiro campo recusado (antes vinha so a
+    // mensagem generica e nao dava para saber o que corrigir)
+    if (Array.isArray(dados?.detail) && dados.detail[0]) {
+      const item = dados.detail[0]
+      const campo = Array.isArray(item.loc) ? item.loc.filter((x: unknown) => x !== 'body').join(' › ') : ''
+      const msg = String(item.msg ?? '').replace(/^Value error,\s*/, '')
+      return `${generica} ${campo ? `(${campo}) ` : ''}${msg}`.trim()
+    }
   } catch {
     // resposta sem corpo JSON legivel
   }
@@ -913,7 +921,8 @@ export default function CuradoriaPage() {
       }
       return true
     } catch {
-      setErroFormulario(t('ficha.erroSalvarRascunho'))
+      // sem resposta legivel: servidor fora do ar ou erro interno (500)
+      setErroFormulario(`${t('ficha.erroSalvarRascunho')} ${t('ficha.erroSemResposta')}`)
       return false
     } finally {
       setSalvandoRascunho(false)

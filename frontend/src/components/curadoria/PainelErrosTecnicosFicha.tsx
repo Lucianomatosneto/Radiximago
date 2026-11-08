@@ -55,7 +55,7 @@ export default function PainelErrosTecnicosFicha({
               onClick={() => alternar(e.valor)}
               aria-pressed={ligado}
               className={`rounded-full border px-2.5 py-1 text-xs transition-colors ${i === cursor ? 'ring-2 ring-amber-300' : ''} ${
-                ligado ? 'border-rose-400 bg-rose-500/20 font-semibold text-rose-100' : 'border-base-border text-slate-300 hover:border-rose-300/60'
+                ligado ? 'border-rose-400 bg-rose-500/20 font-semibold text-rose-800 dark:text-rose-100' : 'border-base-border text-slate-300 hover:border-rose-300/60'
               }`}
             >
               {ligado ? '✓ ' : ''}
