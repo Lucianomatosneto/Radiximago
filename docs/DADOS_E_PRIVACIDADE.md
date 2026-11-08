@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.6 — 02/11/2026 |
+| Versão do documento | 1.8 — 08/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -150,3 +150,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.5 | 02/11/2026 | Pastas de pacientes: o **administrador** vê a fila e os tratamentos **sem dados do paciente** ("Pasta #n") e só abre uma pasta com **justificativa** (10–300 caracteres; somente leitura por 30 min; auditado); o **suporte** não acessa pastas; o **curador** só acrescenta observações (`casos_router.py`) |
 | 1.6 | 02/11/2026 | Pastas de pacientes: **eliminação por prazo** (12 meses após a conclusão; copia de trabalho, não é prontuário) e **a pedido** pelo professor; sobra só a auditoria `caso_eliminado`. Cópias de segurança guardam a pasta até 14 dias (`casos_eliminacao.py`) |
 | 1.7 | 08/11/2026 | Pastas de pacientes **retiradas**: o Radix Imago volta a tratar **somente imagens anonimizadas** (ensino e pesquisa). Dados identificados ficam para o futuro Radix Clínica, sistema separado (ramo `radix-clinica-base`). As tabelas antigas das pastas continuam no banco até decisão de apagá-las |
+| 1.8 | 08/11/2026 | Prancha enviada a outra pessoa (`pranchas_enviadas`): guarda só o **pedido** (quem enviou, quem recebe, quais fichas, as escolhas e o recado), nunca o arquivo; o e-mail leva só o link (exige login). Aparelhos da rede (`aparelhos_rede`): nome, local, nome DICOM e IP do aparelho — dados do equipamento, não de pessoas |

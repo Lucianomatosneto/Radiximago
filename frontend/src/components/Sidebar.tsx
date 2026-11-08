@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
-import { type LucideIcon, Camera, ChartColumn, Cpu, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
+import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -67,6 +67,8 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, perfis: ['professor', 'curador', 'administrador'], cor: COR_CYAN },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
+  // etapa E (08/11/2026): pranchas que outras pessoas mandaram (o e-mail traz so o link)
+  { chave: 'pranchasRecebidas', href: '/pranchas-recebidas', ativo: true, icone: FileImage, cor: COR_SKY },
   { chave: 'vocabulario', href: '/vocabulario', ativo: true, icone: Tags, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_TEAL },
   { chave: 'macros', href: '/macros', ativo: true, icone: Zap, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },
   { chave: 'relatorios', href: '/relatorios', ativo: true, icone: ChartColumn, perfis: PERFIS_ADMIN_E_CURADOR, cor: COR_CYAN },

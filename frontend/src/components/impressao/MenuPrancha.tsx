@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { sugestaoDeEmail } from '../../lib/emailDigitacao'
+import SeletorPessoasGrupos, { type Pessoa } from '../envios/SeletorPessoasGrupos'
 
 // PRANCHA COM INFORMACOES (pedido de 20/10/2026)
 // Folha A4 com as imagens EMPILHADAS na metade esquerda e as informacoes de
@@ -17,6 +18,9 @@ import { sugestaoDeEmail } from '../../lib/emailDigitacao'
 // 27/10/2026: a prancha deixou de ser um botao a parte - ela aparece DENTRO
 // de "Imprimir", "Baixar"/"Salvar como" e "Enviar por e-mail" (OpcaoPrancha
 // abre esta mesma janela ja com a acao certa).
+// 08/11/2026 (etapa E): 1, 2 ou 3 por folha; a pessoa escolhe QUAIS dados vao
+// ao lado da imagem; e-mail para outras pessoas (qualquer usuario) vai so como
+// LINK que exige login - o PDF anexado so vai para o proprio e-mail.
 
 export interface ItemPrancha {
   curation_id: number
@@ -34,6 +38,8 @@ const MAX_IMAGENS = 30
 const MAX_IMAGENS_EMAIL = 15
 
 type Acao = 'pdf' | 'png' | 'imprimir' | 'email'
+type Campo = 'tipo' | 'regiao' | 'achados' | 'descricao' | 'marcadores'
+const CAMPOS: Campo[] = ['tipo', 'regiao', 'achados', 'descricao', 'marcadores']
 
 function nomeDoArquivo(resposta: Response, padrao: string): string {
   const cabecalho = resposta.headers.get('content-disposition') ?? ''
@@ -218,8 +224,8 @@ export function BotaoComPrancha({
   )
 }
 
-export function IconePrancha({ por, className }: { por: 2 | 3; className?: string }) {
-  const altura = por === 2 ? 9 : 6
+export function IconePrancha({ por, className }: { por: 1 | 2 | 3; className?: string }) {
+  const altura = por === 1 ? 18 : por === 2 ? 9 : 6
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
       <rect x="3" y="2" width="18" height="20" rx="2" />
@@ -248,9 +254,14 @@ export function DialogoPrancha({
   const t = useTranslations('Prancha')
   const grupos = gruposTodos.filter((g) => g.itens.length > 0)
   const [chave, setChave] = useState(grupos[grupos.length > 1 ? 1 : 0]?.chave ?? '')
-  const [porFolha, setPorFolha] = useState<2 | 3>(2)
-  const [comInformacoes, setComInformacoes] = useState(true)
+  const [porFolha, setPorFolha] = useState<1 | 2 | 3>(2)
+  const [campos, setCampos] = useState<Campo[]>(CAMPOS)
   const [comMarcacoes, setComMarcacoes] = useState(true)
+  // e-mail: para mim (PDF anexado) ou para outras pessoas (so o link)
+  const [paraOutros, setParaOutros] = useState(false)
+  const [pessoas, setPessoas] = useState<Pessoa[]>([])
+  const [gruposEnvio, setGruposEnvio] = useState<number[]>([])
+  const [recado, setRecado] = useState('')
   const [ocupado, setOcupado] = useState<Acao | null>(null)
   const [mensagem, setMensagem] = useState('')
   const [erro, setErro] = useState('')
@@ -258,7 +269,6 @@ export function DialogoPrancha({
   // endereco completo do destinatario e o que vai junto
   const [confirmandoEmail, setConfirmandoEmail] = useState(false)
   const [destinos, setDestinos] = useState<PessoaDestino[] | null>(null)
-  const [paraId, setParaId] = useState<number | null>(null)
   const travaRef = useRef(false)
   const quadroImpressao = useRef<HTMLIFrameElement | null>(null)
   const urlImpressao = useRef<string | null>(null)
@@ -293,7 +303,8 @@ export function DialogoPrancha({
       curation_ids: grupo.itens.map((i) => i.curation_id),
       numeros: grupo.itens.map((i) => i.numero),
       por_folha: porFolha,
-      com_informacoes: comInformacoes,
+      com_informacoes: campos.length > 0,
+      campos,
       com_marcacoes: comMarcacoes,
       formato,
     })
@@ -311,8 +322,7 @@ export function DialogoPrancha({
         return
       }
       const dados: { proprio: PessoaDestino; outros: PessoaDestino[] } = await r.json()
-      setDestinos([dados.proprio, ...dados.outros])
-      setParaId(dados.proprio.id)
+      setDestinos([dados.proprio])
     } catch {
       setErro(t('erro'))
     }
@@ -328,12 +338,24 @@ export function DialogoPrancha({
     setMensagem('')
     try {
       if (acao === 'email') {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/email`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...JSON.parse(corpo('pdf')), para_id: paraId }),
-        })
+        const r = paraOutros
+          ? await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/enviar`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...JSON.parse(corpo('pdf')),
+                pessoas: pessoas.map((p) => p.id),
+                grupos: gruposEnvio,
+                recado: recado.trim() || null,
+              }),
+            })
+          : await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/email`, {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: corpo('pdf'),
+            })
         if (!r.ok) {
           setErro(await mensagemDeErro(r, t('erro')))
           return
@@ -341,6 +363,9 @@ export function DialogoPrancha({
         const dados = await r.json()
         setMensagem(dados.mensagem ?? t('emailEnviado'))
         setConfirmandoEmail(false)
+        setPessoas([])
+        setGruposEnvio([])
+        setRecado('')
         return
       }
       const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/prancha/arquivo`, {
@@ -462,21 +487,37 @@ export function DialogoPrancha({
         <fieldset className="mb-4">
           <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('porFolha')}</legend>
           <div className="flex gap-3">
-            {([2, 3] as const).map((n) => (
+            {([1, 2, 3] as const).map((n) => (
               <button key={n} type="button" onClick={() => setPorFolha(n)} aria-pressed={porFolha === n} className={opcao(porFolha === n)}>
                 <IconePrancha por={n} className="h-10 w-10" />
                 <span className="font-medium">{t('opcao', { quantidade: n })}</span>
-                <span className="text-[11px] text-slate-400">{t('opcaoDica')}</span>
+                <span className="text-[11px] text-slate-400">{n === 1 ? t('opcaoDicaUma') : t('opcaoDica')}</span>
               </button>
             ))}
           </div>
         </fieldset>
 
+        <fieldset className="mb-3" data-teste="campos-prancha">
+          <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">{t('dadosTitulo')}</legend>
+          <div className="flex flex-wrap gap-2">
+            {CAMPOS.map((c) => {
+              const ligado = campos.includes(c)
+              return (
+                <label key={c} className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-3 py-1 text-xs ${ligado ? 'border-teal-400 bg-teal-400/10 text-teal-100' : 'border-base-border text-slate-300'}`}>
+                  <input
+                    type="checkbox"
+                    checked={ligado}
+                    onChange={() => setCampos(ligado ? campos.filter((x) => x !== c) : CAMPOS.filter((x) => x === c || campos.includes(x)))}
+                    className="h-3.5 w-3.5 accent-teal-400"
+                  />
+                  {t(`campos.${c}`)}
+                </label>
+              )
+            })}
+          </div>
+          {campos.length === 0 && <p className="mt-1.5 text-[11px] text-slate-400">{t('semDados')}</p>}
+        </fieldset>
         <div className="mb-4 space-y-2 text-sm">
-          <label className="flex cursor-pointer items-center gap-2">
-            <input type="checkbox" checked={comInformacoes} onChange={(e) => setComInformacoes(e.target.checked)} className="h-4 w-4 accent-teal-400" />
-            {t('comInformacoes')}
-          </label>
           <label className="flex cursor-pointer items-center gap-2">
             <input type="checkbox" checked={comMarcacoes} onChange={(e) => setComMarcacoes(e.target.checked)} className="h-4 w-4 accent-teal-400" />
             {t('comMarcacoes')}
@@ -506,8 +547,7 @@ export function DialogoPrancha({
             <button
               type="button"
               className={botaoAcao}
-              disabled={!!ocupado || demaisEmail || total === 0}
-              title={demaisEmail ? t('limiteEmail', { maximo: MAX_IMAGENS_EMAIL }) : undefined}
+              disabled={!!ocupado || demais || total === 0}
               onClick={abrirConfirmacaoEmail}
             >
               {ocupado === 'email' ? t('enviando') : `✉ ${t('email')}`}
@@ -522,43 +562,55 @@ export function DialogoPrancha({
               !erro && <p className="text-xs text-slate-400">{t('carregandoDestinos')}</p>
             ) : (
               <>
-                {destinos.length === 1 && (
-                  <p className="mb-2 text-xs text-slate-400">{t('soParaVoce')}</p>
-                )}
-                {destinos.length > 1 && (
-                  <label className="mb-2 block text-xs text-slate-300">
-                    {t('destinatario')}
-                    <select
-                      value={paraId ?? ''}
-                      onChange={(e) => setParaId(Number(e.target.value))}
-                      disabled={!!ocupado}
-                      className="mt-1 block w-full rounded-md border border-base-border bg-base-surface2 px-2 py-1 text-sm text-slate-100"
-                    >
-                      {destinos.map((p, i) => (
-                        <option key={p.id} value={p.id} className="bg-white text-slate-900">
-                          {i === 0 ? t('euMesmo', { nome: p.nome }) : `${p.nome} (${p.perfil})`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {(() => {
-                  const destino = destinos.find((p) => p.id === paraId) ?? destinos[0]
-                  const sugerido = destino.email_sugerido ?? sugestaoDeEmail(destino.email)
-                  return (
-                    <>
-                      <p className="text-xs text-slate-300">
-                        {t('vaiPara')} <strong className="break-all text-slate-100">{destino.email}</strong>
-                      </p>
-                      <p className="mt-1 text-xs text-slate-300">{t('oQueVai', { imagens: total, folhas })}</p>
-                      {sugerido && (
-                        <p className="mt-2 text-xs text-amber-300" role="alert">
-                          {t('emailSuspeito', { sugerido })}
+                <div className="mb-3 flex flex-wrap gap-2" role="radiogroup" aria-label={t('destinatario')}>
+                  {[false, true].map((outros) => (
+                    <label key={String(outros)} className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-xs ${paraOutros === outros ? 'border-teal-400 text-teal-100' : 'border-base-border text-slate-300'}`}>
+                      <input type="radio" name="destino-prancha" checked={paraOutros === outros} onChange={() => setParaOutros(outros)}
+                             disabled={!!ocupado} className="accent-teal-400" data-teste={outros ? 'prancha-para-outros' : 'prancha-para-mim'} />
+                      {outros ? t('paraOutros') : t('paraMim')}
+                    </label>
+                  ))}
+                </div>
+                {paraOutros ? (
+                  <>
+                    <SeletorPessoasGrupos
+                      pessoas={pessoas}
+                      grupos={gruposEnvio}
+                      aoMudar={(p, g) => {
+                        setPessoas(p)
+                        setGruposEnvio(g)
+                      }}
+                      urlBusca="/prancha/pessoas"
+                      minimoBusca={3}
+                      ocultarSemGrupos
+                    />
+                    <label className="mt-3 block text-xs text-slate-300">
+                      {t('recado')}
+                      <textarea value={recado} onChange={(e) => setRecado(e.target.value)} maxLength={500} rows={2}
+                                className="mt-1 block w-full rounded-md border border-base-border bg-base-surface2 px-2 py-1 text-sm text-slate-100" />
+                    </label>
+                    <p className="mt-2 text-xs text-slate-300">{t('oQueVaiLink', { imagens: total })}</p>
+                  </>
+                ) : (
+                  (() => {
+                    const destino = destinos[0]
+                    const sugerido = destino.email_sugerido ?? sugestaoDeEmail(destino.email)
+                    return (
+                      <>
+                        <p className="text-xs text-slate-300">
+                          {t('vaiPara')} <strong className="break-all text-slate-100">{destino.email}</strong>
                         </p>
-                      )}
-                    </>
-                  )
-                })()}
+                        <p className="mt-1 text-xs text-slate-300">{t('oQueVai', { imagens: total, folhas })}</p>
+                        {demaisEmail && <p className="mt-1 text-xs text-amber-300">{t('limiteEmail', { maximo: MAX_IMAGENS_EMAIL })}</p>}
+                        {sugerido && (
+                          <p className="mt-2 text-xs text-amber-300" role="alert">
+                            {t('emailSuspeito', { sugerido })}
+                          </p>
+                        )}
+                      </>
+                    )
+                  })()
+                )}
                 <div className="mt-3 flex justify-end gap-2">
                   <button
                     type="button"
@@ -571,12 +623,13 @@ export function DialogoPrancha({
                   <button
                     type="button"
                     className="rounded-md bg-brand px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    data-teste="confirmar-envio-prancha"
                     // desabilitado durante o envio: um segundo clique nao manda de novo
-                    disabled={!!ocupado || paraId === null}
+                    disabled={!!ocupado || (paraOutros ? pessoas.length + gruposEnvio.length === 0 : demaisEmail)}
                     aria-busy={ocupado === 'email'}
                     onClick={() => executar('email')}
                   >
-                    {ocupado === 'email' ? t('enviando') : t('confirmarEnvio')}
+                    {ocupado === 'email' ? t('enviando') : paraOutros ? t('confirmarEnvioLink') : t('confirmarEnvio')}
                   </button>
                 </div>
               </>

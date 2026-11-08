@@ -198,6 +198,7 @@ Implementação: `app/modules/sessoes.py` (tabela `sessoes_usuario`), `app/core/
 | Preencher a ficha de curadoria (tipo, região, achados, desenhos, descrição) **só das imagens que enviou**, como sugestão: enviar ao curador ou guardar em Minhas imagens. Não aprova nem descarta | ✅ | — | ✅ | ✅ | — | — |
 | Analisar imagens enviadas por estudantes (colocar na fila de curadoria ou devolver com recado) — só quem foi escolhido | — | — | ✅ | ✅ | — | — |
 | Cadastrar, liberar e bloquear **aparelhos de raio X da rede** (tela "Aparelhos da rede"); o suporte só vê a lista e testa a conexão. Aparelho não cadastrado ou bloqueado tem o envio **recusado** pelo Orthanc (nome DICOM e IP conferidos) | ✅ | só vê e testa | — | — | — | — |
+| Enviar a prancha a outras pessoas (qualquer usuário cadastrado e ativo): vai **só um link que exige login**; só quem recebeu abre. O PDF anexado só vai para o próprio e-mail | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Curadoria — **gravar** (editar fichas, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário) | ✅ | — | ✅ | — | — | — |
 | Curadoria — **só ler** (fichas, fila, indicadores) | ✅ | ✅ | ✅ | — | — | — |
 | Indicadores e relatórios | ✅ | ✅ | ✅ | — | — | — |
@@ -321,6 +322,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.18 | 08/11/2026 | Prancha a outras pessoas só por link com login (`/prancha/enviar`, `/prancha/recebidas`); quem não é o destinatário recebe 404 |
 | 1.17 | 08/11/2026 | Aparelhos da rede: só aparelhos cadastrados e liberados pelo administrador enviam imagens pela porta 4242 (`DicomAlwaysAllowStore=false`, `DicomCheckModalityHost=true`); lista mantida pelo Radix (`aparelhos_router.py`) |
 | 1.16 | 08/11/2026 | Professor preenche fichas como sugestão (só das imagens dele); o curador não vê o rascunho antes do envio; só o curador aprova (conferir_acesso_ficha) |
 | 1.15 | 08/11/2026 | Grupos de envio (cada professor/curador cuida dos seus; membros não se veem) e envio de imagens a pessoas; portaria passa a liberar a imagem para quem a recebeu |

@@ -258,7 +258,8 @@
       "sugestoes": "Sugestões",
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
-      "aparelhos": "Aparelhos da rede"
+      "aparelhos": "Aparelhos da rede",
+      "pranchasRecebidas": "Pranchas recebidas"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -2207,7 +2208,6 @@
     "porFolha": "Imagens por folha",
     "opcao": "{quantidade} por folha",
     "opcaoDica": "uma embaixo da outra",
-    "comInformacoes": "Informações da imagem ao lado",
     "comMarcacoes": "Marcações do curador desenhadas na imagem",
     "resumo": "{imagens, plural, one {1 imagem} other {# imagens}} em {folhas, plural, one {1 folha} other {# folhas}} A4",
     "limite": "Escolha no máximo {maximo} imagens por prancha.",
@@ -2230,17 +2230,30 @@
       "imprimir": "Imprimir prancha com informações…",
       "email": "Enviar prancha por e-mail…"
     },
-    "opcaoMenuDica": "2 ou 3 imagens por folha, com as informações ao lado",
+    "opcaoMenuDica": "1, 2 ou 3 imagens por folha, com os dados que você escolher",
     "confirmarTitulo": "Confirmar o envio por e-mail",
     "carregandoDestinos": "Carregando destinatários…",
     "destinatario": "Enviar para",
-    "euMesmo": "Eu mesmo(a) – {nome}",
     "vaiPara": "A prancha vai para:",
     "oQueVai": "Anexo: 1 PDF com {imagens} imagem(ns) em {folhas} folha(s).",
     "emailSuspeito": "Atenção: este e-mail parece ter erro de digitação. Você quis dizer {sugerido}? Peça ao administrador para corrigir o cadastro antes de enviar.",
     "cancelar": "Cancelar",
     "confirmarEnvio": "Confirmar envio",
-    "soParaVoce": "A prancha vai para o seu e-mail. Professores e curadores também podem escolher outro professor ou curador cadastrado; nenhum está disponível agora."
+    "opcaoDicaUma": "a imagem maior",
+    "dadosTitulo": "Dados ao lado da imagem",
+    "campos": {
+      "tipo": "Tipo e qualidade",
+      "regiao": "Região (dentes)",
+      "achados": "Achados",
+      "descricao": "Descrição",
+      "marcadores": "Lista de marcadores"
+    },
+    "semDados": "Sem dados: a imagem ocupa a largura toda.",
+    "paraMim": "Para mim (PDF anexado)",
+    "paraOutros": "Para outras pessoas (link com login)",
+    "recado": "Recado (opcional; fica no Rádix, não vai no e-mail)",
+    "oQueVaiLink": "Cada pessoa recebe um e-mail só com o link: para ver as {imagens} imagem(ns), precisa entrar no Rádix.",
+    "confirmarEnvioLink": "Enviar link"
   },
   "SegundaOpiniao": {
     "titulo": "Segunda opinião",
@@ -2625,7 +2638,8 @@
       "imagem": "Banco de imagens",
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
-      "aparelhos": "Aparelhos da rede"
+      "aparelhos": "Aparelhos da rede",
+      "pranchasRecebidas": "Pranchas recebidas"
     }
   },
   "AvisoEmail": {
@@ -2730,7 +2744,7 @@
       "grupos": "Meus grupos",
       "semGrupos": "Você ainda não tem grupos. Crie em \"Grupos\" no menu.",
       "pessoas": "Pessoas",
-      "buscar": "Digite pelo menos 2 letras do nome ou e-mail",
+      "buscar": "Digite pelo menos {n} letras do nome ou e-mail",
       "tirar": "Tirar {nome}",
       "perfis": {
         "administrador": "administrador",
@@ -2817,5 +2831,19 @@
     "bloquearSim": "Sim, bloquear",
     "bloqueado": "{nome} foi bloqueado.",
     "liberado": "{nome} foi liberado."
+  },
+  "PranchasRecebidas": {
+    "titulo": "Pranchas recebidas",
+    "subtitulo": "Pranchas que outras pessoas mandaram para você. O e-mail traz só o link; a prancha é montada aqui, com as imagens que continuam aprovadas.",
+    "carregando": "Carregando...",
+    "vazio": "Você ainda não recebeu nenhuma prancha.",
+    "de": "De {nome}",
+    "nova": "nova",
+    "resumo": "{imagens, plural, one {1 imagem} other {# imagens}}, {porFolha} por folha",
+    "abrirPdf": "Baixar PDF",
+    "abrirPng": "Baixar imagem (PNG)",
+    "gerando": "Gerando…",
+    "erro": "Não foi possível abrir a prancha. Tente de novo.",
+    "aviso": "Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico."
   }
 }

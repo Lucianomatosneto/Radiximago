@@ -127,12 +127,24 @@ class ItemPrancha:
     linhas: list[Linha] = field(default_factory=list)
 
 
-def descrever_ficha(ficha, marcacoes: list[dict] | None) -> list[Linha]:
-    """As mesmas linhas da caixa "i" das telas (lib/descricaoCuradoria.ts)."""
+# Dados que podem acompanhar a imagem (etapa E, 08/11/2026): a pessoa escolhe
+# quais vao na prancha. Cada rotulo pertence a um destes grupos.
+CAMPOS_PRANCHA = ("tipo", "regiao", "achados", "descricao", "marcadores")
+_CAMPO_DO_ROTULO = {
+    "Tipo": "tipo", "Qualidade": "tipo", "Dentes": "regiao",
+    "Achado principal": "achados", "Alterações observadas": "achados", "Achados detalhados": "achados",
+    "Descrição didática": "descricao",
+}
+
+
+def descrever_ficha(ficha, marcacoes: list[dict] | None, campos=None) -> list[Linha]:
+    """As mesmas linhas da caixa "i" das telas (lib/descricaoCuradoria.ts).
+    `campos`: so os grupos escolhidos (None = todos)."""
     linhas: list[Linha] = []
+    escolhidos = set(CAMPOS_PRANCHA if campos is None else campos)
 
     def add(rotulo: str, valor: str | None):
-        if valor and valor.strip():
+        if valor and valor.strip() and _CAMPO_DO_ROTULO.get(rotulo) in escolhidos:
             linhas.append(Linha(rotulo, valor.strip()))
 
     tipo = _cru(ficha.tipo_radiografia)
@@ -147,6 +159,8 @@ def descrever_ficha(ficha, marcacoes: list[dict] | None) -> list[Linha]:
     add("Alterações observadas", ", ".join(a for a in alteracoes if a))
     add("Achados detalhados", _cru(ficha.achados_detalhe))
     add("Descrição didática", _cru(ficha.descricao_didatica))
+    if "marcadores" not in escolhidos:
+        return linhas
     for i, m in enumerate(marcacoes or [], start=1):
         achado_m = m.get("achado")
         if achado_m == "outro" and m.get("achado_descricao"):
@@ -289,13 +303,13 @@ def _cabecalho_e_rodape(pagina: Image.Image, numero_pagina: int, total_paginas: 
 
 def montar_paginas(
     itens: list[ItemPrancha],
-    por_folha: Literal[2, 3] = 2,
+    por_folha: Literal[1, 2, 3] = 2,
     com_informacoes: bool = True,
     data: str | None = None,
 ) -> list[Image.Image]:
     """Monta as folhas: imagens empilhadas a esquerda, informacoes a direita."""
-    if por_folha not in (2, 3):
-        raise ValueError("por_folha deve ser 2 ou 3")
+    if por_folha not in (1, 2, 3):
+        raise ValueError("por_folha deve ser 1, 2 ou 3")
     data = data or datetime.now().strftime("%d/%m/%Y")
     grupos = [itens[i:i + por_folha] for i in range(0, len(itens), por_folha)] or [[]]
     paginas: list[Image.Image] = []

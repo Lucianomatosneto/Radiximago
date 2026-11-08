@@ -258,7 +258,8 @@
       "sugestoes": "Suggestions",
       "enviarImagem": "Send image",
       "grupos": "Groups",
-      "aparelhos": "Network devices"
+      "aparelhos": "Network devices",
+      "pranchasRecebidas": "Received plates"
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
@@ -2207,7 +2208,6 @@
     "porFolha": "Images per sheet",
     "opcao": "{quantidade} per sheet",
     "opcaoDica": "one below the other",
-    "comInformacoes": "Image information beside it",
     "comMarcacoes": "Curator markings drawn on the image",
     "resumo": "{imagens, plural, one {1 image} other {# images}} on {folhas, plural, one {1 A4 sheet} other {# A4 sheets}}",
     "limite": "Choose at most {maximo} images per plate.",
@@ -2230,17 +2230,30 @@
       "imprimir": "Print sheet with information…",
       "email": "E-mail sheet…"
     },
-    "opcaoMenuDica": "2 or 3 images per page, with the information beside them",
+    "opcaoMenuDica": "1, 2 or 3 images per sheet, with the data you choose",
     "confirmarTitulo": "Confirm sending by e-mail",
     "carregandoDestinos": "Loading recipients…",
     "destinatario": "Send to",
-    "euMesmo": "Myself – {nome}",
     "vaiPara": "The sheet goes to:",
     "oQueVai": "Attachment: 1 PDF with {imagens} image(s) on {folhas} page(s).",
     "emailSuspeito": "Warning: this e-mail looks mistyped. Did you mean {sugerido}? Ask the administrator to fix the account before sending.",
     "cancelar": "Cancel",
     "confirmarEnvio": "Confirm sending",
-    "soParaVoce": "The sheet goes to your e-mail. Professors and curators can also choose another registered professor or curator; none is available now."
+    "opcaoDicaUma": "larger image",
+    "dadosTitulo": "Data next to the image",
+    "campos": {
+      "tipo": "Type and quality",
+      "regiao": "Region (teeth)",
+      "achados": "Findings",
+      "descricao": "Description",
+      "marcadores": "Marker list"
+    },
+    "semDados": "No data: the image uses the full width.",
+    "paraMim": "To me (PDF attached)",
+    "paraOutros": "To other people (link with login)",
+    "recado": "Note (optional; stays in Rádix, not in the e-mail)",
+    "oQueVaiLink": "Each person gets an e-mail with only the link: to see the {imagens} image(s), they must sign in to Rádix.",
+    "confirmarEnvioLink": "Send link"
   },
   "SegundaOpiniao": {
     "titulo": "Second opinion",
@@ -2625,7 +2638,8 @@
       "imagem": "Image bank",
       "enviarImagem": "Send image",
       "grupos": "Groups",
-      "aparelhos": "Network devices"
+      "aparelhos": "Network devices",
+      "pranchasRecebidas": "Received plates"
     }
   },
   "AvisoEmail": {
@@ -2730,7 +2744,7 @@
       "grupos": "My groups",
       "semGrupos": "You have no groups yet. Create them in \"Groups\" in the menu.",
       "pessoas": "People",
-      "buscar": "Type at least 2 letters of the name or e-mail",
+      "buscar": "Type at least {n} letters of the name or e-mail",
       "tirar": "Remove {nome}",
       "perfis": {
         "administrador": "administrator",
@@ -2817,5 +2831,19 @@
     "bloquearSim": "Yes, block",
     "bloqueado": "{nome} was blocked.",
     "liberado": "{nome} was allowed."
+  },
+  "PranchasRecebidas": {
+    "titulo": "Received plates",
+    "subtitulo": "Plates other people sent you. The e-mail only has the link; the plate is built here, with the images that are still approved.",
+    "carregando": "Loading...",
+    "vazio": "You have not received any plate yet.",
+    "de": "From {nome}",
+    "nova": "new",
+    "resumo": "{imagens, plural, one {1 image} other {# images}}, {porFolha} per sheet",
+    "abrirPdf": "Download PDF",
+    "abrirPng": "Download image (PNG)",
+    "gerando": "Generating…",
+    "erro": "Could not open the plate. Try again.",
+    "aviso": "Teaching and research material. Anonymized images. Not for diagnosis."
   }
 }

@@ -235,6 +235,20 @@ def enviar_email_prancha(
     )
 
 
+def enviar_email_link_prancha(destinatario: str, nome: str, remetente: str, total_imagens: int, link: str) -> None:
+    """Prancha enviada por OUTRA pessoa (etapa E, 08/11/2026): so o LINK, que
+    exige login - a imagem nao vai no e-mail. O recado de quem enviou fica so
+    dentro do Radix."""
+    corpo_html = f"""
+    <p>Olá, {escape(nome)}.</p>
+    <p>{escape(remetente)} enviou para você uma prancha com {total_imagens} imagem(ns) pelo Rádix Imago.</p>
+    <p><a href="{escape(link, quote=True)}">Abrir a prancha no Rádix Imago</a></p>
+    <p>Para ver, entre com o seu login. A imagem não vem anexada a este e-mail.</p>
+    <p>Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.</p>
+    """
+    enviar_email(destinatario, "Prancha recebida - Rádix Imago", corpo_html)
+
+
 def enviar_email_acesso_rejeitado(destinatario: str, nome: str, motivo: str) -> None:
     corpo_html = f"""
     <p>Olá, {escape(nome)}.</p>

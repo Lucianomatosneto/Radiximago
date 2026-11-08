@@ -13,10 +13,8 @@ from pathlib import Path
 
 from app.core.email_digitacao import DOMINIOS_TROCADOS, sugestao_de_email
 from app.modules import prancha_router
-from app.modules.audit_logs import AuditLog
 from app.modules.users import UserRole
 from tests.conftest import cabecalho_auth, obter_token
-from tests.test_prancha import _png
 
 
 def test_sugestao_de_email():
@@ -37,47 +35,25 @@ def test_lista_de_dominios_igual_nas_telas():
     assert pares == DOMINIOS_TROCADOS
 
 
-def test_destinatarios_mostra_email_completo_e_aviso(client, criar_usuario):
+def test_destinatarios_mostra_so_o_proprio_email_completo(client, criar_usuario):
+    """Etapa E (08/11/2026): o PDF anexado so vai para o proprio e-mail; para
+    outras pessoas a tela usa /prancha/enviar (link com login)."""
     curador = criar_usuario(perfil=UserRole.curador)
-    professor = criar_usuario(perfil=UserRole.professor)
-    aluno = criar_usuario(perfil=UserRole.estudante)
+    criar_usuario(perfil=UserRole.professor)
     r = client.get("/prancha/destinatarios", headers=cabecalho_auth(obter_token(client, curador.email)))
     assert r.status_code == 200, r.text
     dados = r.json()
     assert dados["proprio"]["email"] == curador.email
-    ids = {p["id"] for p in dados["outros"]}
-    assert professor.id in ids and aluno.id not in ids and curador.id not in ids
-    outro = next(p for p in dados["outros"] if p["id"] == professor.id)
-    assert outro["email"] != professor.email and outro["email"].endswith("@" + professor.email.split("@")[1])
-
-    r = client.get("/prancha/destinatarios", headers=cabecalho_auth(obter_token(client, aluno.email)))
-    assert r.json()["outros"] == []  # estudante so envia para si
+    assert dados["outros"] == []
 
 
-def test_email_vai_para_o_destinatario_escolhido(client, db, criar_usuario, criar_ficha, monkeypatch):
+def test_pdf_anexado_nao_vai_para_outra_pessoa(client, criar_usuario, criar_ficha, monkeypatch):
     curador = criar_usuario(perfil=UserRole.curador)
-    professor = criar_usuario(perfil=UserRole.professor)
-    ficha = criar_ficha(descricao_didatica="prancha-destino")
-    monkeypatch.setattr(prancha_router.orthanc_client, "obter_preview_instancia", lambda i: _png())
-    enviados = []
-    monkeypatch.setattr(prancha_router, "enviar_email_prancha", lambda *a, **k: enviados.append((a, k)))
-    r = client.post("/prancha/email", headers=cabecalho_auth(obter_token(client, curador.email)),
-                    json={"curation_ids": [ficha.id], "para_id": professor.id})
-    assert r.status_code == 200, r.text
-    assert r.json()["destinatario"] != professor.email  # mascarado na resposta
-    (args, extras), = enviados
-    assert args[0] == professor.email and extras["remetente"] == curador.nome
-    log = db.query(AuditLog).filter(AuditLog.acao == "prancha_enviada_email", AuditLog.usuario_id == curador.id).first()
-    assert f"para_id={professor.id}" in log.detalhes
-
-
-def test_estudante_nao_envia_para_outra_pessoa(client, criar_usuario, criar_ficha, monkeypatch):
-    aluno = criar_usuario(perfil=UserRole.estudante)
     outro = criar_usuario(perfil=UserRole.professor)
     ficha = criar_ficha()
     enviados = []
     monkeypatch.setattr(prancha_router, "enviar_email_prancha", lambda *a, **k: enviados.append(a))
-    r = client.post("/prancha/email", headers=cabecalho_auth(obter_token(client, aluno.email)),
+    r = client.post("/prancha/email", headers=cabecalho_auth(obter_token(client, curador.email)),
                     json={"curation_ids": [ficha.id], "para_id": outro.id})
-    assert r.status_code == 422
+    assert r.status_code == 422 and "link" in r.json()["detail"]
     assert enviados == []

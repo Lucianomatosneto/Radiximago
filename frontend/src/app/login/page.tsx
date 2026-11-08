@@ -94,6 +94,14 @@ export default function LoginPage() {
   const [perfilFinal, setPerfilFinal] = useState('')
 
   function irParaInicio(perfil: string) {
+    // Etapa E (08/11/2026): o link do e-mail (ex.: prancha recebida) pede o
+    // login e depois VOLTA para onde a pessoa queria ir - so caminhos deste
+    // proprio site (comecam com "/" e nunca "//"), nunca outro endereco.
+    const volta = new URLSearchParams(window.location.search).get('volta')
+    if (volta && /^\/(?![\/\\])[A-Za-z0-9\-/?=&_.%]*$/.test(volta)) {
+      router.push(volta)
+      return
+    }
     // Admin continua indo pro dashboard com os indicadores; os demais
     // perfis vao direto pro banco de imagens, que passou a ser a tela
     // inicial deles.

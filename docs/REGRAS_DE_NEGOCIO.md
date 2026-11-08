@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.11 — 02/11/2026 |
+| Versão do documento | 1.13 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -51,12 +51,13 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 
 ### 1.2 Envio da prancha por e-mail (01/11/2026)
 
-- **Confirmação antes de enviar:** a tela mostra o e-mail do destinatário. O próprio e-mail aparece **completo**; o de outra pessoa aparece **mascarado** (`g•••o@hotmail.com`), com o domínio inteiro para conferir erros de digitação. A regra geral do sistema é que nenhuma tela mostra o e-mail completo de outro usuário (`test_exposicao_de_dados.py`). A tela mostra também o que vai anexado o que vai anexado (1 PDF, N imagens, F folhas). O envio só sai depois de clicar em **Confirmar envio**. O botão fica desabilitado durante o envio, para não mandar duas vezes.
-- **Para quem:**
-  - o estudante, o pesquisador e o administrador enviam só para o próprio e-mail;
-  - o professor e o curador também podem escolher outro professor ou curador **cadastrado e ativo**.
+- **Confirmação antes de enviar:** a tela mostra o e-mail do destinatário. O próprio e-mail aparece **completo**; o de outra pessoa aparece **mascarado** (`g•••o@hotmail.com`), com o domínio inteiro para conferir erros de digitação. A regra geral do sistema é que nenhuma tela mostra o e-mail completo de outro usuário (`test_exposicao_de_dados.py`). A tela mostra também o que vai anexado (1 PDF, N imagens, F folhas). O envio só sai depois de clicar em **Confirmar envio**. O botão fica desabilitado durante o envio, para não mandar duas vezes.
+- **Para quem (mudou em 08/11/2026, etapa E — decisão do Luciano):**
+  - **para o próprio e-mail**: vai o **PDF anexado**, como antes (`prancha_enviada_email`);
+  - **para outras pessoas**: **qualquer perfil** escolhe **qualquer usuário cadastrado e ativo**, pelo nome ou pelo e-mail (busca a partir de 3 letras; e-mail mascarado), ou um dos próprios grupos. Vai **só um link que exige login** — a imagem não sai do sistema. O recado de quem enviou fica só dentro do Radix, não vai no e-mail. Quem recebe abre em **Pranchas recebidas**; a prancha é montada na hora, só com as imagens que continuam aprovadas (`prancha_enviada_link`, `prancha_recebida_aberta`). Até 30 pessoas por envio.
 
-  Nunca há e-mail digitado livre, para evitar o envio de imagens a terceiros. O registro de auditoria `prancha_enviada_email` guarda o destinatário (`para_id`).
+  Nunca há e-mail digitado livre para fora do sistema.
+- **Escolhas em todas as saídas (baixar, imprimir, e-mail):** 1, 2 ou 3 imagens por folha; **quais dados** vão ao lado da imagem (tipo e qualidade, região/dentes, achados, descrição didática, lista de marcadores); e se os marcadores aparecem **sobre** a imagem. Formato: PDF ou imagem (PNG).
 - **Provável erro de digitação:** domínios como `hotmai.com` ou `gmial.com` geram o aviso "você quis dizer …?". A lista fica em `app/core/email_digitacao.py` e `lib/emailDigitacao.ts`, e um teste confere que as duas são iguais. O aviso aparece:
   - no cadastro;
   - na criação de usuário;
@@ -153,7 +154,7 @@ pendente ─┐
 | **E-mail com várias imagens** | 5 por hora; até 10 imagens por e-mail | conta | `search_router.py` |
 | **Download `.zip` de série** (imagens ou DICOM, somados) | 20 por hora; até 1.000 cortes no ZIP de imagens | conta | `search_router.py` |
 | **Prancha** (folha com as imagens à esquerda e as informações à direita; baixar ou imprimir) | 60 por hora; até 30 imagens por prancha; montagem conta como trabalho pesado (no máximo 2 ao mesmo tempo) | conta | `prancha_router.py` |
-| **Prancha por e-mail** (PDF, para o próprio e-mail) | 5 por hora; até 15 imagens por prancha | conta | `prancha_router.py` |
+| **Prancha por e-mail** (PDF para o próprio e-mail, ou link para outras pessoas) | 5 envios por hora; até 15 imagens por prancha (PDF) e até 30 pessoas por envio (link); busca de pessoas: 60 por minuto | conta | `prancha_router.py` |
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
 | **Sugestão de melhoria** | 10 por hora | conta | `sugestoes.py` |
@@ -205,3 +206,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.10 | 01/11/2026 | Proteção das contas de administrador (M1); só estudante é aprovado automaticamente (A3) |
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor; regras das pastas de pacientes em `PASTAS_DE_PACIENTES.md` |
 | 1.12 | 08/11/2026 | Pastas de pacientes retiradas do Radix Imago (separação Radix Imago / Radix Clínica); limites das pastas removidos |
+| 1.13 | 08/11/2026 | Prancha: escolha dos dados e 1 por folha; envio a qualquer usuário só por link com login (seção 1.2) |

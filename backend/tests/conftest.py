@@ -125,6 +125,10 @@ def criar_usuario(db):
     yield _criar
 
     for usuario_id in criados:
+        from app.modules.prancha_envios import PranchaEnviada
+        db.query(PranchaEnviada).filter(
+            (PranchaEnviada.remetente_id == usuario_id) | (PranchaEnviada.destinatario_id == usuario_id)
+        ).delete(synchronize_session=False)
         db.query(CurationTermo).filter(CurationTermo.vinculado_por_id == usuario_id).delete()
         db.query(MacroCuradoria).filter(MacroCuradoria.criado_por_id == usuario_id).delete()
         db.query(FraseAprendida).filter(FraseAprendida.criado_por_id == usuario_id).delete()

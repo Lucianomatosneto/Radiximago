@@ -7,8 +7,10 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { obterSessaoAtual } from '../../lib/sessao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
+const PERFIS_COM_GRUPOS = ['professor', 'curador', 'administrador']
 
 export type Pessoa = { id: number; nome: string; perfil: string; email: string }
 type Grupo = { id: number; nome: string; membros: Pessoa[] }
@@ -18,12 +20,20 @@ export default function SeletorPessoasGrupos({
   grupos,
   aoMudar,
   somentePessoas = false,
+  urlBusca = '/grupos/pessoas',
+  minimoBusca = 2,
+  ocultarSemGrupos = false,
 }: {
   pessoas: Pessoa[]
   grupos: number[]
   aoMudar: (pessoas: Pessoa[], grupos: number[]) => void
   /** tela Grupos: so escolhe pessoas (grupo dentro de grupo nao existe) */
   somentePessoas?: boolean
+  /** de onde vem a busca de pessoas (prancha: qualquer usuario, /prancha/pessoas) */
+  urlBusca?: string
+  minimoBusca?: number
+  /** quem nao tem grupos nao ve o aviso "crie em Grupos" (ex.: estudante na prancha) */
+  ocultarSemGrupos?: boolean
 }) {
   const t = useTranslations('EnviarImagem.seletor')
   const [meusGrupos, setMeusGrupos] = useState<Grupo[]>([])
@@ -32,25 +42,28 @@ export default function SeletorPessoasGrupos({
 
   useEffect(() => {
     if (somentePessoas) return
-    fetch(`${API}/grupos`, { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { grupos: [] }))
+    // grupos so existem para professor, curador e administrador
+    obterSessaoAtual()
+      .then((s) => (s && PERFIS_COM_GRUPOS.includes(s.perfil)
+        ? fetch(`${API}/grupos`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : { grupos: [] }))
+        : { grupos: [] }))
       .then((d) => setMeusGrupos(d.grupos ?? []))
       .catch(() => setMeusGrupos([]))
   }, [somentePessoas])
 
   useEffect(() => {
-    if (busca.trim().length < 2) {
+    if (busca.trim().length < minimoBusca) {
       setAchadas([])
       return
     }
     const id = setTimeout(() => {
-      fetch(`${API}/grupos/pessoas?busca=${encodeURIComponent(busca.trim())}`, { credentials: 'include' })
+      fetch(`${API}${urlBusca}?busca=${encodeURIComponent(busca.trim())}`, { credentials: 'include' })
         .then((r) => (r.ok ? r.json() : { pessoas: [] }))
         .then((d) => setAchadas(d.pessoas ?? []))
         .catch(() => setAchadas([]))
     }, 300)
     return () => clearTimeout(id)
-  }, [busca])
+  }, [busca, urlBusca, minimoBusca])
 
   function alternarGrupo(id: number) {
     aoMudar(pessoas, grupos.includes(id) ? grupos.filter((g) => g !== id) : [...grupos, id])
@@ -70,12 +83,12 @@ export default function SeletorPessoasGrupos({
             ))}
           </div>
         </div>
-      ) : (
+      ) : ocultarSemGrupos ? null : (
         <p className="text-xs text-ink-3">{t('semGrupos')}</p>
       )}
       <div>
         <label htmlFor="busca-pessoa" className="mb-1 block text-xs font-medium text-ink-2">{t('pessoas')}</label>
-        <input id="busca-pessoa" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={t('buscar')}
+        <input id="busca-pessoa" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder={t('buscar', { n: minimoBusca })}
                className="w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-ink" />
         {achadas.length > 0 && (
           <ul className="mt-1 max-h-48 overflow-y-auto rounded-lg border border-base-border bg-base-surface text-sm">
