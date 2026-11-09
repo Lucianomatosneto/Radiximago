@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.8 — 08/11/2026 |
+| Versão do documento | 1.9 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -37,6 +37,7 @@
 | Sugestão do professor na ficha (08/11/2026) | `sugestao_professor_enviada` (o professor mandou a ficha preenchida para a fila do curador), `sugestao_professor_guardada` (guardou a imagem com as marcações em Minhas imagens). No histórico da ficha: `envio_ao_curador` e `sugestao_assumida` (o curador abriu a sugestão e virou o curador da ficha) |
 | Aparelhos da rede (08/11/2026) | `aparelho_cadastrado`, `aparelho_alterado` (diz se o nome DICOM ou o endereço mudou), `aparelho_liberado`, `aparelho_bloqueado` (só o administrador), `aparelho_testado` (teste de conexão; resultado "erro" quando o aparelho não respondeu). A `anonimizacao_automatica` passa a dizer de qual aparelho a imagem veio, ou que veio de aparelho NÃO cadastrado. O endereço IP do aparelho fica só no cadastro, não nos detalhes |
 | Prancha enviada por link (08/11/2026) | `prancha_enviada_link` (uma por pessoa que recebeu; detalhes: o número do usuário e as fichas — o recado não entra), `prancha_recebida_aberta` (quem recebeu abriu a prancha) |
+| Anexos da curadoria (08/11/2026) | `anexo_curadoria_adicionado` (imagem anexada à ficha; detalhes: número do anexo, tipo e tamanho em pixels — o nome do arquivo não entra), `anexo_curadoria_removido` |
 | Curadoria | `edicao_curadoria`, `preenchimento_por_voz`, `aprovacao` (com o resultado da verificação de texto na imagem), `descarte`, `solicitacao_segunda_opiniao`, `resposta_segunda_opiniao`, `aprovacao_pos_segunda_opiniao`, `descarte_pos_segunda_opiniao`, `anotacao_segunda_opiniao_incorporada` e `anotacao_segunda_opiniao_dispensada` (o que quem pediu a segunda opinião fez com cada anotação do revisor; o efeito na ficha fica também no histórico da curadoria) |
 | Achados e erros técnicos | `criacao_achado`, `edicao_achado`, `exclusao_achado`, `criacao_erro_tecnico`, `edicao_erro_tecnico`, `exclusao_erro_tecnico` |
 | Segmentação (pintura de estruturas) | `segmentacao_criada`, `segmentacao_alterada`, `segmentacao_apagada` (estrutura, dente e quantos pixels foram pintados — **sem a imagem**) |
@@ -111,3 +112,4 @@ Isso é comprovado por:
 | 1.6 | 08/11/2026 | Sugestão do professor na ficha de curadoria |
 | 1.7 | 08/11/2026 | Aparelhos de raio X da rede: cadastro, liberação, bloqueio e teste |
 | 1.8 | 08/11/2026 | Prancha enviada a outras pessoas por link com login |
+| 1.9 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria |

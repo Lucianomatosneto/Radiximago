@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.4 — 08/11/2026 |
+| Versão do documento | 1.5 — 08/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -35,6 +35,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Pedido de acesso (nome, e-mail, instituição, motivo, resumo da senha) | `access_requests` — código de confirmação só como resumo SHA-256 | N2/N3 | mantido como histórico da decisão |
 | Sessões (`jti`, início, fim, motivo, endereço de rede, **resumo** do aparelho — ex.: "Chrome · Windows" —, último uso) | `sessoes_usuario`; o texto completo do navegador **não** é guardado (minimização) | N3 (`jti`) / N2 (origem) | apagadas 30 dias após encerradas |
 | Fichas, achados, erros técnicos, histórico, segunda opinião | `curations`, `achados`, `erros_tecnicos`, `curation_history`, `curation_reviews` | N0/N1 | permanente (rastreabilidade científica) |
+| Informações adicionais e anexos da ficha (texto livre e imagens anexadas pelo curador) | `curations.informacoes_adicionais`; tabela `anexos_curadoria`; arquivos em `backend/anexos_curadoria` (**fora** da pasta pública `uploads`, entregues só pela API com login; regravados sem metadados). Não passam pela anonimização do DICOM: a tela avisa para não anexar nada com nome, data ou número do paciente | N1 | junto com a ficha; o anexo removido é apagado do disco |
 | Observações internas da ficha | `curations.observacoes_internas` | N1 | permanente |
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
@@ -147,3 +148,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.2 | 19/10/2026 | Senhas em Argon2id; dados do login em duas etapas |
 | 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |
 | 1.4 | 08/11/2026 | Prancha enviada a outra pessoa (`pranchas_enviadas`): guarda só o **pedido** (quem enviou, quem recebe, quais fichas, as escolhas e o recado), nunca o arquivo; o e-mail leva só o link (exige login). Aparelhos da rede (`aparelhos_rede`): nome, local, nome DICOM e IP do aparelho — dados do equipamento, não de pessoas |
+| 1.5 | 08/11/2026 | Informações adicionais e anexos da curadoria (`anexos_curadoria`): imagens regravadas sem metadados, fora da pasta pública, vistas só por quem abre a imagem curada aprovada |

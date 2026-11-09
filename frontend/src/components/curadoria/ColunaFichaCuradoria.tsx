@@ -376,7 +376,7 @@ export default function ColunaFichaCuradoria({
             </button>
           }
         >
-          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} podeCriarTermo={podeCriarTermo} />
+          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} podeCriarTermo={podeCriarTermo} curationId={curationId} />
         </Secao>
 
         <Secao {...p('erro_tecnico')}>

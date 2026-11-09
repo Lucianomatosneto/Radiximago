@@ -283,3 +283,4 @@ copias/
 # Pastas de pacientes: fotos CIFRADAS com dados identificados - nunca versionar
 backend/dados_clinicos/
 dados_clinicos/
+backend/anexos_curadoria/

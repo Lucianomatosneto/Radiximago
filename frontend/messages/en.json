@@ -2872,5 +2872,20 @@
     "gerando": "Generating…",
     "erro": "Could not open the plate. Try again.",
     "aviso": "Teaching and research material. Anonymized images. Not for diagnosis."
+  },
+  "Anexos": {
+    "titulo": "Additional information",
+    "placeholder": "Free text about the image (e.g. case context, class reference)…",
+    "avisoBusca": "Note: what you write or attach here does NOT appear as a search option in Advanced search. It is only seen by whoever opens this curated image (paperclip icon 📎).",
+    "avisoPaciente": "Do not attach images showing the patient's name, date, number or face: attachments are not automatically anonymized. JPEG, PNG or WebP, up to 10 MB each.",
+    "anexar": "Attach image",
+    "limite": "Limit of {maximo} attachments per image",
+    "erroEnvio": "Could not attach the image.",
+    "erroRemover": "Could not remove the attachment.",
+    "remover": "Remove {nome}",
+    "naoDesligar": "Clear the text and attachments to turn it off",
+    "verAnexos": "See additional information and attachments for this image",
+    "verAnexosCurto": "Attachments",
+    "fechar": "Close"
   }
 }

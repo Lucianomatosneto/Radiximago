@@ -14,6 +14,7 @@ import SeletorLayout, { type Grade } from './visualizador/SeletorLayout'
 import EtiquetaMarcacoes from './visualizador/EtiquetaMarcacoes'
 import { BotaoComPrancha } from './impressao/MenuPrancha'
 import MenuImpressao from './impressao/MenuImpressao'
+import { BotaoAnexosImagem } from './anexos/AnexosCuradoria'
 import type { Marcacao } from '../lib/marcacoes'
 import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
 import { textoMarcacao } from '../lib/descricaoCuradoria'
@@ -1197,6 +1198,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
             )}
           </div>
             <div className="flex flex-wrap items-center justify-end gap-1.5">
+              {!emGrade && <BotaoAnexosImagem key={atual.curation_id} curationId={atual.curation_id} />}
               <MenuImpressao compacto grupos={gruposPrancha} />
             {infoSerie?.eh_serie ? (
               <>

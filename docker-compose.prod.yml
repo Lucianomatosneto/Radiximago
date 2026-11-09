@@ -35,6 +35,8 @@ services:
       # fotos de perfil enviadas pelos usuarios: ficam no disco do servidor
       # (senao seriam perdidas a cada atualizacao do container)
       - ./backend/uploads:/app/uploads
+      # anexos da curadoria (08/11/2026): fora de /uploads (que e publica)
+      - ./backend/anexos_curadoria:/app/anexos_curadoria
     environment:
       # a API so e alcancada pelo Caddy (rede interna): confiar no IP do
       # visitante que ele informa - limite de tentativas e auditoria por

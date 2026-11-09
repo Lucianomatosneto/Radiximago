@@ -106,6 +106,7 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
     regioes_imagem: form.regioes_imagem,
     descricao_didatica: form.descricao_didatica,
     observacoes_internas: form.observacoes_internas,
+    informacoes_adicionais: form.informacoes_adicionais ?? '',
     anonimizacao_validada: form.anonimizacao_validada,
   }
   if (form.idade_min !== '') payload.idade_min = Number(form.idade_min)
@@ -763,6 +764,7 @@ export default function CuradoriaPage() {
       qualidade_tecnica: ficha.qualidade_tecnica ?? '',
       descricao_didatica: ficha.descricao_didatica ?? '',
       observacoes_internas: ficha.observacoes_internas ?? '',
+      informacoes_adicionais: ficha.informacoes_adicionais ?? '',
       anonimizacao_validada: ficha.anonimizacao_validada ?? false,
       termos: ficha.termos ?? [],
       achados: achadosDaApi(ficha.achados, ficha.alteracoes_observadas),

@@ -35,6 +35,7 @@ from app.modules.sugestoes import router as sugestoes_router
 from app.modules.envios_router import router as envios_router
 from app.modules.grupos_router import router as grupos_router
 from app.modules.aparelhos_router import router as aparelhos_router
+from app.modules.anexos_curadoria import router_curadoria as anexos_curadoria_router, router_pesquisa as anexos_pesquisa_router
 
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
@@ -135,6 +136,8 @@ app.include_router(sugestoes_router)
 app.include_router(envios_router)
 app.include_router(grupos_router)
 app.include_router(aparelhos_router)
+app.include_router(anexos_curadoria_router)
+app.include_router(anexos_pesquisa_router)
 
 @app.get("/health")
 async def health():

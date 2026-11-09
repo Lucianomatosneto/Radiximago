@@ -8,6 +8,7 @@ import type { TermoVocabularioApi } from '../../lib/catalogoTermos'
 import { normalizar } from '../../lib/vozCuradoria'
 import { corMarcacao } from '../../lib/marcacoes'
 import { PalavraChave } from './PainelDadosSobrepostos'
+import { InformacoesAdicionaisFicha } from '../anexos/AnexosCuradoria'
 
 // ACHADOS = AS MARCACOES DA IMAGEM (secao 2 da ficha).
 // O curador desenha cada lesao na imagem de marcacao (que abre sozinha
@@ -206,12 +207,15 @@ export default function PainelAchadosFicha({
   onChange,
   palavrasChave = false,
   podeCriarTermo = true,
+  curationId,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
   palavrasChave?: boolean
   /** "Outros" (acrescentar termo ao vocabulario): curador e administrador */
   podeCriarTermo?: boolean
+  /** ficha aberta: habilita "Informações adicionais" e anexos */
+  curationId?: number
 }) {
   const t = useTranslations('Curadoria.achadosFicha')
   const tItens = useTranslations('AlteracoesObservadas.itens')
@@ -452,6 +456,14 @@ export default function PainelAchadosFicha({
         </div>
       )}
 
+      {curationId !== undefined && (
+        <InformacoesAdicionaisFicha
+          key={curationId}
+          curationId={curationId}
+          texto={form.informacoes_adicionais ?? ''}
+          onTexto={(texto) => onChange({ ...form, informacoes_adicionais: texto })}
+        />
+      )}
     </div>
   )
 }

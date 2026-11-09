@@ -114,6 +114,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('aparelho_testado', 'Teste de conexão com aparelho', 'Network device connection test'),
       a('prancha_enviada_link', 'Prancha enviada a outra pessoa (link)', 'Plate sent to another person (link)'),
       a('prancha_recebida_aberta', 'Prancha recebida aberta', 'Received plate opened'),
+      a('anexo_curadoria_adicionado', 'Anexo acrescentado à curadoria', 'Attachment added to curation'),
+      a('anexo_curadoria_removido', 'Anexo removido da curadoria', 'Attachment removed from curation'),
       a('upload_sem_preambulo_dicom', 'DICOM sem cabeçalho padrão aceito', 'DICOM without preamble accepted'),
       a('importacao_orthanc', 'Importação do Orthanc', 'Orthanc import'),
       a('anonimizacao_automatica', 'Anonimização automática', 'Automatic anonymization'),

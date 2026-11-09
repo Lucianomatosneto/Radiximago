@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.13 — 08/11/2026 |
+| Versão do documento | 1.14 — 08/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -21,6 +21,7 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
 | Os resumos `dentes` e `alteracoes_observadas` da ficha **são calculados** a partir dos achados (o usuário não os define em separado) | `curation/ficha.py` (`_sincronizar_achados`) |
 | Termos do vocabulário ligados à ficha precisam existir | `curation/ficha.py` |
 | **Achados e termos numa lista só** (08/11/2026): o achado de cada marcação vem de uma única lista (achados padronizados + termos do vocabulário marcados "nas curadorias"); escolher um termo liga a ficha a ele (e é isso que faz a imagem aparecer na Pesquisa avançada); tirar a marcação desliga. "Outros" acrescenta um termo novo e o curador escolhe se ele aparece na Pesquisa avançada (`na_busca`) e nas próximas curadorias (`nas_curadorias`); dá para mudar depois na tela Vocabulário. Só curador e administrador acrescentam termos | `curation/ficha.py`, `vocabulario_router.py`, `busca_termos.py` |
+| **Informações adicionais e anexos** (08/11/2026): na caixa "Achados" o curador pode ligar um texto livre e anexar imagens (JPEG, PNG ou WebP; até 10 por ficha, 10 MB cada; o servidor regrava a imagem sem metadados). **Não entram na Pesquisa avançada**; só aparecem para quem abre a imagem curada (ícone de clipe), e só de ficha aprovada. Acrescenta e remove quem pode editar a ficha | `anexos_curadoria.py`, `curation/ficha.py` |
 | Uma imagem tem **no máximo uma** ficha; imagem desativada não recebe ficha | `curation/ficha.py` |
 | Limites de tamanho de textos e listas | `app/core/limites.py` (ver `SEGURANCA.md`, seção 2.1) |
 
@@ -208,3 +209,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.11 | 02/11/2026 | Suporte só lê a curadoria; aprovação exige os campos mínimos no servidor |
 | 1.12 | 08/11/2026 | Prancha: escolha dos dados e 1 por folha; envio a qualquer usuário só por link com login (seção 1.2) |
 | 1.13 | 08/11/2026 | Achados das marcações e termos do vocabulário numa lista só, com "Outros" (seção 1) |
+| 1.14 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria, fora da Pesquisa avançada (seção 1) |

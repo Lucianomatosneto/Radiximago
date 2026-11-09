@@ -470,6 +470,7 @@ def obter_ficha(
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,
         "observacoes_internas": ficha.observacoes_internas,
+        "informacoes_adicionais": ficha.informacoes_adicionais,
         "status": ficha.status,
         "anonimizacao_validada": ficha.anonimizacao_validada,
         "origem": ficha.orthanc_reference.origem if ficha.orthanc_reference else None,

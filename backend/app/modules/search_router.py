@@ -426,6 +426,8 @@ def pesquisar_imagens(
 
     erros = erros_por_ficha(db, [r[0].id for r in resultados])
     marcacoes_dos_achados = _marcacoes_dos_achados(db, [r[0].id for r in resultados])
+    from app.modules.anexos_curadoria import contar_por_ficha as contar_anexos
+    anexos = contar_anexos(db, [r[0].id for r in resultados])
     segmentacoes = contar_por_ficha(db, [r[0].id for r in resultados])
     itens = []
     for ficha, ref in resultados:
@@ -458,6 +460,10 @@ def pesquisar_imagens(
             "dificuldade": ficha.dificuldade,
             "descricao_didatica": ficha.descricao_didatica,
             "erros_tecnicos": erros.get(ficha.id, []),
+            # informacoes adicionais e anexos (08/11/2026): so o aviso de que
+            # existem; o conteudo vem de /search/{id}/anexos ao abrir a imagem
+            "tem_informacoes_adicionais": bool(ficha.informacoes_adicionais),
+            "total_anexos": anexos.get(ficha.id, 0),
             "origem": ref.origem,
             "viewer_url": viewer_url,
         })

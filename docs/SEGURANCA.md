@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.16 — 08/11/2026 |
+| Versão do documento | 1.17 — 08/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -243,6 +243,7 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 | Imagem DICOM (tela) | administrador, suporte, curador, professor | DICOM (Part 10; sem cabeçalho "DICM" só se tiver SOPClassUID e SOPInstanceUID) | `.dcm` ou sem extensão (a extensão **não** decide; o conteúdo decide) | 50 MB (`MAX_UPLOAD_SIZE_MB`) | **arquivos compactados (.zip, .rar, .7z, .gz) são recusados** antes do Orthanc. A imagem DICOM comprimida (JPEG) só é descompactada na memória para o OCR; não há limite explícito de dimensões (risco baixo, limitado pelos 50 MB) | lido pelo `pydicom`; anonimizado; texto tarjado; original apagado |
 | Imagem DICOM (aparelho, porta 4242) | só aparelho cadastrado e liberado (nome DICOM + IP) | DICOM | — | o que o Orthanc aceitar | o Orthanc não descompacta nada no protocolo DICOM | anonimizada automaticamente em até 60 s |
 | Foto de perfil | o próprio usuário | JPG, PNG, WebP | qualquer (o nome enviado é ignorado; o servidor gera nome e extensão) | 5 MB | não se aplica | conteúdo real conferido pela assinatura do arquivo; servida com `nosniff` e CSP `sandbox` |
+| Anexo da curadoria | quem pode editar a ficha (curador, administrador, professor no rascunho dele) | JPG, PNG, WebP | qualquer (nome guardado limpo só para exibição; no disco, nome sorteado) | 10 MB; até 10 por ficha; lado maior até 4000 px | não se aplica | aberto e **regravado** pelo Pillow (sai sem EXIF/GPS); pasta fora de `/uploads`; entregue só pela API com login, `nosniff` e `no-store`; quem não edita a ficha recebe 403; na imagem curada, só de ficha aprovada |
 | Áudio da curadoria por voz | curadoria | áudio do navegador | — | 10 MB | não se aplica | só na memória; vira texto e é descartado |
 
 **Nome do arquivo nas respostas (ASVS 5.4.1):** toda resposta de arquivo (miniatura, ZIP, foto de perfil) leva `Content-Disposition` com um nome **gerado pelo servidor** (`radix-imago-12.png`), nunca o nome enviado pelo usuário. Só letras sem acento, números, `.`, `-` e `_` entram no cabeçalho (`disposicao_de_arquivo` em `app/core/cabecalhos.py`). Comprovado por análise do código (toda `Response(content=...)` define o nome) e por teste (`test_5_4_1_...`).
@@ -322,6 +323,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.17 | 08/11/2026 | Anexos da curadoria (seção 6): regravados sem metadados, fora da pasta pública, só com login |
 | 1.16 | 08/11/2026 | Prancha a outras pessoas só por link com login (`/prancha/enviar`, `/prancha/recebidas`); quem não é o destinatário recebe 404 |
 | 1.15 | 08/11/2026 | Aparelhos da rede: só aparelhos cadastrados e liberados pelo administrador enviam imagens pela porta 4242 (`DicomAlwaysAllowStore=false`, `DicomCheckModalityHost=true`); lista mantida pelo Radix (`aparelhos_router.py`) |
 | 1.14 | 08/11/2026 | Professor preenche fichas como sugestão (só das imagens dele); o curador não vê o rascunho antes do envio; só o curador aprova (conferir_acesso_ficha) |

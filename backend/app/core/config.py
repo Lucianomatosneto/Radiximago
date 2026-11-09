@@ -1,3 +1,4 @@
+from pathlib import Path
 import os
 import warnings
 from typing import Optional
@@ -43,6 +44,9 @@ class Settings(BaseSettings):
     # nome DICOM do Radix (o mesmo do Orthanc, ORTHANC__DICOM_AET no
     # docker-compose); DICOM_ENDERECO_SERVIDOR e o IP deste computador na rede
     # (vazio = a tela pede para o administrador conferir).
+    # anexos da curadoria (08/11/2026): pasta FORA de /uploads (que e publica);
+    # so a API entrega os arquivos, com login. Volume proprio na producao.
+    ANEXOS_DIR: str = str(Path(__file__).resolve().parents[2] / "anexos_curadoria")
     ORTHANC_AET: str = "RADIXIMAGO"
     DICOM_PORTA: int = 4242
     DICOM_ENDERECO_SERVIDOR: str = ""

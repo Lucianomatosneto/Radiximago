@@ -46,8 +46,8 @@ if [ "$ORTHANC_PARADO" = 1 ]; then
 fi
 
 echo "3/4 Fotos de perfil e configuracao..."
-mkdir -p backend/uploads
-tar -czf "$TEMP/fotos.tar.gz" -C backend uploads
+mkdir -p backend/uploads backend/anexos_curadoria
+tar -czf "$TEMP/fotos.tar.gz" -C backend uploads anexos_curadoria
 cp .env "$TEMP/env"
 {
   echo "Copia completa do Radix Imago"

@@ -116,6 +116,8 @@ class CurationUpdate(BaseModel):
     dificuldade: Optional[Dificuldade] = None
     descricao_didatica: Optional[TextoLongo] = None
     observacoes_internas: Optional[TextoLongo] = None
+    # 08/11/2026: texto livre que nao vai para a Pesquisa avancada
+    informacoes_adicionais: Optional[TextoLongo] = None
     anonimizacao_validada: Optional[bool] = None
     # Termos do vocabulario controlado ligados a ficha (lista completa -
     # substitui a anterior). Ver app/modules/vocabulario.py.

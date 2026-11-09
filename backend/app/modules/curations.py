@@ -228,6 +228,10 @@ class Curation(Base):
     dificuldade = Column(String(20), nullable=True)
     descricao_didatica = Column(Text, nullable=True)
     observacoes_internas = Column(Text, nullable=True)
+    # 08/11/2026: informacoes adicionais (texto livre do curador). NAO entra
+    # na Pesquisa avancada; so aparece para quem abre a imagem, junto com os
+    # anexos (anexos_curadoria.py)
+    informacoes_adicionais = Column(Text, nullable=True)
 
     # Fluxo
     status = Column(String(25), nullable=False, default="pendente", index=True)

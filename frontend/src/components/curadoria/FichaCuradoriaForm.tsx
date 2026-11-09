@@ -29,6 +29,9 @@ export interface FormularioFicha {
   qualidade_tecnica: string
   descricao_didatica: string
   observacoes_internas: string
+  // texto livre da caixa "Informações adicionais" (08/11/2026): NAO entra
+  // na Pesquisa avancada, so aparece para quem abre a imagem curada
+  informacoes_adicionais?: string
   anonimizacao_validada: boolean
   // termos do vocabulario controlado ligados a ficha (ver /vocabulario)
   termos: number[]

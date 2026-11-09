@@ -45,11 +45,11 @@ echo "2/4 Banco de dados..."
 "${DC[@]}" exec -T radix-postgres sh -c 'dropdb -U "$POSTGRES_USER" --if-exists --force "$POSTGRES_DB" && createdb -U "$POSTGRES_USER" "$POSTGRES_DB"'
 "${DC[@]}" exec -T radix-postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --exit-on-error' < "$TEMP/banco.dump"
 
-echo "3/4 Imagens (Orthanc) e fotos de perfil..."
+echo "3/4 Imagens (Orthanc), fotos de perfil e anexos da curadoria..."
 "${DC[@]}" run --rm --no-deps -T --entrypoint sh radix-orthanc -c \
   'rm -rf /var/lib/orthanc/db/* && tar -xzf - -C /var/lib/orthanc/db --strip-components=1' < "$TEMP/orthanc.tar.gz"
 mkdir -p backend
-rm -rf backend/uploads
+rm -rf backend/uploads backend/anexos_curadoria
 tar -xzf "$TEMP/fotos.tar.gz" -C backend
 
 echo "4/4 Ligando o Radix..."

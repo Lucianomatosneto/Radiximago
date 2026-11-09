@@ -2872,5 +2872,20 @@
     "gerando": "Gerando…",
     "erro": "Não foi possível abrir a prancha. Tente de novo.",
     "aviso": "Material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico."
+  },
+  "Anexos": {
+    "titulo": "Informações adicionais",
+    "placeholder": "Texto livre sobre a imagem (ex.: contexto do caso, referência de aula)…",
+    "avisoBusca": "Atenção: o que for escrito ou anexado aqui NÃO aparece como opção de procura na Busca avançada. Só será visto por quem abrir esta imagem curada (ícone de clipe 📎).",
+    "avisoPaciente": "Não anexe imagens com nome, data, número ou rosto do paciente: os anexos não passam pela anonimização automática. JPEG, PNG ou WebP, até 10 MB cada.",
+    "anexar": "Anexar imagem",
+    "limite": "Limite de {maximo} anexos por imagem",
+    "erroEnvio": "Não foi possível anexar a imagem.",
+    "erroRemover": "Não foi possível remover o anexo.",
+    "remover": "Remover {nome}",
+    "naoDesligar": "Apague o texto e os anexos para desligar",
+    "verAnexos": "Ver informações adicionais e anexos desta imagem",
+    "verAnexosCurto": "Anexos",
+    "fechar": "Fechar"
   }
 }
