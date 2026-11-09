@@ -1920,7 +1920,8 @@
     "ajudaMinhas": "Keeps the images in your personal list (My images menu). Images already there are not duplicated.",
     "salvandoMinhas": "Saving to My images…",
     "minhasSalvas": "{total, plural, one {1 image is} other {# images are}} in My images.",
-    "minhasFalhas": "{total, plural, one {1 image could not be saved} other {# images could not be saved}}."
+    "minhasFalhas": "{total, plural, one {1 image could not be saved} other {# images could not be saved}}.",
+    "salvarMinhasDica": "Saves {total, plural, one {1 image} other {# images}} to My images (the selected ones; with no selection, all)"
   },
   "Compartilhar": {
     "titulo": "Share",
@@ -2280,7 +2281,12 @@
     "paraOutros": "To other people (link with login)",
     "recado": "Note (optional; stays in Rádix, not in the e-mail)",
     "oQueVaiLink": "Each person gets an e-mail with only the link: to see the {imagens} image(s), they must sign in to Rádix.",
-    "confirmarEnvioLink": "Send link"
+    "confirmarEnvioLink": "Send link",
+    "baixarZip": "ZIP",
+    "baixarZipDica": "The images as separate files in a .zip, with one .txt per image holding the chosen data",
+    "zipComFalhas": "ZIP saved, but {total} image(s) could not be downloaded.",
+    "botaoImprimir": "Print",
+    "botaoSalvarComo": "Save as"
   },
   "SegundaOpiniao": {
     "titulo": "Second opinion",

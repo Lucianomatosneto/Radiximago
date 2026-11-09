@@ -1920,7 +1920,8 @@
     "ajudaMinhas": "Guarda as imagens na sua lista pessoal (menu Minhas imagens). As que já estavam lá não são duplicadas.",
     "salvandoMinhas": "Salvando em Minhas imagens…",
     "minhasSalvas": "{total, plural, one {1 imagem está} other {# imagens estão}} em Minhas imagens.",
-    "minhasFalhas": "{total, plural, one {1 imagem não pôde ser salva} other {# imagens não puderam ser salvas}}."
+    "minhasFalhas": "{total, plural, one {1 imagem não pôde ser salva} other {# imagens não puderam ser salvas}}.",
+    "salvarMinhasDica": "Salva {total, plural, one {1 imagem} other {# imagens}} em Minhas imagens (as selecionadas; sem seleção, todas)"
   },
   "Compartilhar": {
     "titulo": "Compartilhar",
@@ -2280,7 +2281,12 @@
     "paraOutros": "Para outras pessoas (link com login)",
     "recado": "Recado (opcional; fica no Rádix, não vai no e-mail)",
     "oQueVaiLink": "Cada pessoa recebe um e-mail só com o link: para ver as {imagens} imagem(ns), precisa entrar no Rádix.",
-    "confirmarEnvioLink": "Enviar link"
+    "confirmarEnvioLink": "Enviar link",
+    "baixarZip": "ZIP",
+    "baixarZipDica": "As imagens soltas num .zip, com um .txt por imagem com os dados escolhidos",
+    "zipComFalhas": "ZIP salvo, mas {total} imagem(ns) não puderam ser baixadas.",
+    "botaoImprimir": "Imprimir",
+    "botaoSalvarComo": "Salvar como"
   },
   "SegundaOpiniao": {
     "titulo": "Segunda opinião",

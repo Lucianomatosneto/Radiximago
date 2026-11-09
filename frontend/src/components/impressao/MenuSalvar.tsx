@@ -1,96 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
-import { criarZip, escolherOndeSalvar, gravarArquivo, type ArquivoZip } from '../../lib/zip'
-import { ImpressaoEmAndamento, type GrupoImpressao, type ItemImpressao, type Trabalho } from './MenuImpressao'
-import { DialogoPrancha, OpcaoPrancha } from './MenuPrancha'
+import type { GrupoImpressao, ItemImpressao } from './MenuImpressao'
+import { DialogoPrancha } from './MenuPrancha'
 
-// Dois botoes ao lado de "Imprimir", com os mesmos grupos (ex.: todas as
-// encontradas / somente as selecionadas):
+// Dois botoes ao lado de "Imprimir" (08/11/2026, sem menus de opcoes):
 //
-// "Salvar como" - grava no computador da pessoa:
-//   - Imagens (.zip), com ou sem a descricao da curadoria (um .txt por
-//     imagem, com o mesmo nome);
-//   - PDF, com ou sem descricao (usa o mesmo layout da impressao; na janela
-//     do navegador basta escolher "Salvar como PDF").
-//   Onde o navegador permite, abre a janela "Salvar como" de verdade para
-//   escolher pasta e nome; senao, o arquivo vai para Downloads.
+// "Salvar como" - abre direto a prancha (PDF, PNG ou ZIP), onde a pessoa
+//   escolhe quais imagens, quantas por folha e quais dados.
 //
-// "Salvar em Minhas imagens" - guarda as imagens na lista pessoal do
-// usuario dentro do Radix (a mesma de "Minhas imagens" no menu).
+// "Salvar em Minhas imagens" - guarda na lista pessoal do usuario dentro do
+//   Radix as SELECIONADAS (sem selecao, todas as da lista).
 
 const PARALELO = 4
-
-function MenuBase({
-  rotulo,
-  icone,
-  aberto,
-  setAberto,
-  desativado,
-  enxuto = false,
-  soIcone = false,
-  children,
-}: {
-  rotulo: string
-  icone: string
-  aberto: boolean
-  setAberto: (v: boolean) => void
-  desativado: boolean
-  /** botao menor (barra de acoes fixa da Pesquisa) */
-  enxuto?: boolean
-  /** so o icone (o nome aparece ao parar o mouse em cima) */
-  soIcone?: boolean
-  children: React.ReactNode
-}) {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    if (!aberto) return
-    function fora(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setAberto(false)
-    }
-    document.addEventListener('mousedown', fora)
-    return () => document.removeEventListener('mousedown', fora)
-  }, [aberto, setAberto])
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setAberto(!aberto)}
-        disabled={desativado}
-        aria-haspopup="true"
-        aria-expanded={aberto}
-        title={soIcone ? rotulo : undefined}
-        aria-label={soIcone ? rotulo : undefined}
-        className={`flex items-center rounded-lg border border-base-border bg-base-surface text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50 ${
-          enxuto ? 'h-8 gap-1.5 px-2.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
-        }`}
-      >
-        {icone} {!soIcone && rotulo} <span aria-hidden="true" className="text-xs opacity-70">▾</span>
-      </button>
-      {aberto && (
-        <div className="absolute right-0 top-full z-70 mt-2 w-80 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl">
-          {children}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Opcao({ onClick, disabled, children }: { onClick: () => void; disabled?: boolean; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className="block w-full rounded-lg px-2 py-1.5 text-left text-sm text-slate-200 hover:bg-white/5 disabled:opacity-40"
-    >
-      {children}
-    </button>
-  )
-}
 
 function Progresso({ titulo, feitas, total, aviso }: { titulo: string; feitas: number; total: number; aviso?: string }) {
   return (
@@ -129,7 +53,6 @@ function useMensagemTemporaria(): [string, (m: string) => void] {
   return [mensagem, setMensagem]
 }
 
-const tresDigitos = (n: number) => String(n).padStart(3, '0')
 
 export function MenuSalvarComo({
   grupos,
@@ -140,108 +63,26 @@ export function MenuSalvarComo({
   enxuto?: boolean
   soIcone?: boolean
 }) {
+  // 08/11/2026 (pedido do Luciano): "Salvar como" abre direto a PRANCHA, com
+  // PDF, PNG e ZIP (imagens soltas + .txt com os dados escolhidos).
   const t = useTranslations('Salvar')
-  const descrever = useDescricaoCuradoria()
-  const [aberto, setAberto] = useState(false)
-  const [pdf, setPdf] = useState<Trabalho | null>(null)
   const [prancha, setPrancha] = useState(false)
-  const [progresso, setProgresso] = useState<{ feitas: number; total: number } | null>(null)
-  const [mensagem, setMensagem] = useMensagemTemporaria()
-
-  async function salvarZip(itens: ItemImpressao[], comDescricao: boolean) {
-    setAberto(false)
-    setMensagem('')
-    const hoje = new Date()
-    const data = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
-    const nome = `radix-imago-${itens.length}-imagens-${data}.zip`
-    // a janela "Salvar como" precisa abrir ainda no clique
-    const alca = await escolherOndeSalvar(nome, 'application/zip', t('tipoZip'))
-    if (alca === 'cancelado') return
-
-    const arquivos: ArquivoZip[] = []
-    let falhas = 0
-    let feitas = 0
-    setProgresso({ feitas: 0, total: itens.length })
-    await emParalelo(itens, async (item) => {
-      const comMarcacao = comDescricao && (item.marcacoes ?? []).length > 0
-      try {
-        const r = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/search/${item.curation_id}/preview${comMarcacao ? '?com_marcacao=true' : ''}`,
-          { credentials: 'include' }
-        )
-        if (!r.ok) throw new Error(String(r.status))
-        const blob = await r.blob()
-        const ext = blob.type.includes('jpeg') ? 'jpg' : 'png'
-        const base = `imagem-${tresDigitos(item.numero)}`
-        arquivos.push({ nome: `${base}.${ext}`, dados: new Uint8Array(await blob.arrayBuffer()) })
-        if (comDescricao) {
-          const texto = [`Rádix Imago - ${t('imagem')} #${item.numero}`, '', ...descrever(item).map((l) => `${l.rotulo}: ${l.valor}`)].join('\r\n')
-          arquivos.push({ nome: `${base}.txt`, dados: new TextEncoder().encode(texto) })
-        }
-      } catch {
-        falhas++
-      } finally {
-        feitas++
-        setProgresso({ feitas, total: itens.length })
-      }
-    })
-    arquivos.sort((a, b) => a.nome.localeCompare(b.nome))
-    arquivos.unshift({ nome: 'LEIA-ME.txt', dados: new TextEncoder().encode(t('leiaMe')) })
-    await gravarArquivo(criarZip(arquivos), alca, nome)
-    setProgresso(null)
-    setMensagem(falhas ? t('salvoComFalhas', { total: falhas }) : t('salvo'))
-  }
-
   return (
     <>
-      <MenuBase
-        enxuto={enxuto}
-        soIcone={soIcone}
-        rotulo={t('salvarComo')}
-        icone="💾"
-        aberto={aberto}
-        setAberto={setAberto}
-        desativado={!grupos.some((g) => g.itens.length) || !!progresso || !!pdf}
+      <button
+        type="button"
+        onClick={() => setPrancha(true)}
+        disabled={!grupos.some((g) => g.itens.length)}
+        aria-haspopup="dialog"
+        data-teste="botao-salvar-como"
+        title={soIcone ? t('salvarComo') : undefined}
+        aria-label={soIcone ? t('salvarComo') : undefined}
+        className={`flex items-center rounded-lg border border-base-border bg-base-surface text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50 ${
+          enxuto ? 'h-8 gap-1.5 px-2.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+        }`}
       >
-        {grupos.map((g) => (
-          <div key={g.chave} className="py-1">
-            <p className="px-2 pb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              {g.rotulo} ({g.itens.length})
-            </p>
-            <Opcao disabled={!g.itens.length} onClick={() => salvarZip(g.itens, true)}>{t('zipCom')}</Opcao>
-            <Opcao disabled={!g.itens.length} onClick={() => salvarZip(g.itens, false)}>{t('zipSem')}</Opcao>
-            <Opcao
-              disabled={!g.itens.length}
-              onClick={() => {
-                setAberto(false)
-                setPdf({ itens: g.itens, comDescricao: true })
-              }}
-            >
-              {t('pdfCom')}
-            </Opcao>
-            <Opcao
-              disabled={!g.itens.length}
-              onClick={() => {
-                setAberto(false)
-                setPdf({ itens: g.itens, comDescricao: false })
-              }}
-            >
-              {t('pdfSem')}
-            </Opcao>
-          </div>
-        ))}
-        {/* prancha (imagens a esquerda e informacoes a direita), dentro do Baixar */}
-        <OpcaoPrancha
-          modo="baixar"
-          onEscolher={() => {
-            setAberto(false)
-            setPrancha(true)
-          }}
-        />
-      </MenuBase>
-      {mensagem && <span className="text-xs text-emerald-400">{mensagem}</span>}
-      {progresso && <Progresso titulo={t('preparandoZip')} feitas={progresso.feitas} total={progresso.total} />}
-      {pdf && <ImpressaoEmAndamento trabalho={pdf} dicaPdf onTerminar={() => setPdf(null)} />}
+        💾 {!soIcone && t('salvarComo')}
+      </button>
       {prancha && <DialogoPrancha grupos={grupos} modo="baixar" onFechar={() => setPrancha(false)} />}
     </>
   )
@@ -295,24 +136,25 @@ export function MenuSalvarMinhasImagens({
     setMensagem(t('minhasSalvas', { total: itens.length - falhas }))
   }
 
+  // 08/11/2026 (pedido do Luciano): sem menu de opcoes - salva as
+  // SELECIONADAS; sem nenhuma selecionada, todas as da lista.
+  const alvo = grupos.find((g) => g.chave === 'selecionadas' && g.itens.length) ?? grupos.find((g) => g.itens.length)
+
   return (
     <>
-      <MenuBase
-        enxuto={enxuto}
-        soIcone={soIcone}
-        rotulo={t('salvarMinhas')}
-        icone="★"
-        aberto={aberto}
-        setAberto={setAberto}
-        desativado={!grupos.some((g) => g.itens.length) || !!progresso}
+      <button
+        type="button"
+        onClick={() => alvo && salvar(alvo.itens)}
+        disabled={!alvo || !!progresso}
+        data-teste="botao-salvar-minhas"
+        title={alvo ? t('salvarMinhasDica', { total: alvo.itens.length }) : t('salvarMinhas')}
+        aria-label={soIcone ? t('salvarMinhas') : undefined}
+        className={`flex items-center rounded-lg border border-base-border bg-base-surface text-slate-200 hover:border-brand hover:text-brand-300 disabled:opacity-50 ${
+          enxuto ? 'h-8 gap-1.5 px-2.5 text-xs' : 'gap-2 px-4 py-2 text-sm'
+        }`}
       >
-        <p className="px-2 pb-1 text-xs text-slate-400">{t('ajudaMinhas')}</p>
-        {grupos.map((g) => (
-          <Opcao key={g.chave} disabled={!g.itens.length} onClick={() => salvar(g.itens)}>
-            {g.rotulo} ({g.itens.length})
-          </Opcao>
-        ))}
-      </MenuBase>
+        ★ {!soIcone && t('salvarMinhas')}
+      </button>
       {mensagem && <span className="text-xs text-emerald-400">{mensagem}</span>}
       {erro && (
         <span className="text-xs text-red-400" role="alert">

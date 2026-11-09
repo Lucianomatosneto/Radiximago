@@ -25,6 +25,8 @@ export interface LinhaDescricao {
   /** linhas "Marcação N": indice da marcacao (0, 1, 2...) e a cor dela */
   marcacao?: number
   cor?: string
+  /** grupo de dados da prancha (o mesmo de prancha.py CAMPOS_PRANCHA) */
+  campo?: 'tipo' | 'regiao' | 'achados' | 'descricao' | 'marcadores'
 }
 
 const CHAVE_ACHADO: Record<string, string> = {
@@ -55,16 +57,16 @@ export function useDescricaoCuradoria() {
 
   return function descrever(item: ItemDescritivel): LinhaDescricao[] {
     const linhas: LinhaDescricao[] = []
-    const add = (rotulo: string, valor: string | null | undefined) => {
-      if (valor && valor.trim()) linhas.push({ rotulo, valor: valor.trim() })
+    const add = (rotulo: string, valor: string | null | undefined, campo?: LinhaDescricao['campo']) => {
+      if (valor && valor.trim()) linhas.push({ rotulo, valor: valor.trim(), campo })
     }
     const tipo = item.tipo_radiografia
-    add(t('tipo'), tipo && TIPOS.includes(tipo) ? tOpcoes(`tipoRadiografia.${tipo}`) : tipo)
+    add(t('tipo'), tipo && TIPOS.includes(tipo) ? tOpcoes(`tipoRadiografia.${tipo}`) : tipo, 'tipo')
     const q = item.qualidade_tecnica
-    add(t('qualidade'), q && QUALIDADES.includes(q) ? tOpcoes(`qualidadeTecnica.${q}`) : q)
-    add(t('dentes'), item.dentes && item.dentes.length ? item.dentes.join(', ') : null)
+    add(t('qualidade'), q && QUALIDADES.includes(q) ? tOpcoes(`qualidadeTecnica.${q}`) : q, 'tipo')
+    add(t('dentes'), item.dentes && item.dentes.length ? item.dentes.join(', ') : null, 'regiao')
     const a = item.achado_principal
-    add(t('achadoPrincipal'), a && CHAVE_ACHADO[a] ? tOpcoes(`achadoPrincipal.${CHAVE_ACHADO[a]}`) : a)
+    add(t('achadoPrincipal'), a && CHAVE_ACHADO[a] ? tOpcoes(`achadoPrincipal.${CHAVE_ACHADO[a]}`) : a, 'achados')
     add(
       t('alteracoes'),
       (item.alteracoes_observadas ?? [])
@@ -75,12 +77,13 @@ export function useDescricaoCuradoria() {
             return v
           }
         })
-        .join(', ')
+        .join(', '),
+      'achados'
     )
-    add(t('achadosDetalhados'), item.achados_detalhe)
-    add(t('descricao'), item.descricao_didatica)
+    add(t('achadosDetalhados'), item.achados_detalhe, 'achados')
+    add(t('descricao'), item.descricao_didatica, 'descricao')
     ;(item.marcacoes ?? []).forEach((m, i) =>
-      linhas.push({ rotulo: t('marcacaoN', { numero: i + 1 }), valor: textoMarcacao(m), marcacao: i, cor: corMarcacao(m) })
+      linhas.push({ rotulo: t('marcacaoN', { numero: i + 1 }), valor: textoMarcacao(m), marcacao: i, cor: corMarcacao(m), campo: 'marcadores' })
     )
     return linhas
   }

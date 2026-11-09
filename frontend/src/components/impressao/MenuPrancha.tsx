@@ -5,6 +5,8 @@ import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
 import { sugestaoDeEmail } from '../../lib/emailDigitacao'
 import SeletorPessoasGrupos, { type Pessoa } from '../envios/SeletorPessoasGrupos'
+import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricaoCuradoria'
+import { criarZip, escolherOndeSalvar, gravarArquivo, type ArquivoZip } from '../../lib/zip'
 
 // PRANCHA COM INFORMACOES (pedido de 20/10/2026)
 // Folha A4 com as imagens EMPILHADAS na metade esquerda e as informacoes de
@@ -21,6 +23,10 @@ import SeletorPessoasGrupos, { type Pessoa } from '../envios/SeletorPessoasGrupo
 // 08/11/2026 (etapa E): 1, 2 ou 3 por folha; a pessoa escolhe QUAIS dados vao
 // ao lado da imagem; e-mail para outras pessoas (qualquer usuario) vai so como
 // LINK que exige login - o PDF anexado so vai para o proprio e-mail.
+// 08/11/2026: "Imprimir" e "Salvar como" abrem DIRETO esta janela (os menus
+// com/sem descricao sairam) e o Salvar como ganhou o ZIP: as imagens soltas
+// (com as marcacoes, se escolhido) e um .txt por imagem com os dados
+// escolhidos.
 
 export interface ItemPrancha {
   curation_id: number
@@ -37,7 +43,7 @@ export interface GrupoPrancha {
 const MAX_IMAGENS = 30
 const MAX_IMAGENS_EMAIL = 15
 
-type Acao = 'pdf' | 'png' | 'imprimir' | 'email'
+type Acao = 'pdf' | 'png' | 'zip' | 'imprimir' | 'email'
 type Campo = 'tipo' | 'regiao' | 'achados' | 'descricao' | 'marcadores'
 const CAMPOS: Campo[] = ['tipo', 'regiao', 'achados', 'descricao', 'marcadores']
 
@@ -252,6 +258,7 @@ export function DialogoPrancha({
   modo?: ModoPrancha
 }) {
   const t = useTranslations('Prancha')
+  const descrever = useDescricaoCuradoria()
   const grupos = gruposTodos.filter((g) => g.itens.length > 0)
   const [chave, setChave] = useState(grupos[grupos.length > 1 ? 1 : 0]?.chave ?? '')
   const [porFolha, setPorFolha] = useState<1 | 2 | 3>(2)
@@ -308,6 +315,60 @@ export function DialogoPrancha({
       com_marcacoes: comMarcacoes,
       formato,
     })
+  }
+
+  // ZIP: as imagens soltas + um .txt por imagem com os dados escolhidos.
+  // A janela "Salvar como" do navegador precisa abrir ainda no clique.
+  async function baixarZip() {
+    if (!grupo || ocupado || travaRef.current) return
+    travaRef.current = true
+    setErro('')
+    setMensagem('')
+    const hoje = new Date()
+    const data = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`
+    const nome = `radix-imago-${total}-imagens-${data}.zip`
+    try {
+      const alca = await escolherOndeSalvar(nome, 'application/zip', 'ZIP')
+      if (alca === 'cancelado') return
+      setOcupado('zip')
+      const arquivos: ArquivoZip[] = []
+      let falhas = 0
+      const fila = [...grupo.itens]
+      await Promise.all(
+        Array.from({ length: Math.min(4, fila.length) }, async () => {
+          while (fila.length) {
+            const item = fila.shift() as ItemPrancha & ItemDescritivel
+            const base = `imagem-${String(item.numero).padStart(3, '0')}`
+            try {
+              const comMarcacao = comMarcacoes && (item.marcacoes ?? []).length > 0
+              const r = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/search/${item.curation_id}/preview${comMarcacao ? '?com_marcacao=true' : ''}`,
+                { credentials: 'include' }
+              )
+              if (!r.ok) throw new Error(String(r.status))
+              const blob = await r.blob()
+              arquivos.push({ nome: `${base}.${blob.type.includes('jpeg') ? 'jpg' : 'png'}`, dados: new Uint8Array(await blob.arrayBuffer()) })
+              const linhas = descrever(item).filter((l) => l.campo && campos.includes(l.campo))
+              if (linhas.length) {
+                const texto = [`Rádix Imago - #${item.numero}`, '', ...linhas.map((l) => `${l.rotulo}: ${l.valor}`), '', t('aviso')].join('\r\n')
+                arquivos.push({ nome: `${base}.txt`, dados: new TextEncoder().encode(texto) })
+              }
+            } catch {
+              falhas++
+            }
+          }
+        })
+      )
+      arquivos.sort((a, b) => a.nome.localeCompare(b.nome))
+      arquivos.unshift({ nome: 'LEIA-ME.txt', dados: new TextEncoder().encode(t('aviso')) })
+      await gravarArquivo(criarZip(arquivos), alca, nome)
+      setMensagem(falhas ? t('zipComFalhas', { total: falhas }) : t('baixado'))
+    } catch {
+      setErro(t('erro'))
+    } finally {
+      travaRef.current = false
+      setOcupado(null)
+    }
   }
 
   async function abrirConfirmacaoEmail() {
@@ -527,7 +588,7 @@ export function DialogoPrancha({
         <p className="mb-3 text-xs text-slate-400">{t('resumo', { imagens: total, folhas })}</p>
         {demais && <p className="mb-3 text-xs text-amber-300">{t('limite', { maximo: MAX_IMAGENS })}</p>}
 
-        <div className={`grid gap-2 ${modo === 'baixar' ? 'grid-cols-2' : modo ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-4'}`}>
+        <div className={`grid gap-2 ${modo === 'baixar' ? 'grid-cols-3' : modo ? 'grid-cols-1' : 'grid-cols-2 sm:grid-cols-4'}`}>
           {(!modo || modo === 'baixar') && (
             <>
               <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('pdf')}>
@@ -535,6 +596,9 @@ export function DialogoPrancha({
               </button>
               <button type="button" className={botaoAcao} disabled={!!ocupado || demais || total === 0} onClick={() => executar('png')}>
                 {ocupado === 'png' ? t('gerando') : `⬇ ${t('baixarPng')}`}
+              </button>
+              <button type="button" className={botaoAcao} disabled={!!ocupado || total === 0} onClick={baixarZip} title={t('baixarZipDica')} data-teste="prancha-zip">
+                {ocupado === 'zip' ? t('gerando') : `⬇ ${t('baixarZip')}`}
               </button>
             </>
           )}
