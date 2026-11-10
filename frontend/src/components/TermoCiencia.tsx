@@ -6,21 +6,29 @@
 // para diagnostico. "Nao aceito" encerra a sessao e volta ao login.
 // Quem garante a regra e o SERVIDOR (sem o aceite tudo responde 403); esta
 // janela so mostra o termo. Ela confere a situacao a cada troca de tela.
+//
+// TERMOS DE USO E PRIVACIDADE (10/11/2026): antes do termo de ciencia,
+// se faltar o aceite da versao atual dos Termos de Uso + anexo do perfil +
+// Politica de Privacidade (primeiro acesso, nova versao ou novo perfil),
+// aparece a janela <AceiteTermosUso>. A caixa "Li e concordo" so libera
+// depois de rolar os textos ate o fim.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { ShieldCheck } from 'lucide-react'
+import AceiteTermosUso, { type MeusTermos } from './termos/AceiteTermosUso'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 // telas sem login: nao ha o que perguntar
-const TELAS_PUBLICAS = ['/login', '/conheca', '/esqueci-senha', '/redefinir-senha', '/confirmar-email', '/solicitar-acesso']
+const TELAS_PUBLICAS = ['/login', '/termos', '/conheca', '/esqueci-senha', '/redefinir-senha', '/confirmar-email', '/solicitar-acesso']
 
 export default function TermoCiencia() {
   const t = useTranslations('TermoCiencia')
   const caminho = usePathname()
   const router = useRouter()
   const [pendente, setPendente] = useState(false)
+  const [termosUso, setTermosUso] = useState<MeusTermos | null>(null)
   const [versao, setVersao] = useState('')
   const [ciente, setCiente] = useState(false)
   const [enviando, setEnviando] = useState(false)
@@ -29,6 +37,21 @@ export default function TermoCiencia() {
 
   const conferir = useCallback(async () => {
     try {
+      // 1o os Termos de Uso (primeiro acesso / nova versao)
+      const rt = await fetch(`${API}/termos/meus`, { credentials: 'include' })
+      if (!rt.ok) {
+        setTermosUso(null)
+        setPendente(false) // sem login: nada a mostrar
+        return
+      }
+      const termos: MeusTermos = await rt.json()
+      if (termos.pendente) {
+        setTermosUso(termos)
+        setPendente(false)
+        return
+      }
+      setTermosUso(null)
+      // 2o o termo de ciencia desta sessao
       const r = await fetch(`${API}/auth/termo-ciencia`, { credentials: 'include' })
       if (!r.ok) {
         setPendente(false) // sem login: nada a mostrar
@@ -45,6 +68,7 @@ export default function TermoCiencia() {
   useEffect(() => {
     if (TELAS_PUBLICAS.some((p) => caminho === p || caminho?.startsWith(`${p}/`)) || caminho === '/') {
       setPendente(false)
+      setTermosUso(null)
       return
     }
     conferir()
@@ -94,6 +118,7 @@ export default function TermoCiencia() {
     }
   }
 
+  if (termosUso) return <AceiteTermosUso termos={termosUso} onAceito={conferir} />
   if (!pendente) return null
 
   return (
