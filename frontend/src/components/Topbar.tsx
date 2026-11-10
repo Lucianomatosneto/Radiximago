@@ -370,6 +370,13 @@ export default function Topbar({
                 >
                   {t('meusAcessos')}
                 </Link>
+                <Link
+                  href="/termos"
+                  onClick={fecharModalPerfil}
+                  className="rounded-lg border border-base-border px-4 py-2 text-center text-sm text-slate-300 hover:border-brand hover:text-brand-300"
+                >
+                  {t('termosPrivacidade')}
+                </Link>
                 <button
                   type="button"
                   onClick={fecharModalPerfil}
