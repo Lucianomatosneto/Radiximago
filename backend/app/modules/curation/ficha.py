@@ -112,7 +112,8 @@ def criar_curadoria(
 
     ficha = Curation(
         orthanc_reference_id=orthanc_reference_id,
-        modalidade="RX",
+        # foto convertida em DICOM (Fase 1): modalidade OT, sem escala real
+        modalidade="OT" if imagem.formato_entrada == "foto" else "RX",
         tipo_radiografia=dados.tipo_radiografia.value,
         dentes=dados.dentes,
         idade_min=dados.idade_min,
