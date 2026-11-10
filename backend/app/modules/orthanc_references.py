@@ -77,6 +77,9 @@ class OrthancReference(Base):
     analise_em = Column(DateTime(timezone=True), nullable=True)
     devolucao_nota = Column(String(500), nullable=True)  # motivo de quem devolveu
     # de qual aparelho da rede a imagem chegou (etapa D, 08/11/2026)
+    # "dicom" (arquivo DICOM, do aparelho ou enviado) ou "foto" (foto/imagem
+    # convertida pelo Radix em DICOM de captura secundaria - Fase 1, 10/11/2026)
+    formato_entrada = Column(String(10), nullable=False, default="dicom", server_default=text("'dicom'"))
     aparelho_id = Column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
 
     curations = relationship("Curation", back_populates="orthanc_reference")
