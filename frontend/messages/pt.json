@@ -222,7 +222,9 @@
     "afastar": "Afastar",
     "redefinirVista": "Redefinir vista",
     "conhecaRadix": "Conheça o Rádix Imago",
-    "termoRecusado": "Sem aceitar o termo de ciência, o acesso ao sistema não é liberado."
+    "termoRecusado": "Sem aceitar o termo de ciência, o acesso ao sistema não é liberado.",
+    "linkTermos": "Termos e privacidade",
+    "termosRecusados": "Sem aceitar os Termos de Uso e a Política de Privacidade, o acesso ao sistema não é liberado."
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -293,7 +295,8 @@
       "suporte": "Suporte"
     },
     "meusAcessos": "Meus acessos (aparelhos conectados)",
-    "irInicio": "Rádix Imago — ir para a página inicial"
+    "irInicio": "Rádix Imago — ir para a página inicial",
+    "termosPrivacidade": "Termos de uso e privacidade"
   },
   "StatusCuradoria": {
     "pendente": "Pendente",
@@ -2947,5 +2950,44 @@
     "textoMudou": "O texto do termo foi atualizado. Leia novamente e confirme.",
     "erro": "Não foi possível registrar o aceite. Tente de novo.",
     "cadaLogin": "Este termo é apresentado a cada entrada no sistema. Seu aceite fica registrado com data e hora."
+  },
+  "Termos": {
+    "titulo": "Termos de Uso e Política de Privacidade",
+    "versao": "Versão {versao} · vigente desde {vigencia}",
+    "explica": "Estes documentos valem para todos os usuários do Rádix Imago. Cada perfil tem também um anexo com permissões e deveres próprios.",
+    "documentos": "Documentos",
+    "abaTermos": "Termos de Uso",
+    "abaAnexos": "Anexos por perfil",
+    "abaPrivacidade": "Política de Privacidade",
+    "imprimir": "Imprimir ou salvar em PDF",
+    "escolhaPerfil": "Perfil",
+    "erro": "Não foi possível carregar os termos. Tente novamente.",
+    "carregando": "Carregando…",
+    "meusAceites": "Seus aceites",
+    "nenhumAceite": "Você ainda não aceitou os termos.",
+    "aceiteLinha": "Versão {versao} · perfil {perfil} · {data}",
+    "contato": "Dúvidas e pedidos sobre seus dados:",
+    "voltar": "Voltar",
+    "perfis": {
+      "estudante": "Estudante",
+      "professor": "Professor",
+      "curador": "Curador",
+      "pesquisador": "Pesquisador",
+      "suporte": "Suporte",
+      "administrador": "Administrador"
+    },
+    "tituloPrimeiro": "Antes de começar: Termos de Uso e Privacidade",
+    "tituloNovaVersao": "Os termos foram atualizados",
+    "oQueMudou": "O que mudou:",
+    "leiaAntes": "Leia os Termos de Uso, o anexo do perfil {perfil} e a Política de Privacidade. Para usar o Rádix Imago, é preciso aceitá-los.",
+    "textosParaLer": "Textos dos termos (role até o fim)",
+    "concordo": "Li e concordo com os Termos de Uso, o Anexo do perfil {perfil} e a Política de Privacidade (versão {versao}).",
+    "roleAteOFim": "Role os textos até o fim para habilitar o aceite.",
+    "marqueConcordo": "Marque \"Li e concordo\" para continuar.",
+    "atualizados": "Os termos acabaram de ser atualizados. Leia a nova versão.",
+    "erroAceite": "Não foi possível registrar o aceite. Tente de novo.",
+    "abrirPagina": "Abrir em página inteira",
+    "naoAceito": "Não aceito",
+    "aceitar": "Aceitar e continuar"
   }
 }
