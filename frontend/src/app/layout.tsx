@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl'
 import FundoAplicacao from '../components/fundo/FundoAplicacao'
 import PularParaConteudo from '../components/PularParaConteudo'
 import TituloDaPagina from '../components/TituloDaPagina'
+import TermoCiencia from '../components/TermoCiencia'
 import { SCRIPT_TEMA_INICIAL } from '../lib/tema'
 import { getLocale, getTranslations } from 'next-intl/server'
 
@@ -60,6 +61,8 @@ export default async function RootLayout({
           {/* mapa-mundi de fundo (padrao visual de todas as telas - ver FundoAplicacao) */}
           <FundoAplicacao intensity="subtle" />
           {children}
+          {/* termo de ciencia a cada login (sem o aceite o servidor recusa tudo) */}
+          <TermoCiencia />
         </NextIntlClientProvider>
       </body>
     </html>
