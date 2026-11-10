@@ -32,6 +32,9 @@ def _entrar(email: str, navegador: str) -> TestClient:
     r = aparelho.post("/auth/login", data={"username": email, "password": SENHA_TESTE})
     r = completar_segundo_fator(aparelho, email, r)  # perfis com poder: login em duas etapas
     assert r.status_code == 200, r.text
+    # termo de ciencia (10/11/2026): cada login precisa do aceite
+    from app.modules.termo_ciencia import TERMO_CIENCIA_VERSAO
+    assert aparelho.post("/auth/termo-ciencia/aceitar", json={"versao": TERMO_CIENCIA_VERSAO, "ciente": True}).status_code == 200
     return aparelho
 
 
