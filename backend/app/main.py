@@ -15,6 +15,7 @@ from app.modules import orthanc_client
 
 logger = logging.getLogger(__name__)
 from app.modules.auth import router as auth_router
+from app.modules.termo_ciencia import router as termo_ciencia_router
 from app.modules.mfa_router import router as mfa_router
 from app.modules.search_router import router as search_router
 from app.modules.prancha_router import router as prancha_router
@@ -115,6 +116,7 @@ os.makedirs(os.path.join(_DIRETORIO_UPLOADS, "avatars"), exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=_DIRETORIO_UPLOADS), name="uploads")
 
 app.include_router(auth_router)
+app.include_router(termo_ciencia_router)
 app.include_router(mfa_router)
 app.include_router(search_router)
 app.include_router(prancha_router)
