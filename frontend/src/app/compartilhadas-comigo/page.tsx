@@ -250,9 +250,9 @@ export default function CompartilhadasComigoPage() {
   return (
     <div className="flex min-h-screen bg-base">
       <Sidebar />
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
-        <main ref={areaPrincipalRef} className="flex-1 overflow-x-clip px-6 pb-3">
+        <main ref={areaPrincipalRef} className="flex-1 overflow-x-clip px-3 pb-3 sm:px-6">
           {/* cabecalho: rola e some; a barra de ferramentas fica presa no topo */}
           <div ref={topoFixoRef} className="pt-6">
             <h1 className="titulo-pagina tela-entra">
@@ -288,7 +288,7 @@ export default function CompartilhadasComigoPage() {
                     {t('quantidade', { quantidade: itens.length })}
                   </span>
 
-                  <div className="flex h-8 items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
+                  <div className="flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
                     {!barraRolada && <span className="px-1 text-[11px] font-medium text-slate-400">{tPesquisa('selecaoLabel')}</span>}
                     <button type="button" onClick={selecionarTodas} className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300">
                       {tPesquisa('selecionarTodas', { quantidade: itens.length })}
@@ -360,7 +360,7 @@ export default function CompartilhadasComigoPage() {
               <div>
               <div
                 ref={gradeRef}
-                className="grid grid-cols-2 justify-center gap-3 pb-2 sm:grid-cols-3 md:grid-cols-5"
+                className="grid grid-cols-1 justify-center gap-3 pb-2 min-[480px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
                 style={ladoCartao ? { gridTemplateColumns: `repeat(5, ${ladoCartao}px)` } : undefined}
               >
                 {itens.map((item, indice) => {
