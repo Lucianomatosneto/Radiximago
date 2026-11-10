@@ -350,7 +350,16 @@ def obter_token(client: TestClient, email: str, senha: str = SENHA_TESTE) -> str
     # authenticar com o cookie do login anterior, ignorando o header
     # explicito que o teste passou de proposito.
     client.cookies.clear()
-    return resposta.json()["access_token"]
+    token = resposta.json()["access_token"]
+    # termo de ciencia (10/11/2026): cada login precisa do aceite antes de
+    # usar o sistema - aqui o aceite e automatico; os testes do proprio
+    # termo (test_termo_ciencia.py) fazem o login sem ele
+    from app.modules.termo_ciencia import TERMO_CIENCIA_VERSAO
+    aceite = client.post("/auth/termo-ciencia/aceitar", headers={"Authorization": f"Bearer {token}"},
+                         json={"versao": TERMO_CIENCIA_VERSAO, "ciente": True})
+    assert aceite.status_code == 200, aceite.text
+    client.cookies.clear()
+    return token
 
 
 def cabecalho_auth(token: str) -> dict:
