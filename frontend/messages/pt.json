@@ -221,7 +221,8 @@
     "aproximar": "Aproximar",
     "afastar": "Afastar",
     "redefinirVista": "Redefinir vista",
-    "conhecaRadix": "Conheça o Rádix Imago"
+    "conhecaRadix": "Conheça o Rádix Imago",
+    "termoRecusado": "Sem aceitar o termo de ciência, o acesso ao sistema não é liberado."
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -2933,5 +2934,18 @@
     "verAnexos": "Ver informações adicionais e anexos desta imagem",
     "verAnexosCurto": "Anexos",
     "fechar": "Fechar"
+  },
+  "TermoCiencia": {
+    "titulo": "Termo de ciência",
+    "paragrafo1": "O Rádix Imago é uma plataforma acadêmica. As imagens deste sistema são usadas exclusivamente para ensino e pesquisa.",
+    "paragrafo2": "As imagens e as curadorias não têm validade para diagnóstico, não substituem laudo nem exame clínico e não devem orientar condutas com pacientes.",
+    "paragrafo3": "As imagens são anonimizadas. É proibido tentar identificar pacientes ou copiar imagens para fora do sistema sem autorização.",
+    "caixa": "Estou ciente de que as imagens são usadas exclusivamente para ensino e pesquisa e não têm validade para diagnóstico.",
+    "continuar": "Continuar",
+    "naoAceito": "Não aceito",
+    "marqueACaixa": "Marque a caixa de ciência para continuar.",
+    "textoMudou": "O texto do termo foi atualizado. Leia novamente e confirme.",
+    "erro": "Não foi possível registrar o aceite. Tente de novo.",
+    "cadaLogin": "Este termo é apresentado a cada entrada no sistema. Seu aceite fica registrado com data e hora."
   }
 }
