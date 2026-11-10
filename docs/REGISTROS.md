@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.10 — 10/11/2026 |
+| Versão do documento | 1.11 — 10/11/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -14,7 +14,7 @@
 |---|---|---|---|---|
 | **Auditoria** | tabela `audit_logs` (PostgreSQL) | quando (`criado_em`, com fuso), quem (`usuario_id`; vazio = o próprio sistema), **de onde** (`ip`, `rota`), o quê (`acao`, `entidade`, `entidade_id`), resultado (`sucesso`, `negado`, `alerta` (a verificação de integridade achou problema; desde 01/11/2026), `erro`), detalhes e **lacre** encadeado | **administrador**, pela tela de auditoria (`GET /admin/audit-logs`, só leitura) | **5 anos**, apagados automaticamente depois disso (`app/modules/retencao.py`; mesmo prazo de guarda de dados de pesquisa da Res. CNS 466/2012) |
 | Histórico das fichas | tabela `curation_history` | mudanças de estado com justificativa | curadoria | permanente (pesquisa) |
-| Sessões | tabela `sessoes_usuario` | início, fim e motivo do encerramento | o sistema | 30 dias após encerradas |
+| Sessões | tabela `sessoes_usuario` | início, fim e motivo do encerramento; data e versão do **aceite do termo de ciência** daquela sessão | o sistema | 30 dias após encerradas |
 | Saída da API | saída padrão do container `radix-api` (`docker compose logs radix-api`) | em **JSON**, uma linha por evento (`app/core/registro_json.py`): horário UTC, nível, origem e mensagem. Inclui endereço de rede, método, caminho e código de cada pedido (uvicorn) e erros inesperados com o rastro técnico | quem administra o servidor | **até 5 arquivos de 10 MB por serviço** (`x-registros` no `docker-compose.yml`); os mais antigos são descartados |
 | Portaria e visualizador (nginx) | saída de `radix-orthanc-cors` e `radix-ohif` | endereço de rede, caminho (inclui UIDs de estudo **anonimizados**), código | quem administra o servidor | idem |
 | Orthanc | saída de `radix-orthanc` | recebimentos DICOM, erros | quem administra o servidor | idem |
@@ -37,6 +37,7 @@
 | Sugestão do professor na ficha (08/11/2026) | `sugestao_professor_enviada` (o professor mandou a ficha preenchida para a fila do curador), `sugestao_professor_guardada` (guardou a imagem com as marcações em Minhas imagens). No histórico da ficha: `envio_ao_curador` e `sugestao_assumida` (o curador abriu a sugestão e virou o curador da ficha) |
 | Aparelhos da rede (08/11/2026) | `aparelho_cadastrado`, `aparelho_alterado` (diz se o nome DICOM ou o endereço mudou), `aparelho_liberado`, `aparelho_bloqueado` (só o administrador), `aparelho_testado` (teste de conexão; resultado "erro" quando o aparelho não respondeu). A `anonimizacao_automatica` passa a dizer de qual aparelho a imagem veio, ou que veio de aparelho NÃO cadastrado. O endereço IP do aparelho fica só no cadastro, não nos detalhes |
 | Prancha enviada por link (08/11/2026) | `prancha_enviada_link` (uma por pessoa que recebeu; detalhes: o número do usuário e as fichas — o recado não entra), `prancha_recebida_aberta` (quem recebeu abriu a prancha) |
+| Termo de ciência após o login (10/11/2026) | `termo_ciencia_aceito` (a cada login; detalhes: a versão do texto), `termo_ciencia_recusado` (não aceitou; a sessão é encerrada com o motivo "termo_recusado") |
 | Foto pelo celular — Fase 1 (10/11/2026) | `foto_janela_aberta` (abriu a janela de envio; detalhes: a duração), `foto_recebida` (foto aceita; detalhes: o número da janela, a confirmação "sem dados do paciente" e o resultado da leitura de texto antes do Orthanc), `foto_convertida_dicom` (agora só para foto vinda do celular), `foto_enviada_analise` (foto mandada para um professor ou curador analisar; detalhes: o número do usuário), `foto_recusada` (detalhes: só o **motivo** — tempo esgotado, comprovante reutilizado, de outro usuário, substituído por janela mais nova ou inválido, arquivo grande ou inválido —, nunca o conteúdo). `imagem_pessoal_retirada` passa a valer também para imagem em análise |
 | Anexos da curadoria (08/11/2026) | `anexo_curadoria_adicionado` (imagem anexada à ficha; detalhes: número do anexo, tipo e tamanho em pixels — o nome do arquivo não entra), `anexo_curadoria_removido` |
 | Curadoria | `edicao_curadoria`, `preenchimento_por_voz`, `aprovacao` (com o resultado da verificação de texto na imagem), `descarte`, `solicitacao_segunda_opiniao`, `resposta_segunda_opiniao`, `aprovacao_pos_segunda_opiniao`, `descarte_pos_segunda_opiniao`, `anotacao_segunda_opiniao_incorporada` e `anotacao_segunda_opiniao_dispensada` (o que quem pediu a segunda opinião fez com cada anotação do revisor; o efeito na ficha fica também no histórico da curadoria) |
@@ -115,3 +116,4 @@ Isso é comprovado por:
 | 1.8 | 08/11/2026 | Prancha enviada a outras pessoas por link com login |
 | 1.9 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria |
 | 1.10 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): janela de 5 minutos, recusas com motivo |
+| 1.11 | 10/11/2026 | Termo de ciência após o login: aceite e recusa |
