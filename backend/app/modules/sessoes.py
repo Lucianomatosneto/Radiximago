@@ -49,6 +49,9 @@ class SessaoUsuario(Base):
     ip = Column(String(45), nullable=True)
     aparelho = Column(String(80), nullable=True)
     ultimo_uso = Column(DateTime(timezone=True), nullable=True)
+    # termo de ciencia (app/modules/termo_ciencia.py): aceito NESTA sessao
+    termo_aceito_em = Column(DateTime(timezone=True), nullable=True)
+    termo_versao = Column(String(20), nullable=True)
 
 
 def abrir_sessao(db: Session, usuario_id: int) -> str:
