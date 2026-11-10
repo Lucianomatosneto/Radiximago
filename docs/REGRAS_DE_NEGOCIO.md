@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.15 — 10/11/2026 |
+| Versão do documento | 1.16 — 10/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -94,6 +94,12 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - **Curador, administrador e suporte:** veem a lista de todas as imagens recebidas.
 - **Professor:** vê só as imagens DICOM que **ele mesmo enviou**. Desde 08/11/2026 quem enviou fica na coluna `orthanc_references.enviado_por_id` (antes, só no registro de auditoria `upload_imagem`). É o princípio do mínimo necessário (LGPD), decidido pelo Luciano no QA com perfil professor.
 - Nenhum desses perfis vê, pela lista, imagens ainda não aprovadas: a prévia continua bloqueada.
+
+### 1.10 Termo de ciência após o login (10/11/2026)
+
+- A **cada login** (cada sessão nova), depois da senha e do segundo fator, a pessoa marca: *"Estou ciente de que as imagens são usadas exclusivamente para ensino e pesquisa e não têm validade para diagnóstico."*
+- **Sem o aceite, não entra:** o servidor responde 403 (`termo_ciencia_pendente`) a tudo, menos ao próprio termo, a `/auth/me` e a `/auth/logout`. "Não aceito" encerra a sessão e volta ao login.
+- O aceite fica na sessão (data e versão do texto) e na auditoria. Se o texto mudar, a versão (`TERMO_CIENCIA_VERSAO`, em `termo_ciencia.py`) é trocada.
 
 ### 1.9 Envio de imagens por todos os perfis e foto pelo celular (08 e 10/11/2026)
 
@@ -237,3 +243,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.13 | 08/11/2026 | Achados das marcações e termos do vocabulário numa lista só, com "Outros" (seção 1) |
 | 1.14 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria, fora da Pesquisa avançada (seção 1) |
 | 1.15 | 10/11/2026 | Envio por todos os perfis (08/11) e foto do negatoscópio pelo celular com janela de 5 minutos (seção 1.9); limite da foto (seção 3); professor identificado por `enviado_por_id` (seção 1.6) |
+| 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
