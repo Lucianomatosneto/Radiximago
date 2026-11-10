@@ -222,7 +222,9 @@
     "afastar": "Zoom out",
     "redefinirVista": "Reset view",
     "conhecaRadix": "Discover Rádix Imago",
-    "termoRecusado": "Without accepting the acknowledgement, access to the system is not granted."
+    "termoRecusado": "Without accepting the acknowledgement, access to the system is not granted.",
+    "linkTermos": "Terms and privacy",
+    "termosRecusados": "Without accepting the Terms of Use and the Privacy Policy, access to the system is not granted."
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -293,7 +295,8 @@
       "suporte": "Support"
     },
     "meusAcessos": "My sessions (connected devices)",
-    "irInicio": "Rádix Imago — go to the home page"
+    "irInicio": "Rádix Imago — go to the home page",
+    "termosPrivacidade": "Terms of use and privacy"
   },
   "StatusCuradoria": {
     "pendente": "Pending",
@@ -2947,5 +2950,44 @@
     "textoMudou": "The text was updated. Please read it again and confirm.",
     "erro": "Could not record your acceptance. Try again.",
     "cadaLogin": "This acknowledgement is shown at every sign-in. Your acceptance is recorded with date and time."
+  },
+  "Termos": {
+    "titulo": "Terms of Use and Privacy Policy",
+    "versao": "Version {versao} · in force since {vigencia}",
+    "explica": "These documents apply to all Rádix Imago users. Each profile also has an annex with its own permissions and duties. The legally binding text is the Portuguese version.",
+    "documentos": "Documents",
+    "abaTermos": "Terms of Use",
+    "abaAnexos": "Annexes by profile",
+    "abaPrivacidade": "Privacy Policy",
+    "imprimir": "Print or save as PDF",
+    "escolhaPerfil": "Profile",
+    "erro": "Could not load the terms. Try again.",
+    "carregando": "Loading…",
+    "meusAceites": "Your acceptances",
+    "nenhumAceite": "You have not accepted the terms yet.",
+    "aceiteLinha": "Version {versao} · profile {perfil} · {data}",
+    "contato": "Questions and requests about your data:",
+    "voltar": "Back",
+    "perfis": {
+      "estudante": "Student",
+      "professor": "Professor",
+      "curador": "Curator",
+      "pesquisador": "Researcher",
+      "suporte": "Support",
+      "administrador": "Administrator"
+    },
+    "tituloPrimeiro": "Before you start: Terms of Use and Privacy",
+    "tituloNovaVersao": "The terms have been updated",
+    "oQueMudou": "What changed:",
+    "leiaAntes": "Read the Terms of Use, the {perfil} profile annex and the Privacy Policy (in Portuguese, the legally binding version). You must accept them to use Rádix Imago.",
+    "textosParaLer": "Terms text (scroll to the end)",
+    "concordo": "I have read and agree to the Terms of Use, the {perfil} profile Annex and the Privacy Policy (version {versao}).",
+    "roleAteOFim": "Scroll the text to the end to enable acceptance.",
+    "marqueConcordo": "Tick \"I have read and agree\" to continue.",
+    "atualizados": "The terms have just been updated. Read the new version.",
+    "erroAceite": "Could not record your acceptance. Try again.",
+    "abrirPagina": "Open full page",
+    "naoAceito": "I do not accept",
+    "aceitar": "Accept and continue"
   }
 }
