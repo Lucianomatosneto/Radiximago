@@ -34,6 +34,9 @@ def _entrar(email: str, navegador: str) -> TestClient:
     assert r.status_code == 200, r.text
     # termo de ciencia (10/11/2026): cada login precisa do aceite
     from app.modules.termo_ciencia import TERMO_CIENCIA_VERSAO
+    from app.modules.termos_uso import TERMOS_VERSAO
+    perfil = aparelho.get("/termos/meus").json()["perfil"]
+    assert aparelho.post("/termos/aceitar", json={"versao": TERMOS_VERSAO, "anexo": perfil, "li_e_concordo": True}).status_code == 200
     assert aparelho.post("/auth/termo-ciencia/aceitar", json={"versao": TERMO_CIENCIA_VERSAO, "ciente": True}).status_code == 200
     return aparelho
 
