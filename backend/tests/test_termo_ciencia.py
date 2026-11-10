@@ -17,6 +17,10 @@ def _login_sem_aceite(email: str) -> TestClient:
     r = navegador.post("/auth/login", data={"username": email, "password": SENHA_TESTE})
     r = completar_segundo_fator(navegador, email, r)
     assert r.status_code == 200, r.text
+    # os Termos de Uso (1o acesso) sao outra etapa - aqui ja aceitos
+    from app.modules.termos_uso import TERMOS_VERSAO
+    perfil = navegador.get("/termos/meus").json()["perfil"]
+    assert navegador.post("/termos/aceitar", json={"versao": TERMOS_VERSAO, "anexo": perfil, "li_e_concordo": True}).status_code == 200
     return navegador
 
 
