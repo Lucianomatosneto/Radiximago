@@ -62,10 +62,16 @@ def orthanc_falso(monkeypatch, db):
     db.commit()
 
 
+def _dcm() -> bytes:
+    """DICOM pequeno (desde 10/11/2026 /envios aceita so DICOM; foto vai por
+    /envios/foto - tests/test_foto_celular.py)."""
+    return foto_para_dicom.converter(_jpg())
+
+
 def _enviar(client, cab, destino, conteudo=None, **campos):
     dados = {"destino": destino, **{k: str(v) for k, v in campos.items()}}
     return client.post("/envios", headers=cab, data=dados,
-                       files={"arquivo": ("foto.jpg", conteudo or _jpg(), "image/jpeg")})
+                       files={"arquivo": ("imagem.dcm", conteudo or _dcm(), "application/dicom")})
 
 
 def test_foto_vira_dicom_sem_metadados_do_celular():
@@ -87,7 +93,6 @@ def test_estudante_so_para_mim_nao_entra_na_fila_nem_para_o_curador(client, cria
 
     r = _enviar(client, cab_aluno, "pessoal")
     assert r.status_code == 200, r.text
-    assert r.json()["foto_convertida"] is True
     ref_id = r.json()["orthanc_reference_id"]
     assert pydicom.dcmread(io.BytesIO(orthanc_falso[0])).Modality == "OT"
 
@@ -148,11 +153,11 @@ def test_analise_vai_so_para_a_pessoa_escolhida_que_poe_na_fila_ou_devolve(clien
     assert client.post(f"/envios/{ref_id}/decidir", headers=cab_prof, json={"acao": "fila"}).status_code == 200
     pendentes = client.get("/curation/pending?limit=200", headers=cab_cur).json()["itens"]
     assert ref_id in {p["orthanc_reference_id"] for p in pendentes}
-    assert client.delete(f"/envios/{ref_id}", headers=cab_aluno).status_code == 409  # ja na fila
+    assert client.delete(f"/envios/{ref_id}", headers=cab_aluno).status_code == 409  # ja na fila de curadoria
 
     acoes = {a for (a,) in db.query(AuditLog.acao).filter(AuditLog.entidade_id == ref_id,
                                                           AuditLog.entidade == "orthanc_reference")}
-    assert {"upload_imagem", "foto_convertida_dicom", "imagem_enviada_analise",
+    assert {"upload_imagem", "imagem_enviada_analise",
             "imagem_analise_devolvida", "imagem_analise_para_fila"} <= acoes
 
 
@@ -183,7 +188,9 @@ def test_telas_enviar_imagem_camera_e_listas():
 
     front = Path(__file__).resolve().parents[2] / "frontend/src"
     tela = (front / "app/enviar-imagem/page.tsx").read_text(encoding="utf-8")
-    assert 'capture="environment"' in tela          # camera de tras do celular
+    foto = (front / "components/envios/EnvioFotoCelular.tsx").read_text(encoding="utf-8")
+    assert 'capture="environment"' in foto          # camera de tras do celular (Fase 1, 10/11/2026)
+    assert "<EnvioFotoCelular" in tela
     assert "fetch(`${API}/envios`" in tela
     assert "['pessoal', 'analise']" in tela and "['fila', 'pessoal']" in tela
     menu = (front / "components/Sidebar.tsx").read_text(encoding="utf-8")
