@@ -101,6 +101,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('foto_recebida', 'Foto recebida pelo celular', 'Photo received from phone'),
       a('foto_enviada_analise', 'Foto enviada para análise', 'Photo sent for review'),
       a('foto_recusada', 'Foto recusada', 'Photo rejected'),
+      a('termo_ciencia_aceito', 'Termo de ciência aceito', 'Acknowledgement accepted'),
+      a('termo_ciencia_recusado', 'Termo de ciência recusado (não entrou)', 'Acknowledgement refused (no access)'),
       a('imagem_enviada_analise', 'Imagem enviada para análise', 'Image sent for review'),
       a('imagem_analise_para_fila', 'Imagem analisada colocada na fila de curadoria', 'Reviewed image sent to curation queue'),
       a('imagem_analise_devolvida', 'Imagem analisada devolvida com recado', 'Reviewed image returned with a note'),
