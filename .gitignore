@@ -284,3 +284,9 @@ copias/
 backend/dados_clinicos/
 dados_clinicos/
 backend/anexos_curadoria/
+
+# Videos (gravacao automatica)
+videos/credenciais.local.json
+videos/node_modules/
+videos/saida/
+videos/sessoes/

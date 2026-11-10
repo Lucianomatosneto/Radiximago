@@ -88,9 +88,13 @@ export default function EnviarImagemPage() {
 
   function escolher(lista: FileList | null) {
     if (!lista?.length) return
+    // Copia os arquivos AGORA: logo depois o campo e limpo (value = '') e o
+    // navegador esvazia essa mesma FileList; se a copia ficasse para depois
+    // (dentro do setArquivos), a foto se perdia e a lista ficava vazia.
+    const novos = Array.from(lista)
     setResultados([])
     setErro('')
-    setArquivos((atuais) => [...atuais, ...Array.from(lista)].slice(0, 20))
+    setArquivos((atuais) => [...atuais, ...novos].slice(0, 20))
   }
 
   async function enviar(e: React.FormEvent) {
