@@ -114,6 +114,8 @@ def test_2_4_1_limite_geral_em_todas_as_rotas(client, criar_usuario):
     """Robo varrendo o sistema: rota comum (sem limite proprio) tambem e barrada."""
     usuario, colega = criar_usuario(), criar_usuario()
     token, token_colega = obter_token(client, usuario.email), obter_token(client, colega.email)
+    from app.main import app
+    app.state.limiter.reset()  # o login (com o aceite do termo de ciencia) nao entra na conta
     for _ in range(_numero(rate_limit.LIMITE_GERAL)):
         assert client.get("/auth/me", headers=cabecalho_auth(token)).status_code == 200
     r = client.get("/auth/me", headers=cabecalho_auth(token))
