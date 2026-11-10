@@ -43,6 +43,9 @@ from app.modules import achados as _achados  # noqa: F401
 # ---------------------------------------------------------------------
 class Modalidade(str, enum.Enum):
     RX = "RX"
+    # foto de radiografia (negatoscopio/celular) convertida em DICOM de
+    # captura secundaria: sem escala real, nenhuma medida em mm (10/11/2026)
+    OT = "OT"
 
 
 class TipoRadiografia(str, enum.Enum):
