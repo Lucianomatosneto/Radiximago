@@ -56,7 +56,7 @@ COR_MOLDURA = (13, 148, 136)  # turquesa do Radix
 COR_FUNDO_INFO = (248, 250, 252)
 
 AVISO = (
-    "Rádix Imago - material de ensino e pesquisa (UFSC). Imagens anonimizadas. "
+    "Rádix Imago - material de ensino e pesquisa. Imagens anonimizadas. "
     "Não destinado a diagnóstico."
 )
 
