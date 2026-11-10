@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.11 — 10/11/2026 |
+| Versão do documento | 1.12 — 10/11/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -37,6 +37,7 @@
 | Sugestão do professor na ficha (08/11/2026) | `sugestao_professor_enviada` (o professor mandou a ficha preenchida para a fila do curador), `sugestao_professor_guardada` (guardou a imagem com as marcações em Minhas imagens). No histórico da ficha: `envio_ao_curador` e `sugestao_assumida` (o curador abriu a sugestão e virou o curador da ficha) |
 | Aparelhos da rede (08/11/2026) | `aparelho_cadastrado`, `aparelho_alterado` (diz se o nome DICOM ou o endereço mudou), `aparelho_liberado`, `aparelho_bloqueado` (só o administrador), `aparelho_testado` (teste de conexão; resultado "erro" quando o aparelho não respondeu). A `anonimizacao_automatica` passa a dizer de qual aparelho a imagem veio, ou que veio de aparelho NÃO cadastrado. O endereço IP do aparelho fica só no cadastro, não nos detalhes |
 | Prancha enviada por link (08/11/2026) | `prancha_enviada_link` (uma por pessoa que recebeu; detalhes: o número do usuário e as fichas — o recado não entra), `prancha_recebida_aberta` (quem recebeu abriu a prancha) |
+| Termos de Uso e Política de Privacidade (10/11/2026) | `termos_uso_aceitos` (primeiro acesso, nova versão ou troca de perfil; detalhes: versão, perfil e o início do resumo SHA-256 do texto aceito — o aceite completo fica na tabela de aceites dos termos), `termos_uso_recusados` (não aceitou; a sessão é encerrada com o motivo "termos_recusados") |
 | Termo de ciência após o login (10/11/2026) | `termo_ciencia_aceito` (a cada login; detalhes: a versão do texto), `termo_ciencia_recusado` (não aceitou; a sessão é encerrada com o motivo "termo_recusado") |
 | Foto pelo celular — Fase 1 (10/11/2026) | `foto_janela_aberta` (abriu a janela de envio; detalhes: a duração), `foto_recebida` (foto aceita; detalhes: o número da janela, a confirmação "sem dados do paciente" e o resultado da leitura de texto antes do Orthanc), `foto_convertida_dicom` (agora só para foto vinda do celular), `foto_enviada_analise` (foto mandada para um professor ou curador analisar; detalhes: o número do usuário), `foto_recusada` (detalhes: só o **motivo** — tempo esgotado, comprovante reutilizado, de outro usuário, substituído por janela mais nova ou inválido, arquivo grande ou inválido —, nunca o conteúdo). `imagem_pessoal_retirada` passa a valer também para imagem em análise |
 | Anexos da curadoria (08/11/2026) | `anexo_curadoria_adicionado` (imagem anexada à ficha; detalhes: número do anexo, tipo e tamanho em pixels — o nome do arquivo não entra), `anexo_curadoria_removido` |
@@ -117,3 +118,4 @@ Isso é comprovado por:
 | 1.9 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria |
 | 1.10 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): janela de 5 minutos, recusas com motivo |
 | 1.11 | 10/11/2026 | Termo de ciência após o login: aceite e recusa |
+| 1.12 | 10/11/2026 | Termos de Uso e Política de Privacidade: aceite e recusa |
