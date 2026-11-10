@@ -182,10 +182,11 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
     <div className="flex min-h-screen bg-base">
       <Sidebar />
 
-      <div className="flex flex-1 flex-col">
+      {/* min-w-0 + espacos menores: no celular a pagina cabe na largura da tela (Fase 2, 10/11/2026) */}
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main className="flex flex-1 flex-col overflow-y-auto p-6">
+        <main className="flex flex-1 flex-col overflow-y-auto p-3 sm:p-6">
           <div className="mb-4">
             <h1 className="titulo-pagina tela-entra">
               {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
@@ -253,7 +254,7 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
                     sem sair do modo tela cheia. */}
                 <div
                   ref={colunaPrincipalRef}
-                  className={`flex w-full min-w-[480px] flex-1 flex-col bg-base ${telaCheia ? 'p-4' : ''}`}
+                  className={`flex w-full min-w-0 flex-1 flex-col bg-base sm:min-w-[480px] ${telaCheia ? 'p-4' : ''}`}
                 >
                   <section className="flex min-h-[78vh] flex-col overflow-hidden rounded-2xl border border-base-border bg-base-surface">
                     <div className="flex items-center justify-between border-b border-base-border px-4 py-3">
