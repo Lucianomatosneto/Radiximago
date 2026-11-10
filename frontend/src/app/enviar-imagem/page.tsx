@@ -1,7 +1,10 @@
 'use client'
 
-// ENVIAR IMAGEM (etapa B, 08/11/2026)
-// Arquivo do computador (DICOM, JPG ou PNG) ou foto pela camera do celular.
+// ENVIAR IMAGEM (etapa B, 08/11/2026; Fase 1 da foto pelo celular, 10/11/2026)
+// - FOTO da radiografia (negatoscopio, celular ou galeria): fluxo proprio
+//   com janela de 5 minutos, ajuste/tarja no aparelho e confirmacao de que
+//   nao ha dados do paciente (components/envios/EnvioFotoCelular.tsx).
+// - ARQUIVO DICOM do computador: este formulario (so DICOM).
 // - Estudante: "So para mim" (fica em Minhas imagens) ou "Enviar para
 //   analise" de UM professor ou curador, que decide colocar na fila de
 //   curadoria ou devolver com um recado.
@@ -13,6 +16,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Camera, FileUp, Send } from 'lucide-react'
+import EnvioFotoCelular from '../../components/envios/EnvioFotoCelular'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
@@ -53,8 +57,8 @@ export default function EnviarImagemPage() {
   const [enviando, setEnviando] = useState(false)
   const [resultados, setResultados] = useState<Resultado[]>([])
   const [erro, setErro] = useState('')
+  const [modoFoto, setModoFoto] = useState(false)
   const entradaArquivo = useRef<HTMLInputElement>(null)
-  const entradaCamera = useRef<HTMLInputElement>(null)
 
   const ehEstudante = sessao?.perfil === 'estudante'
 
@@ -158,17 +162,24 @@ export default function EnviarImagemPage() {
             <p className="mt-1 max-w-3xl text-sm text-slate-400">{t(ehEstudante ? 'subtituloEstudante' : 'subtituloEquipe')}</p>
           </div>
 
+          {modoFoto ? (
+            <EnvioFotoCelular opcoes={opcoes} analistas={analistas} onSair={() => setModoFoto(false)} />
+          ) : (
+            <section className="max-w-3xl rounded-2xl border border-brand/40 bg-brand/5 p-4 sm:p-6">
+              <h2 className="text-base font-semibold text-ink">{t('foto.titulo')}</h2>
+              <p className="mt-1 text-sm text-ink-2">{t('foto.explica')}</p>
+              <button type="button" onClick={() => setModoFoto(true)} data-teste="abrir-envio-foto"
+                      className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 text-sm font-medium text-white hover:bg-brand-hover sm:w-auto">
+                <Camera aria-hidden="true" className="h-5 w-5" /> {t('foto.comecar')}
+              </button>
+            </section>
+          )}
+
+          {!modoFoto && (
           <form onSubmit={enviar} className="max-w-3xl space-y-5 rounded-2xl border border-base-border bg-base-surface p-4 sm:p-6">
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-ink">{t('passo1')}</legend>
               <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={() => entradaCamera.current?.click()}
-                  className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover"
-                >
-                  <Camera aria-hidden="true" className="h-4 w-4" /> {t('tirarFoto')}
-                </button>
                 <button
                   type="button"
                   onClick={() => entradaArquivo.current?.click()}
@@ -177,10 +188,7 @@ export default function EnviarImagemPage() {
                   <FileUp aria-hidden="true" className="h-4 w-4" /> {t('escolherArquivo')}
                 </button>
               </div>
-              {/* capture="environment": no celular abre direto a camera de tras */}
-              <input ref={entradaCamera} type="file" accept="image/*" capture="environment" className="sr-only"
-                     aria-label={t('tirarFoto')} onChange={(e) => { escolher(e.target.files); e.target.value = '' }} />
-              <input ref={entradaArquivo} type="file" multiple accept=".dcm,application/dicom,image/jpeg,image/png,image/webp"
+              <input ref={entradaArquivo} type="file" multiple accept=".dcm,application/dicom"
                      className="sr-only" aria-label={t('escolherArquivo')}
                      onChange={(e) => { escolher(e.target.files); e.target.value = '' }} />
               <p className="mt-2 text-xs text-ink-3">{t('ajudaArquivo')}</p>
@@ -257,6 +265,7 @@ export default function EnviarImagemPage() {
               {enviando ? t('enviando') : t('enviar', { quantidade: arquivos.length })}
             </button>
           </form>
+          )}
 
           {resultados.length > 0 && (
             <section aria-live="polite" className="max-w-3xl space-y-2" data-teste="resultados-envio">
