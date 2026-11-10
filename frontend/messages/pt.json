@@ -61,7 +61,7 @@
       }
     },
     "chamada": "Curadoria, pesquisa e ensino com imagens anonimizadas. O piloto começa pela Odontologia, com radiografias odontológicas, e a plataforma foi desenhada para se expandir a outras áreas da saúde e da vida.",
-    "selo": "Piloto em Odontologia · PPGINFOS · UFSC",
+    "selo": "Piloto em Odontologia",
     "verComoFunciona": "Ver como funciona",
     "confianca": {
       "lgpd": "Conforme a LGPD",
@@ -155,7 +155,7 @@
       "texto": "Crie sua conta e confirme o seu e-mail. Estudantes entram na hora; professor, curador e pesquisador são liberados pelo administrador.",
       "botao": "Solicitar acesso"
     },
-    "rodapeInstitucional": "Rádix Imago · Produto de pesquisa do Programa de Pós-Graduação em Informática em Saúde (PPGINFOS) da Universidade Federal de Santa Catarina (UFSC).",
+    "rodapeInstitucional": "Rádix Imago · Desenvolvido por Luciano de Matos Neto.",
     "expansao": {
       "rotulo": "Piloto e expansão",
       "titulo": "Começa pela Odontologia. Foi feito para crescer.",
@@ -1894,7 +1894,7 @@
     "cabecalho": "Página {pagina} de {total} · {data}",
     "imagemNumero": "Imagem {numero}",
     "imagemIndisponivel": "Imagem indisponível",
-    "rodape": "Rádix Imago - material de ensino e pesquisa (UFSC). Imagens anonimizadas. Não destinado a diagnóstico.",
+    "rodape": "Rádix Imago - material de ensino e pesquisa. Imagens anonimizadas. Não destinado a diagnóstico.",
     "dicaPdf": "Na janela que vai abrir, em \"Destino\", escolha \"Salvar como PDF\" e clique em Salvar."
   },
   "DescricaoCuradoria": {
@@ -1919,7 +1919,7 @@
     "preparandoZip": "Preparando o arquivo…",
     "salvo": "Arquivo salvo.",
     "salvoComFalhas": "Arquivo salvo, mas {total, plural, one {1 imagem não pôde ser incluída} other {# imagens não puderam ser incluídas}}.",
-    "leiaMe": "Rádix Imago - Universidade Federal de Santa Catarina (UFSC)\r\n\r\nMaterial exclusivo para ensino e pesquisa. As imagens são anonimizadas (LGPD) e não se destinam a diagnóstico.\r\nNão compartilhe fora do contexto acadêmico.\r\n",
+    "leiaMe": "Rádix Imago\r\n\r\nMaterial exclusivo para ensino e pesquisa. As imagens são anonimizadas (LGPD) e não se destinam a diagnóstico.\r\nNão compartilhe fora do contexto acadêmico.\r\n",
     "salvarMinhas": "Salvar em Minhas imagens",
     "ajudaMinhas": "Guarda as imagens na sua lista pessoal (menu Minhas imagens). As que já estavam lá não são duplicadas.",
     "salvandoMinhas": "Salvando em Minhas imagens…",
