@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.14 — 08/11/2026 |
+| Versão do documento | 1.15 — 10/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -92,8 +92,33 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 ### 1.6 Imagens recebidas por perfil (01/11/2026)
 
 - **Curador, administrador e suporte:** veem a lista de todas as imagens recebidas.
-- **Professor:** vê só as imagens DICOM que **ele mesmo enviou**. Quem enviou é identificado pelo registro de auditoria `upload_imagem`, sem coluna nova no banco. É o princípio do mínimo necessário (LGPD), decidido pelo Luciano no QA com perfil professor.
+- **Professor:** vê só as imagens DICOM que **ele mesmo enviou**. Desde 08/11/2026 quem enviou fica na coluna `orthanc_references.enviado_por_id` (antes, só no registro de auditoria `upload_imagem`). É o princípio do mínimo necessário (LGPD), decidido pelo Luciano no QA com perfil professor.
 - Nenhum desses perfis vê, pela lista, imagens ainda não aprovadas: a prévia continua bloqueada.
+
+### 1.9 Envio de imagens por todos os perfis e foto pelo celular (08 e 10/11/2026)
+
+**Quem envia e para onde** (decisões do Luciano, 08/11/2026, mantidas em 10/11):
+
+| Perfil | Destinos | Como |
+|---|---|---|
+| Estudante | **Só para mim** (Minhas imagens) ou **Enviar para análise** de UM professor ou curador | só pela **foto** (o envio de DICOM bruto continua restrito à equipe) |
+| Professor, curador, administrador | **Fila de curadoria** ou **Só para mim** | arquivo DICOM ou foto |
+| Pesquisador, suporte | não enviam | — |
+
+- Quem analisa (professor ou curador escolhido) coloca na fila de curadoria ou devolve com recado. **Só o curador publica** no banco geral, aprovando a ficha.
+- Imagem ainda não aprovada é vista só pelo **dono**, por **quem foi escolhido para analisar**, pela **curadoria** (se estiver na fila) e pelo administrador. Qualquer outra pessoa recebe "não encontrada" (404), sem saber que ela existe (`visivel_para`).
+- O dono pode **retirar** a própria imagem enquanto ela está "só para mim" **ou em análise** (desde 10/11/2026). Depois que entra na fila de curadoria, não.
+
+**Foto do negatoscópio pelo celular — Fase 1 (10/11/2026, `docs/ESPECIFICACAO_FASE1_FOTO_CELULAR.md`):**
+
+- Toda foto (JPG, PNG) entra **só** por `/envios/foto`. O envio comum (`/envios`) aceita **só DICOM**: não há atalho que pule as regras abaixo.
+- **Janela de 5 minutos:** ao tocar em "Enviar foto da radiografia", o servidor abre uma janela e devolve um comprovante de **uso único** e a hora de término pelo **relógio do servidor** (mudar a hora do celular não muda nada). O envio precisa chegar até o término **mais 30 segundos** de folga para rede lenta. Depois disso: recusado (410), "O tempo para enviar acabou. Comece de novo." Abrir uma nova janela cancela a anterior (uma por conta). Comprovante já usado, de outra pessoa ou cancelado é recusado. Se a foto for recusada por problema do **arquivo**, a janela volta a valer dentro do tempo que resta. Valores em `FOTO_JANELA_MINUTOS` e `FOTO_JANELA_TOLERANCIA_SEGUNDOS` (`.env`).
+- **No celular:** girar, recortar e **tarja** gravada nos pixels; a foto é reduzida (lado maior até 2048 px) e regravada em JPEG, o que descarta os dados do celular. A versão sem tarja não sai do aparelho.
+- **Confirmação obrigatória:** "Confirmo que a imagem não mostra dados que identifiquem o paciente." Sem ela, o servidor recusa (422).
+- **No servidor:** confere o tipo real pelos primeiros bytes; até **10 MB** (`FOTO_TAMANHO_MAX_MB`) e 40 megapixels; reconstrói a imagem, converte em tons de cinza e monta um DICOM **Secondary Capture**, modalidade **OT**, sem escala (`PixelSpacing`) e sem nenhum dado do usuário. O **texto gravado na foto é procurado e tarjado antes** de qualquer gravação no Orthanc; depois segue o caminho de sempre (anonimização, leitura de texto, recorte da moldura, registro).
+- A ficha de uma foto nasce com **modalidade OT**. A foto não tem escala real: nenhuma medida em milímetros vale para ela.
+- O destinatário é **reconferido no envio** (precisa continuar professor ou curador ativo).
+- Foto de exame de **paciente real** só depois da aprovação do CEP e do checklist de dados reais (a tela avisa).
 
 ### 1.7 Proteção das contas de administrador (01/11/2026)
 
@@ -158,6 +183,7 @@ pendente ─┐
 | **Prancha** (folha com as imagens à esquerda e as informações à direita; baixar ou imprimir) | 60 por hora; até 30 imagens por prancha; montagem conta como trabalho pesado (no máximo 2 ao mesmo tempo) | conta | `prancha_router.py` |
 | **Prancha por e-mail** (PDF para o próprio e-mail, ou link para outras pessoas) | 5 envios por hora; até 15 imagens por prancha (PDF) e até 30 pessoas por envio (link); busca de pessoas: 60 por minuto | conta | `prancha_router.py` |
 | **Envio de DICOM** | 300 por hora; 50 MB por arquivo; compactados recusados | conta | `images_router.py` |
+| **Foto pelo celular** (Fase 1) | 30 por hora; 10 MB e 40 megapixels por foto; abrir a janela de envio: 30 por hora | conta | `envios_router.py` |
 | **Sincronizar com o Orthanc** | 10 por hora | conta (administrador/suporte) | `images_router.py` |
 | **Sugestão de melhoria** | 10 por hora | conta | `sugestoes.py` |
 | **Girar imagem** (Curadoria) | 30 por minuto; um giro por vez em cada imagem | conta (curadoria) | `curation/orientacao.py` |
@@ -210,3 +236,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.12 | 08/11/2026 | Prancha: escolha dos dados e 1 por folha; envio a qualquer usuário só por link com login (seção 1.2) |
 | 1.13 | 08/11/2026 | Achados das marcações e termos do vocabulário numa lista só, com "Outros" (seção 1) |
 | 1.14 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria, fora da Pesquisa avançada (seção 1) |
+| 1.15 | 10/11/2026 | Envio por todos os perfis (08/11) e foto do negatoscópio pelo celular com janela de 5 minutos (seção 1.9); limite da foto (seção 3); professor identificado por `enviado_por_id` (seção 1.6) |
