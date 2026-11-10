@@ -6,7 +6,7 @@ Esta Política explica, em linguagem simples, **quais dados pessoais** o Rádix 
 
 ## 1. Quem trata os dados
 
-- **Controlador** (quem decide sobre o tratamento dos dados dos usuários): **Luciano de Matos Neto**, pessoa física, desenvolvedor e responsável pelo Rádix Imago, produto de pesquisa do PPGINFOS/UFSC.
+- **Controlador** (quem decide sobre o tratamento dos dados dos usuários): **Luciano de Matos Neto**, pessoa física, desenvolvedor, titular e responsável pelo Rádix Imago.
 - **Canal de atendimento ao titular e encarregado de dados**: **privacidade@radiximago.com.br** (LGPD, art. 41, e Resolução CD/ANPD nº 2/2022, para agentes de tratamento de pequeno porte).
 
 ## 2. Dois tipos de dados, dois cuidados diferentes
@@ -26,7 +26,7 @@ Esta Política explica, em linguagem simples, **quais dados pessoais** o Rádix 
 | Registros de auditoria (o que foi feito, por quem, quando e de qual endereço de rede) | rastreabilidade científica, segurança, apuração de incidentes e de uso indevido | legítimo interesse (art. 7º, IX) e exercício regular de direitos (art. 7º, VI) |
 | Conteúdo que você cria: anotações, imagens salvas, compartilhamentos e recados, curadorias, pareceres, anexos | prestar as funções da Plataforma | execução de contrato (art. 7º, V) |
 | Áudio da curadoria por voz | transformar a fala em texto | execução de contrato (art. 7º, V). **O áudio não é gravado**: é convertido em texto em servidor próprio e descartado |
-| Dados de uso agregados e sem identificação | estatísticas da pesquisa de mestrado (dissertação e artigos) | estudos por pesquisa, com anonimização sempre que possível (art. 7º, IV) |
+| Dados de uso agregados e sem identificação | estatísticas de uso, estudos e publicações científicas | estudos por pesquisa, com anonimização sempre que possível (art. 7º, IV) |
 
 Não usamos os seus dados para publicidade, não traçamos perfil de comportamento para fins comerciais e **não vendemos dados**.
 
