@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.16 — 10/11/2026 |
+| Versão do documento | 1.17 — 10/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -94,6 +94,14 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - **Curador, administrador e suporte:** veem a lista de todas as imagens recebidas.
 - **Professor:** vê só as imagens DICOM que **ele mesmo enviou**. Desde 08/11/2026 quem enviou fica na coluna `orthanc_references.enviado_por_id` (antes, só no registro de auditoria `upload_imagem`). É o princípio do mínimo necessário (LGPD), decidido pelo Luciano no QA com perfil professor.
 - Nenhum desses perfis vê, pela lista, imagens ainda não aprovadas: a prévia continua bloqueada.
+
+### 1.11 Termos de Uso e Política de Privacidade (10/11/2026)
+
+- Documentos: **Termos de Uso** (gerais), um **Anexo por perfil** (estudante, professor, curador, pesquisador, suporte, administrador) e a **Política de Privacidade**. Textos em `backend/app/termos_texto/`; responsável e controlador: Luciano de Matos Neto (pessoa física); canal do titular: privacidade@radiximago.com.br.
+- **Aceite obrigatório** no primeiro acesso, a cada **nova versão** e quando o **perfil muda** (o anexo muda). A caixa "Li e concordo" só libera depois de rolar os textos até o fim. Sem o aceite, o servidor recusa tudo (403 `termos_uso_pendentes`), menos os próprios termos, o termo de ciência, `/auth/me` e `/auth/logout`. "Não aceito" encerra a sessão.
+- Cada aceite fica em `aceites_termos_uso` com versão, perfil, data e o resumo SHA-256 do texto exato aceito, e na auditoria.
+- Os textos ficam **sempre disponíveis, também sem login**, em `/termos` (link no rodapé do login e no menu do usuário), com impressão em PDF.
+- Nova versão: alterar os textos, `TERMOS_VERSAO`, `TERMOS_VIGENCIA` e `TERMOS_MUDANCAS` em `termos_uso.py`.
 
 ### 1.10 Termo de ciência após o login (10/11/2026)
 
@@ -244,3 +252,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.14 | 08/11/2026 | Informações adicionais e anexos de imagem na curadoria, fora da Pesquisa avançada (seção 1) |
 | 1.15 | 10/11/2026 | Envio por todos os perfis (08/11) e foto do negatoscópio pelo celular com janela de 5 minutos (seção 1.9); limite da foto (seção 3); professor identificado por `enviado_por_id` (seção 1.6) |
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
+| 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
