@@ -61,7 +61,7 @@
       }
     },
     "chamada": "Curation, research and teaching with anonymized images. The pilot starts with Dentistry, using dental radiographs, and the platform was designed to expand to other health and life science areas.",
-    "selo": "Dentistry pilot · PPGINFOS · UFSC",
+    "selo": "Dentistry pilot",
     "verComoFunciona": "See how it works",
     "confianca": {
       "lgpd": "LGPD compliant",
@@ -155,7 +155,7 @@
       "texto": "Create your account and confirm your e-mail. Students get in right away; professor, curator and researcher are released by the administrator.",
       "botao": "Request access"
     },
-    "rodapeInstitucional": "Rádix Imago · Research product of the Graduate Program in Health Informatics (PPGINFOS) at the Federal University of Santa Catarina (UFSC).",
+    "rodapeInstitucional": "Rádix Imago · Developed by Luciano de Matos Neto.",
     "expansao": {
       "rotulo": "Pilot and expansion",
       "titulo": "It starts with Dentistry. It was built to grow.",
@@ -1894,7 +1894,7 @@
     "cabecalho": "Page {pagina} of {total} · {data}",
     "imagemNumero": "Image {numero}",
     "imagemIndisponivel": "Image unavailable",
-    "rodape": "Rádix Imago - teaching and research material (UFSC). Anonymized images. Not intended for diagnosis.",
+    "rodape": "Rádix Imago - teaching and research material. Anonymized images. Not intended for diagnosis.",
     "dicaPdf": "In the window that opens, set \"Destination\" to \"Save as PDF\" and click Save."
   },
   "DescricaoCuradoria": {
@@ -1919,7 +1919,7 @@
     "preparandoZip": "Preparing the file…",
     "salvo": "File saved.",
     "salvoComFalhas": "File saved, but {total, plural, one {1 image could not be included} other {# images could not be included}}.",
-    "leiaMe": "Rádix Imago - Federal University of Santa Catarina (UFSC)\r\n\r\nFor teaching and research only. Images are anonymized (LGPD) and are not intended for diagnosis.\r\nDo not share outside the academic context.\r\n",
+    "leiaMe": "Rádix Imago\r\n\r\nFor teaching and research only. Images are anonymized (LGPD) and are not intended for diagnosis.\r\nDo not share outside the academic context.\r\n",
     "salvarMinhas": "Save to My images",
     "ajudaMinhas": "Keeps the images in your personal list (My images menu). Images already there are not duplicated.",
     "salvandoMinhas": "Saving to My images…",
