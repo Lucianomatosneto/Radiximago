@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useRef, useState, FormEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -86,6 +86,10 @@ export default function LoginPage() {
   const [senha, setSenha] = useState('')
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [erro, setErro] = useState('')
+  // voltou porque recusou o termo de ciencia (components/TermoCiencia.tsx)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('termo') === 'recusado') setErro(t('termoRecusado'))
+  }, [t])
   const [carregando, setCarregando] = useState(false)
   const tSF = useTranslations('SegundoFator')
   const [etapa, setEtapa] = useState<EtapaSegundoFator | null>(null)
