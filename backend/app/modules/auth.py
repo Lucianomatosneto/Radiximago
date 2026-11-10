@@ -30,6 +30,7 @@ from app.core.email import (
 from app.modules.users import User, UserRole
 from app.modules.access_requests import AccessRequest, IntencaoPerfil, StatusSolicitacaoAcesso
 from app.modules.audit_logs import AuditLog
+from app.modules.sessoes import SessaoUsuario
 from app.modules.sessoes import (
     abrir_sessao, encerrar_sessao, encerrar_sessoes_do_usuario, identificador_publico, registrar_uso,
     sessao_aberta, sessoes_abertas,
@@ -198,6 +199,11 @@ def obter_usuario_atual(request: Request, token: str | None = Depends(obter_toke
     if not sessao_aberta(db, payload.get("jti"), usuario.id):
         raise HTTPException(status_code=401, detail="Sessão encerrada. Entre novamente.")
     request.state.sessao_jti = payload.get("jti")
+    # termo de ciencia (10/11/2026): sem o aceite NESTA sessao, so as rotas
+    # do proprio termo, /auth/me e /auth/logout respondem
+    from app.modules.termo_ciencia import CODIGO_PENDENTE, ROTAS_LIVRES, termo_aceito
+    if request.url.path.rstrip("/") not in ROTAS_LIVRES and not termo_aceito(db.get(SessaoUsuario, payload.get("jti"))):
+        raise HTTPException(status_code=403, detail=CODIGO_PENDENTE)
     registrar_uso(db, payload.get("jti"))  # "ultimo uso" visto em Meus acessos (no maximo a cada 5 min)
     # usuario conferido no banco: a resposta pode renovar a sessao
     # (app/core/sessao.py - quem esta trabalhando nao e deslogado no meio)
@@ -244,13 +250,15 @@ def exigir_perfis(*perfis_permitidos: UserRole):
     return guardiao
 
 @router.get("/me")
-def meu_perfil(usuario: User = Depends(obter_usuario_atual)):
+def meu_perfil(request: Request, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    from app.modules.termo_ciencia import termo_aceito
     return {
         "id": usuario.id,
         "nome": usuario.nome,
         "email": usuario.email,
         "perfil": usuario.perfil,
         "foto_perfil_url": usuario.foto_perfil_url,
+        "termo_ciencia_pendente": not termo_aceito(db.get(SessaoUsuario, getattr(request.state, "sessao_jti", None) or "")),
     }
 
 @router.post("/logout")
