@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.5 — 08/11/2026 |
+| Versão do documento | 1.6 — 10/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -36,6 +36,8 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Sessões (`jti`, início, fim, motivo, endereço de rede, **resumo** do aparelho — ex.: "Chrome · Windows" —, último uso) | `sessoes_usuario`; o texto completo do navegador **não** é guardado (minimização) | N3 (`jti`) / N2 (origem) | apagadas 30 dias após encerradas |
 | Fichas, achados, erros técnicos, histórico, segunda opinião | `curations`, `achados`, `erros_tecnicos`, `curation_history`, `curation_reviews` | N0/N1 | permanente (rastreabilidade científica) |
 | Informações adicionais e anexos da ficha (texto livre e imagens anexadas pelo curador) | `curations.informacoes_adicionais`; tabela `anexos_curadoria`; arquivos em `backend/anexos_curadoria` (**fora** da pasta pública `uploads`, entregues só pela API com login; regravados sem metadados). Não passam pela anonimização do DICOM: a tela avisa para não anexar nada com nome, data ou número do paciente | N1 | junto com a ficha; o anexo removido é apagado do disco |
+| Foto do negatoscópio enviada pelo celular (Fase 1) | a foto recebida **não é guardada**: o servidor a reconstrói, tira os dados do celular, tarja o texto gravado na imagem e grava só o DICOM tratado no Orthanc. `orthanc_references.formato_entrada = "foto"`; dono, destino e quem analisa em `orthanc_references` | N1 (DICOM tratado) | igual ao DICOM anonimizado; a foto original não é retida |
+| Janelas de envio de foto (quem abriu, quando, quando venceu, quando foi usada) | `janelas_envio_foto` | N1 | apagadas automaticamente após 30 dias |
 | Observações internas da ficha | `curations.observacoes_internas` | N1 | permanente |
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
@@ -90,6 +92,8 @@ Perfis (`backend/app/modules/auth.py`):
 | Ficha: **observações internas**, histórico, curador, segunda opinião | — | — | ver e editar | ver e editar |
 | Ficha pendente, em análise ou descartada | — | — | ver e editar | ver e editar |
 | Enviar imagem DICOM | — | sim | sim | sim |
+| Enviar **foto** de radiografia (celular, janela de 5 min) | estudante: sim (só para mim ou análise); pesquisador: — | sim | curador: sim; suporte: — | sim |
+| Ver foto/imagem **ainda não aprovada** | só a **própria**, ou a que foi enviada para ele analisar | idem | curador: as da fila; suporte: todas | todas |
 | Sincronizar, ativar ou desativar imagens | — | — | só suporte | sim |
 | Própria conta: nome, instituição, foto, senha | editar | editar | editar | editar |
 | Outros usuários: nome, e-mail, perfil, situação | — | — | — | ver e editar |
@@ -149,3 +153,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.3 | 20/10/2026 | Recorte da moldura branca e giro da imagem (seção 2.1) |
 | 1.4 | 08/11/2026 | Prancha enviada a outra pessoa (`pranchas_enviadas`): guarda só o **pedido** (quem enviou, quem recebe, quais fichas, as escolhas e o recado), nunca o arquivo; o e-mail leva só o link (exige login). Aparelhos da rede (`aparelhos_rede`): nome, local, nome DICOM e IP do aparelho — dados do equipamento, não de pessoas |
 | 1.5 | 08/11/2026 | Informações adicionais e anexos da curadoria (`anexos_curadoria`): imagens regravadas sem metadados, fora da pasta pública, vistas só por quem abre a imagem curada aprovada |
+| 1.6 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): foto original não retida, tarja no aparelho e no servidor antes do Orthanc, `janelas_envio_foto` (30 dias); matriz de acesso: estudante envia foto, dono vê a própria |
