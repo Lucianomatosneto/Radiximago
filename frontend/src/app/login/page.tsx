@@ -88,7 +88,9 @@ export default function LoginPage() {
   const [erro, setErro] = useState('')
   // voltou porque recusou o termo de ciencia (components/TermoCiencia.tsx)
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get('termo') === 'recusado') setErro(t('termoRecusado'))
+    const busca = new URLSearchParams(window.location.search)
+    if (busca.get('termo') === 'recusado') setErro(t('termoRecusado'))
+    if (busca.get('termos') === 'recusados') setErro(t('termosRecusados'))
   }, [t])
   const [carregando, setCarregando] = useState(false)
   const tSF = useTranslations('SegundoFator')
@@ -429,6 +431,8 @@ export default function LoginPage() {
           <path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z" />
         </svg>
         <span className="truncate">{t('avisoIA')}</span>
+        {/* Termos de Uso e Politica de Privacidade: sempre disponiveis, sem login */}
+        <a href="/termos" className="ml-auto shrink-0 text-slate-300 underline hover:text-white">{t('linkTermos')}</a>
       </footer>
     </main>
   )
