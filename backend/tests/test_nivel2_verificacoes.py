@@ -197,8 +197,10 @@ def test_7_4_4_botao_sair_em_todas_as_telas_logadas():
     topbar = (FRONTEND / "components" / "Topbar.tsx").read_text(encoding="utf-8")
     assert "/auth/logout" in topbar
     paginas = [p for p in (FRONTEND / "app").rglob("page.tsx")]
-    # telas sem login; "erro-tecnico" e uma pagina isolada sem dados (so o botao "voltar ao painel")
-    publicas = {"login", "esqueci-senha", "redefinir-senha", "solicitar-acesso", "confirmar-email", "conheca", "app", "erro-tecnico"}
+    # telas sem login; "erro-tecnico" e uma pagina isolada sem dados (so o botao "voltar ao painel");
+    # "termos" (10/11/2026) e publica: Termos de Uso e Privacidade, abertos tambem sem login
+    publicas = {"login", "esqueci-senha", "redefinir-senha", "solicitar-acesso", "confirmar-email", "conheca", "app",
+                "erro-tecnico", "termos"}
     sem_layout = [str(p.relative_to(FRONTEND)) for p in paginas
                   if p.parent.name not in publicas and "Topbar" not in p.read_text(encoding="utf-8")
                   and "AppShell" not in p.read_text(encoding="utf-8") and "Layout" not in p.read_text(encoding="utf-8")]
