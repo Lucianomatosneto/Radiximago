@@ -36,9 +36,9 @@
   /* TITULO DA TELA DE LOGIN (10/11/2026) - cores do degrade animado;
      trocar AQUI, sem procurar no codigo */
   --color-login-titulo-1: #ffffff;     /* degrade animado do titulo */
-  --color-login-titulo-2: #98a0ff;
-  --color-login-titulo-3: #b794f6;
-  --color-login-titulo-4: #6ec1ff;
+  --color-login-titulo-2: #86efac;     /* verde claro */
+  --color-login-titulo-3: #34d399;     /* verde esmeralda */
+  --color-login-titulo-4: #5eead4;     /* verde-agua, levemente azul */
 
   --radius-2xl: 1rem;
 
