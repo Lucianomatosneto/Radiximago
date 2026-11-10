@@ -154,26 +154,39 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     origem = _determinar_origem(orthanc_id)
     orthanc_id_anonimizado, resultado_texto, resultado_recorte = _anonimizar_e_excluir_original(orthanc_id)
 
-    detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
-    tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
-    uids = _extrair_uids(detalhes, tags_simplificadas)
-    dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id_anonimizado}"
+    try:
+        detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
+        tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
+        uids = _extrair_uids(detalhes, tags_simplificadas)
+        dicomweb_url = f"{settings.DICOMWEB_URL}/instances/{orthanc_id_anonimizado}"
 
-    nova_ref = OrthancReference(
-        orthanc_id=orthanc_id_anonimizado,
-        study_instance_uid=uids["study_instance_uid"],
-        series_instance_uid=uids["series_instance_uid"],
-        sop_instance_uid=uids["sop_instance_uid"],
-        resource_type="instance",
-        dicomweb_url=dicomweb_url,
-        anonimizacao_status="concluida",
-        origem=origem,
-        texto_na_imagem=resultado_texto.situacao,
-        texto_regioes=resultado_texto.regioes,
-        enquadramento=resultado_recorte.situacao,
-    )
-    db.add(nova_ref)
-    db.commit()
+        nova_ref = OrthancReference(
+            orthanc_id=orthanc_id_anonimizado,
+            study_instance_uid=uids["study_instance_uid"],
+            series_instance_uid=uids["series_instance_uid"],
+            sop_instance_uid=uids["sop_instance_uid"],
+            resource_type="instance",
+            dicomweb_url=dicomweb_url,
+            anonimizacao_status="concluida",
+            origem=origem,
+            texto_na_imagem=resultado_texto.situacao,
+            texto_regioes=resultado_texto.regioes,
+            enquadramento=resultado_recorte.situacao,
+        )
+        db.add(nova_ref)
+        db.commit()
+    except IntegrityError:
+        # envio concorrente do MESMO arquivo: a outra referencia vale
+        raise
+    except Exception:
+        # nada pela metade (10/11/2026): sem registro no banco, a versao
+        # anonimizada nao fica "orfa" no Orthanc
+        db.rollback()
+        try:
+            orthanc_client.excluir_instancia(orthanc_id_anonimizado)
+        except Exception:
+            logger.exception("Instancia anonimizada %s ficou no Orthanc sem registro.", orthanc_id_anonimizado)
+        raise
     return nova_ref, True
 
 
@@ -383,6 +396,7 @@ def receber_dicom(
     destino: str = DestinoImagem.FILA.value,
     destinatario_id: int | None = None,
     nota: str | None = None,
+    formato_entrada: str = "dicom",
 ) -> dict:
     """
     Caminho UNICO de entrada de um arquivo DICOM enviado por alguem (tela
@@ -438,6 +452,7 @@ def receber_dicom(
         if criada:
             ref.enviado_por_id = usuario.id
             ref.destino = destino
+            ref.formato_entrada = formato_entrada
             if destino == DestinoImagem.ANALISE.value:
                 ref.analise_destinatario_id = destinatario_id
                 ref.analise_nota = nota
