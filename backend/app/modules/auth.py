@@ -199,11 +199,19 @@ def obter_usuario_atual(request: Request, token: str | None = Depends(obter_toke
     if not sessao_aberta(db, payload.get("jti"), usuario.id):
         raise HTTPException(status_code=401, detail="Sessão encerrada. Entre novamente.")
     request.state.sessao_jti = payload.get("jti")
-    # termo de ciencia (10/11/2026): sem o aceite NESTA sessao, so as rotas
-    # do proprio termo, /auth/me e /auth/logout respondem
-    from app.modules.termo_ciencia import CODIGO_PENDENTE, ROTAS_LIVRES, termo_aceito
-    if request.url.path.rstrip("/") not in ROTAS_LIVRES and not termo_aceito(db.get(SessaoUsuario, payload.get("jti"))):
-        raise HTTPException(status_code=403, detail=CODIGO_PENDENTE)
+    # TERMOS (10/11/2026). Antes de usar o sistema, a pessoa precisa ter:
+    # 1) aceito os Termos de Uso + anexo do perfil + Politica de Privacidade
+    #    na versao atual (primeiro acesso e cada nova versao);
+    # 2) marcado o termo de ciencia NESTA sessao (a cada login).
+    # Sem isso, so as rotas dos proprios termos, /auth/me e /auth/logout respondem.
+    from app.modules import termo_ciencia, termos_uso
+    caminho = request.url.path.rstrip("/")
+    livres = termo_ciencia.ROTAS_LIVRES | termos_uso.ROTAS_LIVRES
+    if caminho not in livres:
+        if not termos_uso.termos_aceitos(db, usuario):
+            raise HTTPException(status_code=403, detail=termos_uso.CODIGO_PENDENTE)
+        if not termo_ciencia.termo_aceito(db.get(SessaoUsuario, payload.get("jti"))):
+            raise HTTPException(status_code=403, detail=termo_ciencia.CODIGO_PENDENTE)
     registrar_uso(db, payload.get("jti"))  # "ultimo uso" visto em Meus acessos (no maximo a cada 5 min)
     # usuario conferido no banco: a resposta pode renovar a sessao
     # (app/core/sessao.py - quem esta trabalhando nao e deslogado no meio)
@@ -252,12 +260,14 @@ def exigir_perfis(*perfis_permitidos: UserRole):
 @router.get("/me")
 def meu_perfil(request: Request, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
     from app.modules.termo_ciencia import termo_aceito
+    from app.modules.termos_uso import termos_aceitos
     return {
         "id": usuario.id,
         "nome": usuario.nome,
         "email": usuario.email,
         "perfil": usuario.perfil,
         "foto_perfil_url": usuario.foto_perfil_url,
+        "termos_uso_pendentes": not termos_aceitos(db, usuario),
         "termo_ciencia_pendente": not termo_aceito(db.get(SessaoUsuario, getattr(request.state, "sessao_jti", None) or "")),
     }
 
