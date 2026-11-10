@@ -221,7 +221,8 @@
     "aproximar": "Zoom in",
     "afastar": "Zoom out",
     "redefinirVista": "Reset view",
-    "conhecaRadix": "Discover Rádix Imago"
+    "conhecaRadix": "Discover Rádix Imago",
+    "termoRecusado": "Without accepting the acknowledgement, access to the system is not granted."
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -2933,5 +2934,18 @@
     "verAnexos": "See additional information and attachments for this image",
     "verAnexosCurto": "Attachments",
     "fechar": "Close"
+  },
+  "TermoCiencia": {
+    "titulo": "Acknowledgement",
+    "paragrafo1": "Rádix Imago is an academic platform. The images in this system are used exclusively for teaching and research.",
+    "paragrafo2": "The images and curations have no diagnostic value, do not replace a report or clinical exam, and must not guide patient care.",
+    "paragrafo3": "The images are anonymized. Trying to identify patients or copying images out of the system without authorization is forbidden.",
+    "caixa": "I acknowledge that the images are used exclusively for teaching and research and have no diagnostic value.",
+    "continuar": "Continue",
+    "naoAceito": "I do not accept",
+    "marqueACaixa": "Tick the acknowledgement box to continue.",
+    "textoMudou": "The text was updated. Please read it again and confirm.",
+    "erro": "Could not record your acceptance. Try again.",
+    "cadaLogin": "This acknowledgement is shown at every sign-in. Your acceptance is recorded with date and time."
   }
 }
