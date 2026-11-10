@@ -46,7 +46,7 @@ def e_foto(conteudo: bytes) -> bool:
     )
 
 
-def converter(conteudo: bytes, agora: datetime | None = None) -> bytes:
+def converter(conteudo: bytes, agora: datetime | None = None, negatoscopio: bool = False) -> bytes:
     """Devolve os bytes de um arquivo DICOM com os pixels da foto, em tons de cinza."""
     try:
         with Image.open(io.BytesIO(conteudo)) as original:
@@ -78,7 +78,10 @@ def converter(conteudo: bytes, agora: datetime | None = None) -> bytes:
     ds.PatientID = "ANONIMO"
     ds.Modality = "OT"
     ds.ConversionType = "WSD"  # estacao de trabalho / captura digital
-    ds.SeriesDescription = "Foto enviada pelo Radix Imago"
+    ds.SeriesDescription = "Foto de negatoscopio" if negatoscopio else "Foto enviada pelo Radix Imago"
+    # sem PixelSpacing de proposito: a foto nao tem escala real (nenhuma
+    # medida em milimetros pode ser feita nela)
+    ds.ImageComments = "Foto convertida pelo Radix Imago. Sem escala real: nao medir em mm."
     ds.ContentDate = agora.strftime("%Y%m%d")
     ds.SamplesPerPixel = 1
     ds.PhotometricInterpretation = "MONOCHROME2"
