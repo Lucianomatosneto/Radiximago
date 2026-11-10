@@ -355,6 +355,11 @@ def obter_token(client: TestClient, email: str, senha: str = SENHA_TESTE) -> str
     # usar o sistema - aqui o aceite e automatico; os testes do proprio
     # termo (test_termo_ciencia.py) fazem o login sem ele
     from app.modules.termo_ciencia import TERMO_CIENCIA_VERSAO
+    from app.modules.termos_uso import TERMOS_VERSAO
+    cab = {"Authorization": f"Bearer {token}"}
+    perfil = client.get("/termos/meus", headers=cab).json()["perfil"]
+    termos = client.post("/termos/aceitar", headers=cab, json={"versao": TERMOS_VERSAO, "anexo": perfil, "li_e_concordo": True})
+    assert termos.status_code == 200, termos.text
     aceite = client.post("/auth/termo-ciencia/aceitar", headers={"Authorization": f"Bearer {token}"},
                          json={"versao": TERMO_CIENCIA_VERSAO, "ciente": True})
     assert aceite.status_code == 200, aceite.text
