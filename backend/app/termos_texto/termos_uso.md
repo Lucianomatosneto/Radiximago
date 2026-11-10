@@ -21,7 +21,7 @@ Para facilitar a leitura, neste documento:
 
 ## 2. Quem é o Responsável
 
-A Plataforma é desenvolvida e mantida por **Luciano de Matos Neto**, pessoa física, tecnólogo em radiologia, como produto de pesquisa no âmbito do Programa de Pós-Graduação em Informática em Saúde da Universidade Federal de Santa Catarina (PPGINFOS/UFSC).
+A Plataforma é desenvolvida e mantida por **Luciano de Matos Neto**, pessoa física, tecnólogo em radiologia, autor e titular da Plataforma.
 
 Contato para qualquer assunto relacionado a estes Termos: **privacidade@radiximago.com.br**.
 
@@ -118,7 +118,7 @@ Você pode usar a Plataforma, dentro das permissões do seu perfil, para:
 
 ## 10. Pesquisa científica e dados de uso
 
-10.1. O Rádix Imago é produto de pesquisa de mestrado. **Dados de uso agregados e sem identificação** (por exemplo, quantidade de curadorias, tempo médio de uso, funções mais usadas) podem ser usados em relatórios, dissertação e artigos científicos.
+10.1. **Dados de uso agregados e sem identificação** (por exemplo, quantidade de curadorias, tempo médio de uso, funções mais usadas) podem ser usados pelo Responsável em relatórios, estudos e publicações científicas.
 
 10.2. Qualquer pesquisa que envolva **dados identificáveis de usuários** (como questionários, entrevistas ou testes de usabilidade) dependerá de convite específico e de termo de consentimento livre e esclarecido próprio, conforme as normas de ética em pesquisa.
 
