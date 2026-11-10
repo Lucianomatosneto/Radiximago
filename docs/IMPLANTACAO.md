@@ -131,6 +131,15 @@ Para editar o arquivo:
 nano .env
 ```
 
+**Opcional — foto pelo celular (Fase 1):** os valores abaixo já têm
+padrão no código e só precisam ir para o `.env` se forem mudados depois
+dos testes com aparelhos reais:
+
+- `FOTO_JANELA_MINUTOS=5` (tempo para concluir o envio da foto);
+- `FOTO_JANELA_TOLERANCIA_SEGUNDOS=30` (folga só para a foto terminar de
+  subir em rede lenta);
+- `FOTO_TAMANHO_MAX_MB=10`.
+
 Ainda no arquivo, preencha:
 
 - `SMTP_USER` e `SMTP_PASSWORD`: os **mesmos** da Brevo que já funcionam no
