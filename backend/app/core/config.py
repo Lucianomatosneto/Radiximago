@@ -63,6 +63,12 @@ class Settings(BaseSettings):
     #   python -c "import secrets; print(secrets.token_hex(32))"
     WHISPER_CHAVE: str = ""
     MAX_UPLOAD_SIZE_MB: int = 50
+    # FOTO DO NEGATOSCOPIO PELO CELULAR (Fase 1, 10/11/2026 -
+    # app/modules/janela_foto.py): tempo para concluir o envio, folga so para
+    # a foto terminar de subir em rede lenta, e tamanho maximo da foto.
+    FOTO_JANELA_MINUTOS: int = 5
+    FOTO_JANELA_TOLERANCIA_SEGUNDOS: int = 30
+    FOTO_TAMANHO_MAX_MB: int = 10
 
     # E-mail (SMTP) - usado pra redefinicao de senha. Se SMTP_HOST ficar
     # vazio (default), o envio real e pulado e o conteudo do e-mail (com o
