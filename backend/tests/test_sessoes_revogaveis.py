@@ -25,6 +25,9 @@ def _entrar(cliente: TestClient, email: str, senha: str = SENHA_TESTE) -> str:
     r = cliente.post("/auth/login", data={"username": email, "password": senha})
     r = completar_segundo_fator(cliente, email, r)  # perfis com poder: login em duas etapas
     assert r.status_code == 200, r.text
+    # termo de ciencia (10/11/2026): cada login precisa do aceite
+    from app.modules.termo_ciencia import TERMO_CIENCIA_VERSAO
+    assert cliente.post("/auth/termo-ciencia/aceitar", json={"versao": TERMO_CIENCIA_VERSAO, "ciente": True}).status_code == 200
     return cliente.cookies.get(NOME_COOKIE_TOKEN)
 
 
