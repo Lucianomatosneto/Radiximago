@@ -87,7 +87,7 @@ export const TOPICOS_AJUDA: TopicoAjuda[] = [
       titulo: 'Para que serve o Rádix Imago',
       resumo: 'Plataforma acadêmica de ensino e pesquisa com radiografias odontológicas anonimizadas.',
       passos: [
-        'As imagens servem para estudo e pesquisa (UFSC). Não são usadas para diagnóstico nem para laudo de pacientes.',
+        'As imagens servem para estudo e pesquisa. Não são usadas para diagnóstico nem para laudo de pacientes.',
         'Todas as imagens são anonimizadas: nenhum dado que identifique o paciente fica disponível (LGPD).',
         'Cada imagem passa por curadoria: um curador confere a anonimização e descreve o que a imagem mostra.',
         'Só as imagens aprovadas na curadoria aparecem no Banco de imagens e na Pesquisa avançada.',
@@ -98,7 +98,7 @@ export const TOPICOS_AJUDA: TopicoAjuda[] = [
       titulo: 'What Rádix Imago is for',
       resumo: 'An academic teaching and research platform with anonymized dental radiographs.',
       passos: [
-        'Images are for study and research (UFSC). They are not used for diagnosis or patient reports.',
+        'Images are for study and research. They are not used for diagnosis or patient reports.',
         'Every image is anonymized: no data that identifies the patient is available (LGPD).',
         'Each image goes through curation: a curator checks the anonymization and describes what the image shows.',
         'Only images approved in curation appear in the Image bank and Advanced search.',
