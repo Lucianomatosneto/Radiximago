@@ -187,7 +187,11 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   // imagens (1 linha x 2 colunas). Toda vez que o visualizador abre, ele
   // comeca em 1x2 (pedido: sempre abrir assim); trocar o layout vale so
   // enquanto esta tela estiver aberta.
-  const [grade, setGrade] = useState<Grade>({ linhas: 1, colunas: 2 })
+  // celular (tela estreita, Fase 2 - 10/11/2026): comeca com UMA imagem por
+  // vez, que ocupa a tela toda; no notebook continua 1x2
+  const [grade, setGrade] = useState<Grade>(() =>
+    typeof window !== 'undefined' && window.innerWidth < 640 ? { linhas: 1, colunas: 1 } : { linhas: 1, colunas: 2 }
+  )
   function escolherGrade(nova: Grade) {
     setGrade(nova)
   }
@@ -880,18 +884,21 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
           areas das imagens continuam pretas, para a leitura. */}
       <FundoMapaMundi intensidade="leitura" />
       {quadroConfirmacao}
-      <div className="relative z-40 flex items-center justify-between border-b border-base-border bg-base/60 px-4 py-3 backdrop-blur-md sm:px-6">
-        <div className="flex items-center gap-4">
+      <div className="relative z-40 flex flex-wrap items-center justify-between gap-2 border-b border-base-border bg-base/60 px-3 py-2 backdrop-blur-md sm:px-6 sm:py-3">
+        <div className="flex min-w-0 items-center gap-4">
           {/* Este visualizador cobre a tela inteira (fixed inset-0), inclusive
               a Topbar (onde a logo normalmente aparece) - por isso ela e
               repetida aqui, na variante "escuro". Esta tela acompanha o
               alternador de tema claro/escuro (botao <ThemeToggle> abaixo),
               igual as outras telas do sistema - por isso o fundo (bg-base) e
               os textos usam as variaveis de tema, em vez de cores fixas. */}
-          <Logo variante="escuro" />
+          {/* no celular a logo sai para sobrar espaco (Fase 2, 10/11/2026) */}
+          <div className="hidden sm:block">
+            <Logo variante="escuro" />
+          </div>
           <div className="text-sm text-slate-300">
             {t('imagemPrefixo')} <span className="font-semibold text-ink">#{atual.numero}</span>{' '}
-            <span className="text-slate-500">
+            <span className="hidden text-slate-500 sm:inline">
               {emGrade
                 ? t('paginaDeSelecionadas', {
                     de: inicioPagina + 1,
