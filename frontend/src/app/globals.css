@@ -33,15 +33,8 @@
   --color-slate-600: rgb(var(--rgb-ink-4));
   --color-slate-700: rgb(var(--rgb-base-border));
 
-  /* TELA DE LOGIN (10/11/2026) - trocar as cores AQUI, sem procurar no codigo.
-     Viram classes do Tailwind: text-login-destaque, border-login-destaque/40...
-     e tambem valem como var(--color-login-...) no CSS. */
-  --color-login-fundo-1: #000000;      /* topo, ate 30% da altura */
-  --color-login-fundo-2: #0a0d2e;      /* em 62% */
-  --color-login-fundo-3: #2a3190;      /* embaixo (100%) */
-  --color-login-destaque: #98a0ff;     /* links, icones das vantagens, etiquetas, foco */
-  --color-login-aviso-fundo: rgb(0 0 0 / 0.28); /* faixa do aviso legal */
-  --color-login-aviso-texto: #cbd5e1;  /* texto do aviso: contraste 9,5:1 sobre a faixa */
+  /* TITULO DA TELA DE LOGIN (10/11/2026) - cores do degrade animado;
+     trocar AQUI, sem procurar no codigo */
   --color-login-titulo-1: #ffffff;     /* degrade animado do titulo */
   --color-login-titulo-2: #98a0ff;
   --color-login-titulo-3: #b794f6;
