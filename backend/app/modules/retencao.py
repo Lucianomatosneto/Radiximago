@@ -7,7 +7,9 @@ Uma vez por dia, enquanto o servidor estiver ligado:
   O banco so permite apagar registros acima desse prazo (gatilho
   radix_auditoria_protegida, migracao a4c8e2f6b1d9) - os dois valores
   precisam ser iguais (conferido em tests/test_registros_seguranca.py);
-- sessoes encerradas ha mais de 30 dias sao apagadas.
+- sessoes encerradas ha mais de 30 dias sao apagadas;
+- janelas de envio de foto (app/modules/janela_foto.py) com mais de 30
+  dias sao apagadas.
 Referencia do prazo: 5 anos, o mesmo exigido para a guarda de dados de
 pesquisa (Resolucao CNS 466/2012, item XI.2.f).
 """
@@ -28,6 +30,7 @@ INTERVALO_LIMPEZA_SEGUNDOS = 24 * 3600
 
 def limpar_registros_vencidos() -> dict:
     from app.modules.audit_logs import AuditLog
+    from app.modules.janela_foto import DIAS_GUARDAR_JANELAS, JanelaEnvioFoto
     from app.modules.sessoes import DIAS_GUARDAR_SESSOES, SessaoUsuario
 
     agora = datetime.now(timezone.utc)
@@ -44,8 +47,13 @@ def limpar_registros_vencidos() -> dict:
                     SessaoUsuario.encerrada_em < agora - timedelta(days=DIAS_GUARDAR_SESSOES))
             .delete(synchronize_session=False)
         )
+        janelas = (
+            db.query(JanelaEnvioFoto)
+            .filter(JanelaEnvioFoto.expira_em < agora - timedelta(days=DIAS_GUARDAR_JANELAS))
+            .delete(synchronize_session=False)
+        )
         db.commit()
-        return {"auditoria": auditoria, "sessoes": sessoes}
+        return {"auditoria": auditoria, "sessoes": sessoes, "janelas_foto": janelas}
     finally:
         db.close()
 
