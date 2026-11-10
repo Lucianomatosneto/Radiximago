@@ -41,7 +41,7 @@ const API = process.env.NEXT_PUBLIC_API_URL
 const AREAS = [
   { chave: 'areaOdontologia', cor: '#F97316' },
   { chave: 'areaOdontologia', cor: '#F59E0B' },
-  { chave: 'areaRadiologia', cor: '#14B8A6' },
+  { chave: 'areaRadiologia', cor: 'var(--color-login-destaque)' },
   { chave: 'areaOdontologia', cor: '#FB923C' },
   { chave: 'areaOdontologia', cor: '#F97316' },
   { chave: 'areaRadiologia', cor: '#3B82F6' },
@@ -57,13 +57,17 @@ const ICONES_FERRAMENTA = {
   redefinir: <><path d="M4 12a8 8 0 1 0 2.34-5.66" /><path d="M4 4v4h4" /><circle cx="12" cy="12" r="1.6" fill="currentColor" /></>,
 }
 
+// 10/11/2026: degrade vertical preto -> azul (cores em globals.css, @theme)
 const FUNDO =
-  'radial-gradient(70% 45% at 50% 100%, rgba(45,212,191,.45), transparent 70%),' +
-  'linear-gradient(180deg, #000 0%, #000 38%, #032826 70%, #0B5E58 100%)'
+  'linear-gradient(180deg, var(--color-login-fundo-1) 0%, var(--color-login-fundo-1) 30%, ' +
+  'var(--color-login-fundo-2) 62%, var(--color-login-fundo-3) 100%)'
+
+// cor com transparencia a partir de uma variavel (ou hexadecimal)
+const comAlfa = (cor: string, porcento: number) => `color-mix(in srgb, ${cor} ${porcento}%, transparent)`
 
 function Icone({ tipo }: { tipo: 'escudo' | 'pessoa' | 'rota' }) {
   return (
-    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-teal-300/40 bg-teal-400/10 text-teal-300">
+    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg border border-login-destaque/40 bg-login-destaque/10 text-login-destaque">
       <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         {tipo === 'escudo' && (<><path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z" /><path d="m9 12 2 2 4-4" /></>)}
         {tipo === 'pessoa' && (<><circle cx="12" cy="8" r="4" /><path d="M5 21c.8-3.5 3.6-6 7-6s6.2 2.5 7 6" /></>)}
@@ -232,18 +236,18 @@ export default function LoginPage() {
 
   const sombraTexto = { textShadow: '0 1px 10px rgba(0,0,0,.95)' }
   const campo =
-    'w-full border-0 border-b border-slate-600 bg-transparent px-0.5 py-3 text-base text-white outline-hidden transition placeholder:text-slate-500 focus:border-teal-300 focus-visible:outline-hidden'
+    'w-full border-0 border-b border-slate-600 bg-transparent px-0.5 py-3 text-base text-white outline-hidden transition placeholder:text-slate-500 focus:border-login-destaque focus-visible:outline-hidden'
   const ferramentas: { id: keyof typeof ICONES_FERRAMENTA; rotulo: string; cor: string; acao: () => void }[] = [
     { id: pausado ? 'retomar' : 'pausar', rotulo: pausado ? t('retomarRotacao') : t('pausarRotacao'), cor: '#60A5FA', acao: () => setPausado(controleRef.current?.alternarPausa() ?? false) },
     { id: 'avancar', rotulo: t('proximaImagem'), cor: '#4ADE80', acao: () => controleRef.current?.avancar() },
-    { id: 'aproximar', rotulo: t('aproximar'), cor: '#2DD4BF', acao: () => controleRef.current?.aproximar() },
-    { id: 'afastar', rotulo: t('afastar'), cor: '#2DD4BF', acao: () => controleRef.current?.afastar() },
+    { id: 'aproximar', rotulo: t('aproximar'), cor: 'var(--color-login-destaque)', acao: () => controleRef.current?.aproximar() },
+    { id: 'afastar', rotulo: t('afastar'), cor: 'var(--color-login-destaque)', acao: () => controleRef.current?.afastar() },
     { id: 'redefinir', rotulo: t('redefinirVista'), cor: '#FACC15', acao: () => controleRef.current?.redefinir() },
   ]
   const area = foco >= 0 ? AREAS[foco] : null
 
   return (
-    <main className="relative isolate min-h-screen overflow-x-hidden text-white" style={{ background: FUNDO }}>
+    <main className="tela-login relative isolate min-h-screen overflow-x-hidden text-white" style={{ background: FUNDO }}>
       {/* animacao da etiqueta da area em destaque */}
       <style>{'@keyframes etiquetaEntra{from{opacity:0;transform:translateY(8px) scale(.96)}to{opacity:1;transform:none}}@media (prefers-reduced-motion:reduce){.etiqueta-area{animation:none!important}}'}</style>
       <CenaLogin controleRef={controleRef} aoMudarFoco={aoMudarFoco} aoMudarLongitude={aoMudarLongitude} />
@@ -260,9 +264,11 @@ export default function LoginPage() {
           aria-label={t('acessoSistema')}
           className="flex flex-col lg:fixed lg:bottom-9 lg:left-0 lg:top-12 lg:w-[640px] lg:justify-[safe_center] lg:overflow-y-auto lg:px-[clamp(40px,6vw,96px)]"
         >
-          <h1 className="text-4xl font-semibold leading-[1.02] tracking-[-0.035em] lg:text-[clamp(38px,3.6vw,58px)]" style={sombraTexto}>
+          {/* degrade animado nas letras (globals.css); sem sombra, que apareceria
+              por dentro do texto transparente */}
+          <h1 className="titulo-login-animado text-4xl font-semibold leading-[1.02] tracking-[-0.035em] lg:text-[clamp(38px,3.6vw,58px)]">
             {t('tituloDestaque1')}
-            <span className="block text-teal-300">{t('tituloDestaque2')}</span>
+            <span className="block">{t('tituloDestaque2')}</span>
           </h1>
 
           <div className="mt-[42vh] lg:hidden" aria-hidden="true" />
@@ -316,7 +322,7 @@ export default function LoginPage() {
                   <button
                     type="button"
                     onClick={() => setMostrarSenha((v) => !v)}
-                    className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-teal-300"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-slate-400 transition-colors hover:text-white focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-login-destaque"
                     aria-label={mostrarSenha ? t('ocultarSenha') : t('mostrarSenha')}
                   >
                     {mostrarSenha ? (
@@ -364,7 +370,7 @@ export default function LoginPage() {
 
           <Link
             href="/conheca"
-            className="group mt-6 inline-flex items-center gap-2 text-[13.5px] font-medium text-teal-300 transition hover:text-teal-200"
+            className="group mt-6 inline-flex items-center gap-2 text-[13.5px] font-medium text-login-destaque transition hover:brightness-125"
             style={sombraTexto}
           >
             {t('conhecaRadix')}
@@ -383,8 +389,8 @@ export default function LoginPage() {
               title={f.rotulo}
               aria-label={f.rotulo}
               onClick={f.acao}
-              className="grid h-9 w-9 place-items-center rounded-lg border transition hover:brightness-150 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-teal-300"
-              style={{ color: f.cor, borderColor: `${f.cor}73`, background: `linear-gradient(135deg, ${f.cor}38, #0A0C10)` }}
+              className="grid h-9 w-9 place-items-center rounded-lg border transition hover:brightness-150 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-login-destaque"
+              style={{ color: f.cor, borderColor: comAlfa(f.cor, 45), background: `linear-gradient(135deg, ${comAlfa(f.cor, 22)}, #0A0C10)` }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-[17px] w-[17px]" aria-hidden="true">
                 {ICONES_FERRAMENTA[f.id]}
@@ -399,7 +405,7 @@ export default function LoginPage() {
             <span
               key={foco}
               className="etiqueta-area animate-[etiquetaEntra_.45s_cubic-bezier(.2,.8,.2,1)_both] inline-flex items-center gap-3 rounded-full border py-2.5 pl-3 pr-5 text-[17px] font-semibold text-white"
-              style={{ borderColor: area.cor, background: `linear-gradient(135deg, ${area.cor}cc, ${area.cor}66)`, boxShadow: `0 0 22px -4px ${area.cor}` }}
+              style={{ borderColor: area.cor, background: `linear-gradient(135deg, ${comAlfa(area.cor, 80)}, ${comAlfa(area.cor, 40)})`, boxShadow: `0 0 22px -4px ${area.cor}` }}
             >
               <span className="rounded-full bg-black/25 px-2 py-0.5 font-mono text-[11px] tracking-widest">{String(foco + 1).padStart(2, '0')}</span>
               {t(area.chave)}
@@ -410,7 +416,7 @@ export default function LoginPage() {
         {/* hemisferio voltado para a frente */}
         {longitude !== null && (
           <p className="fixed bottom-14 right-6 z-10 hidden text-right font-mono text-xs uppercase leading-relaxed tracking-wider text-slate-300 lg:block" style={sombraTexto}>
-            {t('hemisferio')} <b className="font-semibold text-teal-300">{longitude < 0 ? t('ocidental') : t('oriental')}</b>
+            {t('hemisferio')} <b className="font-semibold text-login-destaque">{longitude < 0 ? t('ocidental') : t('oriental')}</b>
             <br />
             {t(regiaoDe(longitude))}
           </p>
@@ -418,7 +424,7 @@ export default function LoginPage() {
       </div>
 
       {/* rodape: aviso sobre as imagens ilustrativas */}
-      <footer className="fixed inset-x-0 bottom-0 z-20 flex h-9 items-center gap-2 border-t border-white/10 bg-black/70 px-4 text-[11.5px] text-slate-400 backdrop-blur-xs">
+      <footer className="fixed inset-x-0 bottom-0 z-20 flex h-9 items-center gap-2 border-t border-white/10 bg-login-aviso-fundo px-4 text-[11.5px] text-login-aviso-texto backdrop-blur-xs">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} className="h-3.5 w-3.5 shrink-0" aria-hidden="true">
           <path d="M12 3 4.5 6v6c0 4.5 3.2 7.8 7.5 9 4.3-1.2 7.5-4.5 7.5-9V6z" />
         </svg>
