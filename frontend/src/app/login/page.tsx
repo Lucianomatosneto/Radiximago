@@ -37,14 +37,15 @@ const API = process.env.NEXT_PUBLIC_API_URL
 
 // Area de cada imagem (mesma ordem de CenaLogin) e a cor da etiqueta,
 // alinhada a paleta dos cartoes do Banco de imagens.
+// mesma ordem de IMAGENS_LOGIN (components/login/CenaLogin.tsx)
 const AREAS = [
-  { chave: 'areaRadiologia', cor: '#14B8A6' },
-  { chave: 'areaRadiologia', cor: '#3B82F6' },
-  { chave: 'areaAnatomia', cor: '#EF4444' },
   { chave: 'areaOdontologia', cor: '#F97316' },
-  { chave: 'areaBiologia', cor: '#A855F7' },
-  { chave: 'areaFlora', cor: '#22C55E' },
-  { chave: 'areaFauna', cor: '#EAB308' },
+  { chave: 'areaOdontologia', cor: '#F59E0B' },
+  { chave: 'areaRadiologia', cor: '#14B8A6' },
+  { chave: 'areaOdontologia', cor: '#FB923C' },
+  { chave: 'areaOdontologia', cor: '#F97316' },
+  { chave: 'areaRadiologia', cor: '#3B82F6' },
+  { chave: 'areaOdontologia', cor: '#F59E0B' },
 ] as const
 
 const ICONES_FERRAMENTA = {

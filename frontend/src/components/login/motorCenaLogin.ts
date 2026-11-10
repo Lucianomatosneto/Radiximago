@@ -2,7 +2,8 @@
 //
 // Desenha, atras do formulario:
 //   1. um globo terrestre em pontos (WebGL, biblioteca Three.js), branco-gelo;
-//   2. sete imagens ilustrativas (geradas por IA, sem nenhum dado de paciente)
+//   2. sete imagens radiologicas ilustrativas, quase todas odontologicas
+//      (geradas por IA, sem nenhum dado de paciente)
 //      correndo em duas faixas retas, na frente e atras do globo;
 //   3. estrelas cadentes num <canvas> 2D separado.
 //
@@ -33,7 +34,7 @@ export interface OpcoesCenaLogin {
   aoMudarFoco?: (indice: number) => void
   /** Avisa a longitude (graus, -180..180) voltada para a frente. */
   aoMudarLongitude?: (longitude: number) => void
-  /** Caminhos das 7 imagens, na ordem: RM, TC torax, coracao, panoramica, celulas, arvore, cao. */
+  /** Caminhos das imagens (radiologicas, foco odontologico), na ordem de CenaLogin.tsx. */
   imagens: string[]
   /** Mascara dos continentes (equiretangular, branco = terra). */
   mascaraContinentes: string

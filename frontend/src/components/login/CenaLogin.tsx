@@ -8,9 +8,22 @@ import type { ControleCena } from './motorCenaLogin'
 // de teclado. A logica fica em motorCenaLogin.ts; este componente so cria os
 // elementos e liga/desliga o motor junto com a pagina.
 
-// Ordem: RM, TC torax, coracao, panoramica, celulas, arvore, cao.
+// 09/11/2026 (pedido do Luciano): so imagens RADIOLOGICAS, com foco na
+// Odontologia (o primeiro projeto e so de Odontologia). Ordem: panoramica,
+// terceiro molar, RM do cranio, panoramica digital, dentes anteriores, TC do
+// torax, pre-molares e molares. Os "detalhes" sao recortes das panoramicas
+// ilustrativas (geradas por IA, sem dados de paciente).
 // Indices pares correm na faixa da frente; impares, na faixa de tras.
-const IMAGENS = ['rm', 'tc', 'cardio', 'rxodonto', 'celulas', 'arvore', 'cao'].map((n) => `/login/${n}.webp`)
+export const IMAGENS_LOGIN = [
+  'rxodonto',
+  'odonto-terceiro-molar',
+  'rm',
+  'odonto-panoramica-digital',
+  'odonto-anteriores',
+  'tc',
+  'odonto-posteriores',
+] as const
+const IMAGENS = IMAGENS_LOGIN.map((n) => `/login/${n}.webp`)
 
 /** Largura da coluna de texto/login no desktop (deve bater com a classe lg:w-[640px] da pagina). */
 export const LARGURA_COLUNA_LOGIN = 640

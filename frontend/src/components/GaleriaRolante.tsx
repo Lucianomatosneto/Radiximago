@@ -2,8 +2,8 @@
 
 import { useTranslations } from 'next-intl'
 
-// Galeria "esteira" da pagina inicial: as mesmas imagens ilustrativas da
-// tela de entrada (geradas por IA, sem dados de pacientes - LGPD) correndo
+// Galeria "esteira" da pagina inicial: as mesmas imagens radiologicas
+// ilustrativas (foco odontologico) da tela de entrada (geradas por IA, sem dados de pacientes - LGPD) correndo
 // numa faixa unica, bem devagar. Uma faixa so (e nao duas) para que nenhuma
 // imagem apareca repetida na tela ao mesmo tempo.
 //
@@ -21,14 +21,15 @@ interface ItemGaleria {
 }
 
 // Mesma ordem e mesmas cores de area da tela de entrada (login/page.tsx)
+// 09/11/2026: so imagens radiologicas, foco na Odontologia (primeiro projeto)
 const ITENS: ItemGaleria[] = [
-  { arquivo: 'rm', chaveTitulo: 'rm', chaveArea: 'areaRadiologia', cor: '#14B8A6' },
-  { arquivo: 'tc', chaveTitulo: 'tc', chaveArea: 'areaRadiologia', cor: '#3B82F6' },
-  { arquivo: 'cardio', chaveTitulo: 'cardio', chaveArea: 'areaAnatomia', cor: '#EF4444' },
   { arquivo: 'rxodonto', chaveTitulo: 'rxodonto', chaveArea: 'areaOdontologia', cor: '#F97316' },
-  { arquivo: 'celulas', chaveTitulo: 'celulas', chaveArea: 'areaBiologia', cor: '#A855F7' },
-  { arquivo: 'arvore', chaveTitulo: 'arvore', chaveArea: 'areaFlora', cor: '#22C55E' },
-  { arquivo: 'cao', chaveTitulo: 'cao', chaveArea: 'areaFauna', cor: '#EAB308' },
+  { arquivo: 'odonto-terceiro-molar', chaveTitulo: 'terceiroMolar', chaveArea: 'areaOdontologia', cor: '#F59E0B' },
+  { arquivo: 'rm', chaveTitulo: 'rm', chaveArea: 'areaRadiologia', cor: '#14B8A6' },
+  { arquivo: 'odonto-panoramica-digital', chaveTitulo: 'panoramicaDigital', chaveArea: 'areaOdontologia', cor: '#FB923C' },
+  { arquivo: 'odonto-anteriores', chaveTitulo: 'anteriores', chaveArea: 'areaOdontologia', cor: '#F97316' },
+  { arquivo: 'tc', chaveTitulo: 'tc', chaveArea: 'areaRadiologia', cor: '#3B82F6' },
+  { arquivo: 'odonto-posteriores', chaveTitulo: 'posteriores', chaveArea: 'areaOdontologia', cor: '#F59E0B' },
 ]
 
 function Cartao({ item, numero, decorativo, compacta }: { item: ItemGaleria; numero: number; decorativo: boolean; compacta: boolean }) {

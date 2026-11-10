@@ -47,17 +47,17 @@
     },
     "galeria": {
       "rotulo": "Acervo ilustrativo",
-      "titulo": "Imagens de várias áreas da saúde e da vida",
-      "subtitulo": "Radiologia, odontologia, anatomia, biologia, flora e fauna, organizadas para ensino e pesquisa.",
+      "titulo": "Radiografias odontológicas para ensino e pesquisa",
+      "subtitulo": "Panorâmicas e detalhes de dentes, com exames de imagem de apoio, organizados para ensino e pesquisa.",
       "altImagem": "Ilustração: {titulo}",
       "itens": {
-        "rm": "Ressonância magnética do crânio",
-        "tc": "Tomografia do tórax",
-        "cardio": "Coração e artérias coronárias",
         "rxodonto": "Radiografia panorâmica",
-        "celulas": "Células em microscopia",
-        "arvore": "Árvore",
-        "cao": "Cão"
+        "terceiroMolar": "Terceiro molar incluso (detalhe da panorâmica)",
+        "rm": "Ressonância magnética do crânio",
+        "panoramicaDigital": "Radiografia panorâmica digital",
+        "anteriores": "Dentes anteriores (detalhe da panorâmica)",
+        "tc": "Tomografia do tórax",
+        "posteriores": "Pré-molares e molares (detalhe da panorâmica)"
       }
     },
     "chamada": "Curadoria, pesquisa e ensino com imagens anonimizadas. O piloto começa pela Odontologia, com radiografias odontológicas, e a plataforma foi desenhada para se expandir a outras áreas da saúde e da vida.",
@@ -172,7 +172,7 @@
         "biologia": "Biologia e microscopia",
         "vida": "Flora e fauna"
       },
-      "nota": "As áreas da expansão entram após a validação do piloto. As imagens da galeria acima ilustram essas áreas."
+      "nota": "As áreas da expansão entram após a validação do piloto, que é só de Odontologia."
     }
   },
   "Login": {

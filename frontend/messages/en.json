@@ -47,17 +47,17 @@
     },
     "galeria": {
       "rotulo": "Illustrative collection",
-      "titulo": "Images from many areas of health and life",
-      "subtitulo": "Radiology, dentistry, anatomy, biology, flora and fauna, organized for teaching and research.",
+      "titulo": "Dental radiographs for teaching and research",
+      "subtitulo": "Panoramic radiographs and tooth details, with supporting imaging exams, organized for teaching and research.",
       "altImagem": "Illustration: {titulo}",
       "itens": {
-        "rm": "Brain MRI",
-        "tc": "Chest CT",
-        "cardio": "Heart and coronary arteries",
         "rxodonto": "Panoramic radiograph",
-        "celulas": "Cells under microscopy",
-        "arvore": "Tree",
-        "cao": "Dog"
+        "terceiroMolar": "Impacted third molar (panoramic detail)",
+        "rm": "Brain MRI",
+        "panoramicaDigital": "Digital panoramic radiograph",
+        "anteriores": "Anterior teeth (panoramic detail)",
+        "tc": "Chest CT",
+        "posteriores": "Premolars and molars (panoramic detail)"
       }
     },
     "chamada": "Curation, research and teaching with anonymized images. The pilot starts with Dentistry, using dental radiographs, and the platform was designed to expand to other health and life science areas.",
@@ -172,7 +172,7 @@
         "biologia": "Biology and microscopy",
         "vida": "Flora and fauna"
       },
-      "nota": "Expansion areas come after the pilot is validated. The gallery images above illustrate these areas."
+      "nota": "Expansion areas come in after the pilot, which is Dentistry only, is validated."
     }
   },
   "Login": {
