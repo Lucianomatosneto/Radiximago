@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.7 — 10/11/2026 |
+| Versão do documento | 1.8 — 10/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -38,6 +38,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Informações adicionais e anexos da ficha (texto livre e imagens anexadas pelo curador) | `curations.informacoes_adicionais`; tabela `anexos_curadoria`; arquivos em `backend/anexos_curadoria` (**fora** da pasta pública `uploads`, entregues só pela API com login; regravados sem metadados). Não passam pela anonimização do DICOM: a tela avisa para não anexar nada com nome, data ou número do paciente | N1 | junto com a ficha; o anexo removido é apagado do disco |
 | Foto do negatoscópio enviada pelo celular (Fase 1) | a foto recebida **não é guardada**: o servidor a reconstrói, tira os dados do celular, tarja o texto gravado na imagem e grava só o DICOM tratado no Orthanc. `orthanc_references.formato_entrada = "foto"`; dono, destino e quem analisa em `orthanc_references` | N1 (DICOM tratado) | igual ao DICOM anonimizado; a foto original não é retida |
 | Janelas de envio de foto (quem abriu, quando, quando venceu, quando foi usada) | `janelas_envio_foto` | N1 | apagadas automaticamente após 30 dias |
+| Aceites dos Termos de Uso e da Política de Privacidade (versão, perfil, data, resumo SHA-256 do texto aceito) | `aceites_termos_uso` | N2 | enquanto a conta existir (prova do aceite) |
 | Observações internas da ficha | `curations.observacoes_internas` | N1 | permanente |
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
@@ -140,7 +141,7 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 
 **Pendências registradas:**
 - criptografia e cópia externa dos backups;
-- termo de uso e privacidade para os usuários;
+- termo de uso e privacidade para os usuários: **feito em 10/11/2026** (`/termos`, aceite versionado; ver REGRAS_DE_NEGOCIO 1.11). A Política de Privacidade publicada descreve este inventário para os usuários e precisa ser revista sempre que ele mudar;
 - análise de risco de reidentificação (orientador/CEP).
 
 ## 6. Histórico
@@ -155,3 +156,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.5 | 08/11/2026 | Informações adicionais e anexos da curadoria (`anexos_curadoria`): imagens regravadas sem metadados, fora da pasta pública, vistas só por quem abre a imagem curada aprovada |
 | 1.6 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): foto original não retida, tarja no aparelho e no servidor antes do Orthanc, `janelas_envio_foto` (30 dias); matriz de acesso: estudante envia foto, dono vê a própria |
 | 1.7 | 10/11/2026 | Termo de ciência a cada login: aceite registrado na sessão e na auditoria |
+| 1.8 | 10/11/2026 | Termos de Uso e Política de Privacidade publicados (`/termos`), aceites em `aceites_termos_uso` |
