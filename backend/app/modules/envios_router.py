@@ -1,14 +1,16 @@
 """
 ENVIO DE IMAGENS POR TODOS OS PERFIS - etapa B (08/11/2026).
 
-- POST   /envios                      envia arquivo DICOM ou foto (JPG/PNG,
-                                      inclusive pela camera do celular)
+- POST   /envios                      envia arquivo DICOM (desde 10/11/2026, SO DICOM)
+- POST   /envios/foto/iniciar         abre a janela de 5 minutos para enviar uma foto
+- GET    /envios/foto/janela          a janela ainda aberta (tela recarregada no celular)
+- POST   /envios/foto                 envia a foto (negatoscopio/celular) dentro da janela
 - GET    /envios/meus                 o que EU enviei (Minhas imagens)
 - GET    /envios/para-analisar        o que mandaram para EU analisar
 - GET    /envios/analistas            professores e curadores que podem analisar
 - POST   /envios/{id}/analise         dono manda uma imagem pessoal para analise
 - POST   /envios/{id}/decidir         quem analisa: colocar na fila ou devolver
-- DELETE /envios/{id}                 dono retira uma imagem pessoal
+- DELETE /envios/{id}                 dono retira uma imagem pessoal ou em analise
 - GET    /envios/{id}/preview         miniatura (dono, quem analisa, quem recebeu, curadoria)
 - POST   /envios/{id}/enviar-para     professor/curador manda a imagem a pessoas e grupos (etapa C)
 - GET    /envios/recebidas            imagens que colegas me enviaram (etapa C)
@@ -23,6 +25,17 @@ REGRAS (decisoes do Luciano, 08/11/2026):
 - Toda imagem passa pela MESMA entrada (receber_dicom): anonimizacao, texto
   gravado na imagem, recorte da moldura. Foto vira DICOM sem os metadados
   do celular (foto_para_dicom.py).
+
+FOTO DO NEGATOSCOPIO PELO CELULAR - Fase 1 (10/11/2026,
+docs/ESPECIFICACAO_FASE1_FOTO_CELULAR.md; decisoes do Luciano):
+- toda foto entra por /envios/foto, dentro de uma JANELA de 5 minutos
+  aberta no servidor (janela_foto.py), com a confirmacao "a imagem nao mostra
+  dados do paciente"; /envios passou a aceitar so DICOM (sem atalho);
+- a tela gira, recorta e aplica TARJA no proprio celular antes de enviar;
+- no servidor, a foto vira DICOM e o texto gravado na imagem e procurado e
+  tarjado ANTES de qualquer gravacao no Orthanc; depois segue o caminho de
+  sempre (receber_dicom) e a ficha nasce com modalidade OT;
+- destinos por perfil sao os mesmos de 08/11.
 """
 
 from __future__ import annotations
@@ -37,8 +50,8 @@ from sqlalchemy.sql import func
 from app.core.database import get_db
 from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.limites import TextoMedio
-from app.core.rate_limit import LIMITE_UPLOAD_DICOM, limiter
-from app.modules import foto_para_dicom, orthanc_client
+from app.core.rate_limit import LIMITE_FOTO, LIMITE_JANELA_FOTO, LIMITE_UPLOAD_DICOM, limiter
+from app.modules import foto_para_dicom, janela_foto, orthanc_client
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import exigir_perfis, obter_usuario_atual
 from app.core.config import settings
@@ -175,7 +188,7 @@ def enviar_imagem(
     usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
     db: Session = Depends(get_db),
 ):
-    """Arquivo DICOM ou foto (JPG/PNG/WebP). A foto vira DICOM antes de entrar."""
+    """Arquivo DICOM. Foto (JPG/PNG/WebP) entra so por /envios/foto (janela de 5 minutos)."""
     if destino not in DESTINOS_POR_PERFIL.get(usuario.perfil, set()):
         raise HTTPException(status_code=422, detail="Destino nao permitido para o seu perfil.")
     nota_limpa = _nota(nota)
@@ -186,19 +199,12 @@ def enviar_imagem(
     if destino == DestinoImagem.ANALISE.value:
         destinatario_id = _analista_valido(db, analista_id, usuario).id
     conteudo = ler_arquivo_limitado(arquivo)
-    era_foto = foto_para_dicom.e_foto(conteudo)
-    if era_foto:
-        try:
-            conteudo = foto_para_dicom.converter(conteudo)
-        except foto_para_dicom.FotoInvalida as erro:
-            raise HTTPException(status_code=422, detail=str(erro))
+    if foto_para_dicom.e_foto(conteudo):
+        raise HTTPException(status_code=422, detail=(
+            "Fotos sao enviadas pela opcao Foto (ajuste, tarja e confirmacao em ate "
+            f"{settings.FOTO_JANELA_MINUTOS} minutos)."))
     resultado = receber_dicom(db, usuario, conteudo, destino=destino,
                               destinatario_id=destinatario_id, nota=nota_limpa)
-    if era_foto:
-        ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
-        _auditar(db, usuario, "foto_convertida_dicom", ref,
-                 "Foto (JPG/PNG) convertida em DICOM de captura secundaria; metadados da foto descartados.")
-        db.commit()
     if destino == DestinoImagem.ANALISE.value and resultado.get("status") == "importada":
         ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
         _auditar(db, usuario, "imagem_enviada_analise", ref, f"para usuario_id={destinatario_id}")
@@ -210,7 +216,126 @@ def enviar_imagem(
             resultado["enviada_para"] = enviar_a_pessoas(db, ref, usuario, pessoas_ids, grupos_ids)
             db.commit()
     resultado["destino"] = destino
-    resultado["foto_convertida"] = era_foto
+    resultado["foto_convertida"] = False
+    return resultado
+
+
+# --- FOTO DO NEGATOSCOPIO (Fase 1) --------------------------------------------
+
+def _auditar_recusa(db: Session, usuario: User, motivo: str, janela_id: int | None = None) -> None:
+    db.rollback()
+    db.add(AuditLog(usuario_id=usuario.id, acao="foto_recusada", entidade="janela_envio_foto",
+                    entidade_id=janela_id, resultado="falha", detalhes=f"motivo={motivo}"))
+    db.commit()
+
+
+@router.post("/foto/iniciar")
+@limiter.limit(LIMITE_JANELA_FOTO)
+def iniciar_envio_foto(request: Request, usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
+                       db: Session = Depends(get_db)):
+    """Abre a janela para enviar UMA foto. A hora de termino e a do servidor."""
+    comprovante, janela = janela_foto.abrir_janela(db, usuario.id)
+    db.add(AuditLog(usuario_id=usuario.id, acao="foto_janela_aberta", entidade="janela_envio_foto",
+                    entidade_id=janela.id, resultado="sucesso",
+                    detalhes=f"{settings.FOTO_JANELA_MINUTOS} min"))
+    db.commit()
+    return {
+        "comprovante": comprovante,
+        "expira_em": janela.expira_em.isoformat(),
+        "agora_servidor": janela.aberta_em.isoformat(),
+        "duracao_segundos": settings.FOTO_JANELA_MINUTOS * 60,
+        "tamanho_max_mb": settings.FOTO_TAMANHO_MAX_MB,
+    }
+
+
+@router.get("/foto/janela")
+def janela_em_andamento(usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)), db: Session = Depends(get_db)):
+    """Se o celular recarregou a pagina (comum ao voltar da camera), a tela
+    pergunta aqui: a janela continua valendo, com o mesmo prazo."""
+    janela = janela_foto.janela_aberta(db, usuario.id)
+    if not janela:
+        return {"aberta": False}
+    return {"aberta": True, "comprovante": janela_foto.assinar(janela), "expira_em": janela.expira_em.isoformat(),
+            "agora_servidor": janela_foto.agora().isoformat(), "duracao_segundos": settings.FOTO_JANELA_MINUTOS * 60,
+            "tamanho_max_mb": settings.FOTO_TAMANHO_MAX_MB}
+
+
+def _ler_foto_limitada(arquivo: UploadFile) -> bytes:
+    limite = settings.FOTO_TAMANHO_MAX_MB * 1024 * 1024
+    conteudo = arquivo.file.read(limite + 1)
+    if len(conteudo) > limite:
+        raise HTTPException(status_code=413, detail=f"Foto maior que {settings.FOTO_TAMANHO_MAX_MB} MB.")
+    if not conteudo:
+        raise HTTPException(status_code=422, detail="Arquivo vazio.")
+    return conteudo
+
+
+@router.post("/foto")
+@limiter.limit(LIMITE_FOTO)
+def enviar_foto(
+    request: Request,
+    arquivo: UploadFile = File(...),
+    comprovante: str = Form(..., max_length=2000),
+    destino: str = Form(..., max_length=10),
+    analista_id: int | None = Form(None, ge=1),
+    nota: str | None = Form(None, max_length=NOTA_MAX),
+    confirmacao_sem_identificacao: bool = Form(False),
+    usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
+    db: Session = Depends(get_db),
+):
+    """Foto do negatoscopio (ou da galeria), ja ajustada e tarjada no celular."""
+    if destino not in DESTINOS_POR_PERFIL.get(usuario.perfil, set()):
+        raise HTTPException(status_code=422, detail="Destino nao permitido para o seu perfil.")
+    if not confirmacao_sem_identificacao:
+        raise HTTPException(status_code=422,
+                            detail="Confirme que a imagem nao mostra dados que identifiquem o paciente.")
+    nota_limpa = _nota(nota)
+    destinatario_id = None
+    if destino == DestinoImagem.ANALISE.value:
+        # reconferido no envio: a pessoa pode ter sido desativada durante a janela
+        destinatario_id = _analista_valido(db, analista_id, usuario).id
+
+    try:
+        janela = janela_foto.usar_janela(db, usuario.id, comprovante)
+    except janela_foto.JanelaRecusada as recusa:
+        _auditar_recusa(db, usuario, recusa.motivo)
+        raise
+
+    try:
+        conteudo = _ler_foto_limitada(arquivo)
+        if not foto_para_dicom.e_foto(conteudo):
+            raise HTTPException(status_code=422, detail="O arquivo nao e uma foto JPG ou PNG.")
+        try:
+            dicom = foto_para_dicom.converter(conteudo, negatoscopio=True)
+        except foto_para_dicom.FotoInvalida as erro:
+            raise HTTPException(status_code=422, detail=str(erro))
+        # texto gravado na foto (ex.: nome no filme) e procurado e tarjado
+        # ANTES de qualquer gravacao no Orthanc
+        from app.modules.texto_na_imagem import tarjar_texto
+        dicom, texto_antes = tarjar_texto(dicom)
+        resultado = receber_dicom(db, usuario, dicom, destino=destino, destinatario_id=destinatario_id,
+                                  nota=nota_limpa, formato_entrada="foto")
+    except HTTPException as erro:
+        motivos = {413: "arquivo_grande", 422: "arquivo_invalido"}
+        janela_foto.liberar_janela(db, janela)   # pode tentar de novo dentro do prazo
+        _auditar_recusa(db, usuario, motivos.get(erro.status_code, f"falha_{erro.status_code}"), janela.id)
+        raise
+
+    ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
+    if texto_antes.situacao == "tarjado":
+        # a 2a leitura (na anonimizacao) ja nao acha o que foi coberto: o
+        # curador precisa saber que havia texto
+        ref.texto_na_imagem = "tarjado"
+        ref.texto_regioes = (texto_antes.regioes or 0) + (ref.texto_regioes or 0)
+    _auditar(db, usuario, "foto_recebida", ref,
+             f"janela={janela.id}; confirmacao sem identificacao marcada; texto antes do Orthanc: {texto_antes.situacao}")
+    _auditar(db, usuario, "foto_convertida_dicom", ref,
+             "Foto convertida em DICOM de captura secundaria (OT), tons de cinza, sem escala; metadados descartados.")
+    if destino == DestinoImagem.ANALISE.value and resultado.get("status") == "importada":
+        _auditar(db, usuario, "foto_enviada_analise", ref, f"para usuario_id={destinatario_id}")
+    db.commit()
+    resultado["destino"] = destino
+    resultado["foto_convertida"] = True
     return resultado
 
 
@@ -343,14 +468,15 @@ def decidir_analise(imagem_id: int, decisao: Decisao,
 
 @router.delete("/{imagem_id}")
 def retirar_imagem(imagem_id: int, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
-    """O dono retira uma imagem SO SUA (fica desativada, nada e apagado do Orthanc)."""
+    """O dono retira uma imagem SO SUA ou EM ANALISE (ainda nao na fila nem
+    aprovada - 10/11/2026). Fica desativada; nada e apagado do Orthanc."""
     ref = _buscar(db, imagem_id)
     if ref.enviado_por_id != usuario.id:
         raise HTTPException(status_code=404, detail="Imagem nao encontrada.")
-    if ref.destino != DestinoImagem.PESSOAL.value:
-        raise HTTPException(status_code=409, detail="Imagem na fila ou em analise nao pode ser retirada por aqui.")
+    if ref.destino not in (DestinoImagem.PESSOAL.value, DestinoImagem.ANALISE.value):
+        raise HTTPException(status_code=409, detail="Imagem na fila de curadoria nao pode ser retirada por aqui.")
     ref.ativo = False
-    _auditar(db, usuario, "imagem_pessoal_retirada", ref, "retirada pelo dono (desativada)")
+    _auditar(db, usuario, "imagem_pessoal_retirada", ref, f"retirada pelo dono (desativada; destino={ref.destino})")
     db.commit()
     return {"mensagem": "Imagem retirada."}
 
