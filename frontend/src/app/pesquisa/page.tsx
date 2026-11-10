@@ -637,7 +637,7 @@ function PesquisaConteudo() {
             presos no topo da janela enquanto as imagens passam por baixo. */}
         <main
           ref={areaPrincipalRef}
-          className={`flex-1 ${filtrosRecolhidos ? 'overflow-x-clip px-6 pb-3' : 'overflow-y-auto p-6'}`}
+          className={`flex-1 ${filtrosRecolhidos ? 'overflow-x-clip px-3 pb-3 sm:px-6' : 'overflow-y-auto p-3 sm:p-6'}`}
         >
           {/* Com resultados na tela (busca recolhida) o cabecalho fica numa
               linha so e menor: sobra altura para as duas linhas de imagens
@@ -1021,7 +1021,7 @@ function PesquisaConteudo() {
 
                     {/* selecao em lote: "Selecionar todas", atalhos que SOMAM a
                         selecao atual e um campo para digitar qualquer quantidade */}
-                    <div className="flex h-8 items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
+                    <div className="flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
                       {!barraRolada && <span className="px-1 text-[11px] font-medium text-slate-400">{t('selecaoLabel')}</span>}
                       <button
                         type="button"
@@ -1124,7 +1124,7 @@ function PesquisaConteudo() {
                     acompanham o canto e mantem o tamanho (escala inversa). */}
                 <div
                   ref={gradeRef}
-                  className="grid grid-cols-2 justify-center gap-3 pb-2 sm:grid-cols-3 md:grid-cols-5"
+                  className="grid grid-cols-1 justify-center gap-3 pb-2 min-[480px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
                   style={ladoCartao ? { gridTemplateColumns: `repeat(5, ${ladoCartao}px)` } : undefined}
                 >
                   {resultados.map((imagem, indice) => {
