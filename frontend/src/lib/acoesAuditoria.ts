@@ -97,6 +97,10 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     itens: [
       a('upload_imagem', 'Imagem DICOM enviada', 'DICOM image uploaded'),
       a('foto_convertida_dicom', 'Foto convertida em DICOM', 'Photo converted to DICOM'),
+      a('foto_janela_aberta', 'Envio de foto aberto (janela de 5 min)', 'Photo upload window opened'),
+      a('foto_recebida', 'Foto recebida pelo celular', 'Photo received from phone'),
+      a('foto_enviada_analise', 'Foto enviada para análise', 'Photo sent for review'),
+      a('foto_recusada', 'Foto recusada', 'Photo rejected'),
       a('imagem_enviada_analise', 'Imagem enviada para análise', 'Image sent for review'),
       a('imagem_analise_para_fila', 'Imagem analisada colocada na fila de curadoria', 'Reviewed image sent to curation queue'),
       a('imagem_analise_devolvida', 'Imagem analisada devolvida com recado', 'Reviewed image returned with a note'),
