@@ -33,6 +33,20 @@
   --color-slate-600: rgb(var(--rgb-ink-4));
   --color-slate-700: rgb(var(--rgb-base-border));
 
+  /* TELA DE LOGIN (10/11/2026) - trocar as cores AQUI, sem procurar no codigo.
+     Viram classes do Tailwind: text-login-destaque, border-login-destaque/40...
+     e tambem valem como var(--color-login-...) no CSS. */
+  --color-login-fundo-1: #000000;      /* topo, ate 30% da altura */
+  --color-login-fundo-2: #0a0d2e;      /* em 62% */
+  --color-login-fundo-3: #2a3190;      /* embaixo (100%) */
+  --color-login-destaque: #98a0ff;     /* links, icones das vantagens, etiquetas, foco */
+  --color-login-aviso-fundo: rgb(0 0 0 / 0.28); /* faixa do aviso legal */
+  --color-login-aviso-texto: #cbd5e1;  /* texto do aviso: contraste 9,5:1 sobre a faixa */
+  --color-login-titulo-1: #ffffff;     /* degrade animado do titulo */
+  --color-login-titulo-2: #98a0ff;
+  --color-login-titulo-3: #b794f6;
+  --color-login-titulo-4: #6ec1ff;
+
   --radius-2xl: 1rem;
 
   --shadow-glow: 0 0 40px -10px rgb(var(--rgb-brand) / 0.25);
@@ -336,4 +350,65 @@ html[data-largura="limitada"] .trilha-lista {
 }
 @media (min-width: 1280px) {
   html[data-largura="limitada"] main { padding-left: 2.5rem; padding-right: 2.5rem; }
+}
+
+/*
+  TITULO ANIMADO DA TELA DE LOGIN (10/11/2026): degrade deslizando dentro
+  das letras. Sem suporte a "clip" em texto, o titulo fica branco; com
+  "reduzir movimento" ligado no sistema, o degrade fica parado.
+*/
+.titulo-login-animado {
+  color: var(--color-login-titulo-1);
+}
+@supports ((-webkit-background-clip: text) or (background-clip: text)) {
+  .titulo-login-animado {
+    background-image: linear-gradient(
+      90deg,
+      var(--color-login-titulo-1),
+      var(--color-login-titulo-2),
+      var(--color-login-titulo-3),
+      var(--color-login-titulo-4),
+      var(--color-login-titulo-1)
+    );
+    background-size: 300% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: titulo-login-desliza 7s linear infinite;
+  }
+}
+@keyframes titulo-login-desliza {
+  from { background-position: 0% 50%; }
+  to { background-position: 300% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .titulo-login-animado { animation: none; }
+}
+
+/*
+  A tela de login e sempre escura: os cinzas do texto (classes slate e ink) usam
+  os tons do modo escuro mesmo com o computador em modo claro - senao
+  "Imagens anonimizadas", os rotulos e o hemisferio ficavam cinza-escuro
+  sobre o fundo escuro (contraste conferido em 10/11/2026).
+*/
+.tela-login {
+  --rgb-ink: 241 245 249;
+  --rgb-ink-2: 203 213 225;
+  --rgb-ink-3: 148 163 184;
+  --rgb-ink-4: 100 116 139;
+  --rgb-base-border: 38 43 53;
+  /* as cores do Tailwind sao calculadas no :root; por isso repetidas aqui */
+  --color-ink: rgb(241 245 249);
+  --color-ink-2: rgb(203 213 225);
+  --color-ink-3: rgb(148 163 184);
+  --color-ink-4: rgb(100 116 139);
+  --color-slate-100: rgb(241 245 249);
+  --color-slate-200: rgb(203 213 225);
+  --color-slate-300: rgb(203 213 225);
+  --color-slate-400: rgb(148 163 184);
+  --color-slate-500: rgb(100 116 139);
+  --color-slate-600: rgb(100 116 139);
+  --color-slate-700: rgb(38 43 53);
+  --color-base-border: rgb(38 43 53);
 }
