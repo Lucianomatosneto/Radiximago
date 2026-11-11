@@ -11,13 +11,13 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 
 ## 2. Seus deveres específicos
 
-2.1. **Validação da anonimização (dever principal).** Antes de aprovar, confira com atenção a imagem inteira: cantos, bordas, etiquetas, textos gravados e anexos. Ela não pode conter dado que permita identificar o paciente. **Na dúvida, não aprove**: descarte ou peça segunda opinião. Marcar "anonimização validada" é uma declaração sua, registrada na auditoria.
+2.1. **Validação da anonimização (dever principal).** Antes de aprovar, confira com atenção a imagem inteira: cantos, bordas, etiquetas, textos gravados e anexos. Ela não pode conter dado que permita identificar o paciente. **Na dúvida, não aprove**: descarte ou peça segunda opinião. Marcar "anonimização validada" é uma declaração sua, registrada na auditoria. Ela é uma etapa de controle, não uma garantia absoluta, e não transfere a você a responsabilidade pela segurança do sistema.
 
 2.2. **Rigor técnico-científico.** As curadorias devem refletir o conhecimento técnico atual, com linguagem didática e sem afirmações que pareçam laudo. Informe as limitações da imagem quando houver, como qualidade técnica, artefatos ou ausência de escala nas fotos.
 
 2.3. **Anexos e informações adicionais.** Anexos não passam pela anonimização automática do DICOM. **Nunca anexe** imagens com nome, data, número, rosto ou outro sinal que identifique o paciente.
 
-2.4. **Imparcialidade.** Declare conflito de interesses e não faça curadoria de casos em que tenha interesse pessoal. A segunda opinião deve ser independente.
+2.4. **Imparcialidade.** Não faça curadoria de casos em que tenha interesse pessoal: devolva-os à fila ou peça segunda opinião. A segunda opinião deve ser independente.
 
 2.5. **Sigilo.** Observações internas, pareceres e imagens ainda não aprovadas são **confidenciais**. Não as divulgue fora da Plataforma.
 
