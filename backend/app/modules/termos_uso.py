@@ -36,9 +36,14 @@ from app.modules.auth import obter_usuario_atual
 from app.modules.sessoes import encerrar_sessao
 from app.modules.users import User, UserRole
 
-TERMOS_VERSAO = "1.0"
-TERMOS_VIGENCIA = "10/11/2026"
-TERMOS_MUDANCAS = "Primeira versão dos Termos de Uso, dos anexos por perfil e da Política de Privacidade."
+TERMOS_VERSAO = "1.1"
+TERMOS_VIGENCIA = "11/11/2026"
+TERMOS_MUDANCAS = (
+    "Autoria e responsável sem vínculo institucional; diferença entre desidentificação e anonimização; "
+    "papéis de controlador e operador nas imagens de pacientes; bases legais corrigidas; transferência "
+    "internacional conforme a Resolução ANPD nº 19/2024; prazos de resposta e de cópias de segurança; "
+    "foro do consumidor; proibição ampliada de uso em inteligência artificial."
+)
 CODIGO_PENDENTE = "termos_uso_pendentes"
 PASTA_TEXTOS = Path(__file__).resolve().parents[1] / "termos_texto"
 PERFIS = [p.value for p in UserRole]
