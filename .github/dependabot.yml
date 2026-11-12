@@ -1,0 +1,37 @@
+# Dependabot: robô do GitHub que avisa (abrindo Pull Requests) quando uma
+# biblioteca usada pelo Radix Imago tem versão nova ou correção de segurança.
+# Ele NÃO junta nada sozinho: cada Pull Request precisa de revisão humana e
+# passa pela esteira "Auditoria contínua" antes.
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: /backend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencias, auditoria]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    labels: [dependencias, auditoria]
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+    labels: [dependencias, auditoria]
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly
+    labels: [dependencias, auditoria]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencias, auditoria]
