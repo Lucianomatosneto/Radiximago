@@ -490,7 +490,9 @@ export function DialogoPrancha({
     'flex items-center justify-center gap-1.5 rounded-lg border border-base-border bg-base-surface px-3 py-2 text-sm text-slate-200 hover:border-brand hover:text-brand-300 disabled:cursor-not-allowed disabled:opacity-50'
 
   return createPortal(
+    // fundo escuro: clicar fora fecha (atalho de mouse); no teclado, Esc fecha
     <div
+      role="presentation"
       className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget && !ocupado) onFechar()
