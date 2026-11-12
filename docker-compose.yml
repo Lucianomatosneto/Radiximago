@@ -57,7 +57,9 @@ services:
 
   # --- Servidor DICOM Orthanc ---
   radix-orthanc:
-    image: orthancteam/orthanc:latest
+    # Versao fixada pelo resumo (digest) da imagem em uso em 12/11/2026 (auditoria M-03).
+    # Para atualizar de proposito: docker pull orthancteam/orthanc:latest, testar e trocar o digest.
+    image: orthancteam/orthanc@sha256:83a1f988c9790a8ec018d00bad2d23d29703313e10ec59ecbeb827b5fa8e0aee
     container_name: radix-orthanc
     logging: *registros
     restart: unless-stopped
