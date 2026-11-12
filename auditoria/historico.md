@@ -41,3 +41,7 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 | Z-04 | BAIXO | CONFIRMADO | Faltam COEP, COOP, CORP e Permissions-Policy. |
 | Z-05 | INFO | PROVÁVEL FALSO POSITIVO | "Base64 Disclosure" em imagens .webp (texto aleatório de bytes). |
 | Z-06 | INFO | NÃO VERIFICÁVEL | "Big Redirect" na raiz; requer análise na 1ª auditoria. |
+
+## 2026-11-12 — Auditoria 02 (autenticação, permissões, anonimização DICOM) — relatório em relatorios/2026-11-12_auditoria-02-*.md
+- M-02: CONFIRMADO (código + teste com Orthanc falso). Novos: A-02 (login sem limite por conta, BAIXO/MÉDIO), A-03 (enumeração por tempo, BAIXO). Z-01 e Z-02 ligados ao escopo.
+- Nenhum CRÍTICO. Nada foi corrigido; correções aguardam autorização.
