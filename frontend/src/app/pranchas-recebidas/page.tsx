@@ -52,7 +52,7 @@ export default function PranchasRecebidasPage() {
 
   useEffect(() => {
     const abrir = Number(new URLSearchParams(window.location.search).get('abrir')) || null
-    obterSessaoAtual().then((s) => {
+    void obterSessaoAtual().then((s) => {
       if (!s) {
         // depois do login, volta para esta mesma prancha
         router.push(`/login?volta=${encodeURIComponent(`/pranchas-recebidas${abrir ? `?abrir=${abrir}` : ''}`)}`)
@@ -60,7 +60,7 @@ export default function PranchasRecebidasPage() {
       }
       setDestaque(abrir)
       setPronto(true)
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -89,7 +89,7 @@ export default function PranchasRecebidasPage() {
       link.click()
       link.remove()
       setTimeout(() => URL.revokeObjectURL(url), 10000)
-      carregar()
+      void carregar()
     } catch {
       setErro(t('erro'))
     } finally {

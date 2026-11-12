@@ -74,7 +74,7 @@ export default function AparelhosPage() {
   }
 
   useEffect(() => {
-    obterSessaoAtual().then((s) => {
+    void obterSessaoAtual().then((s) => {
       if (!s) {
         router.push('/login')
         return
@@ -84,7 +84,7 @@ export default function AparelhosPage() {
         return
       }
       setPronto(true)
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -112,7 +112,7 @@ export default function AparelhosPage() {
     }
     mostrarResultado(await r.json(), t('salvo'))
     setForm(null)
-    carregar()
+    void carregar()
   }
 
   async function mudarLiberacao(a: Aparelho) {
@@ -134,7 +134,7 @@ export default function AparelhosPage() {
       return
     }
     mostrarResultado(await r.json(), a.liberado ? t('bloqueado', { nome: a.nome }) : t('liberado', { nome: a.nome }))
-    carregar()
+    void carregar()
   }
 
   async function testar(a: Aparelho) {

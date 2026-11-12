@@ -67,8 +67,8 @@ export default function CenaLogin({ controleRef, aoMudarFoco, aoMudarLongitude }
       controleRef.current = cena.controle
     })
     const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void }
-    if (w.requestIdleCallback) adiar = w.requestIdleCallback(() => { comecar() }, { timeout: 1200 })
-    else adiar = window.setTimeout(() => { comecar() }, 300)
+    if (w.requestIdleCallback) adiar = w.requestIdleCallback(() => { void comecar() }, { timeout: 1200 })
+    else adiar = window.setTimeout(() => { void comecar() }, 300)
     return () => {
       if (adiar !== null) { if (w.cancelIdleCallback) w.cancelIdleCallback(adiar); window.clearTimeout(adiar) }
       cancelado = true

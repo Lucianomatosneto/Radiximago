@@ -46,7 +46,7 @@ export default function GruposPage() {
   }
 
   useEffect(() => {
-    obterSessaoAtual().then((s) => {
+    void obterSessaoAtual().then((s) => {
       if (!s) {
         router.push('/login')
         return
@@ -56,7 +56,7 @@ export default function GruposPage() {
         return
       }
       setPronto(true)
-      carregar()
+      void carregar()
     })
   }, [router])
 
@@ -90,7 +90,7 @@ export default function GruposPage() {
     }
     setAviso(t('salvo'))
     setEditando(null)
-    carregar()
+    void carregar()
   }
 
   async function apagar(g: Grupo) {
@@ -104,7 +104,7 @@ export default function GruposPage() {
     const r = await fetch(`${API}/grupos/${g.id}`, { method: 'DELETE', credentials: 'include' })
     if (!r.ok) setErro(await lerErro(r, t('erro')))
     else setAviso(t('apagado'))
-    carregar()
+    void carregar()
   }
 
   if (!pronto) {

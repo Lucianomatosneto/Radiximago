@@ -155,7 +155,7 @@ export default function RelatoriosPage() {
   const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -167,7 +167,7 @@ export default function RelatoriosPage() {
       }
 
       setPerfil(sessao.perfil)
-      carregarDados()
+      void carregarDados()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])

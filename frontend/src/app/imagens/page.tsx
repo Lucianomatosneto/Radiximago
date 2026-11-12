@@ -148,7 +148,7 @@ export default function ImagensPage() {
   )
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -160,7 +160,7 @@ export default function ImagensPage() {
       }
 
       setAutenticado(true)
-      buscarImagens()
+      void buscarImagens()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, buscarImagens])
@@ -195,7 +195,7 @@ export default function ImagensPage() {
 
       setMensagemEnvio(dados?.status === 'ja_existente' ? t('mensagemDuplicata') : t('mensagemSucesso'))
       if (inputArquivoRef.current) inputArquivoRef.current.value = ''
-      buscarImagens() // atualiza a lista na hora, sem precisar recarregar a pagina
+      void buscarImagens() // atualiza a lista na hora, sem precisar recarregar a pagina
     } catch {
       setErroEnvio(t('erroEnvioConexao'))
     } finally {

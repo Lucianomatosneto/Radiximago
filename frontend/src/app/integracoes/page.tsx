@@ -142,7 +142,7 @@ export default function IntegracoesPage() {
   const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string; detalhe?: string } | null>(null)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -169,9 +169,9 @@ export default function IntegracoesPage() {
   }
 
   function atualizarTudo() {
-    verificarBancoEOrthanc()
-    verificarInfraestrutura()
-    verificarEmail()
+    void verificarBancoEOrthanc()
+    void verificarInfraestrutura()
+    void verificarEmail()
   }
 
   // servidor de e-mail (cadastro e "esqueci a senha" dependem dele): o

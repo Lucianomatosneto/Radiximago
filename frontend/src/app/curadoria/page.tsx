@@ -312,7 +312,7 @@ export default function CuradoriaPage() {
   const [erroDescarteFinal, setErroDescarteFinal] = useState('')
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -325,8 +325,8 @@ export default function CuradoriaPage() {
       const professor = sessao.perfil === 'professor'
       ehProfessorRef.current = professor
       setEhProfessor(professor)
-      carregarFila()
-      if (!professor) carregarReviewsRespondidas()
+      void carregarFila()
+      if (!professor) void carregarReviewsRespondidas()
       // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
       // ficha e mandou para ca - abre ESSA ficha em vez da 1a da fila
       const q = new URLSearchParams(window.location.search)
@@ -334,8 +334,8 @@ export default function CuradoriaPage() {
       const ref = Number(q.get('ref'))
       if (editar > 0 && ref > 0) {
         autoAbriuPrimeiraRef.current = true
-        carregarViewerUrl(ref)
-        carregarFichaCompleta(editar, ref)
+        void carregarViewerUrl(ref)
+        void carregarFichaCompleta(editar, ref)
       }
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -351,7 +351,7 @@ export default function CuradoriaPage() {
     if (fichaAtiva || criandoId !== null) return
     if (!autenticado || fila.length === 0) return
     autoAbriuPrimeiraRef.current = true
-    abrirImagem(fila[0], 0)
+    void abrirImagem(fila[0], 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
 
@@ -545,7 +545,7 @@ export default function CuradoriaPage() {
     if (!mostradoNaTela) {
       setOhifCarregado(false)
       setVersaoImagem((v) => v + 1)
-      carregarViewerUrl(fichaAtiva.orthancReferenceId)
+      void carregarViewerUrl(fichaAtiva.orthancReferenceId)
     }
   }
 
@@ -747,7 +747,7 @@ export default function CuradoriaPage() {
     setMarcacaoAberta(false)
     setRevisadas([])
     if (ficha.status === 'segunda_opiniao') {
-      carregarReviewSegundaOpiniao(curationId)
+      void carregarReviewSegundaOpiniao(curationId)
     }
     setForm({
       tipo_radiografia: ficha.tipo_radiografia ?? 'periapical',
@@ -796,7 +796,7 @@ export default function CuradoriaPage() {
       // disparamos em paralelo com a criacao da ficha, em vez de esperar a
       // ficha carregar primeiro (essa espera sequencial era uma das causas
       // da demora ao abrir uma imagem).
-      carregarViewerUrl(imagem.orthanc_reference_id)
+      void carregarViewerUrl(imagem.orthanc_reference_id)
 
       const respostaCriacao = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/curation/${imagem.orthanc_reference_id}`,
@@ -883,7 +883,7 @@ export default function CuradoriaPage() {
     setEtapaAtiva(ETAPA_INICIAL)
     setMarcacaoAberta(false)
     setRevisadas([])
-    if (autenticado) carregarFila()
+    if (autenticado) void carregarFila()
   }
 
   async function salvarRascunho(opcoes?: {
@@ -937,7 +937,7 @@ export default function CuradoriaPage() {
   // clicar em nada extra entre um estudo e o proximo.
   async function aoClicarSalvar() {
     const ok = await salvarRascunho({ silencioso: true })
-    if (ok) irParaProxima()
+    if (ok) void irParaProxima()
   }
 
   // etapa C: "Enviar ao curador" / "Guardar em Minhas imagens" (professor)
@@ -1127,7 +1127,7 @@ export default function CuradoriaPage() {
   // voz: aplica o que foi entendido e salva como rascunho (origem: voz)
   function aplicarVoz(novo: FormularioFicha) {
     setForm(novo)
-    salvarRascunho({ silencioso: true, formulario: novo, origemVoz: true })
+    void salvarRascunho({ silencioso: true, formulario: novo, origemVoz: true })
   }
 
   // macro escolhida no menu: preenche a ficha (sem salvar sozinha - o
@@ -1212,7 +1212,7 @@ export default function CuradoriaPage() {
       setConferenciaAberta(true)
       return
     }
-    aprovar()
+    void aprovar()
   }  pedirAprovacaoRef.current = pedirAprovacao
 
 
@@ -1766,7 +1766,7 @@ export default function CuradoriaPage() {
                 disabled={conferencia.some((c) => c.nivel === 'bloqueio') || aprovando}
                 onClick={() => {
                   setConferenciaAberta(false)
-                  aprovar()
+                  void aprovar()
                 }}
                 className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
               >

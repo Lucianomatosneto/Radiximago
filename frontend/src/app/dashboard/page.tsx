@@ -84,7 +84,7 @@ export default function DashboardPage() {
       }
     }
 
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -101,7 +101,7 @@ export default function DashboardPage() {
       }
 
       setNome(sessao.nome)
-      buscarStats()
+      void buscarStats()
     })
   }, [router])
 

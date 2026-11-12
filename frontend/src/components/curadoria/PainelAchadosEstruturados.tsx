@@ -89,7 +89,7 @@ export default function PainelAchadosEstruturados({
   const [excluindoId, setExcluindoId] = useState<number | null>(null)
 
   useEffect(() => {
-    carregarAchados()
+    void carregarAchados()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curationId])
 

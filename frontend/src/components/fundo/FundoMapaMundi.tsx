@@ -64,7 +64,7 @@ export default function FundoMapaMundi({ intensidade, forcarEscuro = false, aoMu
 
   useEffect(() => {
     let cancelado = false
-    import('./motorMapaMundi').then(({ iniciarMapaMundi }) => {
+    void import('./motorMapaMundi').then(({ iniciarMapaMundi }) => {
       if (cancelado || !canvasRef.current) return
       controleRef.current = iniciarMapaMundi({
         canvas: canvasRef.current,

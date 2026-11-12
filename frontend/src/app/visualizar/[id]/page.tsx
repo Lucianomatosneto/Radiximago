@@ -95,13 +95,13 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
   }
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
       }
-      buscarImagem()
-      buscarSeries()
+      void buscarImagem()
+      void buscarSeries()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, curationId])

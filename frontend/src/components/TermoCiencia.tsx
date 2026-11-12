@@ -71,7 +71,7 @@ export default function TermoCiencia() {
       setTermosUso(null)
       return
     }
-    conferir()
+    void conferir()
   }, [caminho, conferir])
 
   useEffect(() => {

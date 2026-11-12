@@ -75,14 +75,14 @@ export default function SugestoesPage() {
   const ehAdmin = sessao?.perfil === 'administrador'
 
   useEffect(() => {
-    obterSessaoAtual().then((s) => {
+    void obterSessaoAtual().then((s) => {
       if (!s) {
         router.push('/login')
         return
       }
       setSessao(s)
       setContato(s.email || '')
-      carregar(s.perfil === 'administrador')
+      void carregar(s.perfil === 'administrador')
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -118,7 +118,7 @@ export default function SugestoesPage() {
       }
       setTexto('')
       setAviso(t('enviada'))
-      carregar(ehAdmin)
+      void carregar(ehAdmin)
     } catch {
       setErro(t('erroEnviar'))
     } finally {
@@ -143,7 +143,7 @@ export default function SugestoesPage() {
       setErro(await lerErro(r, t('erroAndamento')))
       return
     }
-    carregar(true)
+    void carregar(true)
   }
 
   if (!sessao) {

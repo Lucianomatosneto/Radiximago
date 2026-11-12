@@ -56,7 +56,7 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
         // sem notas carregadas: o quadro so fica sem elas
       }
     }
-    carregar()
+    void carregar()
     return () => {
       cancelado = true
     }
@@ -129,7 +129,7 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
     }
     setConfirmando(null)
     if (alvo === 'todas') notas.forEach((n) => remover(n.id))
-    else remover(alvo)
+    else void remover(alvo)
   }
 
   function editar(nota: Nota) {
@@ -226,7 +226,7 @@ export default function NotasVisualizador({ curationId, onAbrir }: { curationId:
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) salvar()
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void salvar()
                 if (e.key === 'Escape') cancelar()
               }}
               maxLength={2000}

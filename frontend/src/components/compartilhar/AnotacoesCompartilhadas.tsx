@@ -57,7 +57,7 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
     let cancelado = false
     setNotas(null)
     setErro(false)
-    carregar(() => cancelado)
+    void carregar(() => cancelado)
     return () => {
       cancelado = true
     }
@@ -97,10 +97,10 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
       return
     }
     setConfirmando(null)
-    if (alvo === 'recado') acao('ocultar', [{ mensagem: true }])
+    if (alvo === 'recado') void acao('ocultar', [{ mensagem: true }])
     // "apagar todas": as anotacoes e tambem o recado
-    else if (alvo === 'todas') acao('ocultar', [{}, ...(mensagem ? [{ mensagem: true }] : [])])
-    else acao('ocultar', [{ ids: [alvo] }])
+    else if (alvo === 'todas') void acao('ocultar', [{}, ...(mensagem ? [{ mensagem: true }] : [])])
+    else void acao('ocultar', [{ ids: [alvo] }])
   }
 
   const totalVisivel = (notas?.length ?? 0) + (mensagem ? 1 : 0)

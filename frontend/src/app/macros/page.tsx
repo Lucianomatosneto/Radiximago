@@ -100,7 +100,7 @@ export default function MacrosPage() {
   const tTermos = useTranslations('BuscaTermos')
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -109,7 +109,7 @@ export default function MacrosPage() {
         router.push('/acesso-negado?de=/macros')
         return
       }
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -190,7 +190,7 @@ export default function MacrosPage() {
     }
     setEdicao(null)
     mostrarAviso(t('salva'))
-    carregar()
+    void carregar()
   }
 
   async function alternarAtiva(m: Macro) {
@@ -200,13 +200,13 @@ export default function MacrosPage() {
       credentials: 'include',
       body: JSON.stringify({ ativo: !m.ativo }),
     })
-    if (r.ok) carregar()
+    if (r.ok) void carregar()
     else setErro(await lerErro(r, t('erroSalvar')))
   }
 
   async function esquecer(f: Frase) {
     const r = await fetch(`${API}/voz/frases/${f.id}`, { method: 'DELETE', credentials: 'include' })
-    if (r.ok) carregar()
+    if (r.ok) void carregar()
   }
 
   function traduzirItem(valor: string) {

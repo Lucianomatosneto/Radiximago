@@ -98,7 +98,7 @@ export default function MiniaturaImagem({
       }
     }
 
-    carregar()
+    void carregar()
     return () => {
       cancelado = true
       if (urlObjeto) URL.revokeObjectURL(urlObjeto)

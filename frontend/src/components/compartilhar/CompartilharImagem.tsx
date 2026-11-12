@@ -51,7 +51,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
     setConvite(null)
     setErro('')
     setEnviados([])
-    carregarEnviados()
+    void carregarEnviados()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curationId])
 
@@ -91,7 +91,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
       setEmail('')
       setMensagem('')
       setAberto(false)
-      carregarEnviados()
+      void carregarEnviados()
     } catch {
       setErro(t('erroEnviar'))
     } finally {
@@ -148,7 +148,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') enviar()
+              if (e.key === 'Enter') void enviar()
               if (e.key === 'Escape') setAberto(false)
             }}
             placeholder={t('placeholderEmail')}

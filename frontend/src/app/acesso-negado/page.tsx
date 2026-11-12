@@ -23,7 +23,7 @@ export default function AcessoNegadoPage() {
   useEffect(() => {
     const de = new URLSearchParams(window.location.search).get('de') ?? ''
     if (/^\/[a-z0-9/_-]{0,80}$/i.test(de)) setPagina(de)
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return

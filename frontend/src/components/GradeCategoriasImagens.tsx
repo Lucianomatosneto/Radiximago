@@ -287,7 +287,7 @@ export default function GradeCategoriasImagens({ contagens }: Props) {
   // percentual do acervo so para curador e administrador (estudante nao ve)
   const [mostrarPercentual, setMostrarPercentual] = useState(false)
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => setMostrarPercentual(!!sessao && ['administrador', 'curador'].includes(sessao.perfil)))
+    void obterSessaoAtual().then((sessao) => setMostrarPercentual(!!sessao && ['administrador', 'curador'].includes(sessao.perfil)))
   }, [])
 
   function contagemDaCategoria(categoria: Categoria): number | null {

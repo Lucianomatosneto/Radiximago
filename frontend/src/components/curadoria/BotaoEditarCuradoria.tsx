@@ -21,7 +21,7 @@ export default function BotaoEditarCuradoria({ curationId }: { curationId: numbe
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   useEffect(() => {
-    obterSessaoAtual().then((s) => setPode(!!s && PERFIS.includes(s.perfil)))
+    void obterSessaoAtual().then((s) => setPode(!!s && PERFIS.includes(s.perfil)))
   }, [])
   if (!pode) return null
   async function reabrir() {

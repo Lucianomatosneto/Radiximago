@@ -98,7 +98,7 @@ export default function ResponderCompartilhamento({
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) enviar()
+          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) void enviar()
           if (e.key === 'Escape') setAberto(false)
         }}
         maxLength={500}

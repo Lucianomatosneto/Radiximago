@@ -111,7 +111,7 @@ export default function BuscaTermos({
     } else if (e.key === 'Enter' && aberto && sugestoes[cursor]) {
       e.preventDefault()
       e.stopPropagation()
-      adicionar(sugestoes[cursor])
+      void adicionar(sugestoes[cursor])
     } else if (e.key === 'Escape') {
       setAberto(false)
     } else if (e.key === 'Backspace' && !consulta && selecionados.length) {
@@ -201,7 +201,7 @@ export default function BuscaTermos({
               aria-selected={i === cursor}
               onMouseDown={(e) => {
                 e.preventDefault()
-                adicionar(s)
+                void adicionar(s)
               }}
               onMouseEnter={() => setCursor(i)}
               className={`flex cursor-pointer items-start gap-2 rounded-lg px-2.5 py-1.5 text-sm ${i === cursor ? 'bg-brand/15' : ''}`}

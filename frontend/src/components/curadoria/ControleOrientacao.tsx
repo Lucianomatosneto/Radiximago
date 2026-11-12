@@ -162,7 +162,7 @@ export default function ControleOrientacao({
       if (mostrou) onGirarNaTela(volta)
       setGiro((g) => (g + volta) % 360)
     }
-    if (pendente.current) gravar()
+    if (pendente.current) void gravar()
     else setGirando(false)
   }
 

@@ -75,7 +75,7 @@ function FormOutros({
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault()
-            confirmar()
+            void confirmar()
           }
           if (e.key === 'Escape') onCancelar()
         }}
