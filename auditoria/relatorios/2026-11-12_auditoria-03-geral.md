@@ -101,3 +101,73 @@ Nenhuma correção foi feita no Radix. Para iniciar, preciso da autorização pa
 ## 8. Atualização de 12/11 (correções aplicadas na branch `auditoria/correcoes-seguranca`)
 
 Corrigidos e testados (backend 611 testes passando): A-01 (Pillow 13.0.0), M-02, Z-01, A-02, A-03, Sonar S2819 (origem do postMessage), Z-04 parcial (Permissions-Policy, COOP, sem X-Powered-By), utcnow e 2 regex lentas. Pendentes: M-03 (aguarda versões do Docker), 130 promessas sem tratamento (revisão por área), refatoração Q-01, cobertura no Sonar. Correção a registrar: o item ASVS 3.5.5 (postMessage) estava como "não aplicável" na matriz, mas o Radix recebe mensagens do OHIF; deve ser reavaliado como aplicável.
+
+## 9. Fechamento de 12/11 (tudo fundido em `redesign-ui`; auditoria semanal completa 43280023341 verde)
+
+**Fundidos:** PR #3 (correções de segurança, testadas à mão: microfone da curadoria e bloqueio de login 401×10 → 429), #26 (login mais leve, S-02), #4 (Dependabot ampliado) e as atualizações seguras do Dependabot (React/react-dom juntos, pytest, GitHub Actions, Sonar 5→6, ferramentas internas).
+
+**Antes e depois medidos (mesmo método, runner sem GPU):**
+
+| Medida | Antes | Depois |
+|---|---|---|
+| Lighthouse, tela de login (nota) | 61 | 89 |
+| Tempo bloqueado (TBT) | 8.670 ms | 270 ms |
+| Tempo até ficar interativa | 21,5 s | 1,8 s |
+| Speed Index | 4,2 s | 1,4 s |
+| k6 (API leve), p95 | 11 ms | 4,9 ms, 0 falhas |
+| pip-audit (Pillow) | 1 pacote, 40 avisos | 0 |
+| npm audit / Semgrep / Gitleaks | 0 / 0 / 0 | 0 / 0 / 0 |
+
+Canários (falha e senha plantadas) detectados pelos dois detectores: o "0" é confiável.
+
+**S-01 medido (busca com fichas sintéticas, ferramenta `auditoria/scripts/medir_busca.py`, workflow "Medir busca"):**
+
+| Busca | 2.000 fichas | 10.000 | 30.000 |
+|---|---:|---:|---:|
+| Filtros normais (tipo, dente, achado, idade) | 13–15 ms | 18–28 ms | 30–61 ms |
+| Texto livre, 1 palavra | 60 ms | 228 ms | 472 ms |
+| Texto livre com erro de digitação | 303 ms | 1.417 ms | 3.008 ms |
+| Texto livre + tipo | 53 ms | 108 ms | 242 ms |
+
+Conclusão: filtros estruturados escalam bem; a busca por texto livre cresce linearmente com o acervo (varredura sem índice sobre o texto normalizado de todas as fichas) e chega a ~3 s com 30 mil fichas e tolerância a erro de digitação. Com o acervo atual (~300 imagens) o impacto é desprezível. Limites do teste: texto sintético mais longo que o real; tempos aproximados pelos horários do log.
+**Recomendação (S-01, MÉDIO/futuro):** guardar o texto normalizado em coluna própria mantida ao salvar a ficha, com índice GIN `pg_trgm`/`tsvector`; só implementar se o acervo passar de ~5 mil imagens. Repetir a medição depois do ajuste.
+
+**Pendentes:** M-03 parcial (cloudflared:latest do modo túnel); 130 promessas sem tratamento, 19 itens de acessibilidade, Q-01 (refatorar funções D–F e arquivos gigantes), Mypy/Ruff/ESLint; Dependabot em espera por teste manual: Python 3.15, Node 25, OHIF 3.13, numpy 2 / faster-whisper (junto com o ajuste da voz), alembic, slowapi, three; reteste HTTPS/TLS (ASVS L1); reavaliar ASVS 3.5.5 como aplicável.
+
+## 10. Registro de 10 a 12/11 (Termos v1.1, autoria e SonarCloud lotes 1–3)
+
+Fonte: handoff do Claude Code. Estado em 12/11, base `a4559fe`.
+
+### 10.1 Situação das entregas
+| Pacote | Conteúdo | Situação |
+|---|---|---|
+| `autoria-luciano.mbox` (7) | Retira PPGINFOS/UFSC dos textos do usuário | Já no GitHub |
+| `termos-v1-1-atualizado.mbox` (6) | Termos de Uso e Privacidade v1.1 | **Não aplicado** (substitui `termos-v1-1.mbox`) |
+| `sonar-lote-1.mbox` (19) | 18 correções seguras | **Não aplicado** (`correcoes/sonar-lote-1`) |
+| `sonar-lote-3.mbox` (17) | Acessibilidade, 23 itens | **Não aplicado** (`correcoes/sonar-lote-3`); teste manual antes de juntar |
+
+Verificação na mesma base: backend verde (615 testes com o lote 1; 611 com o lote 3), `tsc` sem erros, testes do frontend sem falhas, `next build` compila.
+
+### 10.2 Termos v1.1 e revisão jurídica
+- v1.0 (10/11): 17 cláusulas, anexos por perfil, Política de Privacidade, aceite registrado em `aceites_termos_uso` (versão, perfil, SHA-256). v1.1 (11/11): 16 correções procedentes da revisão da minuta "v2.0" do GPT (Marco Civil art. 15 só para pessoa jurídica; art. 7º IV e art. 16 II não valem para pessoa física; controlador/operador; original DICOM é dado sensível, art. 11; transferência internacional, Res. CD/ANPD 19/2024; prazos do art. 19; foro do consumidor; exclusão também nas cópias de segurança). Exige novo aceite.
+- Rejeitado na minuta GPT: era rascunho interno; apagava fatos comprovados no código; prometia funções inexistentes; pedia CPF e endereço no texto público.
+- Pendências jurídicas: (1) controlador/operador e contrato institucional antes de dados reais; (2) pessoa física ou CNPJ e titularidade junto à SINOVA/UFSC; (3) mecanismo de transferência internacional (Brevo e hospedagem); (4) nome do provedor de hospedagem; (5) redação final do foro e da responsabilidade. PDF de 22 páginas para o advogado.
+
+### 10.3 SonarCloud (53 problemas)
+Ponto de partida: Segurança A, **Confiabilidade D**, Manutenção A, cobertura 38,2%.
+- **Lote 1 (18 itens):** `Number.parseInt` (5); 5 regex lentas trocadas por laços, com testes de equivalência (4.026 textos no frontend; 20 mil no backend; única diferença: a regex antiga aceitava "a@b.c\n", sem efeito prático); `new Error` em `Promise.reject` (2); `= None` (2); avatar via `run_in_threadpool`; `sort` com `localeCompare`; `ErroDaPagina`; IP de exemplo `192.0.2.10` (única mudança visível).
+- **Lote 2 (decisões):** S3516 em `auth.py:375` (`/forgot-password`) é **falso positivo** (resposta idêntica proposital contra enumeração de contas). S9379 `autoFocus` (11): manter 10, remover 1 (`solicitar-acesso/page.tsx:138`); **aguarda decisão**.
+- **Lote 3 (acessibilidade):** a tarefa mandava trocar `div` por `button` no S6848; o Claude Code corrigiu: isso poria campos de texto dentro de botões (HTML inválido). Usados `role` adequados (presentation, toolbar, search, group/dialog, region) e a linha da etiqueta de marcações passou a ter acesso por teclado. Limitação conhecida: desenhar/arrastar anotações não tem equivalente de teclado. O Sonar pode continuar acusando alguns itens (marcar Won't fix com justificativa). Roteiro de 8 passos de teste manual no relatório do Claude Code.
+
+### 10.4 Outros registros
+- `privacidade@radiximago.com.br` ainda não existe (recomendado: Cloudflare Email Routing, um único SPF juntando Cloudflare e Brevo).
+- Anvisa (RDC 657/2022): finalidade de ensino/pesquisa, sem diagnóstico, não é dispositivo médico; qualquer apoio diagnóstico exige avaliação regulatória antes.
+
+### 10.5 Pendências (ordem sugerida)
+1. Aplicar e juntar Lote 1 e Termos v1.1; aplicar Lote 3 e fazer o teste manual de 8 passos.
+2. Decidir o `autoFocus` do `solicitar-acesso`; marcar no SonarCloud: S3516 = False positive; `autoFocus` mantidos e a11y remanescentes = Won't fix, com justificativa.
+3. Rodar workflows Sonarcloud e Auditoria semanal; registrar Confiabilidade D → ?.
+4. Enviar cobertura do frontend (`coverage/lcov.info`) ao Sonar (gate de código novo hoje reprova só por cobertura).
+5. Advogado revisa o PDF dos Termos v1.1; atualizar `matriz_asvs.csv` (V5/V8/V2); criar e-mail de privacidade.
+6. Antes de ir ao ar: servidor, troca de credenciais, HTTPS (retestar itens TLS do ASVS L1), backup fora do servidor com teste de restauração.
+7. Backlog técnico: S-01 índice de busca (só se acervo > ~5 mil imagens); Q-01 funções D–F e arquivos gigantes; Mypy 403/Ruff 70/ESLint 6; M-03 `cloudflared:latest` (modo túnel); Dependabot retidos (Python 3.15 #5, Node 25 #7, OHIF 3.13 #6, numpy 2 #13, faster-whisper #16, python-multipart whisper #21, three #19) e Orthanc #33; ajustes da dictação por voz.

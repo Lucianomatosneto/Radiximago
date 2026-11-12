@@ -49,3 +49,13 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 
 ## 2026-11-12 — Auditoria 03 (geral)
 - Relatorio: auditoria/relatorios/2026-11-12_auditoria-03-geral.md. ASVS reavaliado (22 reprovados na matriz 18-19/10; L1 so TLS, a retestar), radon, tamanhos, S-01, Q-01/Q-02. Nada alterado no Radix.
+
+## 2026-11-12 — Fechamento da Auditoria 03
+- Correções fundidas em redesign-ui (PRs #3, #26, #4 e Dependabot seguro). Auditoria semanal 43280023341 verde. Login: Lighthouse 61→89, TBT 8,7 s→0,27 s. pip-audit: 0.
+- S-01 medido com dados sintéticos: texto livre escala linearmente (3 s com 30 mil fichas e erro de digitação); filtros normais rápidos. Registrado como melhoria futura (índice GIN em coluna de texto normalizado). Ferramenta: auditoria/scripts/medir_busca.py (PR #34).
+
+## 2026-11-12 — Registro de 10 a 12/11 (Termos v1.1, autoria, Sonar lotes 1–3)
+- Fonte: handoff do Claude Code (Project: claude/auditoria/HANDOFF_auditoria_continua_2026-11-12.md e RELATORIO_sonar_lotes_1_2_3_2026-11-12.md). Detalhes na seção 10 do relatório 2026-11-12_auditoria-03-geral.md.
+- Autoria (retirada de PPGINFOS/UFSC dos textos do usuário): já no GitHub. Termos v1.1 (6 commits), Sonar lote 1 (19) e lote 3 (17): pacotes .mbox NÃO aplicados em 12/11.
+- Sonar 53 problemas: lote 1 = 18 correções seguras; lote 2 = decisões (S3516 falso positivo; autoFocus manter 10, remover 1, aguardando decisão); lote 3 = acessibilidade, exige teste manual. Correção à tarefa: S6848 resolvido com papéis ARIA, não com botão (botão com campo dentro seria HTML inválido).
+- Pendências jurídicas e de produção listadas na seção 10 do relatório. Continua valendo: só dados de teste/anonimizados até aprovação do CEP.
