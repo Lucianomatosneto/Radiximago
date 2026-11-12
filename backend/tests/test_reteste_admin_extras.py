@@ -42,7 +42,8 @@ def test_painel_sem_codigo_interno_e_sem_ponto_duplo():
         texto = json.loads(_ler(f"messages/{lingua}.json"))["PainelAdmin"]["erros24hDetalhe"]
         assert "erro_inesperado" not in texto
     painel = _ler("src/app/painel-admin/page.tsx")
-    assert ".replace(/[.\\s]+$/, '')" in painel
+    # sem o ponto final do registro (desde 12/11/2026 por aparaFim, sem regex lenta)
+    assert "aparaFim(stats.ultima_falha_email.detalhes ?? '', '.', true)" in painel
     assert "detalhesLegiveis(alerta.detalhes)" in painel
 
 
