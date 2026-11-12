@@ -63,7 +63,7 @@ Medido por radon, contagem de linhas e ferramentas do CI (CONFIRMADO):
 - **Tipagem/lint:** Mypy 403 erros em 50 arquivos; Ruff 70; ESLint 6 erros/22 avisos.
 - **Defeitos de prática:** 4 blocos `except: pass` (um deles na anonimização, M-02); `main.py` com BOM (U+FEFF) que quebra ferramentas.
 - **Pontos positivos:** camadas separadas (core/modules), limites de entrada centralizados (`limites.py`), documentação conferida por teste (`test_documentacao_confere.py`), 4 dos 493 endpoints são `async`, o resto síncrono (aceitável no FastAPI: roda em pool de threads).
-- **SonarCloud** (D/C/A) analisa só a `main` (12 mil linhas): **não representa** a `redesign-ui` (SUSPEITA, não usar como nota).
+- **SonarCloud, agora na `redesign-ui` (46 mil linhas, CONFIRMADO em 12/11):** Segurança D (2 problemas: 1 crítico de `postMessage` sem checar origem, já corrigido na branch de correções, e 1 IP de exemplo num campo), Confiabilidade D (186; 130 são promessas sem tratamento de erro, 19 acessibilidade), Manutenibilidade A (42), Hotspots 0, Duplicação 3,3%. Cobertura 0,0% é enganosa: o relatório de testes ainda não é enviado ao Sonar. Os números antigos (main, 12 mil linhas) foram descartados.
 
 ## 5. Velocidade (análise estática; sem medição real)
 
@@ -97,3 +97,7 @@ Medido por radon, contagem de linhas e ferramentas do CI (CONFIRMADO):
 5. **Zerar Ruff/ESLint** e reduzir Mypy em etapas; apontar SonarCloud para `redesign-ui`.
 
 Nenhuma correção foi feita no Radix. Para iniciar, preciso da autorização para a branch `auditoria/correcoes-seguranca`.
+
+## 8. Atualização de 12/11 (correções aplicadas na branch `auditoria/correcoes-seguranca`)
+
+Corrigidos e testados (backend 611 testes passando): A-01 (Pillow 13.0.0), M-02, Z-01, A-02, A-03, Sonar S2819 (origem do postMessage), Z-04 parcial (Permissions-Policy, COOP, sem X-Powered-By), utcnow e 2 regex lentas. Pendentes: M-03 (aguarda versões do Docker), 130 promessas sem tratamento (revisão por área), refatoração Q-01, cobertura no Sonar. Correção a registrar: o item ASVS 3.5.5 (postMessage) estava como "não aplicável" na matriz, mas o Radix recebe mensagens do OHIF; deve ser reavaliado como aplicável.
