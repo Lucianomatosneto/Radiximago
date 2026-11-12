@@ -233,7 +233,7 @@ export default function AparelhosPage() {
                 <div>
                   <label htmlFor="ap-ip" className="mb-1 block text-sm font-medium text-ink">{t('ip')}</label>
                   <input id="ap-ip" value={form.ip} onChange={(e) => campo('ip', e.target.value.trim())} maxLength={45} required
-                         placeholder="192.168.0.25" inputMode="decimal" className={`${entrada} font-mono`} />
+                         placeholder="192.0.2.10" inputMode="decimal" className={`${entrada} font-mono`} />
                   <p className="mt-1 text-xs text-ink-3">{t('ipAjuda')}</p>
                 </div>
                 <div>
