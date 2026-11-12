@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.15-slim
 WORKDIR /app
 # Tesseract (OCR, "leitor de texto"): procura texto gravado nos pixels das
 # radiografias para tarja-lo (app/modules/texto_na_imagem.py). Roda dentro
