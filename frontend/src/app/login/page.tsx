@@ -280,7 +280,7 @@ export default function LoginPage() {
               <CodigosRecuperacao codigos={codigosRecuperacao} aoContinuar={() => irParaInicio(perfilFinal)} variante="escura" />
             </div>
           ) : etapa ? (
-            <form onSubmit={enviarCodigo} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10" style={sombraTexto}>
+            <form method="post" onSubmit={enviarCodigo} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10" style={sombraTexto}>
               <p className="text-lg font-semibold text-white">
                 {etapa.tipo === 'cadastro' ? tSF('tituloCadastro') : tSF('tituloCodigo')}
               </p>
@@ -307,7 +307,7 @@ export default function LoginPage() {
               </div>
             </form>
           ) : (
-          <form onSubmit={handleSubmit} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10">
+          <form method="post" onSubmit={handleSubmit} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10">
               <div className="flex justify-end text-[13px]">
                 <Link href="/solicitar-acesso" className="text-blue-400 hover:text-blue-300 hover:underline" style={sombraTexto}>
                   {t('primeiroAcesso')}

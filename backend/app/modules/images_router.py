@@ -84,25 +84,41 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
     try:
         resultado, resultado_texto, resultado_recorte = orthanc_client.anonimizar_instancia(orthanc_id_original)
     except Exception:
-        try:
-            orthanc_client.excluir_instancia(orthanc_id_original)
-        except Exception:
-            pass
+        _apagar_sem_engolir("original", orthanc_id_original)
         raise
 
     orthanc_id_anonimizado = resultado.get("ID")
     if not orthanc_id_anonimizado:
-        try:
-            orthanc_client.excluir_instancia(orthanc_id_original)
-        except Exception:
-            pass
+        _apagar_sem_engolir("original", orthanc_id_original)
         raise RuntimeError(
             f"Orthanc nao retornou um ID valido para a instancia anonimizada "
             f"(original={orthanc_id_original})."
         )
 
-    orthanc_client.excluir_instancia(orthanc_id_original)
+    try:
+        orthanc_client.excluir_instancia(orthanc_id_original)
+    except Exception:
+        # Nao deixa a copia anonimizada orfa (sem registro no banco): remove-a
+        # para que uma nova tentativa nao duplique. O original continua no
+        # Orthanc e o erro sobe para a rota, que registra a falha.
+        logger.critical(
+            "Falha ao apagar o original identificavel (orthanc_id=%s) apos anonimizar; "
+            "removendo a copia anonimizada %s para permitir nova tentativa.",
+            orthanc_id_original, orthanc_id_anonimizado,
+        )
+        _apagar_sem_engolir("copia anonimizada", orthanc_id_anonimizado)
+        raise
     return orthanc_id_anonimizado, resultado_texto, resultado_recorte
+
+
+def _apagar_sem_engolir(descricao: str, orthanc_id: str) -> None:
+    """Melhor esforco para apagar uma instancia, mas SEM silenciar a falha:
+    registra no log (so o ID interno do Orthanc, sem dado de paciente)."""
+    try:
+        orthanc_client.excluir_instancia(orthanc_id)
+    except Exception:
+        logger.error("Nao foi possivel apagar %s no Orthanc (orthanc_id=%s); verificar manualmente.",
+                     descricao, orthanc_id, exc_info=True)
 
 
 def _determinar_origem(orthanc_id_original: str) -> str:

@@ -170,7 +170,7 @@ export default function SugestoesPage() {
           {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-500 dark:text-red-300" role="alert">{erro}</p>}
           {aviso && <p className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-300" role="status">{aviso}</p>}
 
-          <form onSubmit={enviar} className="max-w-3xl space-y-3 rounded-2xl border border-base-border bg-base-surface p-4">
+          <form method="post" onSubmit={enviar} className="max-w-3xl space-y-3 rounded-2xl border border-base-border bg-base-surface p-4">
             <div>
               <label htmlFor="sug-texto" className="mb-1 block text-sm font-medium text-ink">{t('suaSugestao')}</label>
               <textarea id="sug-texto" required minLength={5} maxLength={4000} rows={5} value={texto} onChange={(e) => setTexto(e.target.value)} className={campo} placeholder={t('exemplo')} />

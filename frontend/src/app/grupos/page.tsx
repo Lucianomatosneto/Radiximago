@@ -127,7 +127,7 @@ export default function GruposPage() {
           {aviso && <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300">{aviso}</p>}
 
           {editando && (
-            <form onSubmit={salvar} className="max-w-3xl space-y-4 rounded-2xl border border-base-border bg-base-surface p-4">
+            <form method="post" onSubmit={salvar} className="max-w-3xl space-y-4 rounded-2xl border border-base-border bg-base-surface p-4">
               <div>
                 <label htmlFor="nome-grupo" className="mb-1 block text-sm font-medium text-ink">{t('nome')}</label>
                 <input id="nome-grupo" value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} required

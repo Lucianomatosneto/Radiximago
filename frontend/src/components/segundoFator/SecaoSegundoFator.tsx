@@ -145,6 +145,7 @@ export default function SecaoSegundoFator() {
         </div>
       ) : (
         <form
+          method="post"
           className="mt-4 space-y-3"
           onSubmit={(e) => {
             e.preventDefault()
