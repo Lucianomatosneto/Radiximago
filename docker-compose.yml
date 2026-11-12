@@ -59,7 +59,7 @@ services:
   radix-orthanc:
     # Versao fixada pelo resumo (digest) da imagem em uso em 12/11/2026 (auditoria M-03).
     # Para atualizar de proposito: docker pull orthancteam/orthanc:latest, testar e trocar o digest.
-    image: orthancteam/orthanc@sha256:83a1f988c9790a8ec018d00bad2d23d29703313e10ec59ecbeb827b5fa8e0aee
+    image: orthancteam/orthanc@sha256:06b8baab0c63cd58de5474a74b64096a82ea3f7eab2aa471e217cc48c9ae11bf
     container_name: radix-orthanc
     logging: *registros
     restart: unless-stopped
