@@ -30,3 +30,14 @@ Backend: 604/604 testes. Auditoria da API: 9/9. Frontend: 181/181 + Vitest 11/11
 - Ainda não executados no GitHub: desempenho, zap-passivo, sonarcloud, auditoria-semanal.
 
 ## 2026-11-11 — SonarCloud integrado (modo automático, branch main). Achados dele ficam como SUSPEITA até verificação no código.
+
+## 2026-11-12 — Leitura do relatório ZAP passivo (Radix isolado, localhost:3000)
+ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informativos. Nenhum Alto. Nada foi corrigido.
+| ID | Severidade | Status | Achado |
+|---|---|---|---|
+| Z-01 | MÉDIO | CONFIRMADO (código) / impacto real = SUSPEITA | Formulários de login, esqueci-senha e solicitar-acesso sem `method="post"` (só `onSubmit` em JS). Se enviados antes de o JS carregar (ou com JS falhando), o navegador usa GET e e-mail/senha vão para a URL (histórico, logs, Referer). O ZAP, que não executa JS, enviou GET com `senha=ZAP`. |
+| Z-02 | BAIXO | CONFIRMADO | Cabeçalho `X-Powered-By: Next.js` exposto (falta `poweredByHeader: false` no next.config). |
+| Z-03 | MÉDIO | CONFIRMADO, limite já declarado | CSP com `'unsafe-inline'` em script-src e style-src (documentado em docs/SEGURANCA.md). |
+| Z-04 | BAIXO | CONFIRMADO | Faltam COEP, COOP, CORP e Permissions-Policy. |
+| Z-05 | INFO | PROVÁVEL FALSO POSITIVO | "Base64 Disclosure" em imagens .webp (texto aleatório de bytes). |
+| Z-06 | INFO | NÃO VERIFICÁVEL | "Big Redirect" na raiz; requer análise na 1ª auditoria. |
