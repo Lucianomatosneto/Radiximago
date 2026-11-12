@@ -1,0 +1,6 @@
+{
+  "name": "radix-auditoria-lighthouse",
+  "private": true,
+  "description": "Lighthouse isolado: mede desempenho, acessibilidade e boas práticas da tela de login",
+  "devDependencies": { "lighthouse": "^13.0.0" }
+}
