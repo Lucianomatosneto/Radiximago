@@ -1,13 +1,13 @@
 # Auditoria automática — 2026-11-12
 
-Commit analisado: `57f5450`
+Commit analisado: `de58806`
 
 ## Testes
 
 | Suíte | Executados | Aprovados | Reprovados | Ignorados |
 |---|---|---|---|---|
 | Backend (suíte do projeto) | 604 | 604 | 0 | 0 |
-| Auditoria da API | 9 | 9 | 0 | 0 |
+| Auditoria da API | 13 | 11 | 0 | 2 |
 | Frontend (Vitest) | 11 | 11 | 0 | 0 |
 
 ## Segurança
@@ -15,7 +15,7 @@ Commit analisado: `57f5450`
 - Gitleaks (segredos no histórico): 0 achado(s)
 - pip-audit: 40 vulnerabilidade(s) em 1 pacote(s): pillow 12.3.0 (40)
 - npm audit: {'info': 0, 'low': 0, 'moderate': 0, 'high': 0, 'critical': 0, 'total': 0}
-- Semgrep: 0 achado(s) {}
+- Semgrep: 0 achado(s)
 
 ## Qualidade
 
@@ -25,7 +25,7 @@ Commit analisado: `57f5450`
 
 ## Desempenho
 
-- k6: p95 = 2.4 ms; falhas = 0.00%
-- Lighthouse (login): Performance 73, Accessibility 100, Best Practices 100, SEO 100
+- k6: p95 = 11.0 ms; falhas = 0.00%
+- Lighthouse (login): Performance 61, Accessibility 100, Best Practices 100, SEO 100
 
 > Resultados automáticos. Problemas só são considerados resolvidos após reteste na Auditoria.
