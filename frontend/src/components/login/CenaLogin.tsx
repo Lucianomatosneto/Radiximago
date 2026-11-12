@@ -48,7 +48,10 @@ export default function CenaLogin({ controleRef, aoMudarFoco, aoMudarLongitude }
     let desligar: (() => void) | null = null
     let cancelado = false
     // Three.js (~150 kB) so e baixado quando a tela abre, sem atrasar o formulario.
-    import('./motorCenaLogin').then(({ iniciarCenaLogin }) => {
+    // A cena so comeca quando o navegador esta ocioso (formulario ja utilizavel);
+    // o limite de 1,2 s garante que ela apareca mesmo em maquina ocupada.
+    let adiar: number | null = null
+    const comecar = () => import('./motorCenaLogin').then(({ iniciarCenaLogin }) => {
       if (cancelado || !globoRef.current || !ceuRef.current || !rastroRef.current) return
       const cena = iniciarCenaLogin({
         canvasGlobo: globoRef.current,
@@ -63,7 +66,11 @@ export default function CenaLogin({ controleRef, aoMudarFoco, aoMudarLongitude }
       desligar = cena.desligar
       controleRef.current = cena.controle
     })
+    const w = window as Window & { requestIdleCallback?: (f: () => void, o?: { timeout: number }) => number; cancelIdleCallback?: (id: number) => void }
+    if (w.requestIdleCallback) adiar = w.requestIdleCallback(() => { comecar() }, { timeout: 1200 })
+    else adiar = window.setTimeout(() => { comecar() }, 300)
     return () => {
+      if (adiar !== null) { if (w.cancelIdleCallback) w.cancelIdleCallback(adiar); window.clearTimeout(adiar) }
       cancelado = true
       controleRef.current = null
       desligar?.()
