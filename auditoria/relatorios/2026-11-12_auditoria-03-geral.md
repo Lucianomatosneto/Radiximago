@@ -210,3 +210,23 @@ Ordem sugerida: 1 → 2 → 5 → 6 → 4 → (teste manual) → 3. Ao juntar o 
 - SonarCloud: marcar S3516 como falso positivo e os "Won't fix"; rodar Sonarcloud e Auditoria semanal depois do PR #4 e registrar Confiabilidade D → ?.
 - Aplicar a matriz: `python3 auditoria/scripts/aplicar_mudancas_matriz.py matriz_asvs.csv mudancas_2026-11-12.csv matriz_nova.csv` (ou pedir ao chat de auditoria) e versionar a matriz completa no repositório.
 - Advogado, e-mail de privacidade, servidor/HTTPS/backup, Dependabot retidos, decisões 6.5.2/6.5.5/3.5.5/6.4.4.
+
+## 12. Branches no GitHub: conferência (noite de 12/11)
+
+Correção de rota informada pelo Luciano: `correcoes/sonar-lote-1` e `-lote-3` existiam vazios no computador dele, o `git checkout -b` falhou e os pacotes entraram em branches trocados; os dois foram ao GitHub vazios e foram corrigidos só por avanço (sem force push). A `redesign-ui` do GitHub não foi afetada. Regra: **sempre "Create a merge commit", nunca squash** (squash junta os 19 commits do lote 1 em um e faz os outros PRs mostrarem commits repetidos).
+
+| Branch | Esperado | Conferido no GitHub (contra `redesign-ui` `ecf801a`) |
+|---|---|---|
+| `correcoes/sonar-lote-1` | 19 | **19** ✔ |
+| `termos-v1-1` | 7 | **7** próprios (26 contra a redesign-ui = 19 do lote 1 + 7) ✔ |
+| `auditoria/cobertura-frontend` | 7 | **7** próprios ✔ |
+| `auditoria/matriz-asvs-2026-11-12` | 3 | **3** próprios ✔ |
+| `correcoes/loaders-try-catch` | 5 | **5** próprios ✔ |
+| `correcoes/sonar-lote-3` | 18 | **18** ✔ (base `a4559fe`; **não contém o lote 1**, ao contrário do que o relatório do Claude Code dizia) |
+| `correcoes/termos-v1-1` (antigo) | apagar | 6 commits, sem o teste `test_termos_v11.py` ✘ apagar |
+
+Observações:
+- Antes de juntar o lote 1, os quatro PRs do item 2 mostram 19 + os próprios commits; depois dele, só os próprios.
+- O lote 3 mostrará 18 commits, mas por estar em `a4559fe` pode pedir "Update branch" depois dos outros; os dois únicos arquivos mexidos tanto pelo lote 1 quanto pelo 3 (`AnexosCuradoria.tsx`, `CamadaMarcacoes.tsx`) se fundem sem conflito.
+- Teste de fusão local (não publicado): `redesign-ui` + lote 1 + termos + cobertura + matriz + loaders + lote 3, nessa ordem: sem conflito; `tsc --noEmit` sem erros; `autoFocus` do `solicitar-acesso` ausente.
+- Falta, ainda: o Luciano abrir os 6 PRs e fazer o teste manual de 8 passos antes do lote 3; os checks de cada PR só aparecem depois de abertos.
