@@ -42,6 +42,7 @@ export default function SeletorDentesGrupos({
   onChange: (dentes: number[]) => void
 }) {
   const t = useTranslations('Pesquisa.gruposDentes')
+  const tp = useTranslations('Pesquisa')
   const marcado = (d: number) => dentesSelecionados.includes(d)
 
   function alternarDente(d: number) {
@@ -75,7 +76,7 @@ export default function SeletorDentesGrupos({
   )
 
   return (
-    <div onKeyDown={setasEntreBotoes} className="space-y-2">
+    <div role="toolbar" aria-label={tp('campoDentes')} aria-orientation="horizontal" onKeyDown={setasEntreBotoes} className="space-y-2">
       {/* grupos em colunas iguais (alinhados com o odontograma abaixo) */}
       <div className="grid grid-cols-[1fr_1fr_1.2fr_1fr_1.55fr] gap-1.5">
         {GRUPOS_DENTES.map((g) => {
