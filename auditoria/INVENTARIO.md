@@ -69,3 +69,10 @@ flowchart LR
 - Conta criada, organização `lucianomatosneto`, projeto `Lucianomatosneto_Radiximago`, plano Free.
 - Modo atual: análise automática da branch `main` (sem token). Leitura inicial (NÃO confirmada, e da `main`, não da `redesign-ui`): Segurança D (8), Confiabilidade C (84, 1 bloqueador), Manutenibilidade A (14), duplicação 3,6%, hotspots 0, cobertura sem dados. O painel avisa 2 'analysis warnings' ainda não lidos.
 - Para analisar a `redesign-ui`: criar SONAR_TOKEN, desligar a análise automática e ativar `sonarcloud.yml`.
+
+## Validação integrada (11–12/11/2026)
+- Auditoria semanal: executou a cadeia completa e publicou `semanais/2026-11-12.md` e `ultimo.md` na branch `auditoria/resultados` (commit analisado 57f5450). ✅
+- ZAP passivo: executou com sucesso no GitHub, contra Radix descartável. ✅ (o CONTEÚDO do relatório do ZAP ainda não foi lido: fica para a 1ª auditoria)
+- Desempenho: k6 p95 2,4 ms, 0% de falhas; Lighthouse login: Performance 73, Acessibilidade 100, Boas práticas 100, SEO 100 (medido no runner, referência relativa).
+- Gitleaks e Semgrep validados por canário. SonarCloud integrado em modo automático (main).
+- Pendências da Central: SonarCloud na redesign-ui (opcional), Sentry (adiado), auditoria de Docker/Orthanc/OHIF (na máquina do usuário), Node 20 nas ações (Dependabot).

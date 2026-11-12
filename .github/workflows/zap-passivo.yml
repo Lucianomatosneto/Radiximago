@@ -6,10 +6,6 @@ name: ZAP passivo
 
 on:
   workflow_dispatch:
-  # TEMPORÁRIO: validar o ZAP antes de o arquivo estar na main. Remover após a validação.
-  push:
-    branches: [auditoria/central]
-    paths: [".github/workflows/zap-passivo.yml"]
 
 permissions:
   contents: read
