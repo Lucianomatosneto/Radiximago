@@ -35,3 +35,18 @@ updates:
     schedule:
       interval: weekly
     labels: [dependencias, auditoria]
+
+  # Servico de voz (Whisper): bibliotecas Python proprias
+  - package-ecosystem: pip
+    directory: /whisper
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 3
+    labels: [dependencias, auditoria]
+
+  # Imagens usadas pelo docker-compose (Orthanc fixado por digest, Postgres, OHIF, nginx)
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencias, auditoria]
