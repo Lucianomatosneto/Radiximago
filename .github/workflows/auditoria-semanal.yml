@@ -14,6 +14,11 @@ on:
   schedule:
     - cron: "0 9 * * 1" # segunda-feira, 09:00 UTC = 06:00 em Brasília
   workflow_dispatch:
+  # TEMPORÁRIO: permite validar a cadeia completa enquanto este arquivo ainda não está na branch principal
+  # (o botão "Run workflow" só aparece para workflows que já estão na main). Remover após a validação.
+  push:
+    branches: [auditoria/central]
+    paths: [".github/workflows/auditoria-semanal.yml"]
 
 permissions:
   contents: read
