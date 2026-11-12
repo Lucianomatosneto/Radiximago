@@ -51,3 +51,31 @@ jobs:
             -Dsonar.python.version=3.11
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.branch.name=main
+      - name: Listar os problemas encontrados (resumo)
+        if: steps.conf.outputs.ativo == 'sim'
+        run: |
+          sleep 60
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import os, json, base64, urllib.request, collections
+          tok = os.environ["SONAR_TOKEN"]
+          h = {"Authorization": "Basic " + base64.b64encode((tok + ":").encode()).decode()}
+          base = "https://sonarcloud.io/api/issues/search?componentKeys=Lucianomatosneto_Radiximago&branch=main&issueStatuses=OPEN,CONFIRMED&ps=500&p=%d"
+          itens, pag = [], 1
+          while True:
+              d = json.load(urllib.request.urlopen(urllib.request.Request(base % pag, headers=h)))
+              itens += d["issues"]
+              if pag * 500 >= d["total"]: break
+              pag += 1
+          print("## SonarCloud — problemas abertos na redesign-ui:", len(itens))
+          for q in ("SECURITY", "RELIABILITY"):
+              sel = [i for i in itens if any(x["softwareQuality"] == q for x in i.get("impacts", []))]
+              print("\n### %s: %d" % (q, len(sel)))
+              por_regra = collections.Counter((i["rule"], i["message"][:90]) for i in sel)
+              for (r, m), n in por_regra.most_common(12):
+                  print("- %dx %s — %s" % (n, r, m))
+              if q == "SECURITY":
+                  for i in sel:
+                      print("  * %s:%s [%s] %s" % (i["component"].split(":", 1)[-1], i.get("line"), i["severity"], i["message"][:120]))
+          PY
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
