@@ -42,5 +42,12 @@ jobs:
         if: steps.conf.outputs.ativo == 'sim'
         with:
           args: >
-            -Dproject.settings=auditoria/config/sonar-project.properties
+            -Dsonar.organization=lucianomatosneto
+            -Dsonar.projectKey=Lucianomatosneto_Radiximago
+            -Dsonar.projectName="Radix Imago"
+            -Dsonar.sources=backend/app,frontend/src
+            -Dsonar.tests=backend/tests
+            -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/alembic/versions/**
+            -Dsonar.python.version=3.11
+            -Dsonar.sourceEncoding=UTF-8
             -Dsonar.branch.name=main
