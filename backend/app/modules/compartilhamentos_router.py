@@ -31,7 +31,6 @@ Seguranca / LGPD:
   recado). A lista de anotacoes do remetente volta sempre vazia.
 """
 
-import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -71,7 +70,23 @@ def _resposta_neutra() -> dict:
         "aviso_cadastro": AVISO_CADASTRO,
         "link_cadastro": f"{settings.FRONTEND_URL}/solicitar-acesso",
     }
-_EMAIL_VALIDO = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def email_valido(email: str) -> bool:
+    """Formato minimo de e-mail: "algo@algo.algo", sem espacos e com um so "@".
+
+    Antes era a regex ^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$, que fica lenta com
+    textos longos cheios de pontos (SonarCloud S8786, 12/11/2026). Esta
+    funcao le o texto uma vez so e da o mesmo resultado (teste de
+    equivalencia em tests/test_sonar_lote1.py). O texto chega sem espacos
+    nas pontas (.strip()), entao a diferenca da regex com um "\\n" final nao
+    aparece.
+    """
+    if not email or email.count("@") != 1 or any(c.isspace() for c in email):
+        return False
+    local, dominio = email.split("@")
+    # depois do "@": um ponto com pelo menos um caractere antes e depois
+    return bool(local) and "." in dominio[1:-1]
 
 
 class CompartilharEntrada(BaseModel):
@@ -114,7 +129,7 @@ def compartilhar(
     db: Session = Depends(get_db),
 ):
     email = dados.email.strip().lower()
-    if not _EMAIL_VALIDO.match(email):
+    if not email_valido(email):
         raise HTTPException(status_code=422, detail="Digite um e-mail válido.")
     if email == (usuario.email or "").strip().lower():
         raise HTTPException(status_code=400, detail="Você não pode compartilhar uma imagem com você mesmo.")
