@@ -59,3 +59,9 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 - Autoria (retirada de PPGINFOS/UFSC dos textos do usuário): já no GitHub. Termos v1.1 (6 commits), Sonar lote 1 (19) e lote 3 (17): pacotes .mbox NÃO aplicados em 12/11.
 - Sonar 53 problemas: lote 1 = 18 correções seguras; lote 2 = decisões (S3516 falso positivo; autoFocus manter 10, remover 1, aguardando decisão); lote 3 = acessibilidade, exige teste manual. Correção à tarefa: S6848 resolvido com papéis ARIA, não com botão (botão com campo dentro seria HTML inválido).
 - Pendências jurídicas e de produção listadas na seção 10 do relatório. Continua valendo: só dados de teste/anonimizados até aprovação do CEP.
+
+## 2026-11-12 (noite) — Resultado da tarefa de pendências (Claude Code)
+- Fonte: RESULTADO_pendencias_2026-11-12.md e matriz_asvs_mudancas_2026-11-12.csv (Project). Seis branches prontas, PRs ainda não abertos; detalhes e conferências na seção 11 do relatório 2026-11-12_auditoria-03-geral.md.
+- Achados novos (segundo fator): 6.5.2 códigos de recuperação em SHA-256 sem sal (MÉDIA); 6.5.5 código do aplicativo vale ~90 s (BAIXA); 3.5.5 OHIF confia na origem de quem o emoldura (BAIXA); 6.4.4 INCONCLUSIVO (falta procedimento de conferência de identidade).
+- Cobertura do frontend medida localmente: 7,7% (832/10.798 linhas). O SonarCloud só mostra depois de juntar o PR da branch auditoria/cobertura-frontend.
+- Matriz ASVS: 15 linhas reavaliadas (7 mudam de situação). A matriz completa não está no repositório; ferramenta auditoria/scripts/aplicar_mudancas_matriz.py aplica o CSV de mudanças e imprime a contagem.
