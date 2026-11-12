@@ -56,3 +56,20 @@ Autenticação e permissões estão **bem construídas** para o porte do projeto
 Continuam abertos: A-01, M-01 (mitigado), M-04 (suspeita), S-02 (suspeita). M-02 passa de “suspeita” para **CONFIRMADO**. M-03 e M-05 não foram reexaminados. Novos: A-02, A-03, Z-01 a Z-06.
 
 > Nenhum problema é considerado resolvido sem reteste. Os resultados do SonarCloud (main) não foram usados como evidência.
+
+---
+
+## Adendo — verificação em execução e configuração de infraestrutura (12/11/2026, máquina do responsável)
+
+**Como foi feito:** o responsável rodou comandos de leitura no PowerShell (`docker compose ps` e 5 pedidos HTTP sem login); a configuração foi lida nos arquivos da pasta do projeto (`docker-compose*.yml`, `orthanc/`, `caddy/Caddyfile`). Nenhuma senha foi exibida. Nada foi alterado.
+
+| ID | Severidade | Status | Achado |
+|---|---|---|---|
+| I-01 | — (ponto forte) | **CONFIRMADO em execução** | Os 8 serviços estão ativos. Sem login, `GET /patients`, `/studies`, `/instances`, `/system` e `/app/explorer.html` na porta 8042 (proxy do Orthanc) retornam **401**. Banco (5432) e Whisper (9000) não são publicados para fora do Docker. A porta 8042 do Orthanc em si não é publicada. |
+| I-02 | — (ponto forte) | **CONFIRMADO na configuração** | Orthanc com autenticação ligada, `DICOM_ALWAYS_ALLOW_STORE=false`, `DICOM_ALWAYS_ALLOW_ECHO=false` e `DICOM_CHECK_MODALITY_HOST=true`: só aparelhos cadastrados e com endereço conferido enviam imagens. |
+| I-03 | — (ponto forte) | **CONFIRMADO na configuração** | Em produção (`docker-compose.prod.yml`) todas as portas internas são zeradas (`!reset []`) e só o Caddy publica 80/443; o Caddy bloqueia `/health/database` e `/health/orthanc` com 404. |
+| **M-03** | **MÉDIO** | **CONFIRMADO** | Contêiner em execução usa `orthancteam/orthanc:latest` (recriado há 3 dias): a versão do Orthanc pode mudar sem aviso e alterar o comportamento da anonimização, que é testada na 1.12.2. `cloudflare/cloudflared:latest` também sem versão fixa. (OHIF está fixo em v3.9.2.) |
+| I-04 | BAIXO | **CONFIRMADO na configuração; impacto SUSPEITA** | No modo de desenvolvimento, as portas 3000, 3001, 4242, 8000 e 8042 são publicadas em `0.0.0.0` (todas as interfaces). Em rede compartilhada, outras máquinas podem alcançá-las, a depender do firewall do Windows. Em produção isso não ocorre. |
+| **M-04** | **BAIXO (reduzido)** | **PARCIALMENTE VERIFICADO** | `docker-compose.prod.yml` e `Caddyfile` lidos: bem configurados. Resta o **modo túnel** (`docker-compose.tunel.yml`, demonstração pela internet a partir do PC): ele NÃO zera as portas e não passa pelo Caddy, então o bloqueio de `/health/database` e `/health/orthanc` pode não valer nesse modo (depende das regras no painel da Cloudflare). O túnel estava desligado na verificação; **NÃO VERIFICÁVEL** hoje. Cuidado de processo: no modo túnel o banco local fica acessível pela internet, portanto nunca com dados reais. |
+
+**Ainda não verificado:** versão exata do Orthanc em execução (`docker compose exec radix-orthanc ...`), logs do Orthanc, anonimização de uma imagem de teste ponta a ponta, e o túnel ligado.
