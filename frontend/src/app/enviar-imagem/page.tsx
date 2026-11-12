@@ -176,7 +176,7 @@ export default function EnviarImagemPage() {
           )}
 
           {!modoFoto && (
-          <form onSubmit={enviar} className="max-w-3xl space-y-5 rounded-2xl border border-base-border bg-base-surface p-4 sm:p-6">
+          <form method="post" onSubmit={enviar} className="max-w-3xl space-y-5 rounded-2xl border border-base-border bg-base-surface p-4 sm:p-6">
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-ink">{t('passo1')}</legend>
               <div className="flex flex-wrap gap-3">

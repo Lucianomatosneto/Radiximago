@@ -66,10 +66,16 @@ const CABECALHOS_DE_PROTECAO = [
   { key: 'Referrer-Policy', value: 'same-origin' },
   { key: 'X-Frame-Options', value: 'DENY' },
   { key: 'Content-Security-Policy', value: POLITICA_DE_CONTEUDO },
+  // So microfone (voz da curadoria) e camera (foto pelo celular) no proprio site;
+  // o resto dos recursos do aparelho fica desligado.
+  { key: 'Permissions-Policy', value: 'microphone=(self), camera=(self), geolocation=(), payment=(), usb=(), bluetooth=()' },
+  // Isola esta janela de outras abas abertas por outros sites (Spectre/XS-Leaks).
+  { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
 ]
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  poweredByHeader: false, // nao anunciar 'X-Powered-By: Next.js'
   async headers() {
     return [{ source: '/:path*', headers: CABECALHOS_DE_PROTECAO }]
   },

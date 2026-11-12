@@ -7,6 +7,7 @@ from typing import Annotated, Literal
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr, Field
 from app.core.database import get_db
@@ -84,6 +85,17 @@ class DesafioSegundoFator(BaseModel):
     segundo_fator: Literal["codigo", "cadastro"]
     desafio: str
 
+# Limite POR CONTA (alem do limite por endereco IP): 10 senhas erradas em 15
+# minutos para o mesmo usuario travam novas tentativas por esse tempo, mesmo que
+# venham de enderecos diferentes (ataque distribuido). So falhas contam, entao o
+# bloqueio nao se prorroga sozinho (auditoria A-02).
+LIMITE_FALHAS_POR_CONTA = 10
+JANELA_FALHAS_CONTA = timedelta(minutes=15)
+# Resumo de senha descartavel, so para gastar o mesmo tempo quando o e-mail nao
+# existe e nao revelar, pela demora, quais e-mails estao cadastrados (A-03).
+_HASH_FALSO = gerar_hash_senha("senha-descartavel-nunca-valida")
+
+
 @router.post("/login", response_model=TokenResposta | DesafioSegundoFator)
 @limiter.limit("5/minute")
 def login(
@@ -103,12 +115,24 @@ def login(
         User.email == form_data.username, User.excluido.is_(False)
     ).first()
     if not usuario:
+        verificar_senha(form_data.password, _HASH_FALSO)  # igualar o tempo de resposta
         db.add(AuditLog(
             usuario_id=None, acao="falha_login", entidade="user", resultado="negado",
             detalhes=f"Tentativa de login com e-mail não cadastrado: {form_data.username}",
         ))
         db.commit()
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+    falhas_recentes = db.query(func.count(AuditLog.id)).filter(
+        AuditLog.usuario_id == usuario.id,
+        AuditLog.acao == "falha_login",
+        AuditLog.criado_em >= datetime.now(timezone.utc) - JANELA_FALHAS_CONTA,
+    ).scalar()
+    if falhas_recentes >= LIMITE_FALHAS_POR_CONTA:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas tentativas para esta conta. Aguarde alguns minutos e tente de novo.",
+            headers={"Retry-After": str(int(JANELA_FALHAS_CONTA.total_seconds()))},
+        )
     if not verificar_senha(form_data.password, usuario.senha_hash):
         db.add(AuditLog(
             usuario_id=usuario.id, acao="falha_login", entidade="user", entidade_id=usuario.id,

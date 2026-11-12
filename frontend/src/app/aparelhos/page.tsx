@@ -211,7 +211,7 @@ export default function AparelhosPage() {
           )}
 
           {form && (
-            <form onSubmit={salvar} data-teste="form-aparelho" className="max-w-3xl space-y-4 rounded-2xl border border-base-border bg-base-surface p-4">
+            <form method="post" onSubmit={salvar} data-teste="form-aparelho" className="max-w-3xl space-y-4 rounded-2xl border border-base-border bg-base-surface p-4">
               <h2 className="text-base font-semibold text-ink">{form.id ? t('editarTitulo') : t('novoTitulo')}</h2>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>

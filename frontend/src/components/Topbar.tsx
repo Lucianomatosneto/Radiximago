@@ -326,7 +326,7 @@ export default function Topbar({
               </span>
             </div>
 
-            <form onSubmit={enviarFoto} className="space-y-4">
+            <form method="post" onSubmit={enviarFoto} className="space-y-4">
               <label className="block">
                 <span className="mb-1.5 block text-xs font-medium text-slate-400">
                   {t('fotoAjuda')}

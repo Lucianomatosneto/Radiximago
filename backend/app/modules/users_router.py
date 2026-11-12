@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from sqlalchemy import func
@@ -265,7 +265,7 @@ def aprovar_solicitacao_acesso(
 
     pedido.status = StatusSolicitacaoAcesso.aprovada
     pedido.revisado_por_id = usuario_atual.id
-    pedido.revisado_em = datetime.utcnow()
+    pedido.revisado_em = datetime.now(timezone.utc)
 
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="aprovacao_solicitacao_acesso", entidade="user",
@@ -301,7 +301,7 @@ def rejeitar_solicitacao_acesso(
     pedido.status = StatusSolicitacaoAcesso.rejeitada
     pedido.motivo_rejeicao = dados.motivo
     pedido.revisado_por_id = usuario_atual.id
-    pedido.revisado_em = datetime.utcnow()
+    pedido.revisado_em = datetime.now(timezone.utc)
 
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="rejeicao_solicitacao_acesso", entidade="user",
@@ -517,7 +517,7 @@ def excluir_usuario(
     _exigir_outro_administrador(db, usuario, "excluir")
 
     usuario.excluido = True
-    usuario.excluido_em = datetime.utcnow()
+    usuario.excluido_em = datetime.now(timezone.utc)
     usuario.excluido_por_id = usuario_atual.id
     usuario.bloqueado = True  # defesa extra: garante que nao loga mesmo se algo ignorar `excluido`
 

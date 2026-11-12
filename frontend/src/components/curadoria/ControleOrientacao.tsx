@@ -85,8 +85,13 @@ export default function ControleOrientacao({
       girarRef.current(ev.shiftKey ? 270 : 90)
     }
     function aoReceber(ev: MessageEvent) {
-      const janela = iframeOhifRef?.current?.contentWindow
-      if (!janela || ev.source !== janela) return
+      const quadro = iframeOhifRef?.current
+      const janela = quadro?.contentWindow
+      if (!quadro || !janela || ev.source !== janela) return
+      // alem da janela, confere a ORIGEM (endereco) do OHIF carregado no quadro
+      let origemEsperada = ''
+      try { origemEsperada = new URL(quadro.src).origin } catch { return }
+      if (ev.origin !== origemEsperada) return
       const dados = ev.data as { tipo?: unknown; sentido?: unknown } | null
       if (dados && dados.tipo === 'radix-tecla-girar') girarRef.current(dados.sentido === 'anti' ? 270 : 90)
     }

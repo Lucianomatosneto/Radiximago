@@ -304,7 +304,7 @@ export default function ImagensPage() {
             <p className="mb-3 text-xs text-ink-2">
               {t('enviarDescricao')}
             </p>
-            <form onSubmit={enviarImagem} className="flex flex-wrap items-center gap-3">
+            <form method="post" onSubmit={enviarImagem} className="flex flex-wrap items-center gap-3">
               <input
                 ref={inputArquivoRef}
                 type="file"

@@ -137,3 +137,47 @@ def test_rate_limit_no_login(client, criar_usuario):
         "/auth/login", data={"username": usuario.email, "password": "errada"}
     )
     assert sexta_tentativa.status_code == 429
+
+
+def test_login_trava_por_conta_apos_muitas_falhas(client, criar_usuario, db):
+    """A-02: 10 senhas erradas em 15 min travam a CONTA (429), mesmo vindas de varios IPs."""
+    from app.modules.audit_logs import AuditLog
+
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    for _ in range(10):
+        db.add(AuditLog(usuario_id=usuario.id, acao="falha_login", entidade="user",
+                        entidade_id=usuario.id, resultado="negado", detalhes="Senha incorreta."))
+    db.commit()
+
+    resposta = client.post("/auth/login", data={"username": usuario.email, "password": SENHA_TESTE})
+
+    assert resposta.status_code == 429
+    assert "Retry-After" in resposta.headers
+
+
+def test_login_conta_com_poucas_falhas_continua_entrando(client, criar_usuario, db):
+    from app.modules.audit_logs import AuditLog
+
+    usuario = criar_usuario(perfil=UserRole.estudante)
+    for _ in range(3):
+        db.add(AuditLog(usuario_id=usuario.id, acao="falha_login", entidade="user",
+                        entidade_id=usuario.id, resultado="negado", detalhes="Senha incorreta."))
+    db.commit()
+
+    resposta = client.post("/auth/login", data={"username": usuario.email, "password": SENHA_TESTE})
+
+    assert resposta.status_code == 200
+
+
+def test_login_email_inexistente_gasta_verificacao_de_senha(client, monkeypatch):
+    """A-03: e-mail inexistente tambem executa o calculo lento de senha (mesmo tempo de resposta)."""
+    from app.modules import auth
+
+    chamadas = []
+    original = auth.verificar_senha
+    monkeypatch.setattr(auth, "verificar_senha", lambda s, h: chamadas.append(h) or original(s, h))
+
+    resposta = client.post("/auth/login", data={"username": "ninguem@teste.example", "password": "qualquer-coisa"})
+
+    assert resposta.status_code == 401
+    assert chamadas == [auth._HASH_FALSO]

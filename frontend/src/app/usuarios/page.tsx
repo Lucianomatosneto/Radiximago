@@ -920,7 +920,7 @@ export default function UsuariosPage() {
       {edicao && (
         <Modal onFechar={() => setEdicao(null)} fecharRotulo={t('fechar')}>
           <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalEditarTitulo')}</h2>
-          <form onSubmit={salvarEdicao} className="space-y-4">
+          <form method="post" onSubmit={salvarEdicao} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
@@ -970,7 +970,7 @@ export default function UsuariosPage() {
       {modalCriacaoAberto && (
         <Modal onFechar={() => setModalCriacaoAberto(false)} fecharRotulo={t('fechar')}>
           <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalNovoTitulo')}</h2>
-          <form onSubmit={criarUsuario} className="space-y-4">
+          <form method="post" onSubmit={criarUsuario} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
@@ -1124,7 +1124,7 @@ export default function UsuariosPage() {
               perfil: t(`perfis.${aprovacao.solicitacao.perfil_solicitado}` as Parameters<typeof t>[0]),
             })}
           </p>
-          <form onSubmit={confirmarAprovacao} className="space-y-4">
+          <form method="post" onSubmit={confirmarAprovacao} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">
                 {t('perfilAConceder')} <span className="text-red-400">*</span>
@@ -1182,7 +1182,7 @@ export default function UsuariosPage() {
           <p className="mb-4 text-sm text-slate-400">
             {t('rejeitandoPedidoDe', { nome: rejeicao.solicitacao.nome, email: rejeicao.solicitacao.email })}
           </p>
-          <form onSubmit={confirmarRejeicao} className="space-y-4">
+          <form method="post" onSubmit={confirmarRejeicao} className="space-y-4">
             <div>
               <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoMotivoRejeicao')}</label>
               <textarea
