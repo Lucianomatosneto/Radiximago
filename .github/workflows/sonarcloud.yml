@@ -21,8 +21,25 @@ jobs:
   sonar:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: radix_user
+          POSTGRES_PASSWORD: ci_descartavel
+          POSTGRES_DB: radix_imago_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radix_user -d radix_imago_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      DATABASE_URL: postgresql://radix_user:ci_descartavel@localhost:5432/radix_imago_teste
+      ORTHANC_PASSWORD: ci_descartavel
+      ENVIRONMENT: test
     steps:
       - name: Conferir se o SonarCloud foi configurado
         id: conf
@@ -38,6 +55,23 @@ jobs:
         with:
           ref: redesign-ui   # branch de desenvolvimento real (enviada ao Sonar como 'main' para caber no plano gratuito)
           fetch-depth: 0
+      - uses: actions/setup-python@v5
+        if: steps.conf.outputs.ativo == 'sim'
+        with:
+          python-version: "3.11"
+      - name: Preparar o backend para medir a cobertura dos testes
+        if: steps.conf.outputs.ativo == 'sim'
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+          pip install -r backend/requirements.txt pytest-cov
+          echo "JWT_SECRET_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Testes do backend com cobertura
+        if: steps.conf.outputs.ativo == 'sim'
+        working-directory: backend
+        continue-on-error: true  # falha de teste nao impede a analise do Sonar (ela aparece no workflow de testes)
+        run: |
+          alembic upgrade head
+          pytest -q -p no:cacheprovider --cov=app --cov-report=xml:coverage.xml
       - uses: SonarSource/sonarqube-scan-action@v5
         if: steps.conf.outputs.ativo == 'sim'
         with:
@@ -49,6 +83,7 @@ jobs:
             -Dsonar.tests=backend/tests
             -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/alembic/versions/**
             -Dsonar.python.version=3.11
+            -Dsonar.python.coverage.reportPaths=backend/coverage.xml
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.branch.name=main
       - name: Listar os problemas encontrados (resumo)
