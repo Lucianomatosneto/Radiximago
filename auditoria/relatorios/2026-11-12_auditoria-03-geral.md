@@ -171,3 +171,42 @@ Ponto de partida: Segurança A, **Confiabilidade D**, Manutenção A, cobertura 
 5. Advogado revisa o PDF dos Termos v1.1; atualizar `matriz_asvs.csv` (V5/V8/V2); criar e-mail de privacidade.
 6. Antes de ir ao ar: servidor, troca de credenciais, HTTPS (retestar itens TLS do ASVS L1), backup fora do servidor com teste de restauração.
 7. Backlog técnico: S-01 índice de busca (só se acervo > ~5 mil imagens); Q-01 funções D–F e arquivos gigantes; Mypy 403/Ruff 70/ESLint 6; M-03 `cloudflared:latest` (modo túnel); Dependabot retidos (Python 3.15 #5, Node 25 #7, OHIF 3.13 #6, numpy 2 #13, faster-whisper #16, python-multipart whisper #21, three #19) e Orthanc #33; ajustes da dictação por voz.
+
+## 11. Resultado da tarefa de pendências (noite de 12/11) e PRs a abrir
+
+Fonte: relatório do Claude Code (base `b3ddbf8`, seis branches, todas com pytest, tsc, testes tsx e build verdes). O push e a abertura dos PRs são feitos pelo Luciano.
+
+### 11.1 Achados novos (autenticação em duas etapas)
+| Item ASVS | Situação | Gravidade | Resumo | Evidência |
+|---|---|---|---|---|
+| 6.5.2 | REPROVADO | **Média** | Os 8 códigos de recuperação têm ~39,6 bits e são guardados com SHA-256 **sem sal**; o requisito pede, abaixo de 112 bits, hash de senha com sal. Quem obtiver uma cópia do banco consegue testar todas as combinações | `backend/app/modules/mfa.py:124-126`, `:132` |
+| 6.5.5 | REPROVADO | Baixa | O código do aplicativo é aceito no passo anterior, atual e seguinte: vale até ~90 s (requisito: 30 s). A tolerância compensa relógio atrasado do celular | `mfa.py:115` |
+| 3.5.5 | REPROVADO | Baixa | O Radix confere a origem das mensagens do OHIF, mas o OHIF confia na origem de quem o coloca em moldura (vem do `document.referrer`) e não tem `frame-ancestors`. Impacto baixo: as mensagens só mudam o desenho de marcações e as imagens exigem login | `ohif/app-config.template.js:212/332/346` |
+| 6.4.4 | INCONCLUSIVO | Baixa | O administrador redefine o segundo fator, mas falta documentar como confere a identidade antes (mesma força do cadastro) | `test_segundo_fator.py:170` |
+
+Aprovados com evidência (antes "não aplicável"): 6.5.1 (uso único), 6.5.3 (gerador aleatório), 6.5.4 (entropia mínima). Mais 8 linhas só tiveram a evidência atualizada, sem mudar de situação: 7.5.1, 6.3.1, 6.4.3, 5.2.1, 5.2.2, 8.2.1, 8.2.2 e 2.3.1.
+
+**Efeito na contagem da matriz (15 linhas reavaliadas, 7 mudam de situação):** REPROVADO +3, INCONCLUSIVO +1, APROVADO COM EVIDÊNCIA +3, NÃO APLICÁVEL −7; o total de linhas não muda. Os totais absolutos saem ao rodar `auditoria/scripts/aplicar_mudancas_matriz.py` (a matriz completa só existe no Project, não no repositório).
+
+Decisões do responsável pendentes: 6.5.2 (guardar com Argon2id e gerar códigos novos, ou aumentar o código para ≥112 bits); 6.5.5 (reduzir a tolerância ou aceitar o risco e registrar); 3.5.5 (OHIF conferir a origem do Radix vinda da configuração + `frame-ancestors`); 6.4.4 (escrever o procedimento em `docs/SEGURANCA.md`).
+
+### 11.2 Cobertura do frontend
+Medida local: **7,7%** das linhas de `frontend/src` (832 de 10.798). Os testes atuais cobrem funções de texto, voz, orientação, tema e teclado, não as telas. O SonarCloud **só mostrará o número depois de juntar o PR da branch `auditoria/cobertura-frontend`** (o workflow faz checkout de `redesign-ui`). A condição "cobertura do código novo ≥ 80%" não deve passar com isso; ela passa a mostrar o valor real.
+
+### 11.3 Os 6 PRs (abrir na ordem; base `redesign-ui`; tipo "Create pull request", não rascunho)
+| # | Branch | Commits | O que conferir antes de juntar |
+|---|---|---|---|
+| 1 | `correcoes/sonar-lote-1` | 19 | Todos os checks verdes. Teste manual rápido: Painel do administrador (última falha de e-mail sem ponto duplo), Auditoria ("Outras ações" em ordem), Termos e privacidade (títulos), compartilhar imagem com e-mail válido e com `a@b`, `a b@c.d`, `@b.c` ("Digite um e-mail válido"), trocar foto de perfil, exemplo de IP `192.0.2.10` em Aparelhos |
+| 2 | `termos-v1-1` | 7 | Checks verdes. Entrar com um usuário que aceitou a 1.0: deve aparecer o novo aceite (1.1); abrir `/termos` sem login e ler o texto novo (sem PPGINFOS). Não há migração nova. **Não aplicar o pacote antigo `termos-v1-1.mbox`.** Fazer antes de mostrar a alguém externo |
+| 3 | `correcoes/sonar-lote-3` | 18 (17 + autoFocus) | **Juntar só depois do #1** (a branch está sobre o lote 1; depois dele o PR mostra só os 18 commits dela) **e depois do seu teste manual de 8 passos** (visualizador/etiqueta com Tab+Enter; anotações; pesquisa avançada; anexos e prancha com clique fora e Esc; notas/compartilhar/responder digitando setas e K; macros da curadoria; enviar imagem/foto pelo celular; aceite dos termos com Tab e setas). Confirmar que o campo "nome" do `solicitar-acesso` não recebe foco sozinho |
+| 4 | `auditoria/cobertura-frontend` | 7 | Checks verdes (inclui Node 22 e a nova dependência `@vitest/coverage-v8` 5.1.0). Depois de juntar: rodar o workflow **Sonarcloud** e anotar a cobertura que o painel mostrar |
+| 5 | `auditoria/matriz-asvs-2026-11-12` | 3 | Só documentação (`auditoria/matriz/mudancas_2026-11-12.csv` e README). Conferir que não mexe em código |
+| 6 | `correcoes/loaders-try-catch` | 5 | Checks verdes. Teste manual: com a internet/servidor desligado, abrir Aparelhos, Grupos, Pranchas recebidas, Segundo fator (Configurações) e a ficha na Curadoria: a tela deve mostrar o erro como se o servidor tivesse respondido erro, sem travar |
+
+Ordem sugerida: 1 → 2 → 5 → 6 → 4 → (teste manual) → 3. Ao juntar o #1, o #3 pode precisar de "Update branch"; avise a auditoria se aparecer conflito.
+
+### 11.4 Fora do escopo do Claude Code (continuam abertos)
+- Ações (salvar, apagar, promover etc.): **19 funções** `async` com `await fetch` sem `try/catch` em aparelhos, grupos, macros, vocabulário, usuários, sugestões, login (`iniciarCadastro`), `AnexosCuradoria`, `BotaoEditarCuradoria` e `SecaoEnvios`. Hoje, sem rede, a ação não acontece e não aparece mensagem. Sugestão: lote futuro com aviso único de "sem conexão".
+- SonarCloud: marcar S3516 como falso positivo e os "Won't fix"; rodar Sonarcloud e Auditoria semanal depois do PR #4 e registrar Confiabilidade D → ?.
+- Aplicar a matriz: `python3 auditoria/scripts/aplicar_mudancas_matriz.py matriz_asvs.csv mudancas_2026-11-12.csv matriz_nova.csv` (ou pedir ao chat de auditoria) e versionar a matriz completa no repositório.
+- Advogado, e-mail de privacidade, servidor/HTTPS/backup, Dependabot retidos, decisões 6.5.2/6.5.5/3.5.5/6.4.4.
