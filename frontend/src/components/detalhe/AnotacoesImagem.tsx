@@ -400,7 +400,9 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
       </button>
 
       {modoAdicionar && (
+        // camada de desenho: gesto de mouse (clicar e arrastar), sem papel para leitor de tela
         <div
+          role="presentation"
           onMouseDown={iniciarArrasto}
           onMouseUp={finalizarArrasto}
           onContextMenu={(evento) => evento.preventDefault()}
@@ -414,6 +416,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
           senão o arrastar trava assim que o mouse passa por cima do OHIF. */}
       {(arrastandoAlvo || arrastandoCaixa || arrastandoSeta) && (
         <div
+          role="presentation"
           ref={definirRetanguloArrasto}
           onMouseMove={moverDuranteArrasto}
           onMouseUp={finalizarArrastoAjuste}
@@ -651,6 +654,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               algum botão fica escondido, arraste esta barra para mover a
               caixa inteira para um lugar visível. */}
           <div
+            role="presentation"
             onMouseDown={(evento) => {
               evento.preventDefault()
               setArrastandoCaixa(true)
