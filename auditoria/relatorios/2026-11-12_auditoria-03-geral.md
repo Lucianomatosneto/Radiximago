@@ -101,3 +101,35 @@ Nenhuma correção foi feita no Radix. Para iniciar, preciso da autorização pa
 ## 8. Atualização de 12/11 (correções aplicadas na branch `auditoria/correcoes-seguranca`)
 
 Corrigidos e testados (backend 611 testes passando): A-01 (Pillow 13.0.0), M-02, Z-01, A-02, A-03, Sonar S2819 (origem do postMessage), Z-04 parcial (Permissions-Policy, COOP, sem X-Powered-By), utcnow e 2 regex lentas. Pendentes: M-03 (aguarda versões do Docker), 130 promessas sem tratamento (revisão por área), refatoração Q-01, cobertura no Sonar. Correção a registrar: o item ASVS 3.5.5 (postMessage) estava como "não aplicável" na matriz, mas o Radix recebe mensagens do OHIF; deve ser reavaliado como aplicável.
+
+## 9. Fechamento de 12/11 (tudo fundido em `redesign-ui`; auditoria semanal completa 43280023341 verde)
+
+**Fundidos:** PR #3 (correções de segurança, testadas à mão: microfone da curadoria e bloqueio de login 401×10 → 429), #26 (login mais leve, S-02), #4 (Dependabot ampliado) e as atualizações seguras do Dependabot (React/react-dom juntos, pytest, GitHub Actions, Sonar 5→6, ferramentas internas).
+
+**Antes e depois medidos (mesmo método, runner sem GPU):**
+
+| Medida | Antes | Depois |
+|---|---|---|
+| Lighthouse, tela de login (nota) | 61 | 89 |
+| Tempo bloqueado (TBT) | 8.670 ms | 270 ms |
+| Tempo até ficar interativa | 21,5 s | 1,8 s |
+| Speed Index | 4,2 s | 1,4 s |
+| k6 (API leve), p95 | 11 ms | 4,9 ms, 0 falhas |
+| pip-audit (Pillow) | 1 pacote, 40 avisos | 0 |
+| npm audit / Semgrep / Gitleaks | 0 / 0 / 0 | 0 / 0 / 0 |
+
+Canários (falha e senha plantadas) detectados pelos dois detectores: o "0" é confiável.
+
+**S-01 medido (busca com fichas sintéticas, ferramenta `auditoria/scripts/medir_busca.py`, workflow "Medir busca"):**
+
+| Busca | 2.000 fichas | 10.000 | 30.000 |
+|---|---:|---:|---:|
+| Filtros normais (tipo, dente, achado, idade) | 13–15 ms | 18–28 ms | 30–61 ms |
+| Texto livre, 1 palavra | 60 ms | 228 ms | 472 ms |
+| Texto livre com erro de digitação | 303 ms | 1.417 ms | 3.008 ms |
+| Texto livre + tipo | 53 ms | 108 ms | 242 ms |
+
+Conclusão: filtros estruturados escalam bem; a busca por texto livre cresce linearmente com o acervo (varredura sem índice sobre o texto normalizado de todas as fichas) e chega a ~3 s com 30 mil fichas e tolerância a erro de digitação. Com o acervo atual (~300 imagens) o impacto é desprezível. Limites do teste: texto sintético mais longo que o real; tempos aproximados pelos horários do log.
+**Recomendação (S-01, MÉDIO/futuro):** guardar o texto normalizado em coluna própria mantida ao salvar a ficha, com índice GIN `pg_trgm`/`tsvector`; só implementar se o acervo passar de ~5 mil imagens. Repetir a medição depois do ajuste.
+
+**Pendentes:** M-03 parcial (cloudflared:latest do modo túnel); 130 promessas sem tratamento, 19 itens de acessibilidade, Q-01 (refatorar funções D–F e arquivos gigantes), Mypy/Ruff/ESLint; Dependabot em espera por teste manual: Python 3.15, Node 25, OHIF 3.13, numpy 2 / faster-whisper (junto com o ajuste da voz), alembic, slowapi, three; reteste HTTPS/TLS (ASVS L1); reavaliar ASVS 3.5.5 como aplicável.
