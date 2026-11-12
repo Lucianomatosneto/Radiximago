@@ -72,7 +72,7 @@ jobs:
         run: |
           alembic upgrade head
           pytest -q -p no:cacheprovider --cov=app --cov-report=xml:coverage.xml
-      - uses: SonarSource/sonarqube-scan-action@v5
+      - uses: SonarSource/sonarqube-scan-action@v6
         if: steps.conf.outputs.ativo == 'sim'
         with:
           args: >
