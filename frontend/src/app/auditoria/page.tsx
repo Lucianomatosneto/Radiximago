@@ -247,7 +247,7 @@ export default function AuditoriaPage() {
                     <optgroup label={t('outrasAcoes')}>
                       {Object.keys(contagemAcoes)
                         .filter((v) => !conhecida(v))
-                        .sort()
+                        .sort((a, b) => a.localeCompare(b, 'pt-BR'))
                         .map((v) => (
                           <option key={v} value={v}>
                             {textoLegivel(v)} ({contagemAcoes[v]})
