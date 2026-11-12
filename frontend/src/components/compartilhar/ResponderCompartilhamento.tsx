@@ -90,6 +90,8 @@ export default function ResponderCompartilhamento({
             : 'mt-2'
       }
       // teclas digitadas aqui nao acionam atalhos da tela
+      role="group"
+      aria-label={rotulo}
       onKeyDown={(e) => e.stopPropagation()}
     >
       {(icone || compacto) && <p className="mb-1 text-[11px] font-semibold text-sky-700 dark:text-sky-200">{rotulo}</p>}
