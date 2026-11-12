@@ -38,6 +38,16 @@ jobs:
           # --redact: nunca imprime o valor do segredo
           ./gitleaks detect --source . --redact --report-format json --report-path relatorios/gitleaks.json --exit-code 0
 
+      - name: Gitleaks - teste do próprio Gitleaks (segredo falso gerado agora)
+        run: |
+          mkdir -p canario-gitleaks
+          # segredo FALSO, criado só no runner, nunca gravado no repositório
+          echo "token = ghp_$(openssl rand -hex 18)" > canario-gitleaks/segredo.txt
+          ./gitleaks detect --no-git --source canario-gitleaks --redact --report-format json \
+            --report-path relatorios/gitleaks-canario.json --exit-code 0
+          python3 -c "import json;n=len(json.load(open('relatorios/gitleaks-canario.json')));print('canário Gitleaks:',n);exit(0 if n>=1 else 1)" \
+            && echo "ok" > relatorios/canario-gitleaks.txt || echo "FALHOU" > relatorios/canario-gitleaks.txt
+
       - name: pip-audit (bibliotecas Python)
         run: |
           pip install pip-audit
@@ -57,6 +67,14 @@ jobs:
           semgrep scan --config p/python --config p/typescript --config p/owasp-top-ten --metrics=off \
             --json --output relatorios/semgrep.json backend/app frontend/src || true
 
+      - name: Semgrep - teste do próprio Semgrep (código vulnerável de propósito)
+        run: |
+          mkdir -p canario-semgrep
+          printf 'import subprocess\ndef f(cmd):\n    subprocess.call(cmd, shell=True)\n    return eval(cmd)\n' > canario-semgrep/vuln.py
+          semgrep scan --config p/python --metrics=off --json --output relatorios/semgrep-canario.json canario-semgrep || true
+          python3 -c "import json;n=len(json.load(open('relatorios/semgrep-canario.json')).get('results',[]));print('canário Semgrep:',n);exit(0 if n>=1 else 1)" \
+            && echo "ok" > relatorios/canario-semgrep.txt || echo "FALHOU" > relatorios/canario-semgrep.txt
+
       - name: Resumo
         if: always()
         run: |
@@ -66,14 +84,20 @@ jobs:
               try: return json.load(open(p))
               except Exception: return None
           print("### Segurança")
+          def canario(nome):
+              try: return open(f"relatorios/canario-{nome}.txt").read().strip()
+              except Exception: return "não executado"
           g = carrega("relatorios/gitleaks.json")
-          print(f"- Gitleaks: {len(g) if g is not None else 'sem relatório'} achado(s)")
+          print(f"- Gitleaks: {len(g) if g is not None else 'sem relatório'} achado(s) | teste da ferramenta: {canario('gitleaks')}")
           p = carrega("relatorios/pip-audit.json")
           if p: print(f"- pip-audit: {sum(len(d.get('vulns', [])) for d in p['dependencies'])} vulnerabilidade(s)")
           n = carrega("relatorios/npm-audit.json")
           if n: print(f"- npm audit: {n.get('metadata', {}).get('vulnerabilities', {})}")
           s = carrega("relatorios/semgrep.json")
-          if s: print(f"- Semgrep: {len(s.get('results', []))} achado(s)")
+          if s:
+              print(f"- Semgrep: {len(s.get('results', []))} achado(s) em {len(s.get('paths', {}).get('scanned', []))} arquivos analisados, {len(s.get('errors', []))} erro(s) internos | teste da ferramenta: {canario('semgrep')}")
+          else:
+              print("- Semgrep: sem relatório")
           PY
 
       - uses: actions/upload-artifact@v4

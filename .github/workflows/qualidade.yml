@@ -39,7 +39,7 @@ jobs:
         run: |
           {
             echo "### Qualidade Python"
-            echo "- Ruff: $(grep -c '' relatorios/ruff.txt) linhas de estatística (ver artefato)"
+            echo "- Ruff: $(grep -E '^Found' relatorios/ruff.txt || echo sem relatório)"
             echo "- Mypy: $(tail -1 relatorios/mypy.txt)"
           } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
