@@ -67,7 +67,7 @@ jobs:
               except Exception as erro:
                   print(f"- {nome}: relatório não gerado ({erro})")
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: testes-backend
