@@ -266,8 +266,8 @@ export default function EnvioFotoCelular({
             <legend className="mb-2 text-sm font-medium text-ink">{t('passo2')}</legend>
             <div className="space-y-2">
               {opcoes.map((op) => (
-                <label key={op} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${destino === op ? 'border-brand bg-brand/5' : 'border-base-border'}`}>
-                  <input type="radio" name="destino-foto" value={op} checked={destino === op} onChange={() => setDestino(op)} className="mt-1" />
+                <label key={op} htmlFor={`destino-foto-${op}`} className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 ${destino === op ? 'border-brand bg-brand/5' : 'border-base-border'}`}>
+                  <input id={`destino-foto-${op}`} type="radio" name="destino-foto" value={op} checked={destino === op} onChange={() => setDestino(op)} className="mt-1" />
                   <span>
                     <span className="block text-sm font-medium text-ink">{t(`destinos.${op}.titulo`)}</span>
                     <span className="block text-xs text-ink-2">{t(`destinos.${op}.explica`)}</span>
