@@ -64,3 +64,8 @@ flowchart LR
 3. **Sentry:** decisão sua (envolve conta externa e mudança no código).
 4. **Lighthouse:** medir de novo no seu notebook e em um celular. O ambiente de nuvem não tem placa de vídeo, o que distorce a medição do globo 3D.
 5. **Docker real do Radix** (Orthanc/OHIF em execução): auditar com o Docker Desktop ligado, pelo seu computador.
+
+## SonarCloud (11/11/2026)
+- Conta criada, organização `lucianomatosneto`, projeto `Lucianomatosneto_Radiximago`, plano Free.
+- Modo atual: análise automática da branch `main` (sem token). Leitura inicial (NÃO confirmada, e da `main`, não da `redesign-ui`): Segurança D (8), Confiabilidade C (84, 1 bloqueador), Manutenibilidade A (14), duplicação 3,6%, hotspots 0, cobertura sem dados. O painel avisa 2 'analysis warnings' ainda não lidos.
+- Para analisar a `redesign-ui`: criar SONAR_TOKEN, desligar a análise automática e ativar `sonarcloud.yml`.

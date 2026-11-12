@@ -28,3 +28,5 @@ Backend: 604/604 testes. Auditoria da API: 9/9. Frontend: 181/181 + Vitest 11/11
 - Gitleaks 0 não contradiz M-01 (regra padrão não reconhece senha dentro de URL de banco).
 - VALIDADOS pelo canário (commit bc9164e): Gitleaks varreu 426 commits (0 achados; canário = 1). Semgrep rodou 231 regras em 261 arquivos (0 achados; canário = 1).
 - Ainda não executados no GitHub: desempenho, zap-passivo, sonarcloud, auditoria-semanal.
+
+## 2026-11-11 — SonarCloud integrado (modo automático, branch main). Achados dele ficam como SUSPEITA até verificação no código.
