@@ -500,7 +500,13 @@ function capitalizar(texto: string): string {
 }
 
 function limparLivre(texto: string): string {
-  return texto.replace(/^[\s:,.;-]+|[\s:,;-]+$/g, '').trim()
+  // tira pontuacao do inicio e do fim com laco (regex ancorada no fim e lenta em textos longos)
+  const sobra = ':,.;-'
+  let ini = 0
+  let fim = texto.length
+  while (ini < fim && (sobra.includes(texto[ini]) || /\s/.test(texto[ini]))) ini++
+  while (fim > ini && ((sobra.includes(texto[fim - 1]) && texto[fim - 1] !== '.') || /\s/.test(texto[fim - 1]))) fim--
+  return texto.slice(ini, fim).trim()
 }
 
 const FALAS_PROXIMO = ['proximo', 'proxima', 'proximo item', 'proximo campo', 'pronto', 'seguinte', 'avancar', 'avanca', 'pula', 'pular']

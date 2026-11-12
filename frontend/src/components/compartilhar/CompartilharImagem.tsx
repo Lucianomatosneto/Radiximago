@@ -57,7 +57,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
 
   async function enviar() {
     const valor = email.trim()
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(valor)) {
+    if (valor.length > 254 || !/^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/.test(valor)) {
       setErro(t('erroEmail'))
       return
     }
