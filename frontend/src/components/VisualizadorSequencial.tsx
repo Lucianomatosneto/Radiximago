@@ -134,7 +134,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   const [salvandoGiro, setSalvandoGiro] = useState(false)
   const [erroGiro, setErroGiro] = useState('')
   useEffect(() => {
-    obterSessaoAtual().then((s) => setPodeSalvarGiro(!!s && ['administrador', 'suporte', 'curador'].includes(s.perfil)))
+    void obterSessaoAtual().then((s) => setPodeSalvarGiro(!!s && ['administrador', 'suporte', 'curador'].includes(s.perfil)))
   }, [])
   const itens = useMemo(
     () =>
@@ -358,7 +358,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
         setRotacaoTela((atual) => ({ ...atual, [id]: (((atual[id] ?? 0) - graus) % 360 + 360) % 360 }))
       }
     }
-    if (giroPendente.current[id]) gravarGiro(item, noOhif)
+    if (giroPendente.current[id]) void gravarGiro(item, noOhif)
     else setSalvandoGiro(algumGiroEmAndamento())
   }
   const girarImagemRef = useRef<() => void>(() => {})
@@ -779,7 +779,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     // arquivo salvo no computador mostra a mesma coisa que estava na tela,
     // em vez da imagem crua.
     const sufixo = mostrarMarcacaoEfetivo ? '?com_marcacao=true' : ''
-    baixarArquivo(
+    void baixarArquivo(
       `/search/${atual.curation_id}/preview${sufixo}`,
       `radix-imago-${atual.curation_id}.png`,
       setBaixandoUnico
@@ -791,7 +791,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
     // desenho relativo a UMA imagem representativa do caso, nao a cada
     // corte da serie - aplicar a mesma marcacao em todos os cortes do ZIP
     // ficaria no lugar errado na maioria deles.
-    baixarArquivo(
+    void baixarArquivo(
       `/search/${atual.curation_id}/download/imagens.zip`,
       `radix-imago-${atual.curation_id}-imagens.zip`,
       setBaixandoImagens
@@ -799,7 +799,7 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   }
 
   function baixarZipDicom() {
-    baixarArquivo(
+    void baixarArquivo(
       `/search/${atual.curation_id}/download/dicom.zip`,
       `radix-imago-${atual.curation_id}-dicom.zip`,
       setBaixandoDicom

@@ -285,7 +285,7 @@ function iniciarGlobo(op: OpcoesCenaLogin, reduzir: boolean): { desligar: () => 
   }
   window.addEventListener('resize', enquadrar); enquadrar()
   const reenquadrar = window.setTimeout(enquadrar, 400)
-  document.fonts?.ready.then(() => { if (ativo) enquadrar() })
+  void document.fonts?.ready.then(() => { if (ativo) enquadrar() })
 
   // --- ciclo ---
   const ENTRA = 3, FICA = 16, RECOLHE = 0.8, SAI = 1.4, PAUSA = 1.8, CICLO = ENTRA + FICA + 0.5 + SAI + PAUSA

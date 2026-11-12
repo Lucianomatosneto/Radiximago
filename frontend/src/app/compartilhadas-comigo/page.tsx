@@ -89,13 +89,13 @@ export default function CompartilhadasComigoPage() {
   const [analisa, setAnalisa] = useState(false)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
       }
       setAnalisa(sessao.perfil === 'professor' || sessao.perfil === 'curador')
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])

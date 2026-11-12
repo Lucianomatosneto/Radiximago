@@ -228,7 +228,7 @@ export default function PainelVoz({
     if (pendente?.sugestoes.length) {
       const escolha = escolherSugestaoPorVoz(texto, pendente.sugestoes.map((s) => s.rotulo))
       if (escolha !== null) {
-        aceitarSugestao(pendente, pendente.sugestoes[escolha])
+        void aceitarSugestao(pendente, pendente.sugestoes[escolha])
         // escuta continua: achados todos ligados -> o holofote anda sozinho
         if (continuo && etapa === 'achados' && onEtapa) {
           const f = formRef.current
@@ -399,7 +399,7 @@ export default function PainelVoz({
   }, [iniciada, pausaManual, etapaAtiva])
 
   function alternarEscuta() {
-    if (!escutaRef.current) ligarEscuta()
+    if (!escutaRef.current) void ligarEscuta()
     else setPausaManual((p) => !p)
   }
 
@@ -423,7 +423,7 @@ export default function PainelVoz({
       e.preventDefault()
       // um botao focado nao deve ser "clicado" pelo espaco
       if (alvo instanceof HTMLElement && alvo.tagName === 'BUTTON') alvo.blur()
-      if (!escutaRef.current) ligarEscuta()
+      if (!escutaRef.current) void ligarEscuta()
       else setPausaManual((p) => !p)
     }
     document.addEventListener('keydown', tecla)
@@ -454,7 +454,7 @@ export default function PainelVoz({
       gravador.onstop = () => {
         fluxo.getTracks().forEach((faixa) => faixa.stop())
         const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || 'audio/webm' })
-        if (blob.size > 0) enviar(blob)
+        if (blob.size > 0) void enviar(blob)
       }
       gravador.start()
       gravadorRef.current = gravador
@@ -489,7 +489,7 @@ export default function PainelVoz({
     function tecla(e: KeyboardEvent) {
       if (e.altKey && (e.key === 'v' || e.key === 'V')) {
         e.preventDefault()
-        alternarRef.current()
+        void alternarRef.current()
       }
     }
     window.addEventListener('keydown', tecla)

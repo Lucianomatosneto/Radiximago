@@ -34,7 +34,7 @@ export default function BancoImagensPage() {
   }, [carregando])
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return

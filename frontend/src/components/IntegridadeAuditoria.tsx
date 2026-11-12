@@ -39,7 +39,7 @@ export default function IntegridadeAuditoria({ compacto = false }: { compacto?: 
         if (!d) return
         setResultado(d)
         const antiga = !d.verificado_em || Date.now() - new Date(d.verificado_em).getTime() > 24 * 3600 * 1000
-        if (antiga || !d.integro) verificar()
+        if (antiga || !d.integro) void verificar()
       })
       .catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps

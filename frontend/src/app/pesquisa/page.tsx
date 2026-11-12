@@ -376,7 +376,7 @@ function PesquisaConteudo() {
   const rotuloDoToken = (tk: string) => catalogo.find((i) => token(i) === tk)?.rotulo
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -448,7 +448,7 @@ function PesquisaConteudo() {
 
     if (temFiltroNaUrl) {
       setFiltros(filtrosDaUrl)
-      pesquisar(filtrosDaUrl)
+      void pesquisar(filtrosDaUrl)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autenticado, vocabularioCarregado])

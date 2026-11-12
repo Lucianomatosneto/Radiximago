@@ -104,13 +104,13 @@ export default function MinhasImagensPage() {
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
       }
       setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])

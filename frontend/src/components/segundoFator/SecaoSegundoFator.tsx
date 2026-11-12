@@ -46,7 +46,7 @@ export default function SecaoSegundoFator() {
   }
 
   useEffect(() => {
-    carregar()
+    void carregar()
   }, [])
 
   function cancelar() {
@@ -149,7 +149,7 @@ export default function SecaoSegundoFator() {
           className="mt-4 space-y-3"
           onSubmit={(e) => {
             e.preventDefault()
-            confirmar()
+            void confirmar()
           }}
         >
           {modo === 'ligando' && cadastro && <CadastroAplicativo dados={cadastro} />}

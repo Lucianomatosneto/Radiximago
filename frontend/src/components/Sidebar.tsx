@@ -106,7 +106,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   const [perfil, setPerfil] = useState<string | null>(null)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
+    void obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
   }, [])
 
   // Quantas imagens chegaram em "Compartilhadas comigo" e ainda nao foram
@@ -124,7 +124,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
           .then((r) => (r.ok ? r.json() : null))
           .then((dados) => (dados?.quantidade as number) ?? 0)
           .catch(() => 0)
-      ler('/shares/recebidas/novas').then((a) => {
+      void ler('/shares/recebidas/novas').then((a) => {
         if (!cancelado) setNovasCompartilhadas(a)
       })
     }

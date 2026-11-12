@@ -115,7 +115,7 @@ export default function ConfiguracoesPage() {
   const [erro, setErro] = useState('')
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -124,7 +124,7 @@ export default function ConfiguracoesPage() {
         router.push('/acesso-negado?de=/configuracoes')
         return
       }
-      buscarConfiguracoes()
+      void buscarConfiguracoes()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])

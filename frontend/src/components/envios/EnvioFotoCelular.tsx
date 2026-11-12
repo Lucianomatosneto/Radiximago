@@ -111,7 +111,7 @@ export default function EnvioFotoCelular({
           setEtapa('foto')
           setMensagem(tf('janelaRetomada'))
         } else {
-          abrirJanela()
+          void abrirJanela()
         }
       })
       .catch(() => abrirJanela())

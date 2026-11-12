@@ -84,7 +84,7 @@ export default function Topbar({
   const [erroFoto, setErroFoto] = useState('')
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) return
       setNome(sessao.nome)
       setPerfil(sessao.perfil)

@@ -132,7 +132,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
   useEffect(() => {
     setModoAdicionar(false)
     setEditando(null)
-    carregar()
+    void carregar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curationId])
 
@@ -557,7 +557,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
                 type="button"
                 onClick={(evento) => {
                   evento.stopPropagation()
-                  removerAnotacao(anotacao.id)
+                  void removerAnotacao(anotacao.id)
                 }}
                 title={t('excluirAnotacao')}
                 className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white group-hover:flex"
@@ -587,7 +587,7 @@ export default function AnotacoesImagem({ curationId, filaVisivel }: Props) {
               type="button"
               onClick={(evento) => {
                 evento.stopPropagation()
-                removerAnotacao(anotacao.id)
+                void removerAnotacao(anotacao.id)
               }}
               title={t('excluirAnotacao')}
               className="absolute -right-1.5 -top-1.5 hidden h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold leading-none text-white group-hover:flex"

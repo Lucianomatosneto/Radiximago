@@ -72,7 +72,7 @@ export default function VocabularioPage() {
   const [conferindo, setConferindo] = useState<{ termo: Termo; itens: Candidata[]; marcadas: number[] } | null>(null)
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -81,7 +81,7 @@ export default function VocabularioPage() {
         router.push('/acesso-negado?de=/vocabulario')
         return
       }
-      carregar()
+      void carregar()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -137,7 +137,7 @@ export default function VocabularioPage() {
     setPromovendo(null)
     mostrarAviso(t('termoCriado', { termo: termo.termo }))
     await carregar()
-    abrirConferencia(termo)
+    void abrirConferencia(termo)
   }
 
   async function editar(termo: Termo, dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string; na_busca: boolean; nas_curadorias: boolean }>) {
@@ -216,7 +216,7 @@ export default function VocabularioPage() {
     const dados = await r.json()
     mostrarAviso(dados.mensagem ?? '')
     setConferindo(null)
-    carregar()
+    void carregar()
   }
 
   const caixa = 'rounded-2xl border border-base-border bg-base-surface p-5'
@@ -442,7 +442,7 @@ export default function VocabularioPage() {
                           value={novoSinonimo[termo.id] ?? ''}
                           onChange={(e) => setNovoSinonimo((m) => ({ ...m, [termo.id]: e.target.value }))}
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') adicionarSinonimo(termo)
+                            if (e.key === 'Enter') void adicionarSinonimo(termo)
                           }}
                         />
                       </div>

@@ -153,7 +153,7 @@ export default function PintorSegmentacao({
   useEffect(() => {
     let url = ''
     let cancelado = false
-    ;(async () => {
+    ;void (async () => {
       try {
         const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`, { credentials: 'include' })
         if (!r.ok) throw new Error()
@@ -313,7 +313,7 @@ export default function PintorSegmentacao({
       setErro((e as Error).message)
     } finally {
       salvando.current.delete(id)
-      if (salvarDeNovo.current.delete(id)) salvar(id)
+      if (salvarDeNovo.current.delete(id)) void salvar(id)
     }
   }
 
@@ -339,7 +339,7 @@ export default function PintorSegmentacao({
     mascaras.current.set(id, anterior)
     varinha.current = null
     desenhar(id)
-    salvar(id)
+    void salvar(id)
   }
 
   // ---------------------------------------------------------------- coordenadas
@@ -387,7 +387,7 @@ export default function PintorSegmentacao({
       guardarHistorico(ativoId)
       desenhar(ativoId, aplicarRegiao(m, regiao, w, valor))
       varinha.current = { id: ativoId, ponto: p, base: antes, valor }
-      salvar(ativoId)
+      void salvar(ativoId)
       return
     }
     varinha.current = null
@@ -451,14 +451,14 @@ export default function PintorSegmentacao({
       const m = mascaras.current.get(ativoId)
       if (m && laco.length >= 3) {
         desenhar(ativoId, aplicarRegiao(m, preencherPoligono(w, h, laco), w, apagar ? 0 : 1))
-        salvar(ativoId)
+        void salvar(ativoId)
       }
       setLaco(null)
       return
     }
     if (!traco.current) return
     traco.current = null
-    if (ativoId !== null) salvar(ativoId)
+    if (ativoId !== null) void salvar(ativoId)
   }
 
   // tolerancia mexida logo depois de um clique da varinha: refaz a regiao na hora
@@ -501,7 +501,7 @@ export default function PintorSegmentacao({
     mascaras.current.set(ativoId, novo)
     desenhar(ativoId)
     setPreenchido(true)
-    salvar(ativoId)
+    void salvar(ativoId)
   }
 
   function concluirPontos() {
@@ -530,7 +530,7 @@ export default function PintorSegmentacao({
     varinha.current = null
     mascaras.current.set(ativoId, tipo === 'buracos' ? preencherBuracos(m, w, h) : suavizar(m, w, h))
     desenhar(ativoId)
-    salvar(ativoId)
+    void salvar(ativoId)
   }
 
   // ---------------------------------------------------------------- zoom

@@ -63,7 +63,7 @@ export default function EnviarImagemPage() {
   const ehEstudante = sessao?.perfil === 'estudante'
 
   useEffect(() => {
-    obterSessaoAtual().then((s) => {
+    void obterSessaoAtual().then((s) => {
       if (!s) {
         router.push('/login')
         return

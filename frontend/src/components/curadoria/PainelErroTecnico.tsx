@@ -46,7 +46,7 @@ export default function PainelErroTecnico({
   const [excluindoId, setExcluindoId] = useState<number | null>(null)
 
   useEffect(() => {
-    carregarErros()
+    void carregarErros()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curationId])
 

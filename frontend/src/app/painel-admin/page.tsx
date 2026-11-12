@@ -105,7 +105,7 @@ export default function PainelAdminPage() {
   const [alertas, setAlertas] = useState<AlertaLogin[]>([])
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -116,19 +116,19 @@ export default function PainelAdminPage() {
         return
       }
 
-      carregarDados()
+      void carregarDados()
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   // nao segura a tela: o e-mail (login no servidor SMTP) pode levar uns segundos
   function carregarServicosExtras() {
-    lerStatusIntegracoes().then(async (dados) => {
+    void lerStatusIntegracoes().then(async (dados) => {
       setArmazenamento(dados?.armazenamento?.status ?? 'instavel')
       setAparelhos(dados?.aparelhos ?? null)
       setOhif((await avaliarOhif(dados)).status)
     })
-    lerStatusEmail().then((r) => setEmail(r.status))
+    void lerStatusEmail().then((r) => setEmail(r.status))
   }
 
   async function carregarDados() {

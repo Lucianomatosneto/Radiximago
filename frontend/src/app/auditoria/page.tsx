@@ -99,7 +99,7 @@ export default function AuditoriaPage() {
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set())
 
   useEffect(() => {
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -109,12 +109,12 @@ export default function AuditoriaPage() {
         return
       }
       setAutenticado(true)
-      carregarUsuarios()
+      void carregarUsuarios()
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/acoes`, { credentials: 'include' })
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => d?.acoes && setContagemAcoes(d.acoes))
         .catch(() => {})
-      buscarLogs(0)
+      void buscarLogs(0)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
@@ -175,15 +175,15 @@ export default function AuditoriaPage() {
   }
 
   function pesquisar() {
-    if (autenticado) buscarLogs(0)
+    if (autenticado) void buscarLogs(0)
   }
 
   function paginaAnterior() {
-    if (autenticado && skip > 0) buscarLogs(Math.max(0, skip - LIMIT))
+    if (autenticado && skip > 0) void buscarLogs(Math.max(0, skip - LIMIT))
   }
 
   function proximaPagina() {
-    if (autenticado && skip + LIMIT < total) buscarLogs(skip + LIMIT)
+    if (autenticado && skip + LIMIT < total) void buscarLogs(skip + LIMIT)
   }
 
   function alternarDetalhes(id: number) {

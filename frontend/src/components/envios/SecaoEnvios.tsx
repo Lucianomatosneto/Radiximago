@@ -77,7 +77,7 @@ export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | '
   }, [modo])
 
   useEffect(() => {
-    carregar()
+    void carregar()
     if (modo === 'meus') {
       fetch(`${API}/envios/analistas`, { credentials: 'include' })
         .then((r) => (r.ok ? r.json() : { pessoas: [] }))
@@ -101,7 +101,7 @@ export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | '
     }
     setMensagem((await r.json()).mensagem ?? '')
     setAberto(null)
-    carregar()
+    void carregar()
     return true
   }
 
@@ -112,7 +112,7 @@ export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | '
       botao: t('retirarSim'),
       cancelar: t('cancelar'),
     })
-    if (sim) chamar(`/envios/${item.id}`, 'DELETE')
+    if (sim) void chamar(`/envios/${item.id}`, 'DELETE')
   }
 
   if (itens === null) return null

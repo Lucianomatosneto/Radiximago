@@ -211,7 +211,7 @@ export default function UsuariosPage() {
       }
     }
 
-    obterSessaoAtual().then((sessao) => {
+    void obterSessaoAtual().then((sessao) => {
       if (!sessao) {
         router.push('/login')
         return
@@ -222,8 +222,8 @@ export default function UsuariosPage() {
       }
       setMeuId(sessao.id)
       setAutenticado(true)
-      buscarUsuarios()
-      buscarSolicitacoes()
+      void buscarUsuarios()
+      void buscarSolicitacoes()
     })
   }, [router])
 

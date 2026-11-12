@@ -150,7 +150,7 @@ export default function SegundaOpiniaoPage() {
       review: Number.isInteger(review) && review > 0 ? review : null,
       aba: busca.get('aba') === 'devolvidas' ? 'devolvidas' : busca.get('aba') === 'revisar' ? 'revisar' : null,
     }
-    obterSessaoAtual().then(async (sessao) => {
+    void obterSessaoAtual().then(async (sessao) => {
       if (!sessao) return router.push('/login')
       if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado?de=/segunda-opiniao')
       setPronto(true)
@@ -163,7 +163,7 @@ export default function SegundaOpiniaoPage() {
       const primeiro =
         naDevolvida ?? naRevisar ??
         (abaInicial === 'revisar' ? revisar.find((i) => i.pode_responder !== false) ?? revisar[0] : devolvidas[0])
-      if (primeiro) escolher(primeiro)
+      if (primeiro) void escolher(primeiro)
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -199,7 +199,7 @@ export default function SegundaOpiniaoPage() {
     setAba(nova)
     const lista = nova === 'revisar' ? filaRevisar : filaDevolvidas
     const primeiro = nova === 'revisar' ? lista.find((i) => i.pode_responder !== false) ?? lista[0] : lista[0]
-    if (primeiro) escolher(primeiro)
+    if (primeiro) void escolher(primeiro)
     else {
       setAtivo(null)
       setDetalhe(null)
@@ -245,7 +245,7 @@ export default function SegundaOpiniaoPage() {
       setAviso(t('avisos.parecerEnviado', { nome: detalhe.solicitante?.nome ?? '—' }))
       const { revisar } = await carregarFilas()
       const proximo = revisar.find((i) => i.pode_responder !== false)
-      if (proximo) escolher(proximo)
+      if (proximo) void escolher(proximo)
       else {
         setAtivo(null)
         setDetalhe(null)
@@ -307,7 +307,7 @@ export default function SegundaOpiniaoPage() {
       }
       setAviso(mensagem)
       const { devolvidas } = await carregarFilas()
-      if (devolvidas[0]) escolher(devolvidas[0])
+      if (devolvidas[0]) void escolher(devolvidas[0])
       else {
         setAtivo(null)
         setDetalhe(null)
@@ -324,7 +324,7 @@ export default function SegundaOpiniaoPage() {
   // holofote no botao "Enviar parecer": Enter envia
   const enviarRef = useRef<() => void>(() => {})
   enviarRef.current = () => {
-    if (podeEnviar) enviarParecer()
+    if (podeEnviar) void enviarParecer()
   }
   useEffect(() => {
     function aoTeclar(ev: KeyboardEvent) {
