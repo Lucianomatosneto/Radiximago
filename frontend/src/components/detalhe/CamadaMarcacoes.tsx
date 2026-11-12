@@ -139,7 +139,10 @@ export default function CamadaMarcacoes({
   if (ativo !== null && ordem.includes(ativo)) ordem.push(ordem.splice(ordem.indexOf(ativo), 1)[0])
 
   return (
+    // camada sobre a imagem: o mouse destaca e isola marcacoes; no teclado,
+    // as teclas 1-9, H e Esc fazem o mesmo (efeito acima)
     <div
+      role="presentation"
       ref={caixaRef}
       className="absolute inset-0"
       style={{ pointerEvents: interativo ? 'auto' : 'none', cursor: interativo && foco !== null ? 'pointer' : undefined }}
