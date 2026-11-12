@@ -1,0 +1,84 @@
+# SEGURANÇA — Gitleaks (segredos no histórico), pip-audit e npm audit (bibliotecas),
+# Semgrep (análise do código). Por enquanto INFORMATIVO: os resultados vão para os
+# relatórios e para a Auditoria; não bloqueiam o desenvolvimento enquanto a linha de base é tratada.
+name: Segurança
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  seguranca:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # histórico completo, para achar segredos antigos
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Gitleaks (senhas e chaves no histórico)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p relatorios
+          versao=$(gh api repos/gitleaks/gitleaks/releases/latest --jq .tag_name | sed 's/^v//')
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${versao}/gitleaks_${versao}_linux_x64.tar.gz" | tar xz gitleaks
+          ./gitleaks version
+          # --redact: nunca imprime o valor do segredo
+          ./gitleaks detect --source . --redact --report-format json --report-path relatorios/gitleaks.json --exit-code 0
+
+      - name: pip-audit (bibliotecas Python)
+        run: |
+          pip install pip-audit
+          pip-audit -r backend/requirements.txt -f json -o relatorios/pip-audit.json || true
+          pip-audit -r backend/requirements.txt || true
+
+      - name: npm audit (bibliotecas do frontend)
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm audit --json > ../relatorios/npm-audit.json || true
+          npm audit --omit=dev || true
+
+      - name: Semgrep (análise estática)
+        run: |
+          pip install semgrep
+          semgrep scan --config p/python --config p/typescript --config p/owasp-top-ten --metrics=off \
+            --json --output relatorios/semgrep.json backend/app frontend/src || true
+
+      - name: Resumo
+        if: always()
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json, os
+          def carrega(p):
+              try: return json.load(open(p))
+              except Exception: return None
+          print("### Segurança")
+          g = carrega("relatorios/gitleaks.json")
+          print(f"- Gitleaks: {len(g) if g is not None else 'sem relatório'} achado(s)")
+          p = carrega("relatorios/pip-audit.json")
+          if p: print(f"- pip-audit: {sum(len(d.get('vulns', [])) for d in p['dependencies'])} vulnerabilidade(s)")
+          n = carrega("relatorios/npm-audit.json")
+          if n: print(f"- npm audit: {n.get('metadata', {}).get('vulnerabilities', {})}")
+          s = carrega("relatorios/semgrep.json")
+          if s: print(f"- Semgrep: {len(s.get('results', []))} achado(s)")
+          PY
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: seguranca
+          path: relatorios/
+          if-no-files-found: ignore

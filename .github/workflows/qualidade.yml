@@ -1,0 +1,85 @@
+# QUALIDADE DO CÓDIGO — Ruff, Mypy (Python) e ESLint, TypeScript (frontend).
+# Por enquanto INFORMATIVO (não bloqueia): serve para medir e acompanhar a evolução.
+# Exceção: TypeScript (tsc) bloqueia, porque hoje está sem erros e deve continuar assim.
+name: Qualidade do código
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python (Ruff + Mypy) - informativo
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: pip install -r backend/requirements.txt ruff mypy
+      - name: Ruff
+        run: |
+          mkdir -p relatorios
+          ruff check backend --config auditoria/config/ruff.toml --statistics --output-format=concise | tee relatorios/ruff.txt || true
+          ruff check backend --config auditoria/config/ruff.toml --output-format=json > relatorios/ruff.json || true
+      - name: Mypy
+        working-directory: backend
+        run: |
+          python -m mypy app --config-file ../auditoria/config/mypy.ini | tee ../relatorios/mypy.txt || true
+      - name: Resumo
+        if: always()
+        run: |
+          {
+            echo "### Qualidade Python"
+            echo "- Ruff: $(grep -c '' relatorios/ruff.txt) linhas de estatística (ver artefato)"
+            echo "- Mypy: $(tail -1 relatorios/mypy.txt)"
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qualidade-python
+          path: relatorios/
+
+  frontend:
+    name: Frontend (TypeScript bloqueia; ESLint informa)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: TypeScript (bloqueante)
+        working-directory: frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsc --noEmit
+      - name: ESLint (informativo)
+        continue-on-error: true
+        run: |
+          mkdir -p relatorios
+          cd auditoria/ferramentas/eslint && npm ci --no-audit --no-fund && cd ../../..
+          auditoria/ferramentas/eslint/node_modules/.bin/eslint -c auditoria/ferramentas/eslint/eslint.config.mjs frontend/src -f json -o relatorios/eslint.json || true
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          d = json.load(open("relatorios/eslint.json"))
+          e = sum(m["severity"] == 2 for f in d for m in f["messages"])
+          w = sum(m["severity"] == 1 for f in d for m in f["messages"])
+          print(f"### ESLint\n- Erros: {e}\n- Avisos: {w}")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qualidade-frontend
+          path: relatorios/
+          if-no-files-found: ignore

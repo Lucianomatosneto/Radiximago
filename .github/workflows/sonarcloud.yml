@@ -1,0 +1,40 @@
+# SONARQUBE / SONARCLOUD — análise de qualidade e segurança do código.
+#
+# O SonarCloud é a versão na nuvem do SonarQube e é GRATUITO para repositórios públicos
+# (o Radix é público). Este workflow só roda DEPOIS que você criar a conta e o segredo
+# SONAR_TOKEN (passo a passo em auditoria/README.md). Sem o segredo, ele é ignorado
+# sem erro. Cria dependência de um serviço externo: por isso exige sua autorização.
+name: SonarCloud
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 10 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  sonar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    steps:
+      - name: Conferir se o SonarCloud foi configurado
+        id: conf
+        run: |
+          if [ -z "$SONAR_TOKEN" ]; then
+            echo "SONAR_TOKEN não configurado: etapa ignorada (veja auditoria/README.md)." | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "ativo=nao" >> "$GITHUB_OUTPUT"
+          else
+            echo "ativo=sim" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v4
+        if: steps.conf.outputs.ativo == 'sim'
+        with:
+          fetch-depth: 0
+      - uses: SonarSource/sonarqube-scan-action@v5
+        if: steps.conf.outputs.ativo == 'sim'
+        with:
+          args: -Dproject.settings=auditoria/config/sonar-project.properties

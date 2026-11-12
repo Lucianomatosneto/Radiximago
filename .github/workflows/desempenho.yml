@@ -1,0 +1,70 @@
+# DESEMPENHO — k6 (usuários simultâneos na API) e Lighthouse (velocidade da tela de login).
+# Roda SÓ dentro do runner, contra um Radix isolado e descartável. NUNCA contra produção.
+# Informativo: mede e guarda a linha de base para comparar entre auditorias.
+name: Desempenho
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  desempenho:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    continue-on-error: true
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: radix_user
+          POSTGRES_PASSWORD: ci_descartavel
+          POSTGRES_DB: radix_imago_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radix_user -d radix_imago_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/subir-radix-isolado
+
+      - uses: grafana/setup-k6-action@v1
+      - name: k6 (carga gradual, só rotas públicas)
+        run: |
+          mkdir -p relatorios
+          k6 run -q -e BASE_URL=http://127.0.0.1:8000 --summary-export=relatorios/k6-resumo.json auditoria/ferramentas/k6/linha_de_base.js
+
+      - name: Lighthouse (tela de login)
+        working-directory: auditoria/ferramentas/lighthouse
+        run: |
+          npm ci --no-audit --no-fund
+          npx lighthouse http://127.0.0.1:3000/login --preset=desktop --chrome-flags="--headless=new --no-sandbox" \
+            --only-categories=performance,accessibility,best-practices,seo --output=json --output=html \
+            --output-path=../../../relatorios/lighthouse-login --quiet
+
+      - name: Resumo
+        if: always()
+        run: |
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          print("### Desempenho")
+          try:
+              k = json.load(open("relatorios/k6-resumo.json"))["metrics"]
+              print(f"- k6: p95 = {k['http_req_duration']['p(95)']:.1f} ms; falhas = {k['http_req_failed']['value']*100:.2f}%")
+          except Exception as e: print("- k6: sem relatório", e)
+          try:
+              d = json.load(open("relatorios/lighthouse-login.report.json"))
+              print("- Lighthouse: " + ", ".join(f"{v['title']} {round((v['score'] or 0)*100)}" for v in d["categories"].values()))
+          except Exception as e: print("- Lighthouse: sem relatório", e)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: desempenho
+          path: relatorios/
+          if-no-files-found: ignore
