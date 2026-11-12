@@ -40,7 +40,7 @@ export default function TermosPage() {
     const pedido = new URLSearchParams(window.location.search).get('doc')
     if (pedido === 'privacidade' || pedido === 'anexos') setDoc(pedido)
     fetch(`${API}/termos`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`termos: HTTP ${r.status}`))))
       .then(setDados)
       .catch(() => setErro(true))
     // logado: abre no proprio perfil e mostra os aceites

@@ -266,9 +266,38 @@ export function rotuloEntidade(entidade: string | null, id: number | null, idiom
 // reescreve o banco, so a forma de mostrar) - reteste de 01/11/2026
 const SEM_ACENTO: [RegExp, string][] = [[/\bnao cadastrado\b/g, 'não cadastrado']]
 
+const ESPACO = /^\s$/ // um caractere so
+
+/**
+ * Esconde o que vem depois do "?" em caminhos de endereco ("/pesquisa?texto=x"
+ * vira "/pesquisa (parâmetros de busca ocultos)"). Antes era a regex
+ * /(\/[^\s?]*)\?[^\s]*\/g, lenta em textos longos com muitas barras e sem "?"
+ * (SonarCloud S8786); agora o texto e lido uma vez so, com o mesmo resultado.
+ */
+export function ocultarParametrosDeBusca(texto: string): string {
+  let saida = ''
+  let i = 0
+  while (i < texto.length) {
+    if (texto[i] !== '/') {
+      saida += texto[i++]
+      continue
+    }
+    let k = i + 1
+    while (k < texto.length && texto[k] !== '?' && !ESPACO.test(texto[k])) k++
+    saida += texto.slice(i, k)
+    if (texto[k] === '?') {
+      saida += ' (parâmetros de busca ocultos)'
+      k++
+      while (k < texto.length && !ESPACO.test(texto[k])) k++
+    }
+    i = k
+  }
+  return saida
+}
+
 export function detalhesLegiveis(texto: string | null | undefined): string {
   if (!texto) return ''
-  let legivel = texto.replace(/(\/[^\s?]*)\?[^\s]*/g, '$1 (parâmetros de busca ocultos)')
+  let legivel = ocultarParametrosDeBusca(texto)
   for (const [errado, certo] of SEM_ACENTO) legivel = legivel.replace(errado, certo)
   return legivel
 }

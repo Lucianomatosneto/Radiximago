@@ -3,6 +3,7 @@ import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
+from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, EmailStr
@@ -97,9 +98,9 @@ class SolicitacaoAcessoResposta(BaseModel):
     email: str
     instituicao: InstituicaoLida
     perfil_solicitado: str
-    motivo: Optional[str]
+    motivo: Optional[str] = None
     status: str
-    motivo_rejeicao: Optional[str]
+    motivo_rejeicao: Optional[str] = None
     criado_em: Optional[datetime] = None
     email_confirmado_em: Optional[datetime] = None
     # M2 (01/11/2026): o e-mail ja tem conta ativa? (perfil dela) - a tela
@@ -119,6 +120,12 @@ class AprovarSolicitacao(BaseModel):
     # a intencao declarada pelo solicitante (curador/estudante) ou
     # restringir a "estudante", independente do que foi pedido.
     perfil_concedido: UserRole
+
+
+def _gravar_avatar(nome_arquivo: str, conteudo: bytes) -> None:
+    os.makedirs(DIRETORIO_AVATARS, exist_ok=True)
+    with open(os.path.join(DIRETORIO_AVATARS, nome_arquivo), "wb") as destino:
+        destino.write(conteudo)
 
 
 # Autoatendimento: o proprio usuario logado troca/remove a sua foto de
@@ -153,11 +160,11 @@ async def enviar_foto_perfil(
             detail="O arquivo enviado não é uma imagem JPEG, PNG ou WEBP válida.",
         )
 
-    os.makedirs(DIRETORIO_AVATARS, exist_ok=True)
     foto_antiga = usuario_atual.foto_perfil_url
     novo_nome_arquivo = f"{usuario_atual.id}-{uuid.uuid4().hex}{extensao}"
-    with open(os.path.join(DIRETORIO_AVATARS, novo_nome_arquivo), "wb") as destino:
-        destino.write(conteudo)
+    # gravar no disco fora da linha principal (SonarCloud S7493): numa rota
+    # "async", um open()/write() comum para o servidor inteiro ate terminar
+    await run_in_threadpool(_gravar_avatar, novo_nome_arquivo, conteudo)
 
     usuario_atual.foto_perfil_url = f"/uploads/avatars/{novo_nome_arquivo}"
     db.add(AuditLog(

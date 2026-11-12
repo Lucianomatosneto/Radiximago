@@ -30,6 +30,20 @@ function enfeitar(texto: string, chave: string): ReactNode[] {
 
 const celulas = (linha: string) => linha.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
 
+/**
+ * Titulo em Markdown: "#", "##" ou "###" seguido de espaco. Devolve o nivel e
+ * o texto, ou null. Antes era a regex /^(#{1,3})\s+(.*)$/ (SonarCloud S8786);
+ * agora le os "#" um a um, com o mesmo resultado.
+ */
+export function lerTitulo(linha: string): { nivel: number; texto: string } | null {
+  let n = 0
+  while (n < linha.length && linha[n] === '#') n++
+  if (n < 1 || n > 3) return null
+  const resto = linha.slice(n)
+  if (!/^\s/.test(resto)) return null
+  return { nivel: n, texto: resto.trimStart() }
+}
+
 export function idTitulo(texto: string) {
   return texto.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 }
@@ -46,10 +60,9 @@ export default function TextoTermos({ markdown, prefixo = '' }: { markdown: stri
       i++
       continue
     }
-    const titulo = /^(#{1,3})\s+(.*)$/.exec(linha)
+    const titulo = lerTitulo(linha)
     if (titulo) {
-      const nivel = titulo[1].length
-      const texto = titulo[2]
+      const { nivel, texto } = titulo
       const id = `${prefixo}${idTitulo(texto)}`
       blocos.push(
         nivel === 1 ? (

@@ -18,6 +18,7 @@ import {
 import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes, type SituacaoAparelhos } from '../../lib/servicosSistema'
 import { detalhesLegiveis } from '../../lib/acoesAuditoria'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { aparaFim } from '../../lib/texto'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -233,7 +234,7 @@ export default function PainelAdminPage() {
                       ? t('falhasEmailUltima', {
                           quando: stats.ultima_falha_email.quando ? new Date(stats.ultima_falha_email.quando).toLocaleString('pt-BR') : '—',
                           // sem o ponto final do registro: o texto ja continua com '. O sistema...'
-                          detalhes: (stats.ultima_falha_email.detalhes ?? '').replace(/[.\s]+$/, ''),
+                          detalhes: aparaFim(stats.ultima_falha_email.detalhes ?? '', '.', true),
                         })
                       : t('falhasEmailNenhuma')
                   }

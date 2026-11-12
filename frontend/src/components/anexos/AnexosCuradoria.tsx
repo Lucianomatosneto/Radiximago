@@ -29,7 +29,7 @@ function ImagemAnexo({ url, nome, className, onClick }: { url: string; nome: str
     let urlObjeto: string | null = null
     let ativo = true
     fetch(url, { credentials: 'include' })
-      .then((r) => (r.ok ? r.blob() : Promise.reject()))
+      .then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`anexo: HTTP ${r.status}`))))
       .then((b) => {
         if (!ativo) return
         urlObjeto = URL.createObjectURL(b)

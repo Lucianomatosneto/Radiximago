@@ -112,7 +112,7 @@ export default function CamadaMarcacoes({
       if (ev.key === 'Escape') setIsolada(null)
       else if (ev.key === 'h' || ev.key === 'H') setHolofote((v) => !v)
       else {
-        const n = parseInt(ev.key, 10)
+        const n = Number.parseInt(ev.key, 10)
         if (n >= 1 && n <= marcacoes.length) setIsolada((atual) => (atual === n - 1 ? null : n - 1))
       }
     }

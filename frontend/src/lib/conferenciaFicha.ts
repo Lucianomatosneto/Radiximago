@@ -44,7 +44,7 @@ export function dentesCitados(texto: string): number[] {
   let m: RegExpExecArray | null
   while ((m = re.exec(n))) {
     for (const num of m[1].match(/\d{2}/g) ?? []) {
-      const d = parseInt(num, 10)
+      const d = Number.parseInt(num, 10)
       if (DENTE_VALIDO(d)) achados.add(d)
     }
   }

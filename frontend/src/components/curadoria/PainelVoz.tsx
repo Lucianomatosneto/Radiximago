@@ -16,6 +16,7 @@ import {
 } from '../../lib/vozCuradoria'
 import { ETAPAS_FICHA, SECAO_DA_ETAPA, etapaVizinha, type EtapaFicha, type SecaoFicha } from '../../lib/secoesCuradoria'
 import { EscutaContinua } from '../../lib/escutaContinua'
+import { aparaFim } from '../../lib/texto'
 
 // CURADORIA POR VOZ (topo da coluna da ficha; flutua no canto so no modo
 // "ampliar imagem", quando a coluna fica escondida).
@@ -246,7 +247,7 @@ export default function PainelVoz({
     })
     if (r.alteracoes.length) {
       // retorno curto do que foi entendido (linha abaixo do microfone)
-      setAviso(`“${texto.replace(/[.!?]+$/, '')}” → ${r.alteracoes.map((a) => a.descricao).join(' · ')}`)
+      setAviso(`“${aparaFim(texto, '.!?')}” → ${r.alteracoes.map((a) => a.descricao).join(' · ')}`)
       aplicar({ ...formRef.current, ...r.ficha }, r.alteracoes.map((a) => a.campo))
       setPreenchidos((p) => [...r.alteracoes.map((a) => ({ ...a, id: ++contadorRef.current })).reverse(), ...p].slice(0, 30))
     }

@@ -249,7 +249,7 @@ const DEZENAS: Record<string, number> = {
 function lerNumero(tokens: Token[], i: number): [number, number] | null {
   const t = tokens[i]
   if (!t || t.pontuacao) return null
-  if (/^\d+$/.test(t.n)) return [parseInt(t.n, 10), 1]
+  if (/^\d+$/.test(t.n)) return [Number.parseInt(t.n, 10), 1]
   if (t.n in ESPECIAIS) return [ESPECIAIS[t.n], 1]
   if (t.n in DEZENAS) {
     if (tokens[i + 1]?.n === 'e' && tokens[i + 2] && tokens[i + 2].n in UNIDADES) {
