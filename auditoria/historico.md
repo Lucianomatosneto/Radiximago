@@ -65,3 +65,9 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 - Achados novos (segundo fator): 6.5.2 códigos de recuperação em SHA-256 sem sal (MÉDIA); 6.5.5 código do aplicativo vale ~90 s (BAIXA); 3.5.5 OHIF confia na origem de quem o emoldura (BAIXA); 6.4.4 INCONCLUSIVO (falta procedimento de conferência de identidade).
 - Cobertura do frontend medida localmente: 7,7% (832/10.798 linhas). O SonarCloud só mostra depois de juntar o PR da branch auditoria/cobertura-frontend.
 - Matriz ASVS: 15 linhas reavaliadas (7 mudam de situação). A matriz completa não está no repositório; ferramenta auditoria/scripts/aplicar_mudancas_matriz.py aplica o CSV de mudanças e imprime a contagem.
+
+## 2026-11-12 (noite) — Situação dos branches no GitHub (conferida pela auditoria)
+- Troca na aplicação dos pacotes: os branches correcoes/sonar-lote-1 e -lote-3 já existiam vazios localmente; o Lote 1 entrou na redesign-ui LOCAL e o Lote 3 no branch local sonar-lote-1. Correção feita pelo Luciano sem force push (avanço dos branches vazios). A redesign-ui do GitHub não foi afetada.
+- Conferido no GitHub: lote-1 = 19 commits; termos-v1-1 = 7, cobertura-frontend = 7, matriz-asvs-2026-11-12 = 3, loaders-try-catch = 5 (contando sobre o lote 1); lote-3 = 18 (base a4559fe, sem o lote 1 por dentro; mergeia sem conflito de texto depois dele).
+- Teste de fusão feito pela auditoria (sem publicar): redesign-ui + lote-1 + termos + cobertura + matriz + loaders + lote-3, nessa ordem, sem conflito; `tsc --noEmit` sem erros; `autoFocus` do solicitar-acesso removido.
+- Ordem de junção: "Create a merge commit" (nunca squash): 1) lote-1; 2) termos, cobertura, matriz, loaders; 3) lote-3 só após o teste manual de 8 passos; 4) apagar o branch antigo correcoes/termos-v1-1 (6 commits, incompleto, sem test_termos_v11.py).
