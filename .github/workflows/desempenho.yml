@@ -62,7 +62,7 @@ jobs:
               print("- Lighthouse: " + ", ".join(f"{v['title']} {round((v['score'] or 0)*100)}" for v in d["categories"].values()))
           except Exception as e: print("- Lighthouse: sem relatório", e)
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: desempenho
