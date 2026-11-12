@@ -16,8 +16,15 @@ Backend: 604/604 testes. Auditoria da API: 9/9. Frontend: 181/181 + Vitest 11/11
 | M-05 | MÉDIO | Pré-checklist de produção pendente (restam: rotação de credenciais, Next.js 14.2.35). **CORS: RESOLVIDO** (reteste: origem desconhecida recusada) | RECORRENTE / parcialmente RESOLVIDO |
 | B-01..03, S-01 | BAIXO | Qualidade do código (Ruff) | NOVO |
 | S-02 | MÉDIO | Desempenho da tela de login (globo 3D), a confirmar em dispositivo real | NOVO (suspeita) |
-| B-04 | BAIXO | 143 erros de tipo (Mypy) | NOVO |
+| B-04 | BAIXO | 403 erros de tipo em 50 arquivos (Mypy, referência oficial = GitHub Actions) | NOVO |
 | B-05 | BAIXO | 6 erros e 22 avisos (ESLint) | NOVO |
 | B-06 | BAIXO | `/uploads` (fotos de perfil) público por decisão; nomes imprevisíveis não verificados | NOVO |
 | B-07 | BAIXO | `/health/*` responde 200 mesmo com serviço fora do ar | NOVO |
 | — | — | Conflito `yarn.lock` × `package-lock.json` | RESOLVIDO (conferido no código) |
+
+## 2026-11-11 — Validação na esteira do GitHub (PR #2, código bebd516)
+- Rodaram com sucesso: testes-backend (604/604 + 9/9 auditoria), testes-frontend (181/181 + Vitest 11/11), E2E Playwright (4/4), qualidade, segurança.
+- Segurança: pip-audit 40, npm audit 0, Gitleaks 0, Semgrep 0, ESLint 6 erros/22 avisos, Mypy 403/50 arquivos.
+- Gitleaks 0 não contradiz M-01 (regra padrão não reconhece senha dentro de URL de banco).
+- Gitleaks e Semgrep só serão considerados VALIDADOS após o "teste da ferramenta: ok" (canário) do commit bc9164e.
+- Ainda não executados no GitHub: desempenho, zap-passivo, sonarcloud, auditoria-semanal.

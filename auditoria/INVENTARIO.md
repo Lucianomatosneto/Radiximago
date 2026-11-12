@@ -13,7 +13,7 @@ Legenda de **Resultado**: ✅ funcionou e foi testado aqui · 🟡 configurado, 
 | TypeScript (tsc) | 6.0.3 | já existia no projeto | sim | `qualidade.yml`, bloqueante | `npx tsc --noEmit` em `frontend/` | Rodou sem erros | ✅ |
 | ESLint | 9.39.5 | sim (isolada em `auditoria/ferramentas/eslint`) | sim | `qualidade.yml` | `eslint -c auditoria/ferramentas/eslint/eslint.config.mjs frontend/src` | 166 arquivos: 6 erros, 22 avisos | ✅ |
 | Ruff | 0.17.4 | sim (pip) | `auditoria/config/ruff.toml` | `qualidade.yml` | `ruff check backend --config auditoria/config/ruff.toml` | 70 ocorrências (554 sem filtro) | ✅ |
-| Mypy | 2.4.1 | sim (pip) | `auditoria/config/mypy.ini` | `qualidade.yml` | `python -m mypy app --config-file ../auditoria/config/mypy.ini` | 143 erros de tipo em 43 arquivos | ✅ |
+| Mypy | 2.4.1 | sim (pip) | `auditoria/config/mypy.ini` | `qualidade.yml` | `python -m mypy app --config-file ../auditoria/config/mypy.ini` | 403 erros de tipo em 50 arquivos (medido no GitHub; localmente dá menos por causa de pacote extra de tipos) | ✅ |
 | SonarQube (SonarCloud) | — | não (serviço externo) | arquivo pronto, falta conta | `sonarcloud.yml` (pula sem token) | via relatório do serviço | Não executável sem conta | 🟡 depende de você |
 | Pytest | 9.1.1 | já existia | `backend/pytest.ini` | `testes-backend.yml`, bloqueante | `pytest` em `backend/` | 604/604 | ✅ |
 | HTTPX / TestClient | 0.27.0 | já existia (requirements) | `auditoria/testes_api/` | `testes-backend.yml` | `pytest auditoria/testes_api` | 9/9 + teste de mutação (detecta rota desprotegida) | ✅ |
