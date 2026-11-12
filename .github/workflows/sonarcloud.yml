@@ -72,6 +72,18 @@ jobs:
         run: |
           alembic upgrade head
           pytest -q -p no:cacheprovider --cov=app --cov-report=xml:coverage.xml
+      - uses: actions/setup-node@v7
+        if: steps.conf.outputs.ativo == 'sim'
+        with:
+          node-version: "22"
+      - name: Cobertura do frontend (Vitest + testes de frontend/testes)
+        if: steps.conf.outputs.ativo == 'sim'
+        continue-on-error: true  # sem o relatorio, o Sonar so analisa sem a cobertura do frontend
+        run: |
+          (cd frontend && npm ci --no-audit --no-fund)
+          cd auditoria/ferramentas/frontend-testes
+          npm ci --no-audit --no-fund
+          npm run cobertura
       - uses: SonarSource/sonarqube-scan-action@v6
         if: steps.conf.outputs.ativo == 'sim'
         with:
@@ -84,6 +96,7 @@ jobs:
             -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/alembic/versions/**
             -Dsonar.python.version=3.11
             -Dsonar.python.coverage.reportPaths=backend/coverage.xml
+            -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info
             -Dsonar.sourceEncoding=UTF-8
             -Dsonar.branch.name=main
       - name: Listar os problemas encontrados (resumo)
