@@ -190,7 +190,7 @@ function iniciarGlobo(op: OpcoesCenaLogin, reduzir: boolean): { desligar: () => 
   const R = new THREE.WebGLRenderer({ canvas: op.canvasGlobo, antialias: true, alpha: true })
   R.outputColorSpace = THREE.LinearSRGBColorSpace
   R.setClearColor(0x000000, 0)
-  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
+  R.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5))
 
   const cena = new THREE.Scene()
   // Campo de visao bem estreito (5 graus): camera "quase ortografica", sem
@@ -212,7 +212,7 @@ function iniciarGlobo(op: OpcoesCenaLogin, reduzir: boolean): { desligar: () => 
     vertexShader: VS_GLOBO, fragmentShader: FS_GLOBO, transparent: true,
     blending: THREE.CustomBlending, blendSrc: THREE.OneFactor, blendDst: THREE.OneFactor, blendSrcAlpha: THREE.OneFactor, blendDstAlpha: THREE.OneFactor,
   }))
-  giro.add(new THREE.Mesh(guardar(new THREE.SphereGeometry(1, 160, 120)), matGlobo))
+  giro.add(new THREE.Mesh(guardar(new THREE.SphereGeometry(1, 112, 84)), matGlobo))
 
   const matHalo = guardar(new THREE.ShaderMaterial({
     side: THREE.BackSide, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
