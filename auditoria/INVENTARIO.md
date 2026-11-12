@@ -22,8 +22,8 @@ Legenda de **Resultado**: ✅ funcionou e foi testado aqui · 🟡 configurado, 
 | Vitest | 3.2.7 | sim (isolada) | `auditoria/ferramentas/frontend-testes` | `testes-frontend.yml` | `npx vitest run` | 11/11 | ✅ |
 | Playwright | 1.65.0 | sim (isolada) | idem | `testes-e2e.yml` | `npx playwright test` | 4/4 com Chrome real, frontend+API isolados | ✅ |
 | Testcontainers | — | não | — | — | — | Desnecessário: o `postgres:16` do GitHub já cumpre o papel | ⛔ dispensado, justificado |
-| Semgrep | (instalado no GitHub) | só no GitHub | `p/python`, `p/typescript`, `p/owasp-top-ten` | `seguranca.yml` | ler relatório | Sem Docker/rede aqui | 🟡 1ª execução no GitHub |
-| Gitleaks | (instalado no GitHub) | só no GitHub | `--redact` | `seguranca.yml` | ler relatório | Varredura própria por padrões feita aqui (menos completa) | 🟡 1ª execução no GitHub |
+| Semgrep | (instalado no GitHub) | só no GitHub | `p/python`, `p/typescript`, `p/owasp-top-ten` | `seguranca.yml` | ler relatório | Sem Docker/rede aqui | ✅ Validado no GitHub (11/11/2026): 231 regras em 261 arquivos = 0 achados; canário = 1 achado (detecta de fato) |
+| Gitleaks | (instalado no GitHub) | só no GitHub | `--redact` | `seguranca.yml` | ler relatório | Varredura própria por padrões feita aqui (menos completa) | ✅ Validado no GitHub (11/11/2026): 426 commits = 0 achados; canário = 1 achado (detecta de fato). Não reconhece senha dentro de URL de banco (M-01) |
 | Dependabot | — | serviço do GitHub | `.github/dependabot.yml` | automático | PRs semanais | Sintaxe validada | 🟡 vale após merge na branch principal |
 | npm audit | 10.9.9 | já existia | — | `seguranca.yml` | `npm audit` em `frontend/` | 0 vulnerabilidades (produção) | ✅ |
 | pip-audit | 2.10.1 | sim | — | `seguranca.yml` | `pip-audit -r backend/requirements.txt` | 40 vulnerabilidades (Pillow) | ✅ |
@@ -59,7 +59,7 @@ flowchart LR
 
 ## Pendências
 
-1. **Executar os workflows no GitHub pela primeira vez** (abrir o Pull Request). Só então Gitleaks, Semgrep, ZAP e a ação reutilizável serão considerados validados.
+1. **Falta executar no GitHub:** Desempenho, ZAP passivo, SonarCloud e Auditoria semanal (disparo manual em Actions → Run workflow). Gitleaks e Semgrep já validados.
 2. **SonarCloud:** criar conta e o segredo `SONAR_TOKEN` (passo a passo no `README.md`).
 3. **Sentry:** decisão sua (envolve conta externa e mudança no código).
 4. **Lighthouse:** medir de novo no seu notebook e em um celular. O ambiente de nuvem não tem placa de vídeo, o que distorce a medição do globo 3D.

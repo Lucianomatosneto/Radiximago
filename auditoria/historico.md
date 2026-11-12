@@ -26,5 +26,5 @@ Backend: 604/604 testes. Auditoria da API: 9/9. Frontend: 181/181 + Vitest 11/11
 - Rodaram com sucesso: testes-backend (604/604 + 9/9 auditoria), testes-frontend (181/181 + Vitest 11/11), E2E Playwright (4/4), qualidade, segurança.
 - Segurança: pip-audit 40, npm audit 0, Gitleaks 0, Semgrep 0, ESLint 6 erros/22 avisos, Mypy 403/50 arquivos.
 - Gitleaks 0 não contradiz M-01 (regra padrão não reconhece senha dentro de URL de banco).
-- Gitleaks e Semgrep só serão considerados VALIDADOS após o "teste da ferramenta: ok" (canário) do commit bc9164e.
+- VALIDADOS pelo canário (commit bc9164e): Gitleaks varreu 426 commits (0 achados; canário = 1). Semgrep rodou 231 regras em 261 arquivos (0 achados; canário = 1).
 - Ainda não executados no GitHub: desempenho, zap-passivo, sonarcloud, auditoria-semanal.
