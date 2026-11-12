@@ -8,7 +8,7 @@
 # navegador e na politica de seguranca - next.config.mjs).
 
 # --- etapa 1: compilar ---
-FROM node:20-alpine AS compilacao
+FROM node:25-alpine AS compilacao
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -21,7 +21,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
 RUN npm run build && npm prune --omit=dev
 
 # --- etapa 2: rodar (so o necessario, usuario sem privilegios) ---
-FROM node:20-alpine
+FROM node:25-alpine
 WORKDIR /app
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY --from=compilacao --chown=node:node /app ./
