@@ -46,3 +46,6 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 - M-02: CONFIRMADO (código + teste com Orthanc falso). Novos: A-02 (login sem limite por conta, BAIXO/MÉDIO), A-03 (enumeração por tempo, BAIXO). Z-01 e Z-02 ligados ao escopo.
 - Nenhum CRÍTICO. Nada foi corrigido; correções aguardam autorização.
 - Adendo da Auditoria 02 (máquina do responsável): proxy do Orthanc devolve 401 sem login (5 rotas), banco/Whisper não expostos, Orthanc só aceita aparelhos cadastrados. M-03 CONFIRMADO (orthanc:latest). M-04 reduzido a BAIXO (resta modo túnel). I-04: portas em 0.0.0.0 no modo dev (suspeita).
+
+## 2026-11-12 — Auditoria 03 (geral)
+- Relatorio: auditoria/relatorios/2026-11-12_auditoria-03-geral.md. ASVS reavaliado (22 reprovados na matriz 18-19/10; L1 so TLS, a retestar), radon, tamanhos, S-01, Q-01/Q-02. Nada alterado no Radix.
