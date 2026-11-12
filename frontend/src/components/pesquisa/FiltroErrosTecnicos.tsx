@@ -73,6 +73,9 @@ export default function FiltroErrosTecnicos({
       <div
         className="flex min-h-[42px] flex-wrap items-center gap-1.5 rounded-lg border border-base-border bg-base-surface2 px-2 py-1.5 focus-within:border-brand"
         style={estilo}
+        // clicar em qualquer ponto da caixa poe o cursor no campo (atalho de
+        // mouse; no teclado o proprio campo recebe o foco pelo Tab)
+        role="presentation"
         onClick={() => campoRef.current?.focus()}
       >
         {selecionados.map((v) => (
