@@ -76,7 +76,7 @@ def main() -> int:
     s = json_de(arq[0]) if arq else None
     if s:
         sev = Counter(r.get("extra", {}).get("severity", "?") for r in s.get("results", []))
-        L.append(f"- Semgrep: {len(s.get('results', []))} achado(s) {dict(sev)}")
+        L.append(f"- Semgrep: {len(s.get('results', []))} achado(s)" + (f" {dict(sev)}" if sev else ""))
     else:
         L.append("- Semgrep: sem relatório")
     L.append("")
