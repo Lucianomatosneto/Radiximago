@@ -69,7 +69,7 @@ const MAX_HISTORICO = 20
 const ZOOM_MAX = 8
 
 function hexParaRgb(cor: string): [number, number, number] {
-  const n = parseInt(cor.slice(1), 16)
+  const n = Number.parseInt(cor.slice(1), 16)
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
 }
 
@@ -611,7 +611,7 @@ export default function PintorSegmentacao({
         ev.stopPropagation()
         return
       }
-      const n = parseInt(ev.key, 10)
+      const n = Number.parseInt(ev.key, 10)
       if (n >= 1 && n <= 9 && segsRef.current[n - 1]) {
         ev.preventDefault()
         ev.stopPropagation()
