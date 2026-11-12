@@ -286,15 +286,27 @@ export default function EtiquetaMarcacoes({
             ) : (
               // Linha de uma marcacao: com a cor dela e ligada a imagem -
               // passar o mouse destaca a marcacao; clicar isola.
+              // Teclado (12/11/2026): Tab chega na linha (destaca, como o
+              // mouse em cima) e Enter ou Espaco isola, como o clique.
               <div
                 key={l.rotulo}
+                role={onIsolarMarcacao ? 'button' : undefined}
+                tabIndex={onIsolarMarcacao ? 0 : undefined}
                 className={`-mx-1 flex items-center gap-1.5 rounded px-1 py-0.5 ${
-                  onFocoMarcacao ? 'cursor-pointer hover:bg-white/10' : ''
+                  onFocoMarcacao ? 'cursor-pointer hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-1 focus-visible:outline-teal-300' : ''
                 }`}
                 onMouseEnter={() => onFocoMarcacao?.(l.marcacao!)}
                 onMouseLeave={() => onFocoMarcacao?.(null)}
+                onFocus={() => onFocoMarcacao?.(l.marcacao!)}
+                onBlur={() => onFocoMarcacao?.(null)}
                 onClick={(e) => {
                   if (!onIsolarMarcacao) return
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onIsolarMarcacao(l.marcacao!)
+                }}
+                onKeyDown={(e) => {
+                  if (!onIsolarMarcacao || (e.key !== 'Enter' && e.key !== ' ')) return
                   e.preventDefault()
                   e.stopPropagation()
                   onIsolarMarcacao(l.marcacao!)
@@ -584,7 +596,8 @@ export default function EtiquetaMarcacoes({
                 ×
               </button>
             </div>
-            <div className={`min-h-0 flex-1 overflow-y-auto ${janelaGrande ? 'p-4' : 'cursor-pointer p-3'}`} onClick={(e) => {
+            {/* clicar no texto fecha (atalho de mouse); no teclado, o botao × acima */}
+            <div role="presentation" className={`min-h-0 flex-1 overflow-y-auto ${janelaGrande ? 'p-4' : 'cursor-pointer p-3'}`} onClick={(e) => {
                 // um clique fecha - menos nas anotacoes (escrever, editar, excluir)
                 if ((e.target as HTMLElement).closest('[data-sem-fechar]') || janelaGrande) return
                 setFixada(false)
