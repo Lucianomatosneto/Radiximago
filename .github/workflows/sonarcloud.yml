@@ -36,9 +36,11 @@ jobs:
       - uses: actions/checkout@v4
         if: steps.conf.outputs.ativo == 'sim'
         with:
-          ref: redesign-ui   # branch de desenvolvimento real (o Sonar tem 'redesign-ui' como branch principal)
+          ref: redesign-ui   # branch de desenvolvimento real (enviada ao Sonar como 'main' para caber no plano gratuito)
           fetch-depth: 0
       - uses: SonarSource/sonarqube-scan-action@v5
         if: steps.conf.outputs.ativo == 'sim'
         with:
-          args: -Dproject.settings=auditoria/config/sonar-project.properties
+          args: >
+            -Dproject.settings=auditoria/config/sonar-project.properties
+            -Dsonar.branch.name=main
