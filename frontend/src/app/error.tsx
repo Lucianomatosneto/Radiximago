@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import ErroTecnico from '../components/ErroTecnico'
 
-export default function Error({
+export default function ErroDaPagina({
   error,
   reset,
 }: {
