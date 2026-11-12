@@ -1,0 +1,74 @@
+# TESTES DO BACKEND — suíte do projeto (pytest) + testes de auditoria da API (HTTPX).
+# Usa PostgreSQL descartável e senhas inventadas. BLOQUEANTE: se falhar, fica vermelho.
+name: Testes do backend
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    name: pytest (suíte do projeto) + auditoria da API
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: radix_user
+          POSTGRES_PASSWORD: ci_descartavel
+          POSTGRES_DB: radix_imago_teste # "teste" no nome: exigido pela trava do conftest.py
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radix_user -d radix_imago_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://radix_user:ci_descartavel@localhost:5432/radix_imago_teste
+      ORTHANC_PASSWORD: ci_descartavel
+      ENVIRONMENT: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11" # mesma versão do backend/Dockerfile
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+      - run: pip install -r backend/requirements.txt
+      - name: Chave JWT descartável
+        run: echo "JWT_SECRET_KEY=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Migrações (Alembic)
+        working-directory: backend
+        run: alembic upgrade head
+      - name: Suíte do projeto
+        working-directory: backend
+        run: pytest -q -p no:cacheprovider --tb=short --junitxml=../relatorio-pytest.xml
+      - name: Testes de auditoria da API (rotas sem login, cabeçalhos)
+        run: pytest auditoria/testes_api -q -p no:cacheprovider --rootdir=auditoria/testes_api --junitxml=relatorio-pytest-auditoria.xml
+      - name: Resumo
+        if: always()
+        run: |
+          python - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import xml.etree.ElementTree as ET
+          print("### Testes do backend")
+          for nome, arq in (("Suíte do projeto", "relatorio-pytest.xml"), ("Auditoria da API", "relatorio-pytest-auditoria.xml")):
+              try:
+                  s = ET.parse(arq).getroot()
+                  s = s if s.tag == "testsuite" else s[0]
+                  t, f, e, k = (int(s.get(x, 0)) for x in ("tests", "failures", "errors", "skipped"))
+                  print(f"- {nome}: {t} executados, {t - f - e - k} aprovados, {f + e} reprovados, {k} ignorados")
+              except Exception as erro:
+                  print(f"- {nome}: relatório não gerado ({erro})")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testes-backend
+          path: relatorio-pytest*.xml

@@ -1,0 +1,52 @@
+# TESTES NO NAVEGADOR (Playwright) — um "robô" usa o site como uma pessoa.
+# Sobe API + frontend isolados dentro do runner (banco descartável, sem dados reais).
+# Só testa telas públicas. BLOQUEANTE.
+name: Testes no navegador (Playwright)
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: radix_user
+          POSTGRES_PASSWORD: ci_descartavel
+          POSTGRES_DB: radix_imago_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radix_user -d radix_imago_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/subir-radix-isolado
+      - name: Instalar Playwright e o Chromium
+        working-directory: auditoria/ferramentas/frontend-testes
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Rodar os testes
+        working-directory: auditoria/ferramentas/frontend-testes
+        env:
+          RADIX_URL: http://127.0.0.1:3000
+        run: npx playwright test --config playwright.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-relatorio
+          path: |
+            auditoria/relatorios/playwright-html/
+            auditoria/ferramentas/frontend-testes/test-results/
+          if-no-files-found: ignore

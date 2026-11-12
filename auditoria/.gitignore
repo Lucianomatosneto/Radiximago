@@ -1,0 +1,5 @@
+# Arquivos gerados pelas ferramentas; não vão para o GitHub
+**/node_modules/
+**/test-results/
+**/playwright-report/
+relatorios/playwright-html/

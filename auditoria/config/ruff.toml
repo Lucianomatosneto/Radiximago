@@ -1,0 +1,23 @@
+# Configuração do Ruff (verificador de qualidade e segurança do código Python)
+# usada SÓ pela Central de Auditoria. Não altera o comportamento do sistema.
+#
+# Regras ligadas:
+#   E9, F  erros de sintaxe e erros típicos (variável não usada, import sobrando)
+#   B      armadilhas comuns (bugbear)
+#   S      segurança (bandit)
+line-length = 120
+target-version = "py311"
+extend-exclude = ["**/alembic/**", "**/tests/**"]
+
+[lint]
+select = ["E9", "F", "B", "S"]
+# B008: o FastAPI usa Depends() como valor padrão de parâmetro. É o jeito
+#       oficial do framework, então não é problema (478 ocorrências esperadas).
+ignore = ["B008"]
+
+[lint.per-file-ignores]
+# Nomes como TIPO_TOKEN_SESSAO são rótulos, não senhas (falso positivo S105),
+# conferido na auditoria 01 (11/11/2026).
+"**/app/core/security.py" = ["S105"]
+"**/app/core/sessao.py" = ["S105"]
+"**/app/modules/janela_foto.py" = ["S105"]

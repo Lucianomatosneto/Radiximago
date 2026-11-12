@@ -1,0 +1,15 @@
+{
+  "name": "radix-auditoria-eslint",
+  "private": true,
+  "description": "ESLint isolado da Central de Auditoria (não altera o frontend)",
+  "scripts": {
+    "lint": "cd ../../.. && eslint -c auditoria/ferramentas/eslint/eslint.config.mjs frontend/src"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@next/eslint-plugin-next": "^14.2.35",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "typescript-eslint": "^8.0.0"
+  }
+}

@@ -1,0 +1,75 @@
+# AUDITORIA SEMANAL — roda todos os workflows de auditoria e publica um RESUMO.
+#
+# Quando: toda segunda-feira às 06h (Brasília) ou manualmente (Actions → Run workflow).
+#
+# Onde ficam os resultados (para o Claude e para você consultarem):
+#   - aba Actions: resumo de cada execução e Artifacts (guardados por 90 dias);
+#   - branch "auditoria/resultados": um arquivo .md por semana (SÓ relatórios, nunca código).
+#
+# Segurança: a única permissão de escrita é do job "consolidar", e só na branch
+# "auditoria/resultados". Nada é publicado em produção. O código nunca é alterado.
+name: Auditoria semanal
+
+on:
+  schedule:
+    - cron: "0 9 * * 1" # segunda-feira, 09:00 UTC = 06:00 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  qualidade:
+    uses: ./.github/workflows/qualidade.yml
+  backend:
+    uses: ./.github/workflows/testes-backend.yml
+  frontend:
+    uses: ./.github/workflows/testes-frontend.yml
+  navegador:
+    uses: ./.github/workflows/testes-e2e.yml
+  seguranca:
+    uses: ./.github/workflows/seguranca.yml
+  desempenho:
+    uses: ./.github/workflows/desempenho.yml
+
+  consolidar:
+    name: Consolidar relatórios
+    needs: [qualidade, backend, frontend, navegador, seguranca, desempenho]
+    if: always() # consolida mesmo quando alguma etapa falhou: falha também é resultado
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # só para gravar o resumo na branch auditoria/resultados
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/artefatos
+        continue-on-error: true
+
+      - name: Gerar o resumo
+        run: |
+          data=$(date -u +%Y-%m-%d)
+          python3 auditoria/scripts/consolidar.py "$RUNNER_TEMP/artefatos" "$RUNNER_TEMP/resumo.md" "$(git rev-parse --short HEAD)" "$data"
+          echo "$data" > "$RUNNER_TEMP/data.txt"
+          cat "$RUNNER_TEMP/resumo.md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publicar na branch auditoria/resultados (só relatórios)
+        run: |
+          git config user.name "Central de Auditoria (automático)"
+          git config user.email "auditoria@users.noreply.github.com"
+          data=$(cat "$RUNNER_TEMP/data.txt")
+          if git ls-remote --exit-code --heads origin auditoria/resultados >/dev/null 2>&1; then
+            git fetch origin auditoria/resultados
+            git checkout -B auditoria/resultados origin/auditoria/resultados
+          else
+            git checkout --orphan auditoria/resultados
+            git rm -rf . >/dev/null 2>&1 || true
+          fi
+          mkdir -p semanais
+          cp "$RUNNER_TEMP/resumo.md" "semanais/$data.md"
+          cp "$RUNNER_TEMP/resumo.md" ultimo.md
+          git add ultimo.md "semanais/$data.md"
+          git commit -m "Resumo automático da auditoria semanal ($data)"
+          git push origin auditoria/resultados

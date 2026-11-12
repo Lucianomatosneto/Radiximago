@@ -1,0 +1,55 @@
+# TESTES DO FRONTEND — testes do projeto (testes/*.teste.ts), Vitest de auditoria e build.
+# BLOQUEANTE: se falhar, fica vermelho.
+name: Testes do frontend
+
+on:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    name: Testes do projeto, Vitest e build de produção
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Instalar dependências
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - name: Testes do projeto (frontend/testes/*.teste.ts)
+        working-directory: frontend
+        run: |
+          falhas=0
+          for t in testes/*.teste.ts; do
+            echo "::group::$t"
+            npx --yes tsx "$t" || falhas=$((falhas+1))
+            echo "::endgroup::"
+          done
+          echo "Arquivos de teste com falha: $falhas"
+          [ "$falhas" -eq 0 ]
+      - name: Vitest (testes de auditoria)
+        working-directory: auditoria/ferramentas/frontend-testes
+        run: |
+          npm ci --no-audit --no-fund
+          npx vitest run --config vitest.config.ts --reporter=default --reporter=junit --outputFile.junit=../../../relatorio-vitest.xml
+      - name: Build de produção (o site compila?)
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npx next build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testes-frontend
+          path: relatorio-vitest.xml
+          if-no-files-found: ignore
