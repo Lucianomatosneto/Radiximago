@@ -3,6 +3,8 @@
 name: Medir busca
 
 on:
+  push:
+    branches: [auditoria/medir-busca]   # TEMPORARIO: so para a primeira execucao, antes de fundir
   workflow_dispatch:
     inputs:
       tamanhos:
