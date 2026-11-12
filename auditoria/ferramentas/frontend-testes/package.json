@@ -4,10 +4,12 @@
   "description": "Vitest (testes de funções) e Playwright (testes no navegador) da Central de Auditoria. Isolado: não altera o frontend.",
   "scripts": {
     "vitest": "vitest run --config vitest.config.ts",
-    "e2e": "playwright test --config playwright.config.ts"
+    "e2e": "playwright test --config playwright.config.ts",
+    "cobertura": "vitest run --config vitest.config.ts --coverage && node ajustar-lcov.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.50.0",
+    "@vitest/coverage-v8": "^5.1.0",
     "vitest": "^5.1.0"
   }
 }
