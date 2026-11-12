@@ -1,0 +1,65 @@
+# MEDICAO DA BUSCA (Auditoria 03, S-01): cria fichas FALSAS num banco descartavel do runner
+# e mede o tempo de cada tipo de filtro. Nao toca em dado real. Disparo manual.
+name: Medir busca
+
+on:
+  workflow_dispatch:
+    inputs:
+      tamanhos:
+        description: "Quantidades de fichas sinteticas (separadas por espaco)"
+        default: "2000 10000 30000"
+
+permissions:
+  contents: read
+
+jobs:
+  medir:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: radix_user
+          POSTGRES_PASSWORD: ci_descartavel
+          POSTGRES_DB: radix_imago_teste
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U radix_user -d radix_imago_teste"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://radix_user:ci_descartavel@localhost:5432/radix_imago_teste
+      ORTHANC_PASSWORD: ci_descartavel
+      ENVIRONMENT: test
+      FRONTEND_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Dependencias e migracoes
+        working-directory: backend
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr
+          pip install -r requirements.txt
+          export JWT_SECRET_KEY="$(openssl rand -hex 32)"
+          alembic upgrade head
+      - name: Medir
+        working-directory: backend
+        run: |
+          export JWT_SECRET_KEY="$(openssl rand -hex 32)"
+          set -o pipefail
+          PYTHONPATH=. python ../auditoria/scripts/medir_busca.py ${{ inputs.tamanhos || '2000 10000 30000' }} | tee ../relatorios-busca.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: medicao-busca
+          path: |
+            relatorios-busca.md
+            relatorios/busca-medicao.json
+          if-no-files-found: ignore
