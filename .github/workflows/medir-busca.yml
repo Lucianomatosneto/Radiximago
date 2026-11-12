@@ -55,7 +55,8 @@ jobs:
         working-directory: backend
         run: |
           export JWT_SECRET_KEY="$(openssl rand -hex 32)"
-          python ../auditoria/scripts/medir_busca.py ${{ inputs.tamanhos || '2000 10000 30000' }} | tee ../relatorios-busca.md >> "$GITHUB_STEP_SUMMARY"
+          set -o pipefail
+          PYTHONPATH=. python ../auditoria/scripts/medir_busca.py ${{ inputs.tamanhos || '2000 10000 30000' }} | tee ../relatorios-busca.md >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v7
         if: always()
         with:
