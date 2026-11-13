@@ -18,9 +18,11 @@ Privacidade (LGPD):
 - o e-mail digitado NAO e guardado aqui - so o id do usuario encontrado.
 """
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, Text, UniqueConstraint, false, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, Text, UniqueConstraint, false, text
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -28,22 +30,22 @@ from app.core.database import Base
 class CompartilhamentoImagem(Base):
     __tablename__ = "compartilhamentos_imagem"
 
-    id = Column(Integer, primary_key=True, index=True)
-    remetente_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    destinatario_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    curation_id = Column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    remetente_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    destinatario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
     # recado opcional do remetente para quem recebe
-    mensagem = Column(Text, nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    mensagem: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # quando o destinatario viu o compartilhamento (nulo = novo) - usado so
     # para o contador de novidades do proprio destinatario
-    visto_em = Column(DateTime(timezone=True), nullable=True)
+    visto_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # ids das anotacoes do remetente que o destinatario ocultou da propria
     # visao ("apagar para mim"); vazio = ve todas
-    anotacoes_ocultas = Column(ARRAY(Integer), nullable=False, server_default=text("'{}'"), default=list)
+    anotacoes_ocultas: Mapped[list[int]] = mapped_column(ARRAY(Integer), nullable=False, server_default=text("'{}'"), default=list)
     # o destinatario "apagou" o recado da propria visao (o texto continua
     # guardado; um recado NOVO do remetente volta a aparecer)
-    mensagem_oculta = Column(Boolean, nullable=False, server_default=false(), default=False)
+    mensagem_oculta: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false(), default=False)
 
     __table_args__ = (
         # a mesma imagem nao e compartilhada duas vezes com a mesma pessoa

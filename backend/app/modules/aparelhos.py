@@ -15,8 +15,10 @@ Esta tabela e a "fonte da verdade"; o Orthanc recebe a mesma lista
 aparelho que sai de uso fica bloqueado, e o historico continua na auditoria.
 """
 
-from sqlalchemy import Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Integer, String
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -31,20 +33,20 @@ class AparelhoRede(Base):
     __tablename__ = "aparelhos_rede"
     __table_args__ = (CheckConstraint("porta BETWEEN 1 AND 65535", name="ck_aparelhos_rede_porta"),)
 
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(NOME_MAX), nullable=False)
-    unidade = Column(String(UNIDADE_MAX), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    nome: Mapped[str] = mapped_column(String(NOME_MAX), nullable=False)
+    unidade: Mapped[str | None] = mapped_column(String(UNIDADE_MAX), nullable=True)
     # nome DICOM do aparelho, sempre em maiusculas; unico
-    aet = Column(String(AET_MAX), nullable=False, unique=True)
-    ip = Column(String(45), nullable=False)
-    porta = Column(Integer, nullable=False, default=PORTA_PADRAO)
+    aet: Mapped[str] = mapped_column(String(AET_MAX), nullable=False, unique=True)
+    ip: Mapped[str] = mapped_column(String(45), nullable=False)
+    porta: Mapped[int] = mapped_column(Integer, nullable=False, default=PORTA_PADRAO)
     # liberado = o Orthanc aceita as imagens dele; bloqueado = recusa
-    liberado = Column(Boolean, nullable=False, default=True)
-    criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    ultimo_recebimento_em = Column(DateTime(timezone=True), nullable=True)
-    total_recebidas = Column(Integer, nullable=False, default=0)
+    liberado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    ultimo_recebimento_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    total_recebidas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
 
 def chave_orthanc(aparelho_id: int) -> str:

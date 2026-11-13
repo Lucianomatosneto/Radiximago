@@ -22,9 +22,11 @@ import binascii
 import io
 
 from PIL import Image
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, LargeBinary, String, func as sa_func
+from sqlalchemy import DateTime, ForeignKey, Integer, LargeBinary, String, func as sa_func
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -42,18 +44,18 @@ PREFIXO_DATA_URL = "data:image/png;base64,"
 class SegmentacaoCuradoria(Base):
     __tablename__ = "segmentacoes_curadoria"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     # apagar a ficha apaga as pinturas dela (CASCADE no banco)
-    curation_id = Column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), nullable=False, index=True)
-    nome = Column(String(60), nullable=False)
-    dente = Column(Integer, nullable=True)  # FDI 11-48 (opcional)
-    cor = Column(String(7), nullable=False)  # "#RRGGBB"
-    mascara = Column(LargeBinary, nullable=False)  # PNG 1 bit, imagem inteira
-    largura = Column(Integer, nullable=False)
-    altura = Column(Integer, nullable=False)
-    criado_por_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), nullable=False, index=True)
+    nome: Mapped[str] = mapped_column(String(60), nullable=False)
+    dente: Mapped[int | None] = mapped_column(Integer, nullable=True)  # FDI 11-48 (opcional)
+    cor: Mapped[str] = mapped_column(String(7), nullable=False)  # "#RRGGBB"
+    mascara: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)  # PNG 1 bit, imagem inteira
+    largura: Mapped[int] = mapped_column(Integer, nullable=False)
+    altura: Mapped[int] = mapped_column(Integer, nullable=False)
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 def contar_por_ficha(db: Session, curation_ids: list[int]) -> dict[int, int]:

@@ -20,12 +20,13 @@ Como compara (tudo no proprio PostgreSQL):
 
 from sqlalchemy import String, and_, cast, exists, func, literal, literal_column, or_
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.expression import ColumnClause
 
 from app.modules.curations import Curation
 from app.modules.vocabulario import CurationTermo, SinonimoTermo, TermoVocabulario, normalizar
 
 # dicionario de portugues da busca de texto completo (radical das palavras)
-PORTUGUES = literal_column("'portuguese'::regconfig")
+PORTUGUES: ColumnClause[str] = literal_column("'portuguese'::regconfig")
 
 # semelhanca minima (0 a 1) para aceitar como erro de digitacao
 LIMIAR_SEMELHANCA = 0.6

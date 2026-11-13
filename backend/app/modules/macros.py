@@ -18,9 +18,12 @@ laudo estruturado da RSNA:
    (tabela sinonimos_termo, ver vocabulario.py).
 """
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from typing import Any
 
 from app.core.database import Base
 
@@ -32,24 +35,24 @@ CAMPOS_MACRO = CAMPOS_TEXTO_MACRO + ("alteracoes_observadas", "tipo_radiografia"
 class MacroCuradoria(Base):
     __tablename__ = "macros_curadoria"
 
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(80), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    nome: Mapped[str] = mapped_column(String(80), nullable=False)
     # nome sem acento/minusculas: e o que o curador fala depois de "macro"
-    nome_normalizado = Column(String(80), nullable=False, unique=True, index=True)
-    conteudo = Column(JSONB, nullable=False, default=dict)
-    ativo = Column(Boolean, nullable=False, default=True)
-    criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    nome_normalizado: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    conteudo: Mapped[Any] = mapped_column(JSONB, nullable=False, default=dict)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class FraseAprendida(Base):
     __tablename__ = "frases_aprendidas_voz"
 
-    id = Column(Integer, primary_key=True, index=True)
-    frase = Column(String(150), nullable=False)
-    frase_normalizada = Column(String(150), nullable=False, unique=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    frase: Mapped[str] = mapped_column(String(150), nullable=False)
+    frase_normalizada: Mapped[str] = mapped_column(String(150), nullable=False, unique=True, index=True)
     # valor de AlteracaoObservada (ex.: "reabsorcao_radicular_externa")
-    alteracao = Column(String(60), nullable=False)
-    criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    alteracao: Mapped[str] = mapped_column(String(60), nullable=False)
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())

@@ -24,9 +24,11 @@ sem espacos repetidos) - ver normalizar().
 import re
 import unicodedata
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -47,20 +49,20 @@ def normalizar(texto: str | None) -> str:
 class TermoVocabulario(Base):
     __tablename__ = "termos_vocabulario"
 
-    id = Column(Integer, primary_key=True, index=True)
-    termo = Column(String(150), nullable=False)
-    termo_normalizado = Column(String(150), nullable=False, unique=True, index=True)
-    categoria = Column(String(20), nullable=False, default="achado")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    termo: Mapped[str] = mapped_column(String(150), nullable=False)
+    termo_normalizado: Mapped[str] = mapped_column(String(150), nullable=False, unique=True, index=True)
+    categoria: Mapped[str] = mapped_column(String(20), nullable=False, default="achado")
     # codigo do descritor no DeCS/MeSH (opcional), ex.: "D012086"
-    codigo_decs = Column(String(30), nullable=True)
-    ativo = Column(Boolean, nullable=False, default=True)
+    codigo_decs: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # 08/11/2026: o curador escolhe, ao acrescentar um termo em "Outros",
     # se ele aparece nas opcoes da Pesquisa avancada e se fica como opcao
     # nas proximas curadorias
-    na_busca = Column(Boolean, nullable=False, default=True, server_default="true")
-    nas_curadorias = Column(Boolean, nullable=False, default=True, server_default="true")
-    criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    na_busca: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    nas_curadorias: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default="true")
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     sinonimos = relationship(
         "SinonimoTermo", back_populates="termo", cascade="all, delete-orphan", order_by="SinonimoTermo.id"
@@ -70,10 +72,10 @@ class TermoVocabulario(Base):
 class SinonimoTermo(Base):
     __tablename__ = "sinonimos_termo"
 
-    id = Column(Integer, primary_key=True, index=True)
-    termo_id = Column(Integer, ForeignKey("termos_vocabulario.id", ondelete="CASCADE"), nullable=False, index=True)
-    sinonimo = Column(String(150), nullable=False)
-    sinonimo_normalizado = Column(String(150), nullable=False, unique=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    termo_id: Mapped[int] = mapped_column(Integer, ForeignKey("termos_vocabulario.id", ondelete="CASCADE"), nullable=False, index=True)
+    sinonimo: Mapped[str] = mapped_column(String(150), nullable=False)
+    sinonimo_normalizado: Mapped[str] = mapped_column(String(150), nullable=False, unique=True, index=True)
 
     termo = relationship("TermoVocabulario", back_populates="sinonimos")
 
@@ -83,9 +85,9 @@ class CurationTermo(Base):
 
     __tablename__ = "curation_termos"
 
-    curation_id = Column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), primary_key=True)
-    termo_id = Column(Integer, ForeignKey("termos_vocabulario.id", ondelete="CASCADE"), primary_key=True, index=True)
-    vinculado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    vinculado_em = Column(DateTime(timezone=True), server_default=func.now())
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), primary_key=True)
+    termo_id: Mapped[int] = mapped_column(Integer, ForeignKey("termos_vocabulario.id", ondelete="CASCADE"), primary_key=True, index=True)
+    vinculado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    vinculado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (UniqueConstraint("curation_id", "termo_id", name="uq_curation_termo"),)

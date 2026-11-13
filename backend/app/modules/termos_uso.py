@@ -26,8 +26,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.database import Base, get_db
 from app.core.sessao import COOKIE_DOMAIN, COOKIE_SECURE, NOME_COOKIE_TOKEN
@@ -51,12 +52,12 @@ router = APIRouter(prefix="/termos", tags=["Termos de uso e privacidade"])
 class AceiteTermosUso(Base):
     __tablename__ = "aceites_termos_uso"
 
-    id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    versao = Column(String(20), nullable=False)
-    perfil = Column(String(20), nullable=False)
-    resumo_textos = Column(String(64), nullable=False)  # SHA-256 do texto exato aceito
-    aceito_em = Column(DateTime(timezone=True), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    versao: Mapped[str] = mapped_column(String(20), nullable=False)
+    perfil: Mapped[str] = mapped_column(String(20), nullable=False)
+    resumo_textos: Mapped[str] = mapped_column(String(64), nullable=False)  # SHA-256 do texto exato aceito
+    aceito_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 def _ler(nome: str) -> str:

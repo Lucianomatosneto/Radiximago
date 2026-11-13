@@ -8,8 +8,10 @@ apenas onde os registros ficam armazenados.
 
 import enum
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -23,34 +25,34 @@ class ResultadoAuditoria(str, enum.Enum):
 class AuditLog(Base):
     __tablename__ = "audit_logs"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     # Quem fez a acao (pode ser nulo em falhas de login, por exemplo)
-    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    usuario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
 
     # O que foi feito: login, falha_login, logout, aprovacao, descarte,
     # segunda_opiniao, acesso_negado, alteracao_usuario, erro_integracao...
-    acao = Column(String(60), nullable=False, index=True)
+    acao: Mapped[str] = mapped_column(String(60), nullable=False, index=True)
 
     # Sobre qual item: "curation", "image", "user"... e o id do item
-    entidade = Column(String(40), nullable=True)
-    entidade_id = Column(Integer, nullable=True)
+    entidade: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    entidade_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Resultado da acao
-    resultado = Column(String(15), nullable=False, default="sucesso")
+    resultado: Mapped[str] = mapped_column(String(15), nullable=False, default="sucesso")
 
     # Informacoes extras (mensagem, contexto) - sem dados sensiveis
-    detalhes = Column(Text, nullable=True)
+    detalhes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
     # De onde veio o pedido (ASVS 16.2.1) - preenchidos automaticamente a
     # partir do pedido em andamento (app/core/contexto_pedido.py). Vazios
     # quando a acao e do proprio sistema (ex.: anonimizacao automatica).
-    ip = Column(String(45), nullable=True)
-    rota = Column(String(200), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    rota: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # Lacre encadeado (ASVS 16.4.2): calculado PELO BANCO (gatilho da
     # migracao a4c8e2f6b1d9) - a aplicacao nunca preenche nem altera.
-    lacre = Column(String(64), nullable=True)
+    lacre: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
 # Preenche ip/rota de todo registro novo com os dados do pedido em andamento,
 # sem precisar mexer nos mais de 50 lugares que gravam auditoria.

@@ -1,8 +1,10 @@
 import enum
 
-from sqlalchemy import Column, Integer, String, Text, Enum, DateTime, ForeignKey, SmallInteger
+from sqlalchemy import Integer, String, Text, Enum, DateTime, ForeignKey, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 from app.core.database import Base
 
 
@@ -37,32 +39,32 @@ class AccessRequest(Base):
 
     __tablename__ = "access_requests"
 
-    id = Column(Integer, primary_key=True, index=True)
-    nome = Column(String(150), nullable=False)
-    email = Column(String(150), nullable=False, index=True)
-    senha_hash = Column(String(255), nullable=False)
-    instituicao = Column(String(200), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    nome: Mapped[str] = mapped_column(String(150), nullable=False)
+    email: Mapped[str] = mapped_column(String(150), nullable=False, index=True)
+    senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    instituicao: Mapped[str | None] = mapped_column(String(200), nullable=True)
     # native_enum=False: fica como VARCHAR no banco (nao um tipo Postgres
     # nativo). Guarda a INTENCAO do solicitante, nao necessariamente o
     # UserRole que sera de fato concedido - esse e escolhido pelo admin na
     # aprovacao. Sem default: a escolha e obrigatoria no formulario
     # (Pydantic exige o campo).
-    perfil_solicitado = Column(
+    perfil_solicitado: Mapped[IntencaoPerfil] = mapped_column(
         Enum(IntencaoPerfil, native_enum=False, length=20), nullable=False
     )
-    motivo = Column(Text, nullable=True)
+    motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    status = Column(
+    status: Mapped[StatusSolicitacaoAcesso] = mapped_column(
         Enum(StatusSolicitacaoAcesso), nullable=False,
         default=StatusSolicitacaoAcesso.pendente, index=True,
     )
-    motivo_rejeicao = Column(Text, nullable=True)
+    motivo_rejeicao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    revisado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    revisado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
     revisado_por = relationship("User")
-    revisado_em = Column(DateTime(timezone=True), nullable=True)
+    revisado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     # CONFIRMACAO DO E-MAIL (cadastro em duas etapas - 2026-10)
     # O pedido so chega ao administrador depois que o solicitante prova
@@ -79,7 +81,7 @@ class AccessRequest(Base):
     # - token_confirmacao_expira_em: o link vale por pouco tempo (24 h).
     # - tentativas_confirmacao: senhas erradas na tela de confirmacao; ao
     #   atingir o limite o link e invalidado (protege contra adivinhacao).
-    email_confirmado_em = Column(DateTime(timezone=True), nullable=True)
-    token_confirmacao_hash = Column(String(64), unique=True, index=True, nullable=True)
-    token_confirmacao_expira_em = Column(DateTime(timezone=True), nullable=True)
-    tentativas_confirmacao = Column(SmallInteger, nullable=False, default=0, server_default="0")
+    email_confirmado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    token_confirmacao_hash: Mapped[str | None] = mapped_column(String(64), unique=True, index=True, nullable=True)
+    token_confirmacao_expira_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    tentativas_confirmacao: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=0, server_default="0")

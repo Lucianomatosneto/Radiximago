@@ -10,8 +10,10 @@ GRUPOS DE ENVIO e IMAGENS ENVIADAS A PESSOAS - etapa C (08/11/2026).
   pelo professor continua indo para a fila de curadoria; so o curador publica.
 """
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base
 
@@ -23,27 +25,27 @@ class GrupoEnvio(Base):
     __tablename__ = "grupos_envio"
     __table_args__ = (UniqueConstraint("dono_id", "nome", name="uq_grupos_envio_dono_nome"),)
 
-    id = Column(Integer, primary_key=True, index=True)
-    dono_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    nome = Column(String(NOME_GRUPO_MAX), nullable=False)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    dono_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    nome: Mapped[str] = mapped_column(String(NOME_GRUPO_MAX), nullable=False)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class GrupoEnvioMembro(Base):
     __tablename__ = "grupos_envio_membros"
 
-    grupo_id = Column(Integer, ForeignKey("grupos_envio.id", ondelete="CASCADE"), primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
+    grupo_id: Mapped[int] = mapped_column(Integer, ForeignKey("grupos_envio.id", ondelete="CASCADE"), primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
 
 
 class EnvioDestinatario(Base):
     __tablename__ = "envios_destinatarios"
     __table_args__ = (UniqueConstraint("orthanc_reference_id", "destinatario_id", name="uq_envio_imagem_pessoa"),)
 
-    id = Column(Integer, primary_key=True, index=True)
-    orthanc_reference_id = Column(Integer, ForeignKey("orthanc_references.id", ondelete="CASCADE"),
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    orthanc_reference_id: Mapped[int] = mapped_column(Integer, ForeignKey("orthanc_references.id", ondelete="CASCADE"),
                                   nullable=False, index=True)
-    remetente_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    destinatario_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    visto_em = Column(DateTime(timezone=True), nullable=True)
+    remetente_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    destinatario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    visto_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

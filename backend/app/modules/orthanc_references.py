@@ -1,8 +1,10 @@
 import enum
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 from app.core.database import Base
 
 
@@ -36,15 +38,15 @@ class DestinoImagem(str, enum.Enum):
 class OrthancReference(Base):
     __tablename__ = "orthanc_references"
 
-    id = Column(Integer, primary_key=True, index=True)
-    orthanc_id = Column(String(255), unique=True, index=True, nullable=False)
-    study_instance_uid = Column(String(255), index=True, nullable=True)
-    series_instance_uid = Column(String(255), index=True, nullable=True)
-    sop_instance_uid = Column(String(255), index=True, nullable=True)
-    resource_type = Column(String(50), nullable=False)
-    dicomweb_url = Column(String(500), nullable=True)
-    ativo = Column(Boolean, nullable=False, default=True, server_default=text("true"))
-    anonimizacao_status = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    orthanc_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    study_instance_uid: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
+    series_instance_uid: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
+    sop_instance_uid: Mapped[str | None] = mapped_column(String(255), index=True, nullable=True)
+    resource_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    dicomweb_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("true"))
+    anonimizacao_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="aguardando", server_default=text("'aguardando'")
     )
     # "ufsc" ou "externa" (ver OrigemImagem). Registros gravados ANTES desta
@@ -53,34 +55,34 @@ class OrthancReference(Base):
     # instancia que guardamos e sempre a versao JA ANONIMIZADA, e o Orthanc
     # nao preserva a metadata de origem do original depois da anonimizacao.
     # So imagens recebidas a partir de agora tem a origem detectada de verdade.
-    origem = Column(String(10), nullable=False, default="externa", server_default=text("'externa'"))
+    origem: Mapped[str] = mapped_column(String(10), nullable=False, default="externa", server_default=text("'externa'"))
     # Verificacao de texto gravado nos pixels (app/modules/texto_na_imagem.py):
     # "sem_texto", "tarjado" ou "nao_verificado". Vazio (NULL) = imagem
     # recebida antes de a verificacao existir (18/10/2026) - o curador deve
     # conferir a imagem com atencao, como em "nao_verificado".
-    texto_na_imagem = Column(String(20), nullable=True)
-    texto_regioes = Column(Integer, nullable=True)  # quantas tarjas foram aplicadas
+    texto_na_imagem: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    texto_regioes: Mapped[int | None] = mapped_column(Integer, nullable=True)  # quantas tarjas foram aplicadas
     # Recorte da moldura branca na entrada (app/modules/geometria_imagem.py):
     # "recortada", "sem_borda", "incerto" ou "nao_verificado". Vazio (NULL) =
     # imagem recebida antes de 20/10/2026 (ver roteiro recortar_molduras.py).
-    enquadramento = Column(String(20), nullable=True)
+    enquadramento: Mapped[str | None] = mapped_column(String(20), nullable=True)
     # Quanto a imagem ja foi girada pelo curador (0, 90, 180 ou 270, horario,
     # acumulado). O giro e gravado no proprio arquivo; aqui fica so o registro.
-    giro_graus = Column(Integer, nullable=False, default=0, server_default=text("0"))
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    giro_graus: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default=text("0"))
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     # quem enviou (NULL = chegou pelo equipamento em rede ou antes de 08/11/2026)
-    enviado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    destino = Column(String(10), nullable=False, default=DestinoImagem.FILA.value,
+    enviado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    destino: Mapped[str] = mapped_column(String(10), nullable=False, default=DestinoImagem.FILA.value,
                      server_default=text("'fila'"), index=True)
-    analise_destinatario_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    analise_nota = Column(String(500), nullable=True)   # recado de quem pediu a analise
-    analise_em = Column(DateTime(timezone=True), nullable=True)
-    devolucao_nota = Column(String(500), nullable=True)  # motivo de quem devolveu
+    analise_destinatario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    analise_nota: Mapped[str | None] = mapped_column(String(500), nullable=True)   # recado de quem pediu a analise
+    analise_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    devolucao_nota: Mapped[str | None] = mapped_column(String(500), nullable=True)  # motivo de quem devolveu
     # de qual aparelho da rede a imagem chegou (etapa D, 08/11/2026)
     # "dicom" (arquivo DICOM, do aparelho ou enviado) ou "foto" (foto/imagem
     # convertida pelo Radix em DICOM de captura secundaria - Fase 1, 10/11/2026)
-    formato_entrada = Column(String(10), nullable=False, default="dicom", server_default=text("'dicom'"))
-    aparelho_id = Column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
+    formato_entrada: Mapped[str] = mapped_column(String(10), nullable=False, default="dicom", server_default=text("'dicom'"))
+    aparelho_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
 
     curations = relationship("Curation", back_populates="orthanc_reference")
 

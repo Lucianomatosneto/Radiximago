@@ -23,9 +23,10 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.contexto_pedido import pedido_atual
 from app.core.database import Base
@@ -38,20 +39,20 @@ class SessaoUsuario(Base):
     __tablename__ = "sessoes_usuario"
 
     # identificador aleatorio de 256 bits (vai no token como "jti")
-    id = Column(String(64), primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    criada_em = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    encerrada_em = Column(DateTime(timezone=True), nullable=True)
+    id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    criada_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    encerrada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # logout | novo_login | troca_senha | redefinicao_senha | pelo_usuario |
     # pelo_administrador | administrador_todas
-    motivo_encerramento = Column(String(30), nullable=True)
+    motivo_encerramento: Mapped[str | None] = mapped_column(String(30), nullable=True)
     # de onde a sessao foi aberta (ASVS 7.5.2) - so o RESUMO do aparelho
-    ip = Column(String(45), nullable=True)
-    aparelho = Column(String(80), nullable=True)
-    ultimo_uso = Column(DateTime(timezone=True), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    aparelho: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    ultimo_uso: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     # termo de ciencia (app/modules/termo_ciencia.py): aceito NESTA sessao
-    termo_aceito_em = Column(DateTime(timezone=True), nullable=True)
-    termo_versao = Column(String(20), nullable=True)
+    termo_aceito_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    termo_versao: Mapped[str | None] = mapped_column(String(20), nullable=True)
 
 
 def abrir_sessao(db: Session, usuario_id: int) -> str:

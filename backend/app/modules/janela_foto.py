@@ -34,8 +34,9 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 from fastapi import HTTPException
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, update
+from sqlalchemy import DateTime, ForeignKey, Integer, String, update
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.config import settings
 from app.core.database import Base
@@ -49,13 +50,13 @@ DIAS_GUARDAR_JANELAS = 30
 class JanelaEnvioFoto(Base):
     __tablename__ = "janelas_envio_foto"
 
-    id = Column(Integer, primary_key=True)
-    usuario_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
-    identificador = Column(String(64), nullable=False, unique=True)  # "jti" do comprovante
-    aberta_em = Column(DateTime(timezone=True), nullable=False)
-    expira_em = Column(DateTime(timezone=True), nullable=False)
-    usada_em = Column(DateTime(timezone=True), nullable=True)
-    cancelada_em = Column(DateTime(timezone=True), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    identificador: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)  # "jti" do comprovante
+    aberta_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    usada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    cancelada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class JanelaRecusada(HTTPException):
