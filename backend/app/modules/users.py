@@ -61,3 +61,7 @@ class User(Base):
     totp_ativo = Column(Boolean, nullable=False, default=False, server_default="false")
     totp_ultimo_passo = Column(BigInteger, nullable=True)
     codigos_recuperacao = Column(JSON, nullable=True)
+    # codigos antigos (resumo SHA-256 de ~40 bits) foram invalidados pela
+    # migracao f1a3c5e7b9d2 (12/11/2026, ASVS 6.5.2): no proximo login com
+    # segundo fator, o sistema gera os novos e mostra uma vez
+    codigos_recuperacao_trocar = Column(Boolean, nullable=False, default=False, server_default="false")

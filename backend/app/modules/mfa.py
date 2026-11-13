@@ -19,10 +19,11 @@ Protecoes:
   chave derivada da JWT_SECRET_KEY (HKDF, contexto proprio). Quem copiar so
   o banco nao consegue gerar codigos. Trocar a JWT_SECRET_KEY obriga todos
   a cadastrar o aplicativo de novo (documentado em docs/CRIPTOGRAFIA.md);
-- cada codigo vale UMA vez (totp_ultimo_passo), com tolerancia de 30 s
-  para relogio atrasado/adiantado;
-- 8 codigos de RECUPERACAO de uso unico, guardados so como resumo
-  (SHA-256), para quando o celular nao estiver a mao;
+- cada codigo vale UMA vez (totp_ultimo_passo) e so no intervalo de 30 s
+  do momento (MFA_TOTP_JANELA=0; com 1, vale tambem o anterior) - ASVS 6.5.5;
+- 8 codigos de RECUPERACAO de uso unico, com 24 caracteres (~119 bits),
+  guardados so como resumo Argon2id com sal (o mesmo das senhas) - ASVS
+  6.5.2, para quando o celular nao estiver a mao;
 - o "vale" entre a senha e o codigo (desafio) dura 5 min, aceita no maximo
   5 tentativas e so pode ser usado uma vez.
 """
@@ -30,7 +31,6 @@ Protecoes:
 from __future__ import annotations
 
 import base64
-import hashlib
 import secrets
 import threading
 import time
@@ -42,14 +42,19 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 
 from app.core.config import settings
+from app.core.security import pwd_context
 from app.modules.users import User, UserRole
 
 PERFIS_MFA_OBRIGATORIO = (UserRole.administrador, UserRole.suporte, UserRole.curador)
 NOME_NO_APLICATIVO = "Radix Imago"
 QUANTIDADE_CODIGOS_RECUPERACAO = 8
 TENTATIVAS_POR_DESAFIO = 5
-# letras e numeros sem os que se confundem (0/O, 1/I/L)
+# letras e numeros sem os que se confundem (0/O, 1/I/L): 31 simbolos
 _ALFABETO_RECUPERACAO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+# 24 simbolos de 31 = 24 x log2(31) = ~118,9 bits (ASVS 6.5.2 pede >= 112),
+# mostrados em 6 grupos de 4: ABCD-EFGH-JKMN-PQRS-TUVW-XYZ2
+TAMANHO_CODIGO_RECUPERACAO = 24
+_GRUPO = 4
 
 
 # --- quem precisa ------------------------------------------------------------
@@ -112,7 +117,9 @@ def conferir_codigo(usuario: User, codigo: str) -> bool:
         return False
     totp = pyotp.TOTP(segredo)
     passo_atual = int(time.time()) // totp.interval
-    for passo in (passo_atual - 1, passo_atual, passo_atual + 1):
+    # so o intervalo do momento (e, com MFA_TOTP_JANELA=1, o anterior);
+    # nunca o seguinte - ASVS 6.5.5
+    for passo in range(passo_atual - settings.MFA_TOTP_JANELA, passo_atual + 1):
         if secrets.compare_digest(totp.at(passo * totp.interval), codigo):
             if usuario.totp_ultimo_passo is not None and passo <= usuario.totp_ultimo_passo:
                 return False  # codigo ja usado (ou anterior a um ja usado)
@@ -121,26 +128,38 @@ def conferir_codigo(usuario: User, codigo: str) -> bool:
     return False
 
 
-def _resumo(codigo: str) -> str:
-    normalizado = codigo.strip().upper().replace("-", "").replace(" ", "")
-    return hashlib.sha256(normalizado.encode("utf-8")).hexdigest()
+def _normalizar(codigo: str) -> str:
+    return (codigo or "").strip().upper().replace("-", "").replace(" ", "")
+
+
+def parece_codigo_de_recuperacao(codigo: str) -> bool:
+    """Tem o formato de um codigo de recuperacao (24 simbolos do alfabeto)?
+    So entao vale a pena conferir os resumos Argon2id (cada um e lento de
+    proposito): um erro no codigo de 6 numeros nao custa 8 calculos pesados."""
+    normalizado = _normalizar(codigo)
+    return len(normalizado) == TAMANHO_CODIGO_RECUPERACAO and all(c in _ALFABETO_RECUPERACAO for c in normalizado)
 
 
 def gerar_codigos_recuperacao(usuario: User) -> list[str]:
-    """8 codigos novos (XXXX-XXXX, ~40 bits cada); os antigos deixam de valer."""
+    """8 codigos novos (6 grupos de 4, ~119 bits cada); os antigos deixam de valer.
+    No banco fica so o resumo Argon2id, com sal proprio para cada codigo."""
     codigos = [
-        "".join(secrets.choice(_ALFABETO_RECUPERACAO) for _ in range(8))
+        "".join(secrets.choice(_ALFABETO_RECUPERACAO) for _ in range(TAMANHO_CODIGO_RECUPERACAO))
         for _ in range(QUANTIDADE_CODIGOS_RECUPERACAO)
     ]
-    usuario.codigos_recuperacao = [_resumo(c) for c in codigos]
-    return [f"{c[:4]}-{c[4:]}" for c in codigos]
+    usuario.codigos_recuperacao = [pwd_context.hash(c) for c in codigos]
+    usuario.codigos_recuperacao_trocar = False
+    return ["-".join(c[i:i + _GRUPO] for i in range(0, len(c), _GRUPO)) for c in codigos]
 
 
 def usar_codigo_recuperacao(usuario: User, codigo: str) -> bool:
-    resumo = _resumo(codigo or "")
+    if not parece_codigo_de_recuperacao(codigo):
+        return False
+    normalizado = _normalizar(codigo)
     guardados = list(usuario.codigos_recuperacao or [])
     for i, item in enumerate(guardados):
-        if secrets.compare_digest(item, resumo):
+        # so resumos Argon2id valem; resumos antigos (SHA-256) foram invalidados
+        if isinstance(item, str) and item.startswith("$argon2") and pwd_context.verify(normalizado, item):
             del guardados[i]
             usuario.codigos_recuperacao = guardados  # lista nova: o banco grava a mudanca
             return True
@@ -166,6 +185,7 @@ def desligar(usuario: User) -> None:
     usuario.totp_segredo_cifrado = None
     usuario.totp_ultimo_passo = None
     usuario.codigos_recuperacao = None
+    usuario.codigos_recuperacao_trocar = False
 
 
 # --- desafios (o "vale" entre a senha e o codigo) -----------------------------

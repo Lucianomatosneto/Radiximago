@@ -98,6 +98,7 @@ export default function LoginPage() {
   const [cadastro, setCadastro] = useState<DadosCadastro | null>(null)
   const [codigo, setCodigo] = useState('')
   const [codigosRecuperacao, setCodigosRecuperacao] = useState<string[] | null>(null)
+  const [codigosTrocados, setCodigosTrocados] = useState(false)
   const [perfilFinal, setPerfilFinal] = useState('')
 
   function irParaInicio(perfil: string) {
@@ -170,8 +171,10 @@ export default function LoginPage() {
       }
       const dados = await r.json()
       if (Array.isArray(dados.codigos_recuperacao)) {
-        // 1o cadastro: mostra os codigos de recuperacao UMA vez antes de entrar
+        // 1o cadastro (ou troca por seguranca): mostra os codigos de
+        // recuperacao UMA vez antes de entrar
         setPerfilFinal(dados.perfil)
+        setCodigosTrocados(dados.codigos_recuperacao_trocados === true)
         setCodigosRecuperacao(dados.codigos_recuperacao)
         return
       }
@@ -277,7 +280,7 @@ export default function LoginPage() {
 
           {codigosRecuperacao ? (
             <div className="mt-8 max-w-[430px] lg:mt-10">
-              <CodigosRecuperacao codigos={codigosRecuperacao} aoContinuar={() => irParaInicio(perfilFinal)} variante="escura" />
+              <CodigosRecuperacao codigos={codigosRecuperacao} aoContinuar={() => irParaInicio(perfilFinal)} variante="escura" trocados={codigosTrocados} />
             </div>
           ) : etapa ? (
             <form method="post" onSubmit={enviarCodigo} noValidate className="mt-8 flex max-w-[430px] flex-col gap-4 lg:mt-10" style={sombraTexto}>

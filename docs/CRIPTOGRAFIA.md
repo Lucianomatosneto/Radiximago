@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.1 — 19/10/2026 |
+| Versão do documento | 1.2 — 12/11/2026 |
 | Base | OWASP ASVS 5.0: 11.1.1 (política de chaves), 11.1.2 (inventário), 11.2.2 (agilidade) |
 | Conferido com | `backend/app/core/security.py`, `config.py`, `modules/auth.py`, `modules/mfa.py`, `modules/sessoes.py`, `core/email.py`, `docker-compose.yml` |
 
@@ -18,8 +18,8 @@ Glossário rápido:
 | Guardar senhas | **Argon2id** (resumo lento e "caro em memória", com "sal"): 19456 KiB de memória, 2 passadas, 1 linha de execução, o mínimo recomendado pela OWASP. Lê a senha **inteira** (o bcrypt só lia 72 bytes). Desde 19/10/2026 | adequada (OWASP, recomendação principal) | `passlib` + `argon2-cffi` | `security.py` (`pwd_context`) |
 | Senhas antigas (antes de 19/10/2026) | **bcrypt**, custo 12: só **conferidas**; no login certo são regravadas em Argon2id | adequada | `passlib` + `bcrypt` | `security.py`, `auth.py` |
 | Segredo do login em duas etapas (TOTP) | guardado **cifrado** com Fernet (AES-128-CBC + HMAC-SHA256); chave de 256 bits **derivada** da `JWT_SECRET_KEY` por HKDF-SHA256 (contexto `radix-imago/totp/v1`) | adequada | `cryptography` | `mfa.py` (`_cofre`) |
-| Códigos do aplicativo (TOTP, RFC 6238) | HMAC-SHA1 sobre o relógio, 6 números a cada 30 s, segredo de 160 bits, cada código aceito **uma vez** | padrão da RFC (o SHA-1 aqui é usado só como HMAC, uso aceito) | `pyotp` | `mfa.py` |
-| Códigos de recuperação | 8 códigos aleatórios de ~40 bits (`secrets`); no banco só o **resumo SHA-256** | adequada para uso único com limite de tentativas | `secrets`, `hashlib` | `mfa.py` |
+| Códigos do aplicativo (TOTP, RFC 6238) | HMAC-SHA1 sobre o relógio, 6 números a cada 30 s, segredo de 160 bits, cada código aceito **uma vez** e só no intervalo do momento (`MFA_TOTP_JANELA=0`; 1 aceita também o anterior) | padrão da RFC (o SHA-1 aqui é usado só como HMAC, uso aceito) | `pyotp` | `mfa.py` |
+| Códigos de recuperação | 8 códigos aleatórios de 24 caracteres, ~119 bits (`secrets`); no banco só o **resumo Argon2id com sal** (mesmos parâmetros das senhas) | adequada (ASVS 6.5.2); antes de 12/11/2026 eram ~40 bits em SHA-256, invalidados pela migração `f1a3c5e7b9d2` | `secrets`, `passlib`/`argon2-cffi` | `mfa.py` |
 | Assinar a sessão (JWT) | **HMAC-SHA256 (HS256)**, algoritmo fixo; `alg: none` e outros recusados | 256 bits (chave ≥ 32 bytes, obrigatória em produção) | `PyJWT` | `security.py`, `config.py` |
 | Identificador da sessão (`jti`) | aleatório, `secrets.token_urlsafe(32)` | 256 bits | Python `secrets` | `sessoes.py` |
 | Códigos dos links (redefinição, confirmação de e-mail) | aleatório, `secrets.token_urlsafe(32)`; no banco só o **resumo SHA-256** | 256 bits | `secrets`, `hashlib` | `auth.py` |
@@ -77,3 +77,4 @@ Proibidos no código (conferido por `test_11_4_3_e_11_5_1`):
 |---|---|---|
 | 1.0 | 18/10/2026 | Criação (auditoria OWASP ASVS 5.0, Nível 2). Também passou a vigorar: chave do JWT com 32 bytes ou mais obrigatória em produção, e regravação automática de senhas em padrão antigo |
 | 1.1 | 19/10/2026 | Senhas em Argon2id (bcrypt só para conferir as antigas); segredos do login em duas etapas cifrados; `WHISPER_CHAVE` na política de segredos |
+| 1.2 | 12/11/2026 | Códigos de recuperação em Argon2id com ~119 bits (ASVS 6.5.2); código do aplicativo só no intervalo do momento (ASVS 6.5.5) |

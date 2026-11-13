@@ -46,12 +46,12 @@ export function CampoCodigo({
         // "one-time-code": o celular sugere o codigo sozinho, quando possivel
         autoComplete="one-time-code"
         inputMode={aceitaRecuperacao ? 'text' : 'numeric'}
-        maxLength={aceitaRecuperacao ? 12 : 6}
+        maxLength={aceitaRecuperacao ? 32 : 6}
         autoFocus={autoFocus}
         value={valor}
         onChange={(e) => aoMudar(e.target.value.toUpperCase())}
-        placeholder={aceitaRecuperacao ? '123456 / ABCD-EFGH' : '123456'}
-        className={`mt-1 w-48 rounded-lg border px-3 py-2 font-mono text-lg tracking-[0.3em] outline-hidden ${cor}`}
+        placeholder={aceitaRecuperacao ? '123456 / ABCD-EFGH-…' : '123456'}
+        className={`mt-1 rounded-lg border px-3 py-2 font-mono text-lg outline-hidden ${aceitaRecuperacao ? 'w-full max-w-sm tracking-[0.12em]' : 'w-48 tracking-[0.3em]'} ${cor}`}
       />
       {aceitaRecuperacao && (
         <p className={`mt-1 text-xs ${variante === 'escura' ? 'text-white/70' : 'text-slate-400'}`}>{t('dicaRecuperacao')}</p>
@@ -101,10 +101,13 @@ export function CodigosRecuperacao({
   codigos,
   aoContinuar,
   variante = 'padrao',
+  trocados = false,
 }: {
   codigos: string[]
   aoContinuar: () => void
   variante?: Variante
+  // codigos antigos invalidados por seguranca (12/11/2026): explica a troca
+  trocados?: boolean
 }) {
   const t = useTranslations('SegundoFator')
   const [copiado, setCopiado] = useState(false)
@@ -119,8 +122,9 @@ export function CodigosRecuperacao({
   return (
     <div className={`space-y-3 text-sm ${corTexto(variante)}`} role="region" aria-label={t('tituloCodigos')}>
       <p className={`text-base font-semibold ${variante === 'escura' ? 'text-white' : 'text-slate-100'}`}>{t('tituloCodigos')}</p>
+      {trocados && <p className="rounded-lg border border-sky-400/40 bg-sky-500/10 p-2" role="status">{t('codigosTrocados')}</p>}
       <p>{t('explicacaoCodigos')}</p>
-      <ul className="grid w-fit grid-cols-2 gap-x-6 gap-y-1 rounded-lg border border-amber-400/40 bg-black/40 px-4 py-3 font-mono text-[15px] tracking-wider text-amber-100">
+      <ul className="grid w-fit grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 rounded-lg border border-amber-400/40 bg-black/40 px-4 py-3 font-mono text-[15px] tracking-wider text-amber-100">
         {codigos.map((c) => (
           <li key={c}>{c}</li>
         ))}
