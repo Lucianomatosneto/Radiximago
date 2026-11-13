@@ -23,9 +23,11 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Session, relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.database import Base, get_db
 from app.core.rate_limit import LIMITE_SUGESTAO, limiter
@@ -44,17 +46,17 @@ class AndamentoSugestao(str, enum.Enum):
 class Sugestao(Base):
     __tablename__ = "sugestoes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     # perfil de quem enviou, no momento do envio
-    perfil = Column(String(20), nullable=False)
-    texto = Column(Text, nullable=False)
-    contato = Column(String(200), nullable=True)
-    andamento = Column(String(20), nullable=False, default=AndamentoSugestao.RECEBIDA.value, index=True)
-    motivo = Column(Text, nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
-    atualizado_em = Column(DateTime(timezone=True), nullable=True)
-    atualizado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    perfil: Mapped[str] = mapped_column(String(20), nullable=False)
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+    contato: Mapped[str | None] = mapped_column(String(200), nullable=True)
+    andamento: Mapped[str] = mapped_column(String(20), nullable=False, default=AndamentoSugestao.RECEBIDA.value, index=True)
+    motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), index=True)
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    atualizado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
 
     usuario = relationship("User", foreign_keys=[usuario_id])
 
