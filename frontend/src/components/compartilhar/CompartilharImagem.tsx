@@ -114,7 +114,8 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
   }
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-2" onKeyDown={(e) => e.stopPropagation()}>
+    // role="group": o leitor de tela anuncia "Compartilhar"; as teclas digitadas aqui nao acionam atalhos da tela
+    <div role="group" aria-label={t('titulo')} className="mt-3 border-t border-white/10 pt-2" onKeyDown={(e) => e.stopPropagation()}>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-200">{t('titulo')}</p>
         {!aberto && (

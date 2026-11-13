@@ -135,7 +135,6 @@ export default function SolicitarAcessoPage() {
                 id="nome"
                 name="nome"
                 type="text"
-                autoFocus
                 className="w-full rounded-lg border border-white/10 bg-white/5 py-2.5 px-3 text-sm text-white outline-hidden transition-colors placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/30"
                 placeholder={t('nomeCompletoPlaceholder')}
               />

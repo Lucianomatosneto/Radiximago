@@ -257,7 +257,8 @@ export function BotaoAnexosImagem({ curationId, className = '' }: { curationId: 
         📎 {dados.anexos.length > 0 ? dados.anexos.length : ''} <span>{t('verAnexosCurto')}</span>
       </button>
       {aberto && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={() => setAberto(false)}>
+        // fundo escuro: clicar fora fecha (atalho de mouse); no teclado, Esc fecha
+        <div role="presentation" className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-4" onClick={() => setAberto(false)}>
           <div
             role="dialog"
             aria-label={t('titulo')}

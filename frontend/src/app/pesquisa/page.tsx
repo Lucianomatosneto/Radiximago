@@ -676,7 +676,7 @@ function PesquisaConteudo() {
             </div>
           ) : (
           <>
-          <section className="busca-holofote mt-4 rounded-2xl border border-base-border bg-base-surface/35 p-4" onKeyDown={setasNasListas}>
+          <section role="search" aria-label={t('buscaAvancadaTitulo')} className="busca-holofote mt-4 rounded-2xl border border-base-border bg-base-surface/35 p-4" onKeyDown={setasNasListas}>
             {/* titulo da busca e, NO FIM DA MESMA LINHA, o icone "Acesso
                 rapido por tipo de exame" (as caixas de tipo abrem logo abaixo) */}
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -718,7 +718,7 @@ function PesquisaConteudo() {
             <div className="grade-busca grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <div>
                 <label className={campoLabel}>{t('campoGenero')}</label>
-                <div className="flex flex-wrap gap-2" onKeyDown={setasEntreBotoes}>
+                <div role="toolbar" aria-label={t('campoGenero')} className="flex flex-wrap gap-2" onKeyDown={setasEntreBotoes}>
                   {[{ valor: '', chave: '' }, ...OPCOES_GENERO].map((o) => (
                     <button
                       key={o.valor || 'todos'}

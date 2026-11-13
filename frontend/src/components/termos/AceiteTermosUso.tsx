@@ -102,6 +102,8 @@ export default function AceiteTermosUso({ termos, onAceito }: { termos: MeusTerm
         <div
           ref={area}
           onScroll={aoRolar}
+          // regiao com nome: o leitor de tela anuncia, e Tab + setas rolam o texto
+          role="region"
           tabIndex={0}
           aria-label={t('textosParaLer')}
           className="min-h-0 flex-1 overflow-y-auto px-4 py-2 sm:px-6"

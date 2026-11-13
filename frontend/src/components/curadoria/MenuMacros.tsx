@@ -69,6 +69,8 @@ export default function MenuMacros({
       </button>
       {aberto && (
         <div
+          role="dialog"
+          aria-label={t('botao')}
           className="absolute right-0 top-full z-40 mt-1 w-80 rounded-xl border border-base-border bg-base-surface p-2 shadow-2xl"
           onKeyDown={(e) => e.stopPropagation()}
         >

@@ -91,7 +91,7 @@ export default function FundoMapaMundi({ intensidade, forcarEscuro = false, aoMu
       data-forcar-escuro={forcarEscuro ? '' : undefined}
       className="fundo-mapa-mundi pointer-events-none fixed inset-0 -z-10"
     >
-      <canvas ref={canvasRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
       {/* vinheta: escurece as bordas para o conteudo continuar legivel */}
       <div className="fundo-mapa-vinheta absolute inset-0" />
       {/* veu do modo discreto: melhora a leitura sobre o mapa */}
