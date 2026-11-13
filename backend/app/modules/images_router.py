@@ -431,19 +431,19 @@ def receber_dicom(
     preambulo_ausente = False
     try:
         pydicom.dcmread(io.BytesIO(conteudo))
-    except InvalidDicomError:
+    except InvalidDicomError as causa:
         try:
             ds = pydicom.dcmread(io.BytesIO(conteudo), force=True)
-        except Exception:
-            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+        except Exception as causa_leitura:
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.") from causa_leitura
         # sem o cabecalho "DICM", o modo tolerante do pydicom aceita quase
         # qualquer coisa: so segue se houver os identificadores minimos de
         # uma imagem DICOM de verdade
         if not getattr(ds, "SOPClassUID", None) or not getattr(ds, "SOPInstanceUID", None):
-            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.") from causa
         preambulo_ausente = True
-    except Exception:
-        raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.")
+    except Exception as causa:
+        raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido.") from causa
 
     try:
         resultado_orthanc = orthanc_client.enviar_instancia(conteudo)
@@ -452,12 +452,12 @@ def receber_dicom(
         # 4xx dele significa que o proprio conteudo foi rejeitado (a validacao
         # do pydicom com force=True e permissiva demais para pegar tudo).
         if e.response.status_code < 500:
-            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido (rejeitado pelo Orthanc).")
+            raise HTTPException(status_code=422, detail="Arquivo enviado nao e um DICOM valido (rejeitado pelo Orthanc).") from e
         logger.exception("Falha ao enviar arquivo para o Orthanc.")
-        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.")
-    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.") from e
+    except httpx.HTTPError as causa:
         logger.exception("Falha ao enviar arquivo para o Orthanc.")
-        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.")
+        raise HTTPException(status_code=502, detail="Falha ao enviar o arquivo para o Orthanc.") from causa
 
     orthanc_id = resultado_orthanc.get("ID")
     if not orthanc_id:
@@ -474,7 +474,7 @@ def receber_dicom(
                 ref.analise_nota = nota
                 ref.analise_em = func.now()
             db.commit()
-    except IntegrityError:
+    except IntegrityError as causa:
         # orthanc_id e unico no banco: se a insercao colidiu, e porque um
         # upload concorrente do mesmo arquivo ja registrou a referencia
         # entre a checagem e o commit. Nao e uma falha de verdade.
@@ -484,7 +484,7 @@ def receber_dicom(
             raise HTTPException(
                 status_code=502,
                 detail="Arquivo foi enviado ao Orthanc, mas falhou ao registrar a referencia no sistema. Contate o suporte.",
-            )
+            ) from causa
         criada = False
     except Exception as e:
         db.rollback()
@@ -497,7 +497,7 @@ def receber_dicom(
         raise HTTPException(
             status_code=502,
             detail="Arquivo foi enviado ao Orthanc, mas falhou ao registrar a referencia no sistema. Contate o suporte.",
-        )
+        ) from e
 
     db.add(AuditLog(
         usuario_id=usuario.id, acao="upload_imagem", entidade="orthanc_reference", entidade_id=ref.id,
