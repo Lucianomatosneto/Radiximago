@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.12 — 10/11/2026 |
+| Versão do documento | 1.13 — 12/11/2026 |
 | Base | OWASP ASVS 5.0: 16.1.1 (inventário); apoio a 16.2.x, 16.3.x, 16.4.x e 14.2.4 |
 | Conferido com | `backend/app/modules/audit_logs.py`, `admin_router.py`, chamadas `AuditLog(...)` e `logger.*` no código, `whisper/app.py`, `docker-compose.yml` |
 
@@ -26,7 +26,7 @@
 | Grupo | Ações (`acao`) |
 |---|---|
 | Autenticação | `login` (com "com segundo fator" nos detalhes quando houve código), `falha_login`, `logout`, `troca_senha`, `falha_troca_senha`, `solicitacao_redefinicao_senha`, `redefinicao_senha` |
-| Login em duas etapas | `falha_segundo_fator`, `segundo_fator_ativado`, `segundo_fator_desativado`, `codigo_recuperacao_usado`, `novos_codigos_recuperacao`, `segundo_fator_redefinido_pelo_admin`, `segundo_fator_redefinido_pelo_servidor` (roteiro `redefinir_segundo_fator.py`) |
+| Login em duas etapas | `falha_segundo_fator`, `segundo_fator_ativado`, `segundo_fator_desativado`, `codigo_recuperacao_usado`, `novos_codigos_recuperacao`, `codigos_recuperacao_regenerados` (códigos antigos invalidados por segurança, novos gerados no login), `segundo_fator_redefinido_pelo_admin`, `segundo_fator_redefinido_pelo_servidor` (roteiro `redefinir_segundo_fator.py`) |
 | Sessões | `encerramento_sessao_pelo_usuario`, `encerramento_outras_sessoes` ("Meus acessos"), `encerramento_sessoes_pelo_admin`, `encerramento_sessoes_de_todos` |
 | Cadastro | `solicitacao_acesso_registrada`, `confirmacao_email_solicitacao`, `falha_confirmacao_email`, `aprovacao_solicitacao_acesso`, `aprovacao_automatica_solicitacao` (só estudante, liberado ao confirmar o e-mail, desde 01/11/2026; antes também professor e pesquisador), `rejeicao_solicitacao_acesso`, `solicitacao_duplicada_descartada` (o e-mail confirmado já tinha conta; o pedido não vai para a fila, desde 01/11/2026), `falha_envio_email` (e-mail de confirmação ou de redefinição de senha não saiu — só o tipo do erro, sem o link; desde 01/11/2026, só depois de 3 tentativas quando a falha é passageira; o Painel administrativo mostra as dos últimos 7 dias) |
 | Usuários | `criacao_usuario`, `edicao_usuario`, `bloqueio_usuario`, `desbloqueio_usuario` (desde 01/11/2026; antes a reativação também ficava como `bloqueio_usuario`, com "foi desbloqueado" nos detalhes), `exclusao_usuario`, `atualizacao_foto_perfil`, `remocao_foto_perfil` |
@@ -119,3 +119,4 @@ Isso é comprovado por:
 | 1.10 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): janela de 5 minutos, recusas com motivo |
 | 1.11 | 10/11/2026 | Termo de ciência após o login: aceite e recusa |
 | 1.12 | 10/11/2026 | Termos de Uso e Política de Privacidade: aceite e recusa |
+| 1.13 | 12/11/2026 | Login em duas etapas: `codigos_recuperacao_regenerados` |
