@@ -559,7 +559,7 @@ def solicitar_acesso(
         raise HTTPException(
             status_code=503,
             detail="Não foi possível enviar o e-mail de confirmação agora. Tente de novo em alguns minutos; se continuar, avise o administrador.",
-        )
+        ) from erro
 
     return mensagem_generica
 
