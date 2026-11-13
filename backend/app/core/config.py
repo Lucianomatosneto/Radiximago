@@ -69,6 +69,12 @@ class Settings(BaseSettings):
     FOTO_JANELA_MINUTOS: int = 5
     FOTO_JANELA_TOLERANCIA_SEGUNDOS: int = 30
     FOTO_TAMANHO_MAX_MB: int = 10
+    # LOGIN EM DUAS ETAPAS (OWASP ASVS 6.5.5, 12/11/2026): quantos codigos
+    # ANTERIORES do aplicativo ainda valem. 0 (padrao) = so o codigo do
+    # momento, vale no maximo 30 s, como pede o ASVS. 1 = vale tambem o
+    # anterior (ate 60 s), para celular com relogio atrasado. Nunca se aceita
+    # o codigo do intervalo seguinte. Valores fora de 0-1 impedem de ligar.
+    MFA_TOTP_JANELA: int = 0
 
     # E-mail (SMTP) - usado pra redefinicao de senha. Se SMTP_HOST ficar
     # vazio (default), o envio real e pulado e o conteudo do e-mail (com o
@@ -89,6 +95,12 @@ class Settings(BaseSettings):
     # 0 desliga.
     ANONIMIZACAO_AUTOMATICA_SEGUNDOS: int = 60
     
+    @model_validator(mode="after")
+    def _janela_do_codigo_valida(self):
+        if self.MFA_TOTP_JANELA not in (0, 1):
+            raise ValueError("MFA_TOTP_JANELA deve ser 0 (so o codigo do momento) ou 1 (tambem o anterior).")
+        return self
+
     @model_validator(mode="after")
     def _chave_jwt_forte(self):
         """Producao NAO liga com chave curta; em desenvolvimento so avisa (docs/CRIPTOGRAFIA.md)."""
