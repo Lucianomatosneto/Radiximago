@@ -66,7 +66,8 @@ def test_cadastro_no_primeiro_login_com_qr_code(criar_usuario, db):
     r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": pyotp.TOTP(inicio["segredo"]).now()})
     assert r.status_code == 200 and "access_token" in r.json()
     codigos = r.json()["codigos_recuperacao"]
-    assert len(codigos) == 8 and all(re.fullmatch(r"[A-Z2-9]{4}-[A-Z2-9]{4}", c) for c in codigos)
+    # 24 caracteres em 6 grupos de 4 (~119 bits, ASVS 6.5.2 - desde 12/11/2026)
+    assert len(codigos) == 8 and all(re.fullmatch(r"[A-Z2-9]{4}(-[A-Z2-9]{4}){5}", c) for c in codigos)
     assert cliente.get("/auth/me").status_code == 200  # sessao aberta
     db.expire_all()
     salvo = db.get(User, curador.id)
@@ -74,7 +75,7 @@ def test_cadastro_no_primeiro_login_com_qr_code(criar_usuario, db):
     # segredo CIFRADO no banco; codigos de recuperacao so como resumo
     assert inicio["segredo"] not in (salvo.totp_segredo_cifrado or "")
     assert mfa.decifrar(salvo.totp_segredo_cifrado) == inicio["segredo"]
-    assert all(re.fullmatch(r"[0-9a-f]{64}", h) for h in salvo.codigos_recuperacao)
+    assert all(h.startswith("$argon2id$") for h in salvo.codigos_recuperacao)  # Argon2id com sal (12/11/2026)
     assert db.query(AuditLog).filter(AuditLog.usuario_id == curador.id, AuditLog.acao == "segundo_fator_ativado").count() == 1
 
 
