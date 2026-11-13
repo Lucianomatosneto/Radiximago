@@ -288,8 +288,8 @@ def ensinar_frase(
     # termo do vocabulario: vira sinonimo
     try:
         termo_id = int(dados.valor)
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Termo inválido.")
+    except ValueError as causa:
+        raise HTTPException(status_code=422, detail="Termo inválido.") from causa
     termo = db.query(TermoVocabulario).filter(TermoVocabulario.id == termo_id, TermoVocabulario.ativo.is_(True)).first()
     if not termo:
         raise HTTPException(status_code=404, detail="Termo não encontrado.")
