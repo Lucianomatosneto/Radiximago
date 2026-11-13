@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { obterSessaoAtual } from '../lib/sessao'
 import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
@@ -101,7 +101,6 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
     return () => consulta.removeEventListener('change', aplicar)
   }, [])
   const podeRecolher = recolhivel || telaEstreita
-  const router = useRouter()
   const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
 
