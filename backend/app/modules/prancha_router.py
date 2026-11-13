@@ -59,7 +59,7 @@ from app.modules.marcacoes_imagem import desenhar_marcacoes_na_imagem
 from app.modules.prancha_envios import DESTINATARIOS_MAX, RECADO_MAX, PranchaEnviada
 from app.modules.prancha import ItemPrancha, descrever_ficha, em_pdf, em_png, montar_paginas
 from app.modules.search_router import _buscar_ficha_aprovada
-from app.modules.users import User, UserRole
+from app.modules.users import User
 from app.core.email_digitacao import sugestao_de_email
 
 

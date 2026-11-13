@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.rate_limit import limiter
 from app.modules import orthanc_client
-from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_ESCRITA, exigir_perfis
+from app.modules.auth import PERFIS_FICHA_ESCRITA, exigir_perfis
 from app.modules.geometria_imagem import FormatoNaoSuportado, girar_dicom, girar_marcacoes, girar_ponto
 from app.modules.curations import Curation, StatusCuradoria
 from app.modules.orthanc_references import OrthancReference

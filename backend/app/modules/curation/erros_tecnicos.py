@@ -17,7 +17,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.achados import ErroTecnico, erro_vale_para_exame
 

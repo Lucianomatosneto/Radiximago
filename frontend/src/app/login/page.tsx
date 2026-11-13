@@ -108,7 +108,7 @@ export default function LoginPage() {
     // login e depois VOLTA para onde a pessoa queria ir - so caminhos deste
     // proprio site (comecam com "/" e nunca "//"), nunca outro endereco.
     const volta = new URLSearchParams(window.location.search).get('volta')
-    if (volta && /^\/(?![\/\\])[A-Za-z0-9\-/?=&_.%]*$/.test(volta)) {
+    if (volta && /^\/(?![/\\])[A-Za-z0-9\-/?=&_.%]*$/.test(volta)) {
       router.push(volta)
       return
     }

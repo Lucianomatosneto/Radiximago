@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User
 
 from .common import (

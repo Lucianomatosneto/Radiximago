@@ -306,8 +306,9 @@ export function iniciarMapaMundi(op: OpcoesMapaMundi): ControleMapaMundi {
   function desenharRotas(t: number, off: number) {
     const f = leitura() ? 0.5 : 1
     ROTAS.forEach(([a, b], i) => {
-      let [x1, y1] = projetar(...CIDADES[a])
-      let [x2, y2] = projetar(...CIDADES[b])
+      const [x1, y1] = projetar(...CIDADES[a])
+      const [x2Bruto, y2] = projetar(...CIDADES[b])
+      let x2 = x2Bruto
       // escolhe o caminho mais curto (pode atravessar a "emenda" do mapa)
       if (x2 - x1 > mapaL / 2) x2 -= mapaL
       else if (x1 - x2 > mapaL / 2) x2 += mapaL

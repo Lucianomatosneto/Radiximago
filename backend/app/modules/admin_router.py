@@ -22,7 +22,7 @@ from app.modules.auth import exigir_perfis, PERFIS_ADMIN, PERFIS_CURADORIA
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference
 from app.modules.audit_logs import AuditLog
-from app.modules.curations import Curation, StatusCuradoria
+from app.modules.curations import Curation
 
 from app.core.migracoes import estado_das_migracoes  # noqa: E402
 

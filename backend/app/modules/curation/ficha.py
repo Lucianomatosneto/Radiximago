@@ -4,12 +4,12 @@ from fastapi import Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
-from app.modules.achados import Achado, ErroTecnico, TipoAchado, regiao_do_achado
+from app.modules.achados import Achado, ErroTecnico, regiao_do_achado
 from app.modules.curations import AlteracaoObservada
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _perfil_de, e_rascunho_do_professor, _registrar_auditoria, _registrar_historico, _valor
