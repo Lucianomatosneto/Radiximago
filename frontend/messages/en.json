@@ -2192,7 +2192,7 @@
     "tituloCodigo": "Two-step login",
     "explicacaoCodigo": "Open the authenticator app on your phone and enter the 6-digit Rádix Imago code.",
     "campoCodigo": "Code",
-    "dicaRecuperacao": "No phone? Enter one of your recovery codes (e.g. ABCD-EFGH).",
+    "dicaRecuperacao": "No phone? Enter one of your recovery codes (e.g. ABCD-EFGH-JKMN-PQRS-TUVW-XYZ2).",
     "confirmar": "Confirm",
     "confirmando": "Checking…",
     "voltar": "Back",
@@ -2228,7 +2228,8 @@
     "ligado": "Two-step login turned on.",
     "redefinir": "Reset 2-step",
     "confirmarRedefinir": "Reset {nome}'s two-step login? Confirm the person's identity first (in person or via institutional email). Their sessions will be closed and they will set up the app again.",
-    "redefinido": "{nome}'s two-step login was reset."
+    "redefinido": "{nome}'s two-step login was reset.",
+    "codigosTrocados": "For security, your old recovery codes were replaced with longer ones. Your authenticator app keeps working as before."
   },
   "Prancha": {
     "botao": "Plate",
