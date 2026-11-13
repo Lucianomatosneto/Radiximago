@@ -41,8 +41,13 @@ export default function SecaoSegundoFator() {
   const [ocupado, setOcupado] = useState(false)
 
   async function carregar() {
-    const r = await fetch(`${API}/auth/mfa`, { credentials: 'include' })
-    if (r.ok) setSituacao(await r.json())
+    // sem rede: mantem a situacao anterior, como quando o servidor responde erro
+    try {
+      const r = await fetch(`${API}/auth/mfa`, { credentials: 'include' })
+      if (r.ok) setSituacao(await r.json())
+    } catch {
+      // nada a mostrar; a tela continua como estava
+    }
   }
 
   useEffect(() => {

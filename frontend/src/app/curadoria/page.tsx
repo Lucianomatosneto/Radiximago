@@ -727,9 +727,16 @@ export default function CuradoriaPage() {
     curationId: number,
     orthancReferenceId: number
   ) {
-    const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
-      credentials: 'include',
-    })
+    let resposta: Response
+    try {
+      resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}`, {
+        credentials: 'include',
+      })
+    } catch {
+      // sem rede: o mesmo aviso de quando o servidor responde erro
+      setErroFila(t('ficha.erroCarregarFichaCriada'))
+      return
+    }
     if (resposta.status === 401) {
       router.push('/login')
       return

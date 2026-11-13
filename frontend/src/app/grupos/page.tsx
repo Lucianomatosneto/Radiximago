@@ -41,8 +41,13 @@ export default function GruposPage() {
   const [aviso, setAviso] = useState('')
 
   async function carregar() {
-    const r = await fetch(`${API}/grupos`, { credentials: 'include' })
-    setGrupos(r.ok ? (await r.json()).grupos : [])
+    // sem rede: lista vazia, como quando o servidor responde erro
+    try {
+      const r = await fetch(`${API}/grupos`, { credentials: 'include' })
+      setGrupos(r.ok ? (await r.json()).grupos : [])
+    } catch {
+      setGrupos([])
+    }
   }
 
   useEffect(() => {

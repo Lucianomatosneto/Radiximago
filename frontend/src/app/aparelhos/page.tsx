@@ -62,15 +62,20 @@ export default function AparelhosPage() {
   const [testando, setTestando] = useState<number | null>(null)
 
   async function carregar() {
-    const r = await fetch(`${API}/aparelhos`, { credentials: 'include' })
-    if (!r.ok) {
+    // sem rede (ou servidor fora do ar) o fetch "explode": mostra o mesmo aviso de erro
+    try {
+      const r = await fetch(`${API}/aparelhos`, { credentials: 'include' })
+      if (!r.ok) {
+        setErro(t('erroCarregar'))
+        return
+      }
+      const d = await r.json()
+      setAparelhos(d.aparelhos)
+      setConfig(d.configuracao)
+      setPodeGerir(Boolean(d.pode_gerir))
+    } catch {
       setErro(t('erroCarregar'))
-      return
     }
-    const d = await r.json()
-    setAparelhos(d.aparelhos)
-    setConfig(d.configuracao)
-    setPodeGerir(Boolean(d.pode_gerir))
   }
 
   useEffect(() => {

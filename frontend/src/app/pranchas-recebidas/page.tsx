@@ -46,8 +46,13 @@ export default function PranchasRecebidasPage() {
   const [erro, setErro] = useState('')
 
   async function carregar() {
-    const r = await fetch(`${API}/prancha/recebidas`, { credentials: 'include' })
-    setLista(r.ok ? (await r.json()).pranchas : [])
+    // sem rede: lista vazia, como quando o servidor responde erro
+    try {
+      const r = await fetch(`${API}/prancha/recebidas`, { credentials: 'include' })
+      setLista(r.ok ? (await r.json()).pranchas : [])
+    } catch {
+      setLista([])
+    }
   }
 
   useEffect(() => {
