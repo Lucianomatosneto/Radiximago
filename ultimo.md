@@ -1,12 +1,12 @@
-# Auditoria automática — 2026-11-12
+# Auditoria automática — 2026-11-13
 
-Commit analisado: `2f99484`
+Commit analisado: `64fc706`
 
 ## Testes
 
 | Suíte | Executados | Aprovados | Reprovados | Ignorados |
 |---|---|---|---|---|
-| Backend (suíte do projeto) | 611 | 611 | 0 | 0 |
+| Backend (suíte do projeto) | 615 | 615 | 0 | 0 |
 | Auditoria da API | 13 | 13 | 0 | 0 |
 | Frontend (Vitest) | 11 | 11 | 0 | 0 |
 
@@ -25,7 +25,7 @@ Commit analisado: `2f99484`
 
 ## Desempenho
 
-- k6: p95 = 4.9 ms; falhas = 0.00%
-- Lighthouse (login): Performance 89, Accessibility 100, Best Practices 100, SEO 100
+- k6: p95 = 4.5 ms; falhas = 0.00%
+- Lighthouse (login): Performance 63, Accessibility 100, Best Practices 100, SEO 100
 
 > Resultados automáticos. Problemas só são considerados resolvidos após reteste na Auditoria.
