@@ -2192,7 +2192,7 @@
     "tituloCodigo": "Login em duas etapas",
     "explicacaoCodigo": "Abra o aplicativo autenticador no celular e digite o código de 6 números do Rádix Imago.",
     "campoCodigo": "Código",
-    "dicaRecuperacao": "Sem o celular? Digite um dos seus códigos de recuperação (ex.: ABCD-EFGH).",
+    "dicaRecuperacao": "Sem o celular? Digite um dos seus códigos de recuperação (ex.: ABCD-EFGH-JKMN-PQRS-TUVW-XYZ2).",
     "confirmar": "Confirmar",
     "confirmando": "Conferindo…",
     "voltar": "Voltar",
@@ -2228,7 +2228,8 @@
     "ligado": "Login em duas etapas ligado.",
     "redefinir": "Redefinir 2 etapas",
     "confirmarRedefinir": "Redefinir o login em duas etapas de {nome}? Confirme antes a identidade da pessoa (pessoalmente ou pelo e-mail institucional). Os acessos dela serão encerrados e ela cadastrará o aplicativo de novo.",
-    "redefinido": "Login em duas etapas de {nome} redefinido."
+    "redefinido": "Login em duas etapas de {nome} redefinido.",
+    "codigosTrocados": "Por segurança, seus códigos de recuperação antigos foram substituídos por códigos mais longos. O aplicativo do celular continua valendo normalmente."
   },
   "Prancha": {
     "botao": "Prancha",
