@@ -116,9 +116,9 @@ def criar_grupo(entrada: GrupoEntrada, usuario: User = Depends(exigir_perfis(*PE
     db.add(grupo)
     try:
         db.flush()
-    except IntegrityError:
+    except IntegrityError as causa:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Voce ja tem um grupo com esse nome.")
+        raise HTTPException(status_code=409, detail="Voce ja tem um grupo com esse nome.") from causa
     n = _gravar_membros(db, grupo, entrada.membros_ids, usuario)
     _auditar(db, usuario, "grupo_envio_criado", grupo, f"{n} membro(s)")
     db.commit()
@@ -132,9 +132,9 @@ def editar_grupo(grupo_id: int, entrada: GrupoEntrada, usuario: User = Depends(e
     grupo.nome = entrada.nome.strip()
     try:
         db.flush()
-    except IntegrityError:
+    except IntegrityError as causa:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Voce ja tem um grupo com esse nome.")
+        raise HTTPException(status_code=409, detail="Voce ja tem um grupo com esse nome.") from causa
     n = _gravar_membros(db, grupo, entrada.membros_ids, usuario)
     _auditar(db, usuario, "grupo_envio_editado", grupo, f"{n} membro(s)")
     db.commit()

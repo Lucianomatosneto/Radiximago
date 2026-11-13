@@ -93,12 +93,12 @@ def _chamar_orthanc(descricao_acao: str, funcao, *args, **kwargs):
     """
     try:
         return funcao(*args, **kwargs)
-    except (httpx.HTTPStatusError, httpx.HTTPError):
+    except (httpx.HTTPStatusError, httpx.HTTPError) as causa:
         logger.exception("Falha ao comunicar com o Orthanc (%s).", descricao_acao)
         raise HTTPException(
             status_code=502,
             detail=f"Não foi possível {descricao_acao} agora - tente novamente em instantes.",
-        )
+        ) from causa
 
 
 def _contar_por(db: Session, coluna) -> dict:

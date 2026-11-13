@@ -113,10 +113,10 @@ def _ler_comprovante(comprovante: str) -> dict:
             comprovante, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM],
             audience=PUBLICO_TOKEN, issuer=EMISSOR_TOKEN, options={"require": ["exp", "sub", "jti"]},
         )
-    except jwt.ExpiredSignatureError:
-        raise JanelaRecusada(410, "tempo_esgotado", "O tempo para enviar acabou. Comece de novo.")
-    except jwt.PyJWTError:
-        raise JanelaRecusada(422, "comprovante_invalido", "Envio sem autorizacao valida. Comece de novo.")
+    except jwt.ExpiredSignatureError as causa:
+        raise JanelaRecusada(410, "tempo_esgotado", "O tempo para enviar acabou. Comece de novo.") from causa
+    except jwt.PyJWTError as causa:
+        raise JanelaRecusada(422, "comprovante_invalido", "Envio sem autorizacao valida. Comece de novo.") from causa
     if dados.get("tipo") != TIPO_TOKEN_JANELA_FOTO:
         raise JanelaRecusada(422, "comprovante_invalido", "Envio sem autorizacao valida. Comece de novo.")
     return dados

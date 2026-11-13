@@ -88,8 +88,8 @@ def sanitizar_mascara(texto: str) -> tuple[bytes, int, int]:
         raise MascaraInvalida("Máscara grande demais.")
     try:
         bruto = base64.b64decode(texto, validate=True)
-    except (binascii.Error, ValueError):
-        raise MascaraInvalida("Máscara com codificação inválida.")
+    except (binascii.Error, ValueError) as causa:
+        raise MascaraInvalida("Máscara com codificação inválida.") from causa
     if len(bruto) > MAX_BYTES_MASCARA or not bruto.startswith(b"\x89PNG\r\n\x1a\n"):
         raise MascaraInvalida("A máscara precisa ser uma imagem PNG dentro do limite de tamanho.")
     try:
@@ -111,8 +111,8 @@ def sanitizar_mascara(texto: str) -> tuple[bytes, int, int]:
                 canal = img.convert("L")
     except MascaraInvalida:
         raise
-    except Exception:
-        raise MascaraInvalida("Não foi possível ler a máscara (PNG inválido).")
+    except Exception as causa:
+        raise MascaraInvalida("Não foi possível ler a máscara (PNG inválido).") from causa
     return _png_1bit(canal.point(lambda v: 255 if v > 127 else 0).convert("1")), largura, altura
 
 

@@ -103,8 +103,8 @@ def _regravar(conteudo: bytes) -> tuple[bytes, str, str, int, int]:
             return saida.getvalue(), mime, ext, im.size[0], im.size[1]
     except HTTPException:
         raise
-    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
-        raise HTTPException(status_code=422, detail="O arquivo não é uma imagem válida.")
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError) as causa:
+        raise HTTPException(status_code=422, detail="O arquivo não é uma imagem válida.") from causa
 
 
 def _saida(a: AnexoCuradoria) -> dict:

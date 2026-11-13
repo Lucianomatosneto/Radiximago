@@ -210,9 +210,9 @@ def responder(
     _auditar(db, usuario.id, "resposta_compartilhamento", ficha.id, f"destinatario_id={remetente.id}")
     try:
         db.commit()
-    except IntegrityError:
+    except IntegrityError as causa:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Tente de novo.")
+        raise HTTPException(status_code=409, detail="Tente de novo.") from causa
     return {"mensagem": f"Resposta enviada para {remetente.nome}."}
 
 

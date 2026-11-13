@@ -152,11 +152,11 @@ def transcrever(
             },
             timeout=180,
         )
-    except httpx.HTTPError:
+    except httpx.HTTPError as causa:
         raise HTTPException(
             status_code=503,
             detail="Serviço de voz indisponível. Verifique se o container radix-whisper está ligado.",
-        )
+        ) from causa
     finally:
         del conteudo
 

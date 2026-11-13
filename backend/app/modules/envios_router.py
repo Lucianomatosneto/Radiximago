@@ -137,8 +137,8 @@ def _ids(texto: str | None) -> list[int]:
     """'3,8, 12' -> [3, 8, 12] (formulario de envio)."""
     try:
         return [int(p) for p in (texto or "").replace(" ", "").split(",") if p][:DESTINATARIOS_MAX]
-    except ValueError:
-        raise HTTPException(status_code=422, detail="Lista de pessoas ou grupos invalida.")
+    except ValueError as causa:
+        raise HTTPException(status_code=422, detail="Lista de pessoas ou grupos invalida.") from causa
 
 
 def enviar_a_pessoas(db: Session, ref: OrthancReference, remetente: User,
@@ -308,7 +308,7 @@ def enviar_foto(
         try:
             dicom = foto_para_dicom.converter(conteudo, negatoscopio=True)
         except foto_para_dicom.FotoInvalida as erro:
-            raise HTTPException(status_code=422, detail=str(erro))
+            raise HTTPException(status_code=422, detail=str(erro)) from erro
         # texto gravado na foto (ex.: nome no filme) e procurado e tarjado
         # ANTES de qualquer gravacao no Orthanc
         from app.modules.texto_na_imagem import tarjar_texto

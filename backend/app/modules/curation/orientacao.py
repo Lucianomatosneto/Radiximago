@@ -94,10 +94,10 @@ def _girar(db: Session, orthanc_reference_id: int, graus: int, usuario: User):
         db.rollback()
         # o motivo fica no registro do servidor (docker compose logs radix-api)
         logger.warning("Giro recusado (imagem %s): %s", orthanc_reference_id, erro)
-        raise HTTPException(status_code=422, detail=f"Não foi possível girar: {erro}")
-    except httpx.HTTPError:
+        raise HTTPException(status_code=422, detail=f"Não foi possível girar: {erro}") from erro
+    except httpx.HTTPError as causa:
         db.rollback()
-        raise HTTPException(status_code=502, detail="O servidor de imagens (Orthanc) não respondeu. Tente de novo.")
+        raise HTTPException(status_code=502, detail="O servidor de imagens (Orthanc) não respondeu. Tente de novo.") from causa
 
     def anotar_giro(r: OrthancReference) -> None:
         r.giro_graus = ((r.giro_graus or 0) + graus) % 360
@@ -113,8 +113,8 @@ def _girar(db: Session, orthanc_reference_id: int, graus: int, usuario: User):
             antes_de_gravar=anotar_giro,
             mascara=lambda png: girar_mascara(png, graus),
         )
-    except httpx.HTTPError:
-        raise HTTPException(status_code=502, detail="O servidor de imagens (Orthanc) não respondeu. Tente de novo.")
+    except httpx.HTTPError as causa:
+        raise HTTPException(status_code=502, detail="O servidor de imagens (Orthanc) não respondeu. Tente de novo.") from causa
     return {
         "orthanc_reference_id": ref.id,
         "orthanc_id": ref.orthanc_id,

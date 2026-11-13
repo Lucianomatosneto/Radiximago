@@ -146,7 +146,7 @@ def _sanitizar(texto: str) -> tuple[bytes, int, int]:
     try:
         return sanitizar_mascara(texto)
     except MascaraInvalida as erro:
-        raise HTTPException(status_code=422, detail=str(erro))
+        raise HTTPException(status_code=422, detail=str(erro)) from erro
 
 
 @router.get("/ficha/{curation_id}")
