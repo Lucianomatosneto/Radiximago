@@ -162,7 +162,6 @@ export default function ImagensPage() {
       setAutenticado(true)
       void buscarImagens()
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router, buscarImagens])
 
   async function enviarImagem(evento: FormEvent<HTMLFormElement>) {
