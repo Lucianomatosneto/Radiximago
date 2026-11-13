@@ -34,6 +34,10 @@ runs:
         FRONTEND_URL: http://127.0.0.1:3000
       run: |
         export JWT_SECRET_KEY="$(openssl rand -hex 32)"
+        # a mesma chave fica para os passos seguintes DESTE job (ex.: semear os
+        # usuarios de teste com o 2o fator cifrado com ela), escondida no log
+        echo "::add-mask::$JWT_SECRET_KEY"
+        echo "JWT_SECRET_KEY=$JWT_SECRET_KEY" >> "$GITHUB_ENV"
         alembic upgrade head
         nohup python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > ../api.log 2>&1 &
         for i in $(seq 1 30); do curl -fs http://127.0.0.1:8000/health >/dev/null && echo "API no ar" && exit 0; sleep 2; done
