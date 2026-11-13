@@ -207,7 +207,7 @@ def listar_reviews_respondidas(
     )
 
     nomes = _nomes_usuarios(db, {r.revisor_id for r, _, _ in resultados if r.revisor_id})
-    pendentes = dict(
+    pendentes: dict[int, int] = dict(
         db.query(CurationReviewNote.review_id, func.count(CurationReviewNote.id))
         .filter(
             CurationReviewNote.review_id.in_([r.id for r, _, _ in resultados] or [0]),
@@ -413,7 +413,7 @@ def obter_minhas_estatisticas(
         .scalar()
     ) or 0
 
-    contagem_por_curador = dict(
+    contagem_por_curador: dict[int, int] = dict(
         db.query(Curation.curador_id, func.count(Curation.id))
         .filter(Curation.curador_id.isnot(None), Curation.criado_em >= inicio_mes)
         .group_by(Curation.curador_id)
