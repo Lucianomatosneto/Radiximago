@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.config import settings
 from app.core.database import get_db
-from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
+from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_FICHA_LEITURA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
 from app.modules import orthanc_client

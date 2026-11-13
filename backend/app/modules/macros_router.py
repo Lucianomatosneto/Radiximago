@@ -25,7 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.audit_logs import AuditLog
-from app.modules.auth import PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, exigir_perfis
+from app.modules.auth import PERFIS_CURADORIA_ESCRITA, PERFIS_FICHA_LEITURA, exigir_perfis
 from app.modules.achados import TipoErroTecnico
 from app.modules.busca_termos import DENTES_VALIDOS
 from app.modules.curations import AlteracaoObservada, QualidadeTecnica, TipoRadiografia

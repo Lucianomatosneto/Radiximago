@@ -1,7 +1,5 @@
 from pathlib import Path
-import os
 import warnings
-from typing import Optional
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings

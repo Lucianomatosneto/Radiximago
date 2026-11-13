@@ -5,11 +5,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Annotated, Literal
 
 import logging
-from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import limiter

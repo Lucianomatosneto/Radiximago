@@ -30,7 +30,7 @@ from sqlalchemy.sql import func
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
-from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_CURADORIA, PERFIS_ENVIO_IMAGENS
+from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import DestinoImagem, OrigemImagem, OrthancReference
 from app.modules.curations import Curation

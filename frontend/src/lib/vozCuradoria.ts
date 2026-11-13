@@ -972,7 +972,7 @@ export function interpretar(
     if (guia) {
       fecharPendente()
       const [g, n] = guia
-      let j = pularPontuacaoEVazias(i + n)
+      const j = pularPontuacaoEVazias(i + n)
 
       if (g === 'descricao' || g === 'continuar_descricao' || g === 'achados' || g === 'observacoes') {
         const campo = g === 'achados' ? 'achados_detalhe' : g === 'observacoes' ? 'observacoes_internas' : 'descricao_didatica'
@@ -1154,7 +1154,7 @@ export function interpretar(
           continue
         }
         const indice = num[0] - 1
-        let k = pularPontuacaoEVazias(j + num[1])
+        const k = pularPontuacaoEVazias(j + num[1])
         const alvo = ficha.marcacoes[indice]
         if (!alvo) {
           naoReconhecidos.push({ texto: `Marcação ${num[0]} (não existe na imagem)`, sugestoes: [] })
