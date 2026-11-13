@@ -84,6 +84,9 @@ sendo seu e continua registrado no registro.br**: só muda quem cuida da
    `docker run cloudflare/cloudflared:latest tunnel --no-autoupdate run --token eyJh...`
    Copie **só o texto depois de `--token `** (o que começa com `eyJ`). Esse
    texto é uma **senha**: não envie para ninguém, nem para o Claude.
+   Não rode esse comando: o Radix já liga o túnel com uma **versão fixa** do
+   `cloudflared`, definida no `docker-compose.tunel.yml` (o painel mostra
+   `:latest`, que mudaria sozinho sem revisão).
 5. No seu PC, abra o `.env` do Radix no Bloco de Notas:
    ```powershell
    cd C:\Users\lmnvo\Radiximago
