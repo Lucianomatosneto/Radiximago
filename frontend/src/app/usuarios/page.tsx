@@ -116,6 +116,10 @@ function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFe
   )
 }
 
+// Lista FECHADA de meios de conferir a identidade (docs/SEGURANCA.md 3.4.1).
+const MEIOS_CONFERENCIA = ['email_cadastrado', 'presencial', 'videochamada', 'responsavel_academico'] as const
+type MeioConferencia = (typeof MEIOS_CONFERENCIA)[number]
+
 export default function UsuariosPage() {
   const t = useTranslations('Usuarios')
   const tSF = useTranslations('SegundoFator')
@@ -154,6 +158,7 @@ export default function UsuariosPage() {
   const [erroAprovacao, setErroAprovacao] = useState('')
 
   const [exclusao, setExclusao] = useState<Usuario | null>(null)
+  const [redefinicao, setRedefinicao] = useState<{ usuario: Usuario; meios: MeioConferencia[]; seguiu: boolean; erro: string; enviando: boolean } | null>(null)
   const [excluindo, setExcluindo] = useState(false)
   const [erroExclusao, setErroExclusao] = useState('')
   const [avisoAcessos, setAvisoAcessos] = useState('')
@@ -309,13 +314,30 @@ export default function UsuariosPage() {
   // Redefinir o login em duas etapas (pessoa perdeu o celular E os codigos
   // de recuperacao): apaga o cadastro do aplicativo e encerra os acessos;
   // no proximo login ela cadastra de novo. Exige confirmar a identidade antes.
-  async function redefinirSegundoFator(usuario: Usuario) {
-    if (!autenticado || !(await pedirConfirmacao(tSF('confirmarRedefinir', { nome: usuario.nome }), t('simRedefinir')))) return
-    setAvisoAcessos('')
+  function redefinirSegundoFator(usuario: Usuario) {
+    if (!autenticado) return
+    setRedefinicao({ usuario, meios: [], seguiu: false, erro: '', enviando: false })
+  }
+
+  function alternarMeio(meio: MeioConferencia) {
+    setRedefinicao((atual) =>
+      atual ? { ...atual, erro: '', meios: atual.meios.includes(meio) ? atual.meios.filter((m) => m !== meio) : [...atual.meios, meio] } : atual
+    )
+  }
+
+  // ASVS 6.4.4: o botao so funciona com DOIS meios de conferencia marcados e a
+  // confirmacao do procedimento; o servidor confere de novo e registra na
+  // auditoria quais meios foram usados (sem documento nem dado pessoal).
+  async function confirmarRedefinicao() {
+    if (!redefinicao || redefinicao.enviando || redefinicao.meios.length < 2 || !redefinicao.seguiu) return
+    const { usuario, meios } = redefinicao
+    setRedefinicao({ ...redefinicao, enviando: true, erro: '' })
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/redefinir-segundo-fator`, {
         method: 'POST',
         credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ meios, procedimento_seguido: true }),
       })
       if (response.status === 401) {
         router.push('/login')
@@ -323,12 +345,14 @@ export default function UsuariosPage() {
       }
       if (!response.ok) {
         const dados = await response.json().catch(() => ({}))
-        setAvisoAcessos(typeof dados?.detail === 'string' ? dados.detail : tSF('erroGenerico'))
+        const msg = typeof dados?.detail === 'string' ? dados.detail : tSF('erroGenerico')
+        setRedefinicao((atual) => (atual ? { ...atual, enviando: false, erro: msg } : atual))
         return
       }
+      setRedefinicao(null)
       setAvisoAcessos(tSF('redefinido', { nome: usuario.nome }))
     } catch {
-      setAvisoAcessos(tSF('erroGenerico'))
+      setRedefinicao((atual) => (atual ? { ...atual, enviando: false, erro: tSF('erroGenerico') } : atual))
     }
   }
 
@@ -1081,6 +1105,59 @@ export default function UsuariosPage() {
               className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
             >
               {confirmacao.botao}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {redefinicao && (
+        <Modal onFechar={() => setRedefinicao(null)} fecharRotulo={t('fechar')}>
+          <h2 className="mb-4 text-lg font-semibold text-slate-100">{tSF('redefinirTitulo', { nome: redefinicao.usuario.nome })}</h2>
+          <p className="mb-3 text-sm text-slate-400">{tSF('redefinirExplicacao')}</p>
+          <fieldset className="mb-3 space-y-2">
+            <legend className="mb-1 text-sm font-medium text-slate-200">{tSF('meiosLegenda')}</legend>
+            {MEIOS_CONFERENCIA.map((meio) => (
+              <label key={meio} className="flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={redefinicao.meios.includes(meio)}
+                  onChange={() => alternarMeio(meio)}
+                />
+                {tSF(`meio_${meio}` as Parameters<typeof tSF>[0])}
+              </label>
+            ))}
+          </fieldset>
+          <label className="mb-3 flex items-start gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={redefinicao.seguiu}
+              onChange={(e) => setRedefinicao({ ...redefinicao, seguiu: e.target.checked, erro: '' })}
+            />
+            {tSF('procedimentoSeguido')}
+          </label>
+
+          {redefinicao.erro && (
+            <p className="mb-3 text-sm text-red-400" role="alert">
+              {redefinicao.erro}
+            </p>
+          )}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setRedefinicao(null)}
+              className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
+            >
+              {t('cancelar')}
+            </button>
+            <button
+              type="button"
+              onClick={confirmarRedefinicao}
+              disabled={redefinicao.enviando || redefinicao.meios.length < 2 || !redefinicao.seguiu}
+              className="rounded-md bg-amber-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-600 disabled:opacity-60"
+            >
+              {t('simRedefinir')}
             </button>
           </div>
         </Modal>
