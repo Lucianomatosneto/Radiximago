@@ -2229,7 +2229,15 @@
     "redefinir": "Redefinir 2 etapas",
     "confirmarRedefinir": "Redefinir o login em duas etapas de {nome}? Confirme antes a identidade da pessoa (pessoalmente ou pelo e-mail institucional). Os acessos dela serão encerrados e ela cadastrará o aplicativo de novo.",
     "redefinido": "Login em duas etapas de {nome} redefinido.",
-    "codigosTrocados": "Por segurança, seus códigos de recuperação antigos foram substituídos por códigos mais longos. O aplicativo do celular continua valendo normalmente."
+    "codigosTrocados": "Por segurança, seus códigos de recuperação antigos foram substituídos por códigos mais longos. O aplicativo do celular continua valendo normalmente.",
+    "redefinirTitulo": "Redefinir as 2 etapas de {nome}",
+    "redefinirExplicacao": "Os acessos dela serão encerrados e ela cadastrará o aplicativo de novo. Antes, confira a identidade da pessoa pelo procedimento do documento de segurança (seção 3.4.1). Marque os DOIS meios que você usou.",
+    "meiosLegenda": "Meios usados para conferir a identidade (marque pelo menos dois)",
+    "meio_email_cadastrado": "Resposta vinda do e-mail cadastrado na conta",
+    "meio_presencial": "Conversa presencial com documento com foto",
+    "meio_videochamada": "Videochamada com documento com foto",
+    "meio_responsavel_academico": "Confirmação escrita do responsável acadêmico (e-mail institucional dele)",
+    "procedimentoSeguido": "Confirmo que segui o procedimento de conferência de identidade. Não guardei cópia de documentos."
   },
   "Prancha": {
     "botao": "Prancha",

@@ -169,14 +169,14 @@ O requisito pede que, quando alguém perde o segundo fator, a identidade seja co
    - **e** um segundo meio independente: conversa **presencial** ou por **videochamada**, com documento com foto, **ou** confirmação por escrito do **responsável acadêmico** da pessoa (orientador, coordenador ou chefia), pelo e-mail institucional dele.
 4. **Nunca** se redefine o segundo fator só com um e-mail, uma ligação ou uma mensagem de aplicativo, nem a pedido de terceiros, nem com "urgência" alegada. Pressa é um sinal comum de golpe.
 5. **Prazo:** até **2 dias úteis** depois de concluída a conferência. Se a conferência não fechar, o pedido é recusado e a pessoa é avisada pelo e-mail cadastrado.
-6. **Execução:** tela Usuários → "Redefinir 2 etapas". O sistema apaga o cadastro do aplicativo e os códigos, **encerra todas as sessões** da pessoa e registra `segundo_fator_redefinido_pelo_admin` (quem fez, para quem, quando, de onde). No próximo login, se o perfil exige, a pessoa cadastra o aplicativo de novo.
+6. **Execução:** tela Usuários → "Redefinir 2 etapas". O sistema apaga o cadastro do aplicativo e os códigos, **encerra todas as sessões** da pessoa e registra `segundo_fator_redefinido_pelo_admin` (quem fez, para quem, quando, de onde **e quais meios de conferência foram usados**). No próximo login, se o perfil exige, a pessoa cadastra o aplicativo de novo.
 7. **Registro da conferência:** o administrador anota, fora do sistema e **sem cópia de documentos**, data, os dois meios usados e quem confirmou, e guarda junto da mensagem de pedido. Não se guarda foto nem número de documento (LGPD: só o necessário).
 
-**Lacuna do sistema (não implementada; depende de decisão do responsável):** a auditoria registra **que** o segundo fator foi redefinido, mas não **como** a identidade foi conferida. Proposta mínima: ao clicar em "Redefinir 2 etapas", o administrador escolhe os dois meios usados (lista fechada: e-mail cadastrado, presencial, videochamada, responsável acadêmico) e confirma que seguiu este procedimento. A escolha vai para o campo de detalhes da auditoria, sem dados de documento, e o botão só funciona com dois meios marcados. Com isso, o item 6.4.4 pode passar de "inconclusivo" a "aprovado" no próximo reteste.
+**Registro da conferência no sistema (implementado em 12/11/2026, ASVS 6.4.4):** ao clicar em "Redefinir 2 etapas", o administrador escolhe, em uma **lista fechada**, os meios que usou (e-mail cadastrado, presencial, videochamada, responsável acadêmico) e confirma que seguiu este procedimento. O botão só funciona com **dois meios diferentes** marcados, e o servidor **confere de novo** (recusa com erro 422 se vier menos de dois, repetidos, fora da lista, ou sem a confirmação). A auditoria `segundo_fator_redefinido_pelo_admin` passa a guardar **quais meios** foram usados, sem campo de texto livre, sem documento e sem dado pessoal. O roteiro do servidor (`redefinir_segundo_fator.py`, para o próprio administrador) segue só o procedimento escrito. **Limite:** o sistema registra o que o administrador declarou, e não consegue provar que a conferência de fato aconteceu; por isso o passo 7 (anotação fora do sistema) continua valendo.
 
 **Limite declarado:** como é **parcial** (estudantes, professores e pesquisadores podem entrar só com a senha), o item 6.3.3 continua **reprovado** na matriz. A escolha foi do responsável, para não exigir celular de estudantes, que só veem imagens já anonimizadas e aprovadas.
 
-Testes: `tests/test_segundo_fator.py` (11 testes) e `tests/test_mfa_codigos_fortes.py` (códigos de recuperação e janela do código).
+Testes: `tests/test_segundo_fator.py` (18 testes, 6 deles da conferência de identidade) e `tests/test_mfa_codigos_fortes.py` (códigos de recuperação e janela do código).
 
 **Melhoria planejada:** bloqueio progressivo por conta.
 
@@ -341,6 +341,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.22 | 12/11/2026 | "Redefinir 2 etapas" exige dois meios de conferência de identidade (lista fechada) e registra quais na auditoria (3.4.1, ASVS 6.4.4) |
 | 1.21 | 12/11/2026 | Procedimento de conferência de identidade quando o segundo fator é perdido (3.4.1, ASVS 6.4.4) e lacuna do registro na auditoria |
 | 1.20 | 12/11/2026 | OHIF: `frame-ancestors` só para as telas do Radix e origem das mensagens vinda da configuração (`RADIX_ORIGEM_CONFIAVEL`), ASVS 3.4.6 e 3.5.5 (seção 5.1) |
 | 1.19 | 12/11/2026 | Login em duas etapas (3.4): códigos de recuperação com ~119 bits em Argon2id (ASVS 6.5.2), antigos invalidados e trocados no próximo login; código do aplicativo só no intervalo do momento, `MFA_TOTP_JANELA` (ASVS 6.5.5) |

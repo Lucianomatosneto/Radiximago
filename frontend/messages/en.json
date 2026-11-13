@@ -2229,7 +2229,15 @@
     "redefinir": "Reset 2-step",
     "confirmarRedefinir": "Reset {nome}'s two-step login? Confirm the person's identity first (in person or via institutional email). Their sessions will be closed and they will set up the app again.",
     "redefinido": "{nome}'s two-step login was reset.",
-    "codigosTrocados": "For security, your old recovery codes were replaced with longer ones. Your authenticator app keeps working as before."
+    "codigosTrocados": "For security, your old recovery codes were replaced with longer ones. Your authenticator app keeps working as before.",
+    "redefinirTitulo": "Reset {nome}'s two-step login",
+    "redefinirExplicacao": "Their sessions will be closed and they will set up the app again. First, verify the person's identity following the security document procedure (section 3.4.1). Tick the TWO means you used.",
+    "meiosLegenda": "Means used to verify identity (tick at least two)",
+    "meio_email_cadastrado": "Reply from the email registered on the account",
+    "meio_presencial": "In-person conversation with photo ID",
+    "meio_videochamada": "Video call with photo ID",
+    "meio_responsavel_academico": "Written confirmation from the academic supervisor (their institutional email)",
+    "procedimentoSeguido": "I confirm I followed the identity verification procedure. I did not keep copies of documents."
   },
   "Prancha": {
     "botao": "Plate",
