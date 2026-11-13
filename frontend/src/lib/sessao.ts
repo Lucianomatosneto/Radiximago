@@ -23,3 +23,20 @@ export async function obterSessaoAtual(): Promise<SessaoUsuario | null> {
     return null
   }
 }
+
+// Codigos que o servidor manda (403) enquanto a pessoa LOGADA ainda nao
+// aceitou o termo de ciencia desta sessao ou a versao atual dos Termos de
+// Uso (backend: termo_ciencia.py e termos_uso.py, CODIGO_PENDENTE).
+export const CODIGOS_TERMO_PENDENTE = ['termo_ciencia_pendente', 'termos_uso_pendentes']
+
+/** A recusa (403) e so "falta aceitar o termo"? Nesse caso a pessoa continua
+ * logada: a janela do termo aparece e a tela nao deve mandar para o login. */
+export async function termoPendente(resposta: Response): Promise<boolean> {
+  if (resposta.status !== 403) return false
+  try {
+    const dados = await resposta.clone().json()
+    return CODIGOS_TERMO_PENDENTE.includes(dados?.detail)
+  } catch {
+    return false
+  }
+}
