@@ -13,6 +13,7 @@ import Topbar from '../../components/Topbar'
 import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
 import { useConfirmacao } from '../../components/useConfirmacao'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS = ['professor', 'curador', 'administrador']
@@ -31,6 +32,7 @@ async function lerErro(r: Response, padrao: string) {
 export default function GruposPage() {
   const router = useRouter()
   const t = useTranslations('Grupos')
+  const tComum = useTranslations('Comum')
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const [pronto, setPronto] = useState(false)
   const [grupos, setGrupos] = useState<Grupo[]>([])
@@ -83,12 +85,16 @@ export default function GruposPage() {
     e.preventDefault()
     if (!editando) return
     setErro('')
-    const r = await fetch(`${API}/grupos${editando.id ? `/${editando.id}` : ''}`, {
+    const r = await fetchOuNulo(`${API}/grupos${editando.id ? `/${editando.id}` : ''}`, {
       method: editando.id ? 'PUT' : 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nome, membros_ids: membros.map((m) => m.id) }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erro')))
       return
@@ -106,7 +112,11 @@ export default function GruposPage() {
       cancelar: t('cancelar'),
     })
     if (!sim) return
-    const r = await fetch(`${API}/grupos/${g.id}`, { method: 'DELETE', credentials: 'include' })
+    const r = await fetchOuNulo(`${API}/grupos/${g.id}`, { method: 'DELETE', credentials: 'include' })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) setErro(await lerErro(r, t('erro')))
     else setAviso(t('apagado'))
     void carregar()

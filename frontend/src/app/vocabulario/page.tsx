@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 // VOCABULARIO CONTROLADO (evolutivo, sempre com uma pessoa aprovando):
 // 1. "Termos livres mais usados": textos do "Outro" que se repetem;
@@ -115,7 +116,7 @@ export default function VocabularioPage() {
   async function promover() {
     if (!promovendo) return
     setErro('')
-    const r = await fetch(`${API}/vocabulario/termos`, {
+    const r = await fetchOuNulo(`${API}/vocabulario/termos`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -129,6 +130,10 @@ export default function VocabularioPage() {
           .filter(Boolean),
       }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -141,12 +146,16 @@ export default function VocabularioPage() {
   }
 
   async function editar(termo: Termo, dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string; na_busca: boolean; nas_curadorias: boolean }>) {
-    const r = await fetch(`${API}/vocabulario/termos/${termo.id}`, {
+    const r = await fetchOuNulo(`${API}/vocabulario/termos/${termo.id}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(dados),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -158,12 +167,16 @@ export default function VocabularioPage() {
   async function adicionarSinonimo(termo: Termo) {
     const valor = (novoSinonimo[termo.id] ?? '').trim()
     if (!valor) return
-    const r = await fetch(`${API}/vocabulario/termos/${termo.id}/sinonimos`, {
+    const r = await fetchOuNulo(`${API}/vocabulario/termos/${termo.id}/sinonimos`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ sinonimo: valor }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -179,7 +192,11 @@ export default function VocabularioPage() {
   }
 
   async function removerSinonimo(termo: Termo, sinonimoId: number) {
-    const r = await fetch(`${API}/vocabulario/sinonimos/${sinonimoId}`, { method: 'DELETE', credentials: 'include' })
+    const r = await fetchOuNulo(`${API}/vocabulario/sinonimos/${sinonimoId}`, { method: 'DELETE', credentials: 'include' })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -191,7 +208,11 @@ export default function VocabularioPage() {
 
   async function abrirConferencia(termo: Termo) {
     setErro('')
-    const r = await fetch(`${API}/vocabulario/termos/${termo.id}/candidatas`, { credentials: 'include' })
+    const r = await fetchOuNulo(`${API}/vocabulario/termos/${termo.id}/candidatas`, { credentials: 'include' })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroCarregar')))
       return
@@ -203,12 +224,16 @@ export default function VocabularioPage() {
 
   async function vincular() {
     if (!conferindo || conferindo.marcadas.length === 0) return
-    const r = await fetch(`${API}/vocabulario/termos/${conferindo.termo.id}/vincular`, {
+    const r = await fetchOuNulo(`${API}/vocabulario/termos/${conferindo.termo.id}/vincular`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ curation_ids: conferindo.marcadas }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return

@@ -8,6 +8,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const PERFIS = ['administrador', 'curador', 'professor', 'estudante', 'pesquisador', 'suporte'] as const
 
@@ -249,10 +250,14 @@ export default function UsuariosPage() {
     // M1 (01/11/2026): bloquear pede confirmacao dizendo quem e o que acontece
     if (!usuario.bloqueado && !(await pedirConfirmacao(t('confirmarBloquear', { nome: usuario.nome, email: usuario.email }), t('simBloquear')))) return
     setAvisoAcessos('')
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
+    const response = await fetchOuNulo(`${process.env.NEXT_PUBLIC_API_URL}/users/${usuario.id}/block`, {
       method: 'PATCH',
       credentials: 'include',
     })
+    if (!response) {
+      setAvisoAcessos(tComum('semConexao'))
+      return
+    }
 
     if (response.status === 401) {
       router.push('/login')

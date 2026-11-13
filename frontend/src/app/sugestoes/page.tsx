@@ -9,6 +9,7 @@ import EstadoVazio from '../../components/EstadoVazio'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 // SUGESTOES DE MELHORIA (30/10/2026) - qualquer usuario logado envia; o
 // nome e o perfil de quem enviou sao gravados pelo servidor, a partir do
@@ -60,6 +61,7 @@ function dataHora(iso: string | null) {
 export default function SugestoesPage() {
   const router = useRouter()
   const t = useTranslations('Sugestoes')
+  const tComum = useTranslations('Comum')
   const tPerfil = useTranslations('Sugestoes.perfis')
   const [sessao, setSessao] = useState<SessaoUsuario | null>(null)
   const [texto, setTexto] = useState('')
@@ -133,12 +135,16 @@ export default function SugestoesPage() {
       setErro(t('motivoObrigatorio'))
       return
     }
-    const r = await fetch(`${API}/sugestoes/${s.id}`, {
+    const r = await fetchOuNulo(`${API}/sugestoes/${s.id}`, {
       method: 'PATCH',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ andamento, motivo: motivo || null }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroAndamento')))
       return

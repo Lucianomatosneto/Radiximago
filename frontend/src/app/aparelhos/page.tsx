@@ -13,6 +13,7 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { useConfirmacao } from '../../components/useConfirmacao'
 import { obterSessaoAtual } from '../../lib/sessao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS = ['administrador', 'suporte']
@@ -49,6 +50,7 @@ async function lerErro(r: Response, padrao: string) {
 export default function AparelhosPage() {
   const router = useRouter()
   const t = useTranslations('Aparelhos')
+  const tComum = useTranslations('Comum')
   const locale = useLocale()
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const [pronto, setPronto] = useState(false)
@@ -103,7 +105,7 @@ export default function AparelhosPage() {
     e.preventDefault()
     if (!form) return
     setErro('')
-    const r = await fetch(`${API}/aparelhos${form.id ? `/${form.id}` : ''}`, {
+    const r = await fetchOuNulo(`${API}/aparelhos${form.id ? `/${form.id}` : ''}`, {
       method: form.id ? 'PUT' : 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -111,6 +113,10 @@ export default function AparelhosPage() {
         nome: form.nome, unidade: form.unidade, aet: form.aet, ip: form.ip, porta: Number(form.porta) || 0,
       }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -131,9 +137,13 @@ export default function AparelhosPage() {
       if (!sim) return
     }
     setErro('')
-    const r = await fetch(`${API}/aparelhos/${a.id}/${a.liberado ? 'bloquear' : 'liberar'}`, {
+    const r = await fetchOuNulo(`${API}/aparelhos/${a.id}/${a.liberado ? 'bloquear' : 'liberar'}`, {
       method: 'POST', credentials: 'include',
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
