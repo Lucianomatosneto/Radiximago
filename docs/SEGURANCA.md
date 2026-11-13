@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.20 — 12/11/2026 |
+| Versão do documento | 1.21 — 12/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -157,6 +157,22 @@ Proteções:
 - **8 códigos de recuperação** de uso único, mostrados uma vez no cadastro. Podem ser gerados de novo em "Meus acessos". Cada um tem **24 caracteres** em 6 grupos (cerca de 119 bits) e fica no banco só como resumo **Argon2id com sal**, o mesmo das senhas (ASVS 6.5.2, desde 12/11/2026). Os códigos antigos (8 caracteres, resumo SHA-256) foram **invalidados** pela migração `f1a3c5e7b9d2`: no próximo login com o aplicativo, o sistema gera os novos, mostra uma vez e registra `codigos_recuperacao_regenerados`;
 - sem eles, o **administrador** usa "Redefinir 2 etapas" na tela Usuários, depois de confirmar a identidade da pessoa por outro meio;
 - se quem perdeu foi o próprio administrador, existe um roteiro no servidor: `docker compose exec radix-api python redefinir_segundo_fator.py`.
+
+#### 3.4.1 Perdeu o celular e os códigos: como confirmar a identidade (ASVS 6.4.4)
+
+O requisito pede que, quando alguém perde o segundo fator, a identidade seja conferida com a **mesma força** do cadastro. Procedimento a seguir (redigido em 12/11/2026):
+
+1. **Quem pede:** a própria pessoa, nunca um colega em nome dela.
+2. **Quem autoriza e executa:** um **administrador** do Radix, que **não** pode ser a própria pessoa. Para o próprio administrador, quem executa é quem administra o servidor, pelo roteiro `redefinir_segundo_fator.py`, seguindo os mesmos passos de conferência.
+3. **Como confirmar a identidade (os dois passos são obrigatórios):**
+   - a pessoa escreve **a partir do e-mail cadastrado na conta** (o e-mail da instituição dela). O administrador **responde para esse endereço**, e não para outro que a mensagem indicar, pedindo a confirmação;
+   - **e** um segundo meio independente: conversa **presencial** ou por **videochamada**, com documento com foto, **ou** confirmação por escrito do **responsável acadêmico** da pessoa (orientador, coordenador ou chefia), pelo e-mail institucional dele.
+4. **Nunca** se redefine o segundo fator só com um e-mail, uma ligação ou uma mensagem de aplicativo, nem a pedido de terceiros, nem com "urgência" alegada. Pressa é um sinal comum de golpe.
+5. **Prazo:** até **2 dias úteis** depois de concluída a conferência. Se a conferência não fechar, o pedido é recusado e a pessoa é avisada pelo e-mail cadastrado.
+6. **Execução:** tela Usuários → "Redefinir 2 etapas". O sistema apaga o cadastro do aplicativo e os códigos, **encerra todas as sessões** da pessoa e registra `segundo_fator_redefinido_pelo_admin` (quem fez, para quem, quando, de onde). No próximo login, se o perfil exige, a pessoa cadastra o aplicativo de novo.
+7. **Registro da conferência:** o administrador anota, fora do sistema e **sem cópia de documentos**, data, os dois meios usados e quem confirmou, e guarda junto da mensagem de pedido. Não se guarda foto nem número de documento (LGPD: só o necessário).
+
+**Lacuna do sistema (não implementada; depende de decisão do responsável):** a auditoria registra **que** o segundo fator foi redefinido, mas não **como** a identidade foi conferida. Proposta mínima: ao clicar em "Redefinir 2 etapas", o administrador escolhe os dois meios usados (lista fechada: e-mail cadastrado, presencial, videochamada, responsável acadêmico) e confirma que seguiu este procedimento. A escolha vai para o campo de detalhes da auditoria, sem dados de documento, e o botão só funciona com dois meios marcados. Com isso, o item 6.4.4 pode passar de "inconclusivo" a "aprovado" no próximo reteste.
 
 **Limite declarado:** como é **parcial** (estudantes, professores e pesquisadores podem entrar só com a senha), o item 6.3.3 continua **reprovado** na matriz. A escolha foi do responsável, para não exigir celular de estudantes, que só veem imagens já anonimizadas e aprovadas.
 
@@ -325,6 +341,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.21 | 12/11/2026 | Procedimento de conferência de identidade quando o segundo fator é perdido (3.4.1, ASVS 6.4.4) e lacuna do registro na auditoria |
 | 1.20 | 12/11/2026 | OHIF: `frame-ancestors` só para as telas do Radix e origem das mensagens vinda da configuração (`RADIX_ORIGEM_CONFIAVEL`), ASVS 3.4.6 e 3.5.5 (seção 5.1) |
 | 1.19 | 12/11/2026 | Login em duas etapas (3.4): códigos de recuperação com ~119 bits em Argon2id (ASVS 6.5.2), antigos invalidados e trocados no próximo login; código do aplicativo só no intervalo do momento, `MFA_TOTP_JANELA` (ASVS 6.5.5) |
 | 1.18 | 10/11/2026 | Foto de radiografia pelo celular (seção 6): janela de 5 minutos com comprovante de uso único (tipo próprio de token, não abre sessão), confirmação obrigatória, tarja antes do Orthanc; `/envios` só DICOM |
