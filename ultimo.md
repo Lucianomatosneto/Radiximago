@@ -1,12 +1,12 @@
 # Auditoria automática — 2026-11-13
 
-Commit analisado: `64fc706`
+Commit analisado: `d1fafdc`
 
 ## Testes
 
 | Suíte | Executados | Aprovados | Reprovados | Ignorados |
 |---|---|---|---|---|
-| Backend (suíte do projeto) | 615 | 615 | 0 | 0 |
+| Backend (suíte do projeto) | 651 | 651 | 0 | 0 |
 | Auditoria da API | 13 | 13 | 0 | 0 |
 | Frontend (Vitest) | 11 | 11 | 0 | 0 |
 
@@ -19,13 +19,13 @@ Commit analisado: `64fc706`
 
 ## Qualidade
 
-- Ruff: 68 ocorrência(s)
-- Mypy: Found 403 errors in 50 files (checked 82 source files)
-- ESLint: 6 erro(s), 22 aviso(s)
+- Ruff: 4 ocorrência(s)
+- Mypy: Found 72 errors in 30 files (checked 82 source files)
+- ESLint: 0 erro(s), 2 aviso(s)
 
 ## Desempenho
 
-- k6: p95 = 4.5 ms; falhas = 0.00%
-- Lighthouse (login): Performance 63, Accessibility 100, Best Practices 100, SEO 100
+- k6: p95 = 8.6 ms; falhas = 0.00%
+- Lighthouse (login): Performance 62, Accessibility 100, Best Practices 100, SEO 100
 
 > Resultados automáticos. Problemas só são considerados resolvidos após reteste na Auditoria.
