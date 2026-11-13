@@ -17,6 +17,7 @@ import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { BotaoComPrancha } from '../../components/impressao/MenuPrancha'
 import { MenuSalvarComo } from '../../components/impressao/MenuSalvar'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
+import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import SecaoEnvios from '../../components/envios/SecaoEnvios'
@@ -528,7 +529,7 @@ export default function MinhasImagensPage() {
                           </div>
 
                           {/* pintura das estruturas (por baixo das marcacoes) */}
-                          {pintura.visivel(id) && proporcao && (
+                          {pintura.visivel(id) && proporcaoValida(proporcao) && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
                                 className="relative max-h-full max-w-full"
@@ -539,7 +540,7 @@ export default function MinhasImagensPage() {
                             </div>
                           )}
 
-                          {mostrandoMarcacoes && proporcao && (
+                          {mostrandoMarcacoes && proporcaoValida(proporcao) && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
                                 className="relative max-h-full max-w-full"
