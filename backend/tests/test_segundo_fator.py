@@ -7,14 +7,13 @@ e curadoria; opcional para os demais (inclusive o professor).
 
 import re
 
-import pyotp
 from fastapi.testclient import TestClient
 
 from app.main import app
 from app.modules import mfa
 from app.modules.audit_logs import AuditLog
 from app.modules.users import User, UserRole
-from tests.conftest import SENHA_TESTE, cabecalho_auth, codigo_atual_do_usuario, obter_token
+from tests.conftest import SENHA_TESTE, cabecalho_auth, codigo_atual_do_usuario, codigo_totp, obter_token
 
 
 MEIOS_OK = {"meios": ["email_cadastrado", "videochamada"], "procedimento_seguido": True}
@@ -32,7 +31,7 @@ def _cadastrar_no_login(cliente: TestClient, email: str) -> tuple[str, list[str]
     """1o login de perfil obrigatorio: cadastra o aplicativo; devolve (segredo, codigos de recuperacao)."""
     desafio = _senha(cliente, email).json()["desafio"]
     segredo = cliente.post("/auth/login/cadastro-mfa/iniciar", json={"desafio": desafio}).json()["segredo"]
-    r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": pyotp.TOTP(segredo).now()})
+    r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": codigo_totp(segredo)})
     assert r.status_code == 200, r.text
     return segredo, r.json()["codigos_recuperacao"]
 
@@ -66,7 +65,7 @@ def test_cadastro_no_primeiro_login_com_qr_code(criar_usuario, db):
     # codigo errado nao ativa
     r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": "000000"})
     assert r.status_code == 401
-    r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": pyotp.TOTP(inicio["segredo"]).now()})
+    r = cliente.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": desafio, "codigo": codigo_totp(inicio["segredo"])})
     assert r.status_code == 200 and "access_token" in r.json()
     codigos = r.json()["codigos_recuperacao"]
     # 24 caracteres em 6 grupos de 4 (~119 bits, ASVS 6.5.2 - desde 12/11/2026)
@@ -97,7 +96,7 @@ def test_6_5_1_codigo_vale_uma_vez_e_desafio_tambem(criar_usuario):
     cliente = _novo_cliente()
     desafio = _senha(cliente, suporte.email).json()["desafio"]
     # o codigo usado no cadastro (mesma janela de 30 s) nao entra de novo
-    r = cliente.post("/auth/login/segundo-fator", json={"desafio": desafio, "codigo": pyotp.TOTP(segredo).now()})
+    r = cliente.post("/auth/login/segundo-fator", json={"desafio": desafio, "codigo": codigo_totp(segredo)})
     assert r.status_code == 401
     codigo = codigo_atual_do_usuario(suporte.email)  # "proxima janela" simulada
     assert cliente.post("/auth/login/segundo-fator", json={"desafio": desafio, "codigo": codigo}).status_code == 200
@@ -138,7 +137,7 @@ def test_opcional_para_estudante_liga_e_desliga(criar_usuario):
     cab = cabecalho_auth(obter_token(cliente, estudante.email))
     assert cliente.get("/auth/mfa", headers=cab).json() == {"ativo": False, "obrigatorio": False, "codigos_recuperacao_restantes": 0}
     segredo = cliente.post("/auth/mfa/iniciar", headers=cab).json()["segredo"]
-    r = cliente.post("/auth/mfa/confirmar", json={"codigo": pyotp.TOTP(segredo).now()}, headers=cab)
+    r = cliente.post("/auth/mfa/confirmar", json={"codigo": codigo_totp(segredo)}, headers=cab)
     assert r.status_code == 200 and len(r.json()["codigos_recuperacao"]) == 8
     # a partir de agora o login dele pede o codigo
     assert _senha(_novo_cliente(), estudante.email).json()["segundo_fator"] == "codigo"
