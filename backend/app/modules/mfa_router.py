@@ -30,7 +30,8 @@ from app.modules.users import User
 router = APIRouter(prefix="/auth", tags=["Login em duas etapas"])
 
 # codigo de 6 numeros ou de recuperacao (XXXX-XXXX)
-Codigo = Field(min_length=6, max_length=12)
+# 6 numeros do aplicativo ou codigo de recuperacao (24 simbolos em 6 grupos)
+Codigo = Field(min_length=6, max_length=40)
 
 
 class PedidoDesafio(BaseModel):
@@ -92,9 +93,19 @@ def login_segundo_fator(request: Request, response: Response, dados: PedidoDesaf
     if recuperacao:
         _registrar(db, usuario, "codigo_recuperacao_usado", "sucesso",
                    f"Restam {len(usuario.codigos_recuperacao or [])} código(s) de recuperação.")
+    # codigos antigos invalidados (ASVS 6.5.2, 12/11/2026): gera os novos
+    # agora e mostra UMA vez, como no primeiro cadastro
+    codigos_novos = None
+    if usuario.codigos_recuperacao_trocar:
+        codigos_novos = mfa.gerar_codigos_recuperacao(usuario)
+        _registrar(db, usuario, "codigos_recuperacao_regenerados", "sucesso",
+                   "Códigos antigos invalidados por segurança; novos gerados no login.")
     resposta = concluir_login(request, response, db, usuario,
                               "com segundo fator (código de recuperação)" if recuperacao else "com segundo fator")
     resposta["codigos_recuperacao_restantes"] = len(usuario.codigos_recuperacao or [])
+    if codigos_novos:
+        resposta["codigos_recuperacao"] = codigos_novos
+        resposta["codigos_recuperacao_trocados"] = True
     return resposta
 
 
