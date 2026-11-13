@@ -102,7 +102,6 @@ const campoInputDegrade =
 export default function FichaCuradoriaForm({
   form,
   onChange,
-  statusFicha,
   erro,
   rascunhoSalvo,
 }: {
