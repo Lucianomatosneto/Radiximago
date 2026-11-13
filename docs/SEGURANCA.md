@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.18 — 10/11/2026 |
+| Versão do documento | 1.19 — 12/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -147,20 +147,20 @@ Como funciona:
 2. **código do aplicativo** (6 números, troca a cada 30 s) → a sessão é aberta.
 
 Proteções:
-- cada código vale **uma vez**;
+- cada código vale **uma vez** e só no intervalo de 30 s do momento (ASVS 6.5.5). A configuração `MFA_TOTP_JANELA` permite aceitar também o código anterior (até 60 s) para celular com relógio atrasado; padrão **0**. O código do intervalo seguinte nunca é aceito;
 - cada "vale" aceita no máximo **5 tentativas** e é usado uma vez só;
 - as rotas têm limite de 10 pedidos por minuto;
 - quem já tem aplicativo cadastrado **não** cadastra outro só com a senha (impede o invasor de trocar o celular);
 - o segredo do aplicativo fica **cifrado** no banco (`CRIPTOGRAFIA.md`).
 
 **Celular perdido:**
-- **8 códigos de recuperação** de uso único, mostrados uma vez no cadastro. Podem ser gerados de novo em "Meus acessos";
+- **8 códigos de recuperação** de uso único, mostrados uma vez no cadastro. Podem ser gerados de novo em "Meus acessos". Cada um tem **24 caracteres** em 6 grupos (cerca de 119 bits) e fica no banco só como resumo **Argon2id com sal**, o mesmo das senhas (ASVS 6.5.2, desde 12/11/2026). Os códigos antigos (8 caracteres, resumo SHA-256) foram **invalidados** pela migração `f1a3c5e7b9d2`: no próximo login com o aplicativo, o sistema gera os novos, mostra uma vez e registra `codigos_recuperacao_regenerados`;
 - sem eles, o **administrador** usa "Redefinir 2 etapas" na tela Usuários, depois de confirmar a identidade da pessoa por outro meio;
 - se quem perdeu foi o próprio administrador, existe um roteiro no servidor: `docker compose exec radix-api python redefinir_segundo_fator.py`.
 
 **Limite declarado:** como é **parcial** (estudantes, professores e pesquisadores podem entrar só com a senha), o item 6.3.3 continua **reprovado** na matriz. A escolha foi do responsável, para não exigir celular de estudantes, que só veem imagens já anonimizadas e aprovadas.
 
-Testes: `tests/test_segundo_fator.py` (11 testes).
+Testes: `tests/test_segundo_fator.py` (11 testes) e `tests/test_mfa_codigos_fortes.py` (códigos de recuperação e janela do código).
 
 **Melhoria planejada:** bloqueio progressivo por conta.
 
@@ -324,6 +324,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.19 | 12/11/2026 | Login em duas etapas (3.4): códigos de recuperação com ~119 bits em Argon2id (ASVS 6.5.2), antigos invalidados e trocados no próximo login; código do aplicativo só no intervalo do momento, `MFA_TOTP_JANELA` (ASVS 6.5.5) |
 | 1.18 | 10/11/2026 | Foto de radiografia pelo celular (seção 6): janela de 5 minutos com comprovante de uso único (tipo próprio de token, não abre sessão), confirmação obrigatória, tarja antes do Orthanc; `/envios` só DICOM |
 | 1.17 | 08/11/2026 | Anexos da curadoria (seção 6): regravados sem metadados, fora da pasta pública, só com login |
 | 1.16 | 08/11/2026 | Prancha a outras pessoas só por link com login (`/prancha/enviar`, `/prancha/recebidas`); quem não é o destinatário recebe 404 |
