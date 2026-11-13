@@ -19,7 +19,6 @@ import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impres
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
-import { corCartaoTipoRadiografia } from '../../lib/coresAchados'
 import { obterSessaoAtual } from '../../lib/sessao'
 import { TIPOS_ACHADO, REGIOES_ANATOMICAS } from '../../lib/achados'
 import { rotuloErro } from '../../lib/errosTecnicos'
@@ -47,16 +46,6 @@ const OPCOES_TIPO_RADIOGRAFIA = [
   { valor: 'interproximal', chave: 'interproximal' },
   { valor: 'oclusal', chave: 'oclusal' },
   { valor: 'tomografia', chave: 'tomografia' },
-]
-
-const OPCOES_ARCADA = [
-  { valor: 'superior', chave: 'superior' },
-  { valor: 'inferior', chave: 'inferior' },
-]
-
-const OPCOES_LADO = [
-  { valor: 'direito', chave: 'direito' },
-  { valor: 'esquerdo', chave: 'esquerdo' },
 ]
 
 const OPCOES_GENERO = [
@@ -257,7 +246,6 @@ function PesquisaConteudo() {
   // criados na Fase 3 pra Curadoria (Curadoria.achadosEstruturados/
   // erroTecnico) - mesmo vocabulario, sem duplicar traducao.
   const tAchadosEstruturados = useTranslations('Curadoria.achadosEstruturados')
-  const tErroTecnico = useTranslations('Curadoria.erroTecnico')
   // Mesmo namespace ja usado por PainelAchadosRadiografia.tsx pros 26
   // valores de achado/alteracao observada - antes rotularTipoAchado
   // devolvia um rotulo fixo em portugues aqui (bug de i18n), agora usa
@@ -265,8 +253,6 @@ function PesquisaConteudo() {
   const tAlteracoesItens = useTranslations('AlteracoesObservadas.itens')
   const traduzirTipoRadiografia = (chave: string) => t(`opcoes.tipoRadiografia.${chave}`)
   const traduzirGenero = (chave: string) => t(`opcoes.genero.${chave}`)
-  const traduzirArcada = (chave: string) => t(`opcoes.arcada.${chave}`)
-  const traduzirLado = (chave: string) => t(`opcoes.lado.${chave}`)
   const traduzirQualidadeTecnica = (chave: string) => t(`opcoes.qualidadeTecnica.${chave}`)
   const traduzirOrigem = (chave: string) => t(`opcoes.origem.${chave}`)
 
@@ -406,7 +392,6 @@ function PesquisaConteudo() {
           // sem o total geral, a tela continua funcionando normalmente
         })
     })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
