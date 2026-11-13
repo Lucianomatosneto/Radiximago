@@ -15,7 +15,6 @@ import enum
 
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     ForeignKey,
     Index,
@@ -27,6 +26,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from typing import Any
 
 from app.core.database import Base
 
@@ -196,60 +198,60 @@ DENTES_PERMANENTES = (
 class Curation(Base):
     __tablename__ = "curations"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
     # Imagem curada (referencia registrada na Fase 3)
-    orthanc_reference_id = Column(
+    orthanc_reference_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("orthanc_references.id"), nullable=False, index=True
     )
     orthanc_reference = relationship("OrthancReference", back_populates="curations")
 
     # Classificacao (valores controlados guardados como texto)
-    modalidade = Column(String(20), nullable=False, default="RX")
-    tipo_radiografia = Column(String(30), nullable=True)
-    dentes = Column(ARRAY(Integer), nullable=True)  # numeros FDI 11-48
-    idade_min = Column(Integer, nullable=True)
-    idade_max = Column(Integer, nullable=True)
-    genero = Column(String(15), nullable=True)
-    achado_principal = Column(String(40), nullable=True)
+    modalidade: Mapped[str] = mapped_column(String(20), nullable=False, default="RX")
+    tipo_radiografia: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    dentes: Mapped[list[int] | None] = mapped_column(ARRAY(Integer), nullable=True)  # numeros FDI 11-48
+    idade_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    idade_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    genero: Mapped[str | None] = mapped_column(String(15), nullable=True)
+    achado_principal: Mapped[str | None] = mapped_column(String(40), nullable=True)
     # Marcacoes desenhadas pelo curador sobre a miniatura estatica (nao o
     # OHIF, que roda em outra origem e nao tem como ser lido de volta) pra
     # indicar onde estao as lesoes. Lista de objetos, cada um com posicao
     # relativa (0.0 a 1.0 da largura/altura da imagem):
     # oval/retangulo: {id, tipo, x, y, largura, altura}
     # seta:           {id, tipo, x1, y1, x2, y2}
-    marcacoes = Column(JSONB, nullable=False, server_default="[]")
-    achados_detalhe = Column(Text, nullable=True)
-    alteracoes_observadas = Column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
+    marcacoes: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default="[]")
+    achados_detalhe: Mapped[str | None] = mapped_column(Text, nullable=True)
+    alteracoes_observadas: Mapped[list[str] | None] = mapped_column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
     # 01/11/2026 - REGIOES ANATOMICAS QUE A IMAGEM MOSTRA (RegiaoAnatomica),
     # independentes dos achados. Panoramica e tomografia cobrem varias
     # regioes: a Curadoria ja sugere as do tipo de exame
     # (achados.REGIOES_PADRAO_POR_EXAME) e o curador ajusta. None = ficha
     # antiga, nunca revisada: a busca usa o padrao do tipo de exame.
-    regioes_imagem = Column(ARRAY(String(30)), nullable=True)
-    qualidade_tecnica = Column(String(20), nullable=True)
-    dificuldade = Column(String(20), nullable=True)
-    descricao_didatica = Column(Text, nullable=True)
-    observacoes_internas = Column(Text, nullable=True)
+    regioes_imagem: Mapped[list[str] | None] = mapped_column(ARRAY(String(30)), nullable=True)
+    qualidade_tecnica: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    dificuldade: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    descricao_didatica: Mapped[str | None] = mapped_column(Text, nullable=True)
+    observacoes_internas: Mapped[str | None] = mapped_column(Text, nullable=True)
     # 08/11/2026: informacoes adicionais (texto livre do curador). NAO entra
     # na Pesquisa avancada; so aparece para quem abre a imagem, junto com os
     # anexos (anexos_curadoria.py)
-    informacoes_adicionais = Column(Text, nullable=True)
+    informacoes_adicionais: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Fluxo
-    status = Column(String(25), nullable=False, default="pendente", index=True)
-    anonimizacao_validada = Column(Boolean, nullable=False, default=False)
+    status: Mapped[str] = mapped_column(String(25), nullable=False, default="pendente", index=True)
+    anonimizacao_validada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Autoria e datas
-    curador_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    curador_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     # Etapa C (08/11/2026): ficha comecada pelo PROFESSOR como sugestao para o
     # curador. Enquanto `sugestao_enviada_em` estiver vazio e um rascunho so
     # dele; ao enviar, entra na fila do curador ja preenchida. So o curador
     # aprova (publica no banco geral).
-    sugerida_por_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    sugestao_enviada_em = Column(DateTime(timezone=True), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+    sugerida_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    sugestao_enviada_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
     # Classificacao odontologica estruturada (Fase 1) - ADITIVA, em
     # paralelo aos campos de classificacao acima (achado_principal,
@@ -265,16 +267,16 @@ class Curation(Base):
 class CurationHistory(Base):
     __tablename__ = "curation_history"
 
-    id = Column(Integer, primary_key=True, index=True)
-    curation_id = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("curations.id"), nullable=False, index=True
     )
-    usuario_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    acao = Column(String(50), nullable=False)  # criacao, aprovacao, descarte...
-    status_anterior = Column(String(25), nullable=True)
-    status_novo = Column(String(25), nullable=True)
-    justificativa = Column(Text, nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    usuario_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    acao: Mapped[str] = mapped_column(String(50), nullable=False)  # criacao, aprovacao, descarte...
+    status_anterior: Mapped[str | None] = mapped_column(String(25), nullable=True)
+    status_novo: Mapped[str | None] = mapped_column(String(25), nullable=True)
+    justificativa: Mapped[str | None] = mapped_column(Text, nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 # ---------------------------------------------------------------------
@@ -283,23 +285,23 @@ class CurationHistory(Base):
 class CurationReview(Base):
     __tablename__ = "curation_reviews"
 
-    id = Column(Integer, primary_key=True, index=True)
-    curation_id = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curation_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("curations.id"), nullable=False, index=True
     )
-    solicitante_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    motivo = Column(Text, nullable=False)  # justificativa obrigatoria (Bloco 4)
-    primeiro_parecer = Column(Text, nullable=True)
-    revisor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    parecer_revisor = Column(Text, nullable=True)
-    concordancia = Column(String(15), nullable=True)  # concorda / discorda
-    decisao_final = Column(String(25), nullable=True)
-    observacoes = Column(Text, nullable=True)
-    status = Column(String(20), nullable=False, default="solicitada")
+    solicitante_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    motivo: Mapped[str] = mapped_column(Text, nullable=False)  # justificativa obrigatoria (Bloco 4)
+    primeiro_parecer: Mapped[str | None] = mapped_column(Text, nullable=True)
+    revisor_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    parecer_revisor: Mapped[str | None] = mapped_column(Text, nullable=True)
+    concordancia: Mapped[str | None] = mapped_column(String(15), nullable=True)  # concorda / discorda
+    decisao_final: Mapped[str | None] = mapped_column(String(25), nullable=True)
+    observacoes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="solicitada")
     # avaliacao geral do revisor (ClassificacaoRevisao - escala tipo RADPEER)
-    classificacao = Column(String(30), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    respondido_em = Column(DateTime(timezone=True), nullable=True)
+    classificacao: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    respondido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     __table_args__ = (
         # No maximo uma review "em aberto" (solicitada ou respondida, ainda
@@ -329,17 +331,17 @@ class CurationReviewNote(Base):
     """
     __tablename__ = "curation_review_notes"
 
-    id = Column(Integer, primary_key=True, index=True)
-    review_id = Column(Integer, ForeignKey("curation_reviews.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    review_id: Mapped[int] = mapped_column(Integer, ForeignKey("curation_reviews.id"), nullable=False, index=True)
     # qual item da ficha (ver curation/segunda_opiniao.py, ITENS_REVISAVEIS)
-    item = Column(String(40), nullable=False)
-    avaliacao = Column(String(15), nullable=False)          # AvaliacaoItem
-    nota = Column(Text, nullable=True)                      # comentario do revisor
-    valor_sugerido = Column(JSONB, nullable=True)           # ex.: "panoramica", [11, 12]
-    situacao = Column(String(15), nullable=False, default="pendente")  # SituacaoAnotacao
-    resolvido_por = Column(Integer, ForeignKey("users.id"), nullable=True)
-    resolvido_em = Column(DateTime(timezone=True), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    item: Mapped[str] = mapped_column(String(40), nullable=False)
+    avaliacao: Mapped[str] = mapped_column(String(15), nullable=False)          # AvaliacaoItem
+    nota: Mapped[str | None] = mapped_column(Text, nullable=True)                      # comentario do revisor
+    valor_sugerido: Mapped[Any | None] = mapped_column(JSONB, nullable=True)           # ex.: "panoramica", [11, 12]
+    situacao: Mapped[str] = mapped_column(String(15), nullable=False, default="pendente")  # SituacaoAnotacao
+    resolvido_por: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    resolvido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (
         # uma anotacao por item em cada segunda opiniao
