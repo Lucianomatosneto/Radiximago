@@ -36,7 +36,7 @@ if not _banco_e_de_teste(_config.DATABASE_URL) and os.environ.get("RADIX_PERMITI
     )
 
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import text
@@ -303,10 +303,27 @@ def criar_solicitacao_acesso(db):
     db.commit()
 
 
+def codigo_totp(segredo: str) -> str:
+    """Codigo do aplicativo autenticador, sem cair na borda do intervalo.
+
+    O servidor so aceita o codigo do intervalo atual de 30 s (MFA_TOTP_JANELA=0).
+    Se o codigo fosse gerado nos ultimos 2 s do intervalo, ele poderia ser
+    conferido ja no intervalo seguinte e ser recusado (teste instavel). Aqui
+    espera-se o proximo intervalo quando faltar pouco - o celular de verdade
+    mostra o mesmo codigo ate o fim do intervalo."""
+    import time
+
+    import pyotp
+
+    restante = 30 - (time.time() % 30)
+    if restante < 2.5:
+        time.sleep(restante + 0.2)
+    return pyotp.TOTP(segredo).now()
+
+
 def codigo_atual_do_usuario(email: str) -> str:
     """Codigo do aplicativo autenticador da conta (o teste faz o papel do celular).
     Zera o "ultimo codigo usado" para o mesmo codigo valer em logins seguidos."""
-    import pyotp
 
     from app.modules import mfa
 
@@ -315,7 +332,7 @@ def codigo_atual_do_usuario(email: str) -> str:
         usuario = sessao.query(User).filter(User.email == email, User.excluido.is_(False)).first()
         usuario.totp_ultimo_passo = None
         sessao.commit()
-        return pyotp.TOTP(mfa.decifrar(usuario.totp_segredo_cifrado)).now()
+        return codigo_totp(mfa.decifrar(usuario.totp_segredo_cifrado))
     finally:
         sessao.close()
 
@@ -324,7 +341,6 @@ def completar_segundo_fator(client: TestClient, email: str, resposta):
     """Login em duas etapas (app/modules/mfa.py): perfis com poder recebem um
     desafio em vez da sessao. Aqui o teste cadastra o aplicativo (1o login)
     ou digita o codigo, como a pessoa faria na tela."""
-    import pyotp
 
     dados = resposta.json()
     if "segundo_fator" not in dados:
@@ -332,7 +348,7 @@ def completar_segundo_fator(client: TestClient, email: str, resposta):
     if dados["segundo_fator"] == "cadastro":
         cadastro = client.post("/auth/login/cadastro-mfa/iniciar", json={"desafio": dados["desafio"]})
         assert cadastro.status_code == 200, cadastro.text
-        codigo = pyotp.TOTP(cadastro.json()["segredo"]).now()
+        codigo = codigo_totp(cadastro.json()["segredo"])
         return client.post("/auth/login/cadastro-mfa/confirmar", json={"desafio": dados["desafio"], "codigo": codigo})
     return client.post("/auth/login/segundo-fator", json={"desafio": dados["desafio"], "codigo": codigo_atual_do_usuario(email)})
 
