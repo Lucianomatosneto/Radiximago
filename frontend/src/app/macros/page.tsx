@@ -10,6 +10,7 @@ import { CATEGORIAS_ALTERACOES } from '../../lib/alteracoesObservadas'
 import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
 import BuscaTermos from '../../components/pesquisa/BuscaTermos'
 import { DENTES_FDI, itensDoVocabulario, normalizarBusca, type ItemCatalogo, type TermoVocabularioApi } from '../../lib/catalogoTermos'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 // MACROS DA CURADORIA (frases prontas da equipe) + FRASES QUE A VOZ
 // APRENDEU. Uma macro preenche de uma vez descricao, achados, observacoes,
@@ -178,12 +179,16 @@ export default function MacrosPage() {
         origem: edicao.conteudo.origem || null,
       },
     }
-    const r = await fetch(edicao.id ? `${API}/macros/${edicao.id}` : `${API}/macros`, {
+    const r = await fetchOuNulo(edicao.id ? `${API}/macros/${edicao.id}` : `${API}/macros`, {
       method: edicao.id ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(corpo),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
       return
@@ -194,18 +199,26 @@ export default function MacrosPage() {
   }
 
   async function alternarAtiva(m: Macro) {
-    const r = await fetch(`${API}/macros/${m.id}`, {
+    const r = await fetchOuNulo(`${API}/macros/${m.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ ativo: !m.ativo }),
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (r.ok) void carregar()
     else setErro(await lerErro(r, t('erroSalvar')))
   }
 
   async function esquecer(f: Frase) {
-    const r = await fetch(`${API}/voz/frases/${f.id}`, { method: 'DELETE', credentials: 'include' })
+    const r = await fetchOuNulo(`${API}/voz/frases/${f.id}`, { method: 'DELETE', credentials: 'include' })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (r.ok) void carregar()
   }
 

@@ -236,7 +236,8 @@
   },
   "Comum": {
     "carregando": "Carregando...",
-    "pularConteudo": "Pular para o conteúdo"
+    "pularConteudo": "Pular para o conteúdo",
+    "semConexao": "Sem conexão com o servidor. Tente de novo."
   },
   "Sidebar": {
     "navegacao": "Navegação",

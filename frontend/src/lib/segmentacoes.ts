@@ -5,6 +5,9 @@
 // Backend: app/modules/segmentacoes.py e segmentacoes_router.py.
 
 import { dentesDoQuadrante } from './dentesFdi'
+import { fetchOuNulo } from './fetchSeguro'
+
+const SEM_CONEXAO = 'Sem conexão com o servidor. Tente de novo.'
 
 export interface Segmentacao {
   id: number
@@ -57,7 +60,8 @@ async function erroDaResposta(r: Response, padrao: string): Promise<Error> {
 }
 
 export async function listarSegmentacoes(curationId: number): Promise<Segmentacao[]> {
-  const r = await fetch(`${API}/segmentacoes/ficha/${curationId}`, { credentials: 'include', cache: 'no-store' })
+  const r = await fetchOuNulo(`${API}/segmentacoes/ficha/${curationId}`, { credentials: 'include', cache: 'no-store' })
+  if (!r) throw new Error(SEM_CONEXAO)
   if (!r.ok) throw await erroDaResposta(r, 'Não foi possível carregar a pintura.')
   return (await r.json()).itens as Segmentacao[]
 }
@@ -66,12 +70,13 @@ export async function criarSegmentacao(
   curationId: number,
   dados: { nome: string; dente: number | null; cor: string; mascara: string }
 ): Promise<Segmentacao> {
-  const r = await fetch(`${API}/segmentacoes/ficha/${curationId}`, {
+  const r = await fetchOuNulo(`${API}/segmentacoes/ficha/${curationId}`, {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(dados),
   })
+  if (!r) throw new Error(SEM_CONEXAO)
   if (!r.ok) throw await erroDaResposta(r, 'Não foi possível criar a estrutura.')
   return r.json()
 }
@@ -80,18 +85,20 @@ export async function alterarSegmentacao(
   id: number,
   dados: Partial<{ nome: string; dente: number; sem_dente: boolean; cor: string; mascara: string }>
 ): Promise<Segmentacao> {
-  const r = await fetch(`${API}/segmentacoes/${id}`, {
+  const r = await fetchOuNulo(`${API}/segmentacoes/${id}`, {
     method: 'PATCH',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(dados),
   })
+  if (!r) throw new Error(SEM_CONEXAO)
   if (!r.ok) throw await erroDaResposta(r, 'Não foi possível salvar a pintura.')
   return r.json()
 }
 
 export async function apagarSegmentacao(id: number): Promise<void> {
-  const r = await fetch(`${API}/segmentacoes/${id}`, { method: 'DELETE', credentials: 'include' })
+  const r = await fetchOuNulo(`${API}/segmentacoes/${id}`, { method: 'DELETE', credentials: 'include' })
+  if (!r) throw new Error(SEM_CONEXAO)
   if (!r.ok) throw await erroDaResposta(r, 'Não foi possível apagar a estrutura.')
 }
 

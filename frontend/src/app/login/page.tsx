@@ -9,6 +9,7 @@ import SeletorIdioma from '../../components/SeletorIdioma'
 import { regiaoDe } from '../../lib/regiaoGeografica'
 import CenaLogin from '../../components/login/CenaLogin'
 import type { ControleCena } from '../../components/login/motorCenaLogin'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 import {
   CadastroAplicativo,
   CampoCodigo,
@@ -75,6 +76,7 @@ function Icone({ tipo }: { tipo: 'escudo' | 'pessoa' | 'rota' }) {
 
 export default function LoginPage() {
   const t = useTranslations('Login')
+  const tComum = useTranslations('Comum')
   const router = useRouter()
   const controleRef = useRef<ControleCena | null>(null)
   const [foco, setFoco] = useState(-1)
@@ -124,12 +126,16 @@ export default function LoginPage() {
   }
 
   async function iniciarCadastro(desafio: string) {
-    const r = await fetch(`${API}/auth/login/cadastro-mfa/iniciar`, {
+    const r = await fetchOuNulo(`${API}/auth/login/cadastro-mfa/iniciar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ desafio }),
       credentials: 'include',
     })
+    if (!r) {
+      voltarAoInicio(tComum('semConexao'))
+      return
+    }
     if (r.status === 401) {
       voltarAoInicio(tSF('erroExpirado'))
       return

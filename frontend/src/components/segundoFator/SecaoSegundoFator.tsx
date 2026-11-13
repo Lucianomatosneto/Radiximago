@@ -7,6 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 import { CadastroAplicativo, CampoCodigo, CodigosRecuperacao, type DadosCadastro } from './PartesSegundoFator'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -20,7 +21,7 @@ interface Situacao {
 type Modo = 'nada' | 'ligando' | 'desligando' | 'novosCodigos'
 
 async function postar(caminho: string, corpo?: unknown) {
-  return fetch(`${API}${caminho}`, {
+  return fetchOuNulo(`${API}${caminho}`, {
     method: 'POST',
     credentials: 'include',
     headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
@@ -30,6 +31,7 @@ async function postar(caminho: string, corpo?: unknown) {
 
 export default function SecaoSegundoFator() {
   const t = useTranslations('SegundoFator')
+  const tComum = useTranslations('Comum')
   const [situacao, setSituacao] = useState<Situacao | null>(null)
   const [modo, setModo] = useState<Modo>('nada')
   const [cadastro, setCadastro] = useState<DadosCadastro | null>(null)
@@ -66,6 +68,10 @@ export default function SecaoSegundoFator() {
     setErro('')
     setAviso('')
     const r = await postar('/auth/mfa/iniciar')
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return
+    }
     if (!r.ok) {
       setErro(t('erroGenerico'))
       return
@@ -82,6 +88,10 @@ export default function SecaoSegundoFator() {
       const caminho = modo === 'ligando' ? '/auth/mfa/confirmar' : modo === 'novosCodigos' ? '/auth/mfa/novos-codigos' : '/auth/mfa/desativar'
       const corpo = modo === 'desligando' ? { senha, codigo: codigo.trim() } : { codigo: codigo.trim() }
       const r = await postar(caminho, corpo)
+      if (!r) {
+        setErro(tComum('semConexao'))
+        return
+      }
       if (r.status === 401) {
         setErro(t('erroCodigo'))
         setCodigo('')

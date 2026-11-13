@@ -236,7 +236,8 @@
   },
   "Comum": {
     "carregando": "Loading...",
-    "pularConteudo": "Skip to content"
+    "pularConteudo": "Skip to content",
+    "semConexao": "No connection to the server. Please try again."
   },
   "Sidebar": {
     "navegacao": "Navigation",
