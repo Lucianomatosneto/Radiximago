@@ -27,6 +27,9 @@ services:
 
   radix-ohif:
     ports: !reset []
+    environment:
+      # so as telas do Radix emolduram o OHIF e trocam mensagens com ele (ASVS 3.5.5)
+      - RADIX_ORIGEM_CONFIAVEL=https://app.radiximago.com.br
 
   radix-api:
     ports: !reset []
