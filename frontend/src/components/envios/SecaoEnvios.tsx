@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl'
 import MiniaturaFila from '../MiniaturaFila'
 import SeletorPessoasGrupos, { type Pessoa } from './SeletorPessoasGrupos'
 import { useConfirmacao } from '../useConfirmacao'
+import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
@@ -49,6 +50,7 @@ async function lerErro(r: Response, padrao: string) {
 
 export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | 'analisar' | 'recebidas'; equipe?: boolean }) {
   const t = useTranslations('EnviarImagem.lista')
+  const tComum = useTranslations('Comum')
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const [itens, setItens] = useState<Item[] | null>(null)
   const [analistas, setAnalistas] = useState<Analista[]>([])
@@ -89,12 +91,16 @@ export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | '
   async function chamar(caminho: string, metodo: string, corpo?: object) {
     setErro('')
     setMensagem('')
-    const r = await fetch(`${API}${caminho}`, {
+    const r = await fetchOuNulo(`${API}${caminho}`, {
       method: metodo,
       credentials: 'include',
       headers: corpo ? { 'Content-Type': 'application/json' } : undefined,
       body: corpo ? JSON.stringify(corpo) : undefined,
     })
+    if (!r) {
+      setErro(tComum('semConexao'))
+      return false
+    }
     if (!r.ok) {
       setErro(await lerErro(r, t('erro')))
       return false

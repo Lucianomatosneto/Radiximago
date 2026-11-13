@@ -17,6 +17,9 @@ from app.modules.users import User, UserRole
 from tests.conftest import SENHA_TESTE, cabecalho_auth, codigo_atual_do_usuario, obter_token
 
 
+MEIOS_OK = {"meios": ["email_cadastrado", "videochamada"], "procedimento_seguido": True}
+
+
 def _novo_cliente() -> TestClient:
     return TestClient(app)
 
@@ -173,13 +176,13 @@ def test_administrador_redefine_o_segundo_fator_de_outra_pessoa(criar_usuario, d
     cab_curador = cabecalho_auth(obter_token(_novo_cliente(), curador.email))
     assert _novo_cliente().get("/auth/me", headers=cab_curador).status_code == 200
     cab_est = cabecalho_auth(obter_token(_novo_cliente(), estudante.email))
-    assert _novo_cliente().post(f"/users/{curador.id}/redefinir-segundo-fator", headers=cab_est).status_code == 403
+    assert _novo_cliente().post(f"/users/{curador.id}/redefinir-segundo-fator", json=MEIOS_OK, headers=cab_est).status_code == 403
     cab_adm = cabecalho_auth(obter_token(_novo_cliente(), admin.email))
-    assert _novo_cliente().post(f"/users/{curador.id}/redefinir-segundo-fator", headers=cab_adm).status_code == 200
+    assert _novo_cliente().post(f"/users/{curador.id}/redefinir-segundo-fator", json=MEIOS_OK, headers=cab_adm).status_code == 200
     assert _novo_cliente().get("/auth/me", headers=cab_curador).status_code == 401  # acessos encerrados
     assert _senha(_novo_cliente(), curador.email).json()["segundo_fator"] == "cadastro"
     # o proprio admin usa o roteiro do servidor (nao ha quem confira a identidade)
-    assert _novo_cliente().post(f"/users/{admin.id}/redefinir-segundo-fator", headers=cab_adm).status_code == 409
+    assert _novo_cliente().post(f"/users/{admin.id}/redefinir-segundo-fator", json=MEIOS_OK, headers=cab_adm).status_code == 409
 
 
 def test_professor_tem_segundo_fator_opcional(criar_usuario):
@@ -196,3 +199,63 @@ def test_professor_tem_segundo_fator_opcional(criar_usuario):
     assert {UserRole.administrador, UserRole.suporte, UserRole.curador} <= set(mfa.PERFIS_MFA_OBRIGATORIO)
     assert UserRole.pesquisador not in mfa.PERFIS_MFA_OBRIGATORIO and UserRole.estudante not in mfa.PERFIS_MFA_OBRIGATORIO
 
+
+
+# --- ASVS 6.4.4: a redefinicao exige DOIS meios de conferir a identidade ---
+
+def _admin_e_curador(criar_usuario):
+    admin, curador = criar_usuario(perfil=UserRole.administrador), criar_usuario(perfil=UserRole.curador)
+    return curador, cabecalho_auth(obter_token(_novo_cliente(), admin.email)), admin
+
+
+def _redefinir(cliente, curador, cab, corpo):
+    return cliente.post(f"/users/{curador.id}/redefinir-segundo-fator", json=corpo, headers=cab)
+
+
+def test_6_4_4_sem_corpo_ou_sem_meios_e_recusado(criar_usuario, db):
+    curador, cab_adm, _ = _admin_e_curador(criar_usuario)
+    cliente = _novo_cliente()
+    assert cliente.post(f"/users/{curador.id}/redefinir-segundo-fator", headers=cab_adm).status_code == 422
+    assert _redefinir(cliente, curador, cab_adm, {"meios": [], "procedimento_seguido": True}).status_code == 422
+    assert db.query(AuditLog).filter(AuditLog.acao == "segundo_fator_redefinido_pelo_admin").count() == 0
+
+
+def test_6_4_4_um_meio_so_ou_meio_repetido_e_recusado(criar_usuario):
+    curador, cab_adm, _ = _admin_e_curador(criar_usuario)
+    cliente = _novo_cliente()
+    assert _redefinir(cliente, curador, cab_adm, {"meios": ["presencial"], "procedimento_seguido": True}).status_code == 422
+    assert _redefinir(cliente, curador, cab_adm, {"meios": ["presencial", "presencial"], "procedimento_seguido": True}).status_code == 422
+
+
+def test_6_4_4_meio_fora_da_lista_e_recusado(criar_usuario):
+    curador, cab_adm, _ = _admin_e_curador(criar_usuario)
+    cliente = _novo_cliente()
+    r = _redefinir(cliente, curador, cab_adm, {"meios": ["presencial", "telefone"], "procedimento_seguido": True})
+    assert r.status_code == 422
+
+
+def test_6_4_4_exige_confirmar_que_seguiu_o_procedimento(criar_usuario):
+    curador, cab_adm, _ = _admin_e_curador(criar_usuario)
+    cliente = _novo_cliente()
+    assert _redefinir(cliente, curador, cab_adm, {"meios": ["presencial", "videochamada"]}).status_code == 422
+    assert _redefinir(cliente, curador, cab_adm, {"meios": ["presencial", "videochamada"], "procedimento_seguido": False}).status_code == 422
+
+
+def test_6_4_4_dois_meios_validos_redefinem_e_registram_na_auditoria(criar_usuario, db):
+    curador, cab_adm, admin = _admin_e_curador(criar_usuario)
+    r = _redefinir(_novo_cliente(), curador, cab_adm, {"meios": ["videochamada", "email_cadastrado"], "procedimento_seguido": True})
+    assert r.status_code == 200
+    registro = db.query(AuditLog).filter(AuditLog.acao == "segundo_fator_redefinido_pelo_admin", AuditLog.entidade_id == curador.id).one()
+    assert registro.usuario_id == admin.id
+    # meios na ordem fixa da lista, sem texto livre
+    assert "email_cadastrado, videochamada" in registro.detalhes
+    assert "3.4.1" in registro.detalhes
+
+
+def test_6_4_4_so_administrador_redefine(criar_usuario):
+    estudante, curador = criar_usuario(), criar_usuario(perfil=UserRole.curador)
+    cab_est = cabecalho_auth(obter_token(_novo_cliente(), estudante.email))
+    cab_cur = cabecalho_auth(obter_token(_novo_cliente(), curador.email))
+    alvo = criar_usuario(perfil=UserRole.curador)
+    for cab in (cab_est, cab_cur):
+        assert _redefinir(_novo_cliente(), alvo, cab, MEIOS_OK).status_code == 403

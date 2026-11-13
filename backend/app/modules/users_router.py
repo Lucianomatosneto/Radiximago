@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
-from typing import Optional
+from pydantic import BaseModel, Field
+from typing import Literal, Optional
 from app.core.database import get_db
 from app.core.security import gerar_hash_senha
 from app.core.politica_senha import problema_na_senha
@@ -427,9 +427,20 @@ def encerrar_sessoes_de_usuario(
     return {"encerradas": fechadas}
 
 
+# Meios de conferir a identidade (docs/SEGURANCA.md 3.4.1, ASVS 6.4.4). Lista
+# FECHADA: nao ha campo de texto livre (nao entra documento nem dado pessoal).
+MEIOS_CONFERENCIA = ("email_cadastrado", "presencial", "videochamada", "responsavel_academico")
+
+
+class RedefinirSegundoFatorIn(BaseModel):
+    meios: list[Literal["email_cadastrado", "presencial", "videochamada", "responsavel_academico"]] = Field(max_length=8)
+    procedimento_seguido: bool = False
+
+
 @router.post("/{user_id}/redefinir-segundo-fator")
 def redefinir_segundo_fator(
     user_id: int,
+    dados: RedefinirSegundoFatorIn,
     db: Session = Depends(get_db),
     usuario_atual: User = Depends(exigir_perfis(*PERFIS_ADMIN)),
 ):
@@ -449,11 +460,19 @@ def redefinir_segundo_fator(
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     if usuario.id == usuario_atual.id:
         raise HTTPException(status_code=409, detail="Use o roteiro do servidor para redefinir o seu próprio segundo fator.")
+    # ASVS 6.4.4: so redefine com DOIS meios diferentes de conferencia
+    # (ordem fixa da lista, sem repeticao) e a confirmacao do procedimento.
+    meios = [m for m in MEIOS_CONFERENCIA if m in dados.meios]
+    if len(meios) < 2:
+        raise HTTPException(status_code=422, detail="Informe dois meios diferentes de conferência da identidade.")
+    if not dados.procedimento_seguido:
+        raise HTTPException(status_code=422, detail="Confirme que o procedimento de conferência da identidade foi seguido.")
     mfa.desligar(usuario)
     fechadas = encerrar_sessoes_do_usuario(db, usuario.id, "segundo_fator_redefinido")
     db.add(AuditLog(
         usuario_id=usuario_atual.id, acao="segundo_fator_redefinido_pelo_admin", entidade="user",
-        entidade_id=usuario.id, resultado="sucesso", detalhes=f"Sessoes encerradas: {fechadas}.",
+        entidade_id=usuario.id, resultado="sucesso",
+        detalhes=f"Conferencia de identidade: {', '.join(meios)}. Procedimento 3.4.1 confirmado. Sessoes encerradas: {fechadas}.",
     ))
     db.commit()
     return {"mensagem": "Segundo fator redefinido. A pessoa cadastra o aplicativo de novo no próximo login."}

@@ -71,3 +71,9 @@ ZAP 2.17.0: 2 Médios (CSP unsafe-inline em script e style), 6 Baixos, 9 Informa
 - Conferido no GitHub: lote-1 = 19 commits; termos-v1-1 = 7, cobertura-frontend = 7, matriz-asvs-2026-11-12 = 3, loaders-try-catch = 5 (contando sobre o lote 1); lote-3 = 18 (base a4559fe, sem o lote 1 por dentro; mergeia sem conflito de texto depois dele).
 - Teste de fusão feito pela auditoria (sem publicar): redesign-ui + lote-1 + termos + cobertura + matriz + loaders + lote-3, nessa ordem, sem conflito; `tsc --noEmit` sem erros; `autoFocus` do solicitar-acesso removido.
 - Ordem de junção: "Create a merge commit" (nunca squash): 1) lote-1; 2) termos, cobertura, matriz, loaders; 3) lote-3 só após o teste manual de 8 passos; 4) apagar o branch antigo correcoes/termos-v1-1 (6 commits, incompleto, sem test_termos_v11.py).
+
+## 2026-11-12 (madrugada) — Parte 2 juntada e Parte 3 (F, H, J) com PRs abertos
+- PRs #46 a #51 juntados em `redesign-ui` (merge commit) com checagens verdes: #46 carregadores com try/catch; #47 S6439 (A); #48 códigos de recuperação 24 caracteres em Argon2id e janela do código (B, C); #49 cloudflared fixado (G); #50 OHIF só com a origem das telas (D); #51 procedimento de identidade (E).
+- Parte 3 (feita pela auditoria neste chat, **sem juntar**): #52 aviso de "sem conexão" nas ações (F); #53 registro dos dois meios de conferência ao redefinir 2 etapas (H, ASVS 6.4.4); #54 ESLint 6→0 erros e Ruff 21 imports sobrando (J). Mypy 406 (CI: 403) só relatado. Detalhes: `relatorios/RESULTADO_parte3_2026-11-12.md`.
+- Matriz ASVS: mudanças da parte 2 em `matriz/mudancas_2026-11-12_parte2.csv` (6.5.2, 6.5.5, 3.5.5 aprovados após reteste; 3.4.6 evidência ampliada; 6.4.4 segue inconclusivo até juntar o #53). Aplicar depois do arquivo de 12/11 com `scripts/aplicar_mudancas_matriz.py`.
+- Decisões pendentes do Luciano: juntar #52/#53/#54; `MFA_TOTP_JANELA` 0 (padrão) ou 1.
