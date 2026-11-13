@@ -15,6 +15,7 @@ import ResponderCompartilhamento from '../../components/compartilhar/ResponderCo
 import MenuImpressao from '../../components/impressao/MenuImpressao'
 import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impressao/MenuSalvar'
 import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
+import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import SecaoEnvios from '../../components/envios/SecaoEnvios'
@@ -412,7 +413,7 @@ export default function CompartilhadasComigoPage() {
                         </div>
 
                         {/* pintura das estruturas (por baixo das marcacoes) */}
-                        {pintura.visivel(item.curation_id) && proporcao && (
+                        {pintura.visivel(item.curation_id) && proporcaoValida(proporcao) && (
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                             <div
                               className="relative max-h-full max-w-full"
@@ -423,7 +424,7 @@ export default function CompartilhadasComigoPage() {
                           </div>
                         )}
 
-                        {mostrandoMarcacoes && proporcao && (
+                        {mostrandoMarcacoes && proporcaoValida(proporcao) && (
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                             <div
                               className="relative max-h-full max-w-full"
