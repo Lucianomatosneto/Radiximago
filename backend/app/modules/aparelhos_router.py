@@ -131,8 +131,8 @@ class AparelhoEntrada(BaseModel):
     def _ip(cls, v: str) -> str:
         try:
             ip = ipaddress.ip_address(v.strip())
-        except ValueError:
-            raise ValueError("Endereço IP inválido (exemplo: 192.168.0.25).")
+        except ValueError as causa:
+            raise ValueError("Endereço IP inválido (exemplo: 192.168.0.25).") from causa
         if ip.is_unspecified or ip.is_multicast:
             raise ValueError("Esse endereço IP não identifica um aparelho.")
         return str(ip)
@@ -184,9 +184,9 @@ def cadastrar_aparelho(entrada: AparelhoEntrada, usuario: User = Depends(exigir_
     db.add(a)
     try:
         db.flush()
-    except IntegrityError:
+    except IntegrityError as causa:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Já existe um aparelho com esse nome DICOM (AE Title).")
+        raise HTTPException(status_code=409, detail="Já existe um aparelho com esse nome DICOM (AE Title).") from causa
     _auditar(db, usuario, "aparelho_cadastrado", a, f"Aparelho '{a.nome}' ({a.aet}) cadastrado e liberado.")
     db.commit()
     return {"aparelho": _saida(a), "aviso": _sincronizar_e_contar(db)}
@@ -201,9 +201,9 @@ def alterar_aparelho(aparelho_id: int, entrada: AparelhoEntrada,
                                                entrada.ip, entrada.porta)
     try:
         db.flush()
-    except IntegrityError:
+    except IntegrityError as causa:
         db.rollback()
-        raise HTTPException(status_code=409, detail="Já existe um aparelho com esse nome DICOM (AE Title).")
+        raise HTTPException(status_code=409, detail="Já existe um aparelho com esse nome DICOM (AE Title).") from causa
     mudou_rede = "sim" if antes != (a.aet, a.ip, a.porta) else "nao"
     _auditar(db, usuario, "aparelho_alterado", a, f"Aparelho '{a.nome}' alterado (endereco/nome DICOM mudou: {mudou_rede}).")
     db.commit()
