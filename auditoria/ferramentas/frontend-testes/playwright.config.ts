@@ -15,6 +15,8 @@ export default defineConfig({
     baseURL: process.env.RADIX_URL || 'http://localhost:3000',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
+    // video da falha: so no GitHub (o workflow instala o Chromium com o ffmpeg)
+    video: process.env.CI ? 'retain-on-failure' : 'off',
     // No GitHub Actions o Chromium é instalado pelo workflow. Localmente, pode-se
     // usar o Chrome já instalado: PLAYWRIGHT_CHROME_DO_SISTEMA=/caminho/do/chrome
     launchOptions: process.env.PLAYWRIGHT_CHROME_DO_SISTEMA
