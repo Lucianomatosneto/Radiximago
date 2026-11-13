@@ -140,6 +140,13 @@ dos testes com aparelhos reais:
   subir em rede lenta);
 - `FOTO_TAMANHO_MAX_MB=10`.
 
+Login em duas etapas (12/11/2026, ASVS 6.5.5):
+
+- `MFA_TOTP_JANELA=0` (padrão): só o código do aplicativo do momento vale
+  (no máximo 30 s). Use `1` apenas se muitos celulares estiverem com o relógio
+  atrasado: vale também o código anterior (até 60 s). Outros valores impedem
+  a API de ligar.
+
 Ainda no arquivo, preencha:
 
 - `SMTP_USER` e `SMTP_PASSWORD`: os **mesmos** da Brevo que já funcionam no
