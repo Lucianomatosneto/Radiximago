@@ -15,7 +15,8 @@ Para facilitar a leitura, neste documento:
 - **Usuário** ou **você**: a pessoa física com conta ativa na Plataforma, em qualquer perfil.
 - **Perfil**: o papel do Usuário na Plataforma (estudante, professor, curador, pesquisador, suporte ou administrador). Cada perfil tem permissões e deveres próprios, descritos no Anexo correspondente.
 - **Imagem**: radiografia ou outro exame de imagem, em formato DICOM ou convertido a partir de foto, incluindo os dados técnicos que a acompanham.
-- **Anonimização**: o processo que retira da Imagem os dados que permitiriam identificar o paciente (nome, documentos, datas completas, números de registro, textos gravados na imagem e semelhantes), de modo que a pessoa não possa ser identificada por meios razoáveis.
+- **Desidentificação**: o processo automático que retira ou cobre na Imagem os dados que permitiriam identificar o paciente (nome, documentos, datas completas, números de registro, textos gravados na imagem e semelhantes). Ele reduz muito o risco, mas sozinho **não garante** que ninguém possa ser identificado.
+- **Imagem anonimizada**: a Imagem que, depois da desidentificação e da conferência do curador, não permite identificar o paciente por meios técnicos razoáveis e disponíveis, nos termos da LGPD (art. 5º, III, e art. 12).
 - **Curadoria**: a análise, a classificação e a descrição didática de uma Imagem por um curador, incluindo marcações, achados e a validação da anonimização.
 - **Conteúdo do Usuário**: tudo o que o Usuário envia ou cria na Plataforma (imagens, fotos, anotações, recados, curadorias, anexos e textos).
 
@@ -41,6 +42,8 @@ Se a titularidade ou a gestão da Plataforma passar a outra pessoa ou empresa, i
 3.3. As imagens, as curadorias, as descrições didáticas, as marcações e quaisquer outros conteúdos da Plataforma servem **exclusivamente para ensino e pesquisa**. Eles **não podem orientar condutas com pacientes**. Toda decisão clínica é de responsabilidade exclusiva do profissional de saúde habilitado que atende o paciente, conforme as normas do seu conselho profissional.
 
 3.4. Fotos de radiografias enviadas pelo celular **não têm escala real**: não servem para medir estruturas em milímetros.
+
+3.5. Qualquer função futura que possa apoiar diagnóstico ou decisão clínica só será oferecida depois de avaliação regulatória específica (incluindo a RDC Anvisa nº 657/2022, sobre software como dispositivo médico) e de nova versão destes Termos.
 
 ## 4. Cadastro, conta e segurança
 
@@ -72,7 +75,7 @@ Você pode usar a Plataforma, dentro das permissões do seu perfil, para:
 1. **Tentar identificar pacientes**, cruzar dados para descobrir de quem é uma imagem ou divulgar qualquer informação que permita essa identificação.
 2. **Enviar imagem, foto ou anexo com dado que identifique o paciente** (nome, documento, data de nascimento, número de prontuário, rosto, tatuagem, joia característica ou qualquer outro sinal identificador), ou sem autorização para usá-la em ensino e pesquisa.
 3. Usar a Plataforma ou o seu conteúdo para **diagnóstico, laudo, segunda opinião clínica ou decisão de tratamento** de pacientes reais.
-4. **Copiar o acervo em massa**, por qualquer meio automatizado (robôs, raspagem de dados, scripts), ou usar imagens e curadorias para **treinar modelos de inteligência artificial** fora da Plataforma, sem autorização escrita do Responsável.
+4. **Copiar o acervo em massa**, por qualquer meio automatizado (robôs, raspagem de dados, scripts), ou usar imagens e curadorias para **treinar, ajustar, testar ou avaliar modelos de inteligência artificial** fora da Plataforma, sem autorização escrita do Responsável.
 5. **Divulgar imagens fora da Plataforma** (redes sociais, grupos de mensagens, sites, repositórios públicos) ou **fotografar e filmar a tela** para esse fim, sem autorização escrita do Responsável. O uso em aula, banca ou trabalho acadêmico deve seguir a cláusula 8.
 6. Compartilhar a conta, criar contas falsas ou se passar por outra pessoa.
 7. Tentar contornar, testar ou desativar mecanismos de segurança, acessar áreas ou dados sem permissão, fazer engenharia reversa do sistema ou sobrecarregá-lo de propósito.
@@ -87,6 +90,8 @@ Você pode usar a Plataforma, dentro das permissões do seu perfil, para:
 - a imagem está **anonimizada** ou que você aplicou as tarjas necessárias antes do envio;
 - você tem **autorização** para usá-la em ensino e pesquisa (por exemplo, da instituição de origem, do comitê de ética em pesquisa quando exigido, ou porque a imagem é de domínio público ou sintética);
 - o envio não viola sigilo profissional, direitos de terceiros nem a legislação, inclusive a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, LGPD).
+
+O aceite destes Termos **não substitui** a autorização do paciente, da instituição de origem nem do comitê de ética em pesquisa, quando exigidas.
 
 7.2. **Camadas de proteção não substituem o cuidado de quem envia.** A Plataforma remove dados de identificação dos arquivos, apaga os dados do celular (como localização e modelo do aparelho) e procura textos gravados na imagem para cobri-los. Essas medidas reduzem riscos, mas **não garantem** a remoção de todo dado identificável (por exemplo, nomes escritos à mão ou em letra muito pequena). A responsabilidade primária por enviar apenas imagens adequadas é de quem envia.
 
@@ -173,7 +178,7 @@ As comunicações sobre a sua conta, a segurança e estes Termos serão feitas p
 
 16.3. Estes Termos são regidos pelas **leis da República Federativa do Brasil**, em especial a Lei nº 12.965/2014 (Marco Civil da Internet) e a Lei nº 13.709/2018 (LGPD).
 
-16.4. Fica eleito o foro da **Comarca de Florianópolis, Santa Catarina**, para resolver questões relacionadas a estes Termos, ressalvado o direito do Usuário de propor ação no foro do seu domicílio quando a lei assim garantir.
+16.4. Quando o Usuário for consumidor, as questões relacionadas a estes Termos serão resolvidas no **foro do seu domicílio** (Código de Defesa do Consumidor, art. 101, I). Nos demais casos, fica eleito o foro da **Comarca de Florianópolis, Santa Catarina**.
 
 ## 17. Contato
 

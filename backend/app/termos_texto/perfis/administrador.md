@@ -17,7 +17,7 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 
 2.3. **Aparelhos de raio X.** Libere somente aparelhos autorizados pela instituição, que enviem imagens destinadas ao ensino e à pesquisa.
 
-2.4. **Auditoria.** Os registros de auditoria são protegidos e **não podem ser alterados ou apagados** pela Plataforma. Consulte-os apenas para segurança, apuração de incidentes e prestação de contas.
+2.4. **Auditoria.** Os registros de auditoria são protegidos e **não podem ser alterados**. Só a rotina automática de retenção os apaga, ao fim de 5 anos. Consulte-os apenas para segurança, apuração de incidentes e prestação de contas.
 
 2.5. **Segurança reforçada.** O login em duas etapas é **obrigatório**. Use senha exclusiva, não acesse o painel em computadores públicos e nunca compartilhe a sua conta.
 

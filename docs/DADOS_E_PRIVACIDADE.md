@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.8 — 10/11/2026 |
+| Versão do documento | 1.9 — 11/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Base | OWASP ASVS 5.0: 14.1.1, 14.1.2, 8.1.2, 8.2.3 e 14.2.4; LGPD (Lei 13.709/2018), art. 5º, 6º, 11, 12, 13 e 46 |
 | Conferido com | código do commit em que este arquivo entrou: modelos em `backend/app/modules/*.py`, rotas e `docker-compose.yml` |
@@ -157,3 +157,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.6 | 10/11/2026 | Foto do negatoscópio pelo celular (Fase 1): foto original não retida, tarja no aparelho e no servidor antes do Orthanc, `janelas_envio_foto` (30 dias); matriz de acesso: estudante envia foto, dono vê a própria |
 | 1.7 | 10/11/2026 | Termo de ciência a cada login: aceite registrado na sessão e na auditoria |
 | 1.8 | 10/11/2026 | Termos de Uso e Política de Privacidade publicados (`/termos`), aceites em `aceites_termos_uso` |
+| 1.9 | 11/11/2026 | Termos de Uso e Política de Privacidade v1.1: desidentificação x anonimização; instituição de origem como controladora e Rádix como operador nas imagens de pacientes; bases legais corrigidas (sem Marco Civil art. 15 e sem art. 7º, IV/16, II, que exigem pessoa jurídica ou órgão de pesquisa); transferência internacional pela Resolução CD/ANPD nº 19/2024; prazos do art. 19; cópias de segurança em até 14 dias; foro do consumidor |
