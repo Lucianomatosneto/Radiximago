@@ -140,6 +140,14 @@ dos testes com aparelhos reais:
   subir em rede lenta);
 - `FOTO_TAMANHO_MAX_MB=10`.
 
+Visualizador OHIF (12/11/2026, ASVS 3.5.5):
+
+- `RADIX_ORIGEM_CONFIAVEL`: endereço das **telas** do Radix, sem barra no fim
+  (padrão `http://localhost:3000`; no servidor, `https://app.radiximago.com.br`,
+  já definido no `docker-compose.prod.yml`). Só esse endereço pode mostrar o
+  OHIF em moldura e trocar mensagens com ele. Valor inválido impede o OHIF de
+  ligar (veja `docker compose logs radix-ohif`).
+
 Login em duas etapas (12/11/2026, ASVS 6.5.5):
 
 - `MFA_TOTP_JANELA=0` (padrão): só o código do aplicativo do momento vale
