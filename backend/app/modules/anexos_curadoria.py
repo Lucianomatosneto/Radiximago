@@ -36,9 +36,11 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
 from PIL import Image, ImageOps, UnidentifiedImageError
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
 
 from app.core.config import settings
 from app.core.database import Base, get_db
@@ -59,16 +61,16 @@ FORMATOS = {"JPEG": ("image/jpeg", "jpg"), "PNG": ("image/png", "png"), "WEBP": 
 class AnexoCuradoria(Base):
     __tablename__ = "anexos_curadoria"
 
-    id = Column(Integer, primary_key=True, index=True)
-    curation_id = Column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), nullable=False, index=True)
-    nome_original = Column(String(NOME_MAX), nullable=False)
-    arquivo = Column(String(80), nullable=False, unique=True)  # nome sorteado no disco
-    tipo_mime = Column(String(30), nullable=False)
-    tamanho = Column(Integer, nullable=False)
-    largura = Column(Integer, nullable=True)
-    altura = Column(Integer, nullable=True)
-    criado_por_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id", ondelete="CASCADE"), nullable=False, index=True)
+    nome_original: Mapped[str] = mapped_column(String(NOME_MAX), nullable=False)
+    arquivo: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)  # nome sorteado no disco
+    tipo_mime: Mapped[str] = mapped_column(String(30), nullable=False)
+    tamanho: Mapped[int] = mapped_column(Integer, nullable=False)
+    largura: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    altura: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id"), nullable=True)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 def pasta_anexos() -> Path:
