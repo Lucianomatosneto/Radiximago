@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.19 — 12/11/2026 |
+| Versão do documento | 1.20 — 12/11/2026 |
 | Responsável | Luciano de Matos Neto (PPGINFOS/UFSC) |
 | Referência | OWASP Application Security Verification Standard (ASVS) 5.0.0 — alvo: **Nível 2** |
 | Atende diretamente | ASVS 2.1.1, 5.1.1, 6.1.1, 6.3.1 (com o código), 7.1.1, 7.1.2, 8.1.1, 15.1.1 |
@@ -234,7 +234,8 @@ Testes: `test_auth.py`, `test_acesso_imagens.py`, `test_saved_images.py`, `test_
 - Exceção: a documentação interativa da API (`/docs`) não recebe a CSP restrita, porque usa scripts. Deve ser desligada no servidor de produção.
 - **Limite declarado da CSP das telas:** `'unsafe-inline'` em scripts e estilos continua permitido, porque o Next.js escreve pequenos scripts dentro da página e o tema é aplicado antes da primeira pintura. Tirá-lo exige "nonce" por resposta, exigência do Nível 3. `'unsafe-eval'` e `ws:` só existem em desenvolvimento (`npm run dev`).
 - **Comprovação em navegador real (18/10):** 12 telas visitadas com o administrador, inclusive o visualizador com o OHIF em moldura, e **nenhuma** recusa da política. Já script, `<object>`, moldura, `<base>` e conexão para um site de fora, inseridos à força na página, foram **todos recusados** pelo navegador.
-- Pendente (implantação): cabeçalhos no OHIF (porta 3001) e no proxy do Orthanc (porta 8042).
+- **OHIF (porta 3001 / `viewer.`), desde 12/11/2026 (ASVS 3.4.6 e 3.5.5):** responde `Content-Security-Policy: frame-ancestors <telas do Radix>`, então só as telas do Radix mostram o visualizador em moldura. O endereço das telas vem da configuração `RADIX_ORIGEM_CONFIAVEL` (`http://localhost:3000` no computador; `https://app.radiximago.com.br` no servidor). O cabeçalho vai em cada bloco do Nginx da imagem, porque um `add_header` dentro de um bloco faz o bloco ignorar os do servidor. **Não** se envia `X-Frame-Options`: ele só sabe `DENY`/`SAMEORIGIN`, e telas e OHIF são origens diferentes, então ele quebraria o visualizador; o `frame-ancestors` o substitui nos navegadores atuais. As mensagens entre as telas e o OHIF (`postMessage`) só são aceitas dessa mesma origem, nos dois lados; antes, o OHIF confiava em quem o colocava em moldura (`document.referrer`). Montagem: `ohif/gerar-config.sh` (origem inválida impede o OHIF de ligar). Testes: `tests/test_ohif_origem_confiavel.py`, inclusive com um Nginx de verdade conferindo o cabeçalho.
+- Pendente (implantação): cabeçalhos no proxy do Orthanc (porta 8042).
 - Testes: `tests/test_protecao_navegador.py`.
 
 ## 6. Arquivos enviados (ASVS 5.1.1)
@@ -324,6 +325,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.20 | 12/11/2026 | OHIF: `frame-ancestors` só para as telas do Radix e origem das mensagens vinda da configuração (`RADIX_ORIGEM_CONFIAVEL`), ASVS 3.4.6 e 3.5.5 (seção 5.1) |
 | 1.19 | 12/11/2026 | Login em duas etapas (3.4): códigos de recuperação com ~119 bits em Argon2id (ASVS 6.5.2), antigos invalidados e trocados no próximo login; código do aplicativo só no intervalo do momento, `MFA_TOTP_JANELA` (ASVS 6.5.5) |
 | 1.18 | 10/11/2026 | Foto de radiografia pelo celular (seção 6): janela de 5 minutos com comprovante de uso único (tipo próprio de token, não abre sessão), confirmação obrigatória, tarja antes do Orthanc; `/envios` só DICOM |
 | 1.17 | 08/11/2026 | Anexos da curadoria (seção 6): regravados sem metadados, fora da pasta pública, só com login |

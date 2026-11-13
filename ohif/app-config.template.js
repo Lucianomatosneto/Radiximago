@@ -198,7 +198,7 @@ window.config = {
 // muda no comportamento normal do OHIF.
 // Ao clicar num quadro, avisa a tela do Radix (janela "mae") qual estudo
 // ficou ativo, para os dados da imagem embaixo acompanharem. A mensagem so
-// e enviada para a origem do proprio Radix (lida do document.referrer) e
+// e enviada para a origem do proprio Radix (da configuracao, RADIX_ORIGEM_CONFIAVEL) e
 // leva apenas o identificador do estudo (anonimizado) - nenhum dado pessoal.
 // ---------------------------------------------------------------------
 ;(function () {
@@ -208,8 +208,9 @@ window.config = {
   if (!grade || ordem.length < 2) return;
   var linhas = Math.min(+grade[1], 4);
   var colunas = Math.min(+grade[2], 5);
-  var origemRadix = '';
-  try { origemRadix = document.referrer ? new URL(document.referrer).origin : ''; } catch (e) { origemRadix = ''; }
+  // endereco das telas do Radix, vindo da CONFIGURACAO (RADIX_ORIGEM_CONFIAVEL,
+  // trocado por ohif/gerar-config.sh) - nunca de quem emoldurou o OHIF (ASVS 3.5.5)
+  var origemRadix = '__RADIX_ORIGEM_CONFIAVEL__';
 
   function avisarAtivo(servicos) {
     if (!origemRadix || window.parent === window) return;
@@ -314,7 +315,7 @@ window.config = {
 // As coordenadas das marcacoes sao relativas (0 a 1) a largura/altura da
 // imagem; aqui elas sao convertidas para a posicao na tela usando as
 // funcoes do proprio motor de imagens do OHIF (cornerstone).
-// So aceita mensagens da origem do Radix (lida do document.referrer).
+// So aceita mensagens da origem do Radix (da configuracao, RADIX_ORIGEM_CONFIAVEL).
 // ---------------------------------------------------------------------
 // Estilo (igual as telas do Radix e aos arquivos baixados/impressos):
 //  - cor por tipo de achado (paleta Okabe & Ito, para daltonicos);
@@ -328,8 +329,9 @@ window.config = {
 //    descricao), isolar e ligar o "holofote" (escurece o resto da imagem).
 ;(function () {
   if (window.parent === window) return;
-  var origemRadix = '';
-  try { origemRadix = document.referrer ? new URL(document.referrer).origin : ''; } catch (e) { origemRadix = ''; }
+  // endereco das telas do Radix, vindo da CONFIGURACAO (RADIX_ORIGEM_CONFIAVEL,
+  // trocado por ohif/gerar-config.sh) - nunca de quem emoldurou o OHIF (ASVS 3.5.5)
+  var origemRadix = '__RADIX_ORIGEM_CONFIAVEL__';
   if (!origemRadix) return;
 
   var NS = 'http://www.w3.org/2000/svg';

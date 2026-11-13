@@ -1,0 +1,21 @@
+# Copia do default.conf.template da imagem ohif/app:v3.9.2 (OHIF/Viewers, tag v3.9.2,
+# .docker/Viewer-v3.x/default.conf.template, licenca MIT) - usada so pelo teste
+# test_ohif_origem_confiavel.py para gerar a configuracao do nginx como no container.
+server {
+  listen ${PORT} default_server;
+  listen [::]:${PORT} default_server;
+  location / {
+    root   /usr/share/nginx/html;
+    index  index.html index.htm;
+    try_files $uri $uri/ /index.html;
+    add_header Cross-Origin-Resource-Policy same-origin;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+  }
+  error_page   500 502 503 504  /50x.html;
+  location = /50x.html {
+    root   /usr/share/nginx/html;
+  }
+}

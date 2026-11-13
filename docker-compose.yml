@@ -195,16 +195,20 @@ services:
     # original porque ele so faz esse envsubst + tratar variaveis que nao
     # usamos (APP_CONFIG env var, credenciais do Google Healthcare API);
     # replicar o envsubst aqui e mais simples que patchar o script deles.
+    # Desde 12/11/2026 os passos acima ficam em ohif/gerar-config.sh (com
+    # teste automatico): app-config.js com a origem confiavel das telas
+    # (RADIX_ORIGEM_CONFIAVEL, nunca o document.referrer - ASVS 3.5.5) e o
+    # cabecalho "frame-ancestors" (so as telas do Radix emolduram o OHIF).
     entrypoint:
       - /bin/sh
       - -c
       - |
-        tr -d '\r' < /usr/src/app-config.template.js > /usr/share/nginx/html/app-config.js
-        envsubst '$${PORT}' < /usr/src/default.conf.template > /etc/nginx/conf.d/default.conf
-        sed -i '/^server {/a\  location = /app-config.js { root /usr/share/nginx/html; add_header Cache-Control "no-store"; }' /etc/nginx/conf.d/default.conf
-        sed -i '/^server {/a\  include /etc/nginx/radix-dicomweb.conf;' /etc/nginx/conf.d/default.conf
+        /bin/sh /usr/src/radix-gerar-config.sh
         exec nginx -g 'daemon off;'
       - sh
+    environment:
+      # endereco das TELAS do Radix (nao o do OHIF); no servidor ver docker-compose.prod.yml
+      - RADIX_ORIGEM_CONFIAVEL=${RADIX_ORIGEM_CONFIAVEL:-http://localhost:3000}
     command: ['nginx', '-g', 'daemon off;']
     depends_on:
       - radix-orthanc
@@ -222,6 +226,7 @@ services:
     volumes:
       - ./ohif/app-config.template.js:/usr/src/app-config.template.js:ro
       - ./ohif/radix-dicomweb.conf:/etc/nginx/radix-dicomweb.conf:ro
+      - ./ohif/gerar-config.sh:/usr/src/radix-gerar-config.sh:ro
 
   # --- Backend FastAPI ---
   radix-api:
