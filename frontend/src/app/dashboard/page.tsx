@@ -8,7 +8,7 @@ import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import ResumoImagens, { type ContagemImagens } from '../../components/ResumoImagens'
 import StatusBadge from '../../components/StatusBadge'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { obterSessaoAtual, termoPendente } from '../../lib/sessao'
 
 interface AtividadeRecente {
   id: number
@@ -72,6 +72,13 @@ export default function DashboardPage() {
         })
 
         if (!response.ok) {
+          // Termo de ciencia (ou Termos de Uso) ainda nao aceito NESTA
+          // sessao: o servidor responde 403 com esse codigo, mas a pessoa
+          // ESTA logada. A janela do termo ja esta na tela; depois do aceite
+          // a pagina recarrega e os numeros aparecem. Mandar para o login
+          // aqui jogava o administrador para fora logo apos entrar (achado
+          // pelo teste no navegador com login, 13/11/2026).
+          if (response.status === 403 && (await termoPendente(response))) return
           router.push('/login')
           return
         }
