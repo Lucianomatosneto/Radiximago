@@ -86,7 +86,6 @@ export default function ImagemPrincipalMarcada({
     medir()
     window.addEventListener('resize', medir)
     return () => window.removeEventListener('resize', medir)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src])
 
   return (

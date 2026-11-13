@@ -113,7 +113,6 @@ export default function FilaCuradoriaHorizontal({
   // rolar naquela direcao depois que a lista encolheu.
   useEffect(() => {
     atualizarLimites()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fila.length])
 
   // modo "N por vez": primeira miniatura do grupo visivel. Acompanha a

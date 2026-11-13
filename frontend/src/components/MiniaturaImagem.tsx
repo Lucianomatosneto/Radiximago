@@ -121,8 +121,10 @@ export default function MiniaturaImagem({
     return <div ref={placeholderRef} className={`animate-pulse bg-base-surface2 ${className}`} />
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
   return (
+    // A imagem vem de um endereço "blob:" criado depois do download com login;
+    // o <Image> do Next.js não otimiza esse tipo de endereço, então <img> é o certo aqui.
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={src}
       alt={alt}

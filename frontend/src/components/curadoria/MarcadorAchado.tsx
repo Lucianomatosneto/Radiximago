@@ -177,7 +177,6 @@ export default function MarcadorAchado({
     const observer = new ResizeObserver(() => recalcularTamanho())
     observer.observe(container)
     return () => observer.disconnect()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -227,7 +226,6 @@ export default function MarcadorAchado({
 
   useEffect(() => {
     if (src) recalcularTamanho()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src])
 
   useEffect(() => {

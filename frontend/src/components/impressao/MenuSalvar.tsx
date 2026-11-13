@@ -99,7 +99,7 @@ export function MenuSalvarMinhasImagens({
 }) {
   const t = useTranslations('Salvar')
   const router = useRouter()
-  const [aberto, setAberto] = useState(false)
+  const [, setAberto] = useState(false)
   const [progresso, setProgresso] = useState<{ feitas: number; total: number } | null>(null)
   const [mensagem, setMensagem] = useMensagemTemporaria()
   const [erro, setErro] = useState('')
