@@ -45,7 +45,12 @@ services:
     volumes: !reset []
 
   radix-cloudflared:
-    image: cloudflare/cloudflared:latest
+    # versao FIXA (M-03 da auditoria, 12/11/2026): ":latest" mudaria sozinho
+    # a cada "docker compose pull", sem revisao. Para atualizar: escolha uma
+    # versao publicada ha pelo menos 2 semanas em
+    # https://github.com/cloudflare/cloudflared/releases, troque o numero
+    # abaixo e rode: docker compose -f docker-compose.yml -f docker-compose.tunel.yml up -d
+    image: cloudflare/cloudflared:2026.10.5
     container_name: radix-cloudflared
     restart: unless-stopped
     command: ['tunnel', '--no-autoupdate', 'run']
