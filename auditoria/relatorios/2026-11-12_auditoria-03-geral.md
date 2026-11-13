@@ -230,3 +230,11 @@ Observações:
 - O lote 3 mostrará 18 commits, mas por estar em `a4559fe` pode pedir "Update branch" depois dos outros; os dois únicos arquivos mexidos tanto pelo lote 1 quanto pelo 3 (`AnexosCuradoria.tsx`, `CamadaMarcacoes.tsx`) se fundem sem conflito.
 - Teste de fusão local (não publicado): `redesign-ui` + lote 1 + termos + cobertura + matriz + loaders + lote 3, nessa ordem: sem conflito; `tsc --noEmit` sem erros; `autoFocus` do `solicitar-acesso` ausente.
 - Falta, ainda: o Luciano abrir os 6 PRs e fazer o teste manual de 8 passos antes do lote 3; os checks de cada PR só aparecem depois de abertos.
+
+
+## 13. Parte 2 juntada e Parte 3 (madrugada de 12/11)
+- **Juntados** em `redesign-ui` (merge commit, checagens verdes): #46 (carregadores com try/catch), #47 (A, S6439), #48 (B e C, segundo fator), #49 (G, cloudflared), #50 (D, OHIF) e #51 (E, procedimento de identidade).
+- **Corrigidos e a retestar manualmente:** ASVS 6.5.2 (códigos de recuperação 24 caracteres, ~118,9 bits, Argon2id com sal), 6.5.5 (janela do código do aplicativo 0 = só o momento), 3.5.5 e 3.4.6 (OHIF só com a origem das telas, `frame-ancestors`). S6439 = 0 no código; M-03 fechado (cloudflared fixado).
+- **Parte 3 com PR aberto, não juntado:** #52 (F), #53 (H: fecha a lacuna do 6.4.4), #54 (J). Relatório: `RESULTADO_parte3_2026-11-12.md`.
+- **Matriz ASVS:** `auditoria/matriz/mudancas_2026-11-12_parte2.csv` (5 linhas). Estado esperado depois de aplicar os dois arquivos de 12/11 à matriz de 18-19/10: **22 reprovados** (os mesmos da matriz original) e **4 inconclusivos** (4.2.1, 16.2.2, RX-DICOM-05 e 6.4.4). Quando o #53 for juntado e retestado, 6.4.4 sai dos inconclusivos.
+- **Ainda reprovados por decisão (HTTPS só na implantação):** 3.3.1, 3.3.3, 3.4.1, 12.1.1, 12.1.2, 12.2.1, 12.2.2, 12.3.1, 12.3.3. Demais: 3.5.4, 4.1.3, 5.4.3, 6.3.3, 13.2.2, 13.2.3, 13.2.5, 13.3.1, 13.4.2, 13.4.5, 15.2.3, 15.3.4, 16.4.3.
