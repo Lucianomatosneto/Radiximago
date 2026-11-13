@@ -182,7 +182,7 @@ def solicitar_segunda_opiniao(
 
     try:
         db.flush()
-    except IntegrityError:
+    except IntegrityError as causa:
         # Indice unico parcial (uq_curation_reviews_aberta) barrou: uma
         # solicitacao concorrente ja criou uma review aberta para esta
         # ficha entre a checagem acima e este flush.
@@ -190,7 +190,7 @@ def solicitar_segunda_opiniao(
         raise HTTPException(
             status_code=409,
             detail="Ja existe uma solicitacao de segunda opiniao em aberto para esta ficha.",
-        )
+        ) from causa
 
     _registrar_historico(
         db, ficha.id, usuario.id, "solicitacao_segunda_opiniao",
