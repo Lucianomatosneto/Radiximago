@@ -28,6 +28,8 @@ const servidor = servidorFalso({
 - A chave é `"MÉTODO /caminho"`, com o `?...` quando houver.
 - Um pedido sem rota cadastrada responde 404. Assim, um pedido inesperado aparece no teste.
 - `servidor.alteracoes()` lista o que a tela **enviou** (POST, PATCH, DELETE), com o corpo já lido. Use para conferir o que foi salvo.
+- Uma chave terminada em `*` vale para todo endereço que começa igual (`'GET /search?*'`). O teste confere depois, em `servidor.pedidos`, os filtros que foram mesmo enviados.
+- A resposta também pode ser uma função, que recebe o pedido. Serve para responder diferente na 2ª vez (ex.: 1ª tentativa falha, 2ª dá certo).
 - **Nada de dado real**: nomes, e-mails, fichas e textos devem ser inventados.
 
 ### 2. Montar a tela
@@ -41,7 +43,10 @@ await screen.findByRole('heading', { level: 1, name: /Vocabulário/ })  // esper
 
 O que **não** é da tela fica de fora com `vi.mock`:
 - `next/navigation`: o roteador vira um espião, para conferir `push('/login')`;
-- `Sidebar` e `Topbar`: têm teste próprio.
+- `Sidebar` e `Topbar`: têm teste próprio;
+- o que depende do navegador de verdade (visualizador OHIF, desenho em *canvas*, microfone, câmera) vira um substituto simples. Diga no comentário do topo do teste o que foi substituído.
+
+Peças só visuais que o navegador simulado não tem (rolar até um item, tema claro/escuro, tela cheia, "a miniatura está visível?") já são preparadas para todos os testes em `telas/apoio/preparar.ts`. As miniaturas nunca pedem imagens ao servidor nos testes.
 
 ### 3. Agir como a pessoa age
 
