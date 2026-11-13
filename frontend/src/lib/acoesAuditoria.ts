@@ -39,6 +39,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('segundo_fator_ativado', 'Login em 2 etapas ativado', 'Two-step sign-in enabled'),
       a('segundo_fator_desativado', 'Login em 2 etapas desativado', 'Two-step sign-in disabled'),
       a('codigo_recuperacao_usado', 'Código de recuperação usado', 'Recovery code used'),
+      a('codigos_recuperacao_regenerados', 'Códigos de recuperação trocados por segurança', 'Recovery codes replaced for security'),
       a('novos_codigos_recuperacao', 'Novos códigos de recuperação', 'New recovery codes'),
       a('segundo_fator_redefinido_pelo_admin', '2 etapas redefinidas pelo administrador', 'Two-step reset by administrator'),
       a('segundo_fator_redefinido_pelo_servidor', '2 etapas redefinidas no servidor', 'Two-step reset on the server'),
