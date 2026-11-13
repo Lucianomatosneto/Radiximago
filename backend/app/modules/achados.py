@@ -23,7 +23,6 @@ import enum
 
 from sqlalchemy import (
     Boolean,
-    Column,
     DateTime,
     ForeignKey,
     Integer,
@@ -34,6 +33,9 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from sqlalchemy.orm import Mapped, mapped_column
+from datetime import datetime
+from typing import Any
 
 from app.core.database import Base
 
@@ -252,15 +254,15 @@ def erro_vale_para_exame(tipo_erro: str, tipo_radiografia: str | None) -> bool:
 class Achado(Base):
     __tablename__ = "achados"
 
-    id = Column(Integer, primary_key=True, index=True)
-    curation_id = Column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
     curation = relationship("Curation", back_populates="achados")
 
-    tipo = Column(String(60), nullable=False)  # TipoAchado
+    tipo: Mapped[str] = mapped_column(String(60), nullable=False)  # TipoAchado
     # 08/11/2026: achado que e um termo do vocabulario (tipo "outro" + nome
     # do termo na descricao) guarda qual termo e
-    termo_id = Column(Integer, ForeignKey("termos_vocabulario.id", ondelete="SET NULL"), nullable=True, index=True)
-    regiao_anatomica = Column(String(30), nullable=True)  # RegiaoAnatomica
+    termo_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("termos_vocabulario.id", ondelete="SET NULL"), nullable=True, index=True)
+    regiao_anatomica: Mapped[str | None] = mapped_column(String(30), nullable=True)  # RegiaoAnatomica
 
     # Numeros FDI (11-48) relacionados ESPECIFICAMENTE a este achado - nao
     # confundir com `Curation.dentes` (nivel da ficha: "quais dentes a
@@ -272,7 +274,7 @@ class Achado(Base):
     # achado pode nao ter dente (ex.: alteracao de seio maxilar) ou ter
     # varios (ex.: perda ossea relacionada a 45, 46 e 47 como UM achado
     # so, nao tres achados separados).
-    dentes = Column(ARRAY(Integer), nullable=True)
+    dentes: Mapped[list[int] | None] = mapped_column(ARRAY(Integer), nullable=True)
 
     # O curador identificou uma regiao/lesao na imagem mas NAO conseguiu
     # determinar a qual numero FDI ela corresponde - situacao DIFERENTE de
@@ -282,24 +284,24 @@ class Achado(Base):
     # proposito: a instrucao foi explicita em nao usar `0` nem nenhum
     # codigo artificial dentro do array de dentes para representar
     # incerteza/ausencia.
-    dente_nao_identificado = Column(
+    dente_nao_identificado: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default=text("false")
     )
 
     # Texto livre - usado na pratica sempre que tipo == "outro", mas
     # tambem pode complementar qualquer outro tipo (mesmo padrao tolerante
     # ja usado em achados_detalhe/achado_descricao hoje).
-    descricao = Column(Text, nullable=True)
+    descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Mesmo formato de `Curation.marcacoes` (lista de formas oval/
     # retangulo/seta, coordenadas relativas 0.0-1.0), MENOS os campos
     # achado/achado_descricao por forma - aqui ficariam redundantes, ja
     # que o achado e o proprio registro desta tabela, nao mais um atributo
     # por forma dentro de uma lista de marcacoes soltas na ficha.
-    marcacoes = Column(JSONB, nullable=False, server_default="[]")
+    marcacoes: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default="[]")
 
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), onupdate=func.now())
 
 
 # ---------------------------------------------------------------------
@@ -308,14 +310,14 @@ class Achado(Base):
 class ErroTecnico(Base):
     __tablename__ = "erros_tecnicos"
 
-    id = Column(Integer, primary_key=True, index=True)
-    curation_id = Column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id"), nullable=False, index=True)
     curation = relationship("Curation", back_populates="erros_tecnicos")
 
-    tipo = Column(String(60), nullable=False)  # TipoErroTecnico
-    descricao = Column(Text, nullable=True)
+    tipo: Mapped[str] = mapped_column(String(60), nullable=False)  # TipoErroTecnico
+    descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 def erros_por_ficha(db, curation_ids) -> dict[int, list[str]]:
