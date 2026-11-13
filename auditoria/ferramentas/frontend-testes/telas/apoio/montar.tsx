@@ -36,6 +36,7 @@ export interface PedidoFeito {
 
 /**
  * Rotas no formato "METODO /caminho" (o caminho inclui o "?..." quando houver).
+ * Terminada em "*", a rota vale para todo caminho que comeca igual.
  * Pedido sem rota cadastrada responde 404 e fica anotado, para o teste perceber.
  */
 export function servidorFalso(rotas: Record<string, Rota>) {
@@ -54,7 +55,11 @@ export function servidorFalso(rotas: Record<string, Rota>) {
     }
     const pedido = { metodo, caminho, corpo }
     pedidos.push(pedido)
-    const rota = rotas[`${metodo} ${caminho}`]
+    // rota exata; senao, a rota "com asterisco" cujo comeco bate
+    // ("GET /search?*" atende qualquer pesquisa; o teste confere o endereco nos pedidos)
+    const chave = `${metodo} ${caminho}`
+    const curinga = Object.keys(rotas).find((k) => k.endsWith('*') && chave.startsWith(k.slice(0, -1)))
+    const rota = rotas[chave] ?? (curinga ? rotas[curinga] : undefined)
     const resposta = typeof rota === 'function' ? rota(pedido) : rota
     if (resposta === 'SEM_CONEXAO') throw new TypeError('Failed to fetch')
     const { status = 200, corpo: dados = {} } = resposta ?? { status: 404, corpo: { detail: 'rota nao cadastrada no teste' } }
