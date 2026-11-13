@@ -1,6 +1,7 @@
 'use client'
 
 import { errouServidor, lerComRepeticao } from '../../lib/repetir'
+import { proporcaoValida } from '../../lib/proporcao'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -1186,7 +1187,7 @@ function PesquisaConteudo() {
                           </div>
 
                           {/* pintura das estruturas (por baixo das marcacoes) */}
-                          {pintura.visivel(imagem.curation_id) && proporcao && (
+                          {pintura.visivel(imagem.curation_id) && proporcaoValida(proporcao) && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
                                 className="relative max-h-full max-w-full"
@@ -1205,7 +1206,7 @@ function PesquisaConteudo() {
                               caixa do tamanho EXATO da imagem dentro do quadrado.
                               Mouse sobre uma forma mostra a descricao dela; clique
                               numa forma isola (outro clique mostra todas). */}
-                          {mostrandoMarcacoes && proporcao && (
+                          {mostrandoMarcacoes && proporcaoValida(proporcao) && (
                             <div className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden rounded-lg">
                               <div
                                 className="relative max-h-full max-w-full"
