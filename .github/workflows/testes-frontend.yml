@@ -36,11 +36,13 @@ jobs:
           done
           echo "Arquivos de teste com falha: $falhas"
           [ "$falhas" -eq 0 ]
-      - name: Vitest (testes de auditoria)
+      - name: Vitest (testes de auditoria e de telas, com a catraca de cobertura)
         working-directory: auditoria/ferramentas/frontend-testes
+        # --coverage: se a cobertura do frontend cair abaixo dos minimos do
+        # vitest.config.ts (coverage.thresholds), este passo falha e o PR avisa
         run: |
           npm ci --no-audit --no-fund
-          npx vitest run --config vitest.config.ts --reporter=default --reporter=junit --outputFile.junit=../../../relatorio-vitest.xml
+          npx vitest run --config vitest.config.ts --coverage --reporter=default --reporter=junit --outputFile.junit=../../../relatorio-vitest.xml
       - name: Build de produção (o site compila?)
         working-directory: frontend
         env:
