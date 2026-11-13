@@ -98,7 +98,6 @@ export default function CamadaMarcacoes({
       ((ry - r.y) / r.altura) * tam.h,
     ]
     return marcacoes.map((m) => geometriaMarcacao(m, paraTela))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [marcacoes, tam, r.x, r.y, r.largura, r.altura])
 
   const texto = (i: number) => `${t('marcacaoN', { numero: i + 1 })}: ${textoMarcacao(marcacoes[i])}`
