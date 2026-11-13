@@ -40,6 +40,8 @@ export default defineConfig({
     environment: 'node',
     // endereco ficticio do servidor: as telas leem NEXT_PUBLIC_API_URL ao carregar
     env: { NEXT_PUBLIC_API_URL: 'http://api.teste' },
+    // pecas visuais que o navegador simulado nao tem (rolar, tema, tela cheia...)
+    setupFiles: ['telas/apoio/preparar.ts'],
     // a Testing Library precisa passar pelos aliases acima (copia unica do React)
     server: { deps: { inline: [/@testing-library/] } },
     coverage: {
@@ -50,15 +52,15 @@ export default defineConfig({
       allowExternal: true,
       reporter: ['lcov', 'text-summary'],
       reportsDirectory: '../../../frontend/coverage',
-      // CATRACA: minimo atual (medido em 13/11/2026, Fase 0: linhas 14,77%).
-      // Se a cobertura cair abaixo disto, o Vitest com --coverage FALHA (no
-      // GitHub: workflow "Testes do frontend"). A cada PR que acrescenta
-      // testes, subir estes numeros; nunca baixar sem justificar no PR.
+      // CATRACA: minimo atual (medido em 13/11/2026, Fase 1: linhas 33,27%;
+      // na Fase 0 era 14,77%). Se a cobertura cair abaixo disto, o Vitest com
+      // --coverage FALHA (no GitHub: workflow "Testes do frontend"). A cada PR
+      // que acrescenta testes, subir estes numeros; nunca baixar sem justificar.
       thresholds: {
-        lines: 14.7,
-        statements: 15.2,
-        branches: 12.1,
-        functions: 11.3,
+        lines: 33.2,
+        statements: 32.7,
+        branches: 30.1,
+        functions: 30.4,
       },
     },
   },
