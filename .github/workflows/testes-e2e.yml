@@ -1,6 +1,8 @@
 # TESTES NO NAVEGADOR (Playwright) — um "robô" usa o site como uma pessoa.
 # Sobe API + frontend isolados dentro do runner (banco descartável, sem dados reais).
-# Só testa telas públicas. BLOQUEANTE.
+# Testa telas públicas e, desde 13/11/2026, fluxos COM LOGIN (estudante e
+# administrador com 2 etapas) usando contas descartáveis criadas a cada execução
+# por backend/scripts/semear_usuarios_teste.py. BLOQUEANTE.
 name: Testes no navegador (Playwright)
 
 on:
@@ -32,6 +34,15 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: ./.github/actions/subir-radix-isolado
+      - name: Semear usuários de teste (descartáveis; senhas e 2º fator sorteados agora)
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://radix_user:ci_descartavel@localhost:5432/radix_imago_teste
+          ORTHANC_PASSWORD: ci_descartavel
+          ENVIRONMENT: test
+        # as credenciais vão só para o $GITHUB_ENV (passos seguintes deste job),
+        # escondidas no log com ::add-mask::; nunca para arquivo do repositório
+        run: python -m scripts.semear_usuarios_teste --saida-env "$GITHUB_ENV"
       - name: Instalar Playwright e o Chromium
         working-directory: auditoria/ferramentas/frontend-testes
         run: |
