@@ -103,10 +103,10 @@ def executar(aplicar: bool) -> None:
                 acao="moldura_recortada",
                 detalhes=f"Roteiro recortar_molduras.py: {resultado.descricao}.",
                 usuario_id=None,
-                marcacoes=lambda m: recortar_marcacoes(m, caixa, largura, altura),
-                ponto=lambda x, y: recortar_ponto(x, y, caixa, largura, altura),
+                marcacoes=lambda m, c=caixa, la=largura, al=altura: recortar_marcacoes(m, c, la, al),
+                ponto=lambda x, y, c=caixa, la=largura, al=altura: recortar_ponto(x, y, c, la, al),
                 antes_de_gravar=marcar,
-                mascara=lambda png: recortar_mascara(png, caixa, largura, altura),
+                mascara=lambda png, c=caixa, la=largura, al=altura: recortar_mascara(png, c, la, al),
             )
     finally:
         db.close()
