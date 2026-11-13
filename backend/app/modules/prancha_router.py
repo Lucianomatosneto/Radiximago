@@ -127,7 +127,7 @@ def _montar(db: Session, pedido: PedidoPrancha) -> tuple[list, list[int]]:
                     pedido.campos,
                 ),
             )
-            for ficha, img in zip(fichas, imagens)
+            for ficha, img in zip(fichas, imagens, strict=False)
         ]
         com_informacoes = pedido.com_informacoes and pedido.campos != []
         paginas = montar_paginas(itens, pedido.por_folha, com_informacoes)
@@ -306,7 +306,7 @@ def enviar_prancha_a_pessoas(
         db.add(envio)
         criadas.append(envio)
     db.flush()
-    for envio, d in zip(criadas, destinos):
+    for envio, d in zip(criadas, destinos, strict=False):
         db.add(AuditLog(
             usuario_id=usuario.id, acao="prancha_enviada_link", entidade="prancha_enviada", entidade_id=envio.id,
             resultado="sucesso",
@@ -315,7 +315,7 @@ def enviar_prancha_a_pessoas(
         ))
     db.commit()
     falhas = 0
-    for envio, d in zip(criadas, destinos):
+    for envio, d in zip(criadas, destinos, strict=False):
         link = f"{settings.FRONTEND_URL.rstrip('/')}/pranchas-recebidas?abrir={envio.id}"
         try:
             enviar_email_link_prancha(d.email, d.nome, usuario.nome, len(ids_unicos), link)
@@ -373,7 +373,7 @@ def abrir_prancha_recebida(
     ids = _disponiveis(db, envio.curation_ids or [])
     if not ids:
         raise HTTPException(status_code=410, detail="As imagens desta prancha não estão mais disponíveis.")
-    numeros_por_id = dict(zip(envio.curation_ids or [], envio.numeros or []))
+    numeros_por_id = dict(zip(envio.curation_ids or [], envio.numeros or [], strict=False))
     pedido = PedidoPrancha(
         curation_ids=ids, numeros=[numeros_por_id.get(c, i + 1) for i, c in enumerate(ids)] if envio.numeros else None,
         por_folha=envio.por_folha, com_informacoes=envio.com_informacoes, campos=envio.campos,
