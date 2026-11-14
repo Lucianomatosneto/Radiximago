@@ -25,7 +25,7 @@ Commit analisado: `4526a83`
 
 ## Desempenho
 
-- k6: p95 = 6.1 ms; falhas = 0.00%
-- Lighthouse (login): Performance 62, Accessibility 100, Best Practices 100, SEO 100
+- k6: p95 = 9.7 ms; falhas = 0.00%
+- Lighthouse (login): Performance 61, Accessibility 100, Best Practices 100, SEO 100
 
 > Resultados automáticos. Problemas só são considerados resolvidos após reteste na Auditoria.
