@@ -1,5 +1,6 @@
 'use client'
 
+import { useId } from 'react'
 import { useTranslations } from 'next-intl'
 
 const campoLabel = 'mb-1.5 block text-xs font-medium text-slate-400'
@@ -31,14 +32,19 @@ export default function ModalMotivo({
   onConfirmar: () => void
 }) {
   const t = useTranslations('Curadoria.modalMotivo')
+  // liga o rotulo "Motivo" a caixa de texto (leitor de tela - 13/11/2026)
+  const idMotivo = useId()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
       <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
         <h2 className="mb-4 text-lg font-semibold text-ink">
           {tipo === 'descartar' ? t('descartarTitulo') : t('segundaOpiniaoTitulo')}
         </h2>
-        <label className={campoLabel}>{t('motivo')}</label>
+        <label htmlFor={idMotivo} className={campoLabel}>
+          {t('motivo')}
+        </label>
         <textarea
+          id={idMotivo}
           maxLength={2000}
           value={motivoTexto}
           onChange={(e) => onMotivoChange(e.target.value)}

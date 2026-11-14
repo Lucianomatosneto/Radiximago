@@ -1,7 +1,7 @@
 'use client'
 
 import AvisoEmail from '../../components/AvisoEmail'
-import { useEffect, useState, FormEvent, ReactNode } from 'react'
+import { useEffect, useId, useState, FormEvent, ReactNode } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
@@ -89,7 +89,10 @@ async function extrairErro(response: Response, generica: string): Promise<string
   return generica
 }
 
-function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFechar: () => void; fecharRotulo: string }) {
+// A janela leva o NOME do proprio titulo (aria-labelledby): o leitor de tela
+// anuncia "Editar usuário, caixa de dialogo" (correcao de 13/11/2026)
+function Modal({ titulo, children, onFechar, fecharRotulo }: { titulo: ReactNode; children: ReactNode; onFechar: () => void; fecharRotulo: string }) {
+  const idTitulo = useId()
   // Esc fecha (= cancelar); clique fora tambem (reteste do M1, 01/11/2026)
   useEffect(() => {
     function aoTeclar(e: KeyboardEvent) {
@@ -102,8 +105,11 @@ function Modal({ children, onFechar, fecharRotulo }: { children: ReactNode; onFe
     return () => document.removeEventListener('keydown', aoTeclar, true)
   }, [onFechar])
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4" role="dialog" aria-modal="true" aria-labelledby={idTitulo}>
       <div className="w-full max-w-md rounded-xl border border-base-border bg-base-surface p-6 shadow-2xl">
+        <h2 id={idTitulo} className="mb-4 text-lg font-semibold text-slate-100">
+          {titulo}
+        </h2>
         {children}
       </div>
       <button
@@ -126,6 +132,8 @@ export default function UsuariosPage() {
   const tComum = useTranslations('Comum')
   const idioma = useLocale()
   const router = useRouter()
+  // ids que ligam cada rotulo ao seu campo (htmlFor/id - correcao de 13/11/2026)
+  const id = useId()
   const [autenticado, setAutenticado] = useState(false)
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -151,6 +159,7 @@ export default function UsuariosPage() {
 
   const [solicitacoes, setSolicitacoes] = useState<SolicitacaoAcesso[]>([])
   const [carregandoSolicitacoes, setCarregandoSolicitacoes] = useState(true)
+  const [erroSolicitacoes, setErroSolicitacoes] = useState('')
   const [processandoSolicitacaoId, setProcessandoSolicitacaoId] = useState<number | null>(null)
   const [rejeicao, setRejeicao] = useState<{ solicitacao: SolicitacaoAcesso; motivo: string } | null>(null)
   const [erroRejeicao, setErroRejeicao] = useState('')
@@ -209,9 +218,15 @@ export default function UsuariosPage() {
           `${process.env.NEXT_PUBLIC_API_URL}/users/access-requests?status_filtro=pendente`,
           { credentials: 'include' }
         )
-        if (!response.ok) return
+        if (!response.ok) {
+          setErroSolicitacoes(t('erroCarregarSolicitacoes'))
+          return
+        }
         const dados: SolicitacaoAcesso[] = await response.json()
         setSolicitacoes(dados)
+      } catch {
+        // sem conexao: avisa (antes a falha passava em silencio - 13/11/2026)
+        setErroSolicitacoes(t('erroCarregarSolicitacoes'))
       } finally {
         setCarregandoSolicitacoes(false)
       }
@@ -231,7 +246,8 @@ export default function UsuariosPage() {
       void buscarUsuarios()
       void buscarSolicitacoes()
     })
-  }, [router])
+    // t: a mensagem de erro dos pedidos (13/11/2026); e estavel, nao repete a busca
+  }, [router, t])
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
     const termo = busca.trim().toLowerCase()
@@ -383,6 +399,9 @@ export default function UsuariosPage() {
 
       setUsuarios((prev) => prev.filter((u) => u.id !== exclusao.id))
       setExclusao(null)
+    } catch {
+      // sem conexao: avisa na janela; a pessoa continua na lista
+      setErroExclusao(t('erroExcluirUsuario'))
     } finally {
       setExcluindo(false)
     }
@@ -412,6 +431,8 @@ export default function UsuariosPage() {
       }
       const dados: UsuarioExcluido[] = await response.json()
       setUsuariosExcluidos(dados)
+    } catch {
+      setErroExcluidos(t('erroCarregarExcluidos'))
     } finally {
       setCarregandoExcluidos(false)
     }
@@ -453,6 +474,8 @@ export default function UsuariosPage() {
       setUsuarios((prev) => [...prev, novoUsuario])
       setSolicitacoes((prev) => prev.filter((s) => s.id !== aprovacao.solicitacao.id))
       setAprovacao(null)
+    } catch {
+      setErroAprovacao(t('erroAprovarSolicitacao'))
     } finally {
       setProcessandoSolicitacaoId(null)
     }
@@ -497,6 +520,8 @@ export default function UsuariosPage() {
 
       setSolicitacoes((prev) => prev.filter((s) => s.id !== rejeicao.solicitacao.id))
       setRejeicao(null)
+    } catch {
+      setErroRejeicao(t('erroRejeitarSolicitacao'))
     } finally {
       setProcessandoSolicitacaoId(null)
     }
@@ -638,6 +663,12 @@ export default function UsuariosPage() {
           {avisoAcessos && (
             <p className="-mt-3 mb-6 text-sm text-amber-300" role="status">
               {avisoAcessos}
+            </p>
+          )}
+
+          {erroSolicitacoes && (
+            <p className="-mt-3 mb-6 text-sm text-red-400" role="alert">
+              {erroSolicitacoes}
             </p>
           )}
 
@@ -947,12 +978,12 @@ export default function UsuariosPage() {
       </div>
 
       {edicao && (
-        <Modal onFechar={() => setEdicao(null)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalEditarTitulo')}</h2>
+        <Modal titulo={t('modalEditarTitulo')} onFechar={() => setEdicao(null)} fecharRotulo={t('fechar')}>
           <form method="post" onSubmit={salvarEdicao} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
+              <label htmlFor={`${id}-editar-nome`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
+                id={`${id}-editar-nome`}
                 type="text"
                 required
                 value={edicao.nome}
@@ -961,8 +992,9 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('tabela.instituicao')}</label>
+              <label htmlFor={`${id}-editar-instituicao`} className="mb-1 block text-sm font-medium text-slate-300">{t('tabela.instituicao')}</label>
               <input
+                id={`${id}-editar-instituicao`}
                 type="text"
                 value={edicao.instituicao}
                 onChange={(e) => setEdicao({ ...edicao, instituicao: e.target.value })}
@@ -997,12 +1029,12 @@ export default function UsuariosPage() {
       )}
 
       {modalCriacaoAberto && (
-        <Modal onFechar={() => setModalCriacaoAberto(false)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalNovoTitulo')}</h2>
+        <Modal titulo={t('modalNovoTitulo')} onFechar={() => setModalCriacaoAberto(false)} fecharRotulo={t('fechar')}>
           <form method="post" onSubmit={criarUsuario} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
+              <label htmlFor={`${id}-novo-nome`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoNome')}</label>
               <input
+                id={`${id}-novo-nome`}
                 type="text"
                 required
                 value={formCriacao.nome}
@@ -1011,8 +1043,9 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoEmail')}</label>
+              <label htmlFor={`${id}-novo-email`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoEmail')}</label>
               <input
+                id={`${id}-novo-email`}
                 type="email"
                 required
                 value={formCriacao.email}
@@ -1022,8 +1055,9 @@ export default function UsuariosPage() {
               <AvisoEmail email={formCriacao.email} />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoSenha')}</label>
+              <label htmlFor={`${id}-novo-senha`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoSenha')}</label>
               <input
+                id={`${id}-novo-senha`}
                 type="password"
                 required
                 value={formCriacao.senha}
@@ -1033,8 +1067,9 @@ export default function UsuariosPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoPerfil')}</label>
+              <label htmlFor={`${id}-novo-perfil`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoPerfil')}</label>
               <select
+                id={`${id}-novo-perfil`}
                 value={formCriacao.perfil}
                 onChange={(e) => setFormCriacao({ ...formCriacao, perfil: e.target.value })}
                 className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-slate-100 outline-hidden focus:border-brand focus:ring-1 focus:ring-brand"
@@ -1047,10 +1082,11 @@ export default function UsuariosPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">
+              <label htmlFor={`${id}-novo-instituicao`} className="mb-1 block text-sm font-medium text-slate-300">
                 {t('campoInstituicaoOpcional')}
               </label>
               <input
+                id={`${id}-novo-instituicao`}
                 type="text"
                 value={formCriacao.instituicao}
                 onChange={(e) => setFormCriacao({ ...formCriacao, instituicao: e.target.value })}
@@ -1085,8 +1121,7 @@ export default function UsuariosPage() {
       )}
 
       {confirmacao && (
-        <Modal onFechar={() => responderConfirmacao(false)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('confirmarTitulo')}</h2>
+        <Modal titulo={t('confirmarTitulo')} onFechar={() => responderConfirmacao(false)} fecharRotulo={t('fechar')}>
           <p className="mb-4 text-sm text-slate-400">{confirmacao.texto}</p>
           <div className="flex justify-end gap-2 pt-2">
             <button
@@ -1111,8 +1146,7 @@ export default function UsuariosPage() {
       )}
 
       {redefinicao && (
-        <Modal onFechar={() => setRedefinicao(null)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{tSF('redefinirTitulo', { nome: redefinicao.usuario.nome })}</h2>
+        <Modal titulo={tSF('redefinirTitulo', { nome: redefinicao.usuario.nome })} onFechar={() => setRedefinicao(null)} fecharRotulo={t('fechar')}>
           <p className="mb-3 text-sm text-slate-400">{tSF('redefinirExplicacao')}</p>
           <fieldset className="mb-3 space-y-2">
             <legend className="mb-1 text-sm font-medium text-slate-200">{tSF('meiosLegenda')}</legend>
@@ -1164,8 +1198,7 @@ export default function UsuariosPage() {
       )}
 
       {exclusao && (
-        <Modal onFechar={() => setExclusao(null)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalExcluirTitulo')}</h2>
+        <Modal titulo={t('modalExcluirTitulo')} onFechar={() => setExclusao(null)} fecharRotulo={t('fechar')}>
           <p className="mb-4 text-sm text-slate-400">
             {t('confirmarExclusao', { nome: exclusao.nome, email: exclusao.email })}
           </p>
@@ -1197,8 +1230,7 @@ export default function UsuariosPage() {
       )}
 
       {aprovacao && (
-        <Modal onFechar={() => setAprovacao(null)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalAprovarTitulo')}</h2>
+        <Modal titulo={t('modalAprovarTitulo')} onFechar={() => setAprovacao(null)} fecharRotulo={t('fechar')}>
           <p className="mb-4 text-sm text-slate-400">
             {t('aprovandoPedidoDe', {
               nome: aprovacao.solicitacao.nome,
@@ -1208,10 +1240,10 @@ export default function UsuariosPage() {
           </p>
           <form method="post" onSubmit={confirmarAprovacao} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">
+              <p id={`${id}-perfil-conceder`} className="mb-1 block text-sm font-medium text-slate-300">
                 {t('perfilAConceder')} <span className="text-red-400">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
+              </p>
+              <div role="group" aria-labelledby={`${id}-perfil-conceder`} className="grid grid-cols-2 gap-2">
                 {PERFIS_CONCEDIVEIS.map((perfil) => (
                   <button
                     key={perfil}
@@ -1259,15 +1291,15 @@ export default function UsuariosPage() {
       )}
 
       {rejeicao && (
-        <Modal onFechar={() => setRejeicao(null)} fecharRotulo={t('fechar')}>
-          <h2 className="mb-4 text-lg font-semibold text-slate-100">{t('modalRejeitarTitulo')}</h2>
+        <Modal titulo={t('modalRejeitarTitulo')} onFechar={() => setRejeicao(null)} fecharRotulo={t('fechar')}>
           <p className="mb-4 text-sm text-slate-400">
             {t('rejeitandoPedidoDe', { nome: rejeicao.solicitacao.nome, email: rejeicao.solicitacao.email })}
           </p>
           <form method="post" onSubmit={confirmarRejeicao} className="space-y-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-slate-300">{t('campoMotivoRejeicao')}</label>
+              <label htmlFor={`${id}-motivo-rejeicao`} className="mb-1 block text-sm font-medium text-slate-300">{t('campoMotivoRejeicao')}</label>
               <textarea
+                id={`${id}-motivo-rejeicao`}
                 required
                 rows={3}
                 value={rejeicao.motivo}

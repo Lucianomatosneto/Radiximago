@@ -6,10 +6,9 @@
 // redefinir as 2 etapas (regra dos DOIS meios, ASVS 6.4.4) e excluir.
 // Pessoas e e-mails abaixo sao inventados (dominio exemplo.test).
 //
-// OBSERVACAO (ver relatorio da Fase 1): nas janelas de editar/criar, os
-// rotulos "Nome", "E-mail", "Senha"... NAO estao ligados aos campos (falta
-// htmlFor/id). Por isso os campos sao achados pela ORDEM dentro da janela
-// (helper campos()), e nao pelo nome - leitores de tela tambem nao os nomeiam.
+// Correcoes de 13/11/2026 (defeitos achados na Fase 1): os campos das janelas
+// sao achados pelo ROTULO (getByLabelText) e as janelas pelo NOME
+// (getByRole('dialog', { name })) - como um leitor de tela faz.
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -58,11 +57,9 @@ function linha(nome: string) {
 function nomesNaTabela() {
   return within(tabelaUsuarios()).queryAllByRole('row').slice(1).map((r) => r.querySelector('td')?.textContent)
 }
-/** campos de texto da janela aberta, na ordem (os rotulos nao estao ligados aos campos) */
-function campos() {
-  const janela = screen.getByRole('dialog')
-  return { janela, textos: within(janela).queryAllByRole('textbox') as HTMLInputElement[], senha: janela.querySelector('input[type=password]') as HTMLInputElement }
-}
+/** a janela aberta, pelo nome (titulo) */
+const janela = (nome: string) => screen.getByRole('dialog', { name: nome })
+const campo = (j: HTMLElement, rotulo: string) => within(j).getByLabelText(rotulo) as HTMLInputElement
 
 beforeEach(() => vi.clearAllMocks())
 afterEach(() => {
@@ -189,9 +186,10 @@ describe('pedidos de acesso', () => {
     expect((within(duplicado).getByRole('button', { name: 'Rejeitar' }) as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('sem pedidos (ou erro ao busca-los): a secao nao aparece', async () => {
-    await abrir(rotasPadrao({ [PEDIDOS]: { status: 500 } }))
+  it('sem pedidos: a secao nao aparece e nao ha aviso de erro', async () => {
+    await abrir(rotasPadrao({ [PEDIDOS]: { corpo: [] } }))
     expect(screen.queryByText(/Solicitações de acesso pendentes/)).toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
     // sem pedidos o cartao mostra 0 e deixa de ser botao (nao ha para onde levar)
     expect(screen.queryByRole('button', { name: /Solicitações pendentes/ })).toBeNull()
     expect(screen.getByText('Solicitações pendentes').parentElement?.textContent).toContain('0')
@@ -261,18 +259,17 @@ describe('criar e editar', () => {
     const novo = { id: 70, nome: 'Pessoa Nova', email: 'nova@exemplo.test', perfil: 'suporte', instituicao: null, ativo: true, bloqueado: false }
     const servidor = await abrir(rotasPadrao({ 'POST /users/': { status: 201, corpo: novo } }))
     await usuario.click(screen.getByRole('button', { name: 'Novo usuário' }))
-    const { janela, textos, senha } = campos()
-    const [nome, email, instituicao] = textos
-    await usuario.type(nome, 'Pessoa Nova')
-    await usuario.type(email, 'nova@exemplo.test')
-    await usuario.type(senha, 'curta')
-    await usuario.selectOptions(within(janela).getByRole('combobox'), 'Suporte')
-    await usuario.type(instituicao, '   ')
-    await usuario.click(within(janela).getByRole('button', { name: 'Criar usuário' }))
-    expect(within(janela).getByRole('alert').textContent).toBe('A senha deve ter ao menos 8 caracteres.')
+    const j = janela('Novo usuário')
+    await usuario.type(campo(j, 'Nome'), 'Pessoa Nova')
+    await usuario.type(campo(j, 'E-mail'), 'nova@exemplo.test')
+    await usuario.type(campo(j, 'Senha'), 'curta')
+    await usuario.selectOptions(campo(j, 'Perfil'), 'Suporte')
+    await usuario.type(campo(j, 'Instituição (opcional)'), '   ')
+    await usuario.click(within(j).getByRole('button', { name: 'Criar usuário' }))
+    expect(within(j).getByRole('alert').textContent).toBe('A senha deve ter ao menos 8 caracteres.')
     expect(servidor.alteracoes()).toEqual([])
-    await usuario.type(senha, '-mais-longa')
-    await usuario.click(within(janela).getByRole('button', { name: 'Criar usuário' }))
+    await usuario.type(campo(j, 'Senha'), '-mais-longa')
+    await usuario.click(within(j).getByRole('button', { name: 'Criar usuário' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(servidor.alteracoes()[0].corpo).toEqual({ nome: 'Pessoa Nova', email: 'nova@exemplo.test', senha: 'curta-mais-longa', perfil: 'suporte', instituicao: null })
     expect(nomesNaTabela()).toContain('Pessoa Nova')
@@ -282,8 +279,8 @@ describe('criar e editar', () => {
     const usuario = userEvent.setup()
     await abrir(rotasPadrao())
     await usuario.click(screen.getByRole('button', { name: 'Novo usuário' }))
-    await usuario.type(campos().textos[1], 'pessoa@hotmai.com')
-    expect(within(campos().janela).getByRole('note').textContent).toMatch(/hotmail\.com/)
+    await usuario.type(campo(janela('Novo usuário'), 'E-mail'), 'pessoa@hotmai.com')
+    expect(within(janela('Novo usuário')).getByRole('note').textContent).toMatch(/hotmail\.com/)
   })
 
   it.each([
@@ -293,13 +290,13 @@ describe('criar e editar', () => {
     const usuario = userEvent.setup()
     await abrir(rotasPadrao({ 'POST /users/': resposta }))
     await usuario.click(screen.getByRole('button', { name: 'Novo usuário' }))
-    const { janela, textos, senha } = campos()
-    await usuario.type(textos[0], 'Pessoa')
-    await usuario.type(textos[1], 'p@exemplo.test')
-    await usuario.type(senha, 'senha-longa-1')
-    await usuario.click(within(janela).getByRole('button', { name: 'Criar usuário' }))
-    expect((await within(janela).findByRole('alert')).textContent).toBe(mensagem)
-    await usuario.click(within(janela).getByRole('button', { name: 'Cancelar' }))
+    const j = janela('Novo usuário')
+    await usuario.type(campo(j, 'Nome'), 'Pessoa')
+    await usuario.type(campo(j, 'E-mail'), 'p@exemplo.test')
+    await usuario.type(campo(j, 'Senha'), 'senha-longa-1')
+    await usuario.click(within(j).getByRole('button', { name: 'Criar usuário' }))
+    expect((await within(j).findByRole('alert')).textContent).toBe(mensagem)
+    await usuario.click(within(j).getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
@@ -307,12 +304,12 @@ describe('criar e editar', () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(rotasPadrao({ 'PATCH /users/3': (p) => ({ corpo: { ...ESTUDANTE, ...(p.corpo as object) } }) }))
     await usuario.click(within(linha('Estudante Beta')).getByRole('button', { name: 'Editar' }))
-    const { janela, textos } = campos()
-    expect(textos.map((c) => c.value)).toEqual(['Estudante Beta', 'Instituição Y'])
-    await usuario.clear(textos[0])
-    await usuario.type(textos[0], 'Estudante Beta Silva')
-    await usuario.clear(textos[1])
-    await usuario.click(within(janela).getByRole('button', { name: 'Salvar' }))
+    const j = janela('Editar usuário')
+    expect([campo(j, 'Nome').value, campo(j, 'Instituição').value]).toEqual(['Estudante Beta', 'Instituição Y'])
+    await usuario.clear(campo(j, 'Nome'))
+    await usuario.type(campo(j, 'Nome'), 'Estudante Beta Silva')
+    await usuario.clear(campo(j, 'Instituição'))
+    await usuario.click(within(j).getByRole('button', { name: 'Salvar' }))
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(servidor.alteracoes()[0]).toEqual({ metodo: 'PATCH', caminho: '/users/3', corpo: { nome: 'Estudante Beta Silva', instituicao: null } })
     expect(nomesNaTabela()).toContain('Estudante Beta Silva')
@@ -325,8 +322,8 @@ describe('criar e editar', () => {
     const usuario = userEvent.setup()
     await abrir(rotasPadrao({ 'PATCH /users/2': resposta }))
     await usuario.click(within(linha('Curadora Alfa')).getByRole('button', { name: 'Editar' }))
-    await usuario.click(within(campos().janela).getByRole('button', { name: 'Salvar' }))
-    expect((await within(campos().janela).findByRole('alert')).textContent).toBe(mensagem)
+    await usuario.click(within(janela('Editar usuário')).getByRole('button', { name: 'Salvar' }))
+    expect((await within(janela('Editar usuário')).findByRole('alert')).textContent).toBe(mensagem)
   })
 })
 
@@ -467,5 +464,106 @@ describe('redefinir as 2 etapas (dois meios de conferencia, ASVS 6.4.4)', () => 
     await usuario.click(within(janela).getByRole('button', { name: 'Sim, redefinir' }))
     expect((await within(janela).findByRole('alert')).textContent).toBe(mensagem)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+describe('correcoes de 13/11/2026: servidor fora do ar (defeito 1)', () => {
+  it.each([
+    ['recusa do servidor', { status: 500, corpo: {} }],
+    ['sem conexao', 'SEM_CONEXAO' as const],
+  ])('pedidos de acesso nao carregam (%s): avisa, sem esconder o problema', async (_caso, resposta) => {
+    await abrir(rotasPadrao({ [PEDIDOS]: resposta }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Não foi possível carregar as solicitações de acesso.')
+    expect(screen.queryByText(/Solicitações de acesso pendentes \(/)).toBeNull()
+    expect(nomesNaTabela()).toHaveLength(4) // o resto da tela funciona
+  })
+
+  it('excluir sem conexao: avisa na janela, o botao volta e a pessoa continua na lista', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ 'DELETE /users/4': 'SEM_CONEXAO' }))
+    await usuario.click(within(linha('Professor Gama')).getByRole('button', { name: 'Excluir' }))
+    const j = janela('Excluir usuário')
+    await usuario.click(within(j).getByRole('button', { name: 'Excluir usuário' }))
+    expect((await within(j).findByRole('alert')).textContent).toBe('Não foi possível excluir o usuário.')
+    expect((within(j).getByRole('button', { name: 'Excluir usuário' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(nomesNaTabela()).toContain('Professor Gama')
+  })
+
+  it('aprovar pedido sem conexao: avisa na janela, o botao volta e o pedido continua', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ 'POST /users/access-requests/50/approve': 'SEM_CONEXAO' }))
+    await usuario.click(screen.getAllByRole('button', { name: 'Aprovar' })[0])
+    const j = janela('Aprovar solicitação')
+    await usuario.click(within(j).getByRole('button', { name: 'Aprovar solicitação' }))
+    expect((await within(j).findByRole('alert')).textContent).toBe('Não foi possível aprovar a solicitação.')
+    expect((within(j).getByRole('button', { name: 'Aprovar solicitação' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText('Solicitações de acesso pendentes (2)')).toBeTruthy()
+  })
+
+  it('rejeitar pedido sem conexao: avisa na janela, o botao volta e o pedido continua', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ 'POST /users/access-requests/50/reject': 'SEM_CONEXAO' }))
+    await usuario.click(screen.getAllByRole('button', { name: 'Rejeitar' })[0])
+    const j = janela('Rejeitar solicitação')
+    await usuario.type(campo(j, 'Motivo da rejeição'), 'Fora do escopo.')
+    await usuario.click(within(j).getByRole('button', { name: 'Rejeitar solicitação' }))
+    expect((await within(j).findByRole('alert')).textContent).toBe('Não foi possível rejeitar a solicitação.')
+    expect((within(j).getByRole('button', { name: 'Rejeitar solicitação' }) as HTMLButtonElement).disabled).toBe(false)
+    expect(screen.getByText('Solicitações de acesso pendentes (2)')).toBeTruthy()
+  })
+
+  it('"Ver usuarios excluidos" sem conexao: avisa e nao fica em "Carregando..."; abrir de novo tenta outra vez', async () => {
+    const usuario = userEvent.setup()
+    let vezes = 0
+    const excluido = { id: 8, nome: 'Ex Usuário', email: 'ex@exemplo.test', perfil: 'estudante', instituicao: null }
+    await abrir(rotasPadrao({ 'GET /users/deleted': () => (++vezes === 1 ? 'SEM_CONEXAO' : { corpo: [excluido] }) }))
+    await usuario.click(screen.getByRole('button', { name: 'Ver usuários excluídos' }))
+    expect((await screen.findByRole('alert')).textContent).toBe('Não foi possível carregar os usuários excluídos.')
+    expect(screen.queryByText('Carregando...')).toBeNull()
+    await usuario.click(screen.getByRole('button', { name: 'Ocultar excluídos' }))
+    await usuario.click(screen.getByRole('button', { name: 'Ver usuários excluídos' }))
+    expect(await screen.findByText('Ex Usuário')).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+})
+
+describe('correcoes de 13/11/2026: acessibilidade (defeito 2)', () => {
+  it('cada janela tem nome (o titulo) para o leitor de tela', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    const abrirEFechar = async (botao: HTMLElement, nome: string) => {
+      await usuario.click(botao)
+      expect(screen.getByRole('dialog', { name: nome })).toBeTruthy()
+      await usuario.keyboard('{Escape}')
+      expect(screen.queryByRole('dialog')).toBeNull()
+    }
+    await abrirEFechar(screen.getByRole('button', { name: 'Novo usuário' }), 'Novo usuário')
+    await abrirEFechar(within(linha('Curadora Alfa')).getByRole('button', { name: 'Editar' }), 'Editar usuário')
+    await abrirEFechar(within(linha('Curadora Alfa')).getByRole('button', { name: 'Excluir' }), 'Excluir usuário')
+    await abrirEFechar(within(linha('Curadora Alfa')).getByRole('button', { name: 'Bloquear' }), 'Confirmar ação')
+    await abrirEFechar(within(linha('Curadora Alfa')).getByRole('button', { name: 'Redefinir 2 etapas' }), 'Redefinir as 2 etapas de Curadora Alfa')
+    await abrirEFechar(screen.getAllByRole('button', { name: 'Aprovar' })[0], 'Aprovar solicitação')
+    await abrirEFechar(screen.getAllByRole('button', { name: 'Rejeitar' })[0], 'Rejeitar solicitação')
+  })
+
+  it('os campos de editar e criar sao encontrados pelo rotulo', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await usuario.click(within(linha('Estudante Beta')).getByRole('button', { name: 'Editar' }))
+    expect(campo(janela('Editar usuário'), 'Nome').value).toBe('Estudante Beta')
+    expect(campo(janela('Editar usuário'), 'Instituição').value).toBe('Instituição Y')
+    await usuario.keyboard('{Escape}')
+    await usuario.click(screen.getByRole('button', { name: 'Novo usuário' }))
+    const j = janela('Novo usuário')
+    for (const rotulo of ['Nome', 'E-mail', 'Senha', 'Perfil', 'Instituição (opcional)']) expect(campo(j, rotulo)).toBeTruthy()
+    expect(campo(j, 'Perfil').value).toBe('estudante')
+  })
+
+  it('aprovar: os botoes de perfil formam um grupo com o nome "Perfil a conceder"', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await usuario.click(screen.getAllByRole('button', { name: 'Aprovar' })[0])
+    const grupo = within(janela('Aprovar solicitação')).getByRole('group', { name: /Perfil a conceder/ })
+    expect(within(grupo).getAllByRole('button').map((b) => b.textContent)).toEqual(['Curador', 'Professor', 'Estudante', 'Pesquisador'])
   })
 })

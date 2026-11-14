@@ -474,3 +474,15 @@ describe('guia "Como laudar"', () => {
     expect(screen.getByRole('dialog', { name: 'Como laudar no Rádix Imago — passo a passo' })).toBeTruthy()
   })
 })
+
+describe('correcao de 13/11/2026: acessibilidade da janela de motivo (defeito 2)', () => {
+  it.each(['Descartar', 'Solicitar segunda opinião'])('"%s": a caixa do motivo e encontrada pelo rotulo "Motivo"', async (nome) => {
+    const usuario = userEvent.setup()
+    await abrirComFicha(rotasPadrao())
+    await usuario.click(within(ficha_()).getAllByRole('button', { name: nome })[0])
+    const motivo = screen.getByLabelText('Motivo')
+    expect(motivo.tagName).toBe('TEXTAREA')
+    await usuario.type(motivo, 'Teste')
+    expect((motivo as HTMLTextAreaElement).value).toBe('Teste')
+  })
+})
