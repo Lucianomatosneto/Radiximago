@@ -21,7 +21,7 @@ Legenda: **[medido]** = número tirado de uma execução real; **[hipótese]** =
   - "Testar conexão" (aparelhos) agora avisa quando o servidor está fora do ar;
   - "Não aceito" (termos) não deixa mais um erro solto quando a conexão cai.
 - **Testes primeiro:** cada correção tem um teste que **falhou no código antigo** e **passa no corrigido** (saídas no item 3).
-- **Precisa da sua decisão:** `PainelErroTecnico` e `PainelAchadosRadiografia` também não são usados por nenhuma tela (item 5). Não foram apagados nem alterados.
+- **Decisão do Luciano (14/11/2026, 00h31):** `PainelErroTecnico` e `PainelAchadosRadiografia`, que também não eram usados por nenhuma tela, foram **apagados** neste mesmo PR, com as 25 chaves de tradução só deles (item 5).
 
 ---
 
@@ -90,9 +90,9 @@ O teste que já passava antes ("com o servidor no ar, o resultado do teste conti
 | Verificação | Resultado |
 |---|---|
 | Vitest | **405 testes**, todos passam (eram 391) |
-| Cobertura do frontend (linhas) | 56,17% → **58,89%**. Sobe pelos testes novos e porque 120 linhas sem uso (96 + 24) saíram da conta |
-| Instruções / ramos / funções | 57,25% / 55,13% / 56,17% |
-| Catraca nova | 58,8 / 57,2 / 55,1 / 56,1 |
+| Cobertura do frontend (linhas) | 56,17% → **59,43%**. Sobe pelos testes novos e porque os 4 componentes sem uso saíram da conta |
+| Instruções / ramos / funções | 57,72% / 55,50% / 56,74% |
+| Catraca nova | 59,4 / 57,7 / 55,5 / 56,7 |
 | pytest | 657 passed |
 | tsc / next build | ok / ok |
 | tsx (16 arquivos) | 0 falhas |
@@ -101,17 +101,33 @@ O teste que já passava antes ("com o servidor no ar, o resultado do teste conti
 | e2e (16) e CI | ver o PR no GitHub |
 | Dependências novas | nenhuma |
 
-## 5. Precisa de decisão do Luciano (não mexi)
+## 5. `PainelErroTecnico` e `PainelAchadosRadiografia`: apagados por decisão do Luciano
 
-1. **`components/curadoria/PainelErroTecnico.tsx`** não é importado por nenhuma tela; o nome só aparece em comentários. Como você pediu, **não apaguei** e não corrigi os 2 rótulos dele.
-2. **`components/curadoria/PainelAchadosRadiografia.tsx`** está na mesma situação: nenhuma tela o importa. Também não mexi nos 2 rótulos dele.
+Na primeira versão deste PR os dois foram só apontados: nenhuma tela os importava e a instrução era não apagar sem decisão. O Luciano decidiu **apagar os dois** (14/11/2026, 00h31). Por isso os 4 rótulos sem ligação que eles tinham deixam de existir.
 
-**Opções para os dois:**
-- (a) apagar, como foi feito com o `PainelAchadosEstruturados`;
-- (b) manter e corrigir os rótulos;
-- (c) manter como estão.
+**Busca antes de apagar [medido]** (mesmo comando do item 2):
 
-**[hipótese]** Recomendo (a), depois de uma busca igual à do item 2.
+| Onde apareceu | O que é | É uso? |
+|---|---|---|
+| os próprios arquivos | — | — (apagados) |
+| `components/curadoria/FichaCuradoriaForm.tsx`, linhas 73, 98 e 125 | comentários que citam o `PainelAchadosRadiografia` | não |
+| `app/pesquisa/page.tsx` (linha 249), `lib/achados.ts` (linha 19), `lib/alteracoesObservadas.ts` (linha 7) | comentários | não |
+| relatórios em `auditoria/` | listam os arquivos | não |
+
+**Chaves de tradução removidas** (iguais em pt e en; ninguém mais usa esses grupos):
+
+| Grupo | Chaves |
+|---|---|
+| `Curadoria.erroTecnico` (grupo inteiro) | `titulo`, `pergunta`, `nao`, `sim`, `adicionar`, `tipo`, `selecioneTipo`, `descricao`, `descricaoPlaceholder`, `salvar`, `salvando`, `cancelar`, `excluir`, `excluindo`, `confirmarExclusao`, `nenhumErro`, `carregando`, `erroCarregar`, `erroSalvar`, `erroExcluir`, `fichaFinalizadaSomenteLeitura`, e `tipos` (8 tipos antigos de erro: `movimento`, `corte_apice`, `corte_coroa`, `angulacao_inadequada`, `exposicao_inadequada`, `posicionamento_inadequado`, `artefato`, `processamento_inadequado`) |
+| `Curadoria.achados` (grupo inteiro) | `alteracoesObservadas`, `outrosAchados`, `placeholderOutros` |
+
+Conferência depois de apagar **[medido]**:
+- varredura das chaves fixas: 0 faltando em pt e en;
+- tsc e next build: ok;
+- Vitest: 405 testes, todos passam;
+- pytest: 657.
+
+Cobertura do frontend: **59,43%** das linhas. Catraca: 59,4 / 57,7 / 55,5 / 56,7.
 
 ## 6. Achados fora do escopo (NÃO corrigidos, só listados)
 
@@ -119,15 +135,19 @@ O teste que já passava antes ("com o servidor no ar, o resultado do teste conti
 |---|---|---|
 | `components/TermoCiencia.tsx`, função `recusar` | **mesmo problema** do "Não aceito" dos termos: sem `catch`, deixa erro solto sem conexão | baixa |
 | `app/solicitar-acesso/page.tsx` | os botões de perfil não dizem qual está escolhido para o leitor de tela (faltaria `aria-pressed`); só a cor muda | baixa |
-| `app/pesquisa/page.tsx`, linhas 331, 333 e 497 | comentários que citam o `SeletorDentesQuadrante` apagado | cosmético |
+| `app/pesquisa/page.tsx`, linhas 331, 333 e 497; `FichaCuradoriaForm.tsx` e `lib/` | comentários que citam componentes apagados | cosmético |
+| `lib/achados.ts`: `TIPOS_ERRO_TECNICO` e o tipo `ErroTecnico` | ficaram sem uso depois de apagar o `PainelErroTecnico` (código do `lib`, fora do pedido) | baixa: candidato à próxima limpeza |
+| `app/pesquisa/page.tsx`, linha 811 | rótulo "Erro técnico" do filtro sem `htmlFor` (mesmo problema dos rótulos, em outra tela) | média |
 
 ## 7. Arquivos do PR
 
 | Arquivo | Mudança |
 |---|---|
-| `frontend/messages/pt.json`, `en.json` | + `Visualizador.anotacoes.salvando`; − 37 chaves sem uso |
+| `frontend/messages/pt.json`, `en.json` | + `Visualizador.anotacoes.salvando`; − 37 chaves (painel de achados estruturados e seletor) e − 2 grupos (`Curadoria.erroTecnico`, `Curadoria.achados`) sem uso |
 | `frontend/src/components/curadoria/PainelAchadosEstruturados.tsx` | apagado |
 | `frontend/src/components/curadoria/SeletorDentesQuadrante.tsx` | apagado |
+| `frontend/src/components/curadoria/PainelErroTecnico.tsx` | apagado (decisão de 14/11, 00h31) |
+| `frontend/src/components/curadoria/PainelAchadosRadiografia.tsx` | apagado (decisão de 14/11, 00h31) |
 | `frontend/src/components/curadoria/ModalMotivo.tsx` | `role="dialog"`, `aria-modal`, `aria-labelledby` |
 | `frontend/src/app/macros/page.tsx` | 5 rótulos ligados (`useId` + `htmlFor`/`id`) |
 | `frontend/src/app/auditoria/page.tsx` | 5 rótulos ligados |
