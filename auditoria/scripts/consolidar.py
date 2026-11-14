@@ -30,10 +30,17 @@ def json_de(p: Path):
 
 
 def junit(p: Path):
+    """Soma TODAS as suítes do relatório JUnit.
+
+    O Vitest grava uma <testsuite> por arquivo de teste dentro de <testsuites>;
+    antes só a primeira era lida (o resumo mostrava 11 testes em vez de ~400).
+    """
     try:
-        s = ET.parse(p).getroot()
-        s = s if s.tag == "testsuite" else s[0]
-        t, f, e, k = (int(s.get(x, 0)) for x in ("tests", "failures", "errors", "skipped"))
+        raiz = ET.parse(p).getroot()
+        suites = [raiz] if raiz.tag == "testsuite" else raiz.findall("testsuite")
+        if not suites:
+            return None
+        t, f, e, k = (sum(int(s.get(x, 0)) for s in suites) for x in ("tests", "failures", "errors", "skipped"))
         return t, t - f - e - k, f + e, k
     except Exception:
         return None
