@@ -2783,6 +2783,7 @@
     "salvo": "Group saved.",
     "apagado": "Group deleted.",
     "erro": "Could not save the group.",
+    "erroApagar": "Could not delete the group.",
     "vazio": "You have no groups yet.",
     "membros": "{n, plural, one {1 person} other {# people}}",
     "semMembros": "No people yet.",
