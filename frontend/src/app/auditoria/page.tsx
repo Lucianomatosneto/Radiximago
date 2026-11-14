@@ -1,7 +1,7 @@
 'use client'
 
 import IntegridadeAuditoria from '../../components/IntegridadeAuditoria'
-import { Fragment, useEffect, useState } from 'react'
+import { Fragment, useEffect, useId, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
@@ -68,6 +68,8 @@ export default function AuditoriaPage() {
   const tPesquisa = useTranslations('Pesquisa')
   const locale = useLocale()
   const tagLocale = TAG_LOCALE[locale] ?? 'pt-BR'
+  // liga cada rotulo de filtro ao seu campo (leitor de tela e clique no rotulo)
+  const id = useId()
 
   // M3 (01/11/2026): rotulos de TODAS as acoes vem de lib/acoesAuditoria.ts
   const rotularAcao = (valor: string, detalhes?: string | null) => rotuloAcao(valor, locale, detalhes)
@@ -226,8 +228,9 @@ export default function AuditoriaPage() {
           <section className="rounded-xl border border-base-border bg-base-surface p-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoAcao')}</label>
+                <label htmlFor={`${id}-acao`} className="mb-1 block text-xs font-medium text-slate-400">{t('campoAcao')}</label>
                 <select
+                  id={`${id}-acao`}
                   value={filtroAcao}
                   onChange={(e) => setFiltroAcao(e.target.value)}
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
@@ -259,8 +262,9 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoUsuario')}</label>
+                <label htmlFor={`${id}-usuario`} className="mb-1 block text-xs font-medium text-slate-400">{t('campoUsuario')}</label>
                 <select
+                  id={`${id}-usuario`}
                   value={filtroUsuario}
                   onChange={(e) => setFiltroUsuario(e.target.value)}
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
@@ -277,8 +281,9 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoResultado')}</label>
+                <label htmlFor={`${id}-resultado`} className="mb-1 block text-xs font-medium text-slate-400">{t('campoResultado')}</label>
                 <select
+                  id={`${id}-resultado`}
                   value={filtroResultado}
                   onChange={(e) => setFiltroResultado(e.target.value)}
                   className="w-full rounded-md border border-slate-700 bg-base-surface2 px-3 py-2 text-sm text-slate-100 outline-hidden focus:border-brand"
@@ -293,8 +298,9 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataInicial')}</label>
+                <label htmlFor={`${id}-data-inicial`} className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataInicial')}</label>
                 <input
+                  id={`${id}-data-inicial`}
                   type="date"
                   value={dataDe}
                   onChange={(e) => setDataDe(e.target.value)}
@@ -303,8 +309,9 @@ export default function AuditoriaPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataFinal')}</label>
+                <label htmlFor={`${id}-data-final`} className="mb-1 block text-xs font-medium text-slate-400">{t('campoDataFinal')}</label>
                 <input
+                  id={`${id}-data-final`}
                   type="date"
                   value={dataAte}
                   onChange={(e) => setDataAte(e.target.value)}
