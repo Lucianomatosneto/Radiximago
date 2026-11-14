@@ -19,10 +19,13 @@ export default function FiltroErrosTecnicos({
   selecionados,
   onChange,
   estilo,
+  idCampo,
 }: {
   selecionados: string[]
   onChange: (valores: string[]) => void
   estilo?: React.CSSProperties
+  /** id da caixa de texto, para um <label htmlFor> da tela; com rotulo, o nome vem dele */
+  idCampo?: string
 }) {
   const t = useTranslations('Pesquisa')
   const id = useId()
@@ -99,6 +102,7 @@ export default function FiltroErrosTecnicos({
         ))}
         <input
           ref={campoRef}
+          id={idCampo}
           type="search"
           role="combobox"
           aria-expanded={aberto && sugestoes.length > 0}
@@ -116,7 +120,7 @@ export default function FiltroErrosTecnicos({
           onBlur={() => window.setTimeout(() => setAberto(false), 150)}
           onKeyDown={aoTeclar}
           placeholder={selecionados.length ? t('errosMaisUm') : t('errosDigite')}
-          aria-label={t('errosDigite')}
+          aria-label={idCampo ? undefined : t('errosDigite')}
           className="min-w-[160px] flex-1 bg-transparent px-1 py-0.5 text-sm text-ink outline-hidden placeholder:text-slate-500"
         />
       </div>

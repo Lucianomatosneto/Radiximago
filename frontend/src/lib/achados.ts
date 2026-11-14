@@ -43,19 +43,6 @@ export const REGIOES_ANATOMICAS: string[] = [
   'outras_estruturas',
 ]
 
-// Tipos de erro tecnico (TipoErroTecnico no backend) - dimensao
-// independente de Achado, vocabulario proprio.
-export const TIPOS_ERRO_TECNICO: string[] = [
-  'movimento',
-  'corte_apice',
-  'corte_coroa',
-  'angulacao_inadequada',
-  'exposicao_inadequada',
-  'posicionamento_inadequado',
-  'artefato',
-  'processamento_inadequado',
-]
-
 // Formato de resposta de GET/POST/PATCH /curation/{id}/achados (AchadoOut).
 export interface Achado {
   id: number
@@ -68,14 +55,4 @@ export interface Achado {
   marcacoes: Marcacao[]
   criado_em: string | null
   atualizado_em: string | null
-}
-
-// Formato de resposta de GET/POST/PATCH /curation/{id}/erros-tecnicos
-// (ErroTecnicoOut).
-export interface ErroTecnico {
-  id: number
-  curation_id: number
-  tipo: string
-  descricao: string | null
-  criado_em: string | null
 }

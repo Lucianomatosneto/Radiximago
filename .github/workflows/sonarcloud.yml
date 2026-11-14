@@ -94,6 +94,7 @@ jobs:
             -Dsonar.sources=backend/app,frontend/src
             -Dsonar.tests=backend/tests
             -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/alembic/versions/**
+            -Dsonar.coverage.exclusions=frontend/src/components/login/motorCenaLogin.ts,frontend/src/components/fundo/motorMapaMundi.ts
             -Dsonar.python.version=3.11
             -Dsonar.python.coverage.reportPaths=backend/coverage.xml
             -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info

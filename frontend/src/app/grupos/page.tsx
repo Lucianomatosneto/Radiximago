@@ -112,12 +112,14 @@ export default function GruposPage() {
       cancelar: t('cancelar'),
     })
     if (!sim) return
+    setErro('')
+    setAviso('')
     const r = await fetchOuNulo(`${API}/grupos/${g.id}`, { method: 'DELETE', credentials: 'include' })
     if (!r) {
       setErro(tComum('semConexao'))
       return
     }
-    if (!r.ok) setErro(await lerErro(r, t('erro')))
+    if (!r.ok) setErro(await lerErro(r, t('erroApagar')))
     else setAviso(t('apagado'))
     void carregar()
   }
@@ -140,6 +142,8 @@ export default function GruposPage() {
             <button type="button" onClick={novo} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover">{t('novo')}</button>
           </div>
           {aviso && <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300">{aviso}</p>}
+          {/* erro ao apagar: com o formulario fechado, o aviso aparece aqui (antes so existia dentro do formulario) */}
+          {erro && !editando && <p role="alert" className="rounded-lg bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{erro}</p>}
 
           {editando && (
             <form method="post" onSubmit={salvar} className="max-w-3xl space-y-4 rounded-2xl border border-base-border bg-base-surface p-4">

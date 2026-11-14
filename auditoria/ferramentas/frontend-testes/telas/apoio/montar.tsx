@@ -54,6 +54,9 @@ export function servidorFalso(rotas: Record<string, Rota>) {
       } catch {
         corpo = init.body
       }
+    } else if (init?.body instanceof URLSearchParams) {
+      // formulario simples (ex.: login): vira { campo: valor }
+      corpo = Object.fromEntries(init.body)
     } else if (init?.body instanceof FormData) {
       // formulario com arquivo: cada campo vira texto; o arquivo vira "arquivo:<nome>:<tipo>"
       corpo = Object.fromEntries(
