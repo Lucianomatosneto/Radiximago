@@ -62,6 +62,7 @@ export default function AparelhosPage() {
   const [aviso, setAviso] = useState('')
   const [alerta, setAlerta] = useState('')
   const [testando, setTestando] = useState<number | null>(null)
+  const [salvando, setSalvando] = useState(false)
 
   async function carregar() {
     // sem rede (ou servidor fora do ar) o fetch "explode": mostra o mesmo aviso de erro
@@ -103,14 +104,24 @@ export default function AparelhosPage() {
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault()
-    if (!form) return
+    // travado durante o envio: dois cliques rapidos nao cadastram duas vezes
+    if (!form || salvando) return
     setErro('')
-    const r = await fetchOuNulo(`${API}/aparelhos${form.id ? `/${form.id}` : ''}`, {
-      method: form.id ? 'PUT' : 'POST',
+    setSalvando(true)
+    try {
+      await enviarFormulario(form)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function enviarFormulario(dados: Formulario) {
+    const r = await fetchOuNulo(`${API}/aparelhos${dados.id ? `/${dados.id}` : ''}`, {
+      method: dados.id ? 'PUT' : 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        nome: form.nome, unidade: form.unidade, aet: form.aet, ip: form.ip, porta: Number(form.porta) || 0,
+        nome: dados.nome, unidade: dados.unidade, aet: dados.aet, ip: dados.ip, porta: Number(dados.porta) || 0,
       }),
     })
     if (!r) {
@@ -262,7 +273,7 @@ export default function AparelhosPage() {
               </div>
               {erro && <p role="alert" className="rounded-lg bg-red-500/10 p-2 text-sm text-red-700 dark:text-red-300">{erro}</p>}
               <div className="flex gap-2">
-                <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white">{t('salvar')}</button>
+                <button type="submit" disabled={salvando} className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white disabled:opacity-50">{t('salvar')}</button>
                 <button type="button" onClick={() => { setForm(null); setErro('') }} className="rounded-lg border border-base-border px-4 py-2 text-sm text-ink">{t('cancelar')}</button>
               </div>
             </form>
