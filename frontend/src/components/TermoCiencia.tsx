@@ -113,6 +113,9 @@ export default function TermoCiencia() {
     setEnviando(true)
     try {
       await fetch(`${API}/auth/termo-ciencia/recusar`, { method: 'POST', credentials: 'include' })
+    } catch {
+      // sem conexao: a recusa nao chega ao servidor, mas a pessoa sai do mesmo
+      // jeito (o termo continua pendente e volta no proximo login)
     } finally {
       window.location.href = '/login?termo=recusado'
     }
