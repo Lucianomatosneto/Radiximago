@@ -155,7 +155,7 @@ describe('perceber as falas', () => {
   it('estalo curto (menos de 150 ms) nao vira trecho', async () => {
     const { escuta, trechos, falando } = nova()
     await escuta.iniciar()
-    falar(80)
+    falar(120) // ~80-120 ms de "fala": abaixo do minimo
     expect(falando).toEqual([true, false])
     expect(trechos).toHaveLength(0)
     escuta.parar()
