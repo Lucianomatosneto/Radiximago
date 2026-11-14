@@ -48,19 +48,37 @@ export default defineConfig({
       provider: 'v8',
       // todo o codigo do frontend entra na conta, inclusive o que nenhum teste toca
       include: ['../../../frontend/src/**/*.{ts,tsx}'],
-      exclude: ['**/*.d.ts'],
+      // EXCLUSAO DOS MOTORES GRAFICOS (decisao do Luciano, 14/11/2026, PR #75).
+      // Os dois arquivos abaixo CONTINUAM no sistema; so saem da CONTA da cobertura:
+      // - sao motores puramente decorativos (desenho em canvas 2D e WebGL/Three.js):
+      //   o globo e a cena da tela de login, e o mapa-mundi do fundo;
+      // - nao tem regra de negocio, nao leem nem gravam dados de pessoas e nao
+      //   tocam em dados de pacientes;
+      // - nao sao testaveis de forma util por teste automatico (o navegador de
+      //   teste, jsdom, nao desenha; simular o canvas inteiro nao provaria o que
+      //   a pessoa ve);
+      // - sao conferidos visualmente;
+      // - a lista e NOMEADA, arquivo por arquivo, SEM curinga, para ninguem
+      //   esconder codigo real por engano. Nao acrescentar nada aqui sem decisao
+      //   registrada. A mesma lista esta no Sonar (sonar.coverage.exclusions).
+      // Documento: auditoria/DECISAO_exclusao_motores_graficos_cobertura_2026-11-14.md
+      exclude: [
+        '**/*.d.ts',
+        '../../../frontend/src/components/login/motorCenaLogin.ts',
+        '../../../frontend/src/components/fundo/motorMapaMundi.ts',
+      ],
       allowExternal: true,
       reporter: ['lcov', 'text-summary'],
       reportsDirectory: '../../../frontend/coverage',
-      // CATRACA: minimo atual (medido em 14/11/2026, Fase 3b: linhas 73,12%;
-      // PR 3a: 59,43%; Fase 2: 56,17%; Fase 1: 33,39%; Fase 0: 14,77%). Se a cobertura cair abaixo disto, o Vitest com
+      // CATRACA: minimo atual (medido em 14/11/2026, Fase 3b SEM os 2 motores
+      // graficos: linhas 76,58%; com eles seriam 73,12%; PR 3a: 59,43%; Fase 2: 56,17%; Fase 1: 33,39%; Fase 0: 14,77%). Se a cobertura cair abaixo disto, o Vitest com
       // --coverage FALHA (no GitHub: workflow "Testes do frontend"). A cada PR
       // que acrescenta testes, subir estes numeros; nunca baixar sem justificar.
       thresholds: {
-        lines: 73.1,
-        statements: 70.5,
-        branches: 68.1,
-        functions: 70.3,
+        lines: 76.5,
+        statements: 74.7,
+        branches: 69.6,
+        functions: 72.2,
       },
     },
   },
