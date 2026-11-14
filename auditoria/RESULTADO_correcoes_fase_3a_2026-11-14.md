@@ -157,6 +157,8 @@ Cobertura do frontend: **59,43%** das linhas. Catraca: 59,4 / 57,7 / 55,5 / 56,7
 | `auditoria/ferramentas/frontend-testes/telas/` | 6 arquivos de teste novos + 2 testes acrescentados (anotações e curadoria) |
 | `auditoria/ferramentas/frontend-testes/vitest.config.ts` | catraca |
 
+**Registro de processo:** o commit `ce3893f` (mensagem sobre o `pt.json`) levou junto a exclusão de `PainelErroTecnico.tsx` e `PainelAchadosRadiografia.tsx`. As exclusões já estavam preparadas no Git quando o commit foi feito. O conteúdo está certo, mas a regra "um arquivo por commit" não foi seguida nesse ponto. Como o histórico já foi enviado e não usamos force push, a correção é este registro.
+
 Visual mantido: as mesmas classes de estilo. O título "Tipo de acesso" passou de `<label>` para `<p>` com as mesmas classes, porque um rótulo precisa de um campo e ali só há botões.
 
 O PR 3b (testes das telas restantes) só começa depois deste ser aprovado e juntado.
