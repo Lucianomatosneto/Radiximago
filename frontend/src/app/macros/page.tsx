@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
@@ -99,6 +99,8 @@ export default function MacrosPage() {
   const [aviso, setAviso] = useState('')
   const [vocabulario, setVocabulario] = useState<TermoVocabularioApi[]>([])
   const tTermos = useTranslations('BuscaTermos')
+  // liga cada rotulo ao seu campo (leitor de tela e clique no rotulo)
+  const id = useId()
 
   useEffect(() => {
     void obterSessaoAtual().then((sessao) => {
@@ -282,28 +284,28 @@ export default function MacrosPage() {
             {edicao && c && (
               <div className="mb-4 space-y-3 rounded-xl border border-violet-300/40 bg-violet-400/5 p-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-400">{t('nome')}</label>
-                  <input value={edicao.nome} maxLength={80} onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })} className={campoTexto} placeholder={t('exemploNome')} />
+                  <label htmlFor={`${id}-nome`} className="mb-1 block text-xs font-medium text-slate-400">{t('nome')}</label>
+                  <input id={`${id}-nome`} value={edicao.nome} maxLength={80} onChange={(e) => setEdicao({ ...edicao, nome: e.target.value })} className={campoTexto} placeholder={t('exemploNome')} />
                   <p className="mt-1 text-[11px] text-slate-500">{t('dicaNome')}</p>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">{t('tipo')}</label>
-                    <select value={c.tipo_radiografia} onChange={(e) => mudar({ tipo_radiografia: e.target.value })} className={campoTexto}>
+                    <label htmlFor={`${id}-tipo`} className="mb-1 block text-xs font-medium text-slate-400">{t('tipo')}</label>
+                    <select id={`${id}-tipo`} value={c.tipo_radiografia} onChange={(e) => mudar({ tipo_radiografia: e.target.value })} className={campoTexto}>
                       <option value="">{t('naoAlterar')}</option>
                       {TIPOS.map((v) => <option key={v} value={v}>{tOpcoes(`tipoRadiografia.${v}`)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">{t('qualidade')}</label>
-                    <select value={c.qualidade_tecnica} onChange={(e) => mudar({ qualidade_tecnica: e.target.value })} className={campoTexto}>
+                    <label htmlFor={`${id}-qualidade`} className="mb-1 block text-xs font-medium text-slate-400">{t('qualidade')}</label>
+                    <select id={`${id}-qualidade`} value={c.qualidade_tecnica} onChange={(e) => mudar({ qualidade_tecnica: e.target.value })} className={campoTexto}>
                       <option value="">{t('naoAlterar')}</option>
                       {QUALIDADES.map((v) => <option key={v} value={v}>{tOpcoes(`qualidadeTecnica.${v}`)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">{tOpcoes('origemRotulo')}</label>
-                    <select value={c.origem} onChange={(e) => mudar({ origem: e.target.value })} className={campoTexto}>
+                    <label htmlFor={`${id}-origem`} className="mb-1 block text-xs font-medium text-slate-400">{tOpcoes('origemRotulo')}</label>
+                    <select id={`${id}-origem`} value={c.origem} onChange={(e) => mudar({ origem: e.target.value })} className={campoTexto}>
                       <option value="">{t('naoAlterar')}</option>
                       {['ufsc', 'externa'].map((v) => <option key={v} value={v}>{tOpcoes(`origem.${v}`)}</option>)}
                     </select>
@@ -311,8 +313,8 @@ export default function MacrosPage() {
                 </div>
                 {(['descricao_didatica', 'achados_detalhe', 'observacoes_internas'] as const).map((campo) => (
                   <div key={campo}>
-                    <label className="mb-1 block text-xs font-medium text-slate-400">{t(`campos.${campo}`)}</label>
-                    <textarea value={c[campo]} rows={campo === 'descricao_didatica' ? 3 : 2} onChange={(e) => mudar({ [campo]: e.target.value })} className={campoTexto} />
+                    <label htmlFor={`${id}-${campo}`} className="mb-1 block text-xs font-medium text-slate-400">{t(`campos.${campo}`)}</label>
+                    <textarea id={`${id}-${campo}`} value={c[campo]} rows={campo === 'descricao_didatica' ? 3 : 2} onChange={(e) => mudar({ [campo]: e.target.value })} className={campoTexto} />
                   </div>
                 ))}
                 {/* ACHADOS: a mesma lista da Curadoria, com busca pelas iniciais */}
