@@ -708,6 +708,7 @@
       "erroSalvar": "Couldn't save the annotation.",
       "erroExcluir": "Couldn't delete the annotation.",
       "salvar": "Save",
+      "salvando": "Saving...",
       "cores": {
         "amarelo": "Yellow",
         "vermelho": "Red",
@@ -861,11 +862,6 @@
       "avisoModoProfessor": "You are marking the images you sent. Fill in the record and drawings, then choose \"Send to curator\" (they check and publish it in the image bank) or \"Keep in My images\" (only you see it).",
       "erroSemResposta": "The server did not answer or had an internal error. If it continues, tell support (log: docker compose logs radix-api)."
     },
-    "achados": {
-      "alteracoesObservadas": "Observed changes",
-      "outrosAchados": "Other findings (not in the list above)",
-      "placeholderOutros": "Describe any finding not covered by the options above"
-    },
     "dadosSobrepostos": {
       "status": "Status",
       "anonimizacaoValidada": "Anonymization validated",
@@ -892,14 +888,6 @@
       "chaveQualidade": "good",
       "regioesImagem": "Regions shown in the image",
       "regioesImagemAjuda": "Used by the “Anatomical region” filter of Advanced search. Panoramic and CT come pre-filled; check or uncheck according to the image."
-    },
-    "seletorDentes": {
-      "denteNaoIdentificado": "Tooth not identified",
-      "naoIdentificadoExplicacao": "The dental region is identifiable, but the FDI number could not be determined.",
-      "escolherQuadrante": "Choose quadrant",
-      "quadranteAbreviado": "Q{numero}",
-      "dentesDoQuadrante": "Teeth of quadrant {numero}",
-      "removerDente": "Remove tooth {numero}"
     },
     "visualizador": {
       "ampliarImagem": "Enlarge image",
@@ -947,37 +935,6 @@
       "voltarErroTecnicoAnterior": "Back"
     },
     "achadosEstruturados": {
-      "titulo": "Findings",
-      "adicionar": "+ Add finding",
-      "nenhumAchado": "No findings recorded yet.",
-      "carregando": "Loading findings...",
-      "erroCarregar": "Couldn't load this record's findings.",
-      "tipo": "Finding type",
-      "selecioneTipo": "Select the type",
-      "outro": "Other",
-      "regiaoAnatomica": "Anatomical region (optional)",
-      "selecioneRegiao": "Select the region",
-      "dentesRelacionados": "Related teeth (optional)",
-      "semDentesNaFicha": "Mark this image's teeth (data panel, above) to relate them to a finding.",
-      "descricao": "Describe the finding",
-      "descricaoPlaceholder": "e.g. Taurodontism",
-      "marcacoesRelacionadas": "Related markings (optional)",
-      "semMarcacoes": "No marking drawn on this image yet.",
-      "marcacaoRotulo": "Marking {indice} ({tipo})",
-      "salvar": "Save finding",
-      "salvando": "Saving...",
-      "cancelar": "Cancel",
-      "editar": "Edit",
-      "excluir": "Delete",
-      "excluindo": "Deleting...",
-      "confirmarExclusao": "Delete this finding? This action cannot be undone.",
-      "erroDescricaoObrigatoriaOutros": "Describe the finding selected as Other.",
-      "erroSalvar": "Couldn't save the finding.",
-      "erroExcluir": "Couldn't delete the finding.",
-      "fichaFinalizadaSomenteLeitura": "This record has already been finalized - findings can no longer be changed.",
-      "semRegiao": "—",
-      "semDentes": "No tooth related",
-      "naoIdentificadoResumo": "Tooth not identified",
       "regioes": {
         "coroa": "Crown",
         "raiz": "Root",
@@ -991,39 +948,6 @@
         "mandibula": "Mandible",
         "palato": "Palate",
         "outras_estruturas": "Other structures"
-      }
-    },
-    "erroTecnico": {
-      "titulo": "Technical error",
-      "pergunta": "Is there a technical error in this image?",
-      "nao": "No",
-      "sim": "Yes",
-      "adicionar": "+ Add technical error",
-      "tipo": "Technical error type",
-      "selecioneTipo": "Select the type",
-      "descricao": "Description (optional)",
-      "descricaoPlaceholder": "e.g. Movement during exposure",
-      "salvar": "Save technical error",
-      "salvando": "Saving...",
-      "cancelar": "Cancel",
-      "excluir": "Delete",
-      "excluindo": "Deleting...",
-      "confirmarExclusao": "Delete this technical error? This action cannot be undone.",
-      "nenhumErro": "No technical error recorded.",
-      "carregando": "Loading...",
-      "erroCarregar": "Couldn't load this record's technical errors.",
-      "erroSalvar": "Couldn't save the technical error.",
-      "erroExcluir": "Couldn't delete the technical error.",
-      "fichaFinalizadaSomenteLeitura": "This record has already been finalized - technical errors can no longer be changed.",
-      "tipos": {
-        "movimento": "Patient movement",
-        "corte_apice": "Apex cut off",
-        "corte_coroa": "Crown cut off",
-        "angulacao_inadequada": "Inadequate angulation",
-        "exposicao_inadequada": "Inadequate exposure",
-        "posicionamento_inadequado": "Inadequate positioning",
-        "artefato": "Artifact",
-        "processamento_inadequado": "Inadequate processing"
       }
     },
     "reviewsRespondidas": {

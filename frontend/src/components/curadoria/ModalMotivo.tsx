@@ -34,10 +34,16 @@ export default function ModalMotivo({
   const t = useTranslations('Curadoria.modalMotivo')
   // liga o rotulo "Motivo" a caixa de texto (leitor de tela - 13/11/2026)
   const idMotivo = useId()
+  const idTitulo = useId()
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={idTitulo}
+    >
       <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-        <h2 className="mb-4 text-lg font-semibold text-ink">
+        <h2 id={idTitulo} className="mb-4 text-lg font-semibold text-ink">
           {tipo === 'descartar' ? t('descartarTitulo') : t('segundaOpiniaoTitulo')}
         </h2>
         <label htmlFor={idMotivo} className={campoLabel}>

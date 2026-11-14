@@ -69,6 +69,26 @@ describe('mostrar', () => {
 })
 
 describe('criar', () => {
+  it('enquanto salva, o botao mostra "Salvando..." (PR 3a: antes mostrava o nome da chave)', async () => {
+    const usuario = userEvent.setup()
+    let liberar: () => void = () => {}
+    abrir({ 'POST /annotations/7': { status: 201, corpo: { ...MARCADOR, id: 3, texto: 'Nota lenta' } } })
+    await screen.findByRole('button', { name: 'Ápice do 36' })
+    const fetchFalso = globalThis.fetch
+    vi.stubGlobal('fetch', async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') await new Promise<void>((r) => (liberar = r))
+      return fetchFalso(url, init)
+    })
+    const caixa = await novaNoPonto(usuario, [20, 10])
+    await usuario.type(caixa, 'Nota lenta')
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    const botao = await screen.findByRole('button', { name: 'Salvando...' })
+    expect((botao as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.queryByText('salvando')).toBeNull()
+    liberar()
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Salvando...' })).toBeNull())
+  })
+
   it('um clique (sem arrastar): nota sem seta; texto vazio e recusado; salva com o estilo escolhido', async () => {
     const usuario = userEvent.setup()
     const nova = { ...MARCADOR, id: 3, texto: 'Nota nova', cor: '#f87171', fixada: true, pos_x: 0.1, pos_y: 0.1 }

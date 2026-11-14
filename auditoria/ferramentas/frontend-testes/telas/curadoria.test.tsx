@@ -485,4 +485,18 @@ describe('correcao de 13/11/2026: acessibilidade da janela de motivo (defeito 2)
     await usuario.type(motivo, 'Teste')
     expect((motivo as HTMLTextAreaElement).value).toBe('Teste')
   })
+
+  it.each([
+    ['Descartar', 'Descartar ficha'],
+    ['Solicitar segunda opinião', 'Solicitar segunda opinião'],
+  ])('PR 3a: "%s" abre uma janela (dialog) com o nome do titulo, e o motivo fica dentro dela', async (botao, titulo) => {
+    const usuario = userEvent.setup()
+    await abrirComFicha(rotasPadrao())
+    await usuario.click(within(ficha_()).getAllByRole('button', { name: botao })[0])
+    const janela = screen.getByRole('dialog', { name: titulo })
+    expect(janela.getAttribute('aria-modal')).toBe('true')
+    expect(within(janela).getByLabelText('Motivo').tagName).toBe('TEXTAREA')
+    await usuario.click(within(janela).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog', { name: titulo })).toBeNull()
+  })
 })

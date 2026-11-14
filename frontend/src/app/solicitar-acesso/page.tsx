@@ -196,10 +196,11 @@ export default function SolicitarAcessoPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">
+              {/* os perfis sao botoes: o titulo nomeia o GRUPO (um <label> exige um campo) */}
+              <p id="tipo_acesso_rotulo" className="mb-1.5 block text-sm font-medium text-slate-300">
                 {t('tipoAcesso')} <span className="text-red-400">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
+              </p>
+              <div role="group" aria-labelledby="tipo_acesso_rotulo" className="grid grid-cols-2 gap-2">
                 {OPCOES_INTENCAO_PERFIL.map((valor) => (
                   <button
                     key={valor}

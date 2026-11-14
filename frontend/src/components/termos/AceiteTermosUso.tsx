@@ -67,6 +67,9 @@ export default function AceiteTermosUso({ termos, onAceito }: { termos: MeusTerm
     setEnviando(true)
     try {
       await fetch(`${API}/termos/recusar`, { method: 'POST', credentials: 'include' })
+    } catch {
+      // sem conexao: a recusa nao chega ao servidor, mas a pessoa sai do mesmo
+      // jeito (os termos continuam pendentes e voltam no proximo login)
     } finally {
       window.location.href = '/login?termos=recusados'
     }

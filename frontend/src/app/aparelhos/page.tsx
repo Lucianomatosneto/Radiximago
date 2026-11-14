@@ -167,6 +167,8 @@ export default function AparelhosPage() {
       if (!d.orthanc_no_ar) setAlerta(t('testeOrthancFora'))
       else if (d.respondeu) setAviso(t('testeOk', { nome: a.nome }))
       else setAlerta(t('testeSemResposta', { nome: a.nome }))
+    } catch {
+      setErro(tComum('semConexao'))
     } finally {
       setTestando(null)
     }
