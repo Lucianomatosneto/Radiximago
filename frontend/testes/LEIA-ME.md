@@ -68,6 +68,24 @@ expect(servidor.alteracoes()[0].corpo).toEqual({ termo: 'Reabsorção', ... })
 expect(roteador.push).toHaveBeenCalledWith('/acesso-negado?de=/vocabulario')
 ```
 
+## Componentes com desenho, câmera ou microfone (Fase 2)
+
+O navegador de teste (jsdom) não desenha, não mede a tela, não tem câmera nem microfone. Simule só o mínimo e **escreva no topo do arquivo o que ficou de fora** (fica para o Playwright ou para o teste à mão).
+
+| Falta no jsdom | Como simular | Exemplo |
+|---|---|---|
+| Medida da tela | `vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({...})`; `clientWidth`/`clientHeight` com `vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get')` | `anotacoes-imagem`, `pintor-segmentacao` |
+| Carregar imagem | classe `ImagemFalsa` com `naturalWidth/Height` e `onload` via `setTimeout`; `vi.stubGlobal('Image', ImagemFalsa)` | `marcador-achado`, `foto-celular` |
+| Canvas | `getContext` devolve um objeto que anota os comandos (`fillRect`, `drawImage`) ou guarda os pixels; `toDataURL`/`toBlob` devolvem algo que o teste consegue conferir (ex.: `data:image/png;pixels=N`) | `foto-celular`, `pintor-segmentacao` |
+| Microfone e gravador | `navigator.mediaDevices.getUserMedia` falso e uma classe `MediaRecorder` que entrega um `Blob` ao parar | `painel-voz` |
+| Iframe de outro endereço (OHIF) | `contentWindow` falso que anota `postMessage`; as respostas do OHIF são `window.dispatchEvent(new MessageEvent('message', { origin, data }))` | `visualizador-sequencial` |
+| Baixar arquivo | `URL.createObjectURL` falso e `vi.spyOn(HTMLAnchorElement.prototype, 'click')` para ler o nome baixado | `menu-prancha`, `visualizador-sequencial` |
+
+Outros padrões:
+- **Componente controlado** (recebe `valor` e `onChange`): monte um pequeno `Dono` no teste que guarda o estado, e confira o estado guardado (`coluna-ficha`, `painel-parecer`).
+- **Servidor falso**: `cabecalhos` na resposta (ex.: `content-disposition` de um download) e corpo `FormData` (o arquivo vira `arquivo:<nome>:<tipo>`).
+- Partes com teste próprio podem virar versões simples com `vi.mock`, que **mostram o que receberam** (botões e textos), para o teste conferir a conversa entre as partes.
+
 ## Regra de ouro
 
 Cobertura conta **linhas executadas**, não prova que algo funciona. Por isso, todo teste confere algo visível:

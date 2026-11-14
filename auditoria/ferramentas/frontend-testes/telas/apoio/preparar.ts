@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
   // rolar a pagina / ate um elemento
   window.scrollTo = vi.fn() as unknown as typeof window.scrollTo
   Element.prototype.scrollIntoView = vi.fn()
+  Element.prototype.scrollTo = vi.fn() as unknown as typeof Element.prototype.scrollTo // rolar dentro de uma caixa
 
   // tema do sistema (ThemeToggle): sempre "escuro", sem mudar
   window.matchMedia = vi.fn((consulta: string) => ({

@@ -24,6 +24,8 @@ export function montarTela(tela: ReactElement) {
 export interface RespostaFalsa {
   status?: number
   corpo?: unknown
+  /** cabecalhos extras (ex.: content-disposition com o nome do arquivo baixado) */
+  cabecalhos?: Record<string, string>
 }
 /** "SEM_CONEXAO" simula o servidor fora do ar (o fetch da erro). */
 export type Rota = RespostaFalsa | 'SEM_CONEXAO' | ((pedido: PedidoFeito) => RespostaFalsa | 'SEM_CONEXAO')
@@ -52,6 +54,11 @@ export function servidorFalso(rotas: Record<string, Rota>) {
       } catch {
         corpo = init.body
       }
+    } else if (init?.body instanceof FormData) {
+      // formulario com arquivo: cada campo vira texto; o arquivo vira "arquivo:<nome>:<tipo>"
+      corpo = Object.fromEntries(
+        [...init.body.entries()].map(([k, v]) => [k, typeof v === 'string' ? v : `arquivo:${(v as File).name}:${v.type}`])
+      )
     }
     const pedido = { metodo, caminho, corpo }
     pedidos.push(pedido)
@@ -62,10 +69,10 @@ export function servidorFalso(rotas: Record<string, Rota>) {
     const rota = rotas[chave] ?? (curinga ? rotas[curinga] : undefined)
     const resposta = typeof rota === 'function' ? rota(pedido) : rota
     if (resposta === 'SEM_CONEXAO') throw new TypeError('Failed to fetch')
-    const { status = 200, corpo: dados = {} } = resposta ?? { status: 404, corpo: { detail: 'rota nao cadastrada no teste' } }
+    const { status = 200, corpo: dados = {}, cabecalhos = {} } = resposta ?? { status: 404, corpo: { detail: 'rota nao cadastrada no teste' } }
     // 204 ("deu certo, sem conteudo") nao pode ter corpo
     const texto = status === 204 ? null : JSON.stringify(dados)
-    return new Response(texto, { status, headers: { 'Content-Type': 'application/json' } })
+    return new Response(texto, { status, headers: { 'Content-Type': 'application/json', ...cabecalhos } })
   })
   vi.stubGlobal('fetch', fetchFalso)
   return {
