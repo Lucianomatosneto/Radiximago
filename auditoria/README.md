@@ -39,6 +39,8 @@ Testes de carga e ZAP rodam só contra um Radix criado dentro do GitHub, nunca c
 
 - Aba **Actions** do GitHub: resumo de cada execução e *Artifacts* (90 dias).
 - Branch **`auditoria/resultados`**: um `.md` por semana (`semanais/AAAA-MM-DD.md`) e `ultimo.md`. **Só relatórios, nunca código.** É dali que o Claude lê os resultados das automações.
+  - `sonar.json` (e a cópia `semanais/AAAA-MM-DD-sonar.json`): os números do SonarCloud lidos pela rotina semanal, para quem não consegue acessar o SonarCloud (o painel de acompanhamento). Traz cobertura, linhas sem teste, bugs, vulnerabilidades, *code smells*, duplicação, *hotspots*, notas (A–E), a porta de qualidade com cada condição e a cobertura por pasta (`backend/app`, `frontend/src/app`, `components`, `lib`, `i18n`). O campo `commit` é o commit que o Sonar analisou e `analise_em` é quando. Se o Sonar não responder, o arquivo traz só `data`, `commit` e `erro`, e a rotina segue normalmente.
+  - Para testar o caso de falha: Actions → *Auditoria semanal* → *Run workflow* → `simular_falha_sonar` = `token_invalido` ou `fora_do_ar`.
 
 ## Como pedir uma auditoria pelo chat
 
