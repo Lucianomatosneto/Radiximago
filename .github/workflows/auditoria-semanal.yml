@@ -4,7 +4,12 @@
 #
 # Onde ficam os resultados (para o Claude e para você consultarem):
 #   - aba Actions: resumo de cada execução e Artifacts (guardados por 90 dias);
-#   - branch "auditoria/resultados": um arquivo .md por semana (SÓ relatórios, nunca código).
+#   - branch "auditoria/resultados": um arquivo .md por semana (SÓ relatórios, nunca código);
+#   - branch "auditoria/resultados", arquivo "sonar.json": os números do SonarCloud
+#     (cobertura, problemas, notas, porta de qualidade e cobertura por pasta), para o
+#     painel de acompanhamento, que lê o GitHub mas não consegue acessar o SonarCloud.
+#     Cópia datada em "semanais/AAAA-MM-DD-sonar.json". Se o Sonar não responder,
+#     o arquivo traz "erro" e a rotina continua normalmente.
 #
 # Segurança: a única permissão de escrita é do job "consolidar", e só na branch
 # "auditoria/resultados". Nada é publicado em produção. O código nunca é alterado.
@@ -14,6 +19,12 @@ on:
   schedule:
     - cron: "0 9 * * 1" # segunda-feira, 09:00 UTC = 06:00 em Brasília
   workflow_dispatch:
+    inputs:
+      simular_falha_sonar:
+        description: "Teste do caso de falha do Sonar (deixe 'nenhuma' no uso normal)"
+        type: choice
+        options: [nenhuma, token_invalido, fora_do_ar]
+        default: nenhuma
 
 permissions:
   contents: read
@@ -55,6 +66,113 @@ jobs:
           echo "$data" > "$RUNNER_TEMP/data.txt"
           cat "$RUNNER_TEMP/resumo.md" >> "$GITHUB_STEP_SUMMARY"
 
+      # Números do SonarCloud -> sonar.json (só LEITURA na API do Sonar).
+      # - O token é o mesmo segredo do sonarcloud.yml, entregue por variável de
+      #   ambiente e NUNCA impresso (o GitHub também o mascara como ***).
+      # - Qualquer falha (Sonar fora do ar, token inválido, resposta estranha) vira
+      #   {"erro": "..."} no arquivo; este passo nunca reprova a rotina.
+      - name: Números do SonarCloud (sonar.json)
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SIMULAR_FALHA: ${{ inputs.simular_falha_sonar || 'nenhuma' }}
+        run: |
+          python3 - <<'PY' || echo '{"data":"'"$(cat "$RUNNER_TEMP/data.txt")"'","erro":"o passo do Sonar terminou sem gravar o resultado"}' > "$RUNNER_TEMP/sonar.json"
+          import base64, json, os, urllib.parse, urllib.request
+          from pathlib import Path
+
+          saida = Path(os.environ["RUNNER_TEMP"]) / "sonar.json"
+          data = (Path(os.environ["RUNNER_TEMP"]) / "data.txt").read_text().strip()
+          PROJETO = "Lucianomatosneto_Radiximago"
+          RAMO = "main"  # nome com que a redesign-ui é enviada ao Sonar (ver sonarcloud.yml)
+          base = "https://sonarcloud.io"
+          token = os.environ.get("SONAR_TOKEN", "")
+          simular = os.environ.get("SIMULAR_FALHA", "nenhuma")
+          if simular == "token_invalido":
+              token = "token-invalido-de-teste"
+          elif simular == "fora_do_ar":
+              base = "https://sonarcloud.invalid"
+          print("Simulação de falha:", simular)
+          print("Token do Sonar:", "presente (valor não exibido)" if token else "ausente (consulta anônima)")
+
+          def api(caminho, **params):
+              url = f"{base}{caminho}?{urllib.parse.urlencode(params)}"
+              req = urllib.request.Request(url)
+              if token:
+                  req.add_header("Authorization", "Basic " + base64.b64encode((token + ":").encode()).decode())
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  return json.load(r)
+
+          def numero(v):
+              try:
+                  f = float(v)
+              except (TypeError, ValueError):
+                  return v
+              return int(f) if f.is_integer() else round(f, 1)
+
+          NOTA = {1: "A", 2: "B", 3: "C", 4: "D", 5: "E"}
+          METRICAS = ["coverage", "ncloc", "lines_to_cover", "uncovered_lines", "bugs", "vulnerabilities",
+                      "code_smells", "duplicated_lines_density", "security_hotspots",
+                      "reliability_rating", "security_rating", "sqale_rating"]
+          AREAS = ["backend/app", "frontend/src/app", "frontend/src/components", "frontend/src/lib", "frontend/src/i18n"]
+
+          try:
+              m = api("/api/measures/component", component=PROJETO, branch=RAMO, metricKeys=",".join(METRICAS))
+              med = {x["metric"]: x.get("value") for x in m["component"]["measures"]}
+
+              analises = api("/api/project_analyses/search", project=PROJETO, branch=RAMO, ps=1).get("analyses", [])
+              commit = analises[0].get("revision") if analises else None
+
+              qg = api("/api/qualitygates/project_status", projectKey=PROJETO, branch=RAMO)["projectStatus"]
+              condicoes = [{"metric": c.get("metricKey"), "status": c.get("status"),
+                            "actual": numero(c.get("actualValue")), "threshold": numero(c.get("errorThreshold")),
+                            "comparator": c.get("comparator")} for c in qg.get("conditions", [])]
+
+              somas = {a: [0, 0] for a in AREAS + ["outros"]}
+              pagina = 1
+              while True:
+                  arv = api("/api/measures/component_tree", component=PROJETO, branch=RAMO, strategy="leaves",
+                            qualifiers="FIL", metricKeys="lines_to_cover,uncovered_lines", ps=500, p=pagina)
+                  for arq in arv.get("components", []):
+                      v = {x["metric"]: int(float(x.get("value", 0))) for x in arq.get("measures", [])}
+                      caminho = arq.get("path", "")
+                      area = next((a for a in AREAS if caminho.startswith(a + "/")), "outros")
+                      somas[area][0] += v.get("lines_to_cover", 0)
+                      somas[area][1] += v.get("uncovered_lines", 0)
+                  total = arv.get("paging", {}).get("total", 0)
+                  if pagina * 500 >= total:
+                      break
+                  pagina += 1
+              areas = [{"area": a, "lines": l, "uncovered": u, "coverage": round(100 * (l - u) / l, 1) if l else None}
+                       for a, (l, u) in somas.items() if a != "outros" or l]
+
+              resultado = {
+                  "data": data,
+                  "commit": commit or os.environ.get("GITHUB_SHA"),
+                  "analise_em": analises[0].get("date") if analises else None,
+                  **{k: numero(med.get(k)) for k in ("coverage", "lines_to_cover", "uncovered_lines", "ncloc", "bugs",
+                                                     "vulnerabilities", "code_smells", "duplicated_lines_density",
+                                                     "security_hotspots")},
+                  "ratings": {nome: NOTA.get(int(float(med[k])), med[k]) if med.get(k) else None
+                              for nome, k in (("reliability", "reliability_rating"), ("security", "security_rating"),
+                                              ("maintainability", "sqale_rating"))},
+                  "quality_gate": {"status": qg.get("status"), "conditions": condicoes},
+                  "areas": areas,
+              }
+          except Exception as erro:  # a rotina continua; o painel vê o motivo
+              resultado = {"data": data, "commit": os.environ.get("GITHUB_SHA"),
+                           "erro": f"{type(erro).__name__}: {erro}"}
+
+          saida.write_text(json.dumps(resultado, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          print(json.dumps(resultado, ensure_ascii=False, indent=2))
+          PY
+          {
+            echo "### SonarCloud (sonar.json)"
+            echo '```json'
+            cat "$RUNNER_TEMP/sonar.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Publicar na branch auditoria/resultados (só relatórios)
         run: |
           git config user.name "Central de Auditoria (automático)"
@@ -71,5 +189,10 @@ jobs:
           cp "$RUNNER_TEMP/resumo.md" "semanais/$data.md"
           cp "$RUNNER_TEMP/resumo.md" ultimo.md
           git add ultimo.md "semanais/$data.md"
+          if [ -f "$RUNNER_TEMP/sonar.json" ]; then
+            cp "$RUNNER_TEMP/sonar.json" sonar.json
+            cp "$RUNNER_TEMP/sonar.json" "semanais/$data-sonar.json"
+            git add sonar.json "semanais/$data-sonar.json"
+          fi
           git commit -m "Resumo automático da auditoria semanal ($data)"
           git push origin auditoria/resultados
