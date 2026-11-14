@@ -157,7 +157,7 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
           ))}
         </ul>
       )}
-      {erroAcao && <p className="mt-1 text-xs text-red-400">{erroAcao}</p>}
+      {erroAcao && <p role="alert" className="mt-1 text-xs text-red-400">{erroAcao}</p>}
       <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] text-slate-500">{t('apagarSoParaVoce')}</p>
         <div className="flex items-center gap-1">
