@@ -222,6 +222,7 @@ export default function MacrosPage() {
       return
     }
     if (r.ok) void carregar()
+    else setErro(await lerErro(r, t('erroEsquecer')))
   }
 
   function traduzirItem(valor: string) {
