@@ -862,11 +862,6 @@
       "avisoModoProfessor": "You are marking the images you sent. Fill in the record and drawings, then choose \"Send to curator\" (they check and publish it in the image bank) or \"Keep in My images\" (only you see it).",
       "erroSemResposta": "The server did not answer or had an internal error. If it continues, tell support (log: docker compose logs radix-api)."
     },
-    "achados": {
-      "alteracoesObservadas": "Observed changes",
-      "outrosAchados": "Other findings (not in the list above)",
-      "placeholderOutros": "Describe any finding not covered by the options above"
-    },
     "dadosSobrepostos": {
       "status": "Status",
       "anonimizacaoValidada": "Anonymization validated",
@@ -953,39 +948,6 @@
         "mandibula": "Mandible",
         "palato": "Palate",
         "outras_estruturas": "Other structures"
-      }
-    },
-    "erroTecnico": {
-      "titulo": "Technical error",
-      "pergunta": "Is there a technical error in this image?",
-      "nao": "No",
-      "sim": "Yes",
-      "adicionar": "+ Add technical error",
-      "tipo": "Technical error type",
-      "selecioneTipo": "Select the type",
-      "descricao": "Description (optional)",
-      "descricaoPlaceholder": "e.g. Movement during exposure",
-      "salvar": "Save technical error",
-      "salvando": "Saving...",
-      "cancelar": "Cancel",
-      "excluir": "Delete",
-      "excluindo": "Deleting...",
-      "confirmarExclusao": "Delete this technical error? This action cannot be undone.",
-      "nenhumErro": "No technical error recorded.",
-      "carregando": "Loading...",
-      "erroCarregar": "Couldn't load this record's technical errors.",
-      "erroSalvar": "Couldn't save the technical error.",
-      "erroExcluir": "Couldn't delete the technical error.",
-      "fichaFinalizadaSomenteLeitura": "This record has already been finalized - technical errors can no longer be changed.",
-      "tipos": {
-        "movimento": "Patient movement",
-        "corte_apice": "Apex cut off",
-        "corte_coroa": "Crown cut off",
-        "angulacao_inadequada": "Inadequate angulation",
-        "exposicao_inadequada": "Inadequate exposure",
-        "posicionamento_inadequado": "Inadequate positioning",
-        "artefato": "Artifact",
-        "processamento_inadequado": "Inadequate processing"
       }
     },
     "reviewsRespondidas": {
