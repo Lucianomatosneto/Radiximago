@@ -1773,6 +1773,7 @@
     "rejeitandoPedidoDe": "Rejecting the request from {nome} ({email}).",
     "erroExcluirUsuario": "Couldn't delete the user.",
     "erroCarregarExcluidos": "Couldn't load the deleted users.",
+    "erroCarregarSolicitacoes": "Couldn't load the access requests.",
     "erroAprovarSolicitacao": "Couldn't approve the request.",
     "erroMotivoRejeicaoObrigatorio": "Enter the rejection reason.",
     "erroRejeitarSolicitacao": "Couldn't reject the request.",
