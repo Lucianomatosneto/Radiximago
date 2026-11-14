@@ -862,11 +862,6 @@
       "avisoModoProfessor": "Você está marcando as imagens que você enviou. Preencha a ficha e os desenhos e escolha \"Enviar ao curador\" (ele confere e publica no banco de imagens) ou \"Guardar em Minhas imagens\" (fica só com você).",
       "erroSemResposta": "O servidor não respondeu ou teve um erro interno. Se continuar, avise o suporte (registro: docker compose logs radix-api)."
     },
-    "achados": {
-      "alteracoesObservadas": "Alterações observadas",
-      "outrosAchados": "Outros achados (não estão na lista acima)",
-      "placeholderOutros": "Descreva aqui qualquer achado que não esteja nas opções acima"
-    },
     "dadosSobrepostos": {
       "status": "Status",
       "anonimizacaoValidada": "Anonimização validada",
@@ -953,39 +948,6 @@
         "mandibula": "Mandíbula",
         "palato": "Palato",
         "outras_estruturas": "Outras estruturas"
-      }
-    },
-    "erroTecnico": {
-      "titulo": "Erro técnico",
-      "pergunta": "Há erro técnico nesta imagem?",
-      "nao": "Não",
-      "sim": "Sim",
-      "adicionar": "+ Adicionar erro técnico",
-      "tipo": "Tipo de erro técnico",
-      "selecioneTipo": "Selecione o tipo",
-      "descricao": "Descrição (opcional)",
-      "descricaoPlaceholder": "ex.: Movimento durante a exposição",
-      "salvar": "Salvar erro técnico",
-      "salvando": "Salvando...",
-      "cancelar": "Cancelar",
-      "excluir": "Excluir",
-      "excluindo": "Excluindo...",
-      "confirmarExclusao": "Excluir este erro técnico? Esta ação não pode ser desfeita.",
-      "nenhumErro": "Nenhum erro técnico registrado.",
-      "carregando": "Carregando...",
-      "erroCarregar": "Não foi possível carregar os erros técnicos desta ficha.",
-      "erroSalvar": "Não foi possível salvar o erro técnico.",
-      "erroExcluir": "Não foi possível excluir o erro técnico.",
-      "fichaFinalizadaSomenteLeitura": "Esta ficha já foi finalizada - erros técnicos não podem mais ser alterados.",
-      "tipos": {
-        "movimento": "Movimento do paciente",
-        "corte_apice": "Corte de ápice",
-        "corte_coroa": "Corte de coroa",
-        "angulacao_inadequada": "Angulação inadequada",
-        "exposicao_inadequada": "Exposição inadequada",
-        "posicionamento_inadequado": "Posicionamento inadequado",
-        "artefato": "Artefato",
-        "processamento_inadequado": "Processamento inadequado"
       }
     },
     "reviewsRespondidas": {
