@@ -2783,6 +2783,7 @@
     "salvo": "Grupo salvo.",
     "apagado": "Grupo apagado.",
     "erro": "Não foi possível salvar o grupo.",
+    "erroApagar": "Não foi possível apagar o grupo.",
     "vazio": "Você ainda não tem grupos.",
     "membros": "{n, plural, one {1 pessoa} other {# pessoas}}",
     "semMembros": "Sem pessoas ainda.",
