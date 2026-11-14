@@ -153,7 +153,7 @@ Resultado: 12 de 12 mutações foram pegas. A tarefa pedia pelo menos 10.
 |---|---|
 | Vitest | 686 testes em 41 arquivos, todos passam. 3 rodadas seguidas sem falha intermitente. |
 | Cobertura (Vitest) | Linhas 73,12% (7848/10733) · Instruções 70,52% (8921/12649) · Ramos 68,14% (6611/9702) · Funções 70,39% (2088/2966) |
-| Catraca (`vitest.config.ts`, commit 9772b1c) | Linhas 73,1 · Instruções 70,5 · Ramos 68,1 · Funções 70,3. Antes: 59,4 / 57,7 / 55,5 / 56,7. Arredondada para baixo. |
+| Catraca (`vitest.config.ts`, commit 9772b1c; depois da decisão dos motores, commit 8ad160a: 76,5 / 74,7 / 69,6 / 72,2) | Linhas 73,1 · Instruções 70,5 · Ramos 68,1 · Funções 70,3. Antes: 59,4 / 57,7 / 55,5 / 56,7. Arredondada para baixo. |
 | pytest | 657 passaram |
 | tsc (checagem de tipos) | ok |
 | tsx (testes de tradução) | 16 arquivos, 0 falhas |
@@ -192,7 +192,15 @@ Os motores são 4,5% de todas as linhas do frontend.
 Proposta: excluir só esses dois arquivos da medição, usando o `exclude` do `vitest.config.ts` e o `sonar.coverage.exclusions`, com o motivo escrito no próprio arquivo.
 As telas que usam os motores (login e fundo) continuam testadas, com o motor simulado.
 
-**Decisão do Luciano:** excluir ou manter. Não foi feito nada por conta própria.
+**Decisão do Luciano (14/11/2026, 08h47): manter os dois arquivos no sistema, mas tirá-los da conta da cobertura.**
+
+Como foi aplicado, no mesmo PR #75:
+
+- **Vitest:** os dois arquivos entraram em `coverage.exclude` (lista nomeada, sem curinga). A catraca subiu para 76,5 / 74,7 / 69,6 / 72,2.
+- **Sonar:** os mesmos dois arquivos foram para `sonar.coverage.exclusions`. A exclusão vale só para a cobertura: eles continuam sendo analisados para bugs, vulnerabilidades e code smells.
+- **Justificativa:** está em `auditoria/DECISAO_exclusao_motores_graficos_cobertura_2026-11-14.md`.
+
+Números depois da exclusão: linhas 76,58% · instruções 74,72% · ramos 69,67% · funções 72,29%.
 
 ## Sobras novas (listadas, NÃO corrigidas)
 
