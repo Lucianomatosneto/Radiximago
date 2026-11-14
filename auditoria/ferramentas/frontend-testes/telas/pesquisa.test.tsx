@@ -118,6 +118,16 @@ describe('permissao por perfil e abertura', () => {
 })
 
 describe('filtros e pesquisa', () => {
+  it('Fase 3b: o rotulo "Erro técnico" esta ligado a caixa de busca do filtro', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    const campo = screen.getByLabelText('Erro técnico')
+    expect(campo).toBe(screen.getByRole('combobox', { name: 'Erro técnico' }))
+    await usuario.type(campo, 'sub')
+    await usuario.click(await screen.findByRole('option', { name: /Subexposição/ }))
+    expect(screen.getByRole('button', { name: '✕ Subexposição' })).toBeTruthy()
+  })
+
   it('filtros escolhidos viram o endereco da pesquisa e o resumo "Pesquisando por"', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(rotasPadrao())
