@@ -1773,6 +1773,7 @@
     "rejeitandoPedidoDe": "Rejeitando o pedido de {nome} ({email}).",
     "erroExcluirUsuario": "Não foi possível excluir o usuário.",
     "erroCarregarExcluidos": "Não foi possível carregar os usuários excluídos.",
+    "erroCarregarSolicitacoes": "Não foi possível carregar as solicitações de acesso.",
     "erroAprovarSolicitacao": "Não foi possível aprovar a solicitação.",
     "erroMotivoRejeicaoObrigatorio": "Informe o motivo da rejeição.",
     "erroRejeitarSolicitacao": "Não foi possível rejeitar a solicitação.",
