@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, FormEvent } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
@@ -76,6 +76,7 @@ export default function Topbar({
   const [menuAberto, setMenuAberto] = useState(false)
   const [ajudaAberta, setAjudaAberta] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const idTituloPerfil = useId()
 
   const [modalPerfilAberto, setModalPerfilAberto] = useState(false)
   const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(null)
@@ -308,8 +309,8 @@ export default function Topbar({
 
       {modalPerfilAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
-          <div className="w-full max-w-sm rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
-            <h2 className="mb-1 text-lg font-semibold text-ink">{t('meuPerfil')}</h2>
+          <div role="dialog" aria-modal="true" aria-labelledby={idTituloPerfil} className="w-full max-w-sm rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
+            <h2 id={idTituloPerfil} className="mb-1 text-lg font-semibold text-ink">{t('meuPerfil')}</h2>
             <p className="mb-5 text-sm text-slate-400">{t('escolhaFoto')}</p>
 
             <div className="mb-5 flex justify-center">
