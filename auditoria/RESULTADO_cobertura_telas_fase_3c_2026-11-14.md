@@ -12,11 +12,16 @@ Regras seguidas:
 
 ## Resumo em linguagem simples
 
-- **Linhas testadas (Vitest):** subiram de **76,58% para 83,14%** (de 7848 para 8522 de 10249). A meta era pelo menos 82%.
-- **Testes:** passaram de 686 para **843**. Todos passam, e passaram em 3 rodadas seguidas.
-- **Defeitos achados:** 2, os dois de acessibilidade, ambos corrigidos. Em cada um, o teste que falhava veio antes da correção.
-- **Mutação:** quebrei o código de propósito em 14 pontos.
-  - 12 foram pegas logo de cara.
+O PR foi feito em duas rodadas. Na segunda, a pedido do Luciano no chat ("Mais cobertura no #76"), entraram mais telas no mesmo PR, antes do merge.
+
+- **Linhas testadas (Vitest):** subiram de **76,58% para 85,07%** (de 7848 para 8724 de 10255). A meta era pelo menos 82%. A primeira rodada chegou a 83,14%.
+- **Testes:** passaram de 686 para **919**. Todos passam, e passaram em 3 rodadas seguidas.
+- **Defeitos achados:** 5, todos corrigidos. Em cada um, o teste que falhava veio antes da correção.
+  - 3 de acessibilidade;
+  - 1 de clique duplo (cadastro duplicado);
+  - 1 de falha silenciosa.
+- **Mutação:** quebrei o código de propósito em 23 pontos.
+  - 21 foram pegas logo de cara.
   - 1 escapou: reforcei o teste e ela passou a ser pega.
   - 1 é "equivalente": é uma proteção dupla, que nenhum teste consegue distinguir. Explico abaixo.
 - **Traduções:** em pt e en, nenhuma chave falta nas telas testadas, e nenhum valor fixo ficou sem tradução.
@@ -24,16 +29,16 @@ Regras seguidas:
 
 ## Passo 1 — Antes: linhas sem teste por área (`frontend/src`)
 
-| Área | Linhas sem teste | Total de linhas | Cobertura antes | Cobertura depois | Linhas sem teste depois |
-|---|---|---|---|---|---|
-| Telas (`app/`) | 818 | 3491 | 76,6% | **84,2%** | 551 |
-| Componentes (`components/`) | 1304 | 4916 → 4917 | 73,5% | **79,4%** | 1015 |
-| Bibliotecas (`lib/`) | 278 | 1827 | 84,8% | **91,2%** | 161 |
-| Traduções (`i18n/`) | 0 | 14 | 100% | 100% | 0 |
+| Área | Linhas sem teste antes | Total de linhas | Cobertura antes | Depois da 1ª rodada | **Depois da 2ª rodada** | Linhas sem teste no fim |
+|---|---|---|---|---|---|---|
+| Telas (`app/`) | 818 | 3491 → 3497 | 76,6% | 84,2% | **88,3%** | 410 |
+| Componentes (`components/`) | 1304 | 4916 → 4917 | 73,5% | 79,4% | **80,5%** | 960 |
+| Bibliotecas (`lib/`) | 278 | 1827 | 84,8% | 91,2% | **91,2%** | 161 |
+| Traduções (`i18n/`) | 0 | 14 | 100% | 100% | 100% | 0 |
 
 **Observação sobre `i18n/`:** a tarefa citava "14 linhas, 0%". Esses 14 arquivos já estavam 100% cobertos desde a Fase 3b (teste `i18n.test.tsx`). Não havia nada a fazer.
 
-A coluna de componentes mudou de 4916 para 4917 linhas porque a correção do Topbar acrescentou uma linha (`useId`).
+O total de linhas mudou um pouco por causa das correções: o Topbar ganhou o `useId`, e as telas Aparelhos e Macros ganharam a trava e o aviso.
 
 ### Os maiores sem teste no início (ordem de prioridade)
 
@@ -67,7 +72,7 @@ A prioridade seguiu a tarefa. Primeiro, o que mexe com:
 | app/confirmar-email/page.tsx | 38 | 0% | **Entrou:** segurança (cadastro). |
 | app/esqueci-senha/page.tsx | 24 | 0% | **Entrou:** segurança (senha). |
 
-## Passo 2 — Testes novos (10 arquivos em `auditoria/ferramentas/frontend-testes/telas/`)
+## Passo 2 — Testes novos (11 arquivos novos e 3 ampliados em `auditoria/ferramentas/frontend-testes/telas/`)
 
 | Arquivo de teste | O que cobre | Linhas sem teste: antes → depois |
 |---|---|---|
@@ -79,6 +84,10 @@ A prioridade seguiu a tarefa. Primeiro, o que mexe com:
 | pranchas-recebidas.test.tsx | Pranchas recebidas | 59 → 0 |
 | configuracoes.test.tsx | Configurações | 51 → 0 |
 | responder-compartilhamento.test.tsx | Responder a quem compartilhou | 53 → 0 |
+| **2ª rodada:** anotacoes-compartilhadas.test.tsx (novo) | Anotações de quem compartilhou | 55 → 0 |
+| **2ª rodada:** solicitar-acesso.test.tsx (casos novos) | Pedido de acesso completo | 40 → 0 |
+| **2ª rodada:** aparelhos.test.tsx (casos novos) | Resto da tela Aparelhos da rede | 53 → 0 |
+| **2ª rodada:** macros.test.tsx (casos novos) | Resto da tela Macros | 52 → 4 |
 
 O que os testes conferem:
 - **Estados:** carregando, vazio, erro do servidor (com e sem motivo) e sem conexão.
@@ -112,8 +121,11 @@ Peças simuladas, com o motivo:
 |---|---|---|---|---|
 | 1 | `frontend/src/components/Topbar.tsx` | A janela "Meu perfil" era só uma caixa desenhada (`div`). O leitor de tela não sabia que uma janela tinha aberto, nem o nome dela. | `topbar.test.tsx`, "e uma janela de verdade para o leitor de tela" (7ece222). Antes: 1 falha, "Unable to find role dialog name Meu perfil". | ca142c0: `role="dialog"`, `aria-modal="true"`, `aria-labelledby` no título. Depois: 32 de 32 passam. |
 | 2 | `frontend/src/components/compartilhar/ResponderCompartilhamento.tsx` | O erro ao responder (429, outro erro, sem conexão) aparecia só como texto vermelho. O leitor de tela não anunciava. | `responder-compartilhamento.test.tsx`, "falha (…): o erro e anunciado" (29ace78). Antes: 3 falhas, "Unable to find role=alert". | 312b0d0: `role="alert"`. Depois: 16 de 16 passam, e a tela "Compartilhadas comigo" continua passando. |
+| 3 | `frontend/src/components/compartilhar/AnotacoesCompartilhadas.tsx` | O mesmo do item 2: o erro ao apagar anotações recebidas não era anunciado. | `anotacoes-compartilhadas.test.tsx` (1767164). Antes: 2 falhas, "Unable to find role=alert". | 4bdde8c: `role="alert"`. Depois: 12 de 12 passam. |
+| 4 | `frontend/src/app/aparelhos/page.tsx` | "Salvar" do cadastro de aparelho não travava durante o envio. Dois cliques rápidos mandavam **dois cadastros**. | `aparelhos.test.tsx`, "durante o envio, Salvar fica travado" (36adb0e). Antes: 1 falha (botão não travava). | e0d059a: o botão fica travado enquanto envia, e o pedido duplicado é ignorado. Depois: 28 de 28 passam. |
+| 5 | `frontend/src/app/macros/page.tsx` | "Esquecer" uma frase aprendida pela voz: se o servidor recusava (403, 500), **nada aparecia**. A frase continuava na lista e a pessoa não sabia por quê. | `macros.test.tsx`, "falha ao esquecer" (9f21d18). Antes: 2 falhas, "Unable to find role=alert". | Nova mensagem `Macros.erroEsquecer` em pt (beb6bcc) e en (20aba66); a tela passa a avisar (88eb310). Depois: 23 de 23 passam. |
 
-Nenhuma regra de negócio foi alterada. Os dois defeitos foram corrigidos só com atributos de acessibilidade.
+Nenhuma regra de negócio foi alterada. Três defeitos foram corrigidos só com atributos de acessibilidade. Os outros dois são uma trava contra envio duplicado e um aviso de erro.
 
 ## Mutações (quebrar o código de propósito; o teste precisa falhar)
 
@@ -136,7 +148,21 @@ Cada mudança foi aplicada, o teste foi rodado e o arquivo foi restaurado com `g
 | configuracoes | aviso de ambiente só em "development" | pega (1 falha) |
 | ResponderCompartilhamento | resposta enviada sem tirar os espaços | pega (2 falhas) |
 
-**Resultado: 13 de 14 pegas** (12 de primeira, mais 1 depois de reforçar o teste). A tarefa pedia pelo menos 10.
+**2ª rodada (mais 9 mutações, todas pegas):**
+
+| Arquivo | Mudança | Resultado |
+|---|---|---|
+| AnotacoesCompartilhadas | apaga sem pedir o segundo clique | pega (7 falhas) |
+| AnotacoesCompartilhadas | "Apagar todas" deixa o recado de fora | pega (1 falha) |
+| solicitar-acesso | instituição vazia vai como "" (e não null) | pega (1 falha) |
+| solicitar-acesso | deixa enviar sem o tipo de acesso | pega (1 falha) |
+| aparelhos | AE Title não vira maiúsculas | pega (1 falha) |
+| aparelhos | bloqueia sem pedir confirmação | pega (1 falha) |
+| aparelhos | não avisa quando o Orthanc está fora | pega (1 falha) |
+| macros | "não alterar" vai como "" (e não null) | pega (1 falha) |
+| macros | desativar manda o estado errado | pega (1 falha) |
+
+**Resultado total: 22 de 23 pegas** (21 de primeira, mais 1 depois de reforçar o teste). A tarefa pedia pelo menos 10.
 
 **Mutação equivalente:** em Meus acessos existem duas proteções contra o pedido duplo:
 1. os botões ficam travados durante o pedido (isso o teste confere);
@@ -148,9 +174,9 @@ Com os botões travados, nenhuma ação da pessoa chega à segunda proteção. P
 
 | Verificação | Resultado |
 |---|---|
-| Vitest | 843 testes, todos passam, em 3 rodadas seguidas |
-| Cobertura (Vitest) | Linhas **83,14%** (8522/10249) · Instruções 80,92% · Ramos 74,66% · Funções 77,35% |
-| Catraca (`vitest.config.ts`, f7751c6) | 83,1 / 80,9 / 74,6 / 77,3 (antes: 76,5 / 74,7 / 69,6 / 72,2). Arredondada para baixo; nunca baixou. |
+| Vitest | 919 testes, todos passam, em 3 rodadas seguidas |
+| Cobertura (Vitest) | Linhas **85,07%** (8724/10255) · Instruções 82,78% · Ramos 77,04% · Funções 79,16% |
+| Catraca (`vitest.config.ts`) | 85,0 / 82,7 / 77,0 / 79,1. Na 1ª rodada foi 83,1 / 80,9 / 74,6 / 77,3 (f7751c6); antes, 76,5 / 74,7 / 69,6 / 72,2. Arredondada para baixo; nunca baixou. |
 | Exclusões de cobertura | Sem mudança: só `motorCenaLogin.ts` e `motorMapaMundi.ts` |
 | pytest | 657 passaram |
 | tsc, tsx (16 arquivos) e build de produção | ok |
@@ -166,8 +192,9 @@ Com os botões travados, nenhuma ação da pessoa chega à segunda proteção. P
   - `curadoria/page.tsx` (já está em 76%);
   - `ControleOrientacao`, `GradeCategoriasImagens`, `TextoTermos`, `MiniaturaImagem` e `SeletorLayout` (só mostram coisas, sem regra de negócio);
   - `recorteImagem.ts` (desenho em canvas);
-  - os restos de `aparelhos`, `macros`, `auditoria` e `solicitar-acesso`;
-  - `AnotacoesCompartilhadas`.
+  - o resto de `auditoria/page.tsx` (42 linhas).
+
+  `aparelhos`, `macros`, `solicitar-acesso` e `AnotacoesCompartilhadas` entraram na 2ª rodada.
 
   A meta foi atingida com folga. Preferi priorizar segurança, permissões, dados de pessoas e microfone.
 - **Sobras novas** (listadas, não corrigidas, porque não é defeito comprovado de regra de negócio, ou porque está fora do escopo):
@@ -177,7 +204,10 @@ Com os botões travados, nenhuma ação da pessoa chega à segunda proteção. P
   4. **Menu lateral aberto:** o `<aside>` não tem nome acessível (o recolhido tem: "Navegação").
   5. **Traduções sem uso:** `Sidebar.itens.pesquisaAvancada` e `Sidebar.menuRecolhidoDica` não são usadas no código.
   6. **Comentário desatualizado em `confirmar-email/page.tsx`:** diz que "professor e pesquisador já entram". No servidor, só o estudante entra direto (`PERFIS_APROVACAO_AUTOMATICA = {"estudante"}`). O texto mostrado na tela está correto; só o comentário está errado.
-  7. **Várias telas** (Meus acessos, Configurações e outras) mandam ao login também quando o problema é falta de conexão. O motivo: `obterSessaoAtual` devolve "sem sessão" nos dois casos. É um padrão antigo, comum a todo o sistema.
+  7. **Solicitar acesso:** os botões de perfil não têm `aria-pressed` (já listado na 3a). A mensagem de sucesso também não tem `role="status"`.
+  8. **Macros:** o aviso "Macro salva." não tem `role="status"`, e "Salvar" da macro não trava durante o envio. É o mesmo tipo do defeito 4. Não foi corrigido nesta fase, para não ampliar o escopo, e fica registrado para decisão.
+  9. **Aparelhos:** "Liberar" e "Bloquear" não travam durante o pedido. Repetir só reenvia o mesmo estado, então não há dano.
+  10. **Várias telas** (Meus acessos, Configurações e outras) mandam ao login também quando o problema é falta de conexão. O motivo: `obterSessaoAtual` devolve "sem sessão" nos dois casos. É um padrão antigo, comum a todo o sistema.
 
 ## Commits
 
