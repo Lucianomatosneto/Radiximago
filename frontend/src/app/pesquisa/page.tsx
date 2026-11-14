@@ -2,7 +2,7 @@
 
 import { errouServidor, lerComRepeticao } from '../../lib/repetir'
 import { proporcaoValida } from '../../lib/proporcao'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
@@ -216,6 +216,8 @@ function PesquisaConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Pesquisa')
+  // liga o rotulo "Erro tecnico" a caixa de busca do filtro (leitor de tela e clique no rotulo)
+  const idErroTecnico = useId()
   const tMarcacoes = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
   // cartao da grade ampliado pela lupa (so um por vez) e os que ja tem a
@@ -808,8 +810,9 @@ function PesquisaConteudo() {
               </div>
 
               <div className="col-span-2">
-                <label className={campoLabel}>{t('campoErroTecnico')}</label>
+                <label htmlFor={idErroTecnico} className={campoLabel}>{t('campoErroTecnico')}</label>
                 <FiltroErrosTecnicos
+                  idCampo={idErroTecnico}
                   selecionados={filtros.errosTecnicos}
                   onChange={(errosTecnicos) => setFiltros((f) => ({ ...f, errosTecnicos }))}
                   estilo={estiloCaixaFiltro(0)}
