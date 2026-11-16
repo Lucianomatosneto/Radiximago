@@ -1,4 +1,4 @@
-# Auditoria automática — 2026-11-14
+# Auditoria automática — 2026-11-16
 
 Commit analisado: `d01ab78`
 
@@ -25,7 +25,7 @@ Commit analisado: `d01ab78`
 
 ## Desempenho
 
-- k6: p95 = 6.7 ms; falhas = 0.00%
+- k6: p95 = 5.5 ms; falhas = 0.00%
 - Lighthouse (login): Performance 62, Accessibility 100, Best Practices 100, SEO 100
 
 > Resultados automáticos. Problemas só são considerados resolvidos após reteste na Auditoria.

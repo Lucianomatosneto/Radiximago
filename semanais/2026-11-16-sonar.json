@@ -1,0 +1,98 @@
+{
+  "data": "2026-11-16",
+  "commit": "d01ab78549406855c9b8d3418eb103cca91fc861",
+  "analise_em": "2026-11-14T12:53:13+0000",
+  "coverage": 77.8,
+  "lines_to_cover": 19292,
+  "uncovered_lines": 3518,
+  "ncloc": 45134,
+  "bugs": 0,
+  "vulnerabilities": 0,
+  "code_smells": 5,
+  "duplicated_lines_density": 3.3,
+  "security_hotspots": 0,
+  "ratings": {
+    "reliability": "A",
+    "security": "A",
+    "maintainability": "A"
+  },
+  "quality_gate": {
+    "status": "OK",
+    "conditions": [
+      {
+        "metric": "new_reliability_rating",
+        "status": "OK",
+        "actual": 1,
+        "threshold": 1,
+        "comparator": "GT"
+      },
+      {
+        "metric": "new_security_rating",
+        "status": "OK",
+        "actual": 1,
+        "threshold": 1,
+        "comparator": "GT"
+      },
+      {
+        "metric": "new_maintainability_rating",
+        "status": "OK",
+        "actual": 1,
+        "threshold": 1,
+        "comparator": "GT"
+      },
+      {
+        "metric": "new_coverage",
+        "status": "OK",
+        "actual": 83.4,
+        "threshold": 80,
+        "comparator": "LT"
+      },
+      {
+        "metric": "new_duplicated_lines_density",
+        "status": "OK",
+        "actual": 0.1,
+        "threshold": 3,
+        "comparator": "GT"
+      },
+      {
+        "metric": "new_security_hotspots_reviewed",
+        "status": "OK",
+        "actual": 100,
+        "threshold": 100,
+        "comparator": "LT"
+      }
+    ]
+  },
+  "areas": [
+    {
+      "area": "backend/app",
+      "lines": 7474,
+      "uncovered": 797,
+      "coverage": 89.3
+    },
+    {
+      "area": "frontend/src/app",
+      "lines": 4076,
+      "uncovered": 935,
+      "coverage": 77.1
+    },
+    {
+      "area": "frontend/src/components",
+      "lines": 5868,
+      "uncovered": 1505,
+      "coverage": 74.4
+    },
+    {
+      "area": "frontend/src/lib",
+      "lines": 1860,
+      "uncovered": 281,
+      "coverage": 84.9
+    },
+    {
+      "area": "frontend/src/i18n",
+      "lines": 14,
+      "uncovered": 0,
+      "coverage": 100.0
+    }
+  ]
+}
