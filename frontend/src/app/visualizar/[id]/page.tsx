@@ -15,7 +15,8 @@ import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
 import BotaoEditarCuradoria from '../../../components/curadoria/BotaoEditarCuradoria'
 import { BotaoAnexosImagem } from '../../../components/anexos/AnexosCuradoria'
-import { obterSessaoAtual } from '../../../lib/sessao'
+import { useVerificarSessao } from '../../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../../components/AvisoSemConexao'
 
 // Rotulos vem do namespace compartilhado Pesquisa.opcoes (mesmo texto
 // usado em Pesquisa avançada, Curadoria e Segunda opinião) - so os valores
@@ -94,17 +95,17 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
     }
   }
 
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo.
+  // A imagem e as series so sao buscadas depois que o servidor confirma a
+  // sessao, e de novo a cada troca de imagem (curationId), como antes.
+  const [sessaoConfirmada, setSessaoConfirmada] = useState(false)
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(() => setSessaoConfirmada(true))
   useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      void buscarImagem()
-      void buscarSeries()
-    })
+    if (!sessaoConfirmada) return
+    void buscarImagem()
+    void buscarSeries()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, curationId])
+  }, [sessaoConfirmada, curationId])
 
   async function buscarSeries() {
     setCarregandoSeries(true)
@@ -178,6 +179,16 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
       ? `${imagem.viewer_url}&SeriesInstanceUIDs=${serieSelecionada.series_instance_uid}`
       : imagem?.viewer_url ?? null
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
+  // antes de o servidor confirmar a sessao, nada restrito (anexos, edicao) e
+  // montado nem pedido ao servidor (Fase 3e: antes, os anexos eram pedidos ja ao abrir)
+  if (!sessaoConfirmada) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-base">
+        <p className="text-slate-300">{tComum('carregando')}</p>
+      </main>
+    )
+  }
   return (
     <div className="flex min-h-screen bg-base">
       <Sidebar />
