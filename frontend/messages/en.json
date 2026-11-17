@@ -237,7 +237,8 @@
   "Comum": {
     "carregando": "Loading...",
     "pularConteudo": "Skip to content",
-    "semConexao": "No connection to the server. Please try again."
+    "semConexao": "No connection to the server. Please try again.",
+    "tentarDeNovo": "Try again"
   },
   "Sidebar": {
     "navegacao": "Navigation",
