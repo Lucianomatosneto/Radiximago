@@ -1889,6 +1889,7 @@
     "enviarResposta": "Send",
     "respostaExplicacao": "Goes with the image and your notes.",
     "respostaEnviada": "Reply sent to {nome}.",
+    "respostaEnviadaResponderDeNovo": "Reply sent to {nome}. Reply again",
     "erroRespostaVazia": "Write the reply before sending.",
     "erroResponder": "Could not send the reply."
   },
