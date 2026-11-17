@@ -1,11 +1,11 @@
 {
-  "data": "2026-11-16",
-  "commit": "d01ab78549406855c9b8d3418eb103cca91fc861",
-  "analise_em": "2026-11-14T12:53:13+0000",
-  "coverage": 77.8,
-  "lines_to_cover": 19292,
-  "uncovered_lines": 3518,
-  "ncloc": 45134,
+  "data": "2026-11-17",
+  "commit": "b7d7ed2c0d276a44cfc660adb491f45061e08843",
+  "analise_em": "2026-11-17T00:25:33+0000",
+  "coverage": 83.7,
+  "lines_to_cover": 19299,
+  "uncovered_lines": 2510,
+  "ncloc": 45145,
   "bugs": 0,
   "vulnerabilities": 0,
   "code_smells": 5,
@@ -43,7 +43,7 @@
       {
         "metric": "new_coverage",
         "status": "OK",
-        "actual": 83.4,
+        "actual": 89.7,
         "threshold": 80,
         "comparator": "LT"
       },
@@ -72,21 +72,21 @@
     },
     {
       "area": "frontend/src/app",
-      "lines": 4076,
-      "uncovered": 935,
-      "coverage": 77.1
+      "lines": 4082,
+      "uncovered": 461,
+      "coverage": 88.7
     },
     {
       "area": "frontend/src/components",
-      "lines": 5868,
-      "uncovered": 1505,
-      "coverage": 74.4
+      "lines": 5869,
+      "uncovered": 1089,
+      "coverage": 81.4
     },
     {
       "area": "frontend/src/lib",
       "lines": 1860,
-      "uncovered": 281,
-      "coverage": 84.9
+      "uncovered": 163,
+      "coverage": 91.2
     },
     {
       "area": "frontend/src/i18n",
