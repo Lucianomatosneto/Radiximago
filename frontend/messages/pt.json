@@ -1889,6 +1889,7 @@
     "enviarResposta": "Enviar",
     "respostaExplicacao": "Vai com a imagem e as suas anotações.",
     "respostaEnviada": "Resposta enviada para {nome}.",
+    "respostaEnviadaResponderDeNovo": "Resposta enviada para {nome}. Responder de novo",
     "erroRespostaVazia": "Escreva a resposta antes de enviar.",
     "erroResponder": "Não foi possível enviar a resposta."
   },
