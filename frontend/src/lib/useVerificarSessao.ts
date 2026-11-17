@@ -91,14 +91,16 @@ export function useVerificarSessao(
  */
 export function useSessaoAtual(): SessaoUsuario | null {
   const [sessao, setSessao] = useState<SessaoUsuario | null>(null)
-  const [semConexao, setSemConexao] = useState(false)
+  // 'conferindo' tambem escuta o "online": se a internet volta enquanto a
+  // primeira pergunta ainda esta no ar, a volta nao se perde
+  const [estado, setEstado] = useState<'conferindo' | 'valida' | 'invalida' | 'sem_conexao'>('conferindo')
 
   const verificar = useCallback(() => {
     let ativo = true
     void obterSessaoAtual().then((resultado) => {
       if (!ativo) return
       setSessao(resultado.estado === 'valida' ? resultado.sessao : null)
-      setSemConexao(resultado.estado === 'sem_conexao')
+      setEstado(resultado.estado)
     })
     return () => {
       ativo = false
@@ -107,8 +109,9 @@ export function useSessaoAtual(): SessaoUsuario | null {
 
   useEffect(() => verificar(), [verificar])
 
+  const escutarVolta = estado === 'conferindo' || estado === 'sem_conexao'
   useEffect(() => {
-    if (!semConexao) return
+    if (!escutarVolta) return
     let cancelar: (() => void) | undefined
     const aoVoltar = () => {
       cancelar?.()
@@ -119,7 +122,7 @@ export function useSessaoAtual(): SessaoUsuario | null {
       window.removeEventListener('online', aoVoltar)
       cancelar?.()
     }
-  }, [semConexao, verificar])
+  }, [escutarVolta, verificar])
 
   return sessao
 }
