@@ -249,7 +249,6 @@
       "imagensRecebidas": "Received images",
       "curadoria": "Curation",
       "segundaOpiniao": "Second opinion",
-      "pesquisaAvancada": "Advanced search",
       "bancoImagens": "Image bank",
       "minhasImagens": "My images",
       "relatorios": "Reports",
@@ -267,8 +266,7 @@
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
-    "recolherMenu": "Collapse the navigation menu",
-    "menuRecolhidoDica": "Collapsed menu: hover an icon to see the section name."
+    "recolherMenu": "Collapse the navigation menu"
   },
   "Topbar": {
     "ajuda": "Help",
