@@ -186,3 +186,32 @@ describe('acoes', () => {
     }
   })
 })
+
+// Fase 3d (16/11/2026), itens 7 e 8.
+describe('Fase 3d: nome do menu e traducoes', () => {
+  // item 7: o menu aberto nao tinha nome acessivel (o recolhido tinha)
+  it('menu aberto tambem se chama "Navegação"', async () => {
+    abrir('estudante')
+    await screen.findByRole('link', { name: 'Enviar imagem' })
+    expect(screen.getByRole('complementary', { name: 'Navegação' })).toBeTruthy()
+  })
+
+  // item 8: havia traducoes do menu que nenhum codigo usava
+  it('toda traducao do menu e usada: cada item aparece para o administrador, e cada texto solto esta no codigo', async () => {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const raiz = path.resolve(process.cwd(), '../../../frontend')
+    const ler = (arquivo: string) => fs.readFileSync(path.join(raiz, arquivo), 'utf-8')
+    const codigo = ler('src/components/Sidebar.tsx')
+    for (const idioma of ['pt', 'en']) {
+      const textos = JSON.parse(ler(`messages/${idioma}.json`)).Sidebar
+      const { itens: itensDoMenu, ...soltos } = textos
+      const chavesDoMenu = [...codigo.matchAll(/chave: '(\w+)'/g)].map((m) => m[1]).sort()
+      expect(Object.keys(itensDoMenu).sort()).toEqual(chavesDoMenu)
+      for (const chave of Object.keys(soltos)) expect(codigo).toContain(`t('${chave}'`)
+    }
+    abrir('administrador')
+    await screen.findByRole('link', { name: 'Configurações' })
+    expect(itens()).toHaveLength(Object.keys(JSON.parse(ler('messages/pt.json')).Sidebar.itens).length)
+  })
+})
