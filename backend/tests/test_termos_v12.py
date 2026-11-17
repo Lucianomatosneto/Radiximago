@@ -53,7 +53,7 @@ def test_textos_explicam_os_grupos(client):
 
     # Politica: dado tratado, quem ve e por quanto tempo
     assert "Participação em grupos" in privacidade
-    assert "os participantes não veem uns aos outros" in privacidade
+    assert "participantes não veem uns aos outros" in privacidade
     assert "só o nome do grupo e quem o criou" in privacidade
     assert "vencem em 30 dias" in privacidade
     assert "Comentários em imagens de grupo" in privacidade
