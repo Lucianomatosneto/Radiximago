@@ -226,6 +226,7 @@ PERMITIDOS = {
     ("TermoEdicao", "ativo"),                   # curadoria: desativar termo do vocabulario
     ("MacroEdicao", "ativo"),                   # curadoria: desativar macro
     ("ConviteDados", "usuario_id"),             # dono do grupo convida alguem; so vira participacao se a pessoa aceitar (17/11/2026)
+    ("EnvioDados", "curation_id"),              # dono do grupo escolhe a imagem; o servidor exige ficha aprovada e ativa (17/11/2026)
 }
 
 

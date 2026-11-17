@@ -19,6 +19,9 @@ const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.f
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/grupos' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
+vi.mock('../../../../frontend/src/components/envios/ImagensGrupoDono', () => ({
+  default: ({ grupoId }: { grupoId: number }) => <p>imagens enviadas ao grupo {grupoId}</p>,
+}))
 vi.mock('../../../../frontend/src/components/envios/SeletorPessoasGrupos', () => ({
   default: ({ pessoas, aoMudar }: { pessoas: { id: number; nome: string }[]; aoMudar: (p: { id: number; nome: string }[], g: number[]) => void }) => (
     <div>
@@ -228,5 +231,19 @@ describe('pedidos, convites e participantes', () => {
     await abrir({ 'POST /grupos/3/pedidos/80/autorizar': rota })
     await usuario.click(within(await waitFor(() => cartao('Turma A'))).getByRole('button', { name: 'Autorizar o pedido de Duda' }))
     expect((await screen.findByRole('alert')).textContent).toBe(mensagem)
+  })
+})
+
+describe('imagens enviadas ao grupo (Etapa 3)', () => {
+  it('abre e fecha a lista de imagens de cada grupo', async () => {
+    const usuario = userEvent.setup()
+    await abrir()
+    const botao = within(await waitFor(() => cartao('Turma A'))).getByRole('button', { name: 'Imagens enviadas ao grupo' })
+    expect(botao.getAttribute('aria-expanded')).toBe('false')
+    await usuario.click(botao)
+    expect(screen.getByText('imagens enviadas ao grupo 3')).toBeTruthy()
+    expect(botao.getAttribute('aria-expanded')).toBe('true')
+    await usuario.click(botao)
+    expect(screen.queryByText('imagens enviadas ao grupo 3')).toBeNull()
   })
 })

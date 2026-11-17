@@ -43,6 +43,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
 | Grupos (17/11/2026): nome do grupo, quem participa, quando e como entrou (convite aceito, pedido autorizado ou "anterior"), convites e pedidos com a resposta | `grupos_envio` (com `aceita_pedidos`), `grupos_envio_membros`, `grupo_entradas` | N1 | até o dono apagar o grupo (apaga participantes, convites e pedidos); quem sai deixa de constar; convites e pedidos sem resposta vencem em 30 dias |
+| Grupos — imagens enviadas em modo aula (17/11/2026): mensagem do dono, marcações e destaques **da aula** (a ficha oficial não muda), chave de comentários; comentários particulares entre cada participante e o dono | `grupo_envios_curados`, `grupo_comentarios` | N1 | até o dono retirar a imagem ou apagar o grupo (apaga os comentários juntos); o participante apaga os próprios comentários quando quiser; some do grupo se a ficha deixar de estar aprovada |
 | Vocabulário, macros, frases de voz | `termos_vocabulario`, `sinonimos_termo`, `macros_curadoria`, `frases_aprendidas_voz` | N1 | permanente |
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
 | Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
@@ -104,6 +105,8 @@ Perfis (`backend/app/modules/auth.py`):
 | **Grupos** (17/11/2026): criar e cuidar do próprio grupo; convidar; autorizar ou recusar pedidos; ver **todos** os participantes do próprio grupo | pesquisador: sim; estudante: — | sim | curador: sim; suporte: — | sim |
 | **Grupos**: procurar pelo nome (vê só o nome do grupo e quem o criou) e pedir para entrar | estudante: sim; pesquisador: — | — | — | — |
 | **Grupos**: aceitar ou recusar convite; ver os grupos de que participa; sair. O participante **não** vê a lista dos colegas | sim | sim | sim | sim |
+| **Grupos — modo aula**: enviar imagem aprovada ao grupo, ligar/desligar comentários, ver todas as conversas e responder | só o dono do grupo (pesquisador: sim) | só o dono | curador: só o dono; suporte: — | só o dono |
+| **Grupos — imagens do grupo**: ver as imagens enviadas e a **própria** conversa; comentar (se o dono permitiu); apagar o próprio comentário. Não vê os comentários dos colegas | só participantes | só participantes | só participantes | só participantes |
 | Registros de auditoria | — | — | — | ver (nunca editar ou apagar pela aplicação) |
 | Resumo da senha, códigos, `jti` | nunca | nunca | nunca | nunca |
 
@@ -163,3 +166,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.8 | 10/11/2026 | Termos de Uso e Política de Privacidade publicados (`/termos`), aceites em `aceites_termos_uso` |
 | 1.9 | 11/11/2026 | Termos de Uso e Política de Privacidade v1.1: desidentificação x anonimização; instituição de origem como controladora e Rádix como operador nas imagens de pacientes; bases legais corrigidas (sem Marco Civil art. 15 e sem art. 7º, IV/16, II, que exigem pessoa jurídica ou órgão de pesquisa); transferência internacional pela Resolução CD/ANPD nº 19/2024; prazos do art. 19; cópias de segurança em até 14 dias; foro do consumidor |
 | 1.10 | 17/11/2026 | Grupos com entrada consentida: ninguém entra direto (convite aceito ou pedido autorizado), busca só por estudantes mostrando só o nome do grupo e quem o criou, dono vê todos os participantes, participante não vê os colegas; tabela `grupo_entradas` (vence em 30 dias) |
+| 1.11 | 17/11/2026 | Grupos: modo aula (marcações e destaques só do envio, ficha oficial intacta), imagens do grupo só para participantes, comentários particulares (D4) e fora da auditoria |

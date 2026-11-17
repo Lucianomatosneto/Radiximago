@@ -70,15 +70,15 @@ export default defineConfig({
       allowExternal: true,
       reporter: ['lcov', 'text-summary'],
       reportsDirectory: '../../../frontend/coverage',
-      // CATRACA: minimo atual (medido em 17/11/2026, grupos Etapa 2: linhas 86,60%; Fase 3e: 86,46%; Fase 3c: 85,07%;
+      // CATRACA: minimo atual (medido em 17/11/2026, grupos Etapa 3: linhas 86,85%; Etapa 2: 86,60%; Fase 3e: 86,46%; Fase 3c: 85,07%;
       // Fase 3b, ja sem os 2 motores graficos: 76,58% (com eles, 73,12%); PR 3a: 59,43%; Fase 2: 56,17%; Fase 1: 33,39%; Fase 0: 14,77%). Se a cobertura cair abaixo disto, o Vitest com
       // --coverage FALHA (no GitHub: workflow "Testes do frontend"). A cada PR
       // que acrescenta testes, subir estes numeros; nunca baixar sem justificar.
       thresholds: {
-        lines: 86.6,
-        statements: 84.2,
-        branches: 78.1,
-        functions: 80.5,
+        lines: 86.8,
+        statements: 84.5,
+        branches: 78.4,
+        functions: 80.9,
       },
     },
   },

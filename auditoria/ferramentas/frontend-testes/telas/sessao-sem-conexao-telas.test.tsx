@@ -27,6 +27,7 @@ import DashboardPage from '../../../../frontend/src/app/dashboard/page'
 import EnviarImagemPage from '../../../../frontend/src/app/enviar-imagem/page'
 import GruposPage from '../../../../frontend/src/app/grupos/page'
 import MeusGruposPage from '../../../../frontend/src/app/meus-grupos/page'
+import AulaGrupoPage from '../../../../frontend/src/app/grupos/aula/page'
 import ImagensPage from '../../../../frontend/src/app/imagens/page'
 import IntegracoesPage from '../../../../frontend/src/app/integracoes/page'
 import MacrosPage from '../../../../frontend/src/app/macros/page'
@@ -102,6 +103,7 @@ const TELAS: Tela[] = [
   { nome: 'Vocabulário', montar: () => <VocabularioPage /> },
   // no fim: os testes abaixo usam a posicao das telas (TELAS[n])
   { nome: 'Meus grupos', montar: () => <MeusGruposPage /> },
+  { nome: 'Preparar aula', montar: () => <AulaGrupoPage /> },
 ]
 
 async function abrir(tela: Tela, sessao: Rota | (() => Rota)) {

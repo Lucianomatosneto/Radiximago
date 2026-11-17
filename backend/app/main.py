@@ -36,6 +36,7 @@ from app.modules.segmentacoes_router import router as segmentacoes_router
 from app.modules.sugestoes import router as sugestoes_router
 from app.modules.envios_router import router as envios_router
 from app.modules.grupos_router import router as grupos_router
+from app.modules.grupos_aula_router import router as grupos_aula_router
 from app.modules.aparelhos_router import router as aparelhos_router
 from app.modules.anexos_curadoria import router_curadoria as anexos_curadoria_router, router_pesquisa as anexos_pesquisa_router
 
@@ -139,6 +140,7 @@ app.include_router(segmentacoes_router)
 app.include_router(sugestoes_router)
 app.include_router(envios_router)
 app.include_router(grupos_router)
+app.include_router(grupos_aula_router)
 app.include_router(aparelhos_router)
 app.include_router(anexos_curadoria_router)
 app.include_router(anexos_pesquisa_router)

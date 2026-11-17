@@ -21,6 +21,9 @@ const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.f
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/meus-grupos' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
+vi.mock('../../../../frontend/src/components/envios/ImagensGrupoParticipante', () => ({
+  default: ({ grupoId }: { grupoId: number }) => <p>imagens do grupo {grupoId}</p>,
+}))
 
 const sessao = (perfil: string) => ({ id: 1, nome: 'Pessoa Teste', email: 'pessoa@exemplo.test', perfil, foto_perfil_url: null })
 const CONVITES = [{ id: 7, grupo: { id: 3, nome: 'Turma A' }, convidado_por: 'Prof. Silva', criado_em: '2026-11-17T10:00:00+00:00' }]
@@ -211,5 +214,18 @@ describe('procurar e pedir (so estudante)', () => {
     await usuario.click(await screen.findByRole('button', { name: 'Desistir do pedido para o grupo Radiologia II' }))
     expect((await screen.findByRole('status')).textContent).toBe('Pedido cancelado.')
     expect(servidor.alteracoes()).toEqual([{ metodo: 'DELETE', caminho: '/grupos/pedidos-enviados/9', corpo: undefined }])
+  })
+})
+
+describe('imagens do grupo (Etapa 3)', () => {
+  it('"Ver imagens" abre e fecha as imagens do grupo', async () => {
+    const usuario = userEvent.setup()
+    await abrir('estudante')
+    const botao = await screen.findByRole('button', { name: 'Ver as imagens do grupo Monitores' })
+    await usuario.click(botao)
+    expect(screen.getByText('imagens do grupo 4')).toBeTruthy()
+    expect(botao.getAttribute('aria-expanded')).toBe('true')
+    await usuario.click(botao)
+    expect(screen.queryByText('imagens do grupo 4')).toBeNull()
   })
 })

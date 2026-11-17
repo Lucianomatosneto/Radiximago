@@ -17,6 +17,7 @@ import Topbar from '../../components/Topbar'
 import { useConfirmacao } from '../../components/useConfirmacao'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
+import ImagensGrupoParticipante from '../../components/envios/ImagensGrupoParticipante'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -65,6 +66,8 @@ export default function MeusGruposPage() {
   const [achados, setAchados] = useState<Achado[] | null>(null)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  // grupo com as imagens abertas (Etapa 3)
+  const [imagensAbertas, setImagensAbertas] = useState<number | null>(null)
 
   async function carregar(estudante: boolean) {
     const [c, p, e] = await Promise.all([
@@ -238,12 +241,20 @@ export default function MeusGruposPage() {
             ) : (
               <ul className="space-y-2">
                 {participo.map((g) => (
-                  <li key={g.id} className={item}>
-                    <span>
-                      <strong className="text-ink">{g.nome}</strong> · {t('criadoPor', { quem: g.criador })}
-                      {g.entrou_em && <span className="ml-1 text-xs text-ink-3">· {t('entrouEm', { data: data(g.entrou_em) })}</span>}
-                    </span>
-                    <button type="button" className={botao} aria-label={t('sairRotulo', { grupo: g.nome })} onClick={() => sair(g)}>{t('sair')}</button>
+                  <li key={g.id} className="space-y-2 rounded-lg border border-base-border p-3 text-sm text-ink-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span>
+                        <strong className="text-ink">{g.nome}</strong> · {t('criadoPor', { quem: g.criador })}
+                        {g.entrou_em && <span className="ml-1 text-xs text-ink-3">· {t('entrouEm', { data: data(g.entrou_em) })}</span>}
+                      </span>
+                      <span className="flex gap-2">
+                        <button type="button" className={botao} aria-expanded={imagensAbertas === g.id}
+                                aria-label={t('verImagensRotulo', { grupo: g.nome })}
+                                onClick={() => setImagensAbertas(imagensAbertas === g.id ? null : g.id)}>{t('verImagens')}</button>
+                        <button type="button" className={botao} aria-label={t('sairRotulo', { grupo: g.nome })} onClick={() => sair(g)}>{t('sair')}</button>
+                      </span>
+                    </div>
+                    {imagensAbertas === g.id && <ImagensGrupoParticipante grupoId={g.id} />}
                   </li>
                 ))}
               </ul>

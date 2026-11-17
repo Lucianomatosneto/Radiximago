@@ -14,6 +14,7 @@ import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
 import BotaoEditarCuradoria from '../../../components/curadoria/BotaoEditarCuradoria'
+import BotaoPrepararAula from '../../../components/envios/BotaoPrepararAula'
 import { BotaoAnexosImagem } from '../../../components/anexos/AnexosCuradoria'
 import { useVerificarSessao } from '../../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../../components/AvisoSemConexao'
@@ -207,6 +208,7 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <BotaoEditarCuradoria curationId={curationId} />
+              <BotaoPrepararAula curationId={curationId} />
               <BotaoAnexosImagem key={curationId} curationId={curationId} />
             </div>
           </div>
