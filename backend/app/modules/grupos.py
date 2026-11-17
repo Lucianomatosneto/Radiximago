@@ -17,16 +17,21 @@ Convite e pedido sem resposta vencem em DIAS_VALIDADE_ENTRADA dias. So pode
 haver UM pendente por pessoa em cada grupo (indice unico parcial).
 """
 
-from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, UniqueConstraint, text
+from sqlalchemy import Boolean, CheckConstraint, DateTime, ForeignKey, Index, Integer, String, Text, UniqueConstraint, false, text
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
+from typing import Any
 
 from app.core.database import Base
 
 NOME_GRUPO_MAX = 80
 MEMBROS_MAX = 300
 DIAS_VALIDADE_ENTRADA = 30
+MENSAGEM_ENVIO_MAX = 1000
+COMENTARIO_MAX = 500
+MARCACOES_ENVIO_MAX = 50
 
 # como a pessoa entrou no grupo
 ORIGEM_CONVITE = "convite"      # aceitou um convite do dono
@@ -90,3 +95,49 @@ class EnvioDestinatario(Base):
     destinatario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     visto_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GrupoEnvioCurado(Base):
+    """IMAGEM CURADA ENVIADA AO GRUPO (Etapa 3, 17/11/2026) - o "modo aula".
+
+    O dono prepara a imagem para a aula: parte das marcacoes oficiais da
+    ficha, ajusta (acrescenta, muda, apaga), escolhe quais alteracoes da
+    ficha quer destacar e escreve uma mensagem. Tudo isso fica AQUI, so neste
+    envio: a ficha oficial (curations) nao muda (D3). A imagem nao e copiada:
+    o envio aponta para a mesma ficha aprovada (e some do grupo se a ficha
+    deixar de estar aprovada ou ativa).
+    """
+    __tablename__ = "grupo_envios_curados"
+    __table_args__ = (UniqueConstraint("grupo_id", "curation_id", name="uq_grupo_envio_curado_imagem"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    grupo_id: Mapped[int] = mapped_column(Integer, ForeignKey("grupos_envio.id", ondelete="CASCADE"),
+                                          nullable=False, index=True)
+    curation_id: Mapped[int] = mapped_column(Integer, ForeignKey("curations.id", ondelete="CASCADE"),
+                                             nullable=False, index=True)
+    remetente_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    mensagem: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # o dono escolhe, em cada envio, se os participantes podem comentar
+    permite_comentar: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false(), default=False)
+    # marcacoes DA AULA (copia ajustada das oficiais; mesmo formato de Curation.marcacoes)
+    marcacoes: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default="[]")
+    # alteracoes da ficha que o dono quer ressaltar (subconjunto de Curation.alteracoes_observadas)
+    destaques: Mapped[list[str]] = mapped_column(ARRAY(String(60)), nullable=False, server_default=text("'{}'"), default=list)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class GrupoComentario(Base):
+    """Comentario PARTICULAR (D4): cada participante conversa so com o dono.
+
+    `participante_id` diz de qual conversa o comentario faz parte; `autor_id`
+    e o participante ou o dono (resposta)."""
+    __tablename__ = "grupo_comentarios"
+    __table_args__ = (Index("ix_grupo_comentarios_conversa", "envio_id", "participante_id"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    envio_id: Mapped[int] = mapped_column(Integer, ForeignKey("grupo_envios_curados.id", ondelete="CASCADE"),
+                                          nullable=False)
+    participante_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    autor_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    texto: Mapped[str] = mapped_column(Text, nullable=False)
+    criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
