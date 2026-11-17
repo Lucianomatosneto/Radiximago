@@ -15,6 +15,7 @@ import { Users } from 'lucide-react'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
+import ImagensGrupoDono from '../../components/envios/ImagensGrupoDono'
 import { useConfirmacao } from '../../components/useConfirmacao'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
@@ -52,6 +53,8 @@ export default function GruposPage() {
   const [convidar, setConvidar] = useState<Pessoa[]>([])
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  // grupo com a lista de imagens enviadas aberta (Etapa 3)
+  const [imagensAbertas, setImagensAbertas] = useState<number | null>(null)
 
   async function carregar() {
     // sem rede: lista vazia, como quando o servidor responde erro
@@ -255,6 +258,14 @@ export default function GruposPage() {
                       </ul>
                     </section>
                   )}
+
+                  <section aria-label={t('imagensEnviadas')}>
+                    <button type="button" onClick={() => setImagensAbertas(imagensAbertas === g.id ? null : g.id)}
+                            aria-expanded={imagensAbertas === g.id} className="text-xs font-semibold text-brand underline">
+                      {t('imagensEnviadas')}
+                    </button>
+                    {imagensAbertas === g.id && <div className="mt-2"><ImagensGrupoDono grupoId={g.id} /></div>}
+                  </section>
 
                   <div className="flex gap-3 text-xs">
                     <button type="button" onClick={() => abrirFormulario(g)} className="text-brand underline">{t('editar')}</button>
