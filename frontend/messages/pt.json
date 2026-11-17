@@ -2107,6 +2107,7 @@
     "aparelhoDesconhecido": "Aparelho desconhecido",
     "detalhes": "Endereço de rede {ip} · entrou em {entrou} · último uso {uso}",
     "encerrar": "Encerrar",
+    "encerrarAcesso": "Encerrar o acesso de {aparelho}, endereço de rede {ip}",
     "encerrarOutros": "{quantidade, plural, one {Encerrar o outro acesso} other {Encerrar os outros # acessos}}",
     "encerrado": "Acesso encerrado.",
     "outrosEncerrados": "Os outros acessos foram encerrados.",
