@@ -28,19 +28,19 @@ function abrir(perfil: string | null, novas: Rota = { corpo: { quantidade: 0 } }
 }
 const itens = () => screen.getAllByRole('link').map((l) => l.getAttribute('aria-label') ?? l.textContent?.replace(/\d+$/, '').trim())
 
-const TODOS = ['Banco de imagens', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões']
+const TODOS = ['Banco de imagens', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões']
 const ESPERADO: Record<string, string[]> = {
-  estudante: ['Banco de imagens', 'Enviar imagem', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
-  pesquisador: TODOS,
-  suporte: ['Banco de imagens', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Aparelhos da rede', 'Sugestões'],
-  professor: ['Imagens recebidas', 'Curadoria', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  estudante: ['Banco de imagens', 'Enviar imagem', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  pesquisador: ['Banco de imagens', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  suporte: ['Banco de imagens', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Aparelhos da rede', 'Sugestões'],
+  professor: ['Imagens recebidas', 'Curadoria', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
   curador: [
-    'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Minhas imagens',
+    'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens',
     'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros', 'Relatórios', 'Sugestões',
   ],
   administrador: [
     'Início', 'Painel administrativo', 'Usuários', 'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens',
-    'Enviar imagem', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros',
+    'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros',
     'Relatórios', 'Auditoria', 'Integrações', 'Aparelhos da rede', 'Configurações', 'Sugestões',
   ],
 }
@@ -70,6 +70,40 @@ describe('o que cada perfil ve', () => {
     await screen.findByRole('link', { name: 'Enviar imagem' })
     expect(screen.getByRole('link', { name: 'Minhas imagens' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('link', { name: 'Banco de imagens' }).getAttribute('aria-current')).toBeNull()
+  })
+})
+
+describe('grupos: convites e pedidos esperando resposta (17/11/2026)', () => {
+  it('"Meus grupos" mostra os convites; "Grupos" mostra os pedidos; com texto para o leitor de tela', async () => {
+    abrir('professor', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 2, pedidos: 1 } } })
+    const convites = await screen.findByLabelText('2 esperando resposta')
+    expect(within(screen.getByRole('link', { name: /Meus grupos/ })).getByText('2')).toBe(convites)
+    expect(within(screen.getByRole('link', { name: /^Grupos/ })).getByText('1')).toBe(screen.getByLabelText('1 esperando resposta'))
+  })
+
+  it('sem pendencias (ou resposta estranha, erro, sem conexao): nenhum numero', async () => {
+    for (const rota of [{ corpo: { convites: 0, pedidos: 0 } }, { corpo: { convites: 'x' } }, { status: 500 }, 'SEM_CONEXAO'] as Rota[]) {
+      const servidor = abrir('professor', undefined, { 'GET /grupos/pendencias': rota })
+      await waitFor(() => expect(servidor.pedidos.map((p) => p.caminho)).toContain('/grupos/pendencias'))
+      await screen.findByRole('link', { name: 'Grupos' })
+      expect(screen.queryByLabelText(/esperando resposta/)).toBeNull()
+      cleanup()
+    }
+  })
+
+  it('reconta quando uma tela de grupos avisa que algo mudou', async () => {
+    const servidor = abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 1, pedidos: 0 } } })
+    await screen.findByLabelText('1 esperando resposta')
+    const contagens = () => servidor.pedidos.filter((p) => p.caminho === '/grupos/pendencias').length
+    const antes = contagens()
+    act(() => void window.dispatchEvent(new Event('radix-grupos-mudou')))
+    await waitFor(() => expect(contagens()).toBe(antes + 1))
+  })
+
+  it('menu recolhido: um ponto no icone de "Meus grupos"', async () => {
+    abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 1, pedidos: 0 } } }, true)
+    const link = await screen.findByRole('link', { name: 'Meus grupos' })
+    await waitFor(() => expect(link.querySelector('span.bg-amber-400')).not.toBeNull())
   })
 })
 
