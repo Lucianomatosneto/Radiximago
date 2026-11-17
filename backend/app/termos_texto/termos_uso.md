@@ -66,7 +66,9 @@ Você pode usar a Plataforma, dentro das permissões do seu perfil, para:
 - estudar, consultar e pesquisar imagens com curadoria aprovada;
 - fazer anotações pessoais, salvar imagens em "Minhas imagens" e compartilhá-las **com outros usuários da própria Plataforma**;
 - enviar imagens e fotos **anonimizadas** para análise ou curadoria, quando o seu perfil permitir;
-- montar pranchas e materiais para **aulas, estudos e trabalhos acadêmicos**, observando a cláusula 8.
+- montar pranchas e materiais para **aulas, estudos e trabalhos acadêmicos**, observando a cláusula 8;
+- participar de **grupos** (por exemplo, uma turma). Você só entra num grupo quando **aceita um convite** do dono do grupo, ou quando o dono **autoriza o seu pedido** para entrar. Você pode sair quando quiser;
+- ver as imagens enviadas aos grupos de que participa e **comentá-las**, quando o dono do grupo permitir.
 
 ## 6. Condutas proibidas
 
@@ -82,6 +84,7 @@ Você pode usar a Plataforma, dentro das permissões do seu perfil, para:
 8. Enviar arquivos com vírus, códigos maliciosos ou conteúdo que não seja imagem médica legítima.
 9. Publicar conteúdo ilegal, ofensivo, discriminatório, que viole direitos de terceiros ou o sigilo profissional.
 10. Usar a Plataforma para fins comerciais (venda de imagens, cursos ou serviços) sem contrato com o Responsável.
+11. Usar nome de grupo, mensagem ou comentário para expor dados de pacientes, dados pessoais de outras pessoas ou conteúdo ofensivo.
 
 ## 7. Imagens e conteúdo enviados pelo Usuário
 
@@ -102,6 +105,8 @@ O aceite destes Termos **não substitui** a autorização do paciente, da instit
 7.5. **Análise e remoção.** O Responsável, os curadores e os administradores podem recusar, ocultar, desativar ou remover qualquer Conteúdo que viole estes Termos ou que apresente risco de identificação de pacientes, mesmo sem aviso prévio.
 
 7.6. **Anotações e recados pessoais** ficam visíveis apenas para você e para as pessoas com quem você os compartilhar, conforme as regras de cada tela.
+
+7.7. **Grupos.** Quem cria um grupo vê todos os participantes; os participantes não veem uns aos outros. As marcações, os destaques e as mensagens que o dono do grupo prepara para uma aula ("modo aula") valem só para o grupo e **não alteram a ficha oficial** da imagem. Os **comentários em imagens de grupo** são **particulares**: cada comentário é visto apenas por quem o escreveu e pelo dono do grupo. Você pode apagar os seus comentários quando quiser.
 
 ## 8. Uso acadêmico do conteúdo
 
