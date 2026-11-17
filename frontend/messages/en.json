@@ -2107,6 +2107,7 @@
     "aparelhoDesconhecido": "Unknown device",
     "detalhes": "Network address {ip} · signed in {entrou} · last used {uso}",
     "encerrar": "End",
+    "encerrarAcesso": "End the session on {aparelho}, network address {ip}",
     "encerrarOutros": "{quantidade, plural, one {End the other session} other {End the other # sessions}}",
     "encerrado": "Session ended.",
     "outrosEncerrados": "The other sessions were ended.",
