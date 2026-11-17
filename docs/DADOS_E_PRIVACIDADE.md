@@ -42,6 +42,7 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Observações internas da ficha | `curations.observacoes_internas` | N1 | permanente |
 | Anotações pessoais | `anotacoes_imagem` (de cada usuário) | N1 | até o usuário apagar |
 | Imagens salvas e compartilhamentos (recados) | `saved_images`, `compartilhamentos_imagem` | N1 | até o usuário apagar/desfazer |
+| Grupos (17/11/2026): nome do grupo, quem participa, quando e como entrou (convite aceito, pedido autorizado ou "anterior"), convites e pedidos com a resposta | `grupos_envio` (com `aceita_pedidos`), `grupos_envio_membros`, `grupo_entradas` | N1 | até o dono apagar o grupo (apaga participantes, convites e pedidos); quem sai deixa de constar; convites e pedidos sem resposta vencem em 30 dias |
 | Vocabulário, macros, frases de voz | `termos_vocabulario`, `sinonimos_termo`, `macros_curadoria`, `frases_aprendidas_voz` | N1 | permanente |
 | Áudio da curadoria por voz | **não é gravado**: vai à memória do serviço de voz, vira texto e é descartado | N1 | não é retido |
 | Registros de auditoria (inclui endereço de rede de quem agiu) | `audit_logs` (ver `docs/REGISTROS.md`) | N2 | **5 anos**, apagados automaticamente; protegidos contra alteração (lacre) |
@@ -100,6 +101,9 @@ Perfis (`backend/app/modules/auth.py`):
 | Outros usuários: nome, e-mail, perfil, situação | — | — | — | ver e editar |
 | Anotações | só as **suas** (desde 27/10/2026 o compartilhamento leva apenas a anotação escrita na caixa do próprio compartilhamento, nunca as anotações pessoais) | idem | idem | idem |
 | Compartilhamento: o remetente vê o **e-mail que ele mesmo digitou**; o destinatário vê só o **nome** do remetente | | | | |
+| **Grupos** (17/11/2026): criar e cuidar do próprio grupo; convidar; autorizar ou recusar pedidos; ver **todos** os participantes do próprio grupo | pesquisador: sim; estudante: — | sim | curador: sim; suporte: — | sim |
+| **Grupos**: procurar pelo nome (vê só o nome do grupo e quem o criou) e pedir para entrar | estudante: sim; pesquisador: — | — | — | — |
+| **Grupos**: aceitar ou recusar convite; ver os grupos de que participa; sair. O participante **não** vê a lista dos colegas | sim | sim | sim | sim |
 | Registros de auditoria | — | — | — | ver (nunca editar ou apagar pela aplicação) |
 | Resumo da senha, códigos, `jti` | nunca | nunca | nunca | nunca |
 
@@ -158,3 +162,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.7 | 10/11/2026 | Termo de ciência a cada login: aceite registrado na sessão e na auditoria |
 | 1.8 | 10/11/2026 | Termos de Uso e Política de Privacidade publicados (`/termos`), aceites em `aceites_termos_uso` |
 | 1.9 | 11/11/2026 | Termos de Uso e Política de Privacidade v1.1: desidentificação x anonimização; instituição de origem como controladora e Rádix como operador nas imagens de pacientes; bases legais corrigidas (sem Marco Civil art. 15 e sem art. 7º, IV/16, II, que exigem pessoa jurídica ou órgão de pesquisa); transferência internacional pela Resolução CD/ANPD nº 19/2024; prazos do art. 19; cópias de segurança em até 14 dias; foro do consumidor |
+| 1.10 | 17/11/2026 | Grupos com entrada consentida: ninguém entra direto (convite aceito ou pedido autorizado), busca só por estudantes mostrando só o nome do grupo e quem o criou, dono vê todos os participantes, participante não vê os colegas; tabela `grupo_entradas` (vence em 30 dias) |
