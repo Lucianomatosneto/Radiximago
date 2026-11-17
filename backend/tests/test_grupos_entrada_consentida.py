@@ -354,3 +354,21 @@ def test_quem_cria_grupos(client, criar_usuario, limpar_grupos, perfil, pode):
     if r.status_code == 200:
         limpar_grupos.append(r.json()["id"])
     assert (r.status_code == 200) is pode, r.text
+
+
+# --- contador do menu (Etapa 2) -------------------------------------------
+
+def test_pendencias_contam_so_o_que_e_da_pessoa(client, criar_usuario, limpar_grupos):
+    """O menu mostra quantos convites a pessoa tem para responder e quantos
+    pedidos esperam o dono nos grupos DELE (nunca os de outros)."""
+    prof, outro_prof = criar_usuario(perfil=UserRole.professor), criar_usuario(perfil=UserRole.professor)
+    a1, a2 = criar_usuario(), criar_usuario()
+    g1 = _criar(client, _cab(client, prof), limpar_grupos, membros_ids=[a1.id])
+    _criar(client, _cab(client, outro_prof), limpar_grupos, membros_ids=[a1.id])
+    client.post(f"/grupos/{g1['id']}/pedir", headers=_cab(client, a2))
+
+    assert client.get("/grupos/pendencias", headers=_cab(client, a1)).json() == {"convites": 2, "pedidos": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, a2)).json() == {"convites": 0, "pedidos": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, prof)).json() == {"convites": 0, "pedidos": 1}
+    assert client.get("/grupos/pendencias", headers=_cab(client, outro_prof)).json() == {"convites": 0, "pedidos": 0}
+    assert client.get("/grupos/pendencias").status_code == 401
