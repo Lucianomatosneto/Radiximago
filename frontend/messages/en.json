@@ -2054,6 +2054,7 @@
     "frasesSubtitulo": "When a curator confirms a doubt with “Remember”, the heard phrase starts to count as the chosen change.",
     "nenhumaFrase": "No learned phrases yet.",
     "esquecer": "Forget",
+    "erroEsquecer": "Could not forget the phrase.",
     "voltar": "Back",
     "achadosPlaceholder": "Type the finding initials: car, lesion, resorp…",
     "termos": "Vocabulary terms",

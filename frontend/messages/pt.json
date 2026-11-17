@@ -2054,6 +2054,7 @@
     "frasesSubtitulo": "Quando o curador confirma uma dúvida com “Lembrar”, a frase ouvida passa a valer como a alteração escolhida.",
     "nenhumaFrase": "Nenhuma frase aprendida ainda.",
     "esquecer": "Esquecer",
+    "erroEsquecer": "Não foi possível esquecer a frase.",
     "voltar": "Voltar",
     "achadosPlaceholder": "Digite as iniciais do achado: cár, lesão, reabs…",
     "termos": "Termos do vocabulário",
