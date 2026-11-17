@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { obterSessaoAtual } from '../lib/sessao'
+import { useSessaoAtual } from '../lib/useVerificarSessao'
 import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
@@ -104,9 +104,10 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   const pathname = usePathname()
   const [perfil, setPerfil] = useState<string | null>(null)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => setPerfil(sessao?.perfil ?? null))
-  }, [])
+  // sem sessao confirmada (inclusive sem conexao): so os itens de todos;
+  // a internet volta e o menu confere de novo (Fase 3e)
+  const sessaoAtual = useSessaoAtual()
+  useEffect(() => setPerfil(sessaoAtual?.perfil ?? null), [sessaoAtual])
 
   // Quantas imagens chegaram em "Compartilhadas comigo" e ainda nao foram
   // vistas - mostrado como um numero ao lado do item do menu.
