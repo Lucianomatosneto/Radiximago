@@ -12,15 +12,36 @@ export interface SessaoUsuario {
 // pra saber "quem esta logado" so lendo uma chave local - cada tela
 // pergunta pro backend via GET /auth/me, que le o cookie enviado
 // automaticamente pelo navegador (credentials: 'include').
-export async function obterSessaoAtual(): Promise<SessaoUsuario | null> {
+//
+// TRES RESULTADOS (Fase 3e, 16/11/2026), no padrao dos grandes sistemas:
+// so o SERVIDOR desloga. Antes, "sem conexao" e "sessao invalida" davam a
+// mesma resposta e o Wi-Fi oscilando mandava a pessoa para o login.
+// - "valida": o servidor respondeu 200 com quem esta logado;
+// - "invalida": o servidor RECUSOU (401, ou outra recusa 4xx, como era
+//   antes) - a tela vai ao login;
+// - "sem_conexao": o pedido nem chegou, ou o servidor falhou (5xx) ou
+//   respondeu algo ilegivel - nao e motivo para deslogar: a tela avisa e
+//   deixa tentar de novo. Nada restrito aparece enquanto isso.
+export type ResultadoSessao =
+  | { estado: 'valida'; sessao: SessaoUsuario }
+  | { estado: 'invalida' }
+  | { estado: 'sem_conexao' }
+
+export async function obterSessaoAtual(): Promise<ResultadoSessao> {
+  let resposta: Response
   try {
-    const resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
+    resposta = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/me`, {
       credentials: 'include',
     })
-    if (!resposta.ok) return null
-    return await resposta.json()
   } catch {
-    return null
+    return { estado: 'sem_conexao' }
+  }
+  if (resposta.status >= 500) return { estado: 'sem_conexao' }
+  if (!resposta.ok) return { estado: 'invalida' }
+  try {
+    return { estado: 'valida', sessao: await resposta.json() }
+  } catch {
+    return { estado: 'sem_conexao' }
   }
 }
 
