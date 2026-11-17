@@ -19,7 +19,8 @@ import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import SecaoEnvios from '../../components/envios/SecaoEnvios'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 // "COMPARTILHADAS COMIGO" no MESMO PADRAO da Pesquisa avancada (pedido de
 // 21/10/2026): grade de quadrados (5 por linha, 2 linhas inteiras na tela),
@@ -89,17 +90,11 @@ export default function CompartilhadasComigoPage() {
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
   const [analisa, setAnalisa] = useState(false)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      setAnalisa(sessao.perfil === 'professor' || sessao.perfil === 'curador')
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    setAnalisa(sessao.perfil === 'professor' || sessao.perfil === 'curador')
+    void carregar()
+  })
 
   // anotacoes recebidas "apagadas" (ou mostradas de novo) no visualizador:
   // atualiza o contador do quadrado
@@ -235,6 +230,7 @@ export default function CompartilhadasComigoPage() {
     .filter(({ i }) => selecionados.includes(i.id))
     .map(({ i, n }) => paraVisualizador(i, n + 1))
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
