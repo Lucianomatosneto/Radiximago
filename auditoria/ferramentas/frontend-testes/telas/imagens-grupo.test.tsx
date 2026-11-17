@@ -153,7 +153,7 @@ describe('visao do participante', () => {
     {
       id: 9, curation_id: 42, remetente: 'Prof. Silva', mensagem: 'Observem o ápice.', permite_comentar: true,
       marcacoes: [{ id: 'a1', tipo: 'seta' }], destaques: ['lesao_periapical', 'valor_sem_traducao'],
-      comentarios: [{ id: 1, autor: 'eu', texto: 'Seria o 36?' }, { id: 2, autor: 'dono', texto: 'Isso.' }],
+      comentarios: [{ id: 1, autor: 'eu', texto: 'Seria o 36?' }, { id: 2, autor: 'dono', texto: 'Isso.' }], nova: true,
     },
     { id: 8, curation_id: 41, remetente: 'Prof. Silva', mensagem: null, permite_comentar: false, marcacoes: [], destaques: [], comentarios: [] },
   ]
@@ -164,6 +164,20 @@ describe('visao do participante', () => {
     return servidor
   }
   const item = (n: number) => screen.getByRole('listitem', { name: `Imagem nº ${n}` })
+
+  it('imagem nova vem com a etiqueta "Nova"; abrir avisa o menu e a tela para recontar', async () => {
+    const recontar = vi.fn()
+    const aoVer = vi.fn()
+    window.addEventListener('radix-grupos-mudou', recontar)
+    servidorFalso({ 'GET /grupos/participo/3/envios': { corpo: { envios: ENVIOS } } })
+    montarTela(<ImagensGrupoParticipante grupoId={3} aoVer={aoVer} />)
+    await screen.findByRole('listitem', { name: 'Imagem nº 42' })
+    expect(within(item(42)).getByText('Nova')).toBeTruthy()
+    expect(within(item(41)).queryByText('Nova')).toBeNull()
+    await waitFor(() => expect(aoVer).toHaveBeenCalledTimes(1))
+    expect(recontar).toHaveBeenCalled()
+    window.removeEventListener('radix-grupos-mudou', recontar)
+  })
 
   it('mostra a imagem com as marcacoes da aula e o selo, mensagem, destaques e a propria conversa', async () => {
     await abrir()
