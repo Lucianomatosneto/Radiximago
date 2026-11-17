@@ -39,7 +39,13 @@ export async function obterSessaoAtual(): Promise<ResultadoSessao> {
   if (resposta.status >= 500) return { estado: 'sem_conexao' }
   if (!resposta.ok) return { estado: 'invalida' }
   try {
-    return { estado: 'valida', sessao: await resposta.json() }
+    const dados = await resposta.json()
+    // so e sessao se tiver o formato esperado; resposta estranha (ex.: um
+    // proxy no caminho) nao abre nada restrito e nao desloga
+    if (dados && typeof dados === 'object' && typeof dados.perfil === 'string' && typeof dados.id === 'number') {
+      return { estado: 'valida', sessao: dados as SessaoUsuario }
+    }
+    return { estado: 'sem_conexao' }
   } catch {
     return { estado: 'sem_conexao' }
   }
