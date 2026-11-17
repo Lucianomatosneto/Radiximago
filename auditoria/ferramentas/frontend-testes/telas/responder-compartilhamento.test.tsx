@@ -102,7 +102,8 @@ describe('enviar', () => {
     await usuario.click(botaoAbrir())
     await usuario.type(campo(), 'Ok')
     await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
-    await waitFor(() => expect(botaoAbrir().textContent).toBe('✓'))
+    // desde a Fase 3d o nome do botao tambem muda (ver o teste da 3d abaixo)
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Resposta enviada para Prof. Teste. Responder de novo' }).textContent).toBe('✓'))
   })
 
   it('Ctrl+Enter envia', async () => {
