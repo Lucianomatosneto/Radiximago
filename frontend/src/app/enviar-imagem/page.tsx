@@ -20,7 +20,9 @@ import EnvioFotoCelular from '../../components/envios/EnvioFotoCelular'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
-import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
+import { type SessaoUsuario } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_QUE_ENVIAM = ['estudante', 'professor', 'curador', 'administrador']
@@ -62,26 +64,21 @@ export default function EnviarImagemPage() {
 
   const ehEstudante = sessao?.perfil === 'estudante'
 
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => {
-      if (!s) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_QUE_ENVIAM.includes(s.perfil)) {
-        router.push('/acesso-negado?de=/enviar-imagem')
-        return
-      }
-      setSessao(s)
-      setDestino(s.perfil === 'estudante' ? 'pessoal' : 'fila')
-      if (s.perfil === 'estudante') {
-        fetch(`${API}/envios/analistas`, { credentials: 'include' })
-          .then((r) => (r.ok ? r.json() : { pessoas: [] }))
-          .then((d) => setAnalistas(d.pessoas ?? []))
-          .catch(() => setAnalistas([]))
-      }
-    })
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((s) => {
+    if (!PERFIS_QUE_ENVIAM.includes(s.perfil)) {
+      router.push('/acesso-negado?de=/enviar-imagem')
+      return
+    }
+    setSessao(s)
+    setDestino(s.perfil === 'estudante' ? 'pessoal' : 'fila')
+    if (s.perfil === 'estudante') {
+      fetch(`${API}/envios/analistas`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : { pessoas: [] }))
+        .then((d) => setAnalistas(d.pessoas ?? []))
+        .catch(() => setAnalistas([]))
+    }
+  })
 
   // miniaturas das fotos escolhidas (DICOM nao tem previa no navegador)
   useEffect(() => {
@@ -141,6 +138,7 @@ export default function EnviarImagemPage() {
     setEnviando(false)
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!sessao) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
