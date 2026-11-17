@@ -2,6 +2,10 @@
 Etapa C (08/11/2026): professor e curador montam os PROPRIOS
 grupos e enviam imagens a pessoas e grupos. A imagem enviada pelo professor
 continua indo para a fila de curadoria; quem recebeu consegue ver.
+
+17/11/2026 (D1, Luciano): ninguem entra direto num grupo. A lista de pessoas
+do formulario vira CONVITE, e a pessoa so participa depois de aceitar. Os
+testes de entrada estao em tests/test_grupos_entrada_consentida.py.
 """
 
 import pytest
@@ -36,6 +40,14 @@ def _cab(client, u):
     return _CABS[u.id]
 
 
+def _aceitar_convites(client, gid, pessoas):
+    """Cada pessoa aceita o convite do grupo (so assim ela participa)."""
+    for u in pessoas:
+        convites = client.get("/grupos/convites-recebidos", headers=_cab(client, u)).json()["convites"]
+        cid = next(c["id"] for c in convites if c["grupo"]["id"] == gid)
+        assert client.post(f"/grupos/convites-recebidos/{cid}/aceitar", headers=_cab(client, u)).status_code == 200
+
+
 def test_grupos_sao_do_dono_e_estudante_nao_cria(client, criar_usuario, limpar_grupos, db):
     prof, outro_prof = criar_usuario(perfil=UserRole.professor), criar_usuario(perfil=UserRole.professor)
     a1, a2, bloqueado = criar_usuario(), criar_usuario(), criar_usuario()
@@ -47,8 +59,10 @@ def test_grupos_sao_do_dono_e_estudante_nao_cria(client, criar_usuario, limpar_g
     assert r.status_code == 200, r.text
     grupo = r.json()
     limpar_grupos.append(grupo["id"])
-    assert {m["id"] for m in grupo["membros"]} == {a1.id, a2.id}   # sem bloqueado e sem o proprio dono
-    assert all("•••" in m["email"] for m in grupo["membros"])      # e-mail mascarado
+    assert grupo["membros"] == []                                   # ninguem entra direto (D1)
+    assert {c["pessoa"]["id"] for c in grupo["convites"]} == {a1.id, a2.id}   # sem bloqueado e sem o proprio dono
+    assert all("•••" in c["pessoa"]["email"] for c in grupo["convites"])      # e-mail mascarado
+    _aceitar_convites(client, grupo["id"], [a1, a2])
     assert client.post("/grupos", headers=cab, json={"nome": "Turma A"}).status_code == 409
 
     assert client.get("/grupos", headers=cab_outro).json()["grupos"] == []
@@ -70,6 +84,7 @@ def test_professor_envia_a_grupo_e_pessoa_que_veem_e_a_imagem_vai_para_a_fila(
     cab = _cab(client, prof)
     gid = client.post("/grupos", headers=cab, json={"nome": "Turma B", "membros_ids": [a1.id, a2.id]}).json()["id"]
     limpar_grupos.append(gid)
+    _aceitar_convites(client, gid, [a1, a2])
 
     r = _enviar(client, cab, "fila", pessoas=f"{colega.id}", grupos=f"{gid}")
     assert r.status_code == 200, r.text

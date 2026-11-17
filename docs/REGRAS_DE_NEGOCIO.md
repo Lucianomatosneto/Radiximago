@@ -190,6 +190,8 @@ pendente ─┐
 | Pedir acesso | 5 por minuto | endereço de rede | `auth.py` |
 | Confirmar e-mail | 10 por minuto; 5 senhas erradas invalidam o link | endereço de rede / pedido | `auth.py` |
 | Compartilhar / responder | 20 por minuto | conta | `compartilhamentos_router.py` |
+| **Grupos** (17/11/2026): procurar grupo pelo nome (só estudantes; pelo menos 3 letras, até 20 resultados) | 30 por minuto | conta | `grupos_router.py` |
+| **Grupos**: pedir para entrar (estudante) e convidar (dono do grupo) | 20 por minuto; um convite ou pedido pendente por pessoa em cada grupo; vencem em 30 dias | conta | `grupos_router.py` |
 | Transcrição de voz | 120 trechos por minuto; áudio de até 10 MB | conta | `voz_router.py` |
 | **E-mail com uma imagem** (para o próprio e-mail) | 20 por hora | conta | `search_router.py` |
 | **E-mail com várias imagens** | 5 por hora; até 10 imagens por e-mail | conta | `search_router.py` |
