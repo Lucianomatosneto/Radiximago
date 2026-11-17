@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 // VOCABULARIO CONTROLADO (evolutivo, sempre com uma pessoa aprovando):
@@ -72,20 +73,14 @@ export default function VocabularioPage() {
   const [novoSinonimo, setNovoSinonimo] = useState<Record<number, string>>({})
   const [conferindo, setConferindo] = useState<{ termo: Termo; itens: Candidata[]; marcadas: number[] } | null>(null)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/vocabulario')
-        return
-      }
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/vocabulario')
+      return
+    }
+    void carregar()
+  })
 
   async function carregar() {
     setCarregando(true)
@@ -250,6 +245,7 @@ export default function VocabularioPage() {
   const botao = 'rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-200 hover:border-brand hover:text-brand-300'
   const botaoPrincipal = 'rounded-lg bg-brand px-3 py-1.5 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50'
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
