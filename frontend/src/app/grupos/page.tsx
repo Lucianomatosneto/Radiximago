@@ -4,7 +4,7 @@
 // proprios grupos (por exemplo, uma turma) para enviar imagens de uma vez.
 // Quem esta no grupo nao ve quem mais esta.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Users } from 'lucide-react'
@@ -12,7 +12,8 @@ import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import SeletorPessoasGrupos, { type Pessoa } from '../../components/envios/SeletorPessoasGrupos'
 import { useConfirmacao } from '../../components/useConfirmacao'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -52,20 +53,15 @@ export default function GruposPage() {
     }
   }
 
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => {
-      if (!s) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS.includes(s.perfil)) {
-        router.push('/acesso-negado?de=/grupos')
-        return
-      }
-      setPronto(true)
-      void carregar()
-    })
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((s) => {
+    if (!PERFIS.includes(s.perfil)) {
+      router.push('/acesso-negado?de=/grupos')
+      return
+    }
+    setPronto(true)
+    void carregar()
+  })
 
   function novo() {
     setEditando({ id: 0, nome: '', membros: [] })
@@ -124,6 +120,7 @@ export default function GruposPage() {
     void carregar()
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!pronto) {
     return <main className="flex min-h-screen items-center justify-center bg-base"><p className="text-sm text-slate-400">{t('carregando')}</p></main>
   }
