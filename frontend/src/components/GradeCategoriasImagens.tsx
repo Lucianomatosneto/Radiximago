@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
-import { obterSessaoAtual } from '../lib/sessao'
+import { useSessaoAtual } from '../lib/useVerificarSessao'
 
 interface Categoria {
   // Chaves em GradeCategorias.categorias/.rotulos (messages/*.json) - o
@@ -140,10 +140,13 @@ const GRUPOS: Categoria['chaveRotulo'][] = ['tipoRadiografia', 'achadoPrincipal'
  * Devolve null enquanto carrega ou se a API nao responder - nesse caso os
  * cartoes continuam funcionando, so sem os numeros.
  */
-export function useContagensBanco(): Contagens | null {
+export function useContagensBanco(ativo = true): Contagens | null {
   const [contagens, setContagens] = useState<Contagens | null>(null)
 
   useEffect(() => {
+    // so pergunta depois que a tela confirmou a sessao (Fase 3e): antes, a
+    // contagem era pedida ao abrir, mesmo sem sessao ou sem conexao
+    if (!ativo) return
     let cancelado = false
 
     // A sessao vive num cookie httpOnly (ver lib/sessao.ts): o navegador o
@@ -163,7 +166,7 @@ export function useContagensBanco(): Contagens | null {
     return () => {
       cancelado = true
     }
-  }, [])
+  }, [ativo])
 
   return contagens
 }
@@ -285,10 +288,8 @@ interface Props {
 export default function GradeCategoriasImagens({ contagens }: Props) {
   const t = useTranslations('GradeCategorias')
   // percentual do acervo so para curador e administrador (estudante nao ve)
-  const [mostrarPercentual, setMostrarPercentual] = useState(false)
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => setMostrarPercentual(!!sessao && ['administrador', 'curador'].includes(sessao.perfil)))
-  }, [])
+  const sessaoAtual = useSessaoAtual()
+  const mostrarPercentual = !!sessaoAtual && ['administrador', 'curador'].includes(sessaoAtual.perfil)
 
   function contagemDaCategoria(categoria: Categoria): number | null {
     if (!contagens) return null
