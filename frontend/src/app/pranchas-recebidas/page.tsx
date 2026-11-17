@@ -11,7 +11,8 @@ import { useRouter } from 'next/navigation'
 import { FileImage } from 'lucide-react'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
@@ -55,19 +56,22 @@ export default function PranchasRecebidasPage() {
     }
   }
 
-  useEffect(() => {
-    const abrir = Number(new URLSearchParams(window.location.search).get('abrir')) || null
-    void obterSessaoAtual().then((s) => {
-      if (!s) {
-        // depois do login, volta para esta mesma prancha
-        router.push(`/login?volta=${encodeURIComponent(`/pranchas-recebidas${abrir ? `?abrir=${abrir}` : ''}`)}`)
-        return
-      }
-      setDestaque(abrir)
+  // so numero vale no "?abrir=" (vai tambem no endereco de volta do login)
+  const pranchaDoLink = () => Number(new URLSearchParams(window.location.search).get('abrir')) || null
+  // sessao (Fase 3e): 401 -> login (voltando a esta prancha); sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(
+    () => {
+      setDestaque(pranchaDoLink())
       setPronto(true)
       void carregar()
-    })
-  }, [router])
+    },
+    {
+      aoInvalida: () => {
+        const abrir = pranchaDoLink()
+        router.push(`/login?volta=${encodeURIComponent(`/pranchas-recebidas${abrir ? `?abrir=${abrir}` : ''}`)}`)
+      },
+    }
+  )
 
   useEffect(() => {
     if (destaque && lista.length) document.getElementById(`prancha-${destaque}`)?.scrollIntoView({ block: 'center' })
@@ -104,6 +108,7 @@ export default function PranchasRecebidasPage() {
   const data = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString(locale === 'en' ? 'en-US' : 'pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : ''
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!pronto) {
     return <main className="flex min-h-screen items-center justify-center bg-base"><p className="text-sm text-ink-3">{t('carregando')}</p></main>
   }
