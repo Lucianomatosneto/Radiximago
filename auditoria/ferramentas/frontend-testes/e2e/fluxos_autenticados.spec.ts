@@ -120,12 +120,12 @@ test.describe('estudante', () => {
   test.describe.configure({ mode: 'serial' })
   let sessao: Awaited<ReturnType<BrowserContext['storageState']>>
 
-  test('primeiro login: Termos v1.1 exigem leitura e aceite, depois o termo de ciencia', async ({ page, context }) => {
+  test('primeiro login: Termos v1.2 exigem leitura e aceite, depois o termo de ciencia', async ({ page, context }) => {
     await entrarComSenha(page, variavel('E2E_ESTUDANTE_EMAIL'), variavel('E2E_ESTUDANTE_SENHA'))
     await expect(page).toHaveURL(/\/banco-imagens/)
     const aceite = page.locator('[data-teste=aceite-termos]')
     await expect(aceite).toBeVisible()
-    await expect(aceite).toContainText('1.1')
+    await expect(aceite).toContainText('1.2')
     // so da para marcar "Li e concordo" depois de rolar o texto ate o fim
     await expect(page.locator('[data-teste=termos-concordo]')).toBeDisabled()
     await expect(page.locator('[data-teste=termos-aceitar]')).toBeDisabled()
