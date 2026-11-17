@@ -7,7 +7,8 @@ import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const PERFIS = ['administrador', 'curador', 'professor', 'estudante', 'pesquisador', 'suporte'] as const
@@ -189,7 +190,8 @@ export default function UsuariosPage() {
     setConfirmacao(null)
   }
 
-  useEffect(() => {
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao, { semConexao: avisarSemConexao }) => {
     async function buscarUsuarios() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
@@ -197,6 +199,11 @@ export default function UsuariosPage() {
         })
         if (response.status === 401) {
           router.push('/login')
+          return
+        }
+        if (response.status >= 500) {
+          // servidor fora nao e motivo para deslogar nem "acesso negado" (Fase 3e)
+          avisarSemConexao()
           return
         }
         if (!response.ok) {
@@ -208,7 +215,8 @@ export default function UsuariosPage() {
         setUsuarios(dados)
         setCarregando(false)
       } catch {
-        router.push('/login')
+        // sem conexao: antes ia ao login (Fase 3e)
+        avisarSemConexao()
       }
     }
 
@@ -232,22 +240,15 @@ export default function UsuariosPage() {
       }
     }
 
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (sessao.perfil !== 'administrador') {
-        router.push('/acesso-negado?de=/usuarios')
-        return
-      }
-      setMeuId(sessao.id)
-      setAutenticado(true)
-      void buscarUsuarios()
-      void buscarSolicitacoes()
-    })
-    // t: a mensagem de erro dos pedidos (13/11/2026); e estavel, nao repete a busca
-  }, [router, t])
+    if (sessao.perfil !== 'administrador') {
+      router.push('/acesso-negado?de=/usuarios')
+      return
+    }
+    setMeuId(sessao.id)
+    setAutenticado(true)
+    void buscarUsuarios()
+    void buscarSolicitacoes()
+  })
 
   const usuariosFiltrados = usuarios.filter((usuario) => {
     const termo = busca.trim().toLowerCase()
@@ -627,6 +628,7 @@ export default function UsuariosPage() {
     }
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
