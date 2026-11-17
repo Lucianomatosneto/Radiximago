@@ -1,15 +1,15 @@
 {
   "data": "2026-11-17",
-  "commit": "595cceca3539c7d23de25b71d1ca6ef7ec77a3cf",
-  "analise_em": "2026-11-17T01:08:46+0000",
-  "coverage": 83.7,
-  "lines_to_cover": 19308,
-  "uncovered_lines": 2510,
-  "ncloc": 45168,
+  "commit": "d1e7c33f82bb8c6353a7cf9bdfcaa440acd63071",
+  "analise_em": "2026-11-17T10:45:34+0000",
+  "coverage": 84.6,
+  "lines_to_cover": 19320,
+  "uncovered_lines": 2357,
+  "ncloc": 45217,
   "bugs": 0,
   "vulnerabilities": 0,
   "code_smells": 5,
-  "duplicated_lines_density": 3.3,
+  "duplicated_lines_density": 3.4,
   "security_hotspots": 0,
   "ratings": {
     "reliability": "A",
@@ -43,14 +43,14 @@
       {
         "metric": "new_coverage",
         "status": "OK",
-        "actual": 89.9,
+        "actual": 92.3,
         "threshold": 80,
         "comparator": "LT"
       },
       {
         "metric": "new_duplicated_lines_density",
         "status": "OK",
-        "actual": 0.2,
+        "actual": 0.3,
         "threshold": 3,
         "comparator": "GT"
       },
@@ -72,21 +72,21 @@
     },
     {
       "area": "frontend/src/app",
-      "lines": 4088,
-      "uncovered": 461,
-      "coverage": 88.7
+      "lines": 4031,
+      "uncovered": 379,
+      "coverage": 90.6
     },
     {
       "area": "frontend/src/components",
-      "lines": 5872,
-      "uncovered": 1089,
-      "coverage": 81.5
+      "lines": 5876,
+      "uncovered": 1024,
+      "coverage": 82.6
     },
     {
       "area": "frontend/src/lib",
-      "lines": 1860,
-      "uncovered": 163,
-      "coverage": 91.2
+      "lines": 1925,
+      "uncovered": 157,
+      "coverage": 91.8
     },
     {
       "area": "frontend/src/i18n",
