@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -45,7 +45,7 @@ from app.modules.grupos import (
     COMENTARIO_MAX, MARCACOES_ENVIO_MAX, MENSAGEM_ENVIO_MAX,
     GrupoComentario, GrupoEnvio, GrupoEnvioCurado, GrupoEnvioMembro,
 )
-from app.modules.grupos_router import PERFIS_GRUPOS, _auditar, _data, _grupo_do_dono
+from app.modules.grupos_router import PERFIS_GRUPOS, _agora, _auditar, _data, _grupo_do_dono
 from app.modules.orthanc_references import OrthancReference
 from app.modules.users import User
 
@@ -76,6 +76,21 @@ def _envios_visiveis(db: Session, grupo_id: int):
             .filter(GrupoEnvioCurado.grupo_id == grupo_id, Curation.status == StatusCuradoria.APROVADA.value,
                     OrthancReference.ativo.is_(True))
             .order_by(GrupoEnvioCurado.criado_em.desc(), GrupoEnvioCurado.id.desc()))
+
+
+def imagens_novas_por_grupo(db: Session, usuario_id: int) -> dict[int, int]:
+    """Quantas imagens (aprovadas e ativas) chegaram em cada grupo de que a
+    pessoa participa desde a ultima vez que ela abriu as imagens do grupo."""
+    linhas = (db.query(GrupoEnvioCurado.grupo_id, func.count(GrupoEnvioCurado.id))
+              .join(GrupoEnvioMembro, (GrupoEnvioMembro.grupo_id == GrupoEnvioCurado.grupo_id)
+                    & (GrupoEnvioMembro.usuario_id == usuario_id))
+              .join(Curation, Curation.id == GrupoEnvioCurado.curation_id)
+              .join(OrthancReference, Curation.orthanc_reference_id == OrthancReference.id)
+              .filter(Curation.status == StatusCuradoria.APROVADA.value, OrthancReference.ativo.is_(True),
+                      or_(GrupoEnvioMembro.imagens_vistas_em.is_(None),
+                          GrupoEnvioCurado.criado_em > GrupoEnvioMembro.imagens_vistas_em))
+              .group_by(GrupoEnvioCurado.grupo_id).all())
+    return dict(linhas)
 
 
 def _envio_do_dono(db: Session, grupo: GrupoEnvio, envio_id: int) -> GrupoEnvioCurado:
@@ -276,12 +291,19 @@ def _envio_do_grupo(db: Session, grupo: GrupoEnvio, envio_id: int) -> GrupoEnvio
 
 @router.get("/participo/{grupo_id}/envios")
 def imagens_do_grupo(grupo_id: int, usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
-    """Imagens do grupo e, em cada uma, SO a conversa da propria pessoa (D4)."""
+    """Imagens do grupo e, em cada uma, SO a conversa da propria pessoa (D4).
+    Cada imagem diz se e NOVA para a pessoa; abrir a lista marca todas como vistas."""
     grupo = _grupo_em_que_participo(db, grupo_id, usuario)
+    membro = db.get(GrupoEnvioMembro, (grupo.id, usuario.id))
+    vistas_em = membro.imagens_vistas_em
     dono = db.get(User, grupo.dono_id)
-    return {"envios": [{**_base_envio(e, f), "remetente": dono.nome if dono else "",
-                        "comentarios": [_comentario(c, eu_sou_participante=True) for c in _comentarios(db, e.id, usuario.id)]}
-                       for e, f in _envios_visiveis(db, grupo.id).all()]}
+    envios = [{**_base_envio(e, f), "remetente": dono.nome if dono else "",
+               "nova": vistas_em is None or (e.criado_em is not None and e.criado_em > vistas_em),
+               "comentarios": [_comentario(c, eu_sou_participante=True) for c in _comentarios(db, e.id, usuario.id)]}
+              for e, f in _envios_visiveis(db, grupo.id).all()]
+    membro.imagens_vistas_em = _agora()
+    db.commit()
+    return {"envios": envios}
 
 
 @router.post("/participo/{grupo_id}/envios/{envio_id}/comentarios")
