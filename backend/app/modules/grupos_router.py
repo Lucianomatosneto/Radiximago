@@ -22,6 +22,7 @@ DONO DO GRUPO (professor, pesquisador, curador, administrador):
 - DELETE /grupos/{id}/membros/{usuario}       tira alguem do grupo
 
 QUALQUER PESSOA LOGADA (participante ou convidado):
+- GET    /grupos/pendencias                   numeros do menu (convites e pedidos esperando)
 - GET    /grupos/participo                    grupos de que participo
 - DELETE /grupos/participo/{id}               sair do grupo
 - GET    /grupos/convites-recebidos           convites esperando minha resposta
@@ -382,6 +383,21 @@ def tirar_participante(grupo_id: int, usuario_id: int, usuario: User = Depends(e
 # ======================================================================
 # PARTICIPANTE E CONVIDADO (qualquer pessoa logada)
 # ======================================================================
+
+@router.get("/pendencias")
+def pendencias(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
+    """Numeros do menu: convites que a pessoa tem para responder e pedidos
+    esperando por ela nos grupos de que e dona (so numeros, sem nomes)."""
+    _vencer_pendentes(db)
+    convites = (db.query(func.count(GrupoEntrada.id))
+                .filter(GrupoEntrada.usuario_id == usuario.id, GrupoEntrada.tipo == CONVITE,
+                        GrupoEntrada.estado == PENDENTE).scalar())
+    pedidos = (db.query(func.count(GrupoEntrada.id))
+               .join(GrupoEnvio, GrupoEnvio.id == GrupoEntrada.grupo_id)
+               .filter(GrupoEnvio.dono_id == usuario.id, GrupoEntrada.tipo == PEDIDO,
+                       GrupoEntrada.estado == PENDENTE).scalar())
+    return {"convites": convites or 0, "pedidos": pedidos or 0}
+
 
 @router.get("/participo")
 def grupos_de_que_participo(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
