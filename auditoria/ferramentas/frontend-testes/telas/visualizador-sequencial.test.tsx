@@ -29,8 +29,9 @@ import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 const roteador = vi.hoisted(() => ({ push: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/pesquisa' }))
 const sessao = vi.hoisted(() => ({ perfil: 'estudante' as string | null }))
+// desde a Fase 3e a sessao tem tres resultados (valida, invalida, sem_conexao)
 vi.mock('../../../../frontend/src/lib/sessao', () => ({
-  obterSessaoAtual: async () => (sessao.perfil ? { perfil: sessao.perfil } : null),
+  obterSessaoAtual: async () => (sessao.perfil ? { estado: 'valida', sessao: { id: 1, perfil: sessao.perfil } } : { estado: 'invalida' }),
 }))
 
 // ---------- partes com teste proprio: versoes simples ----------
