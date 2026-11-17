@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { paginaInicial } from '../../lib/navegacao'
 
 export default function AcessoNegadoPage() {
@@ -23,15 +24,15 @@ export default function AcessoNegadoPage() {
   useEffect(() => {
     const de = new URLSearchParams(window.location.search).get('de') ?? ''
     if (/^\/[a-z0-9/_-]{0,80}$/i.test(de)) setPagina(de)
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      setInicio(paginaInicial(sessao.perfil))
-      setCarregando(false)
-    })
-  }, [router])
+  }, [])
+
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    setInicio(paginaInicial(sessao.perfil))
+    setCarregando(false)
+  })
+
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
 
   if (carregando) {
     return (
