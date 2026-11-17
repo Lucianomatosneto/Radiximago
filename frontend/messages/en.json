@@ -249,7 +249,6 @@
       "imagensRecebidas": "Received images",
       "curadoria": "Curation",
       "segundaOpiniao": "Second opinion",
-      "pesquisaAvancada": "Advanced search",
       "bancoImagens": "Image bank",
       "minhasImagens": "My images",
       "relatorios": "Reports",
@@ -267,8 +266,7 @@
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
-    "recolherMenu": "Collapse the navigation menu",
-    "menuRecolhidoDica": "Collapsed menu: hover an icon to see the section name."
+    "recolherMenu": "Collapse the navigation menu"
   },
   "Topbar": {
     "ajuda": "Help",
@@ -1891,6 +1889,7 @@
     "enviarResposta": "Send",
     "respostaExplicacao": "Goes with the image and your notes.",
     "respostaEnviada": "Reply sent to {nome}.",
+    "respostaEnviadaResponderDeNovo": "Reply sent to {nome}. Reply again",
     "erroRespostaVazia": "Write the reply before sending.",
     "erroResponder": "Could not send the reply."
   },
@@ -2108,6 +2107,7 @@
     "aparelhoDesconhecido": "Unknown device",
     "detalhes": "Network address {ip} · signed in {entrou} · last used {uso}",
     "encerrar": "End",
+    "encerrarAcesso": "End the session on {aparelho}, network address {ip}",
     "encerrarOutros": "{quantidade, plural, one {End the other session} other {End the other # sessions}}",
     "encerrado": "Session ended.",
     "outrosEncerrados": "The other sessions were ended.",

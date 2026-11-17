@@ -63,7 +63,7 @@ export default function EsqueciSenhaPage() {
 
         {enviado ? (
           <div className="space-y-5">
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300" role="status">
               {t('sucessoMensagem')}
             </div>
             <Link

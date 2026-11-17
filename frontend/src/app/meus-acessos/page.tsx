@@ -150,6 +150,7 @@ export default function MeusAcessosPage() {
                     <button
                       type="button"
                       disabled={ocupado}
+                      aria-label={t('encerrarAcesso', { aparelho: a.aparelho ?? t('aparelhoDesconhecido'), ip: a.ip ?? '—' })}
                       onClick={() => encerrar(`/auth/sessoes/${encodeURIComponent(a.id)}/encerrar`, t('encerrado'))}
                       className="rounded-lg border border-red-800/60 px-3 py-1.5 text-sm text-red-300 hover:bg-red-950/40 disabled:opacity-50"
                     >

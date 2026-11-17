@@ -211,4 +211,4 @@ Com os botões travados, nenhuma ação da pessoa chega à segunda proteção. P
 
 ## Commits
 
-Todos os commits têm um arquivo só. Os 2 defeitos estão em pares "teste que falha" → "correção".
+Todos os commits têm um arquivo só. Os 5 defeitos estão em pares "teste que falha" → "correção".

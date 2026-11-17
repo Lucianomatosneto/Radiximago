@@ -55,7 +55,7 @@ describe('carregar', () => {
     expect(within(atual).getByText(`Endereço de rede 10.0.0.1 · entrou em ${quando(ACESSOS[0].criada_em as string)} · último uso ${quando(ACESSOS[0].ultimo_uso as string)}`)).toBeTruthy()
     const desconhecido = linha('Aparelho desconhecido')
     expect(within(desconhecido).getByText('Endereço de rede — · entrou em — · último uso —')).toBeTruthy()
-    expect(within(linha('Chrome · Windows')).getByRole('button', { name: 'Encerrar' })).toBeTruthy()
+    expect(within(linha('Chrome · Windows')).getByRole('button', { name: 'Encerrar o acesso de Chrome · Windows, endereço de rede 10.0.0.2' })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Encerrar os outros 2 acessos' })).toBeTruthy()
     expect(screen.getByRole('region', { name: 'login em duas etapas' })).toBeTruthy()
   })
@@ -96,7 +96,7 @@ describe('encerrar', () => {
         return { corpo: {} }
       },
     })
-    await usuario.click(within(linha('Chrome · Windows')).getByRole('button', { name: 'Encerrar' }))
+    await usuario.click(within(linha('Chrome · Windows')).getByRole('button', { name: 'Encerrar o acesso de Chrome · Windows, endereço de rede 10.0.0.2' }))
     expect((await screen.findByRole('status')).textContent).toBe('Acesso encerrado.')
     await waitFor(() => expect(screen.queryByText('Chrome · Windows')).toBeNull())
     expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/auth/sessoes/resumo%2Fclinica/encerrar', corpo: undefined }])
@@ -145,5 +145,17 @@ describe('encerrar', () => {
     await act(async () => liberar())
     await screen.findByRole('status')
     expect(servidor.alteracoes()).toHaveLength(1)
+  })
+})
+
+// Fase 3d (16/11/2026), item 6: todos os "Encerrar" tinham o mesmo nome; o
+// leitor de tela nao dizia qual acesso cada um encerrava.
+describe('Fase 3d: nome de cada "Encerrar"', () => {
+  it('cada botao diz o aparelho e o endereco de rede do acesso (os mesmos dados da linha)', async () => {
+    await abrir()
+    expect(within(linha('Chrome · Windows')).getByRole('button').getAttribute('aria-label')).toBe('Encerrar o acesso de Chrome · Windows, endereço de rede 10.0.0.2')
+    expect(within(linha('Aparelho desconhecido')).getByRole('button').getAttribute('aria-label')).toBe('Encerrar o acesso de Aparelho desconhecido, endereço de rede —')
+    const nomes = screen.getAllByRole('button', { name: /^Encerrar o acesso de/ }).map((b) => b.getAttribute('aria-label'))
+    expect(new Set(nomes).size).toBe(nomes.length)
   })
 })

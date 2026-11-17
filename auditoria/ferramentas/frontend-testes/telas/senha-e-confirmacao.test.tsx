@@ -298,3 +298,27 @@ describe('Confirme seu e-mail', () => {
     expect(servidor.pedidos).toHaveLength(1)
   })
 })
+
+// Fase 3d (16/11/2026), item 3: as mensagens de sucesso de "Esqueci minha
+// senha" e "Redefinir senha" nao eram anunciadas (o Confirmar e-mail ja era).
+describe('Fase 3d: sucesso anunciado', () => {
+  it('Esqueci minha senha: "Se esse e-mail estiver cadastrado..." e anunciado', async () => {
+    const usuario = userEvent.setup()
+    servidorFalso({ 'POST /auth/forgot-password': { corpo: {} } })
+    montarTela(<EsqueciSenhaPage />)
+    await usuario.type(screen.getByLabelText('E-mail'), 'pessoa@exemplo.test')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar instruções' }))
+    expect((await screen.findByRole('status')).textContent).toMatch(/^Se esse e-mail estiver cadastrado/)
+  })
+
+  it('Redefinir senha: "Senha redefinida com sucesso..." e anunciado', async () => {
+    const usuario = userEvent.setup()
+    enderecoCom('/redefinir-senha#token=codigo-abc')
+    servidorFalso({ 'POST /auth/reset-password': { corpo: {} } })
+    montarTela(<RedefinirSenhaPage />)
+    await usuario.type(await screen.findByLabelText('Nova senha'), 'uma frase de teste')
+    await usuario.type(screen.getByLabelText('Confirmar nova senha'), 'uma frase de teste')
+    await usuario.click(screen.getByRole('button', { name: 'Redefinir senha' }))
+    expect((await screen.findByRole('status')).textContent).toBe('Senha redefinida com sucesso. Redirecionando para o login...')
+  })
+})

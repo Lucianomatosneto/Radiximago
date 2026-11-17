@@ -266,7 +266,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   }
 
   return (
-    <aside className={`flex h-screen w-60 shrink-0 flex-col justify-between border-r border-base-border bg-base lg:w-64 ${telaEstreita ? 'fixed left-0 top-0 z-40 shadow-2xl' : ''}`}>
+    <aside className={`flex h-screen w-60 shrink-0 flex-col justify-between border-r border-base-border bg-base lg:w-64 ${telaEstreita ? 'fixed left-0 top-0 z-40 shadow-2xl' : ''}`} aria-label={t('navegacao')}>
       <div>
         <div className="flex items-center justify-between border-b border-base-border px-6 py-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">{t('navegacao')}</p>

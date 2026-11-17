@@ -115,7 +115,7 @@ export default function SolicitarAcessoPage() {
 
         {enviado ? (
           <div className="space-y-5">
-            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4 text-sm text-emerald-300" role="status">
               {t('sucessoMensagem')}
             </div>
             <Link
@@ -206,6 +206,7 @@ export default function SolicitarAcessoPage() {
                     key={valor}
                     type="button"
                     onClick={() => setPerfilSolicitado(valor)}
+                    aria-pressed={perfilSolicitado === valor}
                     className={`rounded-lg border px-3 py-2 text-sm transition-colors ${
                       perfilSolicitado === valor
                         ? 'border-brand bg-brand text-white'

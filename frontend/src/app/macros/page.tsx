@@ -97,6 +97,7 @@ export default function MacrosPage() {
   const [edicao, setEdicao] = useState<Edicao | null>(null)
   const [erro, setErro] = useState('')
   const [aviso, setAviso] = useState('')
+  const [salvando, setSalvando] = useState(false)
   const [vocabulario, setVocabulario] = useState<TermoVocabularioApi[]>([])
   const tTermos = useTranslations('BuscaTermos')
   // liga cada rotulo ao seu campo (leitor de tela e clique no rotulo)
@@ -170,19 +171,29 @@ export default function MacrosPage() {
   }
 
   async function salvar() {
-    if (!edicao) return
+    // travado durante o envio: dois cliques rapidos nao gravam duas vezes
+    if (!edicao || salvando) return
     setErro('')
+    setSalvando(true)
+    try {
+      await enviarMacro(edicao)
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  async function enviarMacro(dados: Edicao) {
     const corpo = {
-      nome: edicao.nome,
+      nome: dados.nome,
       conteudo: {
-        ...edicao.conteudo,
-        tipo_radiografia: edicao.conteudo.tipo_radiografia || null,
-        qualidade_tecnica: edicao.conteudo.qualidade_tecnica || null,
-        origem: edicao.conteudo.origem || null,
+        ...dados.conteudo,
+        tipo_radiografia: dados.conteudo.tipo_radiografia || null,
+        qualidade_tecnica: dados.conteudo.qualidade_tecnica || null,
+        origem: dados.conteudo.origem || null,
       },
     }
-    const r = await fetchOuNulo(edicao.id ? `${API}/macros/${edicao.id}` : `${API}/macros`, {
-      method: edicao.id ? 'PATCH' : 'POST',
+    const r = await fetchOuNulo(dados.id ? `${API}/macros/${dados.id}` : `${API}/macros`, {
+      method: dados.id ? 'PATCH' : 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(corpo),
@@ -272,7 +283,7 @@ export default function MacrosPage() {
           </div>
 
           {erro && <p className="rounded-lg bg-red-500/10 p-3 text-sm text-red-300" role="alert">{erro}</p>}
-          {aviso && <p className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300">{aviso}</p>}
+          {aviso && <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-300">{aviso}</p>}
 
           <section className="rounded-2xl border border-base-border bg-base-surface p-4">
             <div className="mb-3 flex items-center justify-between">
@@ -370,7 +381,7 @@ export default function MacrosPage() {
                   <button type="button" onClick={() => setEdicao(null)} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-slate-300">
                     {t('cancelar')}
                   </button>
-                  <button type="button" onClick={salvar} className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+                  <button type="button" onClick={salvar} disabled={salvando} className="rounded-lg bg-brand px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
                     {t('salvar')}
                   </button>
                 </div>

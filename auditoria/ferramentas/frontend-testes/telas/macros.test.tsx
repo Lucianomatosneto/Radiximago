@@ -4,7 +4,7 @@
 // PR 3a (14/11/2026): os campos do editor de macro precisam ser achados pelo
 // rotulo (leitor de tela e clique no rotulo). Os demais testes da tela entram
 // no PR 3b. Dados inventados.
-import { cleanup, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MacrosPage from '../../../../frontend/src/app/macros/page'
@@ -245,5 +245,52 @@ describe('Fase 3c: macros e frases', () => {
     abrir()
     await usuario.click(await screen.findByRole('button', { name: 'Voltar' }))
     expect(window.history.length > 1 ? roteador.back : roteador.push).toHaveBeenCalled()
+  })
+})
+
+// Fase 3d (16/11/2026): itens 1 e 2 das sobras da 3c.
+describe('Fase 3d: salvar a macro', () => {
+  async function abrirNova(usuario: ReturnType<typeof userEvent.setup>, extra: Record<string, Rota> = {}) {
+    const servidor = servidorFalso(rotasPadrao(extra))
+    montarTela(<MacrosPage />)
+    await usuario.click(await screen.findByRole('button', { name: /Nova macro/ }))
+    await usuario.type(screen.getByLabelText('Nome (é o que se fala depois de “macro”)'), 'normal')
+    return servidor
+  }
+
+  // item 1: "Salvar" nao travava; dois cliques rapidos mandavam duas macros
+  it('durante o envio, "Salvar" fica travado e o segundo clique e ignorado', async () => {
+    const usuario = userEvent.setup()
+    let liberar: () => void = () => {}
+    const espera = new Promise<void>((r) => (liberar = r))
+    const servidor = await abrirNova(usuario, { 'POST /macros': { status: 201, corpo: {} } })
+    const fetchBase = globalThis.fetch
+    vi.stubGlobal('fetch', async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (init?.method === 'POST') await espera
+      return fetchBase(url, init)
+    })
+    const salvar = screen.getByRole('button', { name: 'Salvar' }) as HTMLButtonElement
+    await usuario.click(salvar)
+    await usuario.click(salvar)
+    expect(salvar.disabled).toBe(true)
+    await act(async () => liberar())
+    await screen.findByText('Macro salva.')
+    expect(servidor.alteracoes()).toHaveLength(1)
+  })
+
+  it('depois de uma falha, "Salvar" volta a funcionar', async () => {
+    const usuario = userEvent.setup()
+    await abrirNova(usuario, { 'POST /macros': { status: 500 } })
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    await screen.findByRole('alert')
+    expect((screen.getByRole('button', { name: 'Salvar' }) as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  // item 2: "Macro salva." aparecia, mas o leitor de tela nao anunciava
+  it('"Macro salva." e anunciada (role="status")', async () => {
+    const usuario = userEvent.setup()
+    await abrirNova(usuario, { 'POST /macros': { status: 201, corpo: {} } })
+    await usuario.click(screen.getByRole('button', { name: 'Salvar' }))
+    expect((await screen.findByRole('status')).textContent).toBe('Macro salva.')
   })
 })

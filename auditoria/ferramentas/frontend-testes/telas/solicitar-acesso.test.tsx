@@ -137,3 +137,32 @@ describe('Fase 3c: pedir acesso', () => {
     expect(servidor.pedidos).toHaveLength(1)
   })
 })
+
+// Fase 3d (16/11/2026), item 4: o sucesso nao era anunciado e os botoes de
+// perfil nao diziam ao leitor de tela qual estava escolhido.
+describe('Fase 3d: acessibilidade do pedido', () => {
+  it('botoes de perfil dizem qual esta escolhido (aria-pressed), um de cada vez', async () => {
+    const usuario = userEvent.setup()
+    servidorFalso({})
+    montarTela(<SolicitarAcessoPage />)
+    const estado = () => ['Estudante', 'Professor', 'Curador', 'Pesquisador'].map((n) => screen.getByRole('button', { name: n }).getAttribute('aria-pressed'))
+    expect(estado()).toEqual(['false', 'false', 'false', 'false'])
+    await usuario.click(screen.getByRole('button', { name: 'Professor' }))
+    expect(estado()).toEqual(['false', 'true', 'false', 'false'])
+    await usuario.click(screen.getByRole('button', { name: 'Curador' }))
+    expect(estado()).toEqual(['false', 'false', 'true', 'false'])
+  })
+
+  it('pedido enviado: a mensagem de sucesso e anunciada (role="status")', async () => {
+    const usuario = userEvent.setup()
+    servidorFalso({ 'POST /auth/request-access': { status: 201, corpo: {} } })
+    montarTela(<SolicitarAcessoPage />)
+    await usuario.type(screen.getByLabelText('Nome completo'), 'Ana Teste')
+    await usuario.type(screen.getByLabelText('E-mail'), 'ana@exemplo.test')
+    await usuario.type(screen.getByLabelText('Senha'), 'uma frase de teste')
+    await usuario.type(screen.getByLabelText('Confirmar'), 'uma frase de teste')
+    await usuario.click(screen.getByRole('button', { name: 'Estudante' }))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar solicitação' }))
+    expect((await screen.findByRole('status')).textContent).toMatch(/Enviamos um link de confirmação/)
+  })
+})

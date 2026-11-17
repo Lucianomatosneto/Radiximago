@@ -249,7 +249,6 @@
       "imagensRecebidas": "Imagens recebidas",
       "curadoria": "Curadoria",
       "segundaOpiniao": "Segunda opinião",
-      "pesquisaAvancada": "Pesquisa avançada",
       "bancoImagens": "Banco de imagens",
       "minhasImagens": "Minhas imagens",
       "relatorios": "Relatórios",
@@ -267,8 +266,7 @@
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
-    "recolherMenu": "Recolher o menu de navegação",
-    "menuRecolhidoDica": "Menu recolhido: passe o mouse sobre um ícone para ver o nome da seção."
+    "recolherMenu": "Recolher o menu de navegação"
   },
   "Topbar": {
     "ajuda": "Ajuda",
@@ -1891,6 +1889,7 @@
     "enviarResposta": "Enviar",
     "respostaExplicacao": "Vai com a imagem e as suas anotações.",
     "respostaEnviada": "Resposta enviada para {nome}.",
+    "respostaEnviadaResponderDeNovo": "Resposta enviada para {nome}. Responder de novo",
     "erroRespostaVazia": "Escreva a resposta antes de enviar.",
     "erroResponder": "Não foi possível enviar a resposta."
   },
@@ -2108,6 +2107,7 @@
     "aparelhoDesconhecido": "Aparelho desconhecido",
     "detalhes": "Endereço de rede {ip} · entrou em {entrou} · último uso {uso}",
     "encerrar": "Encerrar",
+    "encerrarAcesso": "Encerrar o acesso de {aparelho}, endereço de rede {ip}",
     "encerrarOutros": "{quantidade, plural, one {Encerrar o outro acesso} other {Encerrar os outros # acessos}}",
     "encerrado": "Acesso encerrado.",
     "outrosEncerrados": "Os outros acessos foram encerrados.",
