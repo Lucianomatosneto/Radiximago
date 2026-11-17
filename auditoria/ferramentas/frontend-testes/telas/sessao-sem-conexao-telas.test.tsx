@@ -65,7 +65,8 @@ const reais = vi.hoisted(() => ({ Topbar: null as unknown, Sidebar: null as unkn
 
 const ADMIN = { id: 1, nome: 'Admin Teste', email: 'admin@exemplo.test', perfil: 'administrador', foto_perfil_url: null }
 
-type Tela = { nome: string; montar: () => ReactElement; login?: string }
+// extras: o que a tela pede ao servidor depois de confirmar a sessao (para nao cair num 404 que, como antes, leva ao login)
+type Tela = { nome: string; montar: () => ReactElement; login?: string; extras?: Record<string, Rota> }
 const TELAS: Tela[] = [
   { nome: 'Acesso negado', montar: () => <AcessoNegadoPage /> },
   { nome: 'Aparelhos da rede', montar: () => <AparelhosPage /> },
@@ -74,7 +75,7 @@ const TELAS: Tela[] = [
   { nome: 'Compartilhadas comigo', montar: () => <CompartilhadasPage /> },
   { nome: 'Configurações', montar: () => <ConfiguracoesPage /> },
   { nome: 'Curadoria', montar: () => <CuradoriaPage /> },
-  { nome: 'Início (dashboard)', montar: () => <DashboardPage /> },
+  { nome: 'Início (dashboard)', montar: () => <DashboardPage />, extras: { 'GET /admin/stats': { status: 403, corpo: { detail: 'termo_ciencia_pendente' } } } },
   { nome: 'Enviar imagem', montar: () => <EnviarImagemPage /> },
   { nome: 'Grupos', montar: () => <GruposPage /> },
   { nome: 'Imagens recebidas', montar: () => <ImagensPage /> },
@@ -101,7 +102,7 @@ const TELAS: Tela[] = [
 ]
 
 async function abrir(tela: Tela, sessao: Rota | (() => Rota)) {
-  const servidor = servidorFalso({ 'GET /auth/me': typeof sessao === 'function' ? () => sessao() : sessao })
+  const servidor = servidorFalso({ ...tela.extras, 'GET /auth/me': typeof sessao === 'function' ? () => sessao() : sessao })
   await act(async () => {
     montarTela(tela.montar())
   })
@@ -136,9 +137,11 @@ describe.each(TELAS)('$nome', (tela) => {
     const servidor = await abrir(tela, () => rota)
     await screen.findByRole('alert')
     rota = { corpo: ADMIN }
+    const antes = pedidosDeSessao(servidor)
     await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Tentar de novo' })).toBeNull())
-    expect(pedidosDeSessao(servidor)).toBe(2)
+    // conferiu de novo (depois, pecas da tela que mostram/escondem opcoes tambem conferem)
+    expect(pedidosDeSessao(servidor)).toBeGreaterThan(antes)
     expect(roteador.push).not.toHaveBeenCalledWith('/login')
   })
 
@@ -147,8 +150,9 @@ describe.each(TELAS)('$nome', (tela) => {
     const servidor = await abrir(tela, () => rota)
     await screen.findByRole('alert')
     rota = { corpo: ADMIN }
+    const antes = pedidosDeSessao(servidor)
     act(() => void window.dispatchEvent(new Event('online')))
-    await waitFor(() => expect(pedidosDeSessao(servidor)).toBe(2))
+    await waitFor(() => expect(pedidosDeSessao(servidor)).toBeGreaterThan(antes))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Tentar de novo' })).toBeNull())
   })
 
