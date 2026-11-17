@@ -80,6 +80,22 @@ export default function ResponderCompartilhamento({
 
   const rotulo = t('responderA', { nome: remetenteNome })
 
+  // depois de enviar, o botao de icone diz que a resposta foi (so o "✓" nao basta)
+
+  const rotuloBotao = enviado ? t('respostaEnviadaResponderDeNovo', { nome: remetenteNome }) : rotulo
+
+  // sempre presente (mesmo vazio) para o leitor de tela anunciar quando mudar
+
+  const anuncio = (
+
+    <p role="status" className="sr-only">
+
+      {enviado ? t('respostaEnviada', { nome: remetenteNome }) : ''}
+
+    </p>
+
+  )
+
   const formulario = (
     <div
       className={
@@ -138,8 +154,8 @@ export default function ResponderCompartilhamento({
             setErro('')
             setAberto((v) => !v)
           }}
-          title={rotulo}
-          aria-label={rotulo}
+          title={rotuloBotao}
+          aria-label={rotuloBotao}
           aria-expanded={aberto}
           className={`flex items-center rounded-full border bg-white/90 px-1.5 py-0.5 backdrop-blur-sm dark:bg-black/70 ${
             enviado
@@ -150,6 +166,7 @@ export default function ResponderCompartilhamento({
           {enviado ? <span className="text-[11px] leading-none">✓</span> : <span className="[&_svg]:h-3.5 [&_svg]:w-3.5"><IconeResponder /></span>}
         </button>
         {aberto && formulario}
+        {anuncio}
       </div>
     )
   }
@@ -165,8 +182,8 @@ export default function ResponderCompartilhamento({
             setErro('')
             setAberto((v) => !v)
           }}
-          title={rotulo}
-          aria-label={rotulo}
+          title={rotuloBotao}
+          aria-label={rotuloBotao}
           aria-expanded={aberto}
           className={`flex h-8 w-8 items-center justify-center rounded-full border bg-base-surface/30 hover:border-sky-400 hover:text-sky-300 ${
             enviado ? 'border-emerald-400 text-emerald-300' : 'border-base-border text-slate-200'
@@ -175,6 +192,7 @@ export default function ResponderCompartilhamento({
           {enviado ? '✓' : <IconeResponder />}
         </button>
         {aberto && formulario}
+        {anuncio}
       </div>
     )
   }
@@ -194,8 +212,10 @@ export default function ResponderCompartilhamento({
           {rotulo}
         </button>
       )}
-      {enviado && !aberto && <p className="mt-1 text-xs text-emerald-300">✓ {t('respostaEnviada', { nome: remetenteNome })}</p>}
+      {/* visivel; o leitor de tela ouve o mesmo texto pelo anuncio abaixo */}
+      {enviado && !aberto && <p aria-hidden="true" className="mt-1 text-xs text-emerald-300">✓ {t('respostaEnviada', { nome: remetenteNome })}</p>}
       {aberto && formulario}
+      {anuncio}
     </div>
   )
 }
