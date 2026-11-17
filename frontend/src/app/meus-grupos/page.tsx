@@ -25,7 +25,7 @@ const MINIMO_LETRAS = 3
 
 type Convite = { id: number; grupo: { id: number; nome: string }; convidado_por: string }
 type Pedido = { id: number; grupo: { id: number; nome: string }; criador: string }
-type Participacao = { id: number; nome: string; criador: string; entrou_em: string | null }
+type Participacao = { id: number; nome: string; criador: string; entrou_em: string | null; imagens_novas?: number }
 type Achado = { id: number; nome: string; criador: string; situacao: 'participa' | 'pedido_pendente' | 'convite_pendente' | null }
 
 async function lerErro(r: Response, padrao: string) {
@@ -246,6 +246,9 @@ export default function MeusGruposPage() {
                       <span>
                         <strong className="text-ink">{g.nome}</strong> · {t('criadoPor', { quem: g.criador })}
                         {g.entrou_em && <span className="ml-1 text-xs text-ink-3">· {t('entrouEm', { data: data(g.entrou_em) })}</span>}
+                        {(g.imagens_novas ?? 0) > 0 && (
+                          <span className="ml-2 rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">{t('imagensNovas', { n: g.imagens_novas ?? 0 })}</span>
+                        )}
                       </span>
                       <span className="flex gap-2">
                         <button type="button" className={botao} aria-expanded={imagensAbertas === g.id}
@@ -254,7 +257,7 @@ export default function MeusGruposPage() {
                         <button type="button" className={botao} aria-label={t('sairRotulo', { grupo: g.nome })} onClick={() => sair(g)}>{t('sair')}</button>
                       </span>
                     </div>
-                    {imagensAbertas === g.id && <ImagensGrupoParticipante grupoId={g.id} />}
+                    {imagensAbertas === g.id && <ImagensGrupoParticipante grupoId={g.id} aoVer={() => void carregar(ehEstudante)} />}
                   </li>
                 ))}
               </ul>

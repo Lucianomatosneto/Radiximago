@@ -269,7 +269,10 @@
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
     "recolherMenu": "Collapse the navigation menu",
-    "pendentesGrupos": "{quantidade, plural, one {1 awaiting reply} other {# awaiting reply}}"
+    "pendentesGrupos": "{quantidade, plural, one {1 awaiting reply} other {# awaiting reply}}",
+    "convitesNovos": "{quantidade, plural, one {1 invitation} other {# invitations}}",
+    "imagensNovas": "{quantidade, plural, one {1 new image} other {# new images}}",
+    "e": " and "
   },
   "Topbar": {
     "ajuda": "Help",
@@ -2904,7 +2907,9 @@
     "comentarRotulo": "Your comment",
     "comentarExemplo": "Write your question or note",
     "comentariosFechados": "Comments on this image are closed.",
-    "comentarioParticular": "Only you and the group owner see this conversation."
+    "comentarioParticular": "Only you and the group owner see this conversation.",
+    "nova": "New",
+    "imagensNovas": "{n, plural, one {1 new image} other {# new images}}"
   },
   "AulaGrupo": {
     "botao": "Prepare class for a group",

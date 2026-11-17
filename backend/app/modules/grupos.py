@@ -59,6 +59,9 @@ class GrupoEnvioMembro(Base):
     usuario_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), primary_key=True, index=True)
     entrou_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     origem: Mapped[str] = mapped_column(String(10), nullable=False, server_default=ORIGEM_ANTERIOR)
+    # ultima vez que a pessoa abriu as imagens do grupo (nulo = nunca): o que
+    # chegou depois conta como "imagem nova" no menu (17/11/2026)
+    imagens_vistas_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class GrupoEntrada(Base):

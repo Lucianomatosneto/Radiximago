@@ -74,11 +74,22 @@ describe('o que cada perfil ve', () => {
 })
 
 describe('grupos: convites e pedidos esperando resposta (17/11/2026)', () => {
-  it('"Meus grupos" mostra os convites; "Grupos" mostra os pedidos; com texto para o leitor de tela', async () => {
-    abrir('professor', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 2, pedidos: 1 } } })
-    const convites = await screen.findByLabelText('2 esperando resposta')
-    expect(within(screen.getByRole('link', { name: /Meus grupos/ })).getByText('2')).toBe(convites)
-    expect(within(screen.getByRole('link', { name: /^Grupos/ })).getByText('1')).toBe(screen.getByLabelText('1 esperando resposta'))
+  it('"Meus grupos" soma convites e imagens novas; "Grupos" mostra os pedidos; com texto para o leitor de tela', async () => {
+    abrir('professor', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 2, pedidos: 1, imagens_novas: 3 } } })
+    const meus = await screen.findByLabelText('2 convites e 3 imagens novas')
+    expect(within(screen.getByRole('link', { name: /Meus grupos/ })).getByText('5')).toBe(meus)
+    // "Grupos" so aparece depois que o perfil e confirmado
+    const grupos = await screen.findByRole('link', { name: /^Grupos/ })
+    expect(within(grupos).getByText('1')).toBe(screen.getByLabelText('1 esperando resposta'))
+  })
+
+  it.each([
+    [{ convites: 1, pedidos: 0 }, '1 convite', '1'],
+    [{ convites: 0, pedidos: 0, imagens_novas: 1 }, '1 imagem nova', '1'],
+    [{ convites: 3, pedidos: 0, imagens_novas: 0 }, '3 convites', '3'],
+  ])('"Meus grupos" com %o: "%s"', async (corpo, rotulo, numero) => {
+    abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo } })
+    expect((await screen.findByLabelText(rotulo)).textContent).toBe(numero)
   })
 
   it('sem pendencias (ou resposta estranha, erro, sem conexao): nenhum numero', async () => {
@@ -86,14 +97,14 @@ describe('grupos: convites e pedidos esperando resposta (17/11/2026)', () => {
       const servidor = abrir('professor', undefined, { 'GET /grupos/pendencias': rota })
       await waitFor(() => expect(servidor.pedidos.map((p) => p.caminho)).toContain('/grupos/pendencias'))
       await screen.findByRole('link', { name: 'Grupos' })
-      expect(screen.queryByLabelText(/esperando resposta/)).toBeNull()
+      expect(screen.queryByLabelText(/esperando resposta|convite|imagens? nova/)).toBeNull()
       cleanup()
     }
   })
 
   it('reconta quando uma tela de grupos avisa que algo mudou', async () => {
     const servidor = abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 1, pedidos: 0 } } })
-    await screen.findByLabelText('1 esperando resposta')
+    await screen.findByLabelText('1 convite')
     const contagens = () => servidor.pedidos.filter((p) => p.caminho === '/grupos/pendencias').length
     const antes = contagens()
     act(() => void window.dispatchEvent(new Event('radix-grupos-mudou')))
