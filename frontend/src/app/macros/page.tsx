@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useId, useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { CATEGORIAS_ALTERACOES } from '../../lib/alteracoesObservadas'
 import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
 import BuscaTermos from '../../components/pesquisa/BuscaTermos'
@@ -103,20 +104,14 @@ export default function MacrosPage() {
   // liga cada rotulo ao seu campo (leitor de tela e clique no rotulo)
   const id = useId()
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/macros')
-        return
-      }
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/macros')
+      return
+    }
+    void carregar()
+  })
 
   async function carregar() {
     setErro('')
@@ -244,6 +239,7 @@ export default function MacrosPage() {
     }
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
