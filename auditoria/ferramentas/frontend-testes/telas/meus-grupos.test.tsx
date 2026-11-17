@@ -22,12 +22,14 @@ vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () =
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
 vi.mock('../../../../frontend/src/components/envios/ImagensGrupoParticipante', () => ({
-  default: ({ grupoId }: { grupoId: number }) => <p>imagens do grupo {grupoId}</p>,
+  default: ({ grupoId, aoVer }: { grupoId: number; aoVer?: () => void }) => (
+    <p>imagens do grupo {grupoId} <button type="button" onClick={aoVer}>simular imagens vistas</button></p>
+  ),
 }))
 
 const sessao = (perfil: string) => ({ id: 1, nome: 'Pessoa Teste', email: 'pessoa@exemplo.test', perfil, foto_perfil_url: null })
 const CONVITES = [{ id: 7, grupo: { id: 3, nome: 'Turma A' }, convidado_por: 'Prof. Silva', criado_em: '2026-11-17T10:00:00+00:00' }]
-const PARTICIPO = [{ id: 4, nome: 'Monitores', criador: 'Prof. Souza', entrou_em: '2026-11-10T10:00:00+00:00' }]
+const PARTICIPO = [{ id: 4, nome: 'Monitores', criador: 'Prof. Souza', entrou_em: '2026-11-10T10:00:00+00:00', imagens_novas: 2 }]
 const PEDIDOS = [{ id: 9, grupo: { id: 5, nome: 'Radiologia II' }, criador: 'Prof. Lima', criado_em: '2026-11-16T10:00:00+00:00' }]
 const ACHADOS = [
   { id: 20, nome: 'Radiologia I', criador: 'Prof. Lima', situacao: null },
@@ -223,9 +225,18 @@ describe('imagens do grupo (Etapa 3)', () => {
     await abrir('estudante')
     const botao = await screen.findByRole('button', { name: 'Ver as imagens do grupo Monitores' })
     await usuario.click(botao)
-    expect(screen.getByText('imagens do grupo 4')).toBeTruthy()
+    expect(screen.getByText(/imagens do grupo 4/)).toBeTruthy()
     expect(botao.getAttribute('aria-expanded')).toBe('true')
     await usuario.click(botao)
-    expect(screen.queryByText('imagens do grupo 4')).toBeNull()
+    expect(screen.queryByText(/imagens do grupo 4/)).toBeNull()
+  })
+
+  it('mostra quantas imagens novas chegaram e recarrega a lista depois que a pessoa ve as imagens', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir('estudante')
+    expect(await within(secao('Grupos de que participo')).findByText('2 imagens novas')).toBeTruthy()
+    await usuario.click(screen.getByRole('button', { name: 'Ver as imagens do grupo Monitores' }))
+    await usuario.click(screen.getByRole('button', { name: 'simular imagens vistas' }))
+    await waitFor(() => expect(servidor.pedidos.filter((p) => p.caminho === '/grupos/participo')).toHaveLength(2))
   })
 })
