@@ -225,6 +225,7 @@ PERMITIDOS = {
     ("CompartilharEntrada", "email"),           # e-mail do destinatario
     ("TermoEdicao", "ativo"),                   # curadoria: desativar termo do vocabulario
     ("MacroEdicao", "ativo"),                   # curadoria: desativar macro
+    ("ConviteDados", "usuario_id"),             # dono do grupo convida alguem; so vira participacao se a pessoa aceitar (17/11/2026)
 }
 
 
