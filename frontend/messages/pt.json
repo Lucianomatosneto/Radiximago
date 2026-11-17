@@ -249,7 +249,6 @@
       "imagensRecebidas": "Imagens recebidas",
       "curadoria": "Curadoria",
       "segundaOpiniao": "Segunda opinião",
-      "pesquisaAvancada": "Pesquisa avançada",
       "bancoImagens": "Banco de imagens",
       "minhasImagens": "Minhas imagens",
       "relatorios": "Relatórios",
@@ -267,8 +266,7 @@
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
-    "recolherMenu": "Recolher o menu de navegação",
-    "menuRecolhidoDica": "Menu recolhido: passe o mouse sobre um ícone para ver o nome da seção."
+    "recolherMenu": "Recolher o menu de navegação"
   },
   "Topbar": {
     "ajuda": "Ajuda",
