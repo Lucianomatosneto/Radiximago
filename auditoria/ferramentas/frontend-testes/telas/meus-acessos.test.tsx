@@ -147,3 +147,15 @@ describe('encerrar', () => {
     expect(servidor.alteracoes()).toHaveLength(1)
   })
 })
+
+// Fase 3d (16/11/2026), item 6: todos os "Encerrar" tinham o mesmo nome; o
+// leitor de tela nao dizia qual acesso cada um encerrava.
+describe('Fase 3d: nome de cada "Encerrar"', () => {
+  it('cada botao diz o aparelho e o endereco de rede do acesso (os mesmos dados da linha)', async () => {
+    await abrir()
+    expect(within(linha('Chrome · Windows')).getByRole('button').getAttribute('aria-label')).toBe('Encerrar o acesso de Chrome · Windows, endereço de rede 10.0.0.2')
+    expect(within(linha('Aparelho desconhecido')).getByRole('button').getAttribute('aria-label')).toBe('Encerrar o acesso de Aparelho desconhecido, endereço de rede —')
+    const nomes = screen.getAllByRole('button', { name: /^Encerrar o acesso de/ }).map((b) => b.getAttribute('aria-label'))
+    expect(new Set(nomes).size).toBe(nomes.length)
+  })
+})
