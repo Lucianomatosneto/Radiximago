@@ -162,3 +162,30 @@ describe('enviar', () => {
     expect(screen.queryByText('Escreva a resposta antes de enviar.')).toBeNull()
   })
 })
+
+// Fase 3d (16/11/2026), item 5: "Resposta enviada" nao era anunciada; nos
+// formatos de icone o sucesso era so um "✓", com o mesmo nome no botao.
+describe('Fase 3d: sucesso anunciado e nome do botao', () => {
+  it.each<Jeito>(['texto', 'icone', 'compacto'])('%s: "Resposta enviada" e anunciada (role="status")', async (jeito) => {
+    const usuario = userEvent.setup()
+    abrirComponente(jeito)
+    await usuario.click(botaoAbrir())
+    await usuario.type(campo(), 'Ok')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Resposta enviada para Prof. Teste.'))
+  })
+
+  it.each<Jeito>(['icone', 'compacto'])('%s: depois de enviar, o botao diz que a resposta foi enviada (e volta ao normal)', async (jeito) => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const usuario = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+    abrirComponente(jeito)
+    await usuario.click(botaoAbrir())
+    await usuario.type(campo(), 'Ok')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar' }))
+    const botao = await screen.findByRole('button', { name: 'Resposta enviada para Prof. Teste. Responder de novo' })
+    expect(botao.textContent).toBe('✓')
+    await act(async () => void vi.advanceTimersByTime(4100))
+    expect(screen.getByRole('button', { name: 'Responder a Prof. Teste' })).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toBe('')
+  })
+})
