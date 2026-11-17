@@ -269,7 +269,10 @@
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
     "recolherMenu": "Recolher o menu de navegação",
-    "pendentesGrupos": "{quantidade, plural, one {1 esperando resposta} other {# esperando resposta}}"
+    "pendentesGrupos": "{quantidade, plural, one {1 esperando resposta} other {# esperando resposta}}",
+    "convitesNovos": "{quantidade, plural, one {1 convite} other {# convites}}",
+    "imagensNovas": "{quantidade, plural, one {1 imagem nova} other {# imagens novas}}",
+    "e": " e "
   },
   "Topbar": {
     "ajuda": "Ajuda",
@@ -2904,7 +2907,9 @@
     "comentarRotulo": "Seu comentário",
     "comentarExemplo": "Escreva sua dúvida ou observação",
     "comentariosFechados": "Os comentários desta imagem estão fechados.",
-    "comentarioParticular": "Só você e o dono do grupo veem esta conversa."
+    "comentarioParticular": "Só você e o dono do grupo veem esta conversa.",
+    "nova": "Nova",
+    "imagensNovas": "{n, plural, one {1 imagem nova} other {# imagens novas}}"
   },
   "AulaGrupo": {
     "botao": "Preparar aula para um grupo",
