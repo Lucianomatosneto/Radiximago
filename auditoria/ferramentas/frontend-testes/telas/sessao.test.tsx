@@ -273,6 +273,9 @@ describe('useSessaoAtual (menu, barra do topo, botoes)', () => {
     const servidor = servidorFalso({ 'GET /auth/me': { status: 401 } })
     montarTela(<Perfil />)
     await waitFor(() => expect(pedidosDeSessao(servidor)).toBe(1))
+    // espera a resposta 401 ser processada: se a internet "volta" enquanto a
+    // primeira pergunta ainda esta no ar, conferir de novo e o certo
+    await act(async () => void (await new Promise((r) => setTimeout(r, 30))))
     ficarOnline()
     await new Promise((r) => setTimeout(r, 20))
     expect(pedidosDeSessao(servidor)).toBe(1)
