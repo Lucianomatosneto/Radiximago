@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useSessaoAtual } from '../lib/useVerificarSessao'
-import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
+import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, UserPlus, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -63,8 +63,10 @@ const ITENS_MENU: ItemMenu[] = [
   { chave: 'bancoImagens', href: '/banco-imagens', ativo: true, icone: Library, cor: COR_BLUE },
   // etapa B (08/11/2026): arquivo ou camera do celular, para todos que enviam
   { chave: 'enviarImagem', href: '/enviar-imagem', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador', 'administrador'], cor: COR_TEAL },
-  // etapa C (08/11/2026): grupos de envio (cada um cuida dos seus)
-  { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, perfis: ['professor', 'curador', 'administrador'], cor: COR_CYAN },
+  // etapa C (08/11/2026): grupos de envio (cada um cuida dos seus); pesquisador tambem cria (17/11/2026)
+  { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, perfis: ['professor', 'pesquisador', 'curador', 'administrador'], cor: COR_CYAN },
+  // 17/11/2026: grupos de que participo, convites recebidos e (estudante) procurar grupo
+  { chave: 'meusGrupos', href: '/meus-grupos', ativo: true, icone: UserPlus, cor: COR_EMERALD },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
   // etapa E (08/11/2026): pranchas que outras pessoas mandaram (o e-mail traz so o link)
@@ -112,6 +114,9 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // Quantas imagens chegaram em "Compartilhadas comigo" e ainda nao foram
   // vistas - mostrado como um numero ao lado do item do menu.
   const [novasCompartilhadas, setNovasCompartilhadas] = useState(0)
+  // Grupos (17/11/2026): convites que a pessoa tem para responder (em "Meus
+  // grupos") e pedidos esperando por ela nos grupos que criou (em "Grupos")
+  const [pendGrupos, setPendGrupos] = useState({ convites: 0, pedidos: 0 })
   useEffect(() => {
     let cancelado = false
     function contar() {
@@ -127,15 +132,23 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
       void ler('/shares/recebidas/novas').then((a) => {
         if (!cancelado) setNovasCompartilhadas(a)
       })
+      void fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos/pendencias`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((dados) => {
+          if (!cancelado) setPendGrupos({ convites: Number(dados?.convites) || 0, pedidos: Number(dados?.pedidos) || 0 })
+        })
+        .catch(() => undefined)
     }
     contar()
     const id = setInterval(contar, 120000)
     window.addEventListener('radix-compartilhadas-vistas', contar)
+    window.addEventListener('radix-grupos-mudou', contar)
     document.addEventListener('visibilitychange', contar)
     return () => {
       cancelado = true
       clearInterval(id)
       window.removeEventListener('radix-compartilhadas-vistas', contar)
+      window.removeEventListener('radix-grupos-mudou', contar)
       document.removeEventListener('visibilitychange', contar)
     }
   }, [])
@@ -202,6 +215,13 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // acesso.
   const itensVisiveis = ITENS_MENU.filter((item) => !item.perfis || (perfil !== null && item.perfis.includes(perfil)))
 
+  // numero ao lado do item (0 = sem numero) e o texto para o leitor de tela
+  function contador(chave: string): { n: number; rotulo: string } {
+    if (chave === 'compartilhadasComigo') return { n: novasCompartilhadas, rotulo: t('novasCompartilhadas', { quantidade: novasCompartilhadas }) }
+    const n = chave === 'meusGrupos' ? pendGrupos.convites : chave === 'grupos' ? pendGrupos.pedidos : 0
+    return { n, rotulo: t('pendentesGrupos', { quantidade: n }) }
+  }
+
   const botaoRecolher = podeRecolher && (
     <button
       type="button"
@@ -245,7 +265,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
                   className={`group relative flex h-10 w-10 items-center justify-center rounded-lg transition ${estaAtivo ? 'bg-brand/15 text-brand ring-1 ring-brand' : 'text-slate-400 hover:bg-base-surface2 hover:text-ink'}`}
                 >
                   <Icone aria-hidden="true" className="h-5 w-5" />
-                  {item.chave === 'compartilhadasComigo' && novasCompartilhadas > 0 && (
+                  {contador(item.chave).n > 0 && (
                     <span aria-hidden="true" className="absolute right-1 top-1 h-2 w-2 rounded-full bg-amber-400" />
                   )}
                   <span role="tooltip" className="pointer-events-none absolute left-full top-1/2 z-50 ml-2 hidden -translate-y-1/2 whitespace-nowrap rounded-md border border-base-border bg-base-surface px-2 py-1 text-xs font-medium text-ink shadow-lg group-hover:block group-focus-visible:block">
@@ -311,12 +331,12 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
               >
                 <span className="flex items-center justify-between gap-2">
                   {t(`itens.${item.chave}`)}
-                  {item.chave === 'compartilhadasComigo' && novasCompartilhadas > 0 && (
+                  {contador(item.chave).n > 0 && (
                     <span
                       className="rounded-full bg-amber-400 px-1.5 text-[11px] font-bold leading-5 text-black"
-                      aria-label={t('novasCompartilhadas', { quantidade: novasCompartilhadas })}
+                      aria-label={contador(item.chave).rotulo}
                     >
-                      {novasCompartilhadas}
+                      {contador(item.chave).n}
                     </span>
                   )}
                 </span>
