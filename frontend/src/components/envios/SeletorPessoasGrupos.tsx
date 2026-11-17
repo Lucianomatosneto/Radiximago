@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useSessaoAtual } from '../../lib/useVerificarSessao'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_COM_GRUPOS = ['professor', 'curador', 'administrador']
@@ -40,16 +40,17 @@ export default function SeletorPessoasGrupos({
   const [busca, setBusca] = useState('')
   const [achadas, setAchadas] = useState<Pessoa[]>([])
 
+  // grupos so existem para professor, curador e administrador; so com a
+  // sessao confirmada (sem conexao, nao pede; a internet volta e pede - Fase 3e)
+  const sessaoAtual = useSessaoAtual()
+  const perfilComGrupos = !!sessaoAtual && PERFIS_COM_GRUPOS.includes(sessaoAtual.perfil)
   useEffect(() => {
-    if (somentePessoas) return
-    // grupos so existem para professor, curador e administrador
-    obterSessaoAtual()
-      .then((s) => (s && PERFIS_COM_GRUPOS.includes(s.perfil)
-        ? fetch(`${API}/grupos`, { credentials: 'include' }).then((r) => (r.ok ? r.json() : { grupos: [] }))
-        : { grupos: [] }))
+    if (somentePessoas || !perfilComGrupos) return
+    fetch(`${API}/grupos`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : { grupos: [] }))
       .then((d) => setMeusGrupos(d.grupos ?? []))
       .catch(() => setMeusGrupos([]))
-  }, [somentePessoas])
+  }, [somentePessoas, perfilComGrupos])
 
   useEffect(() => {
     if (busca.trim().length < minimoBusca) {

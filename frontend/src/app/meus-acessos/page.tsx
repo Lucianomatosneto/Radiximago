@@ -6,12 +6,13 @@
 // num computador da clinica). So mostra/encerra acessos da propria conta;
 // a API recebe um RESUMO do identificador da sessao, nunca o identificador.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import SecaoSegundoFator from '../../components/segundoFator/SecaoSegundoFator'
 
 interface Acesso {
@@ -36,16 +37,10 @@ export default function MeusAcessosPage() {
   const [aviso, setAviso] = useState('')
   const [ocupado, setOcupado] = useState(false)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(() => {
+    void carregar()
+  })
 
   async function carregar() {
     setErro('')
@@ -99,6 +94,7 @@ export default function MeusAcessosPage() {
     })
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

@@ -1,13 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
+import { useCallback, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import StatusBadge from '../../components/StatusBadge'
 import DashboardCard from '../../components/DashboardCard'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 // "Aguardando curadoria" = sem ficha (null) + pendente + em analise - a
 // MESMA regra do Inicio e do Painel administrativo (contagem unica do
@@ -147,22 +148,17 @@ export default function ImagensPage() {
     [router, t]
   )
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  // (buscarImagens so muda com router/t, que sao estaveis: roda uma vez, como antes)
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/imagens')
+      return
+    }
 
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/imagens')
-        return
-      }
-
-      setAutenticado(true)
-      void buscarImagens()
-    })
-  }, [router, buscarImagens])
+    setAutenticado(true)
+    void buscarImagens()
+  })
 
   async function enviarImagem(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
@@ -240,6 +236,7 @@ export default function ImagensPage() {
   const paginaAtual = Math.min(pagina, totalPaginas)
   const imagensDaPagina = imagensFiltradas.slice((paginaAtual - 1) * POR_PAGINA, paginaAtual * POR_PAGINA)
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

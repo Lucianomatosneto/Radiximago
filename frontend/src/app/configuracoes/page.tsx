@@ -1,11 +1,12 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const PERFIS_PERMITIDOS = ['administrador']
 
@@ -114,20 +115,14 @@ export default function ConfiguracoesPage() {
   const [config, setConfig] = useState<SettingsResponse | null>(null)
   const [erro, setErro] = useState('')
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/configuracoes')
-        return
-      }
-      void buscarConfiguracoes()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/configuracoes')
+      return
+    }
+    void buscarConfiguracoes()
+  })
 
   async function buscarConfiguracoes() {
     setCarregando(true)
@@ -153,6 +148,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

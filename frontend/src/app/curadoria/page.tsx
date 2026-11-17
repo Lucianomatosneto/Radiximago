@@ -29,7 +29,8 @@ import BarraSuperiorCuradoria from '../../components/curadoria/BarraSuperiorCura
 import ModalMotivo from '../../components/curadoria/ModalMotivo'
 import PainelVoz from '../../components/curadoria/PainelVoz'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 // suporte: so leitura na API (02/11/2026); professor (08/11/2026): so as
 // imagens que ELE enviou, como sugestao ao curador (nao aprova)
@@ -311,35 +312,29 @@ export default function CuradoriaPage() {
   const [enviandoDescarteFinal, setEnviandoDescarteFinal] = useState(false)
   const [erroDescarteFinal, setErroDescarteFinal] = useState('')
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/curadoria')
-        return
-      }
-      setAutenticado(true)
-      const professor = sessao.perfil === 'professor'
-      ehProfessorRef.current = professor
-      setEhProfessor(professor)
-      void carregarFila()
-      if (!professor) void carregarReviewsRespondidas()
-      // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
-      // ficha e mandou para ca - abre ESSA ficha em vez da 1a da fila
-      const q = new URLSearchParams(window.location.search)
-      const editar = Number(q.get('editar'))
-      const ref = Number(q.get('ref'))
-      if (editar > 0 && ref > 0) {
-        autoAbriuPrimeiraRef.current = true
-        void carregarViewerUrl(ref)
-        void carregarFichaCompleta(editar, ref)
-      }
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/curadoria')
+      return
+    }
+    setAutenticado(true)
+    const professor = sessao.perfil === 'professor'
+    ehProfessorRef.current = professor
+    setEhProfessor(professor)
+    void carregarFila()
+    if (!professor) void carregarReviewsRespondidas()
+    // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
+    // ficha e mandou para ca - abre ESSA ficha em vez da 1a da fila
+    const q = new URLSearchParams(window.location.search)
+    const editar = Number(q.get('editar'))
+    const ref = Number(q.get('ref'))
+    if (editar > 0 && ref > 0) {
+      autoAbriuPrimeiraRef.current = true
+      void carregarViewerUrl(ref)
+      void carregarFichaCompleta(editar, ref)
+    }
+  })
 
   // Abre a primeira imagem pendente automaticamente assim que a fila
   // carrega, pra quem cura ja cair direto trabalhando (visualizador grande
@@ -1223,6 +1218,7 @@ export default function CuradoriaPage() {
   }  pedirAprovacaoRef.current = pedirAprovacao
 
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

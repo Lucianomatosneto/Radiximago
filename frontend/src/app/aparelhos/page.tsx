@@ -5,14 +5,15 @@
 // administrador cadastra, libera e bloqueia; o suporte ve a lista e testa a
 // conexao. Aparelho nao cadastrado ou bloqueado e recusado.
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Cpu } from 'lucide-react'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import { useConfirmacao } from '../../components/useConfirmacao'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -81,21 +82,15 @@ export default function AparelhosPage() {
     }
   }
 
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => {
-      if (!s) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS.includes(s.perfil)) {
-        router.push('/acesso-negado?de=/aparelhos')
-        return
-      }
-      setPronto(true)
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((s) => {
+    if (!PERFIS.includes(s.perfil)) {
+      router.push('/acesso-negado?de=/aparelhos')
+      return
+    }
+    setPronto(true)
+    void carregar()
+  })
 
   function mostrarResultado(d: { aviso?: string | null }, ok: string) {
     setAviso(ok)
@@ -189,6 +184,7 @@ export default function AparelhosPage() {
   const data = (iso: string | null) =>
     iso ? new Date(iso).toLocaleString(locale === 'en' ? 'en-US' : 'pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : t('nunca')
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!pronto) {
     return <main className="flex min-h-screen items-center justify-center bg-base"><p className="text-sm text-ink-3">{t('carregando')}</p></main>
   }

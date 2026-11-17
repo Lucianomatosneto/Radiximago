@@ -19,7 +19,8 @@ import { MenuSalvarComo, MenuSalvarMinhasImagens } from '../../components/impres
 import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { TIPOS_ACHADO, REGIOES_ANATOMICAS } from '../../lib/achados'
 import { rotuloErro } from '../../lib/errosTecnicos'
 import Link from 'next/link'
@@ -364,37 +365,32 @@ function PesquisaConteudo() {
   }, [termosVocabulario])
   const rotuloDoToken = (tk: string) => catalogo.find((i) => token(i) === tk)?.rotulo
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      setAutenticado(true)
-      setCarregandoPagina(false)
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(() => {
+    setAutenticado(true)
+    setCarregandoPagina(false)
 
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/vocabulario`, { credentials: 'include' })
-        .then((resposta) => (resposta.ok ? resposta.json() : null))
-        .then((dados) => {
-          if (dados?.termos) setTermosVocabulario(dados.termos)
-        })
-        .catch(() => {
-          // sem o vocabulario, a busca por termos fica so com achados/grupos
-        })
-        .finally(() => setVocabularioCarregado(true))
-
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
-        credentials: 'include',
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/vocabulario`, { credentials: 'include' })
+      .then((resposta) => (resposta.ok ? resposta.json() : null))
+      .then((dados) => {
+        if (dados?.termos) setTermosVocabulario(dados.termos)
       })
-        .then((resposta) => (resposta.ok ? resposta.json() : null))
-        .then((dados) => {
-          if (dados) setTotalDisponivel(dados.total)
-        })
-        .catch(() => {
-          // sem o total geral, a tela continua funcionando normalmente
-        })
+      .catch(() => {
+        // sem o vocabulario, a busca por termos fica so com achados/grupos
+      })
+      .finally(() => setVocabularioCarregado(true))
+
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/search/counts`, {
+      credentials: 'include',
     })
-  }, [router])
+      .then((resposta) => (resposta.ok ? resposta.json() : null))
+      .then((dados) => {
+        if (dados) setTotalDisponivel(dados.total)
+      })
+      .catch(() => {
+        // sem o total geral, a tela continua funcionando normalmente
+      })
+  })
 
   // Se a URL veio com filtros (ex: vindo do Banco de imagens), preenche o
   // formulario com eles e ja dispara a busca automaticamente.
@@ -592,6 +588,7 @@ function PesquisaConteudo() {
       achado_principal: imagem.achado_principal,
     }))
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregandoPagina) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

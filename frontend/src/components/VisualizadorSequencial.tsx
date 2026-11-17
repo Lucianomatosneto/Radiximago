@@ -19,7 +19,7 @@ import type { Marcacao } from '../lib/marcacoes'
 import type { InfoCompartilhamento } from './compartilhar/AnotacoesCompartilhadas'
 import { textoMarcacao } from '../lib/descricaoCuradoria'
 import { girarMarcacoes } from '../lib/orientacao'
-import { obterSessaoAtual } from '../lib/sessao'
+import { useSessaoAtual } from '../lib/useVerificarSessao'
 import { errouServidor, lerComRepeticao } from '../lib/repetir'
 import { useConfirmacao } from './useConfirmacao'
 
@@ -130,12 +130,11 @@ export default function VisualizadorSequencial({ itens: itensRecebidos, indiceIn
   //   junto: aqui guardamos a versao girada para desenhar no lugar certo.
   const [marcacoesGiradas, setMarcacoesGiradas] = useState<Record<number, Marcacao[]>>({})
   const [versaoArquivo, setVersaoArquivo] = useState<Record<number, number>>({})
-  const [podeSalvarGiro, setPodeSalvarGiro] = useState(false)
+  // so com a sessao confirmada pelo servidor (Fase 3e)
+  const sessaoAtual = useSessaoAtual()
+  const podeSalvarGiro = !!sessaoAtual && ['administrador', 'suporte', 'curador'].includes(sessaoAtual.perfil)
   const [salvandoGiro, setSalvandoGiro] = useState(false)
   const [erroGiro, setErroGiro] = useState('')
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => setPodeSalvarGiro(!!s && ['administrador', 'suporte', 'curador'].includes(s.perfil)))
-  }, [])
   const itens = useMemo(
     () =>
       itensRecebidos.map((item) =>

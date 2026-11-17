@@ -1,13 +1,14 @@
 'use client'
 
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import StatusBadge from '../../components/StatusBadge'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
 
@@ -154,23 +155,16 @@ export default function RelatoriosPage() {
   const [erro, setErro] = useState('')
   const [perfil, setPerfil] = useState<string | null>(null)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/relatorios')
+      return
+    }
 
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/relatorios')
-        return
-      }
-
-      setPerfil(sessao.perfil)
-      void carregarDados()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+    setPerfil(sessao.perfil)
+    void carregarDados()
+  })
 
   async function carregarDados() {
     setCarregando(true)
@@ -228,6 +222,7 @@ export default function RelatoriosPage() {
     return stats?.nomes_curadores?.[chave] ?? mapaCuradores[id] ?? t('usuarioNumero', { id: chave })
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

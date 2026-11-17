@@ -21,7 +21,8 @@ import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import SecaoEnvios from '../../components/envios/SecaoEnvios'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 // "MINHAS IMAGENS" no MESMO PADRAO da Pesquisa avancada e de "Compartilhadas
 // comigo" (pedido de 26/10/2026): grade de quadrados (5 por linha, 2 linhas
@@ -104,17 +105,11 @@ export default function MinhasImagensPage() {
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
-      void carregar()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
+    void carregar()
+  })
 
   async function carregar() {
     setCarregando(true)
@@ -302,6 +297,7 @@ export default function MinhasImagensPage() {
     .filter(({ i }) => selecionados.includes(i.curation_id))
     .map(({ i, n }) => paraVisualizador(i, n + 1))
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -12,7 +12,8 @@ import {
   StatusServico,
   checarHealthEndpoint,
 } from '../../lib/healthCheck'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes, type SituacaoAparelhos } from '../../lib/servicosSistema'
 
 const PERFIS_PERMITIDOS = ['administrador', 'suporte']
@@ -141,21 +142,15 @@ export default function IntegracoesPage() {
   const [aparelhos, setAparelhos] = useState<SituacaoAparelhos | null>(null)
   const [email, setEmail] = useState<{ status: StatusServico; etapa: string; erro: string | null; servidor?: string; detalhe?: string } | null>(null)
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/integracoes')
-        return
-      }
-      atualizarTudo()
-      setCarregando(false)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/integracoes')
+      return
+    }
+    atualizarTudo()
+    setCarregando(false)
+  })
 
   async function verificarBancoEOrthanc() {
     setAtualizando(true)
@@ -231,6 +226,7 @@ export default function IntegracoesPage() {
       ].filter(Boolean) as string[])
     : []
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

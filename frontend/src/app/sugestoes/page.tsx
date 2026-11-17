@@ -1,14 +1,15 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
 import { Lightbulb } from 'lucide-react'
 import AvisoEmail from '../../components/AvisoEmail'
 import EstadoVazio from '../../components/EstadoVazio'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual, type SessaoUsuario } from '../../lib/sessao'
+import { type SessaoUsuario } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 // SUGESTOES DE MELHORIA (30/10/2026) - qualquer usuario logado envia; o
@@ -59,7 +60,6 @@ function dataHora(iso: string | null) {
 }
 
 export default function SugestoesPage() {
-  const router = useRouter()
   const t = useTranslations('Sugestoes')
   const tComum = useTranslations('Comum')
   const tPerfil = useTranslations('Sugestoes.perfis')
@@ -76,18 +76,12 @@ export default function SugestoesPage() {
 
   const ehAdmin = sessao?.perfil === 'administrador'
 
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => {
-      if (!s) {
-        router.push('/login')
-        return
-      }
-      setSessao(s)
-      setContato(s.email || '')
-      void carregar(s.perfil === 'administrador')
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((s) => {
+    setSessao(s)
+    setContato(s.email || '')
+    void carregar(s.perfil === 'administrador')
+  })
 
   async function carregar(admin: boolean) {
     try {
@@ -152,6 +146,7 @@ export default function SugestoesPage() {
     void carregar(true)
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!sessao) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

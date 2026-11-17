@@ -1,12 +1,13 @@
 'use client'
 
 import IntegridadeAuditoria from '../../components/IntegridadeAuditoria'
-import { Fragment, useEffect, useId, useState } from 'react'
+import { Fragment, useId, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { GRUPOS_ACOES, conhecida, detalhesLegiveis, ipLegivel, rotuloAcao, rotuloEntidade, textoLegivel } from '../../lib/acoesAuditoria'
 
 const PERFIS_PERMITIDOS = ['administrador']
@@ -100,26 +101,20 @@ export default function AuditoriaPage() {
   const [mapaUsuarios, setMapaUsuarios] = useState<Record<number, string>>({})
   const [expandidos, setExpandidos] = useState<Set<number>>(new Set())
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/auditoria')
-        return
-      }
-      setAutenticado(true)
-      void carregarUsuarios()
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/acoes`, { credentials: 'include' })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => d?.acoes && setContagemAcoes(d.acoes))
-        .catch(() => {})
-      void buscarLogs(0)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/auditoria')
+      return
+    }
+    setAutenticado(true)
+    void carregarUsuarios()
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/audit-logs/acoes`, { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d?.acoes && setContagemAcoes(d.acoes))
+      .catch(() => {})
+    void buscarLogs(0)
+  })
 
   async function carregarUsuarios() {
     try {
@@ -205,6 +200,7 @@ export default function AuditoriaPage() {
     return mapaUsuarios[usuarioId] ?? t('usuarioNumero', { id: usuarioId })
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

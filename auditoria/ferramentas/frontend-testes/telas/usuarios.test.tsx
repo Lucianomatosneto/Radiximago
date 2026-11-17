@@ -100,13 +100,24 @@ describe('permissao por perfil', () => {
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/acesso-negado?de=/usuarios'))
   })
 
-  it.each([
-    ['sessao expirada (401)', { status: 401 }],
-    ['servidor fora do ar', 'SEM_CONEXAO' as const],
-  ])('%s ao pedir a lista: vai para o login', async (_caso, resposta) => {
-    servidorFalso(rotasPadrao({ [LISTA]: resposta }))
+  it('sessao expirada (401) ao pedir a lista: vai para o login', async () => {
+    servidorFalso(rotasPadrao({ [LISTA]: { status: 401 } }))
     montarTela(<UsuariosPage />)
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
+  })
+
+  // Fase 3e (16/11/2026): antes, a falta de conexao aqui tambem mandava ao
+  // login. Agora so o servidor desloga; sem conexao (ou 5xx) a pessoa fica e
+  // ve o aviso com "Tentar de novo" (ver sessao-sem-conexao-telas.test.tsx).
+  it.each([
+    ['servidor fora do ar', 'SEM_CONEXAO' as const],
+    ['erro 500 do servidor', { status: 500 }],
+  ])('%s ao pedir a lista: avisa e NAO vai para o login', async (_caso, resposta) => {
+    servidorFalso(rotasPadrao({ [LISTA]: resposta }))
+    montarTela(<UsuariosPage />)
+    expect((await screen.findByRole('alert')).textContent).toBe('Sem conexão com o servidor. Tente de novo.')
+    expect(screen.getByRole('button', { name: 'Tentar de novo' })).toBeTruthy()
+    expect(roteador.push).not.toHaveBeenCalled()
   })
 })
 

@@ -1,13 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
 import GradeCategoriasImagens, { useContador, useContagensBanco } from '../../components/GradeCategoriasImagens'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 // Banco de imagens: mesma identidade visual da tela de entrada. O
 // mapa-mundi de fundo, o menu/barra em vidro e as classes titulo-pagina,
@@ -15,11 +15,11 @@ import { obterSessaoAtual } from '../../lib/sessao'
 // FundoAplicacao.tsx); esta tela usa o modo "vivo" (todos os efeitos).
 
 export default function BancoImagensPage() {
-  const router = useRouter()
   const t = useTranslations('BancoImagens')
   const tComum = useTranslations('Comum')
   const [carregando, setCarregando] = useState(true)
-  const contagens = useContagensBanco()
+  // contagens so com a sessao confirmada (Fase 3e)
+  const contagens = useContagensBanco(!carregando)
   const total = useContador(contagens?.total ?? null, 1200)
   // ao rolar a tela, o botao grande "Busca avancada" sai de vista: um botao
   // compacto aparece fixo na barra do topo, ao lado do logo (27/10/2026)
@@ -33,16 +33,12 @@ export default function BancoImagensPage() {
     return () => obs.disconnect()
   }, [carregando])
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
-      setCarregando(false)
-    })
-  }, [router])
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(() => {
+    setCarregando(false)
+  })
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

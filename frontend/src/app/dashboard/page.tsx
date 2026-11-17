@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import Sidebar from '../../components/Sidebar'
@@ -8,7 +8,9 @@ import Topbar from '../../components/Topbar'
 import DashboardCard from '../../components/DashboardCard'
 import ResumoImagens, { type ContagemImagens } from '../../components/ResumoImagens'
 import StatusBadge from '../../components/StatusBadge'
-import { obterSessaoAtual, termoPendente } from '../../lib/sessao'
+import { termoPendente } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 interface AtividadeRecente {
   id: number
@@ -64,7 +66,8 @@ export default function DashboardPage() {
     return new Date(iso).toLocaleDateString(tagLocale, { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
-  useEffect(() => {
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao, { semConexao: avisarSemConexao }) => {
     async function buscarStats() {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
@@ -79,6 +82,11 @@ export default function DashboardPage() {
           // aqui jogava o administrador para fora logo apos entrar (achado
           // pelo teste no navegador com login, 13/11/2026).
           if (response.status === 403 && (await termoPendente(response))) return
+          // servidor fora (5xx) nao e motivo para deslogar (Fase 3e)
+          if (response.status >= 500) {
+            avisarSemConexao()
+            return
+          }
           router.push('/login')
           return
         }
@@ -87,31 +95,26 @@ export default function DashboardPage() {
         setStats(dados)
         setCarregando(false)
       } catch {
-        router.push('/login')
+        // sem conexao: antes ia ao login (Fase 3e)
+        avisarSemConexao()
       }
     }
 
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
+    // O dashboard com indicadores e exclusivo de administrador - os demais
+    // perfis tem o banco de imagens como tela inicial (ver login/page.tsx).
+    // Esse redirect cobre quem cai aqui por outro caminho (ex.: link
+    // "Início" da barra lateral, ou o botao "voltar ao início" de telas
+    // de erro/acesso negado).
+    if (sessao.perfil !== 'administrador') {
+      router.push('/banco-imagens')
+      return
+    }
 
-      // O dashboard com indicadores e exclusivo de administrador - os demais
-      // perfis tem o banco de imagens como tela inicial (ver login/page.tsx).
-      // Esse redirect cobre quem cai aqui por outro caminho (ex.: link
-      // "Início" da barra lateral, ou o botao "voltar ao início" de telas
-      // de erro/acesso negado).
-      if (sessao.perfil !== 'administrador') {
-        router.push('/banco-imagens')
-        return
-      }
+    setNome(sessao.nome)
+    void buscarStats()
+  })
 
-      setNome(sessao.nome)
-      void buscarStats()
-    })
-  }, [router])
-
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando || !stats) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">

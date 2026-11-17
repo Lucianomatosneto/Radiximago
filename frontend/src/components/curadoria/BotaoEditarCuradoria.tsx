@@ -1,10 +1,10 @@
 'use client'
 
 import { Pencil } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useSessaoAtual } from '../../lib/useVerificarSessao'
 
 // "EDITAR DEPOIS DO ENVIO" (31/10/2026): o curador reabre uma ficha ja
 // aprovada para corrigir. Ela volta para "em analise" (sai da busca ate ser
@@ -15,14 +15,13 @@ const PERFIS = ['administrador', 'curador']
 export default function BotaoEditarCuradoria({ curationId }: { curationId: number }) {
   const t = useTranslations('Curadoria')
   const router = useRouter()
-  const [pode, setPode] = useState(false)
+  // so aparece com a sessao confirmada pelo servidor (Fase 3e)
+  const sessaoAtual = useSessaoAtual()
+  const pode = !!sessaoAtual && PERFIS.includes(sessaoAtual.perfil)
   const [erro, setErro] = useState('')
   // confirmacao na propria tela (a janela nativa podia ser aceita sozinha)
   const [confirmando, setConfirmando] = useState(false)
   const [enviando, setEnviando] = useState(false)
-  useEffect(() => {
-    void obterSessaoAtual().then((s) => setPode(!!s && PERFIS.includes(s.perfil)))
-  }, [])
   if (!pode) return null
   async function reabrir() {
     if (enviando) return

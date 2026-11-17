@@ -9,7 +9,7 @@ import Logo from './Logo'
 import TrilhaNavegacao from './TrilhaNavegacao'
 import { ROTAS_LARGURA_LIMITADA, casaRota, paginaInicial } from '../lib/navegacao'
 import ThemeToggle from './ThemeToggle'
-import { obterSessaoAtual } from '../lib/sessao'
+import { useSessaoAtual } from '../lib/useVerificarSessao'
 import CentralAjuda from './ajuda/CentralAjuda'
 
 // Icones do perfil (lucide-react, 01/11/2026 - antes eram emojis): um
@@ -84,14 +84,15 @@ export default function Topbar({
   const [enviando, setEnviando] = useState(false)
   const [erroFoto, setErroFoto] = useState('')
 
+  // so mostra quem entrou depois que o servidor confirma; sem conexao fica
+  // "Visitante" e confere de novo quando a internet volta (Fase 3e)
+  const sessaoAtual = useSessaoAtual()
   useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) return
-      setNome(sessao.nome)
-      setPerfil(sessao.perfil)
-      setFotoPerfilUrl(sessao.foto_perfil_url ?? '')
-    })
-  }, [])
+    if (!sessaoAtual) return
+    setNome(sessaoAtual.nome)
+    setPerfil(sessaoAtual.perfil)
+    setFotoPerfilUrl(sessaoAtual.foto_perfil_url ?? '')
+  }, [sessaoAtual])
 
   // Esc fecha o menu do usuario (teclado)
   useEffect(() => {

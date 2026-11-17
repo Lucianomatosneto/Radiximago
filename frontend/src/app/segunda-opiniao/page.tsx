@@ -35,7 +35,8 @@ import {
   type ItemFila,
   type ViewerInfo,
 } from '../../components/segundaOpiniao/tipos'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
 type Aba = 'revisar' | 'devolvidas'
@@ -150,23 +151,23 @@ export default function SegundaOpiniaoPage() {
       review: Number.isInteger(review) && review > 0 ? review : null,
       aba: busca.get('aba') === 'devolvidas' ? 'devolvidas' : busca.get('aba') === 'revisar' ? 'revisar' : null,
     }
-    void obterSessaoAtual().then(async (sessao) => {
-      if (!sessao) return router.push('/login')
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado?de=/segunda-opiniao')
-      setPronto(true)
-      const { revisar, devolvidas } = await carregarFilas()
-      const { review: alvo, aba: abaPedida } = pedidoInicial.current
-      const naDevolvida = devolvidas.find((i) => i.id === alvo)
-      const naRevisar = revisar.find((i) => i.id === alvo)
-      const abaInicial: Aba = abaPedida ?? (naDevolvida ? 'devolvidas' : revisar.some((i) => i.pode_responder !== false) || !devolvidas.length ? 'revisar' : 'devolvidas')
-      setAba(abaInicial)
-      const primeiro =
-        naDevolvida ?? naRevisar ??
-        (abaInicial === 'revisar' ? revisar.find((i) => i.pode_responder !== false) ?? revisar[0] : devolvidas[0])
-      if (primeiro) void escolher(primeiro)
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao(async (sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) return router.push('/acesso-negado?de=/segunda-opiniao')
+    setPronto(true)
+    const { revisar, devolvidas } = await carregarFilas()
+    const { review: alvo, aba: abaPedida } = pedidoInicial.current
+    const naDevolvida = devolvidas.find((i) => i.id === alvo)
+    const naRevisar = revisar.find((i) => i.id === alvo)
+    const abaInicial: Aba = abaPedida ?? (naDevolvida ? 'devolvidas' : revisar.some((i) => i.pode_responder !== false) || !devolvidas.length ? 'revisar' : 'devolvidas')
+    setAba(abaInicial)
+    const primeiro =
+      naDevolvida ?? naRevisar ??
+      (abaInicial === 'revisar' ? revisar.find((i) => i.pode_responder !== false) ?? revisar[0] : devolvidas[0])
+    if (primeiro) void escolher(primeiro)
+  })
 
   useEffect(() => {
     const aoMudar = () => setTelaCheia(!!document.fullscreenElement)
@@ -346,6 +347,7 @@ export default function SegundaOpiniaoPage() {
     return () => clearTimeout(id)
   }, [aviso])
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (!pronto) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
