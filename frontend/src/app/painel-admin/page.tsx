@@ -1,7 +1,7 @@
 'use client'
 
 import IntegridadeAuditoria from '../../components/IntegridadeAuditoria'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -17,7 +17,8 @@ import {
 } from '../../lib/healthCheck'
 import { avaliarDocker, avaliarOhif, lerStatusEmail, lerStatusIntegracoes, type SituacaoAparelhos } from '../../lib/servicosSistema'
 import { detalhesLegiveis } from '../../lib/acoesAuditoria'
-import { obterSessaoAtual } from '../../lib/sessao'
+import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { aparaFim } from '../../lib/texto'
 
 const PERFIS_PERMITIDOS = ['administrador']
@@ -105,22 +106,15 @@ export default function PainelAdminPage() {
   const [totalAlertas, setTotalAlertas] = useState(0)
   const [alertas, setAlertas] = useState<AlertaLogin[]>([])
 
-  useEffect(() => {
-    void obterSessaoAtual().then((sessao) => {
-      if (!sessao) {
-        router.push('/login')
-        return
-      }
+  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
+  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
+    if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
+      router.push('/acesso-negado?de=/painel-admin')
+      return
+    }
 
-      if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
-        router.push('/acesso-negado?de=/painel-admin')
-        return
-      }
-
-      void carregarDados()
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+    void carregarDados()
+  })
 
   // nao segura a tela: o e-mail (login no servidor SMTP) pode levar uns segundos
   function carregarServicosExtras() {
@@ -177,6 +171,7 @@ export default function PainelAdminPage() {
     }
   }
 
+  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-base">
