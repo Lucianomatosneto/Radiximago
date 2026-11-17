@@ -63,7 +63,8 @@ function ConfirmarEmailForm() {
         body: JSON.stringify({ token, senha }),
       })
       if (resposta.ok) {
-        // estudante, professor e pesquisador ja entram; curador espera o administrador
+        // so o estudante ja entra; professor, curador e pesquisador esperam o
+        // administrador (no servidor: PERFIS_APROVACAO_AUTOMATICA = {"estudante"})
         const dados = await resposta.json().catch(() => null)
         setLiberado(dados?.aprovado === true)
         setSituacao('confirmado')
