@@ -208,6 +208,25 @@ describe('useVerificarSessao (telas)', () => {
     expect(pedidosDeSessao(servidor)).toBe(2)
   })
 
+  it('clique em "Tentar de novo" e a internet volta ao mesmo tempo: uma pergunta so ao servidor', async () => {
+    const usuario = userEvent.setup()
+    let liberar: () => void = () => {}
+    const servidor = servidorFalso({ 'GET /auth/me': 'SEM_CONEXAO' })
+    montarTela(<TelaProtegida />)
+    await screen.findByRole('alert')
+    const fetchBase = globalThis.fetch
+    const espera = new Promise<void>((r) => (liberar = r))
+    vi.stubGlobal('fetch', async (url: RequestInfo | URL, init?: RequestInit) => {
+      await espera
+      return fetchBase(url, init)
+    })
+    await usuario.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    ficarOnline() // chega enquanto a primeira pergunta ainda esta no ar
+    await act(async () => liberar())
+    await waitFor(() => expect((screen.getByRole('button', { name: 'Tentar de novo' }) as HTMLButtonElement).disabled).toBe(false))
+    expect(pedidosDeSessao(servidor)).toBe(2) // a do inicio + uma so
+  })
+
   it('sessao valida, mas os dados da tela nao chegam: a tela pode pedir o mesmo aviso', async () => {
     servidorFalso({ 'GET /auth/me': { corpo: SESSAO } })
     montarTela(<TelaProtegida comFalhaNosDados />)
