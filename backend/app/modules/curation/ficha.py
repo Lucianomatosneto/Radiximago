@@ -15,6 +15,7 @@ from app.modules.curations import AlteracaoObservada
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _perfil_de, e_rascunho_do_professor, _registrar_auditoria, _registrar_historico, _valor
 from .router import router
 from .schemas import CurationCreate, CurationUpdate
+from .tipo_automatico import sugerir_tipo_da_imagem
 
 
 def _regioes_unicas(regioes) -> list[str] | None:
@@ -110,11 +111,16 @@ def criar_curadoria(
     ):
         raise HTTPException(status_code=422, detail="idade_min nao pode ser maior que idade_max.")
 
+    if dados.tipo_radiografia is not None:
+        tipo, motivo_tipo = dados.tipo_radiografia, "informado por quem abriu a ficha"
+    else:
+        tipo, motivo_tipo = sugerir_tipo_da_imagem(imagem.orthanc_id)
+
     ficha = Curation(
         orthanc_reference_id=orthanc_reference_id,
         # foto convertida em DICOM (Fase 1): modalidade OT, sem escala real
         modalidade="OT" if imagem.formato_entrada == "foto" else "RX",
-        tipo_radiografia=dados.tipo_radiografia.value,
+        tipo_radiografia=tipo.value,
         dentes=dados.dentes,
         idade_min=dados.idade_min,
         idade_max=dados.idade_max,
@@ -138,7 +144,8 @@ def criar_curadoria(
 
     _registrar_historico(
         db, ficha.id, usuario.id, "criacao",
-        None, StatusCuradoria.EM_ANALISE.value, "Ficha de curadoria criada.",
+        None, StatusCuradoria.EM_ANALISE.value,
+        f"Ficha de curadoria criada. Tipo de radiografia: {tipo.value} ({motivo_tipo}).",
     )
     db.commit()
     db.refresh(ficha)

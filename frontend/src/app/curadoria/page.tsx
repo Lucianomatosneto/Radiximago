@@ -806,7 +806,8 @@ export default function CuradoriaPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ tipo_radiografia: 'periapical' }),
+          // sem tipo: o servidor sugere a partir da propria imagem (18/11/2026)
+          body: JSON.stringify({}),
         }
       )
       if (respostaCriacao.status === 401) {
