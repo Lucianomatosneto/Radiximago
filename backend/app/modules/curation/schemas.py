@@ -76,7 +76,9 @@ class Marcacao(BaseModel):
 
 
 class CurationCreate(BaseModel):
-    tipo_radiografia: TipoRadiografia
+    # Opcional desde 18/11/2026: sem tipo informado, o sistema sugere um a
+    # partir da propria imagem (curation/tipo_automatico.py).
+    tipo_radiografia: Optional[TipoRadiografia] = None
     dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     idade_min: Optional[int] = None
     idade_max: Optional[int] = None

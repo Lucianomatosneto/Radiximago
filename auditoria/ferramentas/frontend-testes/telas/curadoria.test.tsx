@@ -169,7 +169,7 @@ describe('permissao por perfil', () => {
 
   it.each(['curador', 'administrador'])('%s: a 1a imagem da fila abre sozinha (cria a ficha) e a posicao aparece', async (perfil) => {
     const servidor = await abrirComFicha(rotasPadrao({ 'GET /auth/me': { corpo: { ...CURADOR, perfil } } }))
-    expect(servidor.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/curation/301', corpo: { tipo_radiografia: 'periapical' } })
+    expect(servidor.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/curation/301', corpo: {} })
     expect(screen.getByText('Imagem 1 de 2')).toBeTruthy()
     expect((await screen.findByTestId('visualizador')).textContent).toContain('StudyInstanceUIDs=1.1')
     expect(within(ficha_()).getByText('tipo: periapical')).toBeTruthy()

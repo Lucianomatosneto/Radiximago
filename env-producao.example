@@ -60,7 +60,3 @@ CADDY_EMAIL=
 
 # --- Servico de voz: desligado no servidor, mas a chave e obrigatoria ---
 WHISPER_CHAVE=
-
-# --- IA (opcional) ---
-CLAUDE_API_KEY=
-CLAUDE_MODEL=claude-sonnet-4-6
