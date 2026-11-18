@@ -28,7 +28,8 @@ const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_QUE_ENVIAM = ['estudante', 'professor', 'curador', 'administrador']
 type Destino = 'pessoal' | 'analise' | 'fila'
 type Analista = { id: number; nome: string; perfil: string }
-type Resultado = { nome: string; ok: boolean; texto: string }
+// aviso: arquivo repetido - o Radix ja tinha esta imagem (18/11/2026)
+type Resultado = { nome: string; ok: boolean; texto: string; aviso?: boolean }
 
 const campo =
   'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-ink outline-hidden focus:border-brand'
@@ -126,7 +127,9 @@ export default function EnviarImagemPage() {
       try {
         const r = await fetch(`${API}/envios`, { method: 'POST', credentials: 'include', body: dados })
         const corpo = r.ok ? await r.json() : null
-        saida.push(r.ok
+        saida.push(r.ok && corpo?.status === 'ja_existente'
+          ? { nome: arquivo.name, ok: true, aviso: true, texto: t('jaExistente') }
+          : r.ok
           ? { nome: arquivo.name, ok: true, texto: t(`enviado.${destino}`) + (corpo?.enviada_para ? ` ${t('enviadoPessoas', { n: corpo.enviada_para })}` : '') }
           : { nome: arquivo.name, ok: false, texto: await lerErro(r, t('erroEnviar')) })
       } catch {
@@ -268,7 +271,8 @@ export default function EnviarImagemPage() {
           {resultados.length > 0 && (
             <section aria-live="polite" className="max-w-3xl space-y-2" data-teste="resultados-envio">
               {resultados.map((r, i) => (
-                <p key={i} className={`rounded-lg p-3 text-sm ${r.ok ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}>
+                <p key={i} data-teste={r.aviso ? 'envio-repetido' : undefined}
+                   className={`rounded-lg p-3 text-sm ${r.aviso ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300' : r.ok ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}>
                   <strong>{r.nome}:</strong> {r.texto}
                 </p>
               ))}

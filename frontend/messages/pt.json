@@ -2778,7 +2778,8 @@
         "erroAbrir": "Não foi possível abrir esta foto. Tente outra.",
         "erroGerar": "Não foi possível preparar a foto. Tente de novo."
       }
-    }
+    },
+    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada."
   },
   "Grupos": {
     "titulo": "Grupos",

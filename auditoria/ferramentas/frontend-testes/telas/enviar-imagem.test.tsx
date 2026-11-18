@@ -165,6 +165,16 @@ describe('enviar', () => {
     expect(envios(servidor)).toEqual([{ arquivo: 'arquivo:aula.dcm:application/dicom', destino: 'fila', pessoas: '4,6', grupos: '2' }])
   })
 
+  it('arquivo repetido (18/11/2026): avisa que a imagem ja esta no Radix, sem dizer que foi enviada', async () => {
+    const usuario = userEvent.setup()
+    await abrir('professor', { 'POST /envios': { status: 201, corpo: { status: 'ja_existente', enviada_para: 0 } } })
+    await usuario.upload(entrada(), dicom('repetido.dcm'))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar 1 imagem' }))
+    const aviso = await screen.findByText(/Esta imagem já está no Radix \(arquivo repetido\)\. Nenhuma cópia nova foi criada\./)
+    expect(aviso.closest('[data-teste="envio-repetido"]')).toBeTruthy()
+    expect(screen.queryByText(/enviada para a fila de curadoria/)).toBeNull()
+  })
+
   it('resultado por arquivo: os que falharam ficam na lista para tentar de novo', async () => {
     const usuario = userEvent.setup()
     let n = 0

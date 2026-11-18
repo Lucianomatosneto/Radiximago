@@ -282,7 +282,8 @@ Toda imagem passa pela mesma função, `_registrar_referencia_se_nova` (`app/mod
 | Horas | removidas | idem |
 | Idade | mantida em anos; **90 ou mais vira "090Y"** | valor didático; idades muito altas são raras (regra HIPAA Safe Harbor) |
 | Sexo | mantido | valor didático; sozinho não identifica |
-| UIDs | gerados novos | impede ligar de volta ao original |
+| UIDs (estudo, série, imagem, referência espacial) | **calculados** a partir do original com uma chave secreta do servidor (HMAC-SHA256, `ANONIMIZACAO_CHAVE_UID`), desde 18/11/2026; antes, sorteados | sem a chave, não há como ligar de volta ao original; o mesmo exame original gera sempre os mesmos UIDs, então os **cortes de uma tomografia ficam juntos** e um **arquivo repetido é reconhecido** (achados DICOM-ACH-01/02 do dossiê) |
+| Paciente | nome fixo `ANONIMIZADO`; identificador fictício calculado a partir do **estudo** original | exames diferentes da mesma pessoa **não** ficam ligados entre si no Radix |
 | Método usado | gravado em `DeidentificationMethod` | rastreabilidade |
 
 2. **Texto gravado nos pixels** (`app/modules/texto_na_imagem.py`). O Tesseract (OCR que roda no próprio servidor) procura texto na imagem e o cobre com tarja preta. O resultado fica na imagem (`texto_na_imagem`: `sem_texto`, `tarjado` ou `nao_verificado`), e a tela de curadoria mostra um aviso ao lado de "Anonimização validada".
@@ -291,6 +292,8 @@ Toda imagem passa pela mesma função, `_registrar_referencia_se_nova` (`app/mod
    - **Limite:** o OCR reduz o risco, não o elimina. Texto pequeno, inclinado ou com pouco contraste pode escapar, e uma tarja pode cobrir uma área pequena de anatomia. Por isso a aprovação continua exigindo "Anonimização validada" marcada pelo curador, e a auditoria registra o resultado da verificação.
 
 3. **O original identificável é apagado** logo após a anonimização.
+   - **Arquivo repetido:** reenviar um arquivo que o Radix já tem gera a mesma imagem anonimizada; o Orthanc responde "já guardada" e o Radix devolve o registro existente, sem criar cópia e **sem tocar na imagem do acervo** (o original repetido é apagado do mesmo jeito). A tela avisa "esta imagem já está no Radix".
+   - **Chave:** é uma técnica de **pseudonimização**. A chave fica só no `.env`; em produção o sistema não liga sem ela. Perder ou trocar a chave não estraga as imagens, mas o Radix deixa de reconhecer arquivos já recebidos — por isso ela entra no plano de cópias de segurança.
 
 4. **Chegada pelo aparelho (porta 4242):** a anonimização é **automática**, a cada `ANONIMIZACAO_AUTOMATICA_SEGUNDOS` (padrão 60). Antes dependia de alguém clicar em "Sincronizar". Cada imagem tratada fica na auditoria (`anonimizacao_automatica`).
 
@@ -341,6 +344,7 @@ Tabela `audit_logs`: usuário, ação, entidade, resultado, detalhes e horário 
 | 1.5 | 18/10/2026 | Anonimização DICOM revisada: datas só com ano, idade 90+, sequência de equipamento, texto nos pixels, anonimização automática na chegada (seção 6.1) |
 | 1.6 | 18/10/2026 | Índice dos documentos complementares; seção 6 completa (5.1.1) |
 | 1.7 | 18/10/2026 | Meus acessos, encerramento pelo administrador, reautenticação e crachá com emissor/público/tipo (seção 4) |
+| 1.23 | 18/11/2026 | Anonimização (6.1): UIDs calculados com chave secreta (`ANONIMIZACAO_CHAVE_UID`) no lugar do sorteio — cortes de tomografia no mesmo exame, arquivo repetido reconhecido sem tocar na imagem do acervo; paciente fictício por estudo |
 | 1.22 | 12/11/2026 | "Redefinir 2 etapas" exige dois meios de conferência de identidade (lista fechada) e registra quais na auditoria (3.4.1, ASVS 6.4.4) |
 | 1.21 | 12/11/2026 | Procedimento de conferência de identidade quando o segundo fator é perdido (3.4.1, ASVS 6.4.4) e lacuna do registro na auditoria |
 | 1.20 | 12/11/2026 | OHIF: `frame-ancestors` só para as telas do Radix e origem das mensagens vinda da configuração (`RADIX_ORIGEM_CONFIAVEL`), ASVS 3.4.6 e 3.5.5 (seção 5.1) |

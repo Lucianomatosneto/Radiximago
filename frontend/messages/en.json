@@ -2778,7 +2778,8 @@
         "erroAbrir": "Could not open this photo. Try another one.",
         "erroGerar": "Could not prepare the photo. Try again."
       }
-    }
+    },
+    "jaExistente": "This image is already in Radix (repeated file). No new copy was created."
   },
   "Grupos": {
     "titulo": "Groups",

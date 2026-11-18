@@ -88,6 +88,11 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
         raise
 
     orthanc_id_anonimizado = resultado.get("ID")
+    # Com os UIDs fixos (uids_anonimizados.py), reenviar um arquivo que o
+    # Radix ja tem gera EXATAMENTE a mesma imagem anonimizada, e o Orthanc
+    # responde "AlreadyStored". Essa imagem ja pertence ao acervo (pode ter
+    # ficha, achados, compartilhamentos): NUNCA pode ser apagada aqui.
+    ja_guardada = resultado.get("Status") == "AlreadyStored"
     if not orthanc_id_anonimizado:
         _apagar_sem_engolir("original", orthanc_id_original)
         raise RuntimeError(
@@ -106,7 +111,8 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
             "removendo a copia anonimizada %s para permitir nova tentativa.",
             orthanc_id_original, orthanc_id_anonimizado,
         )
-        _apagar_sem_engolir("copia anonimizada", orthanc_id_anonimizado)
+        if not ja_guardada:
+            _apagar_sem_engolir("copia anonimizada", orthanc_id_anonimizado)
         raise
     return orthanc_id_anonimizado, resultado_texto, resultado_recorte
 
@@ -169,6 +175,18 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
 
     origem = _determinar_origem(orthanc_id)
     orthanc_id_anonimizado, resultado_texto, resultado_recorte = _anonimizar_e_excluir_original(orthanc_id)
+
+    # Arquivo repetido (18/11/2026): com os UIDs fixos, a versao anonimizada
+    # de um arquivo ja recebido e a MESMA imagem que o Radix ja registrou.
+    # O original identificavel ja foi apagado acima; aqui so devolvemos o
+    # registro existente, sem criar outro nem mexer no arquivo dele.
+    ja_registrada = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.orthanc_id == orthanc_id_anonimizado)
+        .first()
+    )
+    if ja_registrada:
+        return ja_registrada, False
 
     try:
         detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
