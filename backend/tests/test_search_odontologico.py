@@ -337,11 +337,11 @@ def test_busca_origem_sozinha(client, criar_usuario, criar_ficha, db):
     headers = _curador_autenticado(client, criar_usuario)
     ficha = criar_ficha()
     ref = db.query(OrthancReference).filter(OrthancReference.id == ficha.orthanc_reference_id).first()
-    ref.origem = "ufsc"
+    ref.origem = "aparelho"
     db.add(ref)
     db.commit()
 
-    resposta = client.get("/search", headers=headers, params={"origem": "ufsc"})
+    resposta = client.get("/search", headers=headers, params={"origem": "aparelho"})
 
     assert resposta.status_code == 200, resposta.text
     assert ficha.id in _ids_encontrados(resposta.json())

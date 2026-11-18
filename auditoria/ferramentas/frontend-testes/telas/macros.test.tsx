@@ -107,7 +107,7 @@ describe('Fase 3c: macros e frases', () => {
     abrir()
     const ativa = await waitFor(() => linha('periapical normal'))
     expect(within(ativa).getByText('Sem alterações.')).toBeTruthy()
-    expect(within(ativa).getByText(/^Periapical · Boa · 1 alteração\(ões\) · Externa \(upload\) · Erros técnicos: 1 · Termos do vocabulário: 1 · Dentes: 11, 21$/)).toBeTruthy()
+    expect(within(ativa).getByText(/^Periapical · Boa · 1 alteração\(ões\) · Envio manual \(upload\) · Erros técnicos: 1 · Termos do vocabulário: 1 · Dentes: 11, 21$/)).toBeTruthy()
     expect(within(ativa).getByRole('button', { name: 'Desativar' })).toBeTruthy()
     const inativa = linha('antiga')
     expect(within(inativa).getByText('(desativada)')).toBeTruthy()

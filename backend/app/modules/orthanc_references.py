@@ -16,8 +16,17 @@ class OrigemImagem(str, enum.Enum):
     images_router.py). Guardado como texto simples no banco (mesmo padrao
     de curations.py), so o Enum aqui e a lista oficial de valores validos.
     """
-    UFSC = "ufsc"        # chegou por envio direto do equipamento (protocolo DICOM/C-STORE)
-    EXTERNA = "externa"  # chegou por upload manual (API REST) - inclusive de fora da UFSC
+    APARELHO = "aparelho"  # chegou por envio direto de um aparelho cadastrado (protocolo DICOM/C-STORE)
+    EXTERNA = "externa"    # chegou por envio manual (API REST: tela, arquivo ou foto)
+
+    @classmethod
+    def _missing_(cls, valor):
+        # Compatibilidade (18/11/2026): o valor antigo "ufsc" foi renomeado
+        # para "aparelho" (nome neutro, sem citar instituicao). Links,
+        # macros ou pedidos antigos com "ufsc" continuam funcionando.
+        if isinstance(valor, str) and valor.strip().lower() == "ufsc":
+            return cls.APARELHO
+        return None
 
 
 class DestinoImagem(str, enum.Enum):
@@ -49,7 +58,7 @@ class OrthancReference(Base):
     anonimizacao_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="aguardando", server_default=text("'aguardando'")
     )
-    # "ufsc" ou "externa" (ver OrigemImagem). Registros gravados ANTES desta
+    # "aparelho" ou "externa" (ver OrigemImagem; "ufsc" ate 18/11/2026). Registros gravados ANTES desta
     # coluna existir foram marcados como "externa" por padrao (server_default)
     # - nao ha como descobrir retroativamente a origem real deles, porque a
     # instancia que guardamos e sempre a versao JA ANONIMIZADA, e o Orthanc

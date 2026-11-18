@@ -315,7 +315,7 @@ export default function MacrosPage() {
                     <label htmlFor={`${id}-origem`} className="mb-1 block text-xs font-medium text-slate-400">{tOpcoes('origemRotulo')}</label>
                     <select id={`${id}-origem`} value={c.origem} onChange={(e) => mudar({ origem: e.target.value })} className={campoTexto}>
                       <option value="">{t('naoAlterar')}</option>
-                      {['ufsc', 'externa'].map((v) => <option key={v} value={v}>{tOpcoes(`origem.${v}`)}</option>)}
+                      {['aparelho', 'externa'].map((v) => <option key={v} value={v}>{tOpcoes(`origem.${v}`)}</option>)}
                     </select>
                   </div>
                 </div>
