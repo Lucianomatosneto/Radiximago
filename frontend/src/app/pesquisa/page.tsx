@@ -67,11 +67,11 @@ const OPCOES_QUALIDADE_TECNICA = [
 
 
 // Valores reais do enum OrigemImagem (backend/app/modules/orthanc_references.py).
-// "ufsc" = veio direto do aparelho de raio-x da UFSC (protocolo DICOM/C-STORE),
-// detectado automaticamente pelo Orthanc - ninguem escolhe isso na mao.
-// "externa" = chegou por upload manual (tela "Imagens recebidas").
+// "aparelho" = veio direto de um aparelho cadastrado (protocolo DICOM/C-STORE),
+// detectado automaticamente pelo Orthanc ("ufsc" ate 18/11/2026).
+// "externa" = chegou por envio manual (arquivo, foto ou tela "Imagens recebidas").
 const OPCOES_ORIGEM = [
-  { valor: 'ufsc', chave: 'ufsc' },
+  { valor: 'aparelho', chave: 'aparelho' },
   { valor: 'externa', chave: 'externa' },
 ]
 

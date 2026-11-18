@@ -529,8 +529,8 @@
         "avancado": "Advanced"
       },
       "origem": {
-        "ufsc": "UFSC (equipment)",
-        "externa": "External (upload)"
+        "aparelho": "Device (direct transfer)",
+        "externa": "Manual upload"
       },
       "origemRotulo": "Image origin"
     },
@@ -2955,7 +2955,7 @@
     "nome": "Device name",
     "nomeExemplo": "E.g.: Periapical X-ray – room 1",
     "unidade": "Location or unit (optional)",
-    "unidadeExemplo": "E.g.: Dental clinic – UFSC",
+    "unidadeExemplo": "E.g.: Dental clinic – room 2",
     "aet": "Device DICOM name (AE Title)",
     "aetAjuda": "Up to 16 letters, digits, dot, hyphen or underscore. Found in the device's own DICOM settings.",
     "ip": "Device IP address",

@@ -138,7 +138,7 @@ class CurationUpdate(BaseModel):
     sem_alteracoes: Optional[bool] = None
     # Erros tecnicos da imagem (lista completa - substitui os anteriores).
     erros_tecnicos: Optional[List[TipoErroTecnico]] = Field(default=None, max_length=MAX_ERROS_TECNICOS)
-    # ORIGEM da imagem (UFSC / externa) - antes so automatica; desde
+    # ORIGEM da imagem (aparelho / externa) - antes so automatica; desde
     # 26/10/2026 o curador confere e corrige na ficha (filtro da Pesquisa)
     origem: Optional[OrigemImagem] = None
 
