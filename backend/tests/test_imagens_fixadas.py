@@ -37,3 +37,14 @@ def test_nenhuma_imagem_sem_versao_ou_latest():
 def test_tunel_cloudflared_fixado():
     texto = (RAIZ / "docker-compose.tunel.yml").read_text(encoding="utf-8")
     assert re.search(r"image: cloudflare/cloudflared:20\d\d\.\d+\.\d+\n", texto)
+
+
+def test_ohif_fixado_pela_impressao_digital():
+    """Reprodutibilidade (dossie doc. 07, INT-01, 18/11/2026): o visualizador
+    e o mesmo programa testado. Versoes 3.10+ quebram o OHIF ("No modes are
+    defined!") - ver comentario no docker-compose.yml."""
+    ohif = [img for _, _, img in _imagens() if img.startswith("ohif/app")]
+    assert ohif, "imagem do OHIF nao encontrada"
+    for imagem in ohif:
+        assert imagem.startswith("ohif/app:v3.9.2@sha256:"), imagem
+        assert re.fullmatch(r"ohif/app:v3\.9\.2@sha256:[0-9a-f]{64}", imagem), imagem

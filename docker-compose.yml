@@ -143,7 +143,13 @@ services:
     # fora desse array. v3.9.2 e a mais recente confirmada com os modos
     # completos (mode-longitudinal, mode-segmentation, mode-tmtv, etc.)
     # E ja no pipeline moderno (0 ocorrencias de ADD_SERVER/activeServer).
-    image: ohif/app:v3.9.2
+    # Fixada pela IMPRESSAO DIGITAL (digest) desde 18/11/2026 - a mesma imagem
+    # 3.9.2 em uso e testada no computador do responsavel (docker image inspect).
+    # So a etiqueta "v3.9.2" podia, em tese, passar a apontar para outro
+    # conteudo; o digest garante sempre o mesmo programa (reprodutibilidade,
+    # dossie doc. 07, INT-01). O Docker usa o digest; a etiqueta fica so para
+    # leitura humana.
+    image: ohif/app:v3.9.2@sha256:97396688a35fb6ebd35ea7ea1fa8f83352e69470d062acd1fe1a40c7a77177c5
     container_name: radix-ohif
     logging: *registros
     restart: unless-stopped
