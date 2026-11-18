@@ -529,8 +529,8 @@
         "avancado": "Avançado"
       },
       "origem": {
-        "ufsc": "UFSC (equipamento)",
-        "externa": "Externa (upload)"
+        "aparelho": "Aparelho (envio direto)",
+        "externa": "Envio manual (upload)"
       },
       "origemRotulo": "Origem da imagem"
     },
@@ -2956,7 +2956,7 @@
     "nome": "Nome do aparelho",
     "nomeExemplo": "Ex.: Raio X periapical – sala 1",
     "unidade": "Local ou unidade (opcional)",
-    "unidadeExemplo": "Ex.: Clínica de Odontologia – UFSC",
+    "unidadeExemplo": "Ex.: Clínica de Odontologia – sala 2",
     "aet": "Nome DICOM do aparelho (AE Title)",
     "aetAjuda": "Até 16 letras, números, ponto, hífen ou sublinhado. Fica na configuração DICOM do próprio aparelho.",
     "ip": "Endereço IP do aparelho",

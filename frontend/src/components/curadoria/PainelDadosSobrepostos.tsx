@@ -324,7 +324,7 @@ export default function PainelDadosSobrepostos({
         <>
           <p className={`${campoLabel} mb-1.5`}>{tOpcoes('origemRotulo')}</p>
           <div className="grid grid-cols-2 gap-1.5">
-            {(['ufsc', 'externa'] as const).map((valor) => (
+            {(['aparelho', 'externa'] as const).map((valor) => (
               <button
                 key={valor}
                 type="button"
