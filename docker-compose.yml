@@ -149,7 +149,7 @@ services:
     # conteudo; o digest garante sempre o mesmo programa (reprodutibilidade,
     # dossie doc. 07, INT-01). O Docker usa o digest; a etiqueta fica so para
     # leitura humana.
-    image: ohif/app:v3.9.2@sha256:97396688a35fb6ebd35ea7ea1fa8f83352e69470d062acd1fe1a40c7a77177c5
+    image: ohif/app:v3.13.14@sha256:40e509850ffaa45db50e64122387a8592b2b82965003568bd8f19f1cfb5ff2d3
     container_name: radix-ohif
     logging: *registros
     restart: unless-stopped
