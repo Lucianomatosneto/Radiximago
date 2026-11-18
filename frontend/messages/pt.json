@@ -428,7 +428,8 @@
       "instance": "Imagem (instância DICOM)",
       "series": "Série",
       "study": "Estudo"
-    }
+    },
+    "volumeCortes": "Tomografia ({cortes} cortes)"
   },
   "MiniaturaImagem": {
     "semPreview": "Sem preview"
@@ -2724,7 +2725,8 @@
       "enviadaParaN": "Enviada para {n, plural, one {1 pessoa} other {# pessoas}}",
       "abrir": "Abrir no visualizador",
       "enviarPessoas": "Enviar a pessoas ou grupos",
-      "enviar": "Enviar"
+      "enviar": "Enviar",
+      "volumeSelo": "TC · {cortes} cortes"
     },
     "seletor": {
       "grupos": "Meus grupos",

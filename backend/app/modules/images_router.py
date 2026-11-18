@@ -33,7 +33,9 @@ from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, 
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User, UserRole
 from app.modules.substituir_instancia import e_corte_de_volume
-from app.modules.orthanc_references import DestinoImagem, OrigemImagem, OrthancReference
+from app.modules.orthanc_references import (
+    DestinoImagem, OrigemImagem, OrthancReference, contar_cortes, filtro_exame_unico, propagar_ao_exame,
+)
 from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
@@ -244,7 +246,8 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
             detail=f"Imagem {orthanc_reference_id} nao encontrada.",
         )
 
-    imagem.ativo = ativo
+    # exame em volume: ativar/desativar vale para todos os cortes
+    propagar_ao_exame(db, imagem, ativo=ativo)
     estado = "ativada" if ativo else "desativada"
     acao = "reativacao_imagem" if ativo else "desativacao_imagem"
     db.add(AuditLog(
@@ -287,7 +290,9 @@ def listar_imagens(
             and_(OrthancReference.destino == DestinoImagem.ANALISE.value,
                  OrthancReference.analise_destinatario_id == usuario.id),
         ))
-    imagens = consulta.order_by(OrthancReference.id).all()
+    # tomografia (18/11/2026): um exame = uma linha (o primeiro corte)
+    imagens = consulta.filter(filtro_exame_unico()).order_by(OrthancReference.id).all()
+    cortes = contar_cortes(db, imagens)
 
     ids = [imagem.id for imagem in imagens]
     status_mais_recente_por_imagem: dict[int, str] = {}
@@ -321,6 +326,8 @@ def listar_imagens(
             "aguarda_recorte": imagem.id not in status_mais_recente_por_imagem
             and imagem.enquadramento not in ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA,
             "destino": imagem.destino,
+            "em_volume": imagem.em_volume,
+            "cortes": cortes[imagem.id],
         }
         for imagem in imagens
     ]

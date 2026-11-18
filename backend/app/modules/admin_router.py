@@ -20,7 +20,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_ADMIN, PERFIS_CURADORIA
 from app.modules.users import User, UserRole
-from app.modules.orthanc_references import OrthancReference
+from app.modules.orthanc_references import OrthancReference, filtro_exame_unico
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation
 
@@ -88,6 +88,8 @@ def contar_imagens_por_situacao(db: Session) -> dict:
         .select_from(OrthancReference)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(OrthancReference.ativo.is_(True))
+        # tomografia (18/11/2026): um exame conta UMA vez, nao um por corte
+        .filter(filtro_exame_unico())
         .group_by(Curation.status)
         .all()
     )
@@ -96,7 +98,8 @@ def contar_imagens_por_situacao(db: Session) -> dict:
         chave = status if status is not None else "sem_ficha"
         por_situacao[chave] = por_situacao.get(chave, 0) + total
     total = sum(por_situacao.values())
-    desativadas = db.query(func.count(OrthancReference.id)).filter(OrthancReference.ativo.is_(False)).scalar() or 0
+    desativadas = (db.query(func.count(OrthancReference.id))
+                   .filter(OrthancReference.ativo.is_(False), filtro_exame_unico()).scalar() or 0)
     return {
         "total": total,
         "aguardando_curadoria": por_situacao["sem_ficha"] + por_situacao["pendente"] + por_situacao["em_analise"],

@@ -428,7 +428,8 @@
       "instance": "Image (DICOM instance)",
       "series": "Series",
       "study": "Study"
-    }
+    },
+    "volumeCortes": "CT scan ({cortes} slices)"
   },
   "MiniaturaImagem": {
     "semPreview": "No preview"
@@ -2724,7 +2725,8 @@
       "enviadaParaN": "Sent to {n, plural, one {1 person} other {# people}}",
       "abrir": "Open in viewer",
       "enviarPessoas": "Send to people or groups",
-      "enviar": "Send"
+      "enviar": "Send",
+      "volumeSelo": "CT · {cortes} slices"
     },
     "seletor": {
       "grupos": "My groups",

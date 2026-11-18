@@ -67,6 +67,9 @@ interface Imagem {
   criado_em?: string
   status_curadoria: string | null
   aguarda_recorte?: boolean
+  /** tomografia (18/11/2026): uma linha por exame; quantos cortes */
+  em_volume?: boolean
+  cortes?: number
 }
 
 /** "61", "nº 61", "no 61" -> "61"; qualquer outra coisa -> "" */
@@ -407,7 +410,9 @@ export default function ImagensPage() {
                         {imagem.orthanc_id.slice(0, 8)}…
                       </td>
                       <td className="px-4 py-3">
-                        {t.has(`tipoRecurso.${imagem.resource_type}`) ? t(`tipoRecurso.${imagem.resource_type}`) : imagem.resource_type}
+                        {imagem.em_volume && (imagem.cortes ?? 1) > 1
+                          ? <span data-teste="selo-volume">{t('volumeCortes', { cortes: imagem.cortes ?? 1 })}</span>
+                          : t.has(`tipoRecurso.${imagem.resource_type}`) ? t(`tipoRecurso.${imagem.resource_type}`) : imagem.resource_type}
                       </td>
                       <td className="px-4 py-3">
                         <span
