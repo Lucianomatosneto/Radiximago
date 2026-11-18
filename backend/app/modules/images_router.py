@@ -124,8 +124,8 @@ def _apagar_sem_engolir(descricao: str, orthanc_id: str) -> None:
 def _determinar_origem(orthanc_id_original: str) -> str:
     """
     Descobre se a instancia original chegou ao Orthanc por envio direto do
-    equipamento de raio-X (protocolo DICOM/C-STORE, porta 4242 - o
-    computador radiografico da UFSC usa esse caminho) ou por upload manual
+    equipamento de raio-X (protocolo DICOM/C-STORE, porta 4242 - caminho
+    usado por aparelhos cadastrados) ou por upload manual
     (API REST, tela "Imagens recebidas").
 
     CRITICO: isso precisa ser checado ANTES da anonimizacao. A versao
@@ -136,14 +136,14 @@ def _determinar_origem(orthanc_id_original: str) -> str:
 
     Se a checagem falhar por qualquer motivo (Orthanc fora do ar, etc.),
     assume "externa" por seguranca - mais conservador do que afirmar uma
-    origem "ufsc" sem ter certeza.
+    origem "aparelho" sem ter certeza.
     """
     try:
         origin = orthanc_client.obter_metadado_instancia(orthanc_id_original, "Origin")
     except Exception:
         logger.exception("Falha ao consultar a origem da instancia %s no Orthanc.", orthanc_id_original)
         return OrigemImagem.EXTERNA.value
-    return OrigemImagem.UFSC.value if origin == "DicomProtocol" else OrigemImagem.EXTERNA.value
+    return OrigemImagem.APARELHO.value if origin == "DicomProtocol" else OrigemImagem.EXTERNA.value
 
 
 def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[OrthancReference, bool]:

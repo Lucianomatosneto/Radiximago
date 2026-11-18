@@ -88,8 +88,8 @@ def obter_metadado_instancia(orthanc_id: str, chave: str) -> str | None:
 
     Usado principalmente pra chave "Origin", que diz como a imagem chegou:
     "DicomProtocol" = enviada diretamente por um equipamento via C-STORE
-    (protocolo DICOM, porta 4242) - e como o computador radiografico da
-    UFSC envia. "RestApi" = enviada por upload manual (tela "Imagens
+    (protocolo DICOM, porta 4242) - e como um aparelho cadastrado
+    envia. "RestApi" = enviada por upload manual (tela "Imagens
     recebidas" do Radix, e tambem usado internamente durante a
     anonimizacao). Ver uso em _determinar_origem, em images_router.py.
 

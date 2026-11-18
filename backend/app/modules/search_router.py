@@ -228,7 +228,7 @@ def pesquisar_imagens(
     idade_min: Optional[int] = Query(None, ge=0, le=120),
     idade_max: Optional[int] = Query(None, ge=0, le=120),
     origem: Optional[OrigemImagem] = Query(
-        None, description="'ufsc' (recebida direto do equipamento) ou 'externa' (upload manual)"
+        None, description="'aparelho' (recebida direto de um aparelho cadastrado) ou 'externa' (envio manual)"
     ),
     texto: Optional[str] = Query(
         None, max_length=150,
