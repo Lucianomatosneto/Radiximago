@@ -15,12 +15,24 @@ import { useTranslations } from 'next-intl'
 export default function AvisoTextoNaImagem({
   situacao,
   regioes,
+  cortes = 1,
 }: {
   situacao: string | null
   regioes: number | null
+  /** exame em volume (tomografia, 18/11/2026): a ficha vale para todos os
+   * cortes e a verificacao de texto ja considera todos eles (pior caso) */
+  cortes?: number
 }) {
   const t = useTranslations('Curadoria.textoNaImagem')
-  if (situacao === 'sem_texto') return null
+  const volume = cortes > 1
+  if (situacao === 'sem_texto') {
+    if (!volume) return null
+    return (
+      <div data-teste="aviso-volume" className="rounded-lg border border-sky-400/40 bg-sky-400/10 px-3 py-2 text-xs leading-relaxed text-sky-200">
+        <span className="font-semibold">{t('volumeTitulo', { cortes })}</span> {t('volumeExplica')}
+      </div>
+    )
+  }
   const mensagem =
     situacao === 'tarjado'
       ? t('tarjado', { regioes: regioes ?? 0 })
@@ -33,6 +45,7 @@ export default function AvisoTextoNaImagem({
       className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs leading-relaxed text-amber-200"
     >
       <span className="font-semibold">⚠ {t('titulo')}</span> {mensagem}
+      {volume && <> {t('volumeTodosCortes', { cortes })}</>}
     </div>
   )
 }

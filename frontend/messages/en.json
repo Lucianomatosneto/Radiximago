@@ -815,7 +815,9 @@
       "nenhumaPendente": "No pending images.",
       "abrindo": "Opening...",
       "anteriores": "View previous images",
-      "proximas": "View next images"
+      "proximas": "View next images",
+      "volumeSelo": "CT · {cortes}",
+      "volumeTitulo": "CT scan: {cortes} slices, a single exam"
     },
     "modalMotivo": {
       "descartarTitulo": "Discard record",
@@ -1223,7 +1225,10 @@
       "titulo": "Check the image before validating.",
       "tarjado": "Text was found written on the image and was automatically covered with a black bar ({regioes} areas). Make sure no name, date or number is left and that the bar did not cover important anatomy.",
       "naoVerificado": "It was not possible to automatically check whether there is text written on the image. Look carefully for names, dates or numbers before checking “Anonymization validated”.",
-      "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”."
+      "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”.",
+      "volumeTitulo": "CT scan with {cortes} slices.",
+      "volumeExplica": "The record covers the whole exam; the viewer shows every slice.",
+      "volumeTodosCortes": "(Check run on all {cortes} slices of the exam.)"
     },
     "orientacao": {
       "titulo": "Rotate the image",

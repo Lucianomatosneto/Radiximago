@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -46,6 +46,11 @@ class DestinoImagem(str, enum.Enum):
 
 class OrthancReference(Base):
     __tablename__ = "orthanc_references"
+    __table_args__ = (
+        # fila de curadoria: "primeiro corte da serie" (migracao b2d4f6a8c0e1)
+        Index("ix_orthanc_references_volume_serie", "series_instance_uid", "id",
+              postgresql_where=text("em_volume")),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     orthanc_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
@@ -92,8 +97,45 @@ class OrthancReference(Base):
     # convertida pelo Radix em DICOM de captura secundaria - Fase 1, 10/11/2026)
     formato_entrada: Mapped[str] = mapped_column(String(10), nullable=False, default="dicom", server_default=text("'dicom'"))
     aparelho_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
+    # Corte de exame em volume (tomografia, ressonancia - 18/11/2026): os
+    # cortes da mesma serie aparecem como UM item na fila de curadoria (o
+    # primeiro a chegar) e a ficha vale para o exame inteiro. Decidido na
+    # entrada pela modalidade DICOM (substituir_instancia.e_corte_de_volume).
+    em_volume: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
 
     curations = relationship("Curation", back_populates="orthanc_reference")
+
+
+def cortes_da_serie(db, ref: "OrthancReference") -> list["OrthancReference"]:
+    """Todos os cortes do mesmo exame em volume (a propria ref, se nao for
+    de volume). Ordem de chegada."""
+    if not ref.em_volume or not ref.series_instance_uid:
+        return [ref]
+    return (
+        db.query(OrthancReference)
+        .filter(OrthancReference.em_volume.is_(True),
+                OrthancReference.series_instance_uid == ref.series_instance_uid)
+        .order_by(OrthancReference.id)
+        .all()
+    )
+
+
+def texto_do_exame(cortes: list["OrthancReference"]) -> tuple[str | None, int | None]:
+    """
+    Resultado da verificacao de texto nos pixels para o EXAME inteiro (pior
+    caso entre os cortes): "tarjado" se algum corte foi tarjado (soma das
+    tarjas); se nenhum foi tarjado mas algum nao foi verificado, "nao_verificado";
+    so "sem_texto" quando todos os cortes foram verificados sem texto.
+    Para uma radiografia (1 corte) devolve o resultado dela, sem mudanca.
+    """
+    if len(cortes) == 1:
+        return cortes[0].texto_na_imagem, cortes[0].texto_regioes
+    situacoes = [c.texto_na_imagem for c in cortes]
+    if "tarjado" in situacoes:
+        return "tarjado", sum(c.texto_regioes or 0 for c in cortes if c.texto_na_imagem == "tarjado")
+    if any(s != "sem_texto" for s in situacoes):
+        return "nao_verificado", None
+    return "sem_texto", None
 
 
 def visivel_para(ref: "OrthancReference", usuario_id: int, perfil: str) -> bool:

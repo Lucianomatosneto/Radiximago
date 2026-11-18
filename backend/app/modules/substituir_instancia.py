@@ -50,17 +50,27 @@ class ImagemDeVolume(ValueError):
     """Corte de tomografia/ressonancia: girar um corte so desalinharia o volume."""
 
 
-def conferir_pode_ajustar(tags: dict) -> None:
+def e_corte_de_volume(tags: dict) -> bool:
     """
-    Radiografias (intraoral IO, panoramica PX, DX, CR...) podem ser ajustadas
-    uma a uma, mesmo que o aparelho tenha guardado varias na mesma serie ou
-    tenha gravado uma "posicao no espaco". Ja um corte de tomografia faz parte
-    de um volume: ajustar so ele quebraria a reconstrucao.
+    True quando a imagem e um CORTE de um exame em volume (tomografia,
+    ressonancia...). Radiografias (intraoral IO, panoramica PX, DX, CR...)
+    nunca sao, mesmo que o aparelho tenha guardado varias na mesma serie
+    (ex.: serie de periapicais da boca toda) ou gravado uma "posicao no
+    espaco". Usado para: nao girar nem recortar um corte sozinho, e mostrar
+    o exame inteiro como UM item na fila de curadoria (18/11/2026).
     """
     modalidade = str(tags.get("Modality") or "").upper()
     if modalidade in MODALIDADES_RADIOGRAFIA:
-        return
-    if modalidade in MODALIDADES_EM_VOLUME or tags.get("ImagePositionPatient"):
+        return False
+    return modalidade in MODALIDADES_EM_VOLUME or bool(tags.get("ImagePositionPatient"))
+
+
+def conferir_pode_ajustar(tags: dict) -> None:
+    """
+    Radiografias podem ser ajustadas uma a uma. Ja um corte de tomografia faz
+    parte de um volume: ajustar so ele quebraria a reconstrucao.
+    """
+    if e_corte_de_volume(tags):
         raise ImagemDeVolume("Esta imagem é um corte de um exame em volume (ex.: tomografia) e não pode ser girada sozinha.")
 
 

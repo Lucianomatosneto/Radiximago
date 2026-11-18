@@ -10,6 +10,7 @@ from fastapi import HTTPException
 
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation, CurationHistory, StatusCuradoria
+from app.modules.orthanc_references import cortes_da_serie, texto_do_exame
 
 STATUS_FINAIS = [
     StatusCuradoria.APROVADA.value,
@@ -173,8 +174,13 @@ def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, 
         (observacoes or "Ficha aprovada.") + origem,
     )
     ref = getattr(ficha, "orthanc_reference", None)
-    situacao_texto = (ref.texto_na_imagem if ref else None) or "nao_verificado (imagem anterior a verificacao)"
-    regioes = f", {ref.texto_regioes} tarjas" if ref and ref.texto_regioes else ""
+    # exame em volume (18/11/2026): registra o pior caso entre todos os cortes
+    cortes = cortes_da_serie(db, ref) if ref is not None and getattr(ref, "em_volume", False) else ([ref] if ref else [])
+    situacao, n_tarjas = texto_do_exame(cortes) if cortes else (None, None)
+    situacao_texto = situacao or "nao_verificado (imagem anterior a verificacao)"
+    regioes = f", {n_tarjas} tarjas" if n_tarjas else ""
+    if len(cortes) > 1:
+        regioes += f", exame em volume com {len(cortes)} cortes"
     _registrar_auditoria(
         db, usuario.id, acao, ficha.id, "sucesso",
         f"Ficha aprovada por usuario {usuario.id}. Texto na imagem: {situacao_texto}{regioes}; "

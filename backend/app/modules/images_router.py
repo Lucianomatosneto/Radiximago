@@ -32,6 +32,7 @@ from app.core.config import settings
 from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User, UserRole
+from app.modules.substituir_instancia import e_corte_de_volume
 from app.modules.orthanc_references import DestinoImagem, OrigemImagem, OrthancReference
 from app.modules.curations import Curation
 from app.modules import orthanc_client
@@ -206,6 +207,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
             texto_na_imagem=resultado_texto.situacao,
             texto_regioes=resultado_texto.regioes,
             enquadramento=resultado_recorte.situacao,
+            em_volume=e_corte_de_volume(tags_simplificadas),
         )
         db.add(nova_ref)
         db.commit()

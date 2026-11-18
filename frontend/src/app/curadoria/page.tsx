@@ -167,9 +167,11 @@ export default function CuradoriaPage() {
 
   const [fichaAtiva, setFichaAtiva] = useState<FichaAtiva | null>(null)
   // verificacao de texto gravado na imagem (ver AvisoTextoNaImagem)
-  const [textoNaImagem, setTextoNaImagem] = useState<{ situacao: string | null; regioes: number | null }>({
+  // cortes: exame em volume (tomografia) - a ficha vale para todos os cortes
+  const [textoNaImagem, setTextoNaImagem] = useState<{ situacao: string | null; regioes: number | null; cortes: number }>({
     situacao: 'sem_texto',
     regioes: null,
+    cortes: 1,
   })
   const [statusFicha, setStatusFicha] = useState('em_analise')
   const [segundaOpiniaoReview, setSegundaOpiniaoReview] = useState<ReviewInfo | null>(null)
@@ -742,7 +744,7 @@ export default function CuradoriaPage() {
     }
     const ficha = await resposta.json()
     setFichaAtiva({ curationId: ficha.id, orthancReferenceId })
-    setTextoNaImagem({ situacao: ficha.texto_na_imagem ?? null, regioes: ficha.texto_regioes ?? null })
+    setTextoNaImagem({ situacao: ficha.texto_na_imagem ?? null, regioes: ficha.texto_regioes ?? null, cortes: ficha.cortes ?? 1 })
     setStatusFicha(ficha.status ?? 'em_analise')
     setSegundaOpiniaoReview(null)
     setEtapaAtiva(ETAPA_INICIAL)
@@ -1466,7 +1468,7 @@ export default function CuradoriaPage() {
               cima e a esquerda ocupa a largura toda. */}
           {fichaAtiva && !fichaVisivel && barraSuperior}
           {fichaAtiva && !fichaVisivel && (
-            <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} />
+            <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
           )}
           <div className="relative flex min-h-0 flex-1 gap-3">
             <div className={`flex min-h-0 min-w-0 flex-col gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
@@ -1642,7 +1644,7 @@ export default function CuradoriaPage() {
 
             {fichaVisivel && fichaAtiva && (
               <aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
-                <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} />
+                <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
                   podeCriarTermo={!ehProfessor}
