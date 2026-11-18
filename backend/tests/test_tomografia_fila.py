@@ -188,3 +188,55 @@ def test_ficha_de_radiografia_continua_igual(client, curador, exame):
     dados = client.get(f"/curation/{ficha['curation_id']}", headers=h).json()
     assert dados["em_volume"] is False and dados["cortes"] == 1
     assert dados["texto_na_imagem"] == "sem_texto"
+
+
+# --- telas de listagem e contagens (18/11/2026) ------------------------------------
+
+@pytest.fixture()
+def admin(client, criar_usuario):
+    return cabecalho_auth(obter_token(client, criar_usuario(perfil=UserRole.administrador).email))
+
+
+def test_imagens_recebidas_mostram_o_exame_uma_vez(client, admin, exame):
+    r = client.get("/images/", headers=admin)
+    assert r.status_code == 200, r.text
+    ids = {i["id"]: i for i in r.json()}
+    assert exame[0].id in ids and exame[1].id not in ids and exame[2].id not in ids
+    assert ids[exame[0].id]["cortes"] == 3 and ids[exame[0].id]["em_volume"] is True
+    assert ids[exame[3].id]["cortes"] == 1
+
+
+def test_contagem_dos_paineis_conta_o_exame_uma_vez(db, exame):
+    from app.modules.admin_router import contar_imagens_por_situacao
+
+    com = contar_imagens_por_situacao(db)["total"]
+    for r in exame:
+        r.ativo = False
+    db.commit()
+    sem = contar_imagens_por_situacao(db)["total"]
+    assert com - sem == 2  # 1 tomografia + 1 periapical
+
+
+def test_desativar_o_exame_desativa_todos_os_cortes(client, admin, db, exame):
+    r = client.patch(f"/images/{exame[0].id}/deactivate", headers=admin)
+    assert r.status_code == 200, r.text
+    for corte in exame[:3]:
+        db.refresh(corte)
+        assert corte.ativo is False
+    db.refresh(exame[3])
+    assert exame[3].ativo is True  # a periapical nao e tocada
+
+
+def test_minhas_imagens_e_retirar_valem_para_o_exame(client, criar_usuario, db, exame):
+    dono = criar_usuario(perfil=UserRole.estudante)
+    h = cabecalho_auth(obter_token(client, dono.email))
+    for corte in exame[:3]:
+        corte.enviado_por_id, corte.destino = dono.id, DestinoImagem.PESSOAL.value
+    db.commit()
+    itens = client.get("/envios/meus", headers=h).json()["itens"]
+    assert [i["id"] for i in itens] == [exame[0].id]
+    assert itens[0]["cortes"] == 3
+    assert client.delete(f"/envios/{exame[0].id}", headers=h).status_code == 200
+    for corte in exame[:3]:
+        db.refresh(corte)
+        assert corte.ativo is False

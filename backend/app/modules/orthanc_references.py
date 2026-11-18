@@ -1,7 +1,7 @@
 import enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, text
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, and_, exists, func as sa_func, text
+from sqlalchemy.orm import aliased, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
@@ -118,6 +118,46 @@ def cortes_da_serie(db, ref: "OrthancReference") -> list["OrthancReference"]:
         .order_by(OrthancReference.id)
         .all()
     )
+
+
+def filtro_exame_unico():
+    """
+    Condicao SQL que deixa de fora os cortes SEGUINTES de um exame em volume
+    (tomografia): cada exame aparece uma vez, pelo primeiro corte que chegou.
+    Radiografias nunca sao afetadas. Usada pela fila de curadoria, pelas
+    listas de imagens e pelas contagens dos paineis (18/11/2026).
+    """
+    anterior = aliased(OrthancReference)
+    return ~exists().where(and_(
+        OrthancReference.em_volume.is_(True),
+        anterior.em_volume.is_(True),
+        anterior.series_instance_uid == OrthancReference.series_instance_uid,
+        anterior.id < OrthancReference.id,
+    ))
+
+
+def contar_cortes(db, refs: list["OrthancReference"]) -> dict[int, int]:
+    """{id da imagem: quantos cortes o exame tem} (1 para radiografia)."""
+    series = {r.series_instance_uid for r in refs if r.em_volume and r.series_instance_uid}
+    por_serie = dict(
+        db.query(OrthancReference.series_instance_uid, sa_func.count(OrthancReference.id))
+        .filter(OrthancReference.em_volume.is_(True), OrthancReference.series_instance_uid.in_(series))
+        .group_by(OrthancReference.series_instance_uid)
+        .all()
+    ) if series else {}
+    return {r.id: (por_serie.get(r.series_instance_uid, 1) if r.em_volume else 1) for r in refs}
+
+
+def propagar_ao_exame(db, ref: "OrthancReference", **campos) -> None:
+    """
+    Aplica a mesma mudanca (ex.: ativo, destino) a TODOS os cortes do exame,
+    para o exame continuar sendo uma coisa so: retirar, desativar, mandar
+    para analise ou para a fila valem para todos os cortes. Para uma
+    radiografia, so a propria imagem muda.
+    """
+    for corte in cortes_da_serie(db, ref):
+        for nome, valor in campos.items():
+            setattr(corte, nome, valor)
 
 
 def texto_do_exame(cortes: list["OrthancReference"]) -> tuple[str | None, int | None]:

@@ -208,3 +208,11 @@ describe('recebidas de colegas', () => {
     expect(servidor.alteracoes()).toEqual([])
   })
 })
+
+describe('tomografia (18/11/2026)', () => {
+  it('um exame aparece como um cartao com o selo de cortes; radiografia sem selo', async () => {
+    abrir('meus', meus({ 'GET /envios/meus': { corpo: { itens: [item(9, 'so_para_mim', { em_volume: true, cortes: 120 }), item(10, 'so_para_mim')] } } }))
+    expect(await screen.findByText('TC · 120 cortes')).toBeTruthy()
+    expect(screen.getAllByText(/^TC ·/)).toHaveLength(1)
+  })
+})

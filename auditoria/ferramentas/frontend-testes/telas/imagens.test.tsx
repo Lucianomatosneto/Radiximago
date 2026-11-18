@@ -208,3 +208,11 @@ describe('enviar imagem DICOM', () => {
     expect(screen.getByRole('button', { name: 'Enviar imagem' })).toBeTruthy() // botao volta ao normal
   })
 })
+
+describe('tomografia (18/11/2026)', () => {
+  it('o exame e uma linha so, com o numero de cortes no lugar do tipo', async () => {
+    await abrir(rotasPadrao({ 'GET /images/': { corpo: [imagem(61), imagem(70, { em_volume: true, cortes: 3 })] } }))
+    expect(screen.getByText('Tomografia (3 cortes)')).toBeTruthy()
+    expect(numeros()).toEqual(['61', '70'])
+  })
+})
