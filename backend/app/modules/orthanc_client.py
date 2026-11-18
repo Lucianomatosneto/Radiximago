@@ -155,14 +155,24 @@ IDADE_LIMITE_AGRUPAMENTO = 90
 METODO_ANONIMIZACAO = "Radix: PS3.15 basico, datas=ano, sem horas, idade 90+ agrupada"  # max. 64
 
 
-def regras_de_anonimizacao(tags_originais: dict) -> dict:
+def regras_de_anonimizacao(tags_originais: dict, chave_uid: str = "") -> dict:
     """
     Monta o pedido de anonimizacao para o Orthanc a partir das tags da
     imagem ORIGINAL (funcao pura - testada em tests/test_anonimizacao_regras.py).
-    Devolve {"Keep": [...], "Replace": {...}, "Remove": [...]}.
+    Devolve {"Keep": [...], "Replace": {...}, "Remove": [...]} e, quando ha
+    chave_uid, tambem "Force": True.
+
+    chave_uid (18/11/2026): com a chave, os UIDs e o paciente deixam de ser
+    sorteados e passam a ser CALCULADOS a partir do original
+    (app/modules/uids_anonimizados.py) - cortes de um exame ficam juntos e o
+    mesmo arquivo gera sempre a mesma imagem. O Orthanc so aceita trocar UIDs
+    com "Force": True.
     """
+    from app.modules.uids_anonimizados import substituicoes_de_identificadores
+
     manter = list(_CAMPOS_A_PRESERVAR)
     substituir: dict[str, str] = {"DeidentificationMethod": METODO_ANONIMIZACAO}
+    substituir.update(substituicoes_de_identificadores(chave_uid, tags_originais))
 
     for tag in _DATAS_SO_ANO:
         valor = str(tags_originais.get(tag) or "").strip()
@@ -174,7 +184,10 @@ def regras_de_anonimizacao(tags_originais: dict) -> dict:
         manter.remove("PatientAge")
         substituir["PatientAge"] = f"{IDADE_LIMITE_AGRUPAMENTO:03d}Y"
 
-    return {"Keep": manter, "Replace": substituir, "Remove": list(_CAMPOS_A_REMOVER)}
+    regras = {"Keep": manter, "Replace": substituir, "Remove": list(_CAMPOS_A_REMOVER)}
+    if "StudyInstanceUID" in substituir:
+        regras["Force"] = True
+    return regras
 
 
 def anonimizar_instancia(orthanc_id: str):
@@ -200,7 +213,7 @@ def anonimizar_instancia(orthanc_id: str):
     from app.modules.geometria_imagem import recortar_moldura
     from app.modules.texto_na_imagem import tarjar_texto
 
-    regras = regras_de_anonimizacao(obter_tags_simplificadas_instancia(orthanc_id))
+    regras = regras_de_anonimizacao(obter_tags_simplificadas_instancia(orthanc_id), settings.ANONIMIZACAO_CHAVE_UID)
     url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/anonymize"
     corpo = {"Synchronous": True, **regras}
     resposta = _client.post(url, json=corpo, timeout=60.0)
