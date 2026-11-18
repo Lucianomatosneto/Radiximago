@@ -210,15 +210,25 @@ def anonimizar_instancia(orthanc_id: str):
     Retorna: (resposta do Orthanc ao upload - inclui "ID", ResultadoTexto,
     ResultadoRecorte).
     """
-    from app.modules.geometria_imagem import recortar_moldura
+    from app.modules.geometria_imagem import SEM_BORDA, ResultadoRecorte, recortar_moldura
+    from app.modules.substituir_instancia import e_corte_de_volume
     from app.modules.texto_na_imagem import tarjar_texto
 
-    regras = regras_de_anonimizacao(obter_tags_simplificadas_instancia(orthanc_id), settings.ANONIMIZACAO_CHAVE_UID)
+    tags_originais = obter_tags_simplificadas_instancia(orthanc_id)
+    regras = regras_de_anonimizacao(tags_originais, settings.ANONIMIZACAO_CHAVE_UID)
     url = f"{settings.ORTHANC_URL}/instances/{orthanc_id}/anonymize"
     corpo = {"Synchronous": True, **regras}
     resposta = _client.post(url, json=corpo, timeout=60.0)
     resposta.raise_for_status()
-    arquivo, resultado_recorte = recortar_moldura(resposta.content)
+    if e_corte_de_volume(tags_originais):
+        # Corte de tomografia (18/11/2026): recortar um corte sozinho mudaria
+        # o tamanho dele e desalinharia o volume. Tomografia nao tem a
+        # moldura branca das placas de fosforo; a tarja de texto (que nao
+        # muda o tamanho) continua valendo.
+        arquivo = resposta.content
+        resultado_recorte = ResultadoRecorte(SEM_BORDA, detalhe="corte de exame em volume: recorte nao se aplica")
+    else:
+        arquivo, resultado_recorte = recortar_moldura(resposta.content)
     arquivo, resultado_texto = tarjar_texto(arquivo)
     return enviar_instancia(arquivo), resultado_texto, resultado_recorte
 

@@ -815,7 +815,9 @@
       "nenhumaPendente": "Nenhuma imagem pendente.",
       "abrindo": "Abrindo...",
       "anteriores": "Ver imagens anteriores",
-      "proximas": "Ver próximas imagens"
+      "proximas": "Ver próximas imagens",
+      "volumeSelo": "TC · {cortes}",
+      "volumeTitulo": "Tomografia: {cortes} cortes, um exame só"
     },
     "modalMotivo": {
       "descartarTitulo": "Descartar ficha",
@@ -1223,7 +1225,10 @@
       "titulo": "Confira a imagem antes de validar.",
       "tarjado": "Foi encontrado texto escrito na imagem, e ele foi coberto automaticamente com tarja preta ({regioes} trechos). Verifique se não sobrou nenhum nome, data ou número e se a tarja não cobriu anatomia importante.",
       "naoVerificado": "Não foi possível verificar automaticamente se há texto escrito na imagem. Procure com atenção nome, data ou número antes de marcar “Anonimização validada”.",
-      "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”."
+      "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”.",
+      "volumeTitulo": "Tomografia com {cortes} cortes.",
+      "volumeExplica": "A ficha vale para o exame inteiro; o visualizador mostra todos os cortes.",
+      "volumeTodosCortes": "(Verificação feita nos {cortes} cortes do exame.)"
     },
     "orientacao": {
       "titulo": "Girar a imagem",

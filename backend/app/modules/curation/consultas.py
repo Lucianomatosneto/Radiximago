@@ -8,15 +8,17 @@ ficha.
 from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, Query, Response
-from sqlalchemy import and_, func, or_
-from sqlalchemy.orm import Session
+from sqlalchemy import and_, exists, func, or_
+from sqlalchemy.orm import Session, aliased
 
 from app.core.cabecalhos import disposicao_de_arquivo
 from app.core.config import settings
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_FICHA_LEITURA
 from app.modules.users import User
-from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
+from app.modules.orthanc_references import (
+    DestinoImagem, OrthancReference, cortes_da_serie, texto_do_exame, visivel_para,
+)
 from app.modules import orthanc_client
 from app.modules.geometria_imagem import RECORTADA, SEM_BORDA
 from app.modules.curations import (
@@ -72,6 +74,17 @@ def listar_pendentes(
         Curation.status == StatusCuradoria.EM_ANALISE.value,
         Curation.curador_id.is_(None),
     )
+    # Tomografia (18/11/2026): um exame em volume entra na fila como UM item -
+    # o primeiro corte que chegou (os demais cortes da mesma serie ficam fora
+    # da fila; a ficha dele vale para o exame inteiro e o visualizador abre
+    # o estudo completo). Radiografias nao sao afetadas (em_volume = falso).
+    corte_anterior = aliased(OrthancReference)
+    nao_e_corte_seguinte = ~exists().where(and_(
+        OrthancReference.em_volume.is_(True),
+        corte_anterior.em_volume.is_(True),
+        corte_anterior.series_instance_uid == OrthancReference.series_instance_uid,
+        corte_anterior.id < OrthancReference.id,
+    ))
     consulta_base = (
         db.query(OrthancReference, Curation.id, Curation.sugerida_por_id)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
@@ -80,6 +93,7 @@ def listar_pendentes(
         # etapa B (08/11/2026): imagens "so para mim" e em analise nao entram
         .filter(OrthancReference.destino == DestinoImagem.FILA.value)
         .filter(OrthancReference.enquadramento.in_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA))
+        .filter(nao_e_corte_seguinte)
         .order_by(OrthancReference.id)
     )
 
@@ -94,9 +108,18 @@ def listar_pendentes(
                 OrthancReference.destino == DestinoImagem.FILA.value)
         .filter(or_(OrthancReference.enquadramento.is_(None),
                     OrthancReference.enquadramento.notin_(ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA)))
+        .filter(nao_e_corte_seguinte)
         .count()
     )
     registros = consulta_base.offset(skip).limit(limit).all()
+    series_volume = {ref.series_instance_uid for ref, _, _ in registros if ref.em_volume}
+    cortes_por_serie = dict(
+        db.query(OrthancReference.series_instance_uid, func.count(OrthancReference.id))
+        .filter(OrthancReference.em_volume.is_(True),
+                OrthancReference.series_instance_uid.in_(series_volume))
+        .group_by(OrthancReference.series_instance_uid)
+        .all()
+    ) if series_volume else {}
 
     nomes = {u.id: u.nome for u in db.query(User).filter(
         User.id.in_({sid for _, _, sid in registros if sid}))} if registros else {}
@@ -111,6 +134,9 @@ def listar_pendentes(
             "sop_instance_uid": ref.sop_instance_uid,
             "resource_type": ref.resource_type,
             "dicomweb_url": ref.dicomweb_url,
+            # exame em volume: quantos cortes a ficha vai cobrir (1 = radiografia)
+            "em_volume": ref.em_volume,
+            "cortes": cortes_por_serie.get(ref.series_instance_uid, 1) if ref.em_volume else 1,
         }
         for ref, curation_id, sugerida_por_id in registros
     ]
@@ -451,6 +477,8 @@ def obter_ficha(
 ):
     """Busca uma ficha de curadoria especifica, com todos os campos."""
     ficha = _buscar_ficha(db, curation_id, usuario, escrita=False)
+    cortes_exame = cortes_da_serie(db, ficha.orthanc_reference) if ficha.orthanc_reference else []
+    texto_exame = texto_do_exame(cortes_exame) if cortes_exame else (None, None)
 
     return {
         "id": ficha.id,
@@ -477,8 +505,12 @@ def obter_ficha(
         # verificacao de texto gravado nos pixels (texto_na_imagem.py) - a tela
         # mostra um aviso ao lado de "Anonimizacao validada" quando o curador
         # precisa conferir a imagem com atencao
-        "texto_na_imagem": ficha.orthanc_reference.texto_na_imagem if ficha.orthanc_reference else None,
-        "texto_regioes": ficha.orthanc_reference.texto_regioes if ficha.orthanc_reference else None,
+        # exame em volume (tomografia, 18/11/2026): o aviso considera TODOS os
+        # cortes (pior caso), porque a ficha e a aprovacao valem para o exame
+        "texto_na_imagem": texto_exame[0],
+        "texto_regioes": texto_exame[1],
+        "em_volume": bool(ficha.orthanc_reference and ficha.orthanc_reference.em_volume),
+        "cortes": len(cortes_exame),
         "termos": [
             t for (t,) in db.query(CurationTermo.termo_id).filter(CurationTermo.curation_id == ficha.id).all()
         ],
