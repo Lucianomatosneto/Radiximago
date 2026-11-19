@@ -100,6 +100,7 @@ Também neutralizados antes de **contextos perigosos**:
 | Função | Limite | Ao estourar |
 |---|---|---|
 | Login (`POST /auth/login`) | 5 por minuto | resposta 429 por 1 minuto |
+| Login, **por conta** (trava progressiva, 18/11/2026) | 10 senhas erradas em 15 min → **15 minutos**; 20 em 1 hora → **1 hora**; 30 em 24 horas → **24 horas**. Nunca é permanente sozinha | 429 com o motivo (`codigo: conta_travada`) e o tempo (`minutos`); a tela explica e indica "Esqueci minha senha". O dono recebe e-mail quando a trava começa; no nível de 24 horas, os administradores também. Auditoria: `conta_travada_por_tentativas` |
 | Esqueci a senha | 3 por minuto | 429 |
 | Redefinir a senha | 10 por minuto | 429 |
 | Pedir acesso (cadastro) | 5 por minuto | 429 |
@@ -178,7 +179,7 @@ O requisito pede que, quando alguém perde o segundo fator, a identidade seja co
 
 Testes: `tests/test_segundo_fator.py` (18 testes, 6 deles da conferência de identidade) e `tests/test_mfa_codigos_fortes.py` (códigos de recuperação e janela do código).
 
-**Melhoria planejada:** bloqueio progressivo por conta.
+**Bloqueio progressivo por conta:** implementado em 18/11/2026 (seção 3.1). Não existe bloqueio definitivo automático, de propósito: ele deixaria qualquer pessoa travar a conta de um colega só digitando o e-mail dele (recomendação do NIST SP 800-63B e da OWASP). O bloqueio definitivo continua sendo decisão do administrador. Mensagens da tela de login: senha errada, conta travada (com o tempo), muitas tentativas da mesma rede, conta bloqueada e conta inativa têm textos diferentes; "conta bloqueada" e "conta inativa" só aparecem depois da senha certa. **Limite aceito:** a mensagem de conta travada só aparece para e-mails cadastrados, então quem tentar 10 vezes descobre que aquele e-mail existe (já era assim antes); o ganho de explicar a trava a quem é dono da conta foi considerado maior.
 
 ## 4. Sessão (ASVS 7.1.1 e 7.1.2)
 
