@@ -48,6 +48,7 @@
 | Segmentação (pintura de estruturas) | `segmentacao_criada`, `segmentacao_alterada`, `segmentacao_apagada` (estrutura, dente e quantos pixels foram pintados — **sem a imagem**) |
 | Vocabulário e macros | `vocabulario_termo_criado`, `vocabulario_termo_editado`, `vocabulario_sinonimo_criado`, `vocabulario_sinonimo_removido`, `vocabulario_fichas_vinculadas`, `vocabulario_ficha_desvinculada`, `macro_criada`, `macro_editada`, `macro_desativada` |
 | Limpeza de dados de demonstração | `limpeza_dados_demo` (gravada pelo script `scripts/limpar_dados_demo.py` quando roda com `--executar`; detalhes: quantos usuários e compartilhamentos saíram — nunca nomes) |
+| Curadoria arquivada | `arquivamento` (com o motivo) e `desarquivamento`, na auditoria e no histórico da ficha: imagem aprovada que sai de circulação sem ser apagada, e volta (18/11/2026) |
 | Curadoria reaberta | `curadoria_reaberta` e, no histórico da ficha, `reabertura_edicao` (curador reabre uma ficha aprovada ou descartada para editar depois do envio; status anterior e novo) |
 | Sugestões de melhoria | `sugestao_enviada` (com o perfil de quem enviou), `sugestao_andamento_alterado` (administrador; andamento anterior e novo) |
 | Compartilhamento | `compartilhamento_imagem`, `resposta_compartilhamento`, `compartilhamento_desfeito` |
