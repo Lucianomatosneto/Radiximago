@@ -30,6 +30,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     itens: [
       a('login', 'Entrada no sistema', 'Sign-in'),
       a('falha_login', 'Entrada recusada (senha errada)', 'Sign-in failed'),
+      a('conta_travada_por_tentativas', 'Conta travada por muitas senhas erradas', 'Account locked after too many wrong passwords'),
       a('logout', 'Saída do sistema', 'Sign-out'),
       a('troca_senha', 'Senha trocada', 'Password changed'),
       a('falha_troca_senha', 'Troca de senha recusada', 'Password change failed'),
