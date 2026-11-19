@@ -75,8 +75,11 @@ function TabelaProporcao({
   renderRotulo,
   corPorChave,
   base,
+  nota,
 }: {
   titulo: string
+  /** texto curto no fim do quadro (ex.: aviso de ranking sem nomes) */
+  nota?: string
   /** base da porcentagem; sem ela, a soma das linhas (01/11/2026: em
    * "Fichas por achado" uma ficha conta em varias linhas, entao a base e o
    * total de fichas) */
@@ -123,6 +126,7 @@ function TabelaProporcao({
           })}
         </div>
       )}
+      {nota && <p className="mt-4 text-xs text-slate-500">{nota}</p>}
     </section>
   )
 }
@@ -163,10 +167,10 @@ export default function RelatoriosPage() {
     }
 
     setPerfil(sessao.perfil)
-    void carregarDados()
+    void carregarDados(sessao.perfil === 'administrador')
   })
 
-  async function carregarDados() {
+  async function carregarDados(ehAdmin: boolean) {
     setCarregando(true)
     setErro('')
     try {
@@ -174,15 +178,16 @@ export default function RelatoriosPage() {
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/stats`, {
           credentials: 'include',
         }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, {
-          credentials: 'include',
-        }),
+        // nomes so para o administrador (18/11/2026): os demais nem pedem a lista
+        ehAdmin
+          ? fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/`, { credentials: 'include' })
+          : Promise.resolve(null),
         fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/minhas-estatisticas`, {
           credentials: 'include',
         }),
       ])
 
-      if (respostaStats.status === 401 || respostaUsuarios.status === 401) {
+      if (respostaStats.status === 401 || respostaUsuarios?.status === 401) {
         router.push('/login')
         return
       }
@@ -194,7 +199,7 @@ export default function RelatoriosPage() {
       const dadosStats: StatsResponse = await respostaStats.json()
       setStats(dadosStats)
 
-      if (respostaUsuarios.ok) {
+      if (respostaUsuarios?.ok) {
         const usuarios: Usuario[] = await respostaUsuarios.json()
         const mapa: Record<number, string> = {}
         for (const usuario of usuarios) mapa[usuario.id] = usuario.nome
@@ -218,6 +223,10 @@ export default function RelatoriosPage() {
 
   function rotularCurador(chave: string): string {
     if (chave === 'nao_informado') return t('semCuradorAtribuido')
+    // 18/11/2026: para quem nao e administrador o servidor manda so a posicao
+    // ("curador_1" = quem mais curou), sem nome nem numero de cadastro
+    const posicao = /^curador_(\d+)$/.exec(chave)
+    if (posicao) return t('curadorPosicao', { posicao: posicao[1] })
     const id = Number(chave)
     return stats?.nomes_curadores?.[chave] ?? mapaCuradores[id] ?? t('usuarioNumero', { id: chave })
   }
@@ -320,6 +329,7 @@ export default function RelatoriosPage() {
                   titulo={t('fichasPorCurador')}
                   dados={stats.por_curador}
                   renderRotulo={rotularCurador}
+                  nota={perfil === 'administrador' ? undefined : t('rankingSemNomes')}
                 />
               </div>
             </>

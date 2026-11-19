@@ -1442,7 +1442,9 @@
     "fichasPorAchado": "Fichas por achado (alterações observadas)",
     "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. A porcentagem é sobre o total de fichas; uma ficha com vários achados entra em cada um deles, por isso a soma das linhas pode passar de 100%.",
     "semAlteracoes": "Sem alterações",
-    "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria."
+    "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria.",
+    "curadorPosicao": "Curador {posicao}",
+    "rankingSemNomes": "Ranking geral sem nomes e sem instituições: só a administração do Rádix vê quem é cada curador."
   },
   "Integracoes": {
     "titulo": "Integrações",

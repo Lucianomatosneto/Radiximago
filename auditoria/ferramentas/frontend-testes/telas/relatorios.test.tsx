@@ -5,7 +5,9 @@
 // sem conexao, sessao vencida), cartoes (o administrador ve tambem os
 // usuarios), tabelas com porcentagem e rotulos traduzidos (inclusive valores
 // desconhecidos e "nao informado"), nomes dos curadores e o cartao pessoal
-// do curador (so a posicao dele, sem os colegas). Dados inventados.
+// do curador (so a posicao dele, sem os colegas). 18/11/2026: so o
+// administrador ve os nomes em "Fichas por curador"; o curador ve "Curador 1",
+// "Curador 2"... (o servidor ja manda sem nomes). Dados inventados.
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import RelatoriosPage from '../../../../frontend/src/app/relatorios/page'
@@ -120,9 +122,29 @@ describe('tabelas', () => {
   })
 
   it('lista de usuarios e cartao pessoal que falham: a tela segue com o resto', async () => {
-    await abrir('curador', { 'GET /users/': { status: 403 }, 'GET /curation/minhas-estatisticas': { status: 500 } })
+    await abrir('administrador', { 'GET /users/': { status: 403 }, 'GET /curation/minhas-estatisticas': { status: 500 } })
     expect(tabela('Fichas por curador').textContent).toContain('Usuário #810')
     expect(screen.queryByText('Minhas estatísticas (mês atual)')).toBeNull()
+  })
+
+  it('curador: ranking so com a posicao (Curador 1, 2, 3), sem nomes, e aviso de privacidade', async () => {
+    const servidor = await abrir('curador', {
+      'GET /admin/stats': { corpo: { ...STATS, por_curador: { curador_1: 25, curador_2: 10, curador_3: 4, nao_informado: 1 }, nomes_curadores: {} } },
+    })
+    const curadores = tabela('Fichas por curador')
+    const texto = curadores.textContent ?? ''
+    expect(texto).toContain('Curador 125')
+    expect(texto).toContain('Curador 210')
+    expect(texto).toContain('Curador 34')
+    expect(texto).toContain('Sem curador atribuído1')
+    expect(within(curadores).getByText('Ranking geral sem nomes e sem instituições: só a administração do Rádix vê quem é cada curador.')).toBeTruthy()
+    // sem nome, a tela nem pede a lista de usuarios
+    expect(servidor.pedidos.map((p) => p.caminho)).not.toContain('/users/')
+  })
+
+  it('administrador nao ve o aviso de ranking sem nomes', async () => {
+    await abrir('administrador')
+    expect(screen.queryByText(/Ranking geral sem nomes/)).toBeNull()
   })
 })
 
