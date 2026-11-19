@@ -87,7 +87,7 @@ describe('valores', () => {
     expect([...tipos.children].map((c) => c.getAttribute('title'))).toEqual(['periapical', 'panoramica', 'interproximal', 'oclusal', 'tomografia'])
     expect(within(tipos).getByTitle('panoramica').textContent).toBe('Panorâmica')
     const status = within(fixos).getByText('Status de curadoria').nextElementSibling as HTMLElement
-    expect(status.children).toHaveLength(6)
+    expect(status.children).toHaveLength(7) // + arquivada (18/11/2026)
     const perfis = within(fixos).getByText('Perfis de usuário').nextElementSibling as HTMLElement
     expect(within(perfis).getByTitle('administrador').textContent).toBe('Administrador')
     // nenhum valor ficou sem traducao (o rotulo seria o proprio codigo)

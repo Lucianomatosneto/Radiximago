@@ -162,6 +162,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('aprovacao', 'Ficha aprovada', 'Record approved'),
       a('descarte', 'Ficha descartada', 'Record discarded'),
       a('curadoria_reaberta', 'Ficha reaberta para editar', 'Record reopened for editing'),
+      a('arquivamento', 'Ficha arquivada (saiu de circulação)', 'Record archived (out of circulation)'),
+      a('desarquivamento', 'Ficha desarquivada (voltou a circular)', 'Record unarchived (back in circulation)'),
       a('solicitacao_segunda_opiniao', 'Segunda opinião pedida', 'Second opinion requested'),
       a('resposta_segunda_opiniao', 'Segunda opinião respondida', 'Second opinion answered'),
       a('aprovacao_pos_segunda_opiniao', 'Aprovada após segunda opinião', 'Approved after second opinion'),

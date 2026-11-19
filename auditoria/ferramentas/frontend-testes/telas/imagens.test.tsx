@@ -216,3 +216,32 @@ describe('tomografia (18/11/2026)', () => {
     expect(numeros()).toEqual(['61', '70'])
   })
 })
+
+describe('arquivar (18/11/2026)', () => {
+  const comFicha = [imagem(61, { curation_id: 501 }), imagem(62, { status_curadoria: 'arquivada', curation_id: 502 })]
+
+  it('curador: arquiva a aprovada com motivo e desarquiva a arquivada', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(rotasPadrao({
+      'GET /images/': { corpo: comFicha },
+      'POST /curation/501/arquivar': { corpo: { status: 'arquivada' } },
+      'POST /curation/502/desarquivar': { corpo: { status: 'aprovada' } },
+    }))
+    await usuario.click(screen.getByRole('button', { name: 'Arquivar' }))
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(screen.getByRole('alert').textContent).toBe('Informe o motivo do arquivamento.')
+    await usuario.type(screen.getByLabelText('Motivo'), 'Substituída')
+    await usuario.click(screen.getByRole('button', { name: 'Confirmar' }))
+    expect(await screen.findByText(/Imagem arquivada/)).toBeTruthy()
+    expect(servidor.pedidos.find((p) => p.caminho === '/curation/501/arquivar')?.corpo).toEqual({ motivo: 'Substituída' })
+    await usuario.click(screen.getByRole('button', { name: 'Desarquivar' }))
+    expect(await screen.findByText(/Imagem desarquivada/)).toBeTruthy()
+  })
+
+  it('professor ve a situacao, mas nao os botoes', async () => {
+    await abrir(rotasPadrao({ 'GET /images/': { corpo: comFicha } }, 'professor'))
+    expect(screen.getAllByText('Arquivada').length).toBeGreaterThan(0) // selo na linha (e opcao do filtro)
+    expect(screen.queryByRole('button', { name: 'Arquivar' })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Desarquivar' })).toBeNull()
+  })
+})

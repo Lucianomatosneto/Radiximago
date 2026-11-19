@@ -15,6 +15,7 @@ from app.modules.orthanc_references import cortes_da_serie, texto_do_exame
 STATUS_FINAIS = [
     StatusCuradoria.APROVADA.value,
     StatusCuradoria.DESCARTADA.value,
+    StatusCuradoria.ARQUIVADA.value,
 ]
 
 # Só se edita uma ficha enquanto ela ainda nao passou por uma decisao
@@ -209,3 +210,41 @@ def _executar_descarte(db, ficha, usuario, motivo, acao="descarte", origem=""):
         f"Ficha descartada por usuario {usuario.id}. Motivo: {motivo_limpo}{origem}",
     )
     return motivo_limpo
+
+
+def _executar_arquivamento(db, ficha, usuario, motivo):
+    """
+    Arquiva uma ficha APROVADA (Bloco 6, 18/11/2026): a imagem sai de
+    circulacao (toda liberacao do sistema exige ficha "aprovada"), mas nada
+    e apagado - ficha, achados, marcacoes e historico continuam guardados.
+    Exige motivo, como o descarte.
+    """
+    motivo_limpo = (motivo or "").strip()
+    if not motivo_limpo:
+        raise HTTPException(status_code=422, detail="O arquivamento exige uma justificativa (motivo).")
+    if ficha.status != StatusCuradoria.APROVADA.value:
+        raise HTTPException(status_code=409, detail="So uma ficha aprovada pode ser arquivada.")
+    ficha.status = StatusCuradoria.ARQUIVADA.value
+    _registrar_historico(db, ficha.id, usuario.id, "arquivamento",
+                         StatusCuradoria.APROVADA.value, ficha.status, motivo_limpo)
+    _registrar_auditoria(db, usuario.id, "arquivamento", ficha.id, "sucesso",
+                         f"Ficha arquivada por usuario {usuario.id}. Motivo: {motivo_limpo}")
+    return motivo_limpo
+
+
+def _executar_desarquivamento(db, ficha, usuario, motivo=None):
+    """
+    Devolve uma ficha arquivada para "aprovada" (volta a circular). A
+    anonimizacao ja foi validada na aprovacao original; a ficha nao muda.
+    """
+    if ficha.status != StatusCuradoria.ARQUIVADA.value:
+        raise HTTPException(status_code=409, detail="So uma ficha arquivada pode ser desarquivada.")
+    if not ficha.anonimizacao_validada:
+        raise HTTPException(status_code=409, detail="Ficha sem anonimizacao validada nao pode voltar a circular.")
+    motivo_limpo = (motivo or "").strip() or "Desarquivada."
+    ficha.status = StatusCuradoria.APROVADA.value
+    _registrar_historico(db, ficha.id, usuario.id, "desarquivamento",
+                         StatusCuradoria.ARQUIVADA.value, ficha.status, motivo_limpo)
+    _registrar_auditoria(db, usuario.id, "desarquivamento", ficha.id, "sucesso",
+                         f"Ficha desarquivada por usuario {usuario.id}. {motivo_limpo}")
+
