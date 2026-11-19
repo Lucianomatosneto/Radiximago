@@ -1,4 +1,5 @@
 import hashlib
+from html import escape
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -6,6 +7,7 @@ from typing import Annotated, Literal
 
 import logging
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy import func
 from sqlalchemy.orm import Session
@@ -23,6 +25,7 @@ from app.modules import mfa
 from app.core.politica_senha import problema_na_senha
 from app.core.limites import EMAIL_MAX, SENHA_MAX, Codigo, Email, Instituicao, Nome, Senha, TextoMedio
 from app.core.email import (
+    enviar_email,
     enviar_email_acesso_aprovado,
     enviar_email_confirmacao_cadastro,
     enviar_email_redefinicao_senha,
@@ -85,12 +88,102 @@ class DesafioSegundoFator(BaseModel):
     segundo_fator: Literal["codigo", "cadastro"]
     desafio: str
 
-# Limite POR CONTA (alem do limite por endereco IP): 10 senhas erradas em 15
-# minutos para o mesmo usuario travam novas tentativas por esse tempo, mesmo que
-# venham de enderecos diferentes (ataque distribuido). So falhas contam, entao o
-# bloqueio nao se prorroga sozinho (auditoria A-02).
+# Limite POR CONTA (alem do limite por endereco IP): senhas erradas para o
+# mesmo usuario travam novas tentativas, mesmo vindas de enderecos diferentes
+# (ataque distribuido - auditoria A-02). TRAVA PROGRESSIVA (18/11/2026): quanto
+# mais erros, mais longa a trava. Nunca e permanente sozinha: um bloqueio
+# definitivo deixaria qualquer pessoa travar a conta de um colega so digitando
+# o e-mail dele (NIST SP 800-63B, OWASP). So falhas contam, entao a trava nao
+# se prorroga sozinha. Do nivel mais alto para o mais baixo:
+NIVEIS_TRAVA_CONTA = (
+    (30, timedelta(hours=24)),
+    (20, timedelta(hours=1)),
+    (10, timedelta(minutes=15)),
+)
 LIMITE_FALHAS_POR_CONTA = 10
 JANELA_FALHAS_CONTA = timedelta(minutes=15)
+
+
+def _texto_duracao(duracao: timedelta) -> str:
+    minutos = int(duracao.total_seconds() // 60)
+    if minutos >= 60:
+        horas = minutos // 60
+        return f"{horas} hora" + ("s" if horas > 1 else "")
+    return f"{minutos} minutos"
+
+
+def _trava_da_conta(db: Session, usuario_id: int) -> timedelta | None:
+    """Duracao da trava em vigor para a conta (None = pode tentar)."""
+    agora = datetime.now(timezone.utc)
+    for limite, janela in NIVEIS_TRAVA_CONTA:
+        falhas = db.query(func.count(AuditLog.id)).filter(
+            AuditLog.usuario_id == usuario_id,
+            AuditLog.acao == "falha_login",
+            AuditLog.criado_em >= agora - janela,
+        ).scalar()
+        if falhas >= limite:
+            return janela
+    return None
+
+
+def _resposta_conta_travada(duracao: timedelta) -> JSONResponse:
+    """429 com o MOTIVO (codigo) e o tempo (minutos), para a tela explicar em
+    qualquer idioma; o texto em portugues vai em "detail", como nas demais."""
+    minutos = int(duracao.total_seconds() // 60)
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": (
+                f"Por segurança, esta conta foi travada por até {_texto_duracao(duracao)} depois de muitas "
+                "tentativas com a senha errada. Se não foi você, troque a senha em \"Esqueci minha senha\"."
+            ),
+            "codigo": "conta_travada",
+            "minutos": minutos,
+        },
+        headers={"Retry-After": str(int(duracao.total_seconds()))},
+    )
+
+
+def _avisar_trava(db: Session, usuario: User, duracao: timedelta) -> None:
+    """A trava COMECOU agora: registra na auditoria e avisa por e-mail o dono
+    da conta (e, no nivel de 24 horas, os administradores). Falha de e-mail
+    nunca impede a resposta do login."""
+    texto = _texto_duracao(duracao)
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="conta_travada_por_tentativas", entidade="user", entidade_id=usuario.id,
+        resultado="negado", detalhes=f"Conta travada por {texto} depois de muitas senhas erradas.",
+    ))
+    db.commit()
+    link = f"{settings.FRONTEND_URL}/esqueci-senha"
+    destinos = [(usuario.email, "Tentativas de acesso à sua conta - Rádix Imago", f"""
+    <p>Olá, {escape(usuario.nome)}.</p>
+    <p>Houve várias tentativas de entrar na sua conta do Rádix Imago com a senha errada.
+    Por segurança, a conta ficou <strong>travada por até {texto}</strong>.</p>
+    <p>Se foi você, aguarde e tente de novo. <strong>Se não foi você</strong>, troque a sua senha:</p>
+    <p><a href="{escape(link, quote=True)}">Trocar a senha</a></p>
+    """)]
+    if duracao >= timedelta(hours=24):
+        admins = db.query(User).filter(
+            User.perfil == UserRole.administrador, User.ativo.is_(True),
+            User.excluido.is_(False), User.bloqueado.isnot(True), User.id != usuario.id,
+        ).all()
+        for admin in admins:
+            destinos.append((admin.email, "Conta travada por 24 horas - Rádix Imago", f"""
+            <p>Olá, {escape(admin.nome)}.</p>
+            <p>A conta de <strong>{escape(usuario.nome)}</strong> ({escape(usuario.email)}) foi travada por
+            24 horas depois de 30 tentativas com a senha errada. Confira a auditoria e, se parecer
+            ataque, bloqueie a conta e fale com a pessoa.</p>
+            """))
+    for destinatario, assunto, corpo in destinos:
+        try:
+            enviar_email(destinatario, assunto, corpo)
+        except Exception as erro:  # noqa: BLE001 - e-mail e melhor esforco aqui
+            logger.exception("Falha ao enviar o aviso de conta travada.")
+            db.add(AuditLog(
+                usuario_id=usuario.id, acao="falha_envio_email", entidade="user", entidade_id=usuario.id,
+                resultado="erro", detalhes=f"Aviso de conta travada: e-mail não enviado ({type(erro).__name__}).",
+            ))
+            db.commit()
 # Resumo de senha descartavel, so para gastar o mesmo tempo quando o e-mail nao
 # existe e nao revelar, pela demora, quais e-mails estao cadastrados (A-03).
 _HASH_FALSO = gerar_hash_senha("senha-descartavel-nunca-valida")
@@ -122,38 +215,36 @@ def login(
         ))
         db.commit()
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
-    falhas_recentes = db.query(func.count(AuditLog.id)).filter(
-        AuditLog.usuario_id == usuario.id,
-        AuditLog.acao == "falha_login",
-        AuditLog.criado_em >= datetime.now(timezone.utc) - JANELA_FALHAS_CONTA,
-    ).scalar()
-    if falhas_recentes >= LIMITE_FALHAS_POR_CONTA:
-        raise HTTPException(
-            status_code=429,
-            detail="Muitas tentativas para esta conta. Aguarde alguns minutos e tente de novo.",
-            headers={"Retry-After": str(int(JANELA_FALHAS_CONTA.total_seconds()))},
-        )
+    trava = _trava_da_conta(db, usuario.id)
+    if trava:
+        # durante a trava nem a senha certa entra
+        return _resposta_conta_travada(trava)
     if not verificar_senha(form_data.password, usuario.senha_hash):
         db.add(AuditLog(
             usuario_id=usuario.id, acao="falha_login", entidade="user", entidade_id=usuario.id,
             resultado="negado", detalhes="Senha incorreta.",
         ))
         db.commit()
+        trava = _trava_da_conta(db, usuario.id)
+        if trava:  # esta falha comecou uma trava: registra e avisa uma vez so
+            _avisar_trava(db, usuario, trava)
         raise HTTPException(status_code=401, detail="Email ou senha incorretos")
+    # daqui em diante a SENHA ESTA CERTA: dizer o motivo nao revela nada a
+    # quem nao conhece a senha, e evita a confusao de "senha incorreta"
     if usuario.bloqueado:
         db.add(AuditLog(
             usuario_id=usuario.id, acao="falha_login", entidade="user", entidade_id=usuario.id,
             resultado="negado", detalhes="Usuario bloqueado.",
         ))
         db.commit()
-        raise HTTPException(status_code=403, detail="Usuário bloqueado")
+        return JSONResponse(status_code=403, content={"detail": "Usuário bloqueado", "codigo": "conta_bloqueada"})
     if not usuario.ativo:
         db.add(AuditLog(
             usuario_id=usuario.id, acao="falha_login", entidade="user", entidade_id=usuario.id,
             resultado="negado", detalhes="Usuario inativo.",
         ))
         db.commit()
-        raise HTTPException(status_code=403, detail="Usuário inativo")
+        return JSONResponse(status_code=403, content={"detail": "Usuário inativo", "codigo": "conta_inativa"})
     # senha guardada em padrao antigo (algoritmo/custo): regrava no padrao
     # atual agora que a senha correta foi digitada (ASVS 11.2.2)
     if senha_precisa_atualizar(usuario.senha_hash):
