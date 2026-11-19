@@ -50,7 +50,7 @@ services:
     # versao publicada ha pelo menos 2 semanas em
     # https://github.com/cloudflare/cloudflared/releases, troque o numero
     # abaixo e rode: docker compose -f docker-compose.yml -f docker-compose.tunel.yml up -d
-    image: cloudflare/cloudflared:2026.10.5
+    image: cloudflare/cloudflared:2026.11.0
     container_name: radix-cloudflared
     restart: unless-stopped
     command: ['tunnel', '--no-autoupdate', 'run']
