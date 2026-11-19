@@ -26,5 +26,5 @@ pytest==9.2.0
 numpy==2.4.6
 pytesseract==0.3.13
 pylibjpeg==2.1.0
-pylibjpeg-libjpeg==2.4.0
+pylibjpeg-libjpeg==2.5.0
 pylibjpeg-openjpeg==2.6.0
