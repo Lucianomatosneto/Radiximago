@@ -55,7 +55,7 @@ jobs:
         with:
           ref: redesign-ui   # branch de desenvolvimento real (enviada ao Sonar como 'main' para caber no plano gratuito)
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         if: steps.conf.outputs.ativo == 'sim'
         with:
           python-version: "3.11"
