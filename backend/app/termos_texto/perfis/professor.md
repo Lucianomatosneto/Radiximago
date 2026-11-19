@@ -8,7 +8,9 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 - enviar **arquivos DICOM e fotos** de radiografias para a **fila de curadoria** ou para uso próprio;
 - receber e analisar as imagens que estudantes enviam para você, e encaminhá-las à curadoria ou devolvê-las com orientação;
 - classificar e marcar imagens como apoio didático. **Somente o curador publica** uma imagem no acervo geral;
-- criar grupos de envio e compartilhar imagens e pranchas com estudantes e colegas.
+- criar grupos de envio e compartilhar imagens e pranchas com estudantes e colegas;
+- criar **grupos**, convidar pessoas e autorizar ou recusar pedidos de entrada (ninguém entra sem concordar: a pessoa aceita o convite ou você autoriza o pedido);
+- preparar imagens aprovadas para a aula (**modo aula**), com marcações, destaques e mensagem que valem só para o grupo, **sem alterar a ficha oficial**; ler e responder os comentários dos participantes.
 
 ## 2. Seus deveres específicos
 
@@ -24,7 +26,7 @@ Enquanto o projeto não tiver aprovação do comitê de ética, **não envie ima
 
 2.3. **Orientação responsável.** Ao analisar imagens de estudantes, deixe claro que a atividade é **didática**. Ela não constitui laudo, diagnóstico ou orientação clínica para pacientes.
 
-2.4. **Grupos e compartilhamentos.** Inclua nos seus grupos apenas pessoas com finalidade acadêmica legítima. Revise-os quando turmas e projetos terminarem.
+2.4. **Grupos e compartilhamentos.** Inclua nos seus grupos apenas pessoas com finalidade acadêmica legítima. Não use nomes de pessoas ou de pacientes no nome do grupo. Trate os comentários dos participantes com sigilo: eles são particulares entre você e cada participante. Revise os grupos quando turmas e projetos terminarem.
 
 2.5. **Uso em aulas.** Use as imagens em aulas e materiais didáticos sem identificação de pacientes e com a citação da fonte (Termos de Uso, cláusula 8). Publicações dependem de autorização prévia.
 

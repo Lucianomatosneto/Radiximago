@@ -26,6 +26,8 @@ Esta Política explica, em linguagem simples, **quais dados pessoais** o Rádix 
 | Sessões de acesso: data e hora, endereço de rede (IP), resumo do aparelho (ex.: "Chrome · Windows") e aceite dos termos | segurança da conta, encerrar acessos à distância, comprovar aceites | legítimo interesse em segurança (art. 7º, IX) e exercício regular de direitos (art. 7º, VI) |
 | Registros de auditoria (o que foi feito, por quem, quando e de qual endereço de rede) | rastreabilidade científica, segurança, apuração de incidentes e de uso indevido | legítimo interesse (art. 7º, IX) e exercício regular de direitos (art. 7º, VI) |
 | Conteúdo que você cria: anotações, imagens salvas, compartilhamentos e recados, curadorias, pareceres, anexos | prestar as funções da Plataforma | execução de contrato (art. 7º, V) |
+| Participação em grupos: de quais grupos você participa, quando e como entrou (convite aceito ou pedido autorizado), convites e pedidos com a resposta, e quando você viu as imagens do grupo pela última vez | organizar turmas e atividades de ensino e avisar sobre convites, pedidos e imagens novas | execução de contrato (art. 7º, V) |
+| Comentários em imagens de grupo e mensagens do dono do grupo | permitir a conversa de ensino entre cada participante e o dono do grupo | execução de contrato (art. 7º, V) |
 | Áudio da curadoria por voz | transformar a fala em texto | execução de contrato (art. 7º, V). **O áudio não é gravado**: é convertido em texto em servidor próprio e descartado |
 | Estatísticas de uso agregadas e sem identificação | relatórios, estudos e publicações científicas | não são dados pessoais (art. 12); os registros que lhes dão origem seguem as bases acima |
 | Nome do autor de cada curadoria | reconhecer a autoria e manter a rastreabilidade científica | legítimo interesse (art. 7º, IX) e direito do autor de ter o nome indicado (Lei nº 9.610/1998, art. 24, II) |
@@ -51,6 +53,7 @@ Compartilhamos dados apenas com quem é necessário para a Plataforma funcionar,
 - **Provedor de hospedagem**: guarda a Plataforma, o banco de dados e as cópias de segurança. O nome do provedor, o país dos servidores e o mecanismo de proteção serão informados aqui **antes** de a Plataforma receber usuários fora do ambiente de testes.
 - **Serviço de envio de e-mail (Brevo, empresa com sede na França)**: recebe o seu nome e e-mail para enviar mensagens do sistema (confirmação de cadastro, redefinição de senha, avisos e links de pranchas).
 - **Outros usuários da Plataforma**: veem o seu nome quando você é autor de uma curadoria, envia uma imagem para análise ou compartilha uma imagem ou prancha com eles.
+- **Grupos**: o dono de um grupo vê o nome, o e-mail mascarado e a forma de entrada de quem participa, e os comentários que cada participante faz nas imagens do grupo. Quem procura um grupo vê **só o nome do grupo e quem o criou**. Os participantes não veem uns aos outros, nem os comentários dos colegas.
 - **Autoridades públicas**: somente quando houver obrigação legal ou ordem judicial.
 
 O Rádix Imago **não envia** imagens nem dados de usuários para serviços externos de inteligência artificial. Se isso mudar, esta Política será atualizada antes, com novo aceite.
@@ -69,6 +72,8 @@ O serviço de e-mail (Brevo) trata o seu nome e e-mail na **União Europeia**, e
 | Janelas de envio de foto | 30 dias |
 | Cópias de segurança | as 14 mais recentes (cerca de 14 dias). Dados apagados deixam de existir nas cópias **em até 14 dias**, quando a cópia mais antiga é descartada; até lá, ficam protegidas e não são usadas no dia a dia |
 | Anotações, imagens salvas e compartilhamentos | até você apagar ou desfazer |
+| Participação em grupos, convites e pedidos | enquanto o grupo existir; você pode sair quando quiser. Convites e pedidos sem resposta **vencem em 30 dias** |
+| Comentários em imagens de grupo | até você apagar, até o dono retirar a imagem do grupo ou apagar o grupo |
 | Curadorias aprovadas e seus metadados anonimizados | por tempo indeterminado, como acervo científico (dados anonimizados não são dados pessoais, art. 12; o nome do autor segue a cláusula 3) |
 | Arquivo original identificável, foto recebida e áudio | **não são guardados** (cláusula 4.2) |
 
