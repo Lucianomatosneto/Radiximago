@@ -1877,7 +1877,9 @@
   "Compartilhar": {
     "titulo": "Share",
     "abrir": "Share this image and your notes with another user",
-    "placeholderEmail": "The person's registered e-mail",
+    "placeholderEmail": "Person's name or email",
+    "erroEscolher": "Pick the person from the list or type the full email.",
+    "sugestoes": "People found",
     "placeholderMensagem": "Note for the recipient (optional)",
     "explicacao": "The person will see the image and only the note written here (read-only), in \"Shared with me\". Your \"My notes\" stay private. You can undo it at any time.",
     "cancelar": "Cancel",
