@@ -1877,7 +1877,9 @@
   "Compartilhar": {
     "titulo": "Compartilhar",
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
-    "placeholderEmail": "E-mail do cadastro da pessoa",
+    "placeholderEmail": "Nome ou e-mail da pessoa",
+    "erroEscolher": "Escolha a pessoa na lista ou digite o e-mail completo.",
+    "sugestoes": "Pessoas encontradas",
     "placeholderMensagem": "Anotação para quem vai receber (opcional)",
     "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
     "cancelar": "Cancelar",
