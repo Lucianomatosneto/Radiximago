@@ -184,6 +184,8 @@ describe('procurar e pedir (so estudante)', () => {
     await abrir('estudante', { 'GET /grupos/procurar?*': { corpo: { grupos: [] } } })
     await procurar(usuario, 'xyz')
     expect(await screen.findByText('Nenhum grupo encontrado com esse nome.')).toBeTruthy()
+    // pedido do video (22/11): diz por que a turma pode nao aparecer
+    expect(screen.getByText(/Só aparecem os grupos que o dono deixou abertos a pedidos/)).toBeTruthy()
   })
 
   it.each([
