@@ -2658,6 +2658,14 @@
   },
   "EnviarImagem": {
     "titulo": "Send image",
+    "avisoEnvio": {
+      "titulo": "Before you send",
+      "finalidade": "The image sent to Rádix Imago is used only for teaching and research and is not intended for diagnosis.",
+      "prontuario": "The original exam image must be attached to the patient's record, following your institution's protocol. Rádix does not replace the patient record.",
+      "ciente": "I understand",
+      "voltar": "Back",
+      "erro": "Could not record your acknowledgement. Please try again."
+    },
     "carregando": "Loading...",
     "subtituloEstudante": "Send a photo of a radiograph from your phone or a DICOM file from your computer. Choose whether it stays with you only or goes to a professor or curator for review.",
     "subtituloEquipe": "Send a photo of a radiograph from your phone or DICOM files. They go to the curation queue, where the curator decides what enters the image bank.",
