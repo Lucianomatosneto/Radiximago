@@ -155,7 +155,7 @@ def converter_2d(linha: dict, numero: int, origem: str, destino_dir: str) -> lis
     ds.PixelData = np.ascontiguousarray(pixels).tobytes()
     _meta(ds, SECONDARY_CAPTURE)
     nome = f"{sigla}{numero:02d}_{os.path.splitext(linha['arquivo_original'])[0]}"
-    if linha["uso_permitido"] == "sintetica":
+    if linha["uso_permitido"] == "sintetica" and "SINTETICA" not in nome.upper():
         nome = f"SINTETICA_{nome}"
     saida = os.path.join(destino_dir, nome + ".dcm")
     ds.save_as(saida, enforce_file_format=True)
@@ -263,6 +263,12 @@ def main() -> int:
 
     caminho_rel = os.path.join(args.pasta, "convertidos", "conversao.csv")
     os.makedirs(os.path.dirname(caminho_rel), exist_ok=True)
+    # conversao parcial (--tipos): mantem as linhas dos outros arquivos
+    if os.path.exists(caminho_rel):
+        refeitos = {(r["tipo"], r["arquivo_original"]) for r in relatorio}
+        with open(caminho_rel, encoding="utf-8-sig", newline="") as fh:
+            anteriores = [r for r in csv.DictReader(fh) if (r["tipo"], r["arquivo_original"]) not in refeitos]
+        relatorio = anteriores + relatorio
     with open(caminho_rel, "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=["arquivo_original", "tipo", "dicom", "arquivos"])
         w.writeheader()

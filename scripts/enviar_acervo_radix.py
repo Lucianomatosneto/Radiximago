@@ -156,6 +156,8 @@ def main() -> int:
     parser.add_argument("pasta", help="pasta de trabalho (com convertidos/)")
     parser.add_argument("--api", default="http://localhost:8000")
     parser.add_argument("--tipos", default="", help="lista separada por virgula (padrao: todos)")
+    parser.add_argument("--reenviar", action="store_true",
+                        help="envia de novo mesmo o que ja foi enviado (teste de que o Radix nao duplica)")
     args = parser.parse_args()
 
     tipos = {t.strip() for t in args.tipos.split(",") if t.strip()}
@@ -165,7 +167,7 @@ def main() -> int:
     if os.path.exists(registro):
         with open(registro, encoding="utf-8-sig", newline="") as fh:
             feitos = {l["arquivo"]: l for l in csv.DictReader(fh) if l["resultado"] in ("importada", "ja_existente")}
-    pendentes = [(t, c) for t, c in arquivos if os.path.relpath(c, args.pasta) not in feitos]
+    pendentes = [(t, c) for t, c in arquivos if args.reenviar or os.path.relpath(c, args.pasta) not in feitos]
     print(f"{len(arquivos)} arquivo(s); {len(arquivos) - len(pendentes)} ja enviado(s); {len(pendentes)} a enviar.")
     if pendentes:
         minutos = len(pendentes) * INTERVALO_S / 60
