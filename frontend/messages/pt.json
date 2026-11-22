@@ -2658,6 +2658,14 @@
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
+    "avisoEnvio": {
+      "titulo": "Antes de enviar",
+      "finalidade": "A imagem enviada ao Rádix Imago é usada só para ensino e pesquisa e não tem finalidade diagnóstica.",
+      "prontuario": "A imagem original do exame deve ser anexada ao prontuário do paciente, conforme o protocolo da sua instituição. O Rádix não substitui o prontuário.",
+      "ciente": "Estou ciente",
+      "voltar": "Voltar",
+      "erro": "Não foi possível registrar o aceite. Tente de novo."
+    },
     "carregando": "Carregando...",
     "subtituloEstudante": "Envie a foto de uma radiografia pelo celular ou um arquivo DICOM do computador. Escolha se ela fica só com você ou se vai para um professor ou curador analisar.",
     "subtituloEquipe": "Envie a foto de uma radiografia pelo celular ou arquivos DICOM. Eles vão para a fila de curadoria, onde o curador decide o que entra no banco de imagens.",
