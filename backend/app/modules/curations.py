@@ -137,6 +137,10 @@ class StatusCuradoria(str, enum.Enum):
     DESCARTADA = "descartada"
     SEGUNDA_OPINIAO = "segunda_opiniao"
     BAIXA_QUALIDADE = "baixa_qualidade"
+    # Arquivada (18/11/2026, Bloco 6): imagem aprovada que SAI DE CIRCULACAO
+    # (some da pesquisa, do visualizador dos estudantes, das pranchas e dos
+    # grupos) sem ser apagada nem descartada. Volta com "desarquivar".
+    ARQUIVADA = "arquivada"
 
 
 class StatusRevisao(str, enum.Enum):

@@ -296,6 +296,7 @@ def listar_imagens(
 
     ids = [imagem.id for imagem in imagens]
     status_mais_recente_por_imagem: dict[int, str] = {}
+    ficha_mais_recente_por_imagem: dict[int, int] = {}
     if ids:
         curadorias = (
             db.query(Curation)
@@ -311,6 +312,7 @@ def listar_imagens(
             status_mais_recente_por_imagem.setdefault(
                 curadoria.orthanc_reference_id, curadoria.status
             )
+            ficha_mais_recente_por_imagem.setdefault(curadoria.orthanc_reference_id, curadoria.id)
 
     return [
         {
@@ -321,6 +323,8 @@ def listar_imagens(
             "origem": imagem.origem,
             "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
             "status_curadoria": status_mais_recente_por_imagem.get(imagem.id),
+            # para arquivar / desarquivar direto da lista (18/11/2026)
+            "curation_id": ficha_mais_recente_por_imagem.get(imagem.id),
             # 01/11/2026 (QA item 9): sem ficha e com a moldura resolvida = esta
             # na fila da Curadoria; sem ficha e moldura pendente = aguarda recorte
             "aguarda_recorte": imagem.id not in status_mais_recente_por_imagem

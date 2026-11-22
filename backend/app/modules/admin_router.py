@@ -69,7 +69,8 @@ def _contar_por(db, coluna):
 
 # Situacoes de uma imagem ATIVA, sem sobreposicao: cada imagem cai em
 # exatamente UMA delas, entao a soma de todas = total de imagens ativas.
-SITUACOES_IMAGEM = ("sem_ficha", "pendente", "em_analise", "segunda_opiniao", "aprovada", "descartada", "baixa_qualidade")
+SITUACOES_IMAGEM = ("sem_ficha", "pendente", "em_analise", "segunda_opiniao", "aprovada", "descartada", "baixa_qualidade",
+                    "arquivada")
 
 
 def contar_imagens_por_situacao(db: Session) -> dict:

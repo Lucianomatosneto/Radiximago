@@ -309,7 +309,8 @@
     "aprovada": "Aprovada",
     "segundaOpiniao": "Segunda opinião",
     "baixaQualidade": "Baixa qualidade",
-    "descartada": "Descartada"
+    "descartada": "Descartada",
+    "arquivada": "Arquivada"
   },
   "Dashboard": {
     "visaoGeral": "Visão geral",
@@ -414,7 +415,8 @@
       "segunda_opiniao": "Segunda opinião",
       "baixa_qualidade": "Baixa qualidade",
       "descartada": "Descartada",
-      "sem_ficha": "Sem ficha"
+      "sem_ficha": "Sem ficha",
+      "arquivada": "Arquivada"
     },
     "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila.",
     "colunaNumero": "Nº",
@@ -429,7 +431,15 @@
       "series": "Série",
       "study": "Estudo"
     },
-    "volumeCortes": "Tomografia ({cortes} cortes)"
+    "volumeCortes": "Tomografia ({cortes} cortes)",
+    "arquivo": {
+      "arquivar": "Arquivar",
+      "desarquivar": "Desarquivar",
+      "motivoObrigatorio": "Informe o motivo do arquivamento.",
+      "erro": "Não foi possível concluir a ação.",
+      "arquivada": "Imagem arquivada: saiu da pesquisa e do uso pelos estudantes. Nada foi apagado.",
+      "desarquivada": "Imagem desarquivada: voltou a circular."
+    }
   },
   "MiniaturaImagem": {
     "semPreview": "Sem preview"
@@ -829,7 +839,8 @@
       "enviando": "Enviando...",
       "fechar": "Fechar",
       "erroMotivoObrigatorio": "Informe um motivo.",
-      "erroConcluirAcao": "Não foi possível concluir a ação."
+      "erroConcluirAcao": "Não foi possível concluir a ação.",
+      "arquivarTitulo": "Arquivar imagem (sai de circulação, nada é apagado)"
     },
     "segundaOpiniaoBanner": {
       "titulo": "Imagem aguardando segunda opinião",
@@ -2110,7 +2121,8 @@
     "baixaQualidade": "Baixa qualidade",
     "conferencia": "Conferência: {partes} = {total}",
     "naoConfere": "a soma não confere com o total",
-    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total"
+    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total",
+    "arquivadas": "Arquivadas"
   },
   "MeusAcessos": {
     "titulo": "Meus acessos",

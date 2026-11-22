@@ -309,7 +309,8 @@
     "aprovada": "Approved",
     "segundaOpiniao": "Second opinion",
     "baixaQualidade": "Low quality",
-    "descartada": "Discarded"
+    "descartada": "Discarded",
+    "arquivada": "Archived"
   },
   "Dashboard": {
     "visaoGeral": "Overview",
@@ -414,7 +415,8 @@
       "segunda_opiniao": "Second opinion",
       "baixa_qualidade": "Low quality",
       "descartada": "Discarded",
-      "sem_ficha": "No record"
+      "sem_ficha": "No record",
+      "arquivada": "Archived"
     },
     "totalAguardandoDetalhe": "No record, pending and under review. {fila} are in the Curation queue (or already being curated) and {recorte} still wait for the white frame to be cropped, so they are not in the queue yet.",
     "colunaNumero": "No.",
@@ -429,7 +431,15 @@
       "series": "Series",
       "study": "Study"
     },
-    "volumeCortes": "CT scan ({cortes} slices)"
+    "volumeCortes": "CT scan ({cortes} slices)",
+    "arquivo": {
+      "arquivar": "Archive",
+      "desarquivar": "Unarchive",
+      "motivoObrigatorio": "Please give the reason for archiving.",
+      "erro": "The action could not be completed.",
+      "arquivada": "Image archived: removed from search and student use. Nothing was deleted.",
+      "desarquivada": "Image unarchived: back in circulation."
+    }
   },
   "MiniaturaImagem": {
     "semPreview": "No preview"
@@ -829,7 +839,8 @@
       "enviando": "Sending...",
       "fechar": "Close",
       "erroMotivoObrigatorio": "Enter a reason.",
-      "erroConcluirAcao": "Couldn't complete the action."
+      "erroConcluirAcao": "Couldn't complete the action.",
+      "arquivarTitulo": "Archive image (removed from circulation, nothing is deleted)"
     },
     "segundaOpiniaoBanner": {
       "titulo": "Image awaiting second opinion",
@@ -2110,7 +2121,8 @@
     "baixaQualidade": "Low quality",
     "conferencia": "Check: {partes} = {total}",
     "naoConfere": "the sum does not match the total",
-    "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted"
+    "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted",
+    "arquivadas": "Archived"
   },
   "MeusAcessos": {
     "titulo": "My sessions",
