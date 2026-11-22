@@ -167,7 +167,7 @@ pendente ─┐
 |---|---|
 | Só se edita ficha **pendente** ou **em análise** | `curation/common.py` (`STATUS_EDITAVEIS`) |
 | **Aprovar exige "anonimização validada"** marcada pelo curador (LGPD) | `curation/common.py` (`_executar_aprovacao`) |
-| **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição; desde 22/11/2026 a tela pede os dentes, porque a região da imagem só vem do padrão de panorâmica e tomografia). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
+| **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição; desde 22/11/2026, como a região da imagem só vem do padrão de panorâmica e tomografia, nas outras radiografias o curador precisa marcar os dentes). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
 | **Só administrador e curador gravam na curadoria** (editar ficha, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário). O **suporte só lê** (02/11/2026) | `auth.py` (`PERFIS_CURADORIA_ESCRITA`) |
 | Descartar exige justificativa | `curation/common.py` |
 | Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
