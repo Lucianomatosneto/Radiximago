@@ -108,7 +108,36 @@ def entrar(sessao: Sessao) -> None:
             sys.exit(f"Codigo recusado: {r.get('detail') if isinstance(r, dict) else r}")
     if not sessao.cookie:
         sys.exit("Entrou, mas o Radix nao devolveu a sessao (cookie). Nada foi enviado.")
+    aceitar_termo_ciencia(sessao)
     print("Entrou. Comecando os envios.\n")
+
+
+TERMO_CIENCIA = """
+TERMO DE CIENCIA (o mesmo da tela do Radix, pedido a cada entrada)
+O Radix Imago e uma plataforma academica. As imagens deste sistema sao usadas
+exclusivamente para ensino e pesquisa. As imagens e as curadorias nao tem
+validade para diagnostico, nao substituem laudo nem exame clinico e nao devem
+orientar condutas com pacientes. As imagens sao anonimizadas. E proibido tentar
+identificar pacientes ou copiar imagens para fora do sistema sem autorizacao.
+"""
+
+
+def aceitar_termo_ciencia(sessao: Sessao) -> None:
+    """A pessoa le e aceita o termo de ciencia, como na tela (fica na auditoria)."""
+    status, _, r = sessao.json("GET", "/auth/termo-ciencia")
+    if status != 200 or not isinstance(r, dict):
+        sys.exit(f"Nao foi possivel consultar o termo de ciencia: {r}")
+    if not r.get("pendente"):
+        return
+    print(TERMO_CIENCIA)
+    resposta = input("Estou ciente de que as imagens sao usadas exclusivamente para ensino e pesquisa "
+                     "e nao tem validade para diagnostico. Digite S para aceitar: ").strip().upper()
+    if resposta != "S":
+        sessao.json("POST", "/auth/termo-ciencia/recusar", dados={})
+        sys.exit("Termo nao aceito: sessao encerrada, nada foi enviado.")
+    status, _, r = sessao.json("POST", "/auth/termo-ciencia/aceitar", dados={"versao": r.get("versao"), "ciente": True})
+    if status != 200:
+        sys.exit(f"O Radix nao registrou o aceite do termo: {r.get('detail') if isinstance(r, dict) else r}")
 
 
 def listar_arquivos(pasta: str, tipos: set[str]) -> list[tuple[str, str]]:
@@ -175,6 +204,8 @@ def main() -> int:
             w.writerow(linha)
             fh.flush()
             print(f"[{n}/{len(pendentes)}] {linha['arquivo']}: {linha['resultado']} {linha['orthanc_reference_id']} {linha['detalhe']}")
+            if status in (401, 403):
+                sys.exit("O Radix recusou o envio (permissao/sessao). Parei aqui; nada mais foi enviado.")
             resto = INTERVALO_S - (time.monotonic() - inicio)
             if resto > 0 and n < len(pendentes):
                 time.sleep(resto)
