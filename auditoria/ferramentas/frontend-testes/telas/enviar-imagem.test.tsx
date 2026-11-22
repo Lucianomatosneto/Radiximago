@@ -39,12 +39,21 @@ vi.mock('../../../../frontend/src/components/envios/SeletorPessoasGrupos', () =>
 const sessao = (perfil: string) => ({ id: 1, nome: 'Pessoa Teste', email: 'pessoa@exemplo.test', perfil, foto_perfil_url: null })
 const ANALISTAS = [{ id: 21, nome: 'Prof. Teste', perfil: 'professor' }, { id: 22, nome: 'Curadora Teste', perfil: 'curador' }]
 function rotasPadrao(perfil: string, extra: Record<string, Rota> = {}): Record<string, Rota> {
-  return { 'GET /auth/me': { corpo: sessao(perfil) }, 'GET /envios/analistas': { corpo: { pessoas: ANALISTAS } }, ...extra }
+  return {
+    'GET /auth/me': { corpo: sessao(perfil) },
+    'GET /envios/analistas': { corpo: { pessoas: ANALISTAS } },
+    'POST /envios/aviso-ciente': { corpo: { versao: '2026-11-22' } },
+    ...extra,
+  }
 }
+// 22/11/2026: a tela abre com o aviso (sem finalidade diagnostica); os
+// testes de envio partem de quem ja marcou "Estou ciente"
 async function abrir(perfil: string, extra: Record<string, Rota> = {}) {
   const servidor = servidorFalso(rotasPadrao(perfil, extra))
   montarTela(<EnviarImagemPage />)
   await screen.findByRole('heading', { name: 'Enviar imagem' })
+  fireEvent.click(await screen.findByRole('button', { name: 'Estou ciente' }))
+  await screen.findByLabelText('Escolher arquivo', { selector: 'input' })
   return servidor
 }
 const dicom = (nome: string) => new File(['conteudo de teste'], nome, { type: 'application/dicom' })
@@ -53,6 +62,37 @@ const envios = (s: ReturnType<typeof servidorFalso>) => s.alteracoes().filter((p
 
 beforeEach(() => vi.clearAllMocks())
 afterEach(() => cleanup())
+
+describe('aviso com aceite ao entrar (pedido do video, 22/11/2026)', () => {
+  it('mostra o aviso e esconde o envio ate marcar "Estou ciente"; o aceite vai ao servidor', async () => {
+    const servidor = servidorFalso(rotasPadrao('estudante'))
+    montarTela(<EnviarImagemPage />)
+    const aviso = await screen.findByRole('dialog', { name: 'Antes de enviar' })
+    expect(aviso.textContent).toContain('não tem finalidade diagnóstica')
+    expect(aviso.textContent).toContain('prontuário do paciente')
+    expect(screen.queryByLabelText('Escolher arquivo', { selector: 'input' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Estou ciente' }))
+    await screen.findByLabelText('Escolher arquivo', { selector: 'input' })
+    expect(screen.queryByRole('dialog', { name: 'Antes de enviar' })).toBeNull()
+    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/envios/aviso-ciente', corpo: undefined }])
+  })
+
+  it('se o aceite nao chega ao servidor, avisa e continua bloqueado', async () => {
+    servidorFalso(rotasPadrao('estudante', { 'POST /envios/aviso-ciente': 'SEM_CONEXAO' }))
+    montarTela(<EnviarImagemPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Estou ciente' }))
+    expect(await screen.findByText('Não foi possível registrar o aceite. Tente de novo.')).toBeTruthy()
+    expect(screen.queryByLabelText('Escolher arquivo', { selector: 'input' })).toBeNull()
+  })
+
+  it('"Voltar" sai da tela sem enviar nada', async () => {
+    const servidor = servidorFalso(rotasPadrao('estudante'))
+    montarTela(<EnviarImagemPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Voltar' }))
+    expect(roteador.push).toHaveBeenCalledWith('/')
+    expect(servidor.alteracoes()).toEqual([])
+  })
+})
 
 describe('quem pode enviar', () => {
   it('sem sessao vai ao login; antes disso mostra "Carregando..."', async () => {
