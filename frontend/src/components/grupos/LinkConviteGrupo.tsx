@@ -7,7 +7,7 @@
 // anterior; "Cancelar link" desliga na hora. O servidor guarda so o resumo
 // do codigo: o endereco completo aparece AQUI, uma vez, para copiar.
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { Link2 } from 'lucide-react'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
@@ -23,6 +23,9 @@ export default function LinkConviteGrupo({ grupoId }: { grupoId: number }) {
   const [endereco, setEndereco] = useState('')
   const [copiado, setCopiado] = useState(false)
   const [erro, setErro] = useState('')
+  // cada acao ganha um numero; a resposta da consulta so vale se nada foi
+  // feito depois dela (senao "sem link ativo" atrasado apagava o link gerado)
+  const versao = useRef(0)
 
   const data = (iso: string) => new Date(iso).toLocaleDateString(locale === 'en' ? 'en-US' : 'pt-BR')
 
@@ -31,14 +34,17 @@ export default function LinkConviteGrupo({ grupoId }: { grupoId: number }) {
     setAberto(vai)
     setErro('')
     if (!vai) return
+    const minha = ++versao.current
     const r = await fetchOuNulo(`${API}/grupos/${grupoId}/link-convite`, { credentials: 'include' })
     if (r?.ok) {
       const d = await r.json()
+      if (minha !== versao.current) return
       setAtivo(d.ativo ? { expira_em: d.expira_em, usos: d.usos } : null)
     }
   }
 
   async function gerar() {
+    versao.current += 1
     setErro('')
     setCopiado(false)
     const r = await fetchOuNulo(`${API}/grupos/${grupoId}/link-convite`, { method: 'POST', credentials: 'include' })
@@ -50,6 +56,7 @@ export default function LinkConviteGrupo({ grupoId }: { grupoId: number }) {
   }
 
   async function cancelar() {
+    versao.current += 1
     setErro('')
     const r = await fetchOuNulo(`${API}/grupos/${grupoId}/link-convite`, { method: 'DELETE', credentials: 'include' })
     if (!r) return setErro(tComum('semConexao'))
