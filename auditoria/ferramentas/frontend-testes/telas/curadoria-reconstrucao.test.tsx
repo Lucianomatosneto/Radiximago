@@ -16,7 +16,7 @@ import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 
 const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/curadoria/reconstrucao' }))
-vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => null }))
+vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="Navegação lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => null }))
 
 const CURADOR = { id: 7, nome: 'Curador Teste', email: 'curador@exemplo.test', perfil: 'curador', foto_perfil_url: null }
@@ -57,6 +57,16 @@ beforeEach(() => {
 })
 afterEach(() => cleanup())
 
+describe('tela inteira', () => {
+  // 23/11/2026 (pedido do Luciano): sem a coluna de navegacao, para a imagem
+  // ter mais espaco; "Voltar" leva de volta
+  it('nao mostra a coluna de navegacao', async () => {
+    await abrir(rotas())
+    expect(screen.queryByRole('navigation', { name: 'Navegação lateral' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Voltar' })).toBeTruthy()
+  })
+})
+
 describe('quem pode', () => {
   it.each(['estudante', 'professor', 'suporte', 'pesquisador'])('%s vai para acesso negado', async (perfil) => {
     servidorFalso({ 'GET /auth/me': { corpo: { ...CURADOR, perfil } } })
@@ -73,6 +83,36 @@ describe('tracar a curva e gerar', () => {
     fireEvent.change(altura, { target: { value: '20' } })
     expect(imagem().getAttribute('src')).toContain('altura_mm=20')
     expect(imagem().getAttribute('src')).toContain('espessura_mm=10')
+  })
+
+  // 23/11/2026 (pedido do Luciano): "nao consigo passar os cortes" - a roda
+  // do mouse sobre a imagem e as setas passam os cortes axiais, um corte
+  // (espacamento entre cortes) por vez, sem rolar a pagina
+  it('roda do mouse e setas passam os cortes axiais, um por vez', async () => {
+    await abrir(rotas())
+    const area = screen.getByTestId('area-curva')
+    // comeca em 45% da altura: 59,7 x 0,45 = 26,9 mm
+    expect(screen.getByText('26.9 mm')).toBeTruthy()
+    fireEvent.wheel(area, { deltaY: -100 })
+    expect(screen.getByText('27.2 mm')).toBeTruthy()
+    expect(imagem().getAttribute('src')).toContain('altura_mm=27.2')
+    fireEvent.wheel(area, { deltaY: 100 })
+    fireEvent.wheel(area, { deltaY: 100 })
+    expect(screen.getByText('26.6 mm')).toBeTruthy()
+    fireEvent.keyDown(area, { key: 'ArrowUp' })
+    expect(screen.getByText('26.9 mm')).toBeTruthy()
+    fireEvent.keyDown(area, { key: 'ArrowDown' })
+    expect(screen.getByText('26.6 mm')).toBeTruthy()
+    expect(screen.getByText(/Roda do mouse ou setas/)).toBeTruthy()
+  })
+
+  it('a roda nao passa do primeiro nem do ultimo corte', async () => {
+    await abrir(rotas())
+    const area = screen.getByTestId('area-curva')
+    for (let i = 0; i < 300; i++) fireEvent.wheel(area, { deltaY: -100 })
+    expect(screen.getByText('59.7 mm')).toBeTruthy()
+    for (let i = 0; i < 300; i++) fireEvent.wheel(area, { deltaY: 100 })
+    expect(screen.getByText('0 mm')).toBeTruthy()
   })
 
   it('clica 3 pontos ao longo da arcada e gera: os pontos vao em pixels do corte', async () => {
