@@ -165,3 +165,47 @@ describe('mouse no 3D', () => {
     expect(grupos.volume3d.setToolActive).not.toHaveBeenCalledWith('Pan', expect.anything())
   })
 })
+
+// RECONSTRUCAO PANORAMICA (etapa 3, 23/11/2026): series que o Radix gerou no
+// mesmo estudo (SeriesDescription "RADIX - Panorâmica reconstruída (TC)" e
+// "RADIX - Cortes transversais (TC)") ganham botoes no painel.
+describe('reconstrucao no painel', () => {
+  function montarComReconstrucao() {
+    const r = montar('CT', 120)
+    const s = (window as unknown as { services: Record<string, Record<string, unknown>> }).services
+    const ct = { displaySetInstanceUID: 'ds1', StudyInstanceUID: 'e1', Modality: 'CT', instances: Array.from({ length: 120 }, () => ({})) }
+    const pano = { displaySetInstanceUID: 'pano2', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Panorâmica reconstruída (TC)', SeriesNumber: 9003, instances: [{}] }
+    const panoVelha = { displaySetInstanceUID: 'pano1', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Panorâmica reconstruída (TC)', SeriesNumber: 9001, instances: [{}] }
+    const cortes = { displaySetInstanceUID: 'cortes2', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Cortes transversais (TC)', SeriesNumber: 9004, instances: Array.from({ length: 80 }, () => ({})) }
+    s.displaySetService.getActiveDisplaySets = () => [ct, panoVelha, pano, cortes]
+    const definir = vi.fn()
+    s.viewportGridService.setDisplaySetsForViewport = definir
+    vi.advanceTimersByTime(1000)
+    return { ...r, definir, s, pano }
+  }
+
+  it('botoes "Panorâmica reconstruída" e "Cortes transversais" abrem a reconstrucao mais nova num quadro so', () => {
+    const { comandos, definir } = montarComReconstrucao()
+    comandos.mockClear()
+    fireEvent.click(botao('Panorâmica reconstruída'))
+    expect(comandos).toHaveBeenCalledWith('setHangingProtocol', { protocolId: 'default' })
+    vi.advanceTimersByTime(600)
+    expect(definir).toHaveBeenLastCalledWith({ viewportId: 'ax', displaySetInstanceUIDs: ['pano2'] })
+    fireEvent.click(botao('Cortes transversais'))
+    vi.advanceTimersByTime(600)
+    expect(definir).toHaveBeenLastCalledWith({ viewportId: 'ax', displaySetInstanceUIDs: ['cortes2'] })
+  })
+
+  it('com a panoramica aberta (serie OT) o painel continua, porque o estudo tem a tomografia', () => {
+    const { s, pano } = montarComReconstrucao()
+    s.displaySetService.getDisplaySetByUID = () => pano
+    vi.advanceTimersByTime(1500)
+    expect(painel()).toBeTruthy()
+    expect(botao('4 quadros')).toBeTruthy()
+  })
+
+  it('sem reconstrucao no estudo: sem os botoes', () => {
+    montar('CT', 120)
+    expect(within(painel()).queryByRole('button', { name: 'Panorâmica reconstruída' })).toBeNull()
+  })
+})
