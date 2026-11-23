@@ -3300,7 +3300,13 @@
       "processo_estiloide_alongado": "Processo estiloide alongado",
       "lesao_ossea_radiolucida": "Lesão óssea radiolúcida",
       "lesao_ossea_radiopaca": "Lesão óssea radiopaca"
-    }
+    },
+    "mostrarDeciduos": "Decíduos (51–85)",
+    "filtroSituacao": "Situação do dente",
+    "filtroEstrutura": "Estrutura fora dos dentes",
+    "resumoDenticao": "Dentição: {valor}",
+    "resumoSituacao": "Situação do dente: {valor}",
+    "resumoEstrutura": "Fora dos dentes: {valor}"
   },
   "Triagem": {
     "tituloPrefixo": "Triagem da",
