@@ -12,10 +12,9 @@
 // Canal mandibular (23/11/2026): em cada reconstrucao feita, "Marcar canal
 // mandibular" abre a panoramica para tracar o canal (MarcarCanal).
 
-import { useState, type MouseEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
-import Sidebar from '../../../components/Sidebar'
 import Topbar from '../../../components/Topbar'
 import AvisoSemConexao from '../../../components/AvisoSemConexao'
 import { useVerificarSessao } from '../../../lib/useVerificarSessao'
@@ -105,6 +104,31 @@ export default function ReconstrucaoPage() {
   const [aviso, setAviso] = useState('')
   const [erro, setErro] = useState('')
   const [canalDe, setCanalDe] = useState<number | null>(null)
+  const areaRef = useRef<HTMLDivElement | null>(null)
+
+  // passar os cortes axiais (23/11/2026, pedido do Luciano): um corte
+  // (espacamento entre cortes) por vez, entre o primeiro e o ultimo
+  const passarCortes = useCallback(
+    (sentido: number) => {
+      if (!geo) return
+      const passo = Math.max(geo.espacamento_mm[0], 0.1)
+      setAltura((a) => arred(Math.min(geo.altura_mm, Math.max(0, a + sentido * passo))))
+    },
+    [geo],
+  )
+
+  // roda do mouse sobre a imagem: para cima sobe o corte; nao rola a pagina
+  // (o ouvinte "passive: false" deixa cancelar a rolagem)
+  useEffect(() => {
+    const area = areaRef.current
+    if (!area) return
+    function roda(e: WheelEvent) {
+      e.preventDefault()
+      if (e.deltaY !== 0) passarCortes(e.deltaY < 0 ? 1 : -1)
+    }
+    area.addEventListener('wheel', roda, { passive: false })
+    return () => area.removeEventListener('wheel', roda)
+  }, [passarCortes])
 
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
     if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
@@ -192,8 +216,9 @@ export default function ReconstrucaoPage() {
   const campo = 'w-20 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-ink'
 
   return (
+    // sem a coluna de navegacao (23/11/2026, pedido do Luciano): a imagem
+    // ganha espaco; "Voltar" leva de volta
     <div className="flex min-h-screen bg-base">
-      <Sidebar />
       <div className="flex flex-1 flex-col">
         <Topbar />
         <main className="flex-1 space-y-4 overflow-y-auto p-6">
@@ -245,9 +270,21 @@ export default function ReconstrucaoPage() {
                 </div>
                 {/* a imagem e os pontos usam as MESMAS medidas do corte
                     (viewBox em pixels): o clique vira coluna/linha */}
+                <p className="text-xs text-slate-400">{t('dicaCortes')}</p>
                 <div
+                  ref={areaRef}
                   data-testid="area-curva"
+                  tabIndex={0}
                   onClick={clicar}
+                  onKeyDown={(e) => {
+                    if (e.key === 'ArrowUp' || e.key === 'PageUp') {
+                      e.preventDefault()
+                      passarCortes(1)
+                    } else if (e.key === 'ArrowDown' || e.key === 'PageDown') {
+                      e.preventDefault()
+                      passarCortes(-1)
+                    }
+                  }}
                   className="relative mx-auto w-full max-w-4xl cursor-crosshair overflow-hidden rounded-xl border border-base-border bg-black"
                   style={{ aspectRatio: `${geo.colunas} / ${geo.linhas}`, maxWidth: `calc(68vh * ${geo.colunas / geo.linhas})` }}
                 >
