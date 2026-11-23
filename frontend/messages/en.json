@@ -2893,7 +2893,12 @@
         "erroGerar": "Could not prepare the photo. Try again."
       }
     },
-    "jaExistente": "This image is already in Radix (repeated file). No new copy was created."
+    "jaExistente": "This image is already in Radix (repeated file). No new copy was created.",
+    "tipoExame": {
+      "rotulo": "Exam type (optional)",
+      "naoSei": "Not sure — the system recognizes CT and panoramic",
+      "explica": "Helps the curator choose what to curate. They check and correct it during curation."
+    }
   },
   "Grupos": {
     "titulo": "Groups",
@@ -3246,5 +3251,19 @@
     "erroEnviar": "Could not send. Please try again.",
     "erroLimite": "Too many sends in a short time. Wait a minute and send the rest.",
     "erroCriar": "Could not create the group."
+  },
+  "ModalidadeFila": {
+    "periapical": "Periapical",
+    "interproximal": "Bitewing",
+    "oclusal": "Occlusal",
+    "panoramica": "Panoramic",
+    "tomografia": "CT (CBCT)",
+    "intraoral": "Intraoral (type not given)",
+    "nao_informado": "Not given",
+    "todas": "All",
+    "caixa": "Modality",
+    "pergunta": "Which modality do you want to curate now?",
+    "perguntaExplica": "Choose the exam type; its first image opens next. You can change it later in the \"Modality\" box.",
+    "opcao": "{nome} ({total})"
   }
 }
