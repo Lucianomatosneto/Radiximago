@@ -7,7 +7,8 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 - consultar e pesquisar imagens com curadoria **aprovada**, ver as descrições didáticas e as marcações;
 - fazer **anotações pessoais**, que só você vê, e salvar imagens em "Minhas imagens";
 - **compartilhar** imagens aprovadas com outros usuários da Plataforma e montar pranchas para estudo;
-- enviar **fotos de radiografias** pelo celular ou pela galeria, para ficarem **só com você** ou para serem **analisadas por um professor ou curador** que você escolher.
+- enviar **fotos de radiografias** pelo celular ou pela galeria, para ficarem **só com você** ou para serem **analisadas por um professor ou curador** que você escolher;
+- participar de **grupos**: procurar um grupo pelo nome e pedir para entrar, aceitar ou recusar convites, ver as imagens enviadas ao grupo e comentá-las quando o dono permitir. Seus comentários são vistos só por você e pelo dono do grupo; você pode apagá-los e sair do grupo quando quiser.
 
 ## 2. Seus deveres específicos
 

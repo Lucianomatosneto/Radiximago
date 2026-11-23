@@ -7,7 +7,9 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 - analisar as imagens da fila de curadoria, classificar, marcar achados, escrever a descrição didática e as informações adicionais, e anexar imagens de apoio;
 - **validar a anonimização** e **aprovar** a publicação das imagens no acervo, ou descartá-las;
 - pedir e responder **segunda opinião** de outro curador;
-- enviar arquivos DICOM e fotos e receber imagens enviadas para análise.
+- enviar arquivos DICOM e fotos e receber imagens enviadas para análise;
+- criar **grupos**, convidar pessoas e autorizar ou recusar pedidos de entrada (ninguém entra sem concordar: a pessoa aceita o convite ou você autoriza o pedido);
+- preparar imagens aprovadas para a aula (**modo aula**), com marcações, destaques e mensagem que valem só para o grupo, **sem alterar a ficha oficial**; ler e responder os comentários dos participantes.
 
 ## 2. Seus deveres específicos
 
@@ -26,3 +28,5 @@ Este Anexo complementa os Termos de Uso e vale para quem usa o Rádix Imago com 
 2.7. **Segurança reforçada.** O login em duas etapas é **obrigatório** para o seu perfil.
 
 2.8. **Comunicação de incidentes.** Se perceber que uma imagem identificável foi publicada ou enviada, retire-a de circulação imediatamente e avise privacidade@radiximago.com.br.
+
+2.9. **Grupos.** Não use nomes de pessoas ou de pacientes no nome do grupo. Trate os comentários dos participantes com sigilo: eles são particulares entre você e cada participante. Revise os grupos quando turmas e projetos terminarem.

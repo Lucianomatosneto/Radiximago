@@ -37,14 +37,17 @@ from app.modules.auth import obter_usuario_atual
 from app.modules.sessoes import encerrar_sessao
 from app.modules.users import User, UserRole
 
-TERMOS_VERSAO = "1.1"
-TERMOS_VIGENCIA = "11/11/2026"
+TERMOS_VERSAO = "1.2"
+TERMOS_VIGENCIA = "17/11/2026"
 TERMOS_MUDANCAS = (
-    "Autoria e responsável sem vínculo institucional; diferença entre desidentificação e anonimização; "
-    "papéis de controlador e operador nas imagens de pacientes; bases legais corrigidas; transferência "
-    "internacional conforme a Resolução ANPD nº 19/2024; prazos de resposta e de cópias de segurança; "
-    "foro do consumidor; proibição ampliada de uso em inteligência artificial."
+    "Grupos: você só entra num grupo quando aceita um convite ou quando o dono autoriza o seu pedido, e pode "
+    "sair quando quiser; quem cria o grupo vê os participantes, mas eles não veem uns aos outros; o \"modo aula\" "
+    "não altera a ficha oficial da imagem; comentários em imagens de grupo são particulares entre você e o dono "
+    "do grupo; novos dados tratados e prazos de guarda (convites e pedidos vencem em 30 dias)."
 )
+# historico: 1.1 (11/11/2026) - autoria sem vinculo institucional; desidentificacao x anonimizacao;
+# controlador e operador; bases legais; transferencia internacional (Resolucao ANPD 19/2024);
+# prazos; foro do consumidor; proibicao ampliada de uso em IA.
 CODIGO_PENDENTE = "termos_uso_pendentes"
 PASTA_TEXTOS = Path(__file__).resolve().parents[1] / "termos_texto"
 PERFIS = [p.value for p in UserRole]
