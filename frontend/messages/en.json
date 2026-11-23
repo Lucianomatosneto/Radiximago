@@ -2671,6 +2671,34 @@
     "abaParticipo": "Groups I belong to",
     "pendentes": "{n, plural, one {1 pending item} other {# pending items}}"
   },
+  "LinkConvite": {
+    "titulo": "Invitation link",
+    "explica": "Send this link to the people you want in the group (WhatsApp, email...). They sign in with their own account and only join if they confirm. Valid for 7 days; creating a new one cancels the previous link.",
+    "campo": "Group invitation link",
+    "copiar": "Copy",
+    "copiado": "Copied!",
+    "valeAte": "Valid until {data}",
+    "usos": "{n, plural, =0 {nobody joined yet} one {1 person joined} other {# people joined}}",
+    "gerarDeNovo": "(to see the address again, create a new link)",
+    "nenhum": "No active link.",
+    "gerar": "Create invitation link",
+    "gerarNovo": "Create new link",
+    "cancelar": "Cancel link",
+    "erro": "Could not complete. Please try again.",
+    "entrar": {
+      "titulo": "Group invitation",
+      "criadoPor": "Created by {quem}",
+      "explica": "You were invited to this group. When you join, you receive the images the teacher sends to the group. Other participants do not see that you are in the group.",
+      "botao": "Join the group",
+      "agoraNao": "Not now",
+      "entrou": "You joined the group.",
+      "jaParticipa": "You already belong to this group.",
+      "dono": "You created this group. Send the link to the people you want to invite.",
+      "verGrupos": "See my groups",
+      "invalido": "Invalid or expired invitation link. Ask the group creator for a new one.",
+      "semCodigo": "This address is incomplete. Open the whole link you received."
+    }
+  },
   "EnviarImagem": {
     "titulo": "Send image",
     "avisoEnvio": {
@@ -2854,6 +2882,7 @@
     "foraDaBuscaAjuda": "Students cannot find this group by searching its name; only people you invite can join. To change it, use Edit and tick \"Accept requests from students\".",
     "participantes": "Participants",
     "origem_convite": "accepted invitation",
+    "origem_link": "joined via link",
     "origem_pedido": "request approved",
     "origem_anterior": "was already in the group",
     "tirar": "Remove",
