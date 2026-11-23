@@ -13,7 +13,7 @@
 import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MarcadorTomografia from '../../../../frontend/src/components/curadoria/MarcadorTomografia'
-import type { Marcacao } from '../../../../frontend/src/lib/marcacoes'
+import { marcacoesSobreAImagem, type Marcacao } from '../../../../frontend/src/lib/marcacoes'
 import { montarTela, servidorFalso } from './apoio/montar'
 
 vi.mock('../../../../frontend/src/components/curadoria/MarcadorAchado', () => ({
@@ -94,5 +94,15 @@ describe('marcacoes', () => {
     fireEvent.click(within(lista).getByRole('button', { name: 'Ir' }))
     expect(url()).toContain('plano=sagital&indice=120')
     expect(screen.getByText('1 marcações neste corte')).toBeTruthy()
+  })
+})
+
+// nas telas que desenham as marcacoes SOBRE A MINIATURA (Pesquisa, Minhas
+// imagens, Compartilhadas, segunda opiniao), as marcacoes da tomografia nao
+// entram: elas ficam num corte, nao na miniatura (sairiam no lugar errado)
+describe('telas de leitura', () => {
+  it('so as marcacoes sem corte vao para a miniatura', () => {
+    const rx: Marcacao = { id: 'r', tipo: 'oval', x: 0.1, y: 0.1, largura: 0.1, altura: 0.1 }
+    expect(marcacoesSobreAImagem([rx, JA_MARCADA])).toEqual([rx])
   })
 })
