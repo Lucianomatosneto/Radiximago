@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { ACESO, APAGADO, COR_AVALIACAO, COR_CLASSIFICACAO, Tecla, digitando } from './PainelParecer'
 import { useRotularValor } from './useItensFicha'
-import { formatarData, iniciais, type AnotacaoServidor, type DetalheRevisao, type ItemFicha } from './tipos'
+import { formatarData, iniciais, marcacoesSugeridasDe, type AnotacaoServidor, type DetalheRevisao, type ItemFicha } from './tipos'
 
 const TAG_LOCALE: Record<string, string> = { pt: 'pt-BR', en: 'en-US' }
 const campo =
@@ -92,6 +92,10 @@ export default function PainelDevolvida({
 
   function sugestaoTexto(n: AnotacaoServidor): string | null {
     if (n.valor_sugerido === null || n.valor_sugerido === undefined) return null
+    if (n.tipo_item === 'marcacoes') {
+      const total = marcacoesSugeridasDe(n).length
+      return total ? t('devolvida.marcacoesSugeridas', { total }) : null
+    }
     if (Array.isArray(n.valor_sugerido)) return n.valor_sugerido.join(', ')
     return rotular(n.item, n.valor_sugerido)
   }
@@ -148,6 +152,8 @@ export default function PainelDevolvida({
             const efeito =
               n.tipo_item === 'texto'
                 ? t('devolvida.efeitoTexto')
+                : n.tipo_item === 'marcacoes' && sugerido
+                  ? t('devolvida.efeitoMarcacoes')
                 : (n.tipo_item === 'valor' || n.tipo_item === 'dentes') && sugerido
                   ? t('devolvida.efeitoValor')
                   : t('devolvida.efeitoNota')
