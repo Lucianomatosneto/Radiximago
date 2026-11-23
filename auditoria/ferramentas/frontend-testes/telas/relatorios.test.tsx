@@ -172,3 +172,68 @@ describe('erros', () => {
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
   })
 })
+
+// PEDIDO DO VIDEO (22/11/2026, B1): o curador ve o PROPRIO nome na linha
+// dele (os colegas continuam "Curador 1, 2, 3"), os dados dele ("Meus dados")
+// e os totais aguardando curadoria e curados; o administrador ve cada
+// curador separado por situacao.
+describe('meus dados e cada curador', () => {
+  const IMAGENS = { total: 120, aguardando_curadoria: 35, por_situacao: { aprovada: 30, sem_ficha: 25 }, desativadas: 0 }
+  const COMO_CURADOR = {
+    ...STATS,
+    imagens: IMAGENS,
+    por_curador: { curador_1: 25, curador_2: 10, curador_3: 4 },
+    nomes_curadores: { curador_2: 'Pessoa Teste' },
+    minha_chave: 'curador_2',
+    por_curador_detalhe: {},
+  }
+  const MINHAS = {
+    aprovadas_no_mes: 3,
+    curadorias_no_mes: 4,
+    posicao_ranking: 2,
+    total_curadores: 3,
+    minhas_fichas_total: 10,
+    minhas_por_status: { aprovada: 7, em_analise: 2, segunda_opiniao: 1 },
+  }
+
+  it('curador: a propria linha com o nome e "(você)"; os outros so pela posicao', async () => {
+    await abrir('curador', { 'GET /admin/stats': { corpo: COMO_CURADOR }, 'GET /curation/minhas-estatisticas': { corpo: MINHAS } })
+    const texto = tabela('Fichas por curador').textContent ?? ''
+    expect(texto).toContain('Curador 125')
+    expect(texto).toContain('Pessoa Teste (você)10')
+    expect(texto).toContain('Curador 34')
+  })
+
+  it('curador: "Meus dados" com o total e cada situacao das proprias fichas', async () => {
+    await abrir('curador', { 'GET /admin/stats': { corpo: COMO_CURADOR }, 'GET /curation/minhas-estatisticas': { corpo: MINHAS } })
+    const meus = screen.getByRole('heading', { name: 'Meus dados (todas as minhas fichas)' }).closest('section') as HTMLElement
+    expect(meus.textContent).toContain('Minhas fichas10')
+    expect(meus.textContent).toContain('Aprovada7')
+    expect(meus.textContent).toContain('Em análise2')
+    expect(meus.textContent).toContain('Segunda opinião1')
+  })
+
+  it.each(['curador', 'administrador'])('%s: cartoes "Aguardando curadoria" e "Curadas (no banco)"', async (perfil) => {
+    await abrir(perfil, { 'GET /admin/stats': { corpo: COMO_CURADOR } })
+    expect(valorDoCartao('Aguardando curadoria')).toBe('35')
+    expect(valorDoCartao('Curadas (no banco)')).toBe('30')
+  })
+
+  it('administrador: tabela "Cada curador por situação" com nome, situacoes e total', async () => {
+    await abrir('administrador', {
+      'GET /admin/stats': {
+        corpo: { ...STATS, imagens: IMAGENS, por_curador_detalhe: { '7': { aprovada: 20, em_analise: 5 }, '8': { arquivada: 1 } } },
+      },
+    })
+    const cada = tabela('Cada curador por situação')
+    const linhas = within(cada).getAllByRole('row').map((l) => Array.from(l.children).map((c) => c.textContent))
+    expect(linhas[0]).toEqual(['Curador', 'Aprovada', 'Em análise', 'Segunda opinião', 'Pendente', 'Descartada', 'Arquivada', 'Total'])
+    expect(linhas).toContainEqual(['Curadora Sete', '20', '5', '0', '0', '0', '0', '25'])
+    expect(linhas).toContainEqual(['Curador Oito', '0', '0', '0', '0', '0', '1', '1'])
+  })
+
+  it('curador nao recebe nem ve a tabela de cada curador', async () => {
+    await abrir('curador', { 'GET /admin/stats': { corpo: COMO_CURADOR } })
+    expect(screen.queryByRole('heading', { name: 'Cada curador por situação' })).toBeNull()
+  })
+})

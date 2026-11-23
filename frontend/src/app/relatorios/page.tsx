@@ -45,6 +45,26 @@ interface StatsResponse {
   /** nomes dos curadores de por_curador (01/11/2026: a tela nao depende
    * mais da lista de usuarios, que so o administrador pode ver) */
   nomes_curadores?: Record<string, string>
+  /** contagem unica de imagens (aguardando curadoria, aprovadas...) */
+  imagens?: { aguardando_curadoria: number; por_situacao: Record<string, number> }
+  /** 22/11/2026: a posicao de quem esta logado em por_curador (curador) */
+  minha_chave?: string | null
+  /** 22/11/2026: cada curador por situacao (so o administrador recebe) */
+  por_curador_detalhe?: Record<string, Record<string, number>>
+}
+
+/** colunas de "Cada curador por situacao", na ordem do fluxo da ficha */
+const COLUNAS_SITUACAO = ['aprovada', 'em_analise', 'segunda_opiniao', 'pendente', 'descartada', 'arquivada']
+
+/** chave da traducao (StatusCuradoria) de cada situacao da ficha */
+const CHAVE_STATUS: Record<string, string> = {
+  pendente: 'pendente',
+  em_analise: 'emAnalise',
+  aprovada: 'aprovada',
+  segunda_opiniao: 'segundaOpiniao',
+  baixa_qualidade: 'baixaQualidade',
+  descartada: 'descartada',
+  arquivada: 'arquivada',
 }
 
 interface Usuario {
@@ -57,6 +77,9 @@ interface MinhasEstatisticas {
   curadorias_no_mes: number
   posicao_ranking: number | null
   total_curadores: number
+  /** 22/11/2026 ("Meus dados"): todas as fichas do curador, por situacao */
+  minhas_fichas_total?: number
+  minhas_por_status?: Record<string, number>
 }
 
 async function extrairErro(response: Response, generica: string): Promise<string> {
@@ -137,6 +160,7 @@ export default function RelatoriosPage() {
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tItensAchado = useTranslations('AlteracoesObservadas.itens')
+  const tStatus = useTranslations('StatusCuradoria')
 
   function rotular(opcoes: string[], namespace: 'tipoRadiografia' | 'dificuldade' | 'qualidadeTecnica', chave: string): string {
     if (chave === 'nao_informado') return t('naoInformado')
@@ -223,6 +247,10 @@ export default function RelatoriosPage() {
 
   function rotularCurador(chave: string): string {
     if (chave === 'nao_informado') return t('semCuradorAtribuido')
+    // 22/11/2026: a linha de quem esta logado vem com o proprio nome
+    if (stats?.minha_chave && chave === stats.minha_chave) {
+      return t('voce', { nome: stats.nomes_curadores?.[chave] ?? '' })
+    }
     // 18/11/2026: para quem nao e administrador o servidor manda so a posicao
     // ("curador_1" = quem mais curou), sem nome nem numero de cadastro
     const posicao = /^curador_(\d+)$/.exec(chave)
@@ -285,11 +313,41 @@ export default function RelatoriosPage() {
             </section>
           )}
 
+          {/* "Meus dados" (pedido do video, 22/11/2026): TODAS as fichas do
+              curador logado, por situacao */}
+          {perfil === 'curador' && minhasEstatisticas?.minhas_por_status && (
+            <section className="mb-6 rounded-xl border border-base-border bg-base-surface p-5">
+              <h2 className="mb-3 text-sm font-semibold text-slate-200">{t('meusDados.titulo')}</h2>
+              <dl className="flex flex-wrap items-end gap-x-6 gap-y-3">
+                <div>
+                  <dt className="text-sm text-slate-400">{t('meusDados.minhasFichas')}</dt>
+                  <dd className="mt-1 text-3xl font-bold text-brand-300">{minhasEstatisticas.minhas_fichas_total ?? 0}</dd>
+                </div>
+                {Object.entries(minhasEstatisticas.minhas_por_status)
+                  .sort((a, b) => b[1] - a[1])
+                  .map(([status, total]) => (
+                    <div key={status} className="flex items-center gap-2">
+                      <dt>
+                        <StatusBadge status={status} />
+                      </dt>
+                      <dd className="text-lg font-semibold text-ink">{total}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </section>
+          )}
+
           {stats && (
             <>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <DashboardCard label={t('totalImagens')} valor={stats.total_imagens_orthanc} cor="teal" detalhe={t('totalImagensDetalhe')} />
                 <DashboardCard label={t('totalFichas')} valor={stats.total_fichas_curadoria} cor="blue" />
+                {stats.imagens && (
+                  <>
+                    <DashboardCard label={t('aguardandoCuradoria')} valor={stats.imagens.aguardando_curadoria} cor="amber" />
+                    <DashboardCard label={t('curadasNoBanco')} valor={stats.imagens.por_situacao.aprovada ?? 0} cor="green" />
+                  </>
+                )}
                 {perfil === 'administrador' && (
                   <>
                     <DashboardCard label={t('usuariosAtivos')} valor={stats.usuarios_ativos} cor="green" />
@@ -332,6 +390,42 @@ export default function RelatoriosPage() {
                   nota={perfil === 'administrador' ? undefined : t('rankingSemNomes')}
                 />
               </div>
+
+              {/* administrador: cada curador separado, por situacao (22/11/2026) */}
+              {perfil === 'administrador' && stats.por_curador_detalhe && Object.keys(stats.por_curador_detalhe).length > 0 && (
+                <section className="mt-6 overflow-x-auto rounded-xl border border-base-border bg-base-surface p-5">
+                  <h2 className="mb-4 text-sm font-semibold text-slate-200">{t('cadaCurador')}</h2>
+                  <table className="w-full min-w-[560px] text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-base-border text-slate-400">
+                        <th className="py-2 pr-3 font-medium">{t('curador')}</th>
+                        {COLUNAS_SITUACAO.map((s) => (
+                          <th key={s} className="px-2 py-2 text-right font-medium">
+                            {tStatus(CHAVE_STATUS[s])}
+                          </th>
+                        ))}
+                        <th className="py-2 pl-2 text-right font-medium">{t('total')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(stats.por_curador_detalhe)
+                        .map(([id, porStatus]) => ({ id, porStatus, total: Object.values(porStatus).reduce((a, b) => a + b, 0) }))
+                        .sort((a, b) => b.total - a.total)
+                        .map(({ id, porStatus, total }) => (
+                          <tr key={id} className="border-b border-base-border/50 last:border-0">
+                            <td className="py-2 pr-3 text-ink">{rotularCurador(id)}</td>
+                            {COLUNAS_SITUACAO.map((s) => (
+                              <td key={s} className="px-2 py-2 text-right text-slate-300">
+                                {porStatus[s] ?? 0}
+                              </td>
+                            ))}
+                            <td className="py-2 pl-2 text-right font-semibold text-ink">{total}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </section>
+              )}
             </>
           )}
         </main>

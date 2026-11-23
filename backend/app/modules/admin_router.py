@@ -67,18 +67,40 @@ def _contar_por(db, coluna):
     return {(valor if valor is not None else "nao_informado"): total for valor, total in linhas}
 
 
-def _ranking_sem_nomes(por_curador: dict[str, int]) -> dict[str, int]:
+def _ranking_sem_nomes(por_curador: dict[str, int], meu_id: int | None = None) -> tuple[dict[str, int], str | None]:
     """Troca o numero de cadastro de cada curador pela POSICAO no ranking
     ("curador_1" = quem mais curou). Empate: a ordem entre os empatados nao
-    revela nada (so a contagem aparece). "nao_informado" continua igual."""
+    revela nada (so a contagem aparece). "nao_informado" continua igual.
+    Devolve tambem a posicao de quem esta logado (22/11/2026: o curador ve o
+    proprio nome na linha dele), ou None se ele nao tem fichas."""
     identificados = sorted(
         ((chave, total) for chave, total in por_curador.items() if chave != "nao_informado"),
         key=lambda item: (-item[1], int(item[0])),
     )
-    ranking = {f"curador_{posicao}": total for posicao, (_, total) in enumerate(identificados, start=1)}
+    ranking: dict[str, int] = {}
+    minha_chave = None
+    for posicao, (chave, total) in enumerate(identificados, start=1):
+        ranking[f"curador_{posicao}"] = total
+        if meu_id is not None and chave == str(meu_id):
+            minha_chave = f"curador_{posicao}"
     if "nao_informado" in por_curador:
         ranking["nao_informado"] = por_curador["nao_informado"]
-    return ranking
+    return ranking, minha_chave
+
+
+def _detalhe_por_curador(db) -> dict[str, dict[str, int]]:
+    """Fichas de CADA curador por situacao (so para o administrador -
+    pedido do video, 22/11/2026)."""
+    detalhe: dict[str, dict[str, int]] = {}
+    linhas = (
+        db.query(Curation.curador_id, Curation.status, func.count(Curation.id))
+        .filter(Curation.curador_id.isnot(None))
+        .group_by(Curation.curador_id, Curation.status)
+        .all()
+    )
+    for curador_id, status, total in linhas:
+        detalhe.setdefault(str(curador_id), {})[status] = total
+    return detalhe
 
 
 # Situacoes de uma imagem ATIVA, sem sobreposicao: cada imagem cai em
@@ -174,6 +196,8 @@ def obter_indicadores(
     # e o numero de curadorias - sem nome, numero de cadastro ou instituicao.
     eh_admin = usuario.perfil == UserRole.administrador
     nomes_curadores: dict[str, str] = {}
+    minha_chave: str | None = None
+    por_curador_detalhe: dict[str, dict[str, int]] = {}
     if eh_admin:
         nomes_curadores = {
             str(uid): nome
@@ -181,8 +205,13 @@ def obter_indicadores(
                 User.id.in_([int(k) for k in por_curador if k != "nao_informado"])
             )
         }
+        por_curador_detalhe = _detalhe_por_curador(db)
     else:
-        por_curador = _ranking_sem_nomes(por_curador)
+        # 22/11/2026 (pedido do video): os colegas continuam so pela posicao,
+        # mas a linha de quem esta logado vem com o PROPRIO nome
+        por_curador, minha_chave = _ranking_sem_nomes(por_curador, usuario.id)
+        if minha_chave:
+            nomes_curadores = {minha_chave: usuario.nome}
     return {
         # total de imagens ATIVAS = soma exata de imagens.por_situacao
         "total_imagens_orthanc": total_imagens,
@@ -225,6 +254,11 @@ def obter_indicadores(
         # nomes de quem aparece em "Fichas por curador" - SO para o
         # administrador (18/11/2026); para os demais, vazio
         "nomes_curadores": nomes_curadores,
+        # posicao de quem esta logado em por_curador (so para quem nao e
+        # administrador; None se nao tem fichas)
+        "minha_chave": minha_chave,
+        # cada curador por situacao - SO para o administrador
+        "por_curador_detalhe": por_curador_detalhe,
     }
 
 

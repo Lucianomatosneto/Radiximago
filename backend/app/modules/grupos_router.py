@@ -41,6 +41,8 @@ mascarados. Tudo vai para a auditoria, sem nomes (so os numeros de cadastro).
 
 from __future__ import annotations
 
+import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -54,8 +56,8 @@ from app.core.rate_limit import limiter
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import exigir_perfis, obter_usuario_atual
 from app.modules.grupos import (
-    DIAS_VALIDADE_ENTRADA, MEMBROS_MAX, NOME_GRUPO_MAX, ORIGEM_CONVITE, ORIGEM_PEDIDO,
-    GrupoEntrada, GrupoEnvio, GrupoEnvioMembro,
+    DIAS_VALIDADE_ENTRADA, DIAS_VALIDADE_LINK, MEMBROS_MAX, NOME_GRUPO_MAX, ORIGEM_CONVITE, ORIGEM_LINK,
+    ORIGEM_PEDIDO, GrupoEntrada, GrupoEnvio, GrupoEnvioMembro, GrupoLinkConvite,
 )
 from app.modules.prancha_router import _mascarar
 from app.modules.users import User, UserRole
@@ -552,3 +554,120 @@ def desistir_do_pedido(entrada_id: int, usuario: User = Depends(obter_usuario_at
     _auditar(db, usuario, "grupo_pedido_cancelado", grupo, "desistiu do pedido")
     db.commit()
     return {"mensagem": "Pedido cancelado."}
+
+
+# ---------------------------------------------------------------------
+# LINK DE CONVITE (pedido do video, 22/11/2026)
+# O dono gera um link e manda para a turma; quem abre (com login) ve o nome
+# do grupo e quem o criou e so entra se confirmar (consentimento, D1).
+# O banco guarda so o resumo SHA-256 do codigo; o codigo completo vai uma vez
+# para o dono copiar. Um ativo por grupo; DIAS_VALIDADE_LINK dias; o dono
+# cancela quando quiser. Link vencido, cancelado ou inventado: mesma resposta.
+# ---------------------------------------------------------------------
+LINK_INVALIDO = "Link de convite invalido ou vencido. Peca um novo link a quem criou o grupo."
+CODIGO_MAX = 100
+
+
+class LinkConviteDados(BaseModel):
+    codigo: str = Field(min_length=20, max_length=CODIGO_MAX)
+
+
+def _resumo(codigo: str) -> str:
+    return hashlib.sha256(codigo.encode()).hexdigest()
+
+
+def _link_ativo(db: Session, grupo_id: int) -> GrupoLinkConvite | None:
+    return (db.query(GrupoLinkConvite)
+            .filter(GrupoLinkConvite.grupo_id == grupo_id, GrupoLinkConvite.cancelado_em.is_(None),
+                    GrupoLinkConvite.expira_em > _agora())
+            .order_by(GrupoLinkConvite.id.desc()).first())
+
+
+def _cancelar_links(db: Session, grupo_id: int) -> int:
+    ativos = (db.query(GrupoLinkConvite)
+              .filter(GrupoLinkConvite.grupo_id == grupo_id, GrupoLinkConvite.cancelado_em.is_(None)).all())
+    for link in ativos:
+        link.cancelado_em = _agora()
+    return len(ativos)
+
+
+def _grupo_do_link(db: Session, codigo: str) -> tuple[GrupoLinkConvite, GrupoEnvio]:
+    link = db.query(GrupoLinkConvite).filter(GrupoLinkConvite.codigo_hash == _resumo(codigo)).first()
+    if not link or link.cancelado_em is not None or link.expira_em <= _agora():
+        raise HTTPException(status_code=404, detail=LINK_INVALIDO)
+    grupo = db.get(GrupoEnvio, link.grupo_id)
+    if not grupo:
+        raise HTTPException(status_code=404, detail=LINK_INVALIDO)
+    return link, grupo
+
+
+@router.post("/{grupo_id}/link-convite")
+@limiter.limit("10/minute")
+def gerar_link_convite(request: Request, grupo_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_GRUPOS)),
+                       db: Session = Depends(get_db)):
+    grupo = _grupo_do_dono(db, grupo_id, usuario)
+    anteriores = _cancelar_links(db, grupo.id)
+    codigo = secrets.token_urlsafe(32)
+    expira = _agora() + timedelta(days=DIAS_VALIDADE_LINK)
+    db.add(GrupoLinkConvite(grupo_id=grupo.id, codigo_hash=_resumo(codigo), criado_por_id=usuario.id, expira_em=expira))
+    _auditar(db, usuario, "grupo_link_criado", grupo,
+             f"vale {DIAS_VALIDADE_LINK} dias; links anteriores cancelados: {anteriores}")
+    db.commit()
+    return {"codigo": codigo, "expira_em": _data(expira)}
+
+
+@router.get("/{grupo_id}/link-convite")
+def situacao_link_convite(grupo_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_GRUPOS)),
+                          db: Session = Depends(get_db)):
+    grupo = _grupo_do_dono(db, grupo_id, usuario)
+    link = _link_ativo(db, grupo.id)
+    if not link:
+        return {"ativo": False}
+    return {"ativo": True, "expira_em": _data(link.expira_em), "usos": link.usos}
+
+
+@router.delete("/{grupo_id}/link-convite")
+def cancelar_link_convite(grupo_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_GRUPOS)),
+                          db: Session = Depends(get_db)):
+    grupo = _grupo_do_dono(db, grupo_id, usuario)
+    n = _cancelar_links(db, grupo.id)
+    if n:
+        _auditar(db, usuario, "grupo_link_cancelado", grupo, f"{n} link(s)")
+    db.commit()
+    return {"mensagem": "Link de convite cancelado."}
+
+
+@router.post("/link-convite/ver")
+@limiter.limit("20/minute")
+def ver_link_convite(request: Request, dados: LinkConviteDados, usuario: User = Depends(obter_usuario_atual),
+                     db: Session = Depends(get_db)):
+    """O que a pessoa ve antes de confirmar: so o nome do grupo e quem o criou (D2)."""
+    _link, grupo = _grupo_do_link(db, dados.codigo)
+    dono = db.get(User, grupo.dono_id)
+    if grupo.dono_id == usuario.id:
+        situacao = "dono"
+    elif _membro(db, grupo.id, usuario.id):
+        situacao = PARTICIPA
+    else:
+        situacao = None
+    return {"grupo": {"id": grupo.id, "nome": grupo.nome}, "criador": dono.nome if dono else None, "situacao": situacao}
+
+
+@router.post("/link-convite/entrar")
+@limiter.limit("10/minute")
+def entrar_por_link(request: Request, dados: LinkConviteDados, usuario: User = Depends(obter_usuario_atual),
+                    db: Session = Depends(get_db)):
+    link, grupo = _grupo_do_link(db, dados.codigo)
+    if grupo.dono_id == usuario.id:
+        raise HTTPException(status_code=409, detail="Voce e quem criou este grupo.")
+    if _membro(db, grupo.id, usuario.id):
+        return {"situacao": PARTICIPA, "grupo": {"id": grupo.id, "nome": grupo.nome}}
+    pendente = _pendente(db, grupo.id, usuario.id)
+    if pendente:
+        _decidir(pendente, "aceito")
+    _entrar(db, grupo, usuario.id, ORIGEM_LINK)
+    link.usos += 1
+    _auditar(db, usuario, "grupo_entrada_por_link", grupo, f"pessoa {usuario.id}")
+    db.commit()
+    return {"situacao": PARTICIPA, "grupo": {"id": grupo.id, "nome": grupo.nome}}
+

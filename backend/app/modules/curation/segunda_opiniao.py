@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from app.core.database import get_db
-from app.core.limites import MAX_ACHADOS, TEXTO_LONGO_MAX
+from app.core.limites import MAX_ACHADOS, MAX_MARCACOES, TEXTO_LONGO_MAX
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User, UserRole
 from app.modules.curations import (
@@ -43,13 +43,14 @@ from .common import (
     STATUS_FINAIS,
     _buscar_ficha,
     _executar_aprovacao,
+    _executar_arquivamento,
     _executar_descarte,
     _registrar_auditoria,
     _registrar_historico,
     _valor,
 )
 from .router import router
-from .schemas import AplicarDecisaoRevisao, ReviewRequest, ReviewRespond
+from .schemas import AplicarDecisaoRevisao, Marcacao, ReviewRequest, ReviewRespond
 
 
 # ---------------------------------------------------------------------
@@ -58,6 +59,8 @@ from .schemas import AplicarDecisaoRevisao, ReviewRequest, ReviewRespond
 #   "dentes": o revisor pode propor a lista de dentes (FDI)
 #   "texto": acrescentar = juntar a sugestao ao proprio texto do item
 #   "nota":  acrescentar = registrar a anotacao nas observacoes internas
+#   "marcacoes" (22/11/2026): o revisor desenha marcacoes na imagem;
+#            acrescentar = elas entram na ficha DEPOIS das que ja existiam
 # ---------------------------------------------------------------------
 ITENS_REVISAVEIS: dict[str, tuple[str, str, type | None]] = {
     "tipo_radiografia": ("Tipo de radiografia", "valor", TipoRadiografia),
@@ -68,7 +71,7 @@ ITENS_REVISAVEIS: dict[str, tuple[str, str, type | None]] = {
     "achado_principal": ("Achado principal", "valor", AchadoPrincipal),
     "alteracoes_observadas": ("Alterações observadas", "nota", None),
     "erros_tecnicos": ("Erros técnicos", "nota", None),
-    "marcacoes": ("Marcações na imagem", "nota", None),
+    "marcacoes": ("Marcações na imagem", "marcacoes", None),
     "achados_detalhe": ("Achados detalhados", "texto", None),
     "descricao_didatica": ("Descrição didática", "texto", None),
     "observacoes_internas": ("Observações internas", "texto", None),
@@ -97,6 +100,11 @@ def _validar_sugestao(chave: str, tipo: str, enum_valores: type | None, valor):
         if not isinstance(valor, list) or any(not isinstance(d, int) or d not in DENTES_PERMANENTES for d in valor):
             raise HTTPException(status_code=422, detail="Dentes sugeridos inválidos (use a notação FDI, 11 a 48).")
         return sorted(set(valor))
+    if tipo == "marcacoes":
+        # ja validadas uma a uma pelo esquema (forma, coordenadas de 0 a 1)
+        if not isinstance(valor, list) or any(not isinstance(m, Marcacao) for m in valor):
+            raise HTTPException(status_code=422, detail="Marcações sugeridas inválidas.")
+        return [m.model_dump(mode="json", exclude_none=True) for m in valor]
     raise HTTPException(status_code=422, detail=f"O item '{chave}' não aceita valor sugerido, só anotação.")
 
 
@@ -132,10 +140,16 @@ def solicitar_segunda_opiniao(
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    """Solicita segunda opiniao para uma ficha. Exige justificativa."""
-    ficha = _buscar_ficha(db, curation_id, usuario)
+    """Solicita segunda opiniao para uma ficha. Exige justificativa.
 
-    if ficha.status in STATUS_FINAIS:
+    Ficha APROVADA tambem pode (pedido do video, 22/11/2026 - "Pedir segunda
+    opiniao" em Minhas imagens): ela continua aprovada, e na Pesquisa,
+    enquanto a revisao acontece. Descartada e arquivada continuam fora.
+    """
+    ficha = _buscar_ficha(db, curation_id, usuario)
+    ja_aprovada = ficha.status == StatusCuradoria.APROVADA.value
+
+    if ficha.status in STATUS_FINAIS and not ja_aprovada:
         raise HTTPException(
             status_code=409,
             detail=f"Nao e possivel solicitar segunda opiniao: a ficha ja esta '{ficha.status}'.",
@@ -178,7 +192,8 @@ def solicitar_segunda_opiniao(
     db.add(review)
 
     status_anterior = ficha.status
-    ficha.status = StatusCuradoria.SEGUNDA_OPINIAO.value
+    if not ja_aprovada:
+        ficha.status = StatusCuradoria.SEGUNDA_OPINIAO.value
 
     try:
         db.flush()
@@ -194,7 +209,7 @@ def solicitar_segunda_opiniao(
 
     _registrar_historico(
         db, ficha.id, usuario.id, "solicitacao_segunda_opiniao",
-        status_anterior, StatusCuradoria.SEGUNDA_OPINIAO.value, motivo,
+        status_anterior, ficha.status, motivo,
     )
     _registrar_auditoria(
         db, usuario.id, "solicitacao_segunda_opiniao", ficha.id, "sucesso",
@@ -207,7 +222,7 @@ def solicitar_segunda_opiniao(
         "mensagem": "Segunda opiniao solicitada com sucesso.",
         "review_id": review.id,
         "curation_id": curation_id,
-        "status_ficha": StatusCuradoria.SEGUNDA_OPINIAO.value,
+        "status_ficha": ficha.status,
         "status_review": review.status,
     }
 
@@ -339,18 +354,25 @@ def aplicar_decisao_revisao(
     """
     ficha = _buscar_ficha(db, curation_id, usuario)
 
-    if ficha.status in STATUS_FINAIS:
-        raise HTTPException(
-            status_code=409,
-            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
-        )
-
     review = (
         db.query(CurationReview)
         .filter(CurationReview.curation_id == curation_id)
         .order_by(CurationReview.id.desc())
         .first()
     )
+    # ficha aprovada com segunda opiniao respondida (pedido de Minhas
+    # imagens, 22/11/2026): a decisao ainda vale para ela
+    revisao_de_aprovada = (
+        ficha.status == StatusCuradoria.APROVADA.value
+        and review is not None
+        and review.status == StatusRevisao.RESPONDIDA.value
+    )
+    if ficha.status in STATUS_FINAIS and not revisao_de_aprovada:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+
     if not review:
         raise HTTPException(
             status_code=409,
@@ -381,6 +403,11 @@ def aplicar_decisao_revisao(
             db, ficha, usuario, dados.anonimizacao_validada, dados.observacoes,
             acao="aprovacao_pos_segunda_opiniao", origem=origem,
         )
+    elif revisao_de_aprovada:
+        # ficha que ja estava no banco nao e descartada: e ARQUIVADA (sai de
+        # circulacao, nada e apagado - regra do Bloco 6)
+        motivo = (dados.motivo or "").strip()
+        _executar_arquivamento(db, ficha, usuario, motivo + origem if motivo else "")
     else:
         _executar_descarte(
             db, ficha, usuario, dados.motivo,
@@ -455,7 +482,7 @@ def _pode_incorporar(review: CurationReview, ficha: Curation | None, usuario: Us
     return (
         ficha is not None
         and review.status == StatusRevisao.RESPONDIDA.value
-        and ficha.status == StatusCuradoria.SEGUNDA_OPINIAO.value
+        and ficha.status in (StatusCuradoria.SEGUNDA_OPINIAO.value, StatusCuradoria.APROVADA.value)
         and (review.solicitante_id == usuario.id or _eh_admin(usuario))
     )
 
@@ -512,6 +539,16 @@ def incorporar_anotacao(
                 ficha.observacoes_internas, f"[Segunda opinião, {data} - {rotulo}] {nota.nota}",
             )
         efeito = f"{rotulo}: {anterior!r} -> {nota.valor_sugerido!r}"
+    elif tipo == "marcacoes" and isinstance(nota.valor_sugerido, list) and nota.valor_sugerido:
+        atuais = list(ficha.marcacoes or [])
+        if len(atuais) + len(nota.valor_sugerido) > MAX_MARCACOES:
+            raise HTTPException(status_code=422, detail=f"A ficha ficaria com mais de {MAX_MARCACOES} marcações.")
+        ficha.marcacoes = atuais + list(nota.valor_sugerido)
+        if nota.nota:
+            ficha.observacoes_internas = _juntar_texto(
+                ficha.observacoes_internas, f"[Segunda opinião, {data} - {rotulo}] {nota.nota}",
+            )
+        efeito = f"{rotulo}: {len(nota.valor_sugerido)} marcação(ões) do revisor acrescentada(s)"
     elif tipo == "texto":
         texto = nota.nota or (nota.valor_sugerido if isinstance(nota.valor_sugerido, str) else None)
         if not texto:

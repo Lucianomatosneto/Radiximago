@@ -46,6 +46,10 @@ class CompartilhamentoImagem(Base):
     # o destinatario "apagou" o recado da propria visao (o texto continua
     # guardado; um recado NOVO do remetente volta a aparecer)
     mensagem_oculta: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=false(), default=False)
+    # 22/11/2026 (video): quem compartilha decide se a pessoa pode responder.
+    # Os compartilhamentos antigos continuam permitindo (server_default true);
+    # os novos vem do que quem compartilhou marcou.
+    permite_resposta: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"), default=False)
 
     __table_args__ = (
         # a mesma imagem nao e compartilhada duas vezes com a mesma pessoa

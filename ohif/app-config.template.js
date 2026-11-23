@@ -477,7 +477,13 @@ window.config = {
     if (pai) pai.appendChild(n);
     return n;
   }
-  function cor(m) { return (m && m.achado && CORES[m.achado]) || '#FFFFFF'; }
+  // marcacao SUGERIDA pelo revisor da segunda opiniao (pedido do video,
+  // 22/11/2026): sempre rosa e tracejada, para nao confundir com as do curador
+  var COR_SUGERIDA = '#F472B6';
+  function cor(m) {
+    if (m && m.sugerida) return COR_SUGERIDA;
+    return (m && m.achado && CORES[m.achado]) || '#FFFFFF';
+  }
 
   // ---------- caixinha com a descricao (fora do SVG, que e redesenhado) ----------
   var dica = null;
@@ -662,6 +668,7 @@ window.config = {
     if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: HALO, 'stroke-width': larguraHalo, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
     var traco = { d: g.caminho, stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round', fill: 'none' };
     if (!g.seta) { traco.fill = c; traco['fill-opacity'] = '0.06'; }
+    if (m && m.sugerida) traco['stroke-dasharray'] = '6 4';
     el('path', traco, grupo);
     if (g.seta) el('path', { d: g.ponta, fill: 'none', stroke: c, 'stroke-width': larguraTraco, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, grupo);
     el('line', { x1: g.ancora[0], y1: g.ancora[1], x2: g.selo[0], y2: g.selo[1], stroke: HALO, 'stroke-width': '1.75', 'stroke-linecap': 'round' }, grupo);

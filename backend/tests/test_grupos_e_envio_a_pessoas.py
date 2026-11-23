@@ -128,7 +128,13 @@ def test_telas_de_grupos_e_recebidas():
 
     front = Path(__file__).resolve().parents[2] / "frontend/src"
     assert "href: '/grupos'" in (front / "components/Sidebar.tsx").read_text(encoding="utf-8")
-    assert "somentePessoas" in (front / "app/grupos/page.tsx").read_text(encoding="utf-8")
-    assert '<SecaoEnvios modo="recebidas" />' in (front / "app/compartilhadas-comigo/page.tsx").read_text(encoding="utf-8")
+    # 22/11/2026: a lista de grupos que criei virou componente da tela Grupos unica
+    assert "somentePessoas" in (front / "components/grupos/GruposCriados.tsx").read_text(encoding="utf-8")
+    # o endereco antigo /meus-grupos leva a aba "Grupos de que participo" (sem pagina propria)
+    config = (front.parent / "next.config.mjs").read_text(encoding="utf-8")
+    assert "source: '/meus-grupos'" in config and "destination: '/grupos?aba=participo'" in config
+    assert not (front / "app/meus-grupos/page.tsx").exists()
+    # 22/11/2026: as recebidas de colegas viraram grade (GradeEnvios modo recebidas)
+    assert '<GradeEnvios modo="recebidas"' in (front / "app/compartilhadas-comigo/page.tsx").read_text(encoding="utf-8")
     envio = (front / "app/enviar-imagem/page.tsx").read_text(encoding="utf-8")
     assert "dados.append('grupos'" in envio and "if (!ehEstudante)" in envio

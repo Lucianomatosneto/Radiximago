@@ -31,6 +31,8 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
   const [aberto, setAberto] = useState(false)
   const [email, setEmail] = useState('')
   const [mensagem, setMensagem] = useState('')
+  // 22/11/2026 (video): quem compartilha decide se a pessoa pode responder
+  const [permiteResposta, setPermiteResposta] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [aviso, setAviso] = useState('')
   // convite para cadastro (vem na resposta neutra): quem compartilha
@@ -74,6 +76,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
     setEmail('')
     setEscolhida(null)
     setMensagem('')
+    setPermiteResposta(false)
     setAviso('')
     setConvite(null)
     setErro('')
@@ -104,8 +107,8 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(
           escolhida
-            ? { usuario_id: escolhida.id, mensagem: mensagem.trim() || null }
-            : { email: valor, mensagem: mensagem.trim() || null }
+            ? { usuario_id: escolhida.id, mensagem: mensagem.trim() || null, permite_resposta: permiteResposta }
+            : { email: valor, mensagem: mensagem.trim() || null, permite_resposta: permiteResposta }
         ),
       })
       if (!r.ok) {
@@ -126,6 +129,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
       setEmail('')
       setEscolhida(null)
       setMensagem('')
+    setPermiteResposta(false)
       setAberto(false)
       void carregarEnviados()
     } catch {
@@ -248,6 +252,10 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
             rows={2}
             className="w-full resize-y rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
           />
+          <label className="flex items-center gap-1.5 text-xs text-ink">
+            <input type="checkbox" checked={permiteResposta} onChange={(e) => setPermiteResposta(e.target.checked)} className="accent-teal-400" />
+            {t('permitirResposta')}
+          </label>
           <p className="text-[10px] leading-snug text-slate-500">{t('explicacao')}</p>
           <div className="flex justify-end gap-1.5">
             <button type="button" onClick={() => setAberto(false)} className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/10">

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.19 — 22/11/2026 |
+| Versão do documento | 1.23 — 22/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -162,6 +162,8 @@ pendente ─┐
           │                       ├─ descartar → descartada (final)
           │                       └─ pedir 2ª opinião → segunda_opiniao ─┬─ aprovar → aprovada
           │                                                              └─ descartar → descartada
+aprovada ── pedir 2ª opinião (continua aprovada e na Pesquisa) ─┬─ manter → aprovada
+                                                                └─ arquivar → arquivada
 ```
 
 | Regra | Onde |
@@ -171,15 +173,16 @@ pendente ─┐
 | **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição; desde 22/11/2026, como a região da imagem só vem do padrão de panorâmica e tomografia, nas outras radiografias o curador precisa marcar os dentes). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
 | **Só administrador e curador gravam na curadoria** (editar ficha, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário). O **suporte só lê** (02/11/2026) | `auth.py` (`PERFIS_CURADORIA_ESCRITA`) |
 | Descartar exige justificativa | `curation/common.py` |
-| Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
+| Ficha aprovada ou descartada não é reprocessada (exceção: a decisão de uma segunda opinião pedida para ficha aprovada, abaixo) | `aprovacao_descarte.py`, `segunda_opiniao.py` |
 | Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
 | Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
-| Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto ou valor proposto; **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
+| Segunda opinião de **ficha já aprovada** (22/11/2026, pedida por curador ou administrador em Minhas imagens, uma por ficha): a ficha **continua aprovada e na Pesquisa** durante a revisão; quem pediu pode acrescentar as anotações à ficha; a decisão é **manter aprovada** ou **arquivar** (com motivo; sai de circulação, nada é apagado). Descartada e arquivada continuam sem segunda opinião | `curation/segunda_opiniao.py` |
+| Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto, valor proposto ou marcação sugerida; no item **Marcações na imagem** o revisor pode **desenhar novas marcações** (até o mesmo limite de marcações da ficha), que quem pediu vê **tracejadas em rosa** na imagem enquanto a anotação está a decidir e, se acrescentar à curadoria, passam a fazer parte das marcações da ficha (22/11/2026); **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
 **Outras regras de negócio:**
 - Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 01/11/2026 (auditoria do administrador, A3, decisão do Luciano), **só estudante** entra assim que confirma o e-mail (auditoria `aprovacao_automatica_solicitacao`, quem aprovou: o sistema). **Professor, curador e pesquisador** sempre dependem da aprovação do administrador (`aprovacao_solicitacao_acesso`, com o nome de quem aprovou), porque professor e curador trabalham com a curadoria e o envio de imagens. Entre 28/10 e 01/11, professor e pesquisador também entravam sozinhos. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
-- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Desde 22/11/2026 a pessoa é escolhida **pelo nome** (a mesma busca da prancha, com o e-mail mascarado; vai o `usuario_id`) ou pelo e-mail, como antes; pessoa inativa ou inexistente recebe a mesma resposta neutra. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
+- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Desde 22/11/2026 a pessoa é escolhida **pelo nome** (a mesma busca da prancha, com o e-mail mascarado; vai o `usuario_id`) ou pelo e-mail, como antes; pessoa inativa ou inexistente recebe a mesma resposta neutra. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou. **Responder** a quem compartilhou só é possível se quem compartilhou marcou **"Permitir que a pessoa responda"** (`permite_resposta`; desmarcado por padrão; os compartilhamentos anteriores a 22/11/2026 continuam permitindo; a resposta volta permitindo resposta, para a conversa seguir).
 - Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
 
 ## 3. Limites por usuário e globais (ASVS 2.1.3, 2.3.2 e 2.4.1)
@@ -199,6 +202,9 @@ pendente ─┐
 | **Grupos**: pedir para entrar (estudante) e convidar (dono do grupo) | 20 por minuto; um convite ou pedido pendente por pessoa em cada grupo; vencem em 30 dias | conta | `grupos_router.py` |
 | **Grupos**: enviar imagem ao grupo (modo aula; só imagem aprovada e ativa; mensagem até 1.000 letras, até 50 marcações) | 30 por minuto | conta | `grupos_aula_router.py` |
 | **Grupos**: comentar uma imagem do grupo e responder (comentário particular, até 500 letras) | 20 por minuto | conta | `grupos_aula_router.py` |
+| **Grupos** (22/11/2026): gerar link de convite (só o dono; um ativo por grupo; vale 7 dias) | 10 por minuto | conta | `grupos_router.py` |
+| **Grupos**: ver o grupo pelo link de convite (antes de confirmar) | 20 por minuto | conta | `grupos_router.py` |
+| **Grupos**: entrar no grupo pelo link de convite (só com login e confirmando) | 10 por minuto | conta | `grupos_router.py` |
 | Transcrição de voz | 120 trechos por minuto; áudio de até 10 MB | conta | `voz_router.py` |
 | **E-mail com uma imagem** (para o próprio e-mail) | 20 por hora | conta | `search_router.py` |
 | **E-mail com várias imagens** | 5 por hora; até 10 imagens por e-mail | conta | `search_router.py` |
@@ -263,4 +269,8 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
 | 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
 | 1.18 | 22/11/2026 | Pedidos do vídeo das telas: Regiões da imagem fora da Curadoria (seção 1); compartilhar escolhendo a pessoa pelo nome; aviso com aceite em Enviar imagem (seção 1.9) |
-| 1.19 | 22/11/2026 | Definição de cada termo do vocabulário, com fonte, no "?" das marcações (seção 1) |
+| 1.19 | 22/11/2026 | Grupos: tela única (Grupos que criei / Grupos de que participo) e link de convite (7 dias, um ativo por grupo, só o resumo do código no banco, entrar só confirmando; limites na seção 3) |
+| 1.20 | 22/11/2026 | Compartilhadas comigo: filtro por tipo, recebidas de colegas em grade e responder só com permissão de quem compartilhou; Minhas imagens: filtro por tipo e enviadas por mim em grade |
+| 1.21 | 22/11/2026 | Segunda opinião: o revisor desenha marcações sugeridas no item Marcações na imagem (seção 2) |
+| 1.22 | 22/11/2026 | Segunda opinião de ficha já aprovada: continua na Pesquisa; manter ou arquivar (seção 2) |
+| 1.23 | 22/11/2026 | Definição de cada termo do vocabulário, com fonte, no "?" das marcações (seção 1) |

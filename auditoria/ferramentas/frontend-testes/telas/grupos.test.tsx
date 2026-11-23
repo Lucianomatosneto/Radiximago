@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 //
-// TELA "Grupos" (frontend/src/app/grupos/page.tsx) - Fase 3b; entrada
-// consentida em 17/11/2026 (Etapa 2 dos grupos ampliados).
+// TELA "Grupos" (frontend/src/app/grupos/page.tsx), aba "Grupos que criei"
+// (components/grupos/GruposCriados.tsx) - Fase 3b; entrada consentida em
+// 17/11/2026; tela unica com "Meus grupos" desde 22/11/2026 (a outra aba tem
+// teste proprio: meus-grupos.test.tsx).
 // Grupos de pessoas (ex.: uma turma) para enviar imagens de uma vez.
 // Quem pode (professor, pesquisador, curador, administrador), lista vazia e
 // com grupos, criar e editar (o que vai ao servidor: as pessoas escolhidas
@@ -19,6 +21,9 @@ const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.f
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/grupos' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
+vi.mock('../../../../frontend/src/components/grupos/GruposParticipo', () => ({
+  default: ({ ehEstudante }: { ehEstudante: boolean }) => <p>grupos de que participo{ehEstudante ? ' (estudante)' : ''}</p>,
+}))
 vi.mock('../../../../frontend/src/components/envios/ImagensGrupoDono', () => ({
   default: ({ grupoId }: { grupoId: number }) => <p>imagens enviadas ao grupo {grupoId}</p>,
 }))
@@ -49,8 +54,11 @@ function rotasPadrao(perfil = 'professor', extra: Record<string, Rota> = {}): Re
 }
 async function abrir(extra: Record<string, Rota> = {}, perfil = 'professor') {
   const servidor = servidorFalso(rotasPadrao(perfil, extra))
+  window.history.replaceState(null, '', '/grupos')
   montarTela(<GruposPage />)
-  await screen.findByRole('heading', { name: 'Grupos' })
+  await screen.findByRole('heading', { level: 1, name: 'Grupos' })
+  // a aba carrega a lista depois de aparecer
+  await screen.findByText(/^Turma A$|^Turma L$|Você ainda não tem grupos\./)
   return servidor
 }
 const cartao = (nome: string) => screen.getByRole('heading', { name: nome }).closest('li') as HTMLElement
@@ -70,10 +78,20 @@ describe('quem pode', () => {
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
   })
 
-  it.each(['estudante', 'suporte'])('%s vai ao "acesso negado"', async (perfil) => {
-    servidorFalso(rotasPadrao(perfil))
+  // 22/11/2026: tela unica - quem nao cria grupos ve so os grupos de que participa
+  it.each(['estudante', 'suporte'])('%s ve so os grupos de que participa (sem abas, sem criar)', async (perfil) => {
+    const servidor = servidorFalso(rotasPadrao(perfil))
     montarTela(<GruposPage />)
-    await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/acesso-negado?de=/grupos'))
+    expect(await screen.findByText(/grupos de que participo/)).toBeTruthy()
+    expect(screen.queryByRole('tab')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Novo grupo' })).toBeNull()
+    expect(servidor.pedidos.some((p) => p.caminho === '/grupos')).toBe(false)
+    expect(roteador.push).not.toHaveBeenCalled()
+  })
+
+  it('quem cria grupos abre na aba "Grupos que criei"', async () => {
+    await abrir()
+    expect(screen.getByRole('tab', { name: /Grupos que criei/ }).getAttribute('aria-selected')).toBe('true')
   })
 
   it.each(['professor', 'pesquisador', 'curador', 'administrador'])('%s ve os grupos: participantes (com como entraram), pedidos e convites', async (perfil) => {
@@ -104,6 +122,30 @@ describe('quem pode', () => {
   ])('%s: "Você ainda não tem grupos."', async (_n, rota) => {
     await abrir({ 'GET /grupos': rota })
     expect(await screen.findByText('Você ainda não tem grupos.')).toBeTruthy()
+  })
+})
+
+describe('link de convite (pedido do video, 22/11/2026)', () => {
+  it('gera o link, mostra o endereco para copiar e a validade; "Cancelar link" cancela', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir({
+      'GET /grupos/3/link-convite': { corpo: { ativo: false } },
+      'POST /grupos/3/link-convite': { corpo: { codigo: 'codigoXYZ_123', expira_em: '2026-11-29T12:00:00+00:00' } },
+      'DELETE /grupos/3/link-convite': { corpo: { mensagem: 'ok' } },
+    })
+    await usuario.click(within(cartao('Turma A')).getByRole('button', { name: 'Link de convite' }))
+    await usuario.click(await within(cartao('Turma A')).findByRole('button', { name: 'Gerar link de convite' }))
+    const campo = (await within(cartao('Turma A')).findByRole('textbox', { name: 'Link de convite do grupo' })) as HTMLInputElement
+    expect(campo.value).toBe(`${window.location.origin}/grupos/entrar?c=codigoXYZ_123`)
+    expect(within(cartao('Turma A')).getByText(/Vale até/)).toBeTruthy()
+    await usuario.click(within(cartao('Turma A')).getByRole('button', { name: 'Cancelar link' }))
+    await waitFor(() => expect(servidor.alteracoes().map((a) => `${a.metodo} ${a.caminho}`)).toEqual(['POST /grupos/3/link-convite', 'DELETE /grupos/3/link-convite']))
+    expect(within(cartao('Turma A')).queryByRole('textbox', { name: 'Link de convite do grupo' })).toBeNull()
+  })
+
+  it('quem entrou pelo link aparece como "(entrou pelo link)"', async () => {
+    await abrir({ 'GET /grupos': { corpo: { grupos: [{ id: 6, nome: 'Turma L', membros: [{ id: 30, nome: 'Gil', origem: 'link' }] }] } } })
+    expect(within(await waitFor(() => cartao('Turma L'))).getByText(/entrou pelo link/)).toBeTruthy()
   })
 })
 

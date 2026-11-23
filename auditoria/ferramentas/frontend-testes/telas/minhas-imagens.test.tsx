@@ -16,8 +16,13 @@ const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.f
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/minhas-imagens' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
-vi.mock('../../../../frontend/src/components/envios/SecaoEnvios', () => ({
-  default: ({ equipe }: { equipe: boolean }) => <section aria-label="meus envios">{equipe ? 'envios: equipe' : 'envios: pessoal'}</section>,
+// 22/11/2026: as imagens enviadas por mim viraram grade (GradeEnvios, teste proprio)
+vi.mock('../../../../frontend/src/components/envios/GradeEnvios', () => ({
+  default: ({ equipe, filtroTipo }: { equipe: boolean; filtroTipo: string | null }) => (
+    <section aria-label="meus envios" data-filtro={filtroTipo ?? 'todos'}>
+      {equipe ? 'envios: equipe' : 'envios: pessoal'}
+    </section>
+  ),
 }))
 vi.mock('../../../../frontend/src/components/MiniaturaImagem', () => ({
   // imagem "carregada" com proporcao 3:2 (as camadas de marcacao precisam dela)
@@ -125,6 +130,30 @@ describe('permissao por perfil e carregar', () => {
     servidorFalso(rotasPadrao({ [LISTA]: { status: 401 } }))
     montarTela(<MinhasImagensPage />)
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
+  })
+})
+
+describe('filtro por tipo (pedido do video, 22/11/2026)', () => {
+  it('mostra so as imagens do tipo escolhido e passa o filtro para as enviadas por mim; "Todos" volta', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ [LISTA]: { corpo: { itens: [imagem(101), imagem(102, { tipo_radiografia: 'tomografia' }), imagem(103)] } } }))
+    const filtro = screen.getByRole('group', { name: 'Filtrar por tipo' })
+    await usuario.click(within(filtro).getByRole('button', { name: /Tomografia/ }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(1)
+    expect(screen.getByRole('region', { name: 'meus envios' }).getAttribute('data-filtro')).toBe('tomografia')
+    expect(within(filtro).getByRole('button', { name: /Tomografia/ }).getAttribute('aria-pressed')).toBe('true')
+    await usuario.click(within(filtro).getByRole('button', { name: 'Todos' }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(3)
+    expect(screen.getByRole('region', { name: 'meus envios' }).getAttribute('data-filtro')).toBe('todos')
+  })
+
+  it('trocar o filtro limpa a selecao (nao fica imagem escondida marcada)', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await usuario.click(caixa(1))
+    await usuario.click(within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', { name: 'Oclusal' }))
+    await usuario.click(within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', { name: 'Todos' }))
+    expect(marcadas()).toEqual([])
   })
 })
 
@@ -338,5 +367,76 @@ describe('icones de cada quadrado', () => {
     expect(lupa.getAttribute('aria-pressed')).toBe('true')
     await usuario.unhover(lupa.closest('[data-cartao-imagem]') as HTMLElement)
     expect(lupa.getAttribute('aria-pressed')).toBe('false')
+  })
+})
+
+// PEDIDO DO VIDEO (22/11/2026): curador e administrador selecionam imagens
+// salvas (fichas ja aprovadas) e pedem segunda opiniao de todas de uma vez,
+// na barra de acoes (presa no topo). A ficha continua valendo (na Pesquisa)
+// ate a revisao terminar.
+describe('pedir segunda opiniao das selecionadas', () => {
+  const sessao = (perfil: string) => ({ ...ESTUDANTE, perfil })
+
+  it.each(['estudante', 'professor'])('%s: nao ve o botao', async (perfil) => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ 'GET /auth/me': { corpo: sessao(perfil) } }))
+    await usuario.click(caixa(1))
+    expect(screen.queryByRole('button', { name: /Pedir segunda opinião/ })).toBeNull()
+  })
+
+  it('curador: so aparece com selecao; exige motivo; pede uma por ficha e avisa', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(
+      rotasPadrao({
+        'GET /auth/me': { corpo: sessao('curador') },
+        'POST /curation/101/request-review': { corpo: { review_id: 1, status_ficha: 'aprovada' } },
+        'POST /curation/102/request-review': { corpo: { review_id: 2, status_ficha: 'aprovada' } },
+      }),
+    )
+    expect(screen.queryByRole('button', { name: /Pedir segunda opinião/ })).toBeNull()
+    await usuario.click(caixa(1))
+    await usuario.click(caixa(2))
+    await usuario.click(screen.getByRole('button', { name: 'Pedir segunda opinião (2)' }))
+    const painel = screen.getByRole('dialog', { name: 'Pedir segunda opinião de 2 imagens' })
+    expect(painel.textContent).toContain('continuam aprovadas e na Pesquisa até a revisão terminar')
+    const pedir = within(painel).getByRole('button', { name: 'Pedir' }) as HTMLButtonElement
+    expect(pedir.disabled).toBe(true)
+    await usuario.type(within(painel).getByRole('textbox', { name: 'Motivo (obrigatório)' }), '  Revisar o achado.  ')
+    await usuario.click(pedir)
+    expect(await screen.findByText('Segunda opinião pedida para 2 imagens.')).toBeTruthy()
+    expect(servidor.alteracoes()).toEqual([
+      { metodo: 'POST', caminho: '/curation/101/request-review', corpo: { motivo: 'Revisar o achado.' } },
+      { metodo: 'POST', caminho: '/curation/102/request-review', corpo: { motivo: 'Revisar o achado.' } },
+    ])
+    expect(screen.getByRole('link', { name: 'Acompanhar em Segunda opinião' }).getAttribute('href')).toBe('/segunda-opiniao')
+    expect(marcadas()).toEqual([])
+  })
+
+  it('ficha com pedido ja em aberto: continua com as outras e conta as recusadas', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(
+      rotasPadrao({
+        'GET /auth/me': { corpo: sessao('administrador') },
+        'POST /curation/101/request-review': { status: 409, corpo: { detail: 'Ja existe uma solicitacao de segunda opiniao em aberto.' } },
+        'POST /curation/102/request-review': { corpo: { review_id: 2, status_ficha: 'aprovada' } },
+      }),
+    )
+    await usuario.click(caixa(1))
+    await usuario.click(caixa(2))
+    await usuario.click(screen.getByRole('button', { name: 'Pedir segunda opinião (2)' }))
+    await usuario.type(screen.getByRole('textbox', { name: 'Motivo (obrigatório)' }), 'Revisar.')
+    await usuario.click(screen.getByRole('button', { name: 'Pedir' }))
+    expect(await screen.findByText('Segunda opinião pedida para 1 imagem. 1 não pôde ser pedida (já tinha pedido em aberto ou saiu do banco).')).toBeTruthy()
+    expect(servidor.alteracoes()).toHaveLength(2)
+  })
+
+  it('"Cancelar" fecha sem pedir', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(rotasPadrao({ 'GET /auth/me': { corpo: sessao('curador') } }))
+    await usuario.click(caixa(1))
+    await usuario.click(screen.getByRole('button', { name: 'Pedir segunda opinião (1)' }))
+    await usuario.click(within(screen.getByRole('dialog', { name: 'Pedir segunda opinião de 1 imagem' })).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(servidor.alteracoes()).toEqual([])
   })
 })
