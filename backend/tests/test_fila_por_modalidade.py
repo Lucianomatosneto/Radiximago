@@ -155,3 +155,25 @@ def test_ficha_nova_comeca_com_o_tipo_de_quem_enviou(client, criar_usuario, cria
     assert r.status_code in (200, 201), r.text
     db.expire_all()
     assert db.query(Curation).filter(Curation.orthanc_reference_id == ref_id).one().tipo_radiografia == "oclusal"
+
+
+def test_roteiro_preenche_as_imagens_antigas_so_quando_confirmado(monkeypatch, criar_referencia, db, capsys):
+    import preencher_tipo_preliminar
+
+    antiga = criar_referencia()
+    ja_tem = criar_referencia()
+    ja_tem.tipo_preliminar, ja_tem.tipo_preliminar_origem = "oclusal", "envio"
+    db.commit()
+    tags = {antiga.orthanc_id: {"Modality": "CT"}, ja_tem.orthanc_id: {"Modality": "PX"}}
+    monkeypatch.setattr(preencher_tipo_preliminar.orthanc_client, "obter_tags_simplificadas_instancia",
+                        lambda oid: tags.get(oid, {}))
+
+    preencher_tipo_preliminar.executar(aplicar=False)
+    assert "SIMULACAO" in capsys.readouterr().out
+    db.expire_all()
+    assert db.get(OrthancReference, antiga.id).tipo_preliminar is None
+
+    preencher_tipo_preliminar.executar(aplicar=True)
+    db.expire_all()
+    assert (db.get(OrthancReference, antiga.id).tipo_preliminar, db.get(OrthancReference, antiga.id).tipo_preliminar_origem) == ("tomografia", "automatico")
+    assert db.get(OrthancReference, ja_tem.id).tipo_preliminar == "oclusal"  # o que veio de quem enviou nao muda
