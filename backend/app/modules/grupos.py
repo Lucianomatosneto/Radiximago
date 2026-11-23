@@ -37,6 +37,10 @@ MARCACOES_ENVIO_MAX = 50
 ORIGEM_CONVITE = "convite"      # aceitou um convite do dono
 ORIGEM_PEDIDO = "pedido"        # o dono autorizou o pedido dela
 ORIGEM_ANTERIOR = "anterior"    # ja estava no grupo antes de 17/11/2026
+ORIGEM_LINK = "link"            # abriu o link de convite do dono e confirmou (22/11/2026)
+
+# link de convite (22/11/2026): quantos dias vale
+DIAS_VALIDADE_LINK = 7
 
 
 class GrupoEnvio(Base):
@@ -85,6 +89,26 @@ class GrupoEntrada(Base):
     estado: Mapped[str] = mapped_column(String(10), nullable=False, server_default="pendente")
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     decidido_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GrupoLinkConvite(Base):
+    """LINK DE CONVITE (pedido do video, 22/11/2026). O dono gera um link e
+    manda para a turma; quem abre, ja com login, so entra se confirmar
+    (consentimento, D1). Guarda so o RESUMO SHA-256 do codigo: quem le o
+    banco nao consegue montar o link. Um ativo por grupo (gerar outro cancela
+    o anterior); vale DIAS_VALIDADE_LINK dias; o dono pode cancelar."""
+
+    __tablename__ = "grupo_links_convite"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    grupo_id: Mapped[int] = mapped_column(Integer, ForeignKey("grupos_envio.id", ondelete="CASCADE"),
+                                          nullable=False, index=True)
+    codigo_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    criado_por_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    expira_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    cancelado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    usos: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"), default=0)
 
 
 class EnvioDestinatario(Base):
