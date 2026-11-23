@@ -10,6 +10,7 @@
 // panoramica sao reconhecidas na entrada; periapical, interproximal e
 // oclusal so quando quem enviou informou ("intraoral" quando nao informou).
 
+import Link from 'next/link'
 import { useTranslations } from 'next-intl'
 
 /** ordem fixa das modalidades na tela */
@@ -64,6 +65,16 @@ export function PerguntaModalidade({
             </button>
           ))}
         </div>
+        {/* 23/11/2026: periapical, interproximal e oclusal so se separam
+            olhando - a triagem faz isso em lote */}
+        {((porTipo.intraoral ?? 0) > 0 || (porTipo.nao_informado ?? 0) > 0) && (
+          <Link
+            href={`/curadoria/triagem?tipo=${(porTipo.intraoral ?? 0) > 0 ? 'intraoral' : 'nao_informado'}`}
+            className="mt-4 inline-block text-sm font-medium text-teal-300 underline hover:no-underline"
+          >
+            {t('triagem')}
+          </Link>
+        )}
       </div>
     </section>
   )
