@@ -45,7 +45,7 @@ export default function MarcadorTomografia({
   const [erro, setErro] = useState('')
   const [plano, setPlano] = useState<Plano>('axial')
   const [corte, setCorte] = useState(0)
-  const areaRef = useRef<HTMLDivElement | null>(null)
+  const passarRef = useRef<(sentido: number) => void>(() => {})
 
   useEffect(() => {
     let vivo = true
@@ -73,17 +73,22 @@ export default function MarcadorTomografia({
     [total],
   )
 
-  // roda do mouse: para cima avanca um corte; nao rola a pagina
-  useEffect(() => {
-    const area = areaRef.current
+  passarRef.current = passar
+
+  // roda do mouse: para cima avanca um corte; nao rola a pagina. O ouvinte
+  // entra assim que a area aparece (ref de funcao), sem esperar efeito, e
+  // e "passive: false" para poder cancelar a rolagem da pagina.
+  const areaRef = useCallback((area: HTMLDivElement | null) => {
     if (!area) return
-    function roda(e: WheelEvent) {
-      e.preventDefault()
-      if (e.deltaY !== 0) passar(e.deltaY < 0 ? 1 : -1)
-    }
-    area.addEventListener('wheel', roda, { passive: false })
-    return () => area.removeEventListener('wheel', roda)
-  }, [passar])
+    area.addEventListener(
+      'wheel',
+      (e: WheelEvent) => {
+        e.preventDefault()
+        if (e.deltaY !== 0) passarRef.current(e.deltaY < 0 ? 1 : -1)
+      },
+      { passive: false },
+    )
+  }, [])
 
   function trocarPlano(p: Plano) {
     if (!geo || p === plano) return
@@ -92,7 +97,7 @@ export default function MarcadorTomografia({
   }
 
   function irPara(m: Marcacao) {
-    if (!m.plano || m.corte == null) return
+    if (!m.plano || typeof m.corte !== 'number') return
     setPlano(m.plano)
     setCorte(m.corte)
   }
@@ -116,7 +121,7 @@ export default function MarcadorTomografia({
   if (!geo) return <p className="text-sm text-slate-400">{t('carregando')}</p>
 
   const nomes: Record<Plano, string> = { axial: t('axial'), sagital: t('sagital'), coronal: t('coronal') }
-  const doExame = marcacoes.filter((m) => m.plano && m.corte != null)
+  const doExame = marcacoes.filter((m) => m.plano && typeof m.corte === 'number')
 
   return (
     <div className="flex h-full min-h-0 gap-3">
