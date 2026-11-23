@@ -43,10 +43,10 @@ export default function OdontogramaSituacao({
         onClick={() => setAberto(denteAberto === d ? null : d)}
         className={`flex flex-col items-center rounded py-0.5 font-semibold transition-colors ${pequeno ? 'text-[9px]' : 'text-[10px]'} ${
           denteAberto === d ? 'ring-2 ring-amber-300' : ''
-        } ${situacoes.length ? 'bg-teal-500/30 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'}`}
+        } ${situacoes.length ? 'bg-teal-600 text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'}`}
       >
         <span>{d}</span>
-        <span className="min-h-3 text-[9px] leading-3 text-amber-200">{situacoes.map((s) => SIGLA[s]).join('')}</span>
+        <span className="min-h-3 text-[9px] leading-3 text-amber-100">{situacoes.map((s) => SIGLA[s]).join('')}</span>
       </button>
     )
   }
