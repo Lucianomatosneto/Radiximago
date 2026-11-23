@@ -581,6 +581,25 @@ describe('escolher a modalidade', () => {
     expect(link.getAttribute('href')).toBe('/curadoria/triagem?tipo=intraoral')
   })
 
+  // 23/11/2026: curando uma modalidade, o curador acha imagens que nao sao
+  // dela - um atalho leva a triagem daquela modalidade para corrigi-las
+  it('com uma modalidade escolhida, "Corrigir modalidade" leva a triagem dela', async () => {
+    const usuario = userEvent.setup()
+    await abrir(varias())
+    await usuario.click(await screen.findByRole('button', { name: /^Panorâmica/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+    const link = screen.getByRole('link', { name: 'Corrigir modalidade' })
+    expect(link.getAttribute('href')).toBe('/curadoria/triagem?tipo=panoramica')
+  })
+
+  it('em "Todas" nao ha atalho de corrigir (nao ha uma modalidade so)', async () => {
+    const usuario = userEvent.setup()
+    await abrir(varias())
+    await usuario.click(await screen.findByRole('button', { name: /^Todas/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+    expect(screen.queryByRole('link', { name: 'Corrigir modalidade' })).toBeNull()
+  })
+
   it('"Todas": abre a 1a da fila inteira, como antes', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(varias())
