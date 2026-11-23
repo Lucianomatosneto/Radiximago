@@ -175,8 +175,8 @@ def test_gera_panoramica_e_cortes_no_mesmo_estudo(client, criar_usuario, tomogra
     assert {c.SeriesInstanceUID for c in cortes} == {dados["serie_cortes_uid"]}
     assert [int(c.InstanceNumber) for c in cortes] == list(range(1, len(cortes) + 1))
     assert "Cortes transversais" in cortes[0].SeriesDescription
-    # o "dente" aparece claro na panoramica
-    assert pano.pixel_array.max() > 500
+    # o "dente" aparece claro na panoramica (fundo -1000; a faixa de 6 mm faz a media)
+    assert pano.pixel_array.max() > pano.pixel_array.min() + 500
     # registrada, com as instancias novas (para a sincronizacao nao as importar)
     db.expire_all()
     rec = db.query(ReconstrucaoTomografia).filter(ReconstrucaoTomografia.orthanc_reference_id == tomografia.id).one()
