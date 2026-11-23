@@ -843,3 +843,164 @@ window.config = {
     } catch (e) { /* ignora */ }
   }, true);
 })();
+
+// ---------------------------------------------------------------------
+// TAMANHO REAL (pedido do Luciano, 23/11/2026), em todos os visualizadores:
+// tres botoes no canto de cima da area das imagens, valendo para a imagem
+// ativa.
+//  - "1:1": um pixel da imagem = um pixel da tela (qualquer imagem);
+//  - "Tamanho real": milimetros de verdade na tela. Precisa (a) da medida
+//    do pixel no DICOM (PixelSpacing; na falta, ImagerPixelSpacing - a
+//    medida no detector: em panoramica ha a ampliacao propria do exame) e
+//    (b) da CALIBRACAO da tela, feita uma vez neste navegador: a pessoa
+//    ajusta uma barra ate ela ficar do tamanho de um cartao de credito
+//    (85,6 mm, padrao ISO/IEC 7810). O navegador nao sabe o tamanho fisico
+//    da tela; sem calibrar, nao ha milimetro de verdade;
+//  - "Calibrar tela": refaz a calibracao (ex.: outro monitor ou zoom do
+//    navegador).
+// cornerstone3D: a altura visivel do quadro, em unidades do "mundo", e
+// 2 x parallelScale; o "mundo" usa a medida que o OHIF leu da imagem.
+// ---------------------------------------------------------------------
+;(function () {
+  var CHAVE = 'radix-px-por-mm';
+  var CARTAO_MM = 85.6;
+  var caixa = null;
+
+  function lerCalibracao() {
+    try {
+      var v = Number(window.localStorage.getItem(CHAVE));
+      return v > 0 ? v : 0;
+    } catch (e) { return 0; }
+  }
+
+  function ativo() {
+    var s = window.services;
+    if (!s || !s.viewportGridService || !s.cornerstoneViewportService) return null;
+    try {
+      var st = s.viewportGridService.getState();
+      var id = st.activeViewportId;
+      var info = st.viewports.get(id);
+      var dsUid = info && info.displaySetInstanceUIDs && info.displaySetInstanceUIDs[0];
+      var ds = dsUid && s.displaySetService.getDisplaySetByUID(dsUid);
+      var inst = ds && ds.instances && ds.instances[0];
+      var medida = inst && (inst.PixelSpacing || inst.ImagerPixelSpacing);
+      var mm = medida && Number(medida[0]) > 0 ? Number(medida[0]) : 0;
+      var vp = s.cornerstoneViewportService.getCornerstoneViewport(id);
+      var quadro = document.querySelector('[data-viewport-uid="' + id + '"]');
+      if (!vp || !quadro) return null;
+      return { vp: vp, quadro: quadro, mmPorPixel: mm };
+    } catch (e) { return null; }
+  }
+
+  function mundoPorPixel(vp) {
+    try {
+      var d = vp.getImageData();
+      var e = d && d.spacing && Number(d.spacing[1]);
+      return e > 0 ? e : 1;
+    } catch (e) { return 1; }
+  }
+
+  function aplicarEscala(a, mundoPorPixelDeTela) {
+    var altura = a.quadro.getBoundingClientRect().height;
+    if (!altura) return;
+    var cam = a.vp.getCamera();
+    a.vp.setCamera({ parallelScale: (altura * mundoPorPixelDeTela) / 2, focalPoint: cam.focalPoint, position: cam.position });
+    a.vp.render();
+  }
+
+  function umPraUm() {
+    var a = ativo();
+    if (a) aplicarEscala(a, mundoPorPixel(a.vp));
+  }
+
+  function tamanhoReal() {
+    var a = ativo();
+    if (!a || !a.mmPorPixel) return;
+    var pxPorMm = lerCalibracao();
+    if (!pxPorMm) { calibrar(tamanhoReal); return; }
+    // 1 px de tela = 1/pxPorMm mm; 1 unidade do mundo = mmPorPixel/mundoPorPixel mm
+    aplicarEscala(a, (1 / pxPorMm) * (mundoPorPixel(a.vp) / a.mmPorPixel));
+  }
+
+  function botao(texto, aoClicar) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = texto;
+    b.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:3px 8px;font:500 12px Inter,system-ui,sans-serif;cursor:pointer';
+    b.addEventListener('click', aoClicar);
+    return b;
+  }
+
+  function calibrar(depois) {
+    if (document.getElementById('radix-calibrar')) return;
+    var fundo = document.createElement('div');
+    fundo.id = 'radix-calibrar';
+    fundo.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
+    var janela = document.createElement('div');
+    janela.setAttribute('role', 'dialog');
+    janela.setAttribute('aria-modal', 'true');
+    janela.setAttribute('aria-labelledby', 'radix-calibrar-titulo');
+    janela.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #2dd4bf;border-radius:12px;padding:18px;max-width:760px;font:14px Inter,system-ui,sans-serif';
+    var titulo = document.createElement('h2');
+    titulo.id = 'radix-calibrar-titulo';
+    titulo.textContent = 'Calibrar a tela';
+    titulo.style.cssText = 'margin:0 0 6px;font-size:16px';
+    var texto = document.createElement('p');
+    texto.textContent = 'Encoste um cartão de crédito (ou de banco) na tela e ajuste a barra até ela ficar exatamente da largura do cartão (85,6 mm). Também dá para usar uma régua: a barra deve medir 85,6 mm. Vale para este navegador e esta tela; refaça se mudar de monitor ou o zoom do navegador.';
+    texto.style.cssText = 'margin:0 0 12px;color:#cbd5e1;font-size:13px';
+    var barra = document.createElement('div');
+    var atual = lerCalibracao() ? Math.round(lerCalibracao() * CARTAO_MM) : 324;
+    barra.style.cssText = 'height:54px;border-radius:6px;background:linear-gradient(90deg,#2dd4bf,#3b82f6);margin:6px 0 10px;width:' + atual + 'px';
+    var faixa = document.createElement('input');
+    faixa.type = 'range';
+    faixa.min = '150';
+    faixa.max = '700';
+    faixa.value = String(atual);
+    faixa.setAttribute('aria-label', 'Largura da barra');
+    faixa.style.cssText = 'width:100%';
+    faixa.addEventListener('input', function () { barra.style.width = faixa.value + 'px'; });
+    var acoes = document.createElement('div');
+    acoes.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:12px';
+    function fechar() { if (fundo.parentNode) fundo.parentNode.removeChild(fundo); }
+    acoes.appendChild(botao('Cancelar', fechar));
+    acoes.appendChild(botao('Salvar', function () {
+      try { window.localStorage.setItem(CHAVE, String(Number(faixa.value) / CARTAO_MM)); } catch (e) { /* sem salvar */ }
+      fechar();
+      if (depois) depois();
+    }));
+    janela.appendChild(titulo);
+    janela.appendChild(texto);
+    janela.appendChild(barra);
+    janela.appendChild(faixa);
+    janela.appendChild(acoes);
+    fundo.appendChild(janela);
+    document.body.appendChild(fundo);
+  }
+
+  var real = null;
+  function montarCaixa() {
+    var grade = document.querySelector('[data-cy="viewport-grid"]');
+    if (!grade || !grade.parentElement) return;
+    if (!caixa || !caixa.isConnected) {
+      caixa = document.createElement('div');
+      caixa.setAttribute('role', 'group');
+      caixa.setAttribute('aria-label', 'Tamanho da imagem');
+      caixa.style.cssText = 'position:absolute;top:6px;right:10px;z-index:20;display:flex;gap:6px';
+      caixa.appendChild(botao('1:1', umPraUm));
+      real = botao('Tamanho real', tamanhoReal);
+      caixa.appendChild(real);
+      caixa.appendChild(botao('Calibrar tela', function () { calibrar(null); }));
+      var pai = grade.parentElement;
+      if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
+      pai.appendChild(caixa);
+    }
+    var a = ativo();
+    var semMedida = !a || !a.mmPorPixel;
+    real.disabled = semMedida;
+    real.style.opacity = semMedida ? '0.45' : '1';
+    real.title = semMedida
+      ? 'Esta imagem não tem a medida do pixel (ex.: foto convertida): só o 1:1 funciona.'
+      : 'Mostra a imagem em milímetros reais (precisa calibrar a tela uma vez).';
+  }
+  setInterval(montarCaixa, 700);
+})();
