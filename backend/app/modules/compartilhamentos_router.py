@@ -95,6 +95,8 @@ class CompartilharEntrada(BaseModel):
     email: Optional[str] = Field(default=None, min_length=3, max_length=150)
     usuario_id: Optional[int] = Field(default=None, ge=1)
     mensagem: Optional[str] = Field(default=None, max_length=500)
+    # 22/11/2026: a pessoa pode responder? (quem compartilha decide)
+    permite_resposta: bool = False
 
     @model_validator(mode="after")
     def _um_destinatario(self):
@@ -161,7 +163,7 @@ def compartilhar(
         db.commit()
         return _resposta_neutra()
 
-    _gravar_compartilhamento(db, usuario.id, destinatario.id, curation_id, mensagem)
+    _gravar_compartilhamento(db, usuario.id, destinatario.id, curation_id, mensagem, dados.permite_resposta)
     _auditar(db, usuario.id, "compartilhamento_imagem", curation_id, f"destinatario_id={destinatario.id}")
     try:
         db.commit()
@@ -170,7 +172,8 @@ def compartilhar(
     return _resposta_neutra()
 
 
-def _gravar_compartilhamento(db: Session, remetente_id: int, destinatario_id: int, curation_id: int, mensagem: Optional[str]) -> None:
+def _gravar_compartilhamento(db: Session, remetente_id: int, destinatario_id: int, curation_id: int, mensagem: Optional[str],
+                             permite_resposta: bool = False) -> None:
     existente = (
         db.query(CompartilhamentoImagem)
         .filter(
@@ -186,12 +189,14 @@ def _gravar_compartilhamento(db: Session, remetente_id: int, destinatario_id: in
         if mensagem:
             existente.mensagem_oculta = False  # recado novo volta a aparecer
         existente.visto_em = None
+        existente.permite_resposta = permite_resposta
     else:
         db.add(CompartilhamentoImagem(
             remetente_id=remetente_id,
             destinatario_id=destinatario_id,
             curation_id=curation_id,
             mensagem=mensagem,
+            permite_resposta=permite_resposta,
         ))
 
 
@@ -217,7 +222,10 @@ def responder(
         raise HTTPException(status_code=422, detail="Escreva a resposta.")
     if remetente.bloqueado:
         raise HTTPException(status_code=404, detail="Compartilhamento não encontrado.")
-    _gravar_compartilhamento(db, usuario.id, remetente.id, ficha.id, mensagem)
+    if not comp.permite_resposta:
+        raise HTTPException(status_code=403, detail="Quem enviou esta imagem não permitiu respostas.")
+    # a resposta tambem permite resposta: a conversa segue
+    _gravar_compartilhamento(db, usuario.id, remetente.id, ficha.id, mensagem, permite_resposta=True)
     _auditar(db, usuario.id, "resposta_compartilhamento", ficha.id, f"destinatario_id={remetente.id}")
     try:
         db.commit()
@@ -307,6 +315,7 @@ def listar_recebidas(
             "remetente_nome": remetente.nome,
             # recado "apagado" por quem recebeu nao aparece mais para ele
             "mensagem": None if comp.mensagem_oculta else comp.mensagem,
+            "permite_resposta": bool(comp.permite_resposta),
             "compartilhado_em": comp.criado_em.isoformat() if comp.criado_em else None,
             "novo": comp.visto_em is None,
             # so o recado do compartilhamento conta (as "Minhas anotações" de
