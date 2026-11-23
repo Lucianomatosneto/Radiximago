@@ -9,7 +9,8 @@
 //   (com convites e, para o estudante, a busca e os pedidos).
 // Cada aba e um componente (components/grupos/GruposCriados e
 // GruposParticipo) com as mesmas regras de antes; quem decide de verdade e o
-// servidor. /meus-grupos continua existindo e abre esta tela na 2a aba.
+// servidor. O endereco antigo /meus-grupos e redirecionado para esta tela,
+// na 2a aba (frontend/next.config.mjs).
 // Aba inicial: ?aba=participo no endereco; senao, a primeira.
 
 import { useEffect, useState } from 'react'
