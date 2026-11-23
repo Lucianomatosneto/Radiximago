@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 //
-// TELA "Meus grupos" (frontend/src/app/meus-grupos/page.tsx) - 17/11/2026,
-// Etapa 2 dos grupos ampliados. Confere:
+// ABA "Grupos de que participo" da tela Grupos (frontend/src/app/grupos/page.tsx
+// + components/grupos/GruposParticipo.tsx). Ate 22/11/2026 era a tela "Meus
+// grupos" (/meus-grupos, que agora abre esta aba). Confere:
 // - todos os perfis veem convites recebidos e grupos de que participam;
 // - so o estudante ve "Procurar grupo" e "Pedidos enviados" (D7);
 // - aceitar/recusar convite, pedir para entrar, desistir e sair (com
@@ -14,11 +15,14 @@
 import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import GruposPage from '../../../../frontend/src/app/grupos/page'
 import MeusGruposPage from '../../../../frontend/src/app/meus-grupos/page'
 import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 
 const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }))
-vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/meus-grupos' }))
+vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/grupos' }))
+// a outra aba (grupos que criei) tem teste proprio (grupos.test.tsx)
+vi.mock('../../../../frontend/src/components/grupos/GruposCriados', () => ({ default: () => <p>grupos que criei</p> }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
 vi.mock('../../../../frontend/src/components/envios/ImagensGrupoParticipante', () => ({
@@ -45,13 +49,16 @@ function rotasPadrao(perfil: string, extra: Record<string, Rota> = {}): Record<s
     'GET /grupos/participo': { corpo: { grupos: PARTICIPO } },
     'GET /grupos/pedidos-enviados': { corpo: { pedidos: PEDIDOS } },
     'GET /grupos/procurar?*': { corpo: { grupos: ACHADOS } },
+    'GET /grupos/pendencias': { corpo: { convites: 1, pedidos: 0, imagens_novas: 2 } },
     ...extra,
   }
 }
 async function abrir(perfil = 'estudante', extra: Record<string, Rota> = {}) {
   const servidor = servidorFalso(rotasPadrao(perfil, extra))
-  montarTela(<MeusGruposPage />)
-  await screen.findByRole('heading', { name: 'Meus grupos' })
+  window.history.replaceState(null, '', '/grupos?aba=participo')
+  montarTela(<GruposPage />)
+  await screen.findByRole('heading', { level: 1, name: 'Grupos' })
+  await screen.findByRole('region', { name: 'Convites recebidos' })
   return servidor
 }
 const secao = (nome: string) => screen.getByRole('region', { name: nome })
@@ -66,9 +73,29 @@ afterEach(() => cleanup())
 describe('o que cada perfil ve', () => {
   it('sem sessao vai ao login (antes mostra "Carregando...")', async () => {
     servidorFalso({ 'GET /auth/me': { status: 401 } })
-    montarTela(<MeusGruposPage />)
+    montarTela(<GruposPage />)
     expect(screen.getByText('Carregando...')).toBeTruthy()
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
+  })
+
+  it('o endereco antigo /meus-grupos abre Grupos na aba "Grupos de que participo"', async () => {
+    montarTela(<MeusGruposPage />)
+    await waitFor(() => expect(roteador.replace).toHaveBeenCalledWith('/grupos?aba=participo'))
+  })
+
+  it('quem cria grupos ve as duas abas, com o numero de pendencias; trocar de aba mostra a outra', async () => {
+    const usuario = userEvent.setup()
+    await abrir('professor')
+    expect(screen.getByRole('tab', { name: /Grupos de que participo/ }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByRole('tab', { name: /Grupos de que participo/ }).textContent).toContain('3')
+    await usuario.click(screen.getByRole('tab', { name: /Grupos que criei/ }))
+    expect(screen.getByText('grupos que criei')).toBeTruthy()
+    expect(window.location.search).toBe('')
+  })
+
+  it('estudante nao ve abas (so participa de grupos)', async () => {
+    await abrir('estudante')
+    expect(screen.queryByRole('tab')).toBeNull()
   })
 
   it('estudante: convites, procurar, pedidos enviados e grupos de que participa', async () => {
