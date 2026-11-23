@@ -34,9 +34,10 @@ vi.mock('../../../../frontend/src/components/curadoria/PainelVoz', () => ({
 type Form = Record<string, unknown> & { anonimizacao_validada: boolean; genero: string; qualidade_tecnica: string; descricao_didatica: string; tipo_radiografia: string }
 vi.mock('../../../../frontend/src/components/curadoria/ColunaFichaCuradoria', async (original) => ({
   ...(await original<object>()), // ListaConferencia (lista da conferencia) e a de verdade
-  default: (p: { form: Form; onChange: (f: Form) => void; erro: string; rascunhoSalvo: boolean; topo: React.ReactNode; acoesFinais: React.ReactNode }) => (
+  default: (p: { form: Form; onChange: (f: Form) => void; erro: string; rascunhoSalvo: boolean; topo: React.ReactNode; acoesFinais: React.ReactNode; horizontal?: boolean }) => (
     <section aria-label="ficha simplificada">
       {p.topo}
+      {p.horizontal && <p>ficha em colunas</p>}
       <p>tipo: {p.form.tipo_radiografia}</p>
       <label>
         <input type="checkbox" checked={p.form.anonimizacao_validada} onChange={(e) => p.onChange({ ...p.form, anonimizacao_validada: e.target.checked })} />
@@ -585,5 +586,21 @@ describe('escolher a modalidade', () => {
       rotasPadrao({ [FILA]: { corpo: { itens: [IMAGEM(301), IMAGEM(302)], total_pendentes: 2, aguardando_recorte: 0, por_tipo: { periapical: 2 } } } }),
     )
     expect(screen.queryByRole('group', { name: 'Qual modalidade você quer curar agora?' })).toBeNull()
+  })
+})
+
+// PANORAMICA (pedido do Luciano, 23/11/2026): imagem nos 2/3 de cima (largura
+// toda) e a ficha no 1/3 de baixo, em colunas. Os outros tipos nao mudam.
+describe('layout da panoramica', () => {
+  it('ficha de panoramica: imagem em cima, ficha embaixo em colunas', async () => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: 'panoramica' }) } }))
+    expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('panoramica')
+    expect(screen.getByText('ficha em colunas')).toBeTruthy()
+  })
+
+  it('periapical: continua lado a lado, ficha em uma coluna', async () => {
+    await abrirComFicha(rotasPadrao())
+    expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('lado-a-lado')
+    expect(screen.queryByText('ficha em colunas')).toBeNull()
   })
 })
