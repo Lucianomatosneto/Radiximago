@@ -1389,6 +1389,59 @@ export default function CuradoriaPage() {
 
   // barra "Imagem X de Y" + Salvar/Aprovar/Descartar/2a opiniao: no topo da
   // metade DIREITA (acima da ficha); no modo "ampliar imagem", em cima de tudo
+  // panoramica com a ficha a mostra: imagem em cima, ficha embaixo em colunas
+  const layoutPanoramica = !!fichaAtiva && fichaVisivel && form.tipo_radiografia === 'panoramica'
+
+  // painel da voz + Como laudar, Macros, Descartar e "Imagem X de Y": no
+  // topo da coluna da ficha; na PANORAMICA sobe para a linha do titulo (a
+  // ficha fica so com 1/3 da altura e precisa do espaco para as caixas)
+  const topoFicha = fichaAtiva ? (
+    <PainelVoz
+      embutido
+      semVoz={ehProfessor}
+      fichaId={fichaAtiva.curationId}
+      form={form}
+      onAplicar={aplicarVoz}
+      onSalvar={() => salvarRascunho({ origemVoz: true })}
+      etapaAtiva={etapaAtiva}
+      onEtapa={setEtapaAtiva}
+      onDestacar={destacarCampos}
+      macros={macros}
+      frasesAprendidas={frasesAprendidas}
+      onAprendeu={carregarRecursosLaudo}
+      onDuvidas={setDuvidasVoz}
+      onNadaRegistrar={(secao) => nadaARegistrar(secao ?? secaoAtiva, true)}
+      continuo
+      aoLado={
+        <>
+          <button
+            type="button"
+            onClick={() => setGuiaAberto(true)}
+            className="rounded-full border border-sky-300/50 bg-sky-400/10 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-400/20"
+          >
+            📘 {t('comoLaudar')}
+          </button>
+          <MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />
+          <button
+            type="button"
+            onClick={() => abrirModalMotivo('descartar')}
+            className="rounded-full border border-red-800/60 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-950/40"
+          >
+            {t('barraSuperior.descartar')}
+          </button>
+          {/* posicao na fila; as SETAS de passar a imagem ficam ao
+              lado da caixa da imagem (27/10/2026) */}
+          <span className="whitespace-nowrap text-sm font-medium text-slate-300">
+            <span title={t('barraSuperior.explicacaoFila', { recorte: aguardandoRecorte })}>
+              {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
+            </span>
+          </span>
+          {badgeReviewsRespondidas}
+        </>
+      }
+    />
+  ) : null
+
   const barraSuperior = fichaAtiva ? (
     <BarraSuperiorCuradoria
       posicaoAtual={indiceAtual !== null ? indiceAtual + 1 : null}
@@ -1468,6 +1521,7 @@ export default function CuradoriaPage() {
             <Logo variante="icone" />
             <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
             <BotaoInicio rotulo={t('inicio')} />
+            {layoutPanoramica && <div className="min-w-0 flex-1">{topoFicha}</div>}
             {!ehProfessor && !perguntandoModalidade && totalDaFila(porTipo) > 0 && (
               <CaixaModalidade porTipo={porTipo} valor={tipoFiltro} onEscolher={escolherModalidade} />
             )}
@@ -1518,8 +1572,19 @@ export default function CuradoriaPage() {
           {fichaAtiva && !fichaVisivel && (
             <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
           )}
-          <div className="relative flex min-h-0 flex-1 gap-3">
-            <div className={`flex min-h-0 min-w-0 flex-col gap-3 ${fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'}`}>
+          {/* PANORAMICA (23/11/2026, pedido do Luciano): a imagem e larga,
+              entao ocupa os 2/3 de CIMA na largura toda e a ficha fica no
+              1/3 de baixo, com as secoes em colunas. Os outros tipos seguem
+              lado a lado (imagem a esquerda, ficha a direita). */}
+          <div
+            data-layout={layoutPanoramica ? 'panoramica' : 'lado-a-lado'}
+            className={`relative flex min-h-0 flex-1 gap-3 ${layoutPanoramica ? 'flex-col' : ''}`}
+          >
+            <div
+              className={`flex min-h-0 min-w-0 flex-col gap-3 ${
+                layoutPanoramica ? 'flex-[2_1_0%]' : fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'
+              }`}
+            >
               {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
                   e o visualizador, por pedido explicito. Sempre visivel (nao
                   so quando fichaAtiva existe) - e o mecanismo de selecionar a
@@ -1694,10 +1759,11 @@ export default function CuradoriaPage() {
             </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+              <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'flex-[1_1_0%]' : 'flex-1'}`}>
                 <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
+                  horizontal={layoutPanoramica}
                   podeCriarTermo={!ehProfessor}
                   form={form}
                   onChange={setForm}
@@ -1714,52 +1780,7 @@ export default function CuradoriaPage() {
                   revisadas={revisadas}
                   onNadaRegistrar={nadaARegistrar}
                   acoesFinais={acoesFicha}
-                  topo={
-                    <PainelVoz
-                      embutido
-                      semVoz={ehProfessor}
-                      fichaId={fichaAtiva.curationId}
-                      form={form}
-                      onAplicar={aplicarVoz}
-                      onSalvar={() => salvarRascunho({ origemVoz: true })}
-                      etapaAtiva={etapaAtiva}
-                      onEtapa={setEtapaAtiva}
-                      onDestacar={destacarCampos}
-                      macros={macros}
-                      frasesAprendidas={frasesAprendidas}
-                      onAprendeu={carregarRecursosLaudo}
-                      onDuvidas={setDuvidasVoz}
-                      onNadaRegistrar={(secao) => nadaARegistrar(secao ?? secaoAtiva, true)}
-                      continuo
-                      aoLado={
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => setGuiaAberto(true)}
-                            className="rounded-full border border-sky-300/50 bg-sky-400/10 px-3 py-1.5 text-xs font-semibold text-sky-100 hover:bg-sky-400/20"
-                          >
-                            📘 {t('comoLaudar')}
-                          </button>
-                          <MenuMacros macros={macros} onAplicar={aplicarMacroDoMenu} onCriar={criarMacroDaFicha} />
-                          <button
-                            type="button"
-                            onClick={() => abrirModalMotivo('descartar')}
-                            className="rounded-full border border-red-800/60 px-3 py-1.5 text-xs font-semibold text-red-300 hover:bg-red-950/40"
-                          >
-                            {t('barraSuperior.descartar')}
-                          </button>
-                          {/* posicao na fila; as SETAS de passar a imagem ficam ao
-                              lado da caixa da imagem (27/10/2026) */}
-                          <span className="whitespace-nowrap text-sm font-medium text-slate-300">
-                            <span title={t('barraSuperior.explicacaoFila', { recorte: aguardandoRecorte })}>
-                              {indiceAtual !== null ? t('barraSuperior.imagemXdeY', { atual: indiceAtual + 1, total: totalPendentes }) : '—'}
-                            </span>
-                          </span>
-                          {badgeReviewsRespondidas}
-                        </>
-                      }
-                    />
-                  }
+                  topo={layoutPanoramica ? undefined : topoFicha}
                 />
                 </div>
               </aside>

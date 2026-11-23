@@ -24,7 +24,7 @@ vi.mock('../../../../frontend/src/components/anexos/AnexosCuradoria', async (ori
 // o "dono" da ficha (como a tela da Curadoria): guarda o formulario e o item aceso
 const estado: { form: FormularioFicha; etapa: EtapaFicha } = { form: FORM_VAZIO, etapa: 'anonimizacao' }
 const abrirMarcacao = vi.fn()
-function Dono({ inicial, teclasAtivas = true, erro = '', salvo = false }: { inicial: Partial<FormularioFicha>; teclasAtivas?: boolean; erro?: string; salvo?: boolean }) {
+function Dono({ inicial, teclasAtivas = true, erro = '', salvo = false, horizontal = false }: { inicial: Partial<FormularioFicha>; teclasAtivas?: boolean; erro?: string; salvo?: boolean; horizontal?: boolean }) {
   const [form, setForm] = useState<FormularioFicha>({ ...FORM_VAZIO, ...inicial })
   const [etapa, setEtapa] = useState<EtapaFicha>('anonimizacao')
   const [revisadas, setRevisadas] = useState<SecaoFicha[]>([])
@@ -46,12 +46,13 @@ function Dono({ inicial, teclasAtivas = true, erro = '', salvo = false }: { inic
       onNadaRegistrar={(s) => setRevisadas((r) => (r.includes(s) ? r.filter((x) => x !== s) : [...r, s]))}
       topo={<p>painel da voz</p>}
       acoesFinais={<button type="button">✓ Aprovar</button>}
+      horizontal={horizontal}
     />
   )
 }
 
 const VOCABULARIO = { termos: [{ id: 5, termo: 'Nódulo pulpar', categoria: 'achado', ativo: true, nas_curadorias: true, sinonimos: [{ id: 1, sinonimo: 'pedra pulpar' }] }] }
-function abrir(inicial: Partial<FormularioFicha> = {}, extra: Record<string, Rota> = {}, props: { teclasAtivas?: boolean; erro?: string; salvo?: boolean } = {}) {
+function abrir(inicial: Partial<FormularioFicha> = {}, extra: Record<string, Rota> = {}, props: { teclasAtivas?: boolean; erro?: string; salvo?: boolean; horizontal?: boolean } = {}) {
   const servidor = servidorFalso({ 'GET /vocabulario': { corpo: VOCABULARIO }, ...extra })
   montarTela(<Dono inicial={inicial} {...props} />)
   return servidor
@@ -327,5 +328,33 @@ describe('erro tecnico, textos e "nada a registrar"', () => {
     await usuario.type(screen.getByRole('textbox', { name: 'Observações internas' }), 'Só para a equipe.')
     expect(estado.form.descricao_didatica).toBe('Imagem de teste.')
     expect(estado.form.observacoes_internas).toBe('Só para a equipe.')
+  })
+})
+
+// PANORAMICA (pedido do Luciano, 23/11/2026): a imagem ocupa 2/3 de cima e a
+// ficha o 1/3 de baixo, com as secoes LADO A LADO, cada uma rolando sozinha.
+describe('ficha em colunas (panoramica)', () => {
+  it('horizontal: as secoes viram colunas lado a lado; descricao, observacoes e acoes na ultima', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    const colunas = Array.from(document.querySelectorAll('[data-coluna]')) as HTMLElement[]
+    expect(colunas.map((c) => c.getAttribute('data-coluna'))).toEqual(['dados', 'achados', 'erro_tecnico', 'descricao'])
+    // cada coluna rola sozinha
+    expect(colunas.every((c) => c.className.includes('overflow-y-auto'))).toBe(true)
+    const ultima = colunas[3]
+    expect(ultima.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
+    expect(within(ultima).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
+    expect(screen.getByText('painel da voz')).toBeTruthy()
+  })
+
+  it('normal (vertical): sem colunas', () => {
+    abrir({ tipo_radiografia: 'periapical' })
+    expect(document.querySelectorAll('[data-coluna]')).toHaveLength(0)
+  })
+
+  it('as teclas continuam andando pelos itens nas colunas', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    expect(aceso()).toBe('anonimizacao')
+    tecla('Tab')
+    expect(aceso()).not.toBe('anonimizacao')
   })
 })
