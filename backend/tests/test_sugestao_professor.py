@@ -88,7 +88,9 @@ def test_professor_marca_so_as_proprias_e_envia_ao_curador(client, criar_usuario
     assert r.status_code == 200 and r.json()["curation_id"] == cid
     ficha = client.get(f"/curation/{cid}", headers=cab_cur).json()
     assert ficha["descricao_didatica"] == "Lesao periapical no 46" and ficha["curador_id"] == curador.id
-    assert minha.id not in {i["orthanc_reference_id"] for i in client.get("/curation/pending?limit=200", headers=cab_cur).json()["itens"]}
+    # 23/11/2026: a ficha assumida fica na fila DESTE curador como "em andamento" (para continuar)
+    fila_cur = {i["orthanc_reference_id"]: i for i in client.get("/curation/pending?limit=200", headers=cab_cur).json()["itens"]}
+    assert fila_cur[minha.id]["em_andamento"] is True and fila_cur[minha.id]["curation_id"] == cid
     assert client.patch(f"/curation/{cid}", headers=cab_cur, json={"descricao_didatica": "Corrigida pelo curador"}).status_code == 200
 
 

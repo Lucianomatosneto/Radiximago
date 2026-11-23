@@ -90,6 +90,10 @@ def criar_curadoria(
         )
         db.commit()
         return _resposta_criacao(ja_existe, "Sugestao do professor aberta.")
+    # 23/11/2026: o proprio curador reabre a ficha que deixou em andamento
+    # (a fila mostra essas fichas para continuar)
+    if ja_existe and not professor and ja_existe.curador_id == usuario.id and ja_existe.status in STATUS_EDITAVEIS:
+        return _resposta_criacao(ja_existe, "Ficha em andamento reaberta.")
     if ja_existe:
         raise HTTPException(
             status_code=409,
