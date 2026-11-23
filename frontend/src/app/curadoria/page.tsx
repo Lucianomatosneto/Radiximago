@@ -142,6 +142,7 @@ export default function CuradoriaPage() {
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tModalidade = useTranslations('ModalidadeFila')
+  const tReconstrucao = useTranslations('Reconstrucao')
 
   function rotularTipoRadiografia(valor: string | null): string {
     if (!valor || !OPCOES_TIPO_RADIOGRAFIA.includes(valor)) return valor ?? '—'
@@ -1551,6 +1552,16 @@ export default function CuradoriaPage() {
               >
                 <span aria-hidden="true">⇄ </span>
                 {tModalidade('corrigir')}
+              </Link>
+            )}
+            {/* 23/11/2026: tomografia - reconstrucao panoramica e cortes
+                transversais (visualizar e ensinar; nao entra na fila) */}
+            {!ehProfessor && fichaAtiva && form.tipo_radiografia === 'tomografia' && (
+              <Link
+                href={`/curadoria/reconstrucao?ref=${fichaAtiva.orthancReferenceId}`}
+                className="whitespace-nowrap rounded-full border border-teal-400/50 px-2.5 py-1 text-xs text-teal-100 hover:bg-teal-400/10"
+              >
+                {tReconstrucao('atalho')}
               </Link>
             )}
 
