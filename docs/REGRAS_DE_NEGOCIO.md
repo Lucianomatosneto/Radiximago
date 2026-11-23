@@ -172,6 +172,12 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
   - o volume é lido corte a corte, guardando só a região da arcada;
   - limite de 250 milhões de voxels.
 - A tomografia original **não muda**. Cada reconstrução fica na auditoria (`reconstrucao_panoramica`).
+- **Canal mandibular (23/11/2026, decisões do Luciano):**
+  - o curador marca o trajeto do canal **na panorâmica reconstruída**: de 1 a 2 traçados (os dois lados), cada um com 2 a 60 pontos dentro da imagem;
+  - o canal aparece **desenhado em séries novas**, em cor (RGB), no mesmo estudo: "Panorâmica com canal" (traço amarelo no 1º traçado, ciano no 2º) e "Cortes com canal" (marca na **altura** do canal em cada corte, sobre a faixa da panorâmica);
+  - **limite declarado:** a panorâmica é a média de uma faixa, então mostra a altura do canal ao longo da arcada, mas não a posição vestibulolingual dele. A marca do corte indica só a altura;
+  - a reconstrução original não muda. Marcar de novo gera séries novas, e a mais nova vale no visualizador. O último trajeto fica registrado na reconstrução. Auditoria: `marcacao_canal_mandibular`;
+  - material de ensino, **não diagnóstico** e não serve para planejar implante.
 
 ### 1.5 Acesso negado (01/11/2026)
 
@@ -306,3 +312,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.27 | 23/11/2026 | Triagem também corrige imagens que estão na modalidade errada ("Mover para"; atalho "Corrigir modalidade" na Curadoria) (seção 2) |
 | 1.28 | 23/11/2026 | Reconstrução panorâmica e cortes transversais da tomografia (seção 1.13) |
 | 1.29 | 23/11/2026 | Roteiro para manter ativo só o acervo da avaliação (desativação reversível, com auditoria) (seção 2) |
+| 1.30 | 23/11/2026 | Canal mandibular marcado na panorâmica reconstruída e desenhado em séries novas (seção 1.13) |
