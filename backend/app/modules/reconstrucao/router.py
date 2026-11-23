@@ -10,6 +10,10 @@ curadoria nem na pesquisa como radiografia.
 - POST /reconstrucao/{ref}            -> gera a panoramica e os cortes
                                          transversais e grava no Orthanc
 - GET  /reconstrucao/{ref}/lista      -> reconstrucoes ja feitas desse exame
+- GET  /reconstrucao/{ref}/{rec}/panoramica(.png) -> a panoramica gerada,
+                                         para marcar o canal mandibular
+- POST /reconstrucao/{ref}/{rec}/canal -> desenha o canal na panoramica e nos
+                                         cortes (series novas; 23/11/2026)
 
 Quem pode: curador e administrador (quem escreve na curadoria). Ver as
 series geradas segue a regra do estudo (portaria do visualizador).
@@ -21,6 +25,7 @@ from __future__ import annotations
 
 import io
 import threading
+from datetime import datetime, timezone
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -35,6 +40,7 @@ from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import PERFIS_CURADORIA_ESCRITA, exigir_perfis
 from app.modules.orthanc_references import OrthancReference, visivel_para
+from app.modules.reconstrucao import canal as desenho_canal
 from app.modules.reconstrucao import fonte
 from app.modules.reconstrucao.dicom_derivado import gerar_instancia
 from app.modules.reconstrucao.modelo import ReconstrucaoTomografia
@@ -56,6 +62,8 @@ router = APIRouter(prefix="/reconstrucao", tags=["Reconstrução panorâmica (to
 TRAVA = threading.Lock()
 # serie da panoramica = 9001, 9003...; cortes = 9002, 9004... (uma dupla por reconstrucao)
 SERIE_BASE = 9001
+# canal mandibular desenhado: panoramica = 9501, 9503...; cortes = 9502, 9504...
+SERIE_BASE_CANAL = 9501
 MARGEM_MM = 5.0  # folga ao redor da curva no recorte do volume
 
 
@@ -231,9 +239,137 @@ def listar_reconstrucoes(ref_id: int, usuario: User = Depends(exigir_perfis(*PER
             "total_cortes": r.total_cortes,
             "tamanho_pixel_mm": r.tamanho_pixel_mm,
             "parametros": r.parametros,
+            "canal": ({"tracados": r.canal.get("tracados"), "criado_em": r.canal.get("criado_em")} if r.canal else None),
         }
         for r in linhas
     ]
+
+
+# --------------------------------------------------------------------- canal mandibular
+def _reconstrucao(db: Session, ref_id: int, rec_id: int, usuario: User) -> tuple[OrthancReference, ReconstrucaoTomografia]:
+    ref = _exame(db, ref_id, usuario)
+    rec = db.query(ReconstrucaoTomografia).filter(
+        ReconstrucaoTomografia.id == rec_id, ReconstrucaoTomografia.orthanc_reference_id == ref.id
+    ).first()
+    if not rec:
+        raise HTTPException(status_code=404, detail="Reconstrução não encontrada.")
+    return ref, rec
+
+
+def _ler_derivada(orthanc_id: str):
+    try:
+        return fonte.ler_corte(orthanc_id)
+    except Exception as erro:  # noqa: BLE001 - instancia apagada do Orthanc
+        raise HTTPException(status_code=409, detail="As imagens desta reconstrução não estão mais no Orthanc; gere de novo.") from erro
+
+
+@router.get("/{ref_id}/{rec_id}/panoramica")
+def obter_panoramica(ref_id: int, rec_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+                     db: Session = Depends(get_db)):
+    _, rec = _reconstrucao(db, ref_id, rec_id, usuario)
+    pano = fonte.ler_corte(rec.instancias_orthanc[0], so_cabecalho=True)
+    return {
+        "largura": int(pano.Columns),
+        "altura": int(pano.Rows),
+        "tamanho_pixel_mm": rec.tamanho_pixel_mm,
+        "canal": {"tracados": rec.canal.get("tracados")} if rec.canal else None,
+    }
+
+
+@router.get("/{ref_id}/{rec_id}/panoramica.png")
+def obter_panoramica_png(ref_id: int, rec_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+                         db: Session = Depends(get_db)):
+    _, rec = _reconstrucao(db, ref_id, rec_id, usuario)
+    cinza = desenho_canal.em_rgb(_ler_derivada(rec.instancias_orthanc[0]).pixel_array.astype(np.float32))[:, :, 0]
+    saida = io.BytesIO()
+    Image.fromarray(cinza).save(saida, format="PNG")
+    return Response(
+        content=saida.getvalue(),
+        media_type="image/png",
+        headers={
+            "Content-Disposition": disposicao_de_arquivo(f"radix-imago-tomografia-{ref_id}-panoramica-{rec_id}.png"),
+            "Cache-Control": "private, max-age=300",
+        },
+    )
+
+
+class PedidoCanal(BaseModel):
+    # ate 2 tracados (os dois lados); pontos em PIXELS da panoramica (coluna, linha)
+    tracados: list[list[tuple[float, float]]] = Field(..., min_length=1, max_length=desenho_canal.MAX_TRACADOS)
+
+
+@router.post("/{ref_id}/{rec_id}/canal", status_code=201)
+def marcar_canal(
+    ref_id: int,
+    rec_id: int,
+    pedido: PedidoCanal,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    db: Session = Depends(get_db),
+):
+    ref, rec = _reconstrucao(db, ref_id, rec_id, usuario)
+    if not TRAVA.acquire(blocking=False):
+        raise HTTPException(status_code=409, detail="Há outra reconstrução em andamento no servidor; tente de novo em instantes.")
+    try:
+        pano_ds = _ler_derivada(rec.instancias_orthanc[0])
+        pano = pano_ds.pixel_array.astype(np.float32)
+        altura, largura = pano.shape
+        try:
+            tracados = [desenho_canal.linha_do_canal(t, largura, altura) for t in pedido.tracados]
+        except ValueError as erro:
+            raise HTTPException(status_code=422, detail=str(erro)) from erro
+        params = rec.parametros or {}
+        passo = float(rec.tamanho_pixel_mm)
+        intervalo = float(params.get("intervalo_mm", 1.0))
+        meia_faixa = max(1, int(round(float(params.get("espessura_mm", 10.0)) / 2 / passo)))
+
+        anteriores = [r.canal.get("numero_serie", 0) for r in db.query(ReconstrucaoTomografia).filter(
+            ReconstrucaoTomografia.orthanc_reference_id == ref.id, ReconstrucaoTomografia.canal.isnot(None)).all()]
+        numero = max([SERIE_BASE_CANAL - 2, *anteriores]) + 2
+        uid_pano, uid_cortes = generate_uid(), generate_uid()
+        n_tracados = len(pedido.tracados)
+        derivacao = (
+            f"Canal mandibular marcado por curador (Radix Imago) sobre a panoramica reconstruida "
+            f"{rec.serie_panoramica_uid}: {n_tracados} tracado(s). Material de ensino, nao diagnostico."
+        )
+        enviados = [orthanc_client.enviar_instancia(gerar_instancia(
+            pano_ds, desenho_canal.panoramica_com_canal(pano, pedido.tracados), passo, uid_pano, numero,
+            "RADIX - Panorâmica com canal (TC)", 1, derivacao,
+        ))["ID"]]
+        for i, oid in enumerate(rec.instancias_orthanc[1:1 + rec.total_cortes], start=1):
+            corte = _ler_derivada(oid)
+            coluna = desenho_canal.coluna_do_corte(i, intervalo, passo, largura)
+            marcas = desenho_canal.alturas_na_coluna(tracados, coluna)
+            enviados.append(orthanc_client.enviar_instancia(gerar_instancia(
+                corte, desenho_canal.corte_com_canal(corte.pixel_array.astype(np.float32), marcas, meia_faixa), passo,
+                uid_cortes, numero + 1, "RADIX - Cortes com canal (TC)", i,
+                "Corte transversal com a ALTURA do canal mandibular marcada sobre a faixa da panoramica "
+                "(a panoramica nao define a posicao vestibulolingual do canal).",
+                comentario=str(getattr(corte, "ImageComments", "")),
+            ))["ID"])
+        rec.canal = {
+            "tracados": [[list(p) for p in t] for t in pedido.tracados],
+            "serie_panoramica_uid": uid_pano,
+            "serie_cortes_uid": uid_cortes,
+            "numero_serie": numero,
+            "criado_por_id": usuario.id,
+            "criado_em": datetime.now(timezone.utc).isoformat(),
+        }
+        rec.instancias_orthanc = [*rec.instancias_orthanc, *enviados]
+        db.add(AuditLog(
+            usuario_id=usuario.id, acao="marcacao_canal_mandibular", entidade="orthanc_reference", entidade_id=ref.id,
+            resultado="sucesso",
+            detalhes=(f"Canal mandibular ({n_tracados} tracado(s)) desenhado na reconstrucao {rec.id}: "
+                      f"series {numero} e {numero + 1} ({len(enviados) - 1} cortes)."),
+        ))
+        db.commit()
+        return {
+            "id": rec.id,
+            "serie_panoramica_uid": uid_pano,
+            "serie_cortes_uid": uid_cortes,
+            "total_cortes": len(enviados) - 1,
+        }
+    finally:
+        TRAVA.release()
 
 
 def instancias_derivadas(db: Session) -> set[str]:

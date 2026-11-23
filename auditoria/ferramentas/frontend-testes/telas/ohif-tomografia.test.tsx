@@ -204,6 +204,36 @@ describe('reconstrucao no painel', () => {
     expect(botao('4 quadros')).toBeTruthy()
   })
 
+  // CANAL MANDIBULAR (23/11/2026): series "RADIX - Panorâmica com canal (TC)"
+  // e "RADIX - Cortes com canal (TC)" ganham botoes proprios (a mais nova)
+  it('botoes "Panorâmica com canal" e "Cortes com canal" abrem as series desenhadas', () => {
+    const r = montar('CT', 120)
+    const s = (window as unknown as { services: Record<string, Record<string, unknown>> }).services
+    const ct = { displaySetInstanceUID: 'ds1', StudyInstanceUID: 'e1', Modality: 'CT', instances: Array.from({ length: 120 }, () => ({})) }
+    const pano = { displaySetInstanceUID: 'pano1', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Panorâmica reconstruída (TC)', SeriesNumber: 9001, instances: [{}] }
+    const comCanal = { displaySetInstanceUID: 'canal-pano', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Panorâmica com canal (TC)', SeriesNumber: 9501, instances: [{}] }
+    const cortesCanal = { displaySetInstanceUID: 'canal-cortes', StudyInstanceUID: 'e1', Modality: 'OT', SeriesDescription: 'RADIX - Cortes com canal (TC)', SeriesNumber: 9502, instances: [{}, {}] }
+    s.displaySetService.getActiveDisplaySets = () => [ct, pano, comCanal, cortesCanal]
+    const definir = vi.fn()
+    s.viewportGridService.setDisplaySetsForViewport = definir
+    vi.advanceTimersByTime(1000)
+    fireEvent.click(botao('Panorâmica com canal'))
+    vi.advanceTimersByTime(600)
+    expect(definir).toHaveBeenLastCalledWith({ viewportId: 'ax', displaySetInstanceUIDs: ['canal-pano'] })
+    fireEvent.click(botao('Cortes com canal'))
+    vi.advanceTimersByTime(600)
+    expect(definir).toHaveBeenLastCalledWith({ viewportId: 'ax', displaySetInstanceUIDs: ['canal-cortes'] })
+    // a panoramica sem canal continua com o botao dela
+    fireEvent.click(botao('Panorâmica reconstruída'))
+    vi.advanceTimersByTime(600)
+    expect(definir).toHaveBeenLastCalledWith({ viewportId: 'ax', displaySetInstanceUIDs: ['pano1'] })
+    // com a serie desenhada aberta, o painel continua
+    s.displaySetService.getDisplaySetByUID = () => comCanal
+    vi.advanceTimersByTime(1500)
+    expect(painel()).toBeTruthy()
+    expect(r).toBeTruthy()
+  })
+
   it('sem reconstrucao no estudo: sem os botoes', () => {
     montar('CT', 120)
     expect(within(painel()).queryByRole('button', { name: 'Panorâmica reconstruída' })).toBeNull()

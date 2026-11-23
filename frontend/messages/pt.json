@@ -3367,6 +3367,19 @@
     "gerar": "Gerar panorâmica e cortes",
     "gerando": "Gerando…",
     "feitas": "Reconstruções já feitas",
-    "itemLista": "{data}: {n} cortes · faixa {faixa} mm · a cada {intervalo} mm"
+    "itemLista": "{data}: {n} cortes · faixa {faixa} mm · a cada {intervalo} mm",
+    "canalMarcar": "Marcar canal mandibular",
+    "canalMarcado": "canal marcado",
+    "canalTitulo": "Canal mandibular",
+    "canalExplica": "Clique pontos ao longo do canal na panorâmica reconstruída, do forame mandibular ao forame mentual. Marque um lado, clique em \"Outro lado\" e marque o segundo. Ao gravar, o canal aparece desenhado em séries novas no visualizador (painel Tomografia → Reconstrução).",
+    "canalFechar": "Fechar",
+    "canalAltImagem": "Panorâmica reconstruída da tomografia",
+    "canalTracadoAtual": "Traçado {n}: {pontos, plural, =0 {nenhum ponto} one {1 ponto} other {# pontos}}",
+    "canalNovoTracado": "Outro lado",
+    "canalGravar": "Gravar canal",
+    "canalPronto": "Pronto: canal desenhado na panorâmica e em {n} cortes. No visualizador, use Tomografia → Reconstrução → Panorâmica com canal.",
+    "canalErroCarregar": "Não foi possível abrir a panorâmica desta reconstrução.",
+    "canalErroGravar": "Não foi possível gravar o canal.",
+    "canalLimite": "Material de ensino, não diagnóstico. A panorâmica mostra a altura do canal ao longo da arcada; nos cortes transversais a marca indica essa altura, não a posição vestibulolingual."
   }
 }

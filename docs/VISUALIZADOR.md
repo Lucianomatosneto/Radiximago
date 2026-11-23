@@ -55,6 +55,23 @@ CT com vários cortes. Ele é recolhível, para liberar a imagem.
    botão abre num quadro só a série mais nova daquele tipo. Os botões de
    Visualização voltam à tomografia.
 
+### Canal mandibular (23/11/2026)
+
+1. Na tela de reconstrução, em **Reconstruções já feitas**, o curador clica
+   em **Marcar canal mandibular**. A panorâmica gerada aparece.
+2. Ele clica pontos ao longo do canal, do forame mandibular ao forame
+   mentual. Depois clica em **Outro lado** e marca o segundo canal. O 1º
+   traçado fica amarelo e o 2º, ciano.
+3. Em **Gravar canal**, o servidor gera duas séries novas, em cor: **Panorâmica
+   com canal** (o traço) e **Cortes com canal** (uma marca na altura do canal
+   em cada corte, sobre a faixa da panorâmica).
+4. No visualizador, o grupo **Reconstrução** do painel Tomografia ganha os
+   botões **Panorâmica com canal** e **Cortes com canal**.
+
+Limite: a panorâmica mostra a altura do canal ao longo da arcada, mas não se
+ele está mais para lingual ou vestibular. Nos cortes, a marca indica só a
+altura. É material de ensino, não diagnóstico.
+
 As séries geradas ficam no mesmo exame, para visualizar e ensinar. Elas não entram na fila da curadoria. Regras completas: `docs/REGRAS_DE_NEGOCIO.md`, seção 1.13.
 
 **Limitações conhecidas:**
@@ -65,4 +82,4 @@ As séries geradas ficam no mesmo exame, para visualizar e ensinar. Elas não en
 - O OHIF não tem reconstrução panorâmica curva nem cortes transversais ao
   longo da arcada. Por isso o Rádix gera esses recursos no servidor, como
   séries novas (seção acima).
-- A marcação do canal mandibular ainda não existe.
+- O canal mandibular é marcado na panorâmica (seção acima). A posição vestibulolingual dele não é marcada.

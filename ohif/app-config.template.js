@@ -1060,19 +1060,26 @@ window.config = {
   // RECONSTRUCAO PANORAMICA (23/11/2026): series que o Radix gera no mesmo
   // estudo da tomografia (backend/app/modules/reconstrucao). A mais nova
   // (maior SeriesNumber) de cada tipo ganha um botao.
-  var DESCRICOES = { pano: 'RADIX - Panorâmica reconstruída', cortes: 'RADIX - Cortes transversais' };
+  // canal mandibular desenhado (23/11/2026): series proprias, com botoes proprios
+  var DESCRICOES = {
+    pano: 'RADIX - Panorâmica reconstruída',
+    cortes: 'RADIX - Cortes transversais',
+    panoCanal: 'RADIX - Panorâmica com canal',
+    cortesCanal: 'RADIX - Cortes com canal',
+  };
+  var TIPOS_REC = ['pano', 'cortes', 'panoCanal', 'cortesCanal'];
   function ativos() {
     var s = servicos();
     try { return (s && s.displaySetService && s.displaySetService.getActiveDisplaySets()) || []; } catch (e) { return []; }
   }
   function eReconstrucao(ds) {
     var d = (ds && ds.SeriesDescription) || '';
-    return d.indexOf(DESCRICOES.pano) === 0 || d.indexOf(DESCRICOES.cortes) === 0;
+    return TIPOS_REC.some(function (tipo) { return d.indexOf(DESCRICOES[tipo]) === 0; });
   }
   function reconstrucoes() {
-    var achadas = { pano: null, cortes: null };
+    var achadas = { pano: null, cortes: null, panoCanal: null, cortesCanal: null };
     ativos().forEach(function (ds) {
-      ['pano', 'cortes'].forEach(function (tipo) {
+      TIPOS_REC.forEach(function (tipo) {
         if (((ds.SeriesDescription || '').indexOf(DESCRICOES[tipo]) === 0) &&
             (!achadas[tipo] || Number(ds.SeriesNumber || 0) > Number(achadas[tipo].SeriesNumber || 0))) {
           achadas[tipo] = ds;
@@ -1215,6 +1222,8 @@ window.config = {
     var itens = [];
     if (rec.pano) itens.push(botao('Panorâmica reconstruída', false, function () { abrirSerie(rec.pano); }));
     if (rec.cortes) itens.push(botao('Cortes transversais', false, function () { abrirSerie(rec.cortes); }));
+    if (rec.panoCanal) itens.push(botao('Panorâmica com canal', false, function () { abrirSerie(rec.panoCanal); }));
+    if (rec.cortesCanal) itens.push(botao('Cortes com canal', false, function () { abrirSerie(rec.cortesCanal); }));
     if (itens.length) painel.appendChild(grupo('Reconstrução', itens));
   }
 
@@ -1232,7 +1241,7 @@ window.config = {
     if (!tc) { desmontar(); return; }
     document.body.classList.add('radix-tc');
     var rec = reconstrucoes();
-    var nova = (rec.pano ? rec.pano.displaySetInstanceUID : '') + '|' + (rec.cortes ? rec.cortes.displaySetInstanceUID : '');
+    var nova = TIPOS_REC.map(function (tipo) { return rec[tipo] ? rec[tipo].displaySetInstanceUID : ''; }).join('|');
     if (nova !== assinatura) { assinatura = nova; montar(true); }
     var estudo = ds.StudyInstanceUID || ds.displaySetInstanceUID;
     if (!estudosAbertos[estudo]) {
