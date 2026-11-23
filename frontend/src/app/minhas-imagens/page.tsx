@@ -20,7 +20,9 @@ import { useDescricaoCuradoria } from '../../lib/descricaoCuradoria'
 import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
-import SecaoEnvios from '../../components/envios/SecaoEnvios'
+import GradeEnvios from '../../components/envios/GradeEnvios'
+import PedirSegundaOpiniaoLote from '../../components/segundaOpiniao/PedirSegundaOpiniaoLote'
+import FiltroTipoRadiografia from '../../components/FiltroTipoRadiografia'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
 
@@ -34,6 +36,9 @@ import AvisoSemConexao from '../../components/AvisoSemConexao'
 // pelas SELECIONADAS, na barra (sem "x" no quadrado, para nao apagar sem
 // querer), e a remocao pede confirmacao.
 // Dados: backend/app/modules/saved_images_router.py (GET /saved-images/).
+// 22/11/2026 (video das telas): filtro por tipo de radiografia no topo, que
+// vale para as salvas e para as enviadas por mim (GradeEnvios, que agora e
+// grade com as acoes na barra, no mesmo padrao).
 
 interface ImagemSalva {
   curation_id: number
@@ -70,6 +75,8 @@ export default function MinhasImagensPage() {
   const router = useRouter()
   const t = useTranslations('MinhasImagens')
   const [equipe, setEquipe] = useState(false)
+  // curador e administrador: "Pedir segunda opiniao" das selecionadas (22/11/2026)
+  const [podeCurar, setPodeCurar] = useState(false)
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const tComum = useTranslations('Comum')
   const tPesquisa = useTranslations('Pesquisa')
@@ -104,10 +111,12 @@ export default function MinhasImagensPage() {
   const [barraRolada, setBarraRolada] = useState(false)
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
+  const [filtroTipo, setFiltroTipo] = useState<string | null>(null)
 
   // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
     setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
+    setPodeCurar(['curador', 'administrador'].includes(sessao.perfil))
     void carregar()
   })
 
@@ -222,6 +231,12 @@ export default function MinhasImagensPage() {
   }
 
   const temSelecao = selecionados.length > 0
+  const visiveis = filtroTipo ? itens.filter((i) => i.tipo_radiografia === filtroTipo) : itens
+  function trocarFiltro(tipo: string | null) {
+    setFiltroTipo(tipo)
+    setSelecionados([])
+    setConfirmandoRemocao(false)
+  }
   const algumaSelecionadaEhSerie = selecionados.some((id) => infoSeries[id] === true)
   const permiteEnviarLote = temSelecao && selecionados.every((id) => infoSeries[id] === false)
 
@@ -267,12 +282,12 @@ export default function MinhasImagensPage() {
     setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]))
   }
   function selecionarTodas() {
-    setSelecionados(itens.map((i) => i.curation_id))
+    setSelecionados(visiveis.map((i) => i.curation_id))
   }
   function selecionarMais(n: number) {
     if (!Number.isFinite(n) || n < 1) return
     setSelecionados((atual) => {
-      const novos = itens.filter((i) => !atual.includes(i.curation_id)).slice(0, n).map((i) => i.curation_id)
+      const novos = visiveis.filter((i) => !atual.includes(i.curation_id)).slice(0, n).map((i) => i.curation_id)
       return [...atual, ...novos]
     })
   }
@@ -291,8 +306,8 @@ export default function MinhasImagensPage() {
     achado_principal: i.achado_principal,
     erros_tecnicos: i.erros_tecnicos,
   })
-  const todosNumerados = itens.map((i, n) => paraVisualizador(i, n + 1))
-  const itensSelecionados = itens
+  const todosNumerados = visiveis.map((i, n) => paraVisualizador(i, n + 1))
+  const itensSelecionados = visiveis
     .map((i, n) => ({ i, n }))
     .filter(({ i }) => selecionados.includes(i.curation_id))
     .map(({ i, n }) => paraVisualizador(i, n + 1))
@@ -326,8 +341,10 @@ export default function MinhasImagensPage() {
             </h1>
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
-          {/* etapa B (08/11/2026): imagens que EU enviei (so para mim, em analise, na fila) */}
-          <SecaoEnvios modo="meus" equipe={equipe} />
+          {/* filtro por tipo (22/11/2026): vale para as enviadas e para as salvas */}
+          <FiltroTipoRadiografia valor={filtroTipo} aoMudar={trocarFiltro} />
+          {/* etapa B (08/11/2026): imagens que EU enviei - em grade desde 22/11/2026 */}
+          <GradeEnvios equipe={equipe} filtroTipo={filtroTipo} />
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">
@@ -356,13 +373,13 @@ export default function MinhasImagensPage() {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-8 items-center rounded-full bg-brand/10 px-3 text-xs font-medium text-brand-300">
-                    {t('quantidade', { quantidade: itens.length })}
+                    {t('quantidade', { quantidade: visiveis.length })}
                   </span>
 
                   <div className="flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
                     {!barraRolada && <span className="px-1 text-[11px] font-medium text-slate-400">{tPesquisa('selecaoLabel')}</span>}
                     <button type="button" onClick={selecionarTodas} className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300">
-                      {tPesquisa('selecionarTodas', { quantidade: itens.length })}
+                      {tPesquisa('selecionarTodas', { quantidade: visiveis.length })}
                     </button>
                     {[10, 15, 20, 25].map((n) => (
                       <button
@@ -378,7 +395,7 @@ export default function MinhasImagensPage() {
                     <input
                       type="number"
                       min={1}
-                      max={itens.length}
+                      max={visiveis.length}
                       value={quantidadeLote}
                       onChange={(e) => setQuantidadeLote(Number(e.target.value))}
                       aria-label={tPesquisa('selecionarMaisBotao')}
@@ -423,6 +440,14 @@ export default function MinhasImagensPage() {
                       paraBaixo
                       className={botaoBarra}
                     />
+                    {podeCurar && (
+                      <PedirSegundaOpiniaoLote
+                        curationIds={selecionados}
+                        soIcone={barraRolada}
+                        className={botaoBarra}
+                        onConcluido={() => setSelecionados([])}
+                      />
+                    )}
                     {temSelecao &&
                       (confirmandoRemocao ? (
                         <span className="flex h-8 items-center gap-1 rounded-lg border border-red-500/60 bg-red-500/10 px-2 text-xs text-red-300">
@@ -478,7 +503,7 @@ export default function MinhasImagensPage() {
                   className="grid grid-cols-1 justify-center gap-3 pb-2 min-[480px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
                   style={ladoCartao ? { gridTemplateColumns: `repeat(5, ${ladoCartao}px)` } : undefined}
                 >
-                  {itens.map((item, indice) => {
+                  {visiveis.map((item, indice) => {
                     const id = item.curation_id
                     const marcada = selecionados.includes(id)
                     const ampliado = cartaoAmpliado === id

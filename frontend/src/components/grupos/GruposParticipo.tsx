@@ -1,5 +1,7 @@
 'use client'
 
+// GRUPOS DE QUE PARTICIPO - aba da tela Grupos (desde 22/11/2026 Grupos e
+// Meus grupos sao uma tela so: frontend/src/app/grupos/page.tsx).
 // MEUS GRUPOS (17/11/2026, Etapa 2 dos grupos ampliados). Para todos os perfis:
 // - convites recebidos: aceitar ou recusar (so entra quem aceita - D1);
 // - grupos de que participo: sem a lista dos colegas (D2); sair quando quiser;
@@ -9,15 +11,10 @@
 // Quem decide de verdade e o servidor; a tela so mostra. Nada e guardado no
 // navegador.
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
-import { UserPlus } from 'lucide-react'
-import Sidebar from '../../components/Sidebar'
-import Topbar from '../../components/Topbar'
-import { useConfirmacao } from '../../components/useConfirmacao'
-import { useVerificarSessao } from '../../lib/useVerificarSessao'
-import AvisoSemConexao from '../../components/AvisoSemConexao'
-import ImagensGrupoParticipante from '../../components/envios/ImagensGrupoParticipante'
+import { useConfirmacao } from '../useConfirmacao'
+import ImagensGrupoParticipante from '../envios/ImagensGrupoParticipante'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -52,13 +49,11 @@ async function lerLista<T>(caminho: string, campo: string): Promise<T[]> {
 // o menu reconta os convites esperando resposta
 const avisarMenu = () => window.dispatchEvent(new Event('radix-grupos-mudou'))
 
-export default function MeusGruposPage() {
+export default function GruposParticipo({ ehEstudante }: { ehEstudante: boolean }) {
   const t = useTranslations('MeusGrupos')
   const tComum = useTranslations('Comum')
   const locale = useLocale()
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
-  const [pronto, setPronto] = useState(false)
-  const [ehEstudante, setEhEstudante] = useState(false)
   const [convites, setConvites] = useState<Convite[]>([])
   const [participo, setParticipo] = useState<Participacao[]>([])
   const [pedidos, setPedidos] = useState<Pedido[]>([])
@@ -80,13 +75,11 @@ export default function MeusGruposPage() {
     setPedidos(e)
   }
 
-  // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
-  const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((s) => {
-    const estudante = s.perfil === 'estudante'
-    setEhEstudante(estudante)
-    setPronto(true)
-    void carregar(estudante)
-  })
+  // a tela Grupos ja conferiu a sessao antes de mostrar esta aba
+  useEffect(() => {
+    void carregar(ehEstudante)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ehEstudante])
 
   async function procurar(e?: React.FormEvent) {
     e?.preventDefault()
@@ -141,26 +134,14 @@ export default function MeusGruposPage() {
 
   const data = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString(locale === 'en' ? 'en-US' : 'pt-BR') : '')
 
-  if (semConexao) return <AvisoSemConexao aoTentar={tentarDeNovo} ocupado={verificando} />
-  if (!pronto) {
-    return <main className="flex min-h-screen items-center justify-center bg-base"><p className="text-sm text-slate-400">{t('carregando')}</p></main>
-  }
-
   const caixa = 'max-w-4xl space-y-3 rounded-2xl border border-base-border bg-base-surface p-4'
   const titulo = 'text-base font-semibold text-ink'
   const item = 'flex flex-wrap items-center justify-between gap-2 rounded-lg border border-base-border p-3 text-sm text-ink-2'
   const botao = 'rounded-md border border-base-border px-3 py-1 text-xs text-ink hover:border-brand'
 
   return (
-    <div className="flex min-h-screen bg-base">
-      <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar />
-        <main className="min-w-0 flex-1 space-y-6 overflow-y-auto p-4 sm:p-6">
-          <div>
-            <h1 className="titulo-pagina tela-entra flex items-center gap-2"><UserPlus aria-hidden="true" className="h-6 w-6" /> {t('titulo')}</h1>
-            <p className="mt-1 max-w-3xl text-sm text-slate-400">{t('subtitulo')}</p>
-          </div>
+    <div className="space-y-6">
+          <p className="max-w-3xl text-sm text-slate-400">{t('subtitulo')}</p>
           {aviso && <p role="status" className="rounded-lg bg-emerald-500/10 p-3 text-sm text-emerald-800 dark:text-emerald-300">{aviso}</p>}
           {erro && <p role="alert" className="rounded-lg bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">{erro}</p>}
 
@@ -266,8 +247,6 @@ export default function MeusGruposPage() {
               </ul>
             )}
           </section>
-        </main>
-      </div>
       {quadroConfirmacao}
     </div>
   )

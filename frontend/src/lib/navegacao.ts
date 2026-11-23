@@ -10,7 +10,7 @@ export const paginaInicial = (perfil: string | null | undefined) =>
  * imagens, Compartilhadas, Curadoria, visualizador)
  * continuam com a largura toda. */
 export const ROTAS_LARGURA_LIMITADA = [
-  '/sugestoes', '/enviar-imagem', '/grupos', '/meus-grupos', '/aparelhos', '/pranchas-recebidas', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
+  '/sugestoes', '/enviar-imagem', '/grupos', '/aparelhos', '/pranchas-recebidas', '/macros', '/vocabulario', '/usuarios', '/painel-admin', '/configuracoes',
   '/integracoes', '/meus-acessos', '/relatorios', '/dashboard',
 ]
 

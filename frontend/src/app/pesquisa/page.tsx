@@ -20,6 +20,7 @@ import VisualizadorSequencial from '../../components/VisualizadorSequencial'
 import SeletorDentesGrupos, { setasEntreBotoes } from '../../components/pesquisa/SeletorDentesGrupos'
 import type { Marcacao } from '../../lib/marcacoes'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import EnviarParaGrupo from '../../components/envios/EnviarParaGrupo'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
 import { TIPOS_ACHADO, REGIOES_ANATOMICAS } from '../../lib/achados'
 import { rotuloErro } from '../../lib/errosTecnicos'
@@ -1076,6 +1077,8 @@ function PesquisaConteudo() {
                             <MenuSalvarMinhasImagens grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuSalvarComo grupos={gruposAcoes} enxuto soIcone={barraRolada} />
                             <MenuImpressao grupos={gruposAcoes} enxuto soIcone={barraRolada} />
+                            {/* 22/11/2026: enviar as selecionadas a grupos (so quem cria grupos) */}
+                            {selecionados.length > 0 && <EnviarParaGrupo curationIds={selecionados} soIcone={barraRolada} />}
                           </>
                         )
                       })()}

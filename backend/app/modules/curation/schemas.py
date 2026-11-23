@@ -172,7 +172,12 @@ class AnotacaoItemEntrada(BaseModel):
     nota: Optional[TextoMedio] = None
     # valor proposto para o item (so nos itens com lista de valores: tipo,
     # qualidade, achado principal, genero, dentes) - validado no servidor
-    valor_sugerido: Optional[Annotated[str, Field(max_length=60)] | Annotated[List[int], Field(max_length=MAX_DENTES)]] = None
+    # ou, no item "marcacoes" (22/11/2026), as marcacoes que o revisor desenhou
+    valor_sugerido: Optional[
+        Annotated[str, Field(max_length=60)]
+        | Annotated[List[int], Field(max_length=MAX_DENTES)]
+        | Annotated[List[Marcacao], Field(max_length=MAX_MARCACOES)]
+    ] = None
 
 
 class ReviewRespond(BaseModel):

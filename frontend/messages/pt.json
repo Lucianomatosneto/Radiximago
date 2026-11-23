@@ -269,8 +269,7 @@
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
       "aparelhos": "Aparelhos da rede",
-      "pranchasRecebidas": "Pranchas recebidas",
-      "meusGrupos": "Meus grupos"
+      "pranchasRecebidas": "Pranchas recebidas"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -1934,7 +1933,8 @@
     "respostaEnviada": "Resposta enviada para {nome}.",
     "respostaEnviadaResponderDeNovo": "Resposta enviada para {nome}. Responder de novo",
     "erroRespostaVazia": "Escreva a resposta antes de enviar.",
-    "erroResponder": "Não foi possível enviar a resposta."
+    "erroResponder": "Não foi possível enviar a resposta.",
+    "permitirResposta": "Permitir que a pessoa responda"
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Compartilhadas",
@@ -2315,7 +2315,9 @@
       "incorporada": "{item}: acrescentado à curadoria.",
       "dispensada": "{item}: anotação dispensada.",
       "aprovada": "Ficha aprovada.",
-      "descartada": "Ficha descartada."
+      "descartada": "Ficha descartada.",
+      "mantida": "Ficha mantida aprovada.",
+      "arquivada": "Ficha arquivada."
     },
     "rodape": {
       "falta": "Escolha a avaliação geral (1, 2 ou 3) para enviar.",
@@ -2329,7 +2331,10 @@
       "titulo": "Visualizador de imagens (OHIF)",
       "indisponivel": "Imagem indisponível no visualizador.",
       "mostrarMarcacoes": "Mostrar marcações do curador ({total})",
-      "esconderMarcacoes": "Esconder marcações do curador ({total})"
+      "esconderMarcacoes": "Esconder marcações do curador ({total})",
+      "semMarcacoesCurador": "O curador não fez marcações nesta imagem",
+      "sugestaoN": "Sugestão do revisor {numero}",
+      "legendaSugeridas": "Tracejado rosa: sugestões do revisor ({total})"
     },
     "pedido": {
       "titulo": "Pedido de segunda opinião",
@@ -2402,9 +2407,17 @@
         "valor": "Por que mudar? O que você observa na imagem?",
         "dentes": "Ex.: o 21 também está envolvido.",
         "texto": "Escreva o complemento ou a correção.",
-        "nota": "Escreva a sua observação sobre este item."
+        "nota": "Escreva a sua observação sobre este item.",
+        "marcacoes": "Explique as marcações que você sugeriu."
       },
-      "expliqueAnotacao": "Escreva a anotação (ou proponha um valor) para este item."
+      "expliqueAnotacao": "Escreva a anotação (ou proponha um valor) para este item.",
+      "novaMarcacao": "Fazer nova marcação",
+      "novaMarcacaoDica": "Desenhe na imagem onde você vê o que falta ou o que está diferente. Quem pediu verá suas marcações destacadas.",
+      "marcacoesSugeridas": "{total, plural, one {1 marcação sugerida} other {# marcações sugeridas}}",
+      "limparMarcacoes": "Limpar marcações sugeridas",
+      "editorDica": "Use oval, retângulo ou seta e escolha o achado de cada marcação. As marcações do curador não mudam.",
+      "concluir": "Concluir",
+      "cancelar": "Cancelar"
     },
     "devolvida": {
       "parecerDe": "Parecer da segunda opinião",
@@ -2435,7 +2448,15 @@
       "descartar": "Descartar",
       "motivoDescarte": "Motivo do descarte",
       "confirmarDescarte": "Confirmar descarte",
-      "voltar": "Voltar"
+      "voltar": "Voltar",
+      "decisaoAprovada": "Esta ficha já está no banco e continua na Pesquisa até você decidir.",
+      "decisaoInstrucaoAprovada": "Com as anotações resolvidas, mantenha a ficha aprovada ou arquive (sai da Pesquisa; nada é apagado).",
+      "manterAprovada": "Manter aprovada",
+      "arquivar": "Arquivar",
+      "motivoArquivamento": "Motivo do arquivamento",
+      "confirmarArquivamento": "Confirmar arquivamento",
+      "marcacoesSugeridas": "{total, plural, one {1 marcação sugerida — tracejada em rosa na imagem} other {# marcações sugeridas — tracejadas em rosa na imagem}}",
+      "efeitoMarcacoes": "acrescenta as marcações à ficha"
     },
     "sair": "Sair",
     "holofote": {
@@ -2443,7 +2464,20 @@
       "proximo": "próximo",
       "proximoItem": "Próximo item"
     },
-    "tentarDeNovo": "Tentar de novo"
+    "tentarDeNovo": "Tentar de novo",
+    "lote": {
+      "botao": "Pedir segunda opinião ({n})",
+      "titulo": "{n, plural, one {Pedir segunda opinião de 1 imagem} other {Pedir segunda opinião de # imagens}}",
+      "explica": "As fichas continuam aprovadas e na Pesquisa até a revisão terminar. Você acompanha e decide em Segunda opinião.",
+      "motivo": "Motivo (obrigatório)",
+      "pedir": "Pedir",
+      "pedindo": "Pedindo…",
+      "cancelar": "Cancelar",
+      "semConexao": "Sem conexão com o servidor. Tente de novo.",
+      "feito": "{n, plural, =0 {Nenhuma segunda opinião foi pedida.} one {Segunda opinião pedida para 1 imagem.} other {Segunda opinião pedida para # imagens.}}",
+      "recusadas": "{n, plural, one {1 não pôde ser pedida (já tinha pedido em aberto ou saiu do banco).} other {# não puderam ser pedidas (já tinham pedido em aberto ou saíram do banco).}}",
+      "acompanhar": "Acompanhar em Segunda opinião"
+    }
   },
   "Segmentacao": {
     "abaFormas": "Formas (círculo, seta)",
@@ -2729,6 +2763,18 @@
     "erroEnviar": "Não foi possível enviar esta imagem.",
     "erroConexao": "Sem conexão com o servidor. Tente de novo.",
     "verMinhasImagens": "Ver em Minhas imagens",
+    "grade": {
+      "quantidade": "{n, plural, one {1 imagem} other {# imagens}}",
+      "selecionarTodas": "Selecionar todas ({n})",
+      "limpar": "Limpar seleção",
+      "retirar": "Retirar {n, plural, one {a selecionada} other {as # selecionadas}}",
+      "retirarTitulo": "Retirar {n, plural, one {esta imagem} other {estas # imagens}}?",
+      "verSelecionadas": "Ver {n, plural, one {1 selecionada} other {# selecionadas}}",
+      "selecionar": "Selecionar a imagem nº {id}",
+      "info": "Ver informações",
+      "feito": "Enviado: {n, plural, one {1 imagem} other {# imagens}}.",
+      "nenhumDoTipo": "Nenhuma imagem enviada por você deste tipo."
+    },
     "lista": {
       "tituloMeus": "Imagens enviadas por mim",
       "explicaMeus": "O que você enviou e onde cada imagem está agora.",
@@ -2879,8 +2925,8 @@
     "conviteCancelado": "Convite cancelado.",
     "erroAcao": "Não foi possível concluir. Tente de novo.",
     "imagensEnviadas": "Imagens enviadas ao grupo",
-    "comoEnviar": "Para enviar uma imagem, abra-a no Banco de imagens e use \"Preparar aula para um grupo\".",
-    "irBanco": "Ir ao Banco de imagens",
+    "comoEnviar": "Para enviar imagens a este grupo, selecione-as na Busca avançada e use \"Enviar para um grupo\".",
+    "irBanco": "Ir à Busca avançada",
     "semImagens": "Nenhuma imagem enviada a este grupo ainda.",
     "imagemNumero": "Imagem nº {n}",
     "retirarImagem": "Retirar do grupo",
@@ -2898,7 +2944,8 @@
     "conversaCom": "Conversa com {nome}",
     "voce": "Você",
     "responder": "Responder",
-    "responderRotulo": "Responder a {nome}"
+    "responderRotulo": "Responder a {nome}",
+    "origem_link": "entrou pelo link"
   },
   "MeusGrupos": {
     "titulo": "Meus grupos",
@@ -3120,5 +3167,64 @@
     "abrirPagina": "Abrir em página inteira",
     "naoAceito": "Não aceito",
     "aceitar": "Aceitar e continuar"
+  },
+  "FiltroTipo": {
+    "rotulo": "Filtrar por tipo",
+    "todos": "Todos"
+  },
+  "GruposUnico": {
+    "titulo": "Grupos",
+    "carregando": "Carregando...",
+    "abaCriei": "Grupos que criei",
+    "abaParticipo": "Grupos de que participo",
+    "pendentes": "{n, plural, one {1 pendência} other {# pendências}}"
+  },
+  "LinkConvite": {
+    "titulo": "Link de convite",
+    "explica": "Mande este link para quem você quer no grupo (por WhatsApp, e-mail...). A pessoa entra com o próprio login e só fica no grupo se confirmar. Vale 7 dias; gerar um novo cancela o anterior.",
+    "campo": "Link de convite do grupo",
+    "copiar": "Copiar",
+    "copiado": "Copiado!",
+    "valeAte": "Vale até {data}",
+    "usos": "{n, plural, =0 {ninguém entrou ainda} one {1 pessoa entrou} other {# pessoas entraram}}",
+    "gerarDeNovo": "(para ver o endereço de novo, gere um novo link)",
+    "nenhum": "Nenhum link ativo.",
+    "gerar": "Gerar link de convite",
+    "gerarNovo": "Gerar novo link",
+    "cancelar": "Cancelar link",
+    "erro": "Não foi possível concluir. Tente de novo.",
+    "entrar": {
+      "titulo": "Convite para um grupo",
+      "criadoPor": "Criado por {quem}",
+      "explica": "Você foi convidado(a) para este grupo. Ao entrar, você passa a receber as imagens que o professor enviar ao grupo. Os outros participantes não veem que você está no grupo.",
+      "botao": "Entrar no grupo",
+      "agoraNao": "Agora não",
+      "entrou": "Você entrou no grupo.",
+      "jaParticipa": "Você já participa deste grupo.",
+      "dono": "Você criou este grupo. Mande o link para quem você quer convidar.",
+      "verGrupos": "Ver meus grupos",
+      "invalido": "Link de convite inválido ou vencido. Peça um novo link a quem criou o grupo.",
+      "semCodigo": "Este endereço está incompleto. Abra o link inteiro que você recebeu."
+    }
+  },
+  "EnviarParaGrupo": {
+    "botao": "Enviar para um grupo",
+    "explica": "{n, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para os grupos que você escolher, com as marcações oficiais da ficha.",
+    "meusGrupos": "Meus grupos",
+    "semGrupos": "Você ainda não tem grupos. Crie um abaixo.",
+    "criarNovo": "+ Criar grupo novo",
+    "nomeNovo": "Nome do grupo novo",
+    "convidarAjuda": "Quem você escolher recebe um convite e entra no grupo quando aceitar.",
+    "criar": "Criar grupo",
+    "cancelar": "Cancelar",
+    "recado": "Recado para o grupo (opcional)",
+    "comentar": "Participantes podem comentar",
+    "prepararAula": "Preparar aula com marcações próprias (só esta imagem)",
+    "enviar": "Enviar {n, plural, one {1 imagem} other {# imagens}}",
+    "fechar": "Fechar",
+    "resultado": "Enviadas: {enviadas} · já estavam no grupo: {ja}.",
+    "erroEnviar": "Não foi possível enviar. Tente de novo.",
+    "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
+    "erroCriar": "Não foi possível criar o grupo."
   }
 }

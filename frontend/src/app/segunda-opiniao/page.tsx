@@ -27,6 +27,7 @@ import {
   API,
   extrairErro,
   lerDentes,
+  marcacoesSugeridasDe,
   type AnotacaoRascunho,
   type AnotacaoServidor,
   type Classificacao,
@@ -36,6 +37,7 @@ import {
   type ViewerInfo,
 } from '../../components/segundaOpiniao/tipos'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
+import type { Marcacao } from '../../lib/marcacoes'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
 
 const PERFIS_PERMITIDOS = ['administrador', 'curador']
@@ -209,6 +211,13 @@ export default function SegundaOpiniaoPage() {
     }
   }
 
+  // quem pediu: as marcacoes que o revisor sugeriu (ainda a decidir) vao
+  // destacadas para a imagem
+  const marcacoesSugeridas: Marcacao[] =
+    aba !== 'revisar' && detalhe
+      ? detalhe.anotacoes.filter((n) => n.situacao === 'pendente').flatMap(marcacoesSugeridasDe)
+      : []
+
   // ---- revisor: enviar o parecer ----
   const anotacoesValidas = itens.every((i) => rascunhoValido(i, rascunho[i.chave]))
   const podeEnviar = !!detalhe?.pode_responder && !!classificacao && anotacoesValidas && !enviando
@@ -222,9 +231,10 @@ export default function SegundaOpiniaoPage() {
       .map((item) => ({ item, r: rascunho[item.chave] }))
       .filter(({ r }) => r && r.avaliacao !== 'concordo')
       .map(({ item, r }) => {
-        let valor: string | number[] | null = null
+        let valor: string | number[] | Marcacao[] | null = null
         if (item.tipo === 'dentes' && r.valor.trim()) valor = lerDentes(r.valor)
         else if (item.tipo === 'valor' && r.valor) valor = r.valor
+        else if (item.tipo === 'marcacoes' && r.marcacoes?.length) valor = r.marcacoes
         return { item: item.chave, avaliacao: r.avaliacao, nota: r.nota.trim() || null, valor_sugerido: valor }
       })
     try {
@@ -454,6 +464,7 @@ export default function SegundaOpiniaoPage() {
                 carregando={carregandoViewer}
                 viewerInfo={viewer}
                 marcacoes={ficha?.marcacoes ?? []}
+                marcacoesSugeridas={marcacoesSugeridas}
                 mostrarMarcacoes={mostrarMarcacoes}
                 onAlternarMarcacoes={() => setMostrarMarcacoes((v) => !v)}
               />
@@ -505,6 +516,7 @@ export default function SegundaOpiniaoPage() {
                   somenteLeitura={propria}
                   etapa={etapa}
                   onEtapa={setEtapa}
+                  orthancReferenceId={detalhe.orthanc_reference_id}
                 />
               )}
               {ativo && detalhe && ficha && !modoRevisar && (
@@ -514,8 +526,12 @@ export default function SegundaOpiniaoPage() {
                   ocupado={ocupado}
                   onIncorporar={(n) => resolverAnotacao(n, 'incorporar')}
                   onDispensar={(n) => resolverAnotacao(n, 'dispensar')}
-                  onAprovar={() => decidir({ decisao: 'aprovar', anonimizacao_validada: true }, t('avisos.aprovada'))}
-                  onDescartar={(motivo) => decidir({ decisao: 'descartar', motivo }, t('avisos.descartada'))}
+                  onAprovar={() =>
+                    decidir({ decisao: 'aprovar', anonimizacao_validada: true }, t(detalhe.status_ficha === 'aprovada' ? 'avisos.mantida' : 'avisos.aprovada'))
+                  }
+                  onDescartar={(motivo) =>
+                    decidir({ decisao: 'descartar', motivo }, t(detalhe.status_ficha === 'aprovada' ? 'avisos.arquivada' : 'avisos.descartada'))
+                  }
                   decidindo={decidindo}
                 />
               )}
