@@ -140,7 +140,7 @@ describe('compartilhar', () => {
     await abrirCaixa(usuario)
     await usuario.type(emailCampo(), 'nova@exemplo.test{Enter}') // Enter tambem envia
     expect(await screen.findByText('Compartilhado.')).toBeTruthy()
-    expect(servidor.alteracoes()[0].corpo).toEqual({ email: 'nova@exemplo.test', mensagem: null })
+    expect(servidor.alteracoes()[0].corpo).toEqual({ email: 'nova@exemplo.test', mensagem: null, permite_resposta: false })
     const link = `${window.location.origin}/solicitar-acesso`
     expect(screen.getByRole('link', { name: link })).toBeTruthy()
     expect(screen.getByText(/Se a pessoa ainda não tem cadastro/)).toBeTruthy()
