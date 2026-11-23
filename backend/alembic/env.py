@@ -8,6 +8,7 @@ from app.modules.orthanc_references import OrthancReference
 from app.modules.curations import Curation, CurationHistory, CurationReview
 from app.modules.audit_logs import AuditLog
 from app.modules.achados import Achado, ErroTecnico
+from app.modules.reconstrucao.modelo import ReconstrucaoTomografia  # noqa: F401
 
 from app.core.config import settings
 
