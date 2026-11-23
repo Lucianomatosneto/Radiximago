@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useSessaoAtual } from '../lib/useVerificarSessao'
-import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, UserPlus, Users, Zap } from 'lucide-react'
+import { type LucideIcon, Camera, ChartColumn, Cpu, FileImage, ClipboardList, Inbox, UsersRound, LayoutDashboard, Library, Lightbulb, LogOut, MessagesSquare, Plug, ScrollText, Settings, Share2, SlidersHorizontal, Star, Tags, Users, Zap } from 'lucide-react'
 
 interface ItemMenu {
   chave: string
@@ -64,9 +64,9 @@ const ITENS_MENU: ItemMenu[] = [
   // etapa B (08/11/2026): arquivo ou camera do celular, para todos que enviam
   { chave: 'enviarImagem', href: '/enviar-imagem', ativo: true, icone: Camera, perfis: ['estudante', 'professor', 'curador', 'administrador'], cor: COR_TEAL },
   // etapa C (08/11/2026): grupos de envio (cada um cuida dos seus); pesquisador tambem cria (17/11/2026)
-  { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, perfis: ['professor', 'pesquisador', 'curador', 'administrador'], cor: COR_CYAN },
+  // 22/11/2026 (video): "Grupos" e "Meus grupos" viraram uma tela so, para todos os perfis
+  { chave: 'grupos', href: '/grupos', ativo: true, icone: UsersRound, cor: COR_CYAN },
   // 17/11/2026: grupos de que participo, convites recebidos e (estudante) procurar grupo
-  { chave: 'meusGrupos', href: '/meus-grupos', ativo: true, icone: UserPlus, cor: COR_EMERALD },
   { chave: 'minhasImagens', href: '/minhas-imagens', ativo: true, icone: Star, cor: COR_SKY },
   { chave: 'compartilhadasComigo', href: '/compartilhadas-comigo', ativo: true, icone: Share2, cor: COR_BLUE },
   // etapa E (08/11/2026): pranchas que outras pessoas mandaram (o e-mail traz so o link)
@@ -224,17 +224,18 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // numero ao lado do item (0 = sem numero) e o texto para o leitor de tela
   function contador(chave: string): { n: number; rotulo: string } {
     if (chave === 'compartilhadasComigo') return { n: novasCompartilhadas, rotulo: t('novasCompartilhadas', { quantidade: novasCompartilhadas }) }
-    // "Meus grupos": convites para responder + imagens novas nos grupos de que participa
-    if (chave === 'meusGrupos') {
-      const n = pendGrupos.convites + pendGrupos.imagensNovas
+    // "Grupos" (tela unica desde 22/11/2026): pedidos nos grupos que criei +
+    // convites para responder + imagens novas nos grupos de que participo
+    if (chave === 'grupos') {
+      const n = pendGrupos.pedidos + pendGrupos.convites + pendGrupos.imagensNovas
       const partes = [
+        pendGrupos.pedidos > 0 ? t('pendentesGrupos', { quantidade: pendGrupos.pedidos }) : '',
         pendGrupos.convites > 0 ? t('convitesNovos', { quantidade: pendGrupos.convites }) : '',
         pendGrupos.imagensNovas > 0 ? t('imagensNovas', { quantidade: pendGrupos.imagensNovas }) : '',
       ].filter(Boolean)
       return { n, rotulo: partes.join(t('e')) }
     }
-    const n = chave === 'grupos' ? pendGrupos.pedidos : 0
-    return { n, rotulo: t('pendentesGrupos', { quantidade: n }) }
+    return { n: 0, rotulo: '' }
   }
 
   const botaoRecolher = podeRecolher && (
