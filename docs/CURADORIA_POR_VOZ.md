@@ -171,8 +171,11 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
   marca/desmarca; tipo, gênero e qualidade trocam a opção; em dentes e erro
   técnico as setas andam um cursor (contorno amarelo) e **Enter** marca/
   desmarca (curadoria manual, sem áudio).
-- **Panorâmica (ficha em cartões, 23/11/2026):** embaixo da imagem a ficha
-  vira 10 cartões que cabem sem rolar (só "Achados" rola se houver muitas
+- **Panorâmica, oclusal e tomografia (ficha em cartões, 23/11/2026; faixa
+  com 40% da altura da 1ª versão na 2ª rodada - erro técnico em 2 cartões,
+  "Aprovar" com cartão próprio; odontograma de situação e estruturas só na
+  panorâmica):** embaixo da imagem a ficha
+  vira cartões que cabem sem rolar (só "Achados" rola se houver muitas
   marcações); aparecem 3 por vez, com o cartão do item aceso no meio. Aqui
   as setas trocam de papel: **→ / Tab** avançam, **← / Shift+Tab** voltam,
   e **↑ / ↓** trocam a opção do item aceso. O item aceso não cresce
