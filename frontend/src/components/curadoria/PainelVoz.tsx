@@ -546,10 +546,11 @@ export default function PainelVoz({
   const minutos = `${Math.floor(segundos / 60)}:${String(segundos % 60).padStart(2, '0')}`
 
   // ---------------------------------------------------------------- partes
-  const botaoMicrofone = (grande: boolean) => (
+  const botaoMicrofone = (grande: boolean, idDica?: string) => (
     <button
       type="button"
       onClick={alternar}
+      aria-describedby={idDica}
       disabled={(!continuo && transcrevendo) || disponivel === false}
       aria-pressed={continuo ? escutando : gravando}
       title={continuo ? (escutando ? t('pausarEscuta') : t('retomarEscuta')) : gravando ? t('parar') : t('falar')}
@@ -709,41 +710,50 @@ export default function PainelVoz({
   )
 
   if (embutido) {
-    // so o CIRCULO do microfone (cor = estado) com "Pressione espaço para
-    // áudio" embaixo; ao lado, os botoes extras (Como laudar, Macros). Erro
-    // e duvidas da voz aparecem so quando existem.
+    // LINHA UNICA (23/11/2026): so o ICONE do microfone (cor = estado); o
+    // texto "Pressione espaço para curar com áudio" aparece ao passar o
+    // mouse (dica). Ao lado, os botoes extras (Como laudar, Macros...).
+    // Erro e retorno da voz ficam numa linha curta, cortada com "…" (o
+    // texto inteiro aparece no mouse); duvidas abrem por baixo, por cima da
+    // tela, sem empurrar nada.
+    const idDica = `dica-voz-${fichaId ?? 'x'}`
+    const status = sessaoExpirada ? (
+      <p className="max-w-56 truncate text-[11px] text-amber-300" role="alert" title={t('sessaoExpirada')}>
+        {t('sessaoExpirada')}{' '}
+        <a href="/login" target="_blank" rel="noopener" className="font-semibold underline hover:text-amber-200">
+          {t('entrarDeNovo')}
+        </a>
+      </p>
+    ) : erro || disponivel === false ? (
+      <p className="max-w-56 truncate text-[11px] text-red-300" role="alert" title={erro || t('indisponivel')}>
+        {erro || t('indisponivel')}
+      </p>
+    ) : aviso ? (
+      <p className="max-w-56 truncate text-[11px] text-emerald-300" title={aviso} aria-live="polite">
+        ✓ {aviso}
+      </p>
+    ) : avisoVazio ? (
+      <p className="max-w-56 truncate text-[11px] text-slate-400">{t('nadaOuvido')}</p>
+    ) : null
     return (
-      <section aria-label={t('titulo')} onKeyDown={(e) => e.stopPropagation()} className="relative z-20 space-y-2">
-        <div className="flex items-start gap-3">
-          <div className="flex w-28 shrink-0 flex-col items-center gap-1">
-            {botaoMicrofone(true)}
-            <p className="text-center text-[11px] leading-tight text-slate-400">{t('espacoAudio')}</p>
-          </div>
-          {aoLado && <div className="flex flex-wrap items-center gap-2 pt-2">{aoLado}</div>}
+      <section aria-label={t('titulo')} onKeyDown={(e) => e.stopPropagation()} className="relative z-20 flex min-w-0 flex-nowrap items-center gap-2">
+        <div className="group relative shrink-0">
+          {botaoMicrofone(false, idDica)}
+          <span
+            id={idDica}
+            role="tooltip"
+            className="pointer-events-none absolute left-1/2 top-full z-40 mt-1 hidden w-max max-w-64 -translate-x-1/2 rounded-md border border-teal-300/40 bg-base-surface px-2 py-1 text-center text-[11px] leading-snug text-ink shadow-lg group-hover:block group-focus-within:block"
+          >
+            {t('espacoAudioDica')}
+          </span>
         </div>
-        {sessaoExpirada && (
-          <p className="text-[11px] leading-snug text-amber-300" role="alert">
-            {t('sessaoExpirada')}{' '}
-            <a href="/login" target="_blank" rel="noopener" className="font-semibold underline hover:text-amber-200">
-              {t('entrarDeNovo')}
-            </a>
-          </p>
+        {aoLado && <div className="flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">{aoLado}</div>}
+        {status}
+        {duvidas.length > 0 && (
+          <div className="absolute left-0 top-full z-40 mt-2 w-[min(28rem,90vw)] overflow-hidden rounded-xl border border-orange-300/50 bg-base-surface shadow-2xl">
+            {blocoDuvidas}
+          </div>
         )}
-        {(erro || disponivel === false) ? (
-          <p className="text-[11px] text-red-300" role="alert">
-            {erro || t('indisponivel')}
-          </p>
-        ) : (
-          // retorno da ultima fala: o curador ve o que a voz preencheu
-          aviso ? (
-            <p className="truncate text-[11px] text-emerald-300" title={aviso} aria-live="polite">
-              ✓ {aviso}
-            </p>
-          ) : (
-            avisoVazio && <p className="text-[11px] text-slate-400">{t('nadaOuvido')}</p>
-          )
-        )}
-        {duvidas.length > 0 && <div className="overflow-hidden rounded-xl border border-orange-300/50">{blocoDuvidas}</div>}
       </section>
     )
   }
