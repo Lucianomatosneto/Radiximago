@@ -11,21 +11,27 @@ tipo inicial da ficha quando a imagem for curada.
 - POST /curation/triagem  {orthanc_reference_ids: [...], tipo}
   So mudam as imagens que ainda estao na fila (ativas, destino fila, sem
   ficha); as demais voltam contadas como "ignoradas".
+- CORRIGIR (23/11/2026, pedido do Luciano: "classificou como interproximal
+  mas e uma periapical"): vale tambem para tirar uma imagem da modalidade
+  errada e por na certa. A sugestao enviada pelo professor, que fica na
+  fila com a ficha dele, tambem e corrigida: o tipo da ficha muda e fica no
+  historico da ficha.
 """
 
 from typing import List
 
 from fastapi import Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.modules.auth import PERFIS_CURADORIA_ESCRITA, exigir_perfis
-from app.modules.curations import Curation, TipoRadiografia
+from app.modules.curations import Curation, StatusCuradoria, TipoRadiografia
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
 from app.modules.users import User
 
-from .common import _registrar_auditoria
+from .common import _registrar_auditoria, _registrar_historico
 from .router import router
 
 MAX_POR_VEZ = 100
@@ -44,21 +50,35 @@ def triar_modalidade(
     db: Session = Depends(get_db),
 ):
     ids = sorted(set(dados.orthanc_reference_ids))
+    # sugestao do professor aguardando curador: esta na fila COM ficha (mesma
+    # regra de consultas.listar_pendentes)
+    sugestao_aguardando = and_(
+        Curation.sugestao_enviada_em.isnot(None),
+        Curation.status == StatusCuradoria.EM_ANALISE.value,
+        Curation.curador_id.is_(None),
+    )
     na_fila = (
-        db.query(OrthancReference)
+        db.query(OrthancReference, Curation)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(
             OrthancReference.id.in_(ids),
             OrthancReference.ativo.is_(True),
             OrthancReference.destino == DestinoImagem.FILA.value,
-            Curation.id.is_(None),
+            or_(Curation.id.is_(None), sugestao_aguardando),
         )
         .all()
     )
-    for ref in na_fila:
+    for ref, ficha in na_fila:
         ref.tipo_preliminar = dados.tipo.value
         ref.tipo_preliminar_origem = ORIGEM_TRIAGEM
-    alteradas = [ref.id for ref in na_fila]
+        if ficha is not None and ficha.tipo_radiografia != dados.tipo.value:
+            anterior = ficha.tipo_radiografia
+            ficha.tipo_radiografia = dados.tipo.value
+            _registrar_historico(
+                db, ficha.id, usuario.id, "triagem_modalidade", ficha.status, ficha.status,
+                f"Tipo de radiografia corrigido na triagem: {anterior} -> {dados.tipo.value}.",
+            )
+    alteradas = [ref.id for ref, _ in na_fila]
     _registrar_auditoria(
         db, usuario.id, "triagem_modalidade", None, "sucesso",
         f"tipo={dados.tipo.value}; alteradas={len(alteradas)}; ids={','.join(map(str, alteradas))}",

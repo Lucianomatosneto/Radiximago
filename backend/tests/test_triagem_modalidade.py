@@ -112,3 +112,48 @@ def test_triada_aparece_na_fila_com_o_tipo_novo(client, criar_usuario, criar_ref
         if skip >= dados["total_pendentes"]:
             break
     assert ref.id in ids
+
+
+# CORRIGIR UMA MODALIDADE (pedido do Luciano, 23/11/2026): "um curador
+# classificou a imagem como interproximal mas e uma periapical, entao ele
+# precisara remove-la para periapical". A triagem tambem tira da modalidade
+# errada e poe na certa.
+def test_corrigir_imagem_que_estava_na_modalidade_errada(client, criar_usuario, criar_referencia, db):
+    cab = _cab(client, criar_usuario)
+    errada = _na_fila(criar_referencia, db, "interproximal")
+    errada.tipo_preliminar_origem = "triagem"
+    db.commit()
+    r = client.post("/curation/triagem", headers=cab, json={"orthanc_reference_ids": [errada.id], "tipo": "periapical"})
+    assert r.json() == {"alteradas": 1, "ignoradas": 0}
+    db.expire_all()
+    assert db.get(OrthancReference, errada.id).tipo_preliminar == "periapical"
+
+
+def test_sugestao_do_professor_na_fila_tambem_e_corrigida(client, criar_usuario, criar_referencia, db):
+    """A sugestao enviada pelo professor fica na fila com o tipo da ficha
+    dele; a triagem corrige a ficha (e registra no historico)."""
+    from datetime import datetime, timezone
+
+    from app.modules.curations import CurationHistory, StatusCuradoria
+
+    cab = _cab(client, criar_usuario)
+    professor = criar_usuario(perfil=UserRole.professor)
+    ref = _na_fila(criar_referencia, db, "interproximal")
+    ficha = Curation(
+        orthanc_reference_id=ref.id, tipo_radiografia="interproximal", status=StatusCuradoria.EM_ANALISE.value,
+        sugerida_por_id=professor.id, sugestao_enviada_em=datetime.now(timezone.utc), curador_id=None,
+    )
+    db.add(ficha)
+    db.commit()
+    try:
+        r = client.post("/curation/triagem", headers=cab, json={"orthanc_reference_ids": [ref.id], "tipo": "periapical"})
+        assert r.json() == {"alteradas": 1, "ignoradas": 0}
+        db.expire_all()
+        assert db.get(Curation, ficha.id).tipo_radiografia == "periapical"
+        assert db.get(OrthancReference, ref.id).tipo_preliminar == "periapical"
+        historico = db.query(CurationHistory).filter(CurationHistory.curation_id == ficha.id).all()
+        assert any(h.acao == "triagem_modalidade" and "interproximal" in h.justificativa and "periapical" in h.justificativa for h in historico)
+    finally:
+        db.query(CurationHistory).filter(CurationHistory.curation_id == ficha.id).delete()
+        db.delete(db.get(Curation, ficha.id))
+        db.commit()

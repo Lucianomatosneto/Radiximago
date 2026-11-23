@@ -139,6 +139,7 @@ export default function CuradoriaPage() {
   const tSegmentacao = useTranslations('Segmentacao')
   const tComum = useTranslations('Comum')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tModalidade = useTranslations('ModalidadeFila')
 
   function rotularTipoRadiografia(valor: string | null): string {
     if (!valor || !OPCOES_TIPO_RADIOGRAFIA.includes(valor)) return valor ?? '—'
@@ -1535,6 +1536,18 @@ export default function CuradoriaPage() {
             {topoFicha && <div className="min-w-0 flex-1">{topoFicha}</div>}
             {!ehProfessor && !perguntandoModalidade && totalDaFila(porTipo) > 0 && (
               <CaixaModalidade porTipo={porTipo} valor={tipoFiltro} onEscolher={escolherModalidade} />
+            )}
+            {/* 23/11/2026: curando uma modalidade, imagens que nao sao dela
+                vao para a certa na triagem daquela modalidade */}
+            {!ehProfessor && !perguntandoModalidade && tipoFiltro && (
+              <Link
+                href={`/curadoria/triagem?tipo=${encodeURIComponent(tipoFiltro)}`}
+                title={tModalidade('corrigirDica')}
+                className="whitespace-nowrap rounded-full border border-base-border px-2.5 py-1 text-xs text-ink-2 hover:border-teal-300 hover:text-teal-200"
+              >
+                <span aria-hidden="true">⇄ </span>
+                {tModalidade('corrigir')}
+              </Link>
             )}
 
             {/* Atalho visivel para a tela cheia "de verdade" (sem abas e

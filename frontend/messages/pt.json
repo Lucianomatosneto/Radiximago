@@ -3266,7 +3266,9 @@
     "pergunta": "Qual modalidade você quer curar agora?",
     "perguntaExplica": "Escolha o tipo de exame; a primeira imagem dele abre em seguida. Dá para trocar depois na caixa \"Modalidade\".",
     "opcao": "{nome} ({total})",
-    "triagem": "Separar as intraorais por tipo (triagem)"
+    "triagem": "Separar as intraorais por tipo (triagem)",
+    "corrigir": "Corrigir modalidade",
+    "corrigirDica": "Abrir a triagem desta modalidade para mover as imagens que não são dela"
   },
   "SituacaoDentaria": {
     "denticao": "Dentição",
@@ -3322,6 +3324,9 @@
     "carregarMais": "Carregar mais ({faltam})",
     "erroCarregar": "Não foi possível carregar a fila.",
     "erroMarcar": "Não foi possível marcar as imagens.",
-    "marcarComoCurto": "Marcar como:"
+    "marcarComoCurto": "Marcar como:",
+    "explicaCorrigir": "Para corrigir uma modalidade: em \"Mostrar\" escolha a modalidade (por exemplo, Interproximal), selecione as que não são dela e mova para a modalidade certa.",
+    "moverPara": "Mover para:",
+    "movidas": "{n, plural, one {1 imagem movida} other {# imagens movidas}} para {tipo}."
   }
 }

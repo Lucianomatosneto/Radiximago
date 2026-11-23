@@ -107,6 +107,10 @@ export default function TriagemPage() {
     setSelecionadas((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
   }
 
+  // o grupo mostrado e uma modalidade de verdade (nao "intraoral" nem
+  // "nao informado"): a acao e CORRIGIR, movendo para a modalidade certa
+  const grupoEModalidade = (TIPOS_EXAME as readonly string[]).includes(grupo)
+
   async function marcar(tipo: string) {
     if (!selecionadas.length) return
     setMarcando(true)
@@ -129,7 +133,7 @@ export default function TriagemPage() {
       return
     }
     const d = await r.json()
-    setAviso(t('marcadas', { n: d.alteradas, tipo: tm(tipo) }))
+    setAviso(t(grupoEModalidade ? 'movidas' : 'marcadas', { n: d.alteradas, tipo: tm(tipo) }))
     setSelecionadas([])
     void carregar(grupo)
   }
@@ -161,6 +165,7 @@ export default function TriagemPage() {
                 {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
               </h1>
               <p className="mt-1 max-w-3xl text-sm text-slate-400">{t('explica')}</p>
+              <p className="mt-1 max-w-3xl text-sm text-slate-400">{t('explicaCorrigir')}</p>
             </div>
             <Link href="/curadoria" className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink hover:bg-white/5">
               {t('voltar')}
@@ -196,9 +201,11 @@ export default function TriagemPage() {
             )}
             <div role="group" aria-label={t('marcarComo')} className="ml-auto flex flex-wrap items-center gap-2">
               <span aria-hidden="true" className="text-xs text-ink-2">
-                {t('marcarComoCurto')}
+                {grupoEModalidade ? t('moverPara') : t('marcarComoCurto')}
               </span>
-              {TIPOS_EXAME.map((tipo) => (
+              {/* abrindo uma modalidade (ex.: Interproximal), as imagens que nao
+                  sao dela sao movidas para a certa - o botao dela mesma sai */}
+              {TIPOS_EXAME.filter((tipo) => tipo !== grupo).map((tipo) => (
                 <button
                   key={tipo}
                   type="button"
