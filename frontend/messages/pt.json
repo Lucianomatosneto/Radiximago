@@ -3380,6 +3380,7 @@
     "canalPronto": "Pronto: canal desenhado na panorâmica e em {n} cortes. No visualizador, use Tomografia → Reconstrução → Panorâmica com canal.",
     "canalErroCarregar": "Não foi possível abrir a panorâmica desta reconstrução.",
     "canalErroGravar": "Não foi possível gravar o canal.",
-    "canalLimite": "Material de ensino, não diagnóstico. A panorâmica mostra a altura do canal ao longo da arcada; nos cortes transversais a marca indica essa altura, não a posição vestibulolingual."
+    "canalLimite": "Material de ensino, não diagnóstico. A panorâmica mostra a altura do canal ao longo da arcada; nos cortes transversais a marca indica essa altura, não a posição vestibulolingual.",
+    "dicaCortes": "Roda do mouse ou setas ↑ ↓ sobre a imagem passam os cortes axiais, um por vez."
   }
 }
