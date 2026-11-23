@@ -30,6 +30,9 @@ interface Termo {
   termo: string
   categoria: string
   codigo_decs: string | null
+  /** 22/11/2026 (B14): definicao mostrada no "?" das marcacoes, com a fonte */
+  definicao?: string | null
+  definicao_fonte?: string | null
   ativo: boolean
   /** aparece nas opcoes da Pesquisa avancada (08/11/2026) */
   na_busca?: boolean
@@ -72,6 +75,8 @@ export default function VocabularioPage() {
   const [promovendo, setPromovendo] = useState<{ termo: string; categoria: string; decs: string; sinonimos: string } | null>(null)
   const [novoSinonimo, setNovoSinonimo] = useState<Record<number, string>>({})
   const [conferindo, setConferindo] = useState<{ termo: Termo; itens: Candidata[]; marcadas: number[] } | null>(null)
+  // definicao sendo escrita, por termo
+  const [definindo, setDefinindo] = useState<Record<number, { definicao: string; fonte: string }>>({})
 
   // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
@@ -140,7 +145,10 @@ export default function VocabularioPage() {
     void abrirConferencia(termo)
   }
 
-  async function editar(termo: Termo, dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string; na_busca: boolean; nas_curadorias: boolean }>) {
+  async function editar(
+    termo: Termo,
+    dados: Partial<{ ativo: boolean; categoria: string; codigo_decs: string; na_busca: boolean; nas_curadorias: boolean; definicao: string; definicao_fonte: string }>,
+  ): Promise<boolean> {
     const r = await fetchOuNulo(`${API}/vocabulario/termos/${termo.id}`, {
       method: 'PATCH',
       credentials: 'include',
@@ -149,14 +157,21 @@ export default function VocabularioPage() {
     })
     if (!r) {
       setErro(tComum('semConexao'))
-      return
+      return false
     }
     if (!r.ok) {
       setErro(await lerErro(r, t('erroSalvar')))
-      return
+      return false
     }
     const atualizado: Termo = await r.json()
     setTermos((lista) => lista.map((x) => (x.id === atualizado.id ? atualizado : x)))
+    return true
+  }
+
+  async function salvarDefinicao(termo: Termo, dados: { definicao: string; definicao_fonte?: string }) {
+    if (await editar(termo, dados)) {
+      setDefinindo(({ [termo.id]: _feito, ...resto }) => resto)
+    }
   }
 
   async function adicionarSinonimo(termo: Termo) {
@@ -466,6 +481,87 @@ export default function VocabularioPage() {
                             if (e.key === 'Enter') void adicionarSinonimo(termo)
                           }}
                         />
+                      </div>
+                      {/* 22/11/2026 (B14): definicao do achado, com a fonte -
+                          aparece no "?" das marcacoes do visualizador */}
+                      <div className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-2 text-xs">
+                        {definindo[termo.id] ? (
+                          <div className="space-y-1.5">
+                            <label className="block text-slate-400">
+                              {t('definicao.campo')}
+                              <textarea
+                                value={definindo[termo.id].definicao}
+                                onChange={(e) => setDefinindo((m) => ({ ...m, [termo.id]: { ...m[termo.id], definicao: e.target.value } }))}
+                                rows={3}
+                                maxLength={2000}
+                                className="mt-1 w-full rounded-md border border-white/15 bg-transparent px-2 py-1 text-xs text-ink outline-hidden focus:border-teal-300"
+                              />
+                            </label>
+                            <label className="block text-slate-400">
+                              {t('definicao.fonte')}
+                              <input
+                                value={definindo[termo.id].fonte}
+                                onChange={(e) => setDefinindo((m) => ({ ...m, [termo.id]: { ...m[termo.id], fonte: e.target.value } }))}
+                                maxLength={300}
+                                placeholder={t('definicao.fonteDica')}
+                                className="mt-1 w-full rounded-md border border-white/15 bg-transparent px-2 py-1 text-xs text-ink outline-hidden focus:border-teal-300"
+                              />
+                            </label>
+                            <p className="text-[11px] text-slate-500">{t('definicao.direitos')}</p>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                className={`${botao} disabled:opacity-50`}
+                                disabled={!definindo[termo.id].definicao.trim() || !definindo[termo.id].fonte.trim()}
+                                onClick={() =>
+                                  void salvarDefinicao(termo, {
+                                    definicao: definindo[termo.id].definicao.trim(),
+                                    definicao_fonte: definindo[termo.id].fonte.trim(),
+                                  })
+                                }
+                              >
+                                {t('definicao.salvar')}
+                              </button>
+                              {termo.definicao && (
+                                <button type="button" className="text-xs text-red-300 hover:underline" onClick={() => void salvarDefinicao(termo, { definicao: '' })}>
+                                  {t('definicao.apagar')}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                className="text-xs text-slate-400 hover:underline"
+                                onClick={() => setDefinindo(({ [termo.id]: _cancelado, ...resto }) => resto)}
+                              >
+                                {t('definicao.cancelar')}
+                              </button>
+                            </div>
+                          </div>
+                        ) : termo.definicao ? (
+                          <div>
+                            <p className="whitespace-pre-line text-ink">{termo.definicao}</p>
+                            {termo.definicao_fonte && <p className="mt-0.5 text-[11px] text-slate-500">{t('definicao.fonteTexto', { fonte: termo.definicao_fonte })}</p>}
+                            <button
+                              type="button"
+                              className="mt-1 text-xs text-teal-200 hover:underline"
+                              onClick={() =>
+                                setDefinindo((m) => ({ ...m, [termo.id]: { definicao: termo.definicao ?? '', fonte: termo.definicao_fonte ?? '' } }))
+                              }
+                            >
+                              {t('definicao.editar')}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-slate-500">{t('definicao.sem')}</span>
+                            <button
+                              type="button"
+                              className="text-xs text-teal-200 hover:underline"
+                              onClick={() => setDefinindo((m) => ({ ...m, [termo.id]: { definicao: '', fonte: '' } }))}
+                            >
+                              {t('definicao.escrever')}
+                            </button>
+                          </div>
+                        )}
                       </div>
                       {/* 08/11/2026: onde o termo aparece como opcao */}
                       <div className="mt-2 flex flex-wrap gap-4 text-xs text-ink-2">
