@@ -1,7 +1,7 @@
 """compartilhamento: quem compartilha decide se a pessoa pode responder (22/11/2026)
 
 Revision ID: d3f5a7c9e1b2
-Revises: b2d4f6a8c0e1
+Revises: c1e3a5b7d9f0
 Create Date: 2026-11-22
 
 Coluna permite_resposta em compartilhamentos_imagem. Os compartilhamentos
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = 'd3f5a7c9e1b2'
-down_revision: Union[str, None] = 'b2d4f6a8c0e1'
+down_revision: Union[str, None] = 'c1e3a5b7d9f0'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
