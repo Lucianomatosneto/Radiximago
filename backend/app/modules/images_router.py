@@ -191,6 +191,9 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     if ja_registrada:
         return ja_registrada, False
 
+    # importado aqui: o pacote de curadoria carrega varios roteadores
+    from app.modules.curation.tipo_automatico import tipo_preliminar_automatico
+
     try:
         detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
         tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
@@ -210,6 +213,9 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
             texto_regioes=resultado_texto.regioes,
             enquadramento=resultado_recorte.situacao,
             em_volume=e_corte_de_volume(tags_simplificadas),
+            # modalidade preliminar para o filtro da fila (23/11/2026)
+            tipo_preliminar=tipo_preliminar_automatico(tags_simplificadas),
+            tipo_preliminar_origem="automatico",
         )
         db.add(nova_ref)
         db.commit()
@@ -444,6 +450,7 @@ def receber_dicom(
     destinatario_id: int | None = None,
     nota: str | None = None,
     formato_entrada: str = "dicom",
+    tipo_informado: str | None = None,
 ) -> dict:
     """
     Caminho UNICO de entrada de um arquivo DICOM enviado por alguem (tela
@@ -500,6 +507,10 @@ def receber_dicom(
             ref.enviado_por_id = usuario.id
             ref.destino = destino
             ref.formato_entrada = formato_entrada
+            if tipo_informado:
+                # quem enviou disse o tipo (23/11/2026): vale mais que o automatico
+                ref.tipo_preliminar = tipo_informado
+                ref.tipo_preliminar_origem = "envio"
             if destino == DestinoImagem.ANALISE.value:
                 ref.analise_destinatario_id = destinatario_id
                 ref.analise_nota = nota
