@@ -22,7 +22,7 @@ from app.modules.auth import exigir_perfis, PERFIS_ADMIN, PERFIS_CURADORIA
 from app.modules.users import User, UserRole
 from app.modules.orthanc_references import OrthancReference, filtro_exame_unico
 from app.modules.audit_logs import AuditLog
-from app.modules.curations import Curation
+from app.modules.curations import Curation, so_fichas_ativas
 
 from app.core.migracoes import estado_das_migracoes  # noqa: E402
 
@@ -32,10 +32,10 @@ router = APIRouter(prefix="/admin", tags=["Administracao"])
 def _contar_por_achado(db) -> dict:
     """Fichas por achado (alteracoes observadas). Soma pode passar do total de fichas."""
     achado = func.unnest(Curation.alteracoes_observadas).label("achado")
-    linhas = db.query(achado, func.count(Curation.id)).group_by("achado").all()
+    linhas = so_fichas_ativas(db.query(achado, func.count(Curation.id))).group_by("achado").all()
     contagem = {valor: total for valor, total in linhas if valor}
     sem = (
-        db.query(func.count(Curation.id))
+        so_fichas_ativas(db.query(func.count(Curation.id)))
         .filter((Curation.alteracoes_observadas.is_(None)) | (func.cardinality(Curation.alteracoes_observadas) == 0))
         .scalar()
     )
@@ -60,7 +60,7 @@ def _falhas_email(db) -> dict:
 def _contar_por(db, coluna):
     """Conta fichas de curadoria agrupadas por uma coluna. Retorna dict {valor: total}."""
     linhas = (
-        db.query(coluna, func.count(Curation.id))
+        so_fichas_ativas(db.query(coluna, func.count(Curation.id)))
         .group_by(coluna)
         .all()
     )
@@ -93,7 +93,7 @@ def _detalhe_por_curador(db) -> dict[str, dict[str, int]]:
     pedido do video, 22/11/2026)."""
     detalhe: dict[str, dict[str, int]] = {}
     linhas = (
-        db.query(Curation.curador_id, Curation.status, func.count(Curation.id))
+        so_fichas_ativas(db.query(Curation.curador_id, Curation.status, func.count(Curation.id)))
         .filter(Curation.curador_id.isnot(None))
         .group_by(Curation.curador_id, Curation.status)
         .all()
@@ -158,7 +158,7 @@ def obter_indicadores(
     """
     imagens = contar_imagens_por_situacao(db)
     total_imagens = imagens["total"]
-    total_fichas = db.query(func.count(Curation.id)).scalar()
+    total_fichas = so_fichas_ativas(db.query(func.count(Curation.id))).scalar()
     usuarios_ativos = (
         db.query(func.count(User.id))
         .filter(User.ativo == True, User.bloqueado == False)
@@ -183,7 +183,7 @@ def obter_indicadores(
     # (removido na ingestao, conforme LGPD) - mostra o que de fato existe:
     # tipo de exame, curador responsavel, status e data da ultima mudanca.
     atividade_recente = (
-        db.query(Curation, User.nome)
+        so_fichas_ativas(db.query(Curation, User.nome))
         .outerjoin(User, Curation.curador_id == User.id)
         .order_by(func.coalesce(Curation.atualizado_em, Curation.criado_em).desc())
         .limit(8)
