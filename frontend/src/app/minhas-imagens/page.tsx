@@ -21,6 +21,7 @@ import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import GradeEnvios from '../../components/envios/GradeEnvios'
+import PedirSegundaOpiniaoLote from '../../components/segundaOpiniao/PedirSegundaOpiniaoLote'
 import FiltroTipoRadiografia from '../../components/FiltroTipoRadiografia'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
@@ -74,6 +75,8 @@ export default function MinhasImagensPage() {
   const router = useRouter()
   const t = useTranslations('MinhasImagens')
   const [equipe, setEquipe] = useState(false)
+  // curador e administrador: "Pedir segunda opiniao" das selecionadas (22/11/2026)
+  const [podeCurar, setPodeCurar] = useState(false)
   const { pedirConfirmacao, quadroConfirmacao } = useConfirmacao()
   const tComum = useTranslations('Comum')
   const tPesquisa = useTranslations('Pesquisa')
@@ -113,6 +116,7 @@ export default function MinhasImagensPage() {
   // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
     setEquipe(['professor', 'curador', 'administrador'].includes(sessao.perfil))
+    setPodeCurar(['curador', 'administrador'].includes(sessao.perfil))
     void carregar()
   })
 
@@ -436,6 +440,14 @@ export default function MinhasImagensPage() {
                       paraBaixo
                       className={botaoBarra}
                     />
+                    {podeCurar && (
+                      <PedirSegundaOpiniaoLote
+                        curationIds={selecionados}
+                        soIcone={barraRolada}
+                        className={botaoBarra}
+                        onConcluido={() => setSelecionados([])}
+                      />
+                    )}
                     {temSelecao &&
                       (confirmandoRemocao ? (
                         <span className="flex h-8 items-center gap-1 rounded-lg border border-red-500/60 bg-red-500/10 px-2 text-xs text-red-300">

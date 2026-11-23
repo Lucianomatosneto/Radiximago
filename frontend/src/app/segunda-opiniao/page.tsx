@@ -526,8 +526,12 @@ export default function SegundaOpiniaoPage() {
                   ocupado={ocupado}
                   onIncorporar={(n) => resolverAnotacao(n, 'incorporar')}
                   onDispensar={(n) => resolverAnotacao(n, 'dispensar')}
-                  onAprovar={() => decidir({ decisao: 'aprovar', anonimizacao_validada: true }, t('avisos.aprovada'))}
-                  onDescartar={(motivo) => decidir({ decisao: 'descartar', motivo }, t('avisos.descartada'))}
+                  onAprovar={() =>
+                    decidir({ decisao: 'aprovar', anonimizacao_validada: true }, t(detalhe.status_ficha === 'aprovada' ? 'avisos.mantida' : 'avisos.aprovada'))
+                  }
+                  onDescartar={(motivo) =>
+                    decidir({ decisao: 'descartar', motivo }, t(detalhe.status_ficha === 'aprovada' ? 'avisos.arquivada' : 'avisos.descartada'))
+                  }
                   decidindo={decidindo}
                 />
               )}

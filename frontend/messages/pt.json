@@ -1886,7 +1886,6 @@
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
     "placeholderEmail": "Nome ou e-mail da pessoa",
     "erroEscolher": "Escolha a pessoa na lista ou digite o e-mail completo.",
-    "permitirResposta": "Permitir que a pessoa responda",
     "sugestoes": "Pessoas encontradas",
     "placeholderMensagem": "Anotação para quem vai receber (opcional)",
     "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
@@ -1924,7 +1923,8 @@
     "respostaEnviada": "Resposta enviada para {nome}.",
     "respostaEnviadaResponderDeNovo": "Resposta enviada para {nome}. Responder de novo",
     "erroRespostaVazia": "Escreva a resposta antes de enviar.",
-    "erroResponder": "Não foi possível enviar a resposta."
+    "erroResponder": "Não foi possível enviar a resposta.",
+    "permitirResposta": "Permitir que a pessoa responda"
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Compartilhadas",
@@ -2305,7 +2305,9 @@
       "incorporada": "{item}: acrescentado à curadoria.",
       "dispensada": "{item}: anotação dispensada.",
       "aprovada": "Ficha aprovada.",
-      "descartada": "Ficha descartada."
+      "descartada": "Ficha descartada.",
+      "mantida": "Ficha mantida aprovada.",
+      "arquivada": "Ficha arquivada."
     },
     "rodape": {
       "falta": "Escolha a avaliação geral (1, 2 ou 3) para enviar.",
@@ -2437,6 +2439,12 @@
       "motivoDescarte": "Motivo do descarte",
       "confirmarDescarte": "Confirmar descarte",
       "voltar": "Voltar",
+      "decisaoAprovada": "Esta ficha já está no banco e continua na Pesquisa até você decidir.",
+      "decisaoInstrucaoAprovada": "Com as anotações resolvidas, mantenha a ficha aprovada ou arquive (sai da Pesquisa; nada é apagado).",
+      "manterAprovada": "Manter aprovada",
+      "arquivar": "Arquivar",
+      "motivoArquivamento": "Motivo do arquivamento",
+      "confirmarArquivamento": "Confirmar arquivamento",
       "marcacoesSugeridas": "{total, plural, one {1 marcação sugerida — tracejada em rosa na imagem} other {# marcações sugeridas — tracejadas em rosa na imagem}}",
       "efeitoMarcacoes": "acrescenta as marcações à ficha"
     },
@@ -2446,7 +2454,20 @@
       "proximo": "próximo",
       "proximoItem": "Próximo item"
     },
-    "tentarDeNovo": "Tentar de novo"
+    "tentarDeNovo": "Tentar de novo",
+    "lote": {
+      "botao": "Pedir segunda opinião ({n})",
+      "titulo": "{n, plural, one {Pedir segunda opinião de 1 imagem} other {Pedir segunda opinião de # imagens}}",
+      "explica": "As fichas continuam aprovadas e na Pesquisa até a revisão terminar. Você acompanha e decide em Segunda opinião.",
+      "motivo": "Motivo (obrigatório)",
+      "pedir": "Pedir",
+      "pedindo": "Pedindo…",
+      "cancelar": "Cancelar",
+      "semConexao": "Sem conexão com o servidor. Tente de novo.",
+      "feito": "{n, plural, =0 {Nenhuma segunda opinião foi pedida.} one {Segunda opinião pedida para 1 imagem.} other {Segunda opinião pedida para # imagens.}}",
+      "recusadas": "{n, plural, one {1 não pôde ser pedida (já tinha pedido em aberto ou saiu do banco).} other {# não puderam ser pedidas (já tinham pedido em aberto ou saíram do banco).}}",
+      "acompanhar": "Acompanhar em Segunda opinião"
+    }
   },
   "Segmentacao": {
     "abaFormas": "Formas (círculo, seta)",
@@ -2677,10 +2698,6 @@
     "verificarAgora": "Verificar agora",
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
-  },
-  "FiltroTipo": {
-    "rotulo": "Filtrar por tipo",
-    "todos": "Todos"
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
@@ -3140,6 +3157,10 @@
     "abrirPagina": "Abrir em página inteira",
     "naoAceito": "Não aceito",
     "aceitar": "Aceitar e continuar"
+  },
+  "FiltroTipo": {
+    "rotulo": "Filtrar por tipo",
+    "todos": "Todos"
   },
   "GruposUnico": {
     "titulo": "Grupos",

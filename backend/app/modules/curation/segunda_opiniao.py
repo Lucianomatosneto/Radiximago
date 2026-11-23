@@ -43,6 +43,7 @@ from .common import (
     STATUS_FINAIS,
     _buscar_ficha,
     _executar_aprovacao,
+    _executar_arquivamento,
     _executar_descarte,
     _registrar_auditoria,
     _registrar_historico,
@@ -139,10 +140,16 @@ def solicitar_segunda_opiniao(
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
     db: Session = Depends(get_db),
 ):
-    """Solicita segunda opiniao para uma ficha. Exige justificativa."""
-    ficha = _buscar_ficha(db, curation_id, usuario)
+    """Solicita segunda opiniao para uma ficha. Exige justificativa.
 
-    if ficha.status in STATUS_FINAIS:
+    Ficha APROVADA tambem pode (pedido do video, 22/11/2026 - "Pedir segunda
+    opiniao" em Minhas imagens): ela continua aprovada, e na Pesquisa,
+    enquanto a revisao acontece. Descartada e arquivada continuam fora.
+    """
+    ficha = _buscar_ficha(db, curation_id, usuario)
+    ja_aprovada = ficha.status == StatusCuradoria.APROVADA.value
+
+    if ficha.status in STATUS_FINAIS and not ja_aprovada:
         raise HTTPException(
             status_code=409,
             detail=f"Nao e possivel solicitar segunda opiniao: a ficha ja esta '{ficha.status}'.",
@@ -185,7 +192,8 @@ def solicitar_segunda_opiniao(
     db.add(review)
 
     status_anterior = ficha.status
-    ficha.status = StatusCuradoria.SEGUNDA_OPINIAO.value
+    if not ja_aprovada:
+        ficha.status = StatusCuradoria.SEGUNDA_OPINIAO.value
 
     try:
         db.flush()
@@ -201,7 +209,7 @@ def solicitar_segunda_opiniao(
 
     _registrar_historico(
         db, ficha.id, usuario.id, "solicitacao_segunda_opiniao",
-        status_anterior, StatusCuradoria.SEGUNDA_OPINIAO.value, motivo,
+        status_anterior, ficha.status, motivo,
     )
     _registrar_auditoria(
         db, usuario.id, "solicitacao_segunda_opiniao", ficha.id, "sucesso",
@@ -214,7 +222,7 @@ def solicitar_segunda_opiniao(
         "mensagem": "Segunda opiniao solicitada com sucesso.",
         "review_id": review.id,
         "curation_id": curation_id,
-        "status_ficha": StatusCuradoria.SEGUNDA_OPINIAO.value,
+        "status_ficha": ficha.status,
         "status_review": review.status,
     }
 
@@ -346,18 +354,25 @@ def aplicar_decisao_revisao(
     """
     ficha = _buscar_ficha(db, curation_id, usuario)
 
-    if ficha.status in STATUS_FINAIS:
-        raise HTTPException(
-            status_code=409,
-            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
-        )
-
     review = (
         db.query(CurationReview)
         .filter(CurationReview.curation_id == curation_id)
         .order_by(CurationReview.id.desc())
         .first()
     )
+    # ficha aprovada com segunda opiniao respondida (pedido de Minhas
+    # imagens, 22/11/2026): a decisao ainda vale para ela
+    revisao_de_aprovada = (
+        ficha.status == StatusCuradoria.APROVADA.value
+        and review is not None
+        and review.status == StatusRevisao.RESPONDIDA.value
+    )
+    if ficha.status in STATUS_FINAIS and not revisao_de_aprovada:
+        raise HTTPException(
+            status_code=409,
+            detail=f"A ficha {curation_id} ja esta '{ficha.status}' e nao pode ser reprocessada.",
+        )
+
     if not review:
         raise HTTPException(
             status_code=409,
@@ -388,6 +403,11 @@ def aplicar_decisao_revisao(
             db, ficha, usuario, dados.anonimizacao_validada, dados.observacoes,
             acao="aprovacao_pos_segunda_opiniao", origem=origem,
         )
+    elif revisao_de_aprovada:
+        # ficha que ja estava no banco nao e descartada: e ARQUIVADA (sai de
+        # circulacao, nada e apagado - regra do Bloco 6)
+        motivo = (dados.motivo or "").strip()
+        _executar_arquivamento(db, ficha, usuario, motivo + origem if motivo else "")
     else:
         _executar_descarte(
             db, ficha, usuario, dados.motivo,
@@ -462,7 +482,7 @@ def _pode_incorporar(review: CurationReview, ficha: Curation | None, usuario: Us
     return (
         ficha is not None
         and review.status == StatusRevisao.RESPONDIDA.value
-        and ficha.status == StatusCuradoria.SEGUNDA_OPINIAO.value
+        and ficha.status in (StatusCuradoria.SEGUNDA_OPINIAO.value, StatusCuradoria.APROVADA.value)
         and (review.solicitante_id == usuario.id or _eh_admin(usuario))
     )
 

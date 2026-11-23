@@ -38,6 +38,9 @@ export default function PainelDevolvida({
   const tagLocale = TAG_LOCALE[useLocale()] ?? 'pt-BR'
   const rotular = useRotularValor()
   const [anonimizacaoOk, setAnonimizacaoOk] = useState(false)
+  // segunda opiniao de ficha que JA esta no banco (pedida em Minhas imagens,
+  // 22/11/2026): a decisao e manter aprovada ou arquivar (nada e apagado)
+  const jaAprovada = detalhe.status_ficha === 'aprovada'
   const [descartando, setDescartando] = useState(false)
   const [motivo, setMotivo] = useState('')
 
@@ -254,8 +257,13 @@ export default function PainelDevolvida({
           }`}
         >
           <h2 className={`font-semibold text-ink ${aceso === DECISAO ? 'text-base' : 'text-sm'}`}>{t('devolvida.decisaoTitulo')}</h2>
+          {jaAprovada && (
+            <p className="mb-1 rounded-md bg-emerald-500/10 px-2 py-1 text-xs text-emerald-800 dark:text-emerald-200">{t('devolvida.decisaoAprovada')}</p>
+          )}
           <p className="mb-3 text-xs text-slate-400">
-            {pendentes > 0 ? t('devolvida.decisaoComPendentes', { total: pendentes }) : t('devolvida.decisaoInstrucao')}
+            {pendentes > 0
+              ? t('devolvida.decisaoComPendentes', { total: pendentes })
+              : t(jaAprovada ? 'devolvida.decisaoInstrucaoAprovada' : 'devolvida.decisaoInstrucao')}
           </p>
           {!descartando ? (
             <div className="space-y-3">
@@ -270,7 +278,7 @@ export default function PainelDevolvida({
                   onClick={onAprovar}
                   className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-40"
                 >
-                  ✓ {decidindo ? t('devolvida.enviando') : t('devolvida.aprovar')}
+                  ✓ {decidindo ? t('devolvida.enviando') : t(jaAprovada ? 'devolvida.manterAprovada' : 'devolvida.aprovar')}
                 </button>
                 <button
                   type="button"
@@ -278,14 +286,14 @@ export default function PainelDevolvida({
                   onClick={() => setDescartando(true)}
                   className="rounded-lg border border-rose-400/50 px-4 py-2 text-sm text-rose-700 dark:text-rose-200 hover:bg-rose-500/10 disabled:opacity-40"
                 >
-                  {t('devolvida.descartar')}
+                  {t(jaAprovada ? 'devolvida.arquivar' : 'devolvida.descartar')}
                 </button>
               </div>
             </div>
           ) : (
             <div className="space-y-2">
               <label className="block text-xs text-slate-400" htmlFor="motivo-descarte">
-                {t('devolvida.motivoDescarte')}
+                {t(jaAprovada ? 'devolvida.motivoArquivamento' : 'devolvida.motivoDescarte')}
               </label>
               <textarea id="motivo-descarte" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={2} maxLength={2000} className={campo} />
               <div className="flex gap-2">
@@ -295,7 +303,7 @@ export default function PainelDevolvida({
                   onClick={() => onDescartar(motivo.trim())}
                   className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-500 disabled:opacity-40"
                 >
-                  {decidindo ? t('devolvida.enviando') : t('devolvida.confirmarDescarte')}
+                  {decidindo ? t('devolvida.enviando') : t(jaAprovada ? 'devolvida.confirmarArquivamento' : 'devolvida.confirmarDescarte')}
                 </button>
                 <button type="button" onClick={() => setDescartando(false)} className="rounded-lg border border-base-border px-4 py-2 text-sm text-slate-300">
                   {t('devolvida.voltar')}
