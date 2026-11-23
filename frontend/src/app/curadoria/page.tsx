@@ -37,6 +37,8 @@ import { TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
 // suporte: so leitura na API (02/11/2026); professor (08/11/2026): so as
 // imagens que ELE enviou, como sugestao ao curador (nao aprova)
 const PERFIS_PERMITIDOS = ['administrador', 'curador', 'professor']
+// tipos com a imagem em cima e a ficha em cartoes baixos (23/11/2026)
+const TIPOS_IMAGEM_EM_CIMA = ['panoramica', 'oclusal', 'tomografia']
 
 // Usados so pra rotular tipo_radiografia/achado_principal nos cards de
 // "Aguardando sua decisao" (mesmos rotulos usados em toda a Curadoria e em
@@ -1400,7 +1402,9 @@ export default function CuradoriaPage() {
   // barra "Imagem X de Y" + Salvar/Aprovar/Descartar/2a opiniao: no topo da
   // metade DIREITA (acima da ficha); no modo "ampliar imagem", em cima de tudo
   // panoramica com a ficha a mostra: imagem em cima, ficha embaixo em colunas
-  const layoutPanoramica = !!fichaAtiva && fichaVisivel && form.tipo_radiografia === 'panoramica'
+  // 23/11/2026: oclusal e tomografia tambem (imagem em cima, ficha em
+  // cartoes baixos embaixo); periapical e interproximal seguem lado a lado
+  const layoutPanoramica = !!fichaAtiva && fichaVisivel && TIPOS_IMAGEM_EM_CIMA.includes(form.tipo_radiografia)
 
   // painel da voz + Como laudar, Macros, Descartar e "Imagem X de Y": na
   // LINHA DO TITULO, em todos os tipos (23/11/2026 - a imagem ganha altura)
@@ -1601,7 +1605,7 @@ export default function CuradoriaPage() {
               1/3 de baixo, com as secoes em colunas. Os outros tipos seguem
               lado a lado (imagem a esquerda, ficha a direita). */}
           <div
-            data-layout={layoutPanoramica ? 'panoramica' : 'lado-a-lado'}
+            data-layout={layoutPanoramica ? 'imagem-em-cima' : 'lado-a-lado'}
             className={`relative flex min-h-0 flex-1 gap-3 ${layoutPanoramica ? 'flex-col' : ''}`}
           >
             <div
@@ -1783,7 +1787,7 @@ export default function CuradoriaPage() {
             </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'h-[clamp(17rem,32vh,18rem)] shrink-0' : 'flex-1'}`}>
+              <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'h-[8.25rem] shrink-0' : 'flex-1'}`}>
                 <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria

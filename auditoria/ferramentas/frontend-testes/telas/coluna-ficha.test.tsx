@@ -331,31 +331,74 @@ describe('erro tecnico, textos e "nada a registrar"', () => {
   })
 })
 
-// PANORAMICA (pedido do Luciano, 23/11/2026): a imagem ocupa a parte de cima
-// e a ficha fica embaixo em CARTOES que cabem sem rolar. So 3 aparecem por
-// vez; → / Tab avancam, ← / Shift+Tab voltam, e os cartoes acompanham o item
-// aceso. ↑ / ↓ trocam a opcao do item aceso.
-const CARTOES = ['anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'odontograma', 'achados', 'estruturas', 'erro_tecnico', 'descricao', 'observacoes']
+// IMAGEM EM CIMA, FICHA EMBAIXO EM CARTOES (pedido do Luciano, 23/11/2026):
+// oclusal, panoramica e tomografia. Os cartoes sao BAIXOS (40% da altura da
+// 1a versao) e nao rolam - o que nao cabia virou mais cartoes (dentes
+// deciduos, odontograma superior/inferior, erros gerais/do exame,
+// observacoes e aprovar separados). So 3 aparecem por vez.
+// Teclado (decisao do Luciano): TAB avanca para o proximo item (Shift+Tab
+// volta) e as SETAS ← → passam pelas opcoes do item aceso; ↑ ↓ nao fazem
+// nada (confundiam).
+const CARTOES_PANORAMICA = [
+  'anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'odontograma_superior', 'odontograma_inferior',
+  'achados', 'estruturas', 'erro_gerais', 'erro_do_exame', 'descricao', 'observacoes', 'aprovar',
+]
 const cartoes = () => Array.from(document.querySelectorAll('[data-cartao]')) as HTMLElement[]
+const nomesCartoes = () => cartoes().map((c) => c.getAttribute('data-cartao'))
 const visiveis = () => cartoes().filter((c) => c.getAttribute('data-visivel') === 'true').map((c) => c.getAttribute('data-cartao'))
 const cartao = (nome: string) => document.querySelector(`[data-cartao="${nome}"]`) as HTMLElement
 
-describe('ficha em cartoes (panoramica)', () => {
-  it('a ficha vira cartoes; so 3 aparecem por vez e nenhum rola (so os achados, se forem muitos)', () => {
+describe('ficha em cartoes (oclusal, panoramica e tomografia)', () => {
+  it('panoramica: 13 cartoes baixos; so 3 aparecem e nenhum rola (so os achados, se forem muitos)', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    expect(cartoes().map((c) => c.getAttribute('data-cartao'))).toEqual(CARTOES)
+    expect(nomesCartoes()).toEqual(CARTOES_PANORAMICA)
     expect(visiveis()).toEqual(['anonimizacao_tipo', 'idade_sexo', 'dentes'])
     for (const c of cartoes()) {
       if (c.getAttribute('data-cartao') === 'achados') continue
       expect(c.className).toContain('overflow-hidden')
       expect(c.className).not.toContain('overflow-y-auto')
     }
-    const ultimo = cartao('observacoes')
-    expect(ultimo.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
-    expect(within(ultimo).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
+    expect(cartao('observacoes').querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
+    expect(within(cartao('aprovar')).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
     // cada cartao tem so os seus itens
     expect(within(cartao('anonimizacao_tipo')).queryByText('Idade')).toBeNull()
     expect(cartao('idade_sexo').querySelector('[data-etapa="idade"]')).toBeTruthy()
+  })
+
+  it('dentição mista: os decíduos ganham um cartão proprio, logo depois dos dentes', () => {
+    abrir({ tipo_radiografia: 'panoramica', denticao: 'mista' }, {}, { horizontal: true })
+    expect(nomesCartoes().slice(2, 4)).toEqual(['dentes', 'deciduos'])
+    expect(within(cartao('deciduos')).getByRole('button', { name: '55' })).toBeTruthy()
+    expect(within(cartao('dentes')).queryByRole('button', { name: '55' })).toBeNull()
+  })
+
+  it('odontograma dividido: superior (com 16 e 55) e inferior (com 38)', () => {
+    abrir({ tipo_radiografia: 'panoramica', denticao: 'mista' }, {}, { horizontal: true })
+    expect(within(cartao('odontograma_superior')).getByRole('button', { name: 'Dente 16' })).toBeTruthy()
+    expect(within(cartao('odontograma_superior')).getByRole('button', { name: 'Dente 55' })).toBeTruthy()
+    expect(within(cartao('odontograma_superior')).queryByRole('button', { name: 'Dente 38' })).toBeNull()
+    expect(within(cartao('odontograma_inferior')).getByRole('button', { name: 'Dente 38' })).toBeTruthy()
+  })
+
+  it('erro tecnico dividido: gerais e os do exame (panoramica)', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    expect(within(cartao('erro_gerais')).getByRole('button', { name: 'Subexposição' })).toBeTruthy()
+    expect(within(cartao('erro_gerais')).queryByRole('button', { name: 'Imagem fantasma' })).toBeNull()
+    expect(within(cartao('erro_do_exame')).getByRole('button', { name: 'Imagem fantasma' })).toBeTruthy()
+  })
+
+  it('oclusal: sem odontograma, estruturas e erros "do exame"', () => {
+    abrir({ tipo_radiografia: 'oclusal' }, {}, { horizontal: true })
+    expect(nomesCartoes()).toEqual([
+      'anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'achados', 'erro_gerais', 'descricao', 'observacoes', 'aprovar',
+    ])
+  })
+
+  it('tomografia: erros gerais e os da tomografia', () => {
+    abrir({ tipo_radiografia: 'tomografia' }, {}, { horizontal: true })
+    expect(nomesCartoes()).toEqual([
+      'anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'achados', 'erro_gerais', 'erro_do_exame', 'descricao', 'observacoes', 'aprovar',
+    ])
   })
 
   it('normal (vertical): sem cartoes', () => {
@@ -363,44 +406,49 @@ describe('ficha em cartoes (panoramica)', () => {
     expect(cartoes()).toHaveLength(0)
   })
 
-  it('→ avanca e ← volta pelos itens; os cartoes visiveis acompanham', () => {
+  it('Tab avanca e Shift+Tab volta pelos itens; os cartoes visiveis acompanham', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     expect(aceso()).toBe('anonimizacao')
-    tecla('ArrowRight')
+    tecla('Tab')
     expect(aceso()).toBe('tipo')
-    tecla('ArrowRight')
-    tecla('ArrowRight')
-    tecla('ArrowRight')
-    tecla('ArrowRight')
-    expect(aceso()).toBe('qualidade')
-    // o cartao do item aceso fica no meio
-    expect(visiveis()).toEqual(['dentes', 'qualidade_origem', 'odontograma'])
-    tecla('ArrowLeft')
-    expect(aceso()).toBe('dentes')
-    expect(visiveis()).toEqual(['idade_sexo', 'dentes', 'qualidade_origem'])
-    // Tab tambem avanca; Shift+Tab volta
+    tecla('Tab')
+    tecla('Tab')
+    tecla('Tab')
     tecla('Tab')
     expect(aceso()).toBe('qualidade')
+    // o cartao do item aceso fica no meio
+    expect(visiveis()).toEqual(['dentes', 'qualidade_origem', 'odontograma_superior'])
     tecla('Tab', { shiftKey: true })
     expect(aceso()).toBe('dentes')
+    expect(visiveis()).toEqual(['idade_sexo', 'dentes', 'qualidade_origem'])
   })
 
-  it('↑ / ↓ trocam a opcao do item aceso (as setas ← → agora andam entre os cartoes)', () => {
+  it('as setas ← → passam pelas opcoes do item aceso; ↑ ↓ nao mudam nada', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    tecla('ArrowRight') // tipo
-    tecla('ArrowRight') // idade
-    tecla('ArrowRight') // genero
+    tecla('Tab') // tipo
+    tecla('Tab') // idade
+    tecla('Tab') // genero
     expect(aceso()).toBe('genero')
-    tecla('ArrowDown')
+    tecla('ArrowRight')
     expect(estado.form.genero).not.toBe('')
     expect(aceso()).toBe('genero')
+    const antes = estado.form.genero
+    tecla('ArrowDown')
+    tecla('ArrowUp')
+    expect(aceso()).toBe('genero')
+    expect(estado.form.genero).toBe(antes)
   })
 
-  it('o ultimo cartao aparece no fim: observacoes e Aprovar', () => {
+  it('no fim: descricao, observacoes e aprovar', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     for (let i = 0; i < 20; i++) tecla('Tab')
     expect(estado.etapa).toBe('aprovar')
-    expect(visiveis()).toEqual(['erro_tecnico', 'descricao', 'observacoes'])
+    expect(visiveis()).toEqual(['descricao', 'observacoes', 'aprovar'])
+  })
+
+  it('a linha de baixo explica as teclas', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    expect(screen.getByText(/Tab avança, Shift\+Tab volta, ← → escolhem a opção/)).toBeTruthy()
   })
 })
 
@@ -429,7 +477,7 @@ describe('denticao, deciduos e odontograma de situacao', () => {
   it('panoramica: clicar no dente do odontograma escolhe a situacao (pode ter mais de uma)', async () => {
     const usuario = userEvent.setup()
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    const odonto = cartao('odontograma')
+    const odonto = cartao('odontograma_superior')
     await usuario.click(within(odonto).getByRole('button', { name: 'Dente 16' }))
     const situacao = within(odonto).getByRole('group', { name: 'Situação do dente 16' })
     await usuario.click(within(situacao).getByRole('button', { name: 'Restaurado' }))
@@ -445,7 +493,7 @@ describe('denticao, deciduos e odontograma de situacao', () => {
   it('odontograma mostra os deciduos com denticao mista; trocar para permanente limpa a situacao deles', async () => {
     const usuario = userEvent.setup()
     abrir({ tipo_radiografia: 'panoramica', denticao: 'mista', situacao_dentes: { '55': ['carie'], '16': ['ausente'] } }, {}, { horizontal: true })
-    const odonto = cartao('odontograma')
+    const odonto = cartao('odontograma_superior')
     expect(within(odonto).getByRole('button', { name: /Dente 55/ })).toBeTruthy()
     await usuario.click(within(dados()).getByRole('button', { name: 'Permanente' }))
     expect(estado.form.situacao_dentes).toEqual({ '16': ['ausente'] })
@@ -465,5 +513,28 @@ describe('denticao, deciduos e odontograma de situacao', () => {
     abrir({ tipo_radiografia: 'periapical' })
     expect(screen.queryByRole('button', { name: 'Dente 16' })).toBeNull()
     expect(screen.queryByRole('group', { name: 'Estruturas e achados fora dos dentes' })).toBeNull()
+  })
+})
+
+// DECIDUOS NOS ACHADOS (23/11/2026): com denticao mista ou decidua, o dente
+// de cada achado tambem pode ser um deciduo (51-85).
+describe('deciduos no dente de cada achado', () => {
+  const abrirComAchado = (denticao: string) => {
+    abrir({ denticao, marcacoes: MARCACOES.slice(0, 1), achados: [{ tipo: 'lesao_periapical', dentes: [], regiao: '', marcacoes: ['m1'] }] })
+    fireEvent.mouseDown(document.querySelector('[data-secao="achados"]') as HTMLElement)
+    return screen.getByRole('combobox', { name: 'Adicionar dente' }) as HTMLSelectElement
+  }
+
+  it('denticao mista: o deciduo aparece na lista e vai para o achado', async () => {
+    const usuario = userEvent.setup()
+    const lista = abrirComAchado('mista')
+    expect(Array.from(lista.options).map((o) => o.value)).toContain('55')
+    await usuario.selectOptions(lista, '55')
+    expect(estado.form.achados[0].dentes).toEqual([55])
+  })
+
+  it('sem denticao (ou permanente): so os permanentes', () => {
+    const lista = abrirComAchado('')
+    expect(Array.from(lista.options).map((o) => o.value)).not.toContain('55')
   })
 })

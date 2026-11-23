@@ -650,14 +650,15 @@ describe('escolher a modalidade', () => {
 // PANORAMICA (pedido do Luciano, 23/11/2026): imagem nos 2/3 de cima (largura
 // toda) e a ficha no 1/3 de baixo, em colunas. Os outros tipos nao mudam.
 describe('layout da panoramica', () => {
-  it('ficha de panoramica: imagem em cima, ficha embaixo em colunas', async () => {
-    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: 'panoramica' }) } }))
-    expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('panoramica')
+  // 23/11/2026: oclusal e tomografia tambem (imagem em cima, ficha baixa)
+  it.each([['panoramica'], ['oclusal'], ['tomografia']])('ficha de %s: imagem em cima, ficha embaixo em cartoes', async (tipo) => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: tipo }) } }))
+    expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('imagem-em-cima')
     expect(screen.getByText('ficha em colunas')).toBeTruthy()
   })
 
-  it('periapical: continua lado a lado, ficha em uma coluna', async () => {
-    await abrirComFicha(rotasPadrao())
+  it.each([['periapical'], ['interproximal']])('%s: continua lado a lado, ficha em uma coluna', async (tipo) => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: tipo }) } }))
     expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('lado-a-lado')
     expect(screen.queryByText('ficha em colunas')).toBeNull()
   })

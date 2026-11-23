@@ -17,12 +17,15 @@ export default function PainelErrosTecnicosFicha({
   onChange,
   palavrasChave = false,
   cursor,
+  parte,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
   palavrasChave?: boolean
   /** posicao do cursor das setas ←/→ (espaco marca/desmarca) */
   cursor?: number
+  /** cartoes baixos (23/11/2026): so os erros gerais ou so os do exame */
+  parte?: 'gerais' | 'do_exame'
 }) {
   const t = useTranslations('Curadoria.errosFicha')
   // cartao da panoramica (altura fixa): botoes menores para caberem todos
@@ -54,6 +57,8 @@ export default function PainelErrosTecnicosFicha({
       )}
       <div className={`flex flex-wrap ${compacta ? 'gap-0.5' : 'gap-1.5'}`}>
         {lista.map((e, i) => {
+          // o indice i e o da lista inteira (o cursor das setas anda nela toda)
+          if (parte && (parte === 'gerais') !== (e.grupo === 'geral')) return null
           const ligado = marcados.includes(e.valor)
           return (
             <button

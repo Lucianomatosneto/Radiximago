@@ -167,6 +167,33 @@ describe('filtros e pesquisa', () => {
     expect(screen.getByText('6 filtros em uso')).toBeTruthy()
   })
 
+  it('23/11: denticao, situacao do dente e estrutura fora dos dentes viram filtros da pesquisa', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(rotasPadrao())
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Dentição' }), 'Mista')
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Situação do dente' }), 'Implante')
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Estrutura fora dos dentes' }), 'Ateroma carotídeo')
+    expect(screen.getByText('Dentição: Mista')).toBeTruthy()
+    expect(screen.getByText('Situação do dente: Implante')).toBeTruthy()
+    expect(screen.getByText('Fora dos dentes: Ateroma carotídeo')).toBeTruthy()
+    await usuario.click(screen.getByRole('button', { name: /Pesquisar/ }))
+    await screen.findByText(/^3 imagens encontradas/)
+    const p = ultimaPesquisa(servidor)
+    expect([p.get('denticao'), p.get('situacao_dente'), p.get('estrutura')]).toEqual(['mista', 'implante', 'ateroma_carotideo'])
+  })
+
+  it('23/11: "Decíduos" mostra os dentes 51-85 no odontograma da pesquisa', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(rotasPadrao())
+    const dentes = screen.getByRole('toolbar', { name: 'Dentes ou grupos de dentes (FDI)' })
+    expect(within(dentes).queryByRole('button', { name: '55' })).toBeNull()
+    await usuario.click(within(dentes).getByRole('button', { name: 'Decíduos (51–85)' }))
+    await usuario.click(within(dentes).getByRole('button', { name: '55' }))
+    await usuario.click(screen.getByRole('button', { name: /Pesquisar/ }))
+    await screen.findByText(/^3 imagens encontradas/)
+    expect(ultimaPesquisa(servidor).getAll('dentes')).toEqual(['55'])
+  })
+
   it('um dente so: nao pergunta "qualquer um / todos" nem manda o modo', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(rotasPadrao())
