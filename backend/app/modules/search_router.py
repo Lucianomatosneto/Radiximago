@@ -16,7 +16,7 @@ from typing import Annotated, List, Literal, Optional
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
-from sqlalchemy import and_, exists, func, or_
+from sqlalchemy import and_, exists, func, or_, text
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -46,7 +46,10 @@ from app.modules.curations import (
     QualidadeTecnica,
     Dificuldade,
     StatusCuradoria,
-    DENTES_PERMANENTES,
+    DENTES_FDI,
+    Denticao,
+    SituacaoDente,
+    EstruturaExtradental,
 )
 from app.modules.achados import Achado, ErroTecnico, TipoAchado, RegiaoAnatomica, TipoErroTecnico, erros_por_ficha
 
@@ -59,10 +62,12 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/search", tags=["Pesquisa"])
 
 # Faixas de dentes (FDI) por arcada e por lado, para os filtros derivados.
-DENTES_SUPERIORES = list(range(11, 29))   # 11-28
-DENTES_INFERIORES = list(range(31, 49))   # 31-48
-DENTES_DIREITA = list(range(11, 19)) + list(range(41, 49))   # quadrantes 1 e 4
-DENTES_ESQUERDA = list(range(21, 29)) + list(range(31, 39))  # quadrantes 2 e 3
+# Desde 23/11/2026 inclui os deciduos (quadrantes 5-8: 5 e 6 em cima,
+# 5 e 8 a direita).
+DENTES_SUPERIORES = list(range(11, 29)) + list(range(51, 66))   # 11-28 e 51-65
+DENTES_INFERIORES = list(range(31, 49)) + list(range(71, 86))   # 31-48 e 71-85
+DENTES_DIREITA = list(range(11, 19)) + list(range(41, 49)) + list(range(51, 56)) + list(range(81, 86))   # quadrantes 1, 4, 5 e 8
+DENTES_ESQUERDA = list(range(21, 29)) + list(range(31, 39)) + list(range(61, 66)) + list(range(71, 76))  # quadrantes 2, 3, 6 e 7
 
 # Quadrante (FDI) - mesmo principio de arcada/lado acima: SO existe como
 # faixa calculada em tempo de consulta, nunca como coluna persistida (Fase
@@ -71,10 +76,10 @@ DENTES_ESQUERDA = list(range(21, 29)) + list(range(31, 39))  # quadrantes 2 e 3
 # dentesDoQuadrante) so que do lado do banco, pra permitir "Quadrante 4,
 # nenhum dente especifico marcado" como filtro por si so (secao 9/10).
 DENTES_POR_QUADRANTE = {
-    1: list(range(11, 19)),
-    2: list(range(21, 29)),
-    3: list(range(31, 39)),
-    4: list(range(41, 49)),
+    1: list(range(11, 19)) + list(range(51, 56)),
+    2: list(range(21, 29)) + list(range(61, 66)),
+    3: list(range(31, 39)) + list(range(71, 76)),
+    4: list(range(41, 49)) + list(range(81, 86)),
 }
 
 
@@ -246,6 +251,13 @@ def pesquisar_imagens(
     erros_tecnicos: Optional[List[TipoErroTecnico]] = Query(
         None, max_length=40, description="Erros tecnicos marcados na curadoria - basta ter QUALQUER UM deles"
     ),
+    denticao: Optional[Denticao] = Query(None, description="Denticao: decidua, mista ou permanente"),
+    situacao_dente: Optional[SituacaoDente] = Query(
+        None, description="Odontograma de situacao: algum dente com esta situacao (ex.: implante)"
+    ),
+    estrutura: Optional[EstruturaExtradental] = Query(
+        None, description="Estrutura/achado fora dos dentes (panoramica), ex.: ateroma_carotideo"
+    ),
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     usuario: User = Depends(obter_usuario_atual),
@@ -295,6 +307,19 @@ def pesquisar_imagens(
         consulta = consulta.filter(Curation.dificuldade == dificuldade.value)
     if origem is not None:
         consulta = consulta.filter(OrthancReference.origem == origem.value)
+    # 23/11/2026: denticao, odontograma de situacao e estruturas fora dos dentes
+    if denticao is not None:
+        consulta = consulta.filter(Curation.denticao == denticao.value)
+    if situacao_dente is not None:
+        # algum dente do odontograma ({"16": ["implante"]}) tem a situacao
+        consulta = consulta.filter(
+            text(
+                "jsonb_path_exists(curations.situacao_dentes, '$.*[*] ? (@ == $s)', "
+                "jsonb_build_object('s', CAST(:situacao_dente AS text)))"
+            ).bindparams(situacao_dente=situacao_dente.value)
+        )
+    if estrutura is not None:
+        consulta = consulta.filter(Curation.estruturas_extradentais.any(estrutura.value))
 
     # Busca por palavras (texto livre, com sinonimos) e termo do vocabulario.
     if texto:
@@ -336,11 +361,11 @@ def pesquisar_imagens(
     # o CONTEUDO da lista sozinho.
     dentes_normalizados: Optional[List[int]] = None
     if dentes:
-        invalidos = [d for d in dentes if d not in DENTES_PERMANENTES]
+        invalidos = [d for d in dentes if d not in DENTES_FDI]
         if invalidos:
             raise HTTPException(
                 status_code=422,
-                detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
+                detail=f"Dentes invalidos (use 11-48 ou deciduos 51-85, notacao FDI): {invalidos}",
             )
         dentes_normalizados = sorted(set(dentes))
         if modo_dentes == "todos":
