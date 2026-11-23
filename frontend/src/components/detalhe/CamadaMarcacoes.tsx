@@ -12,6 +12,7 @@ import {
   marcacaoSobPonto,
   type GeometriaMarcacao,
   type Marcacao,
+  marcacoesSobreAImagem,
 } from '../../lib/marcacoes'
 import { textoMarcacao } from '../../lib/descricaoCuradoria'
 
@@ -35,15 +36,18 @@ import { textoMarcacao } from '../../lib/descricaoCuradoria'
 // do recorte visivel dela, no editor da Curadoria). Desenha em pixels
 // reais (mede a caixa), por isso nada fica deformado.
 export default function CamadaMarcacoes({
-  marcacoes,
+  marcacoes: todasMarcacoes,
   recorte,
   interativo = true,
   destaque = null,
   aoClicarFora,
   estilo = 'padrao',
   holofoteLigado,
+  corteAberto = false,
 }: {
   marcacoes: Marcacao[]
+  /** as marcacoes passadas sao do corte de tomografia que esta na tela */
+  corteAberto?: boolean
   recorte?: { x: number; y: number; largura: number; altura: number } | null
   interativo?: boolean
   /** marcacao destacada por fora (ex.: a selecionada no editor) */
@@ -59,6 +63,13 @@ export default function CamadaMarcacoes({
   /** holofote ligado/desligado por um botao de fora (a tecla H continua valendo) */
   holofoteLigado?: boolean
 }) {
+  // marcacoes da tomografia ficam num corte, nao na miniatura (23/11/2026);
+  // o editor (MarcadorAchado) ja recebe so as que valem para a imagem que
+  // esta na tela (corteAberto)
+  const marcacoes = useMemo(
+    () => (corteAberto ? todasMarcacoes : marcacoesSobreAImagem(todasMarcacoes)),
+    [todasMarcacoes, corteAberto],
+  )
   const t = useTranslations('DescricaoCuradoria')
   const caixaRef = useRef<HTMLDivElement>(null)
   const [tam, setTam] = useState<{ w: number; h: number } | null>(null)

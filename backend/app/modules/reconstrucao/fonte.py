@@ -6,9 +6,11 @@ Le a tomografia no Orthanc para a reconstrucao (pedido do Luciano,
 from __future__ import annotations
 
 import io
+import threading
 from dataclasses import dataclass
 
 import numpy as np
+from PIL import Image
 from pydicom import dcmread
 from pydicom.dataset import Dataset
 
@@ -112,3 +114,73 @@ def carregar_volume(g: Geometria, recorte: tuple[int, int, int, int]) -> Volume:
             dados = dados.astype(np.float32)
         dados[k] = fatia
     return Volume(dados=dados, espacamento=g.espacamento)
+
+
+# --------------------------------------------------------------------- planos
+# MARCAR LESAO NO CORTE (pedido do Luciano, 23/11/2026, "opcao 1"): a imagem
+# de UM corte de cada plano, para o curador desenhar por cima, como nas
+# radiografias. Em tons de cinza (8 bits), na proporcao REAL (pixels
+# quadrados em mm) e, no sagital e no coronal, com o alto da cabeca em cima.
+PLANOS = ("axial", "sagital", "coronal")
+
+_VOLUME_LOCK = threading.Lock()
+_VOLUME_CACHE: dict[str, np.ndarray] = {}  # so o ULTIMO exame (memoria)
+
+
+def _janela_8bits(valores: np.ndarray, baixo: float, alto: float) -> np.ndarray:
+    return np.clip((valores - baixo) / max(alto - baixo, 1.0) * 255, 0, 255).astype(np.uint8)
+
+
+def _hu(ds: Dataset) -> np.ndarray:
+    slope = float(getattr(ds, "RescaleSlope", 1) or 1)
+    intercept = float(getattr(ds, "RescaleIntercept", 0) or 0)
+    return ds.pixel_array.astype(np.float32) * slope + intercept
+
+
+def volume_cinza(g: Geometria) -> np.ndarray:
+    """O exame inteiro em 8 bits [corte, linha, coluna], guardado na memoria
+    para o ultimo exame aberto (o sagital e o coronal precisam de todos os
+    cortes). A janela vem dos percentis 1 e 99,7 de cortes de amostra."""
+    if len(g.ids) * g.linhas * g.colunas > LIMITE_VOXELS:
+        raise ValueError("Tomografia grande demais para montar os planos sagital e coronal neste servidor.")
+    chave = g.ids[0]
+    with _VOLUME_LOCK:
+        if chave in _VOLUME_CACHE:
+            return _VOLUME_CACHE[chave]
+        amostra = np.concatenate([_hu(ler_corte(oid)).ravel() for oid in g.ids[:: max(1, len(g.ids) // 12)]])
+        baixo, alto = (float(v) for v in np.percentile(amostra, [1, 99.7]))
+        vol = np.empty((len(g.ids), g.linhas, g.colunas), dtype=np.uint8)
+        for k, oid in enumerate(g.ids):
+            vol[k] = _janela_8bits(_hu(ler_corte(oid)), baixo, alto)
+        _VOLUME_CACHE.clear()
+        _VOLUME_CACHE[chave] = vol
+        return vol
+
+
+def total_no_plano(g: Geometria, plano: str) -> int:
+    return {"axial": len(g.ids), "sagital": g.colunas, "coronal": g.linhas}[plano]
+
+
+def imagem_do_plano(g: Geometria, plano: str, indice: int) -> np.ndarray:
+    """Um corte do plano pedido, em 8 bits e pixels quadrados (mm)."""
+    if plano not in PLANOS:
+        raise ValueError("Plano desconhecido (use axial, sagital ou coronal).")
+    if not 0 <= indice < total_no_plano(g, plano):
+        raise ValueError("Corte fora da tomografia.")
+    dz, dy, dx = g.espacamento
+    if plano == "axial":
+        fatia = _hu(ler_corte(g.ids[indice]))
+        baixo, alto = (float(v) for v in np.percentile(fatia, [1, 99.7]))
+        img, larg_mm, alt_mm = _janela_8bits(fatia, baixo, alto), g.colunas * dx, g.linhas * dy
+    else:
+        vol = volume_cinza(g)
+        if plano == "sagital":
+            img, larg_mm = vol[::-1, :, indice], g.linhas * dy
+        else:
+            img, larg_mm = vol[::-1, indice, :], g.colunas * dx
+        alt_mm = len(g.ids) * dz
+    pixel = min(dx, dy, dz) if plano != "axial" else min(dx, dy)
+    tamanho = (max(1, round(larg_mm / pixel)), max(1, round(alt_mm / pixel)))
+    if (img.shape[1], img.shape[0]) == tamanho:
+        return np.ascontiguousarray(img)
+    return np.array(Image.fromarray(np.ascontiguousarray(img)).resize(tamanho, Image.BILINEAR))

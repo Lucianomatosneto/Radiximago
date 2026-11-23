@@ -547,6 +547,7 @@ export default function MarcadorAchado({
                 destaque. O <svg> logo abaixo e so a camada invisivel que
                 recebe os cliques de mover/redimensionar. */}
             <CamadaMarcacoes
+              corteAberto
               marcacoes={formasParaExibir}
               recorte={recorteAtual}
               interativo={false}

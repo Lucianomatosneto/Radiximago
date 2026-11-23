@@ -24,6 +24,11 @@ export interface Marcacao {
   // fora dela so com `achado`). O estudante ve esse texto no tooltip no
   // lugar do rotulo generico "Outro", quando preenchido.
   achado_descricao?: string | null
+  // TOMOGRAFIA (23/11/2026, "opcao 1"): a marcacao fica num CORTE de um
+  // PLANO; as coordenadas sao relativas a imagem desse corte
+  // (GET /reconstrucao/{ref}/plano.png). Sem eles: radiografia.
+  plano?: 'axial' | 'sagital' | 'coronal' | null
+  corte?: number | null
   // Inclinacao (graus, sentido horario, em volta do centro) do retangulo ou
   // oval (27/10/2026) - medida em PIXELS da imagem, entao a proporcao da
   // imagem nao deforma a forma.
@@ -333,4 +338,11 @@ export const CORES_SEQUENCIA = [
 
 export function corDaSequencia(indice: number): string {
   return CORES_SEQUENCIA[indice % CORES_SEQUENCIA.length]
+}
+
+/** Marcacoes que podem ser desenhadas SOBRE A MINIATURA da imagem: as da
+ * tomografia (com plano e corte, 23/11/2026) ficam num corte, nao na
+ * miniatura - desenhadas nela sairiam no lugar errado. */
+export function marcacoesSobreAImagem(marcacoes: Marcacao[]): Marcacao[] {
+  return marcacoes.filter((m) => !m.plano)
 }
