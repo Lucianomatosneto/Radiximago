@@ -3265,5 +3265,40 @@
     "pergunta": "Qual modalidade você quer curar agora?",
     "perguntaExplica": "Escolha o tipo de exame; a primeira imagem dele abre em seguida. Dá para trocar depois na caixa \"Modalidade\".",
     "opcao": "{nome} ({total})"
+  },
+  "SituacaoDentaria": {
+    "denticao": "Dentição",
+    "denticoes": {
+      "decidua": "Decídua",
+      "mista": "Mista",
+      "permanente": "Permanente"
+    },
+    "odontograma": "Odontograma de situação",
+    "odontogramaExplica": "Clique no dente e escolha como ele está na imagem. Um dente pode ter mais de uma situação.",
+    "dente": "Dente {numero}",
+    "situacaoDoDente": "Situação do dente {numero}",
+    "situacoes": {
+      "ausente": "Ausente",
+      "incluso": "Incluso/impactado",
+      "carie": "Cárie",
+      "restaurado": "Restaurado",
+      "endodontia": "Tratamento endodôntico",
+      "implante": "Implante",
+      "protese": "Prótese",
+      "supranumerario": "Supranumerário"
+    },
+    "estruturasTitulo": "Estruturas e achados fora dos dentes",
+    "estruturas": {
+      "seio_maxilar": "Seios maxilares",
+      "atm_condilo": "ATM / côndilos",
+      "canal_mandibular": "Canal mandibular",
+      "perda_ossea_generalizada": "Perda óssea generalizada",
+      "ateroma_carotideo": "Ateroma carotídeo",
+      "sialolito": "Sialolito",
+      "tonsilolito": "Tonsilolito",
+      "processo_estiloide_alongado": "Processo estiloide alongado",
+      "lesao_ossea_radiolucida": "Lesão óssea radiolúcida",
+      "lesao_ossea_radiopaca": "Lesão óssea radiopaca"
+    }
   }
 }
