@@ -51,6 +51,20 @@ def sugerir_tipo(tags: dict) -> tuple[TipoRadiografia, str]:
     return PADRAO, "padrao (sem indicio de panoramica ou tomografia)"
 
 
+INTRAORAL = "intraoral"
+
+
+def tipo_preliminar_automatico(tags: dict) -> str:
+    """Modalidade PRELIMINAR na entrada da imagem (23/11/2026): as mesmas
+    regras de sugerir_tipo, mas sem fingir saber o que nao da para saber -
+    periapical, interproximal e oclusal tem o mesmo DICOM, entao o resto
+    fica "intraoral" (o curador define o tipo exato na ficha)."""
+    tipo, _motivo = sugerir_tipo(tags)
+    if tipo in (TipoRadiografia.TOMOGRAFIA, TipoRadiografia.PANORAMICA):
+        return tipo.value
+    return INTRAORAL
+
+
 def sugerir_tipo_da_imagem(orthanc_id: str) -> tuple[TipoRadiografia, str]:
     """Busca as tags no Orthanc e aplica sugerir_tipo; sem resposta, usa o padrao."""
     try:
