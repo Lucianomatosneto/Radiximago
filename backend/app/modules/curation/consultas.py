@@ -30,7 +30,7 @@ from app.modules.curations import (
 
 from app.modules.vocabulario import CurationTermo
 from app.modules.achados import Achado, ErroTecnico
-from .common import _buscar_ficha
+from .common import STATUS_EDITAVEIS, _buscar_ficha
 from .router import router
 
 
@@ -89,15 +89,23 @@ def listar_pendentes(
     # da fila; a ficha dele vale para o exame inteiro e o visualizador abre
     # o estudo completo). Radiografias nao sao afetadas (em_volume = falso).
     nao_e_corte_seguinte = filtro_exame_unico()
+    # 23/11/2026 (pedido do Luciano): abrir uma imagem ja cria a ficha; quem
+    # saia sem aprovar perdia a imagem de vista. As fichas EM ANDAMENTO do
+    # PROPRIO curador voltam para a fila, para continuar (as de outro
+    # curador continuam fora - cada um cuida das suas).
+    minha_em_andamento = and_(
+        Curation.curador_id == usuario.id,
+        Curation.status.in_(STATUS_EDITAVEIS),
+    )
     if tipo is not None and tipo not in FILTROS_TIPO:
         raise HTTPException(status_code=422, detail="Modalidade desconhecida.")
     # modalidade preliminar (23/11/2026): a sugestao de professor ja tem o
     # tipo na ficha; as demais usam o tipo conhecido na entrada da imagem
     tipo_da_fila = func.coalesce(Curation.tipo_radiografia, OrthancReference.tipo_preliminar, NAO_INFORMADO)
     consulta_toda = (
-        db.query(OrthancReference, Curation.id, Curation.sugerida_por_id, tipo_da_fila)
+        db.query(OrthancReference, Curation.id, Curation.sugerida_por_id, tipo_da_fila, Curation.curador_id)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
-        .filter(or_(Curation.id.is_(None), sugestao_aguardando))
+        .filter(or_(Curation.id.is_(None), sugestao_aguardando, minha_em_andamento))
         .filter(OrthancReference.ativo.is_(True))
         # etapa B (08/11/2026): imagens "so para mim" e em analise nao entram
         .filter(OrthancReference.destino == DestinoImagem.FILA.value)
@@ -130,10 +138,10 @@ def listar_pendentes(
         .count()
     )
     registros = consulta_base.offset(skip).limit(limit).all()
-    cortes = contar_cortes(db, [ref for ref, _, _, _ in registros])
+    cortes = contar_cortes(db, [ref for ref, *_ in registros])
 
     nomes = {u.id: u.nome for u in db.query(User).filter(
-        User.id.in_({sid for _, _, sid, _ in registros if sid}))} if registros else {}
+        User.id.in_({sid for _, _, sid, *_ in registros if sid}))} if registros else {}
     itens = [
         {
             "curation_id": curation_id,
@@ -150,8 +158,10 @@ def listar_pendentes(
             "cortes": cortes[ref.id],
             # modalidade preliminar (23/11/2026); None = nao informado
             "tipo_preliminar": None if tipo_item == NAO_INFORMADO else tipo_item,
+            # ficha que ESTE curador ja abriu e nao terminou (continuar)
+            "em_andamento": curation_id is not None and curador_id == usuario.id,
         }
-        for ref, curation_id, sugerida_por_id, tipo_item in registros
+        for ref, curation_id, sugerida_por_id, tipo_item, curador_id in registros
     ]
 
     return {
