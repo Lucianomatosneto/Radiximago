@@ -76,7 +76,9 @@ class Marcacao(BaseModel):
 
 
 class CurationCreate(BaseModel):
-    tipo_radiografia: TipoRadiografia
+    # Opcional desde 18/11/2026: sem tipo informado, o sistema sugere um a
+    # partir da propria imagem (curation/tipo_automatico.py).
+    tipo_radiografia: Optional[TipoRadiografia] = None
     dentes: Optional[List[int]] = Field(default=None, max_length=MAX_DENTES)
     idade_min: Optional[int] = None
     idade_max: Optional[int] = None
@@ -136,7 +138,7 @@ class CurationUpdate(BaseModel):
     sem_alteracoes: Optional[bool] = None
     # Erros tecnicos da imagem (lista completa - substitui os anteriores).
     erros_tecnicos: Optional[List[TipoErroTecnico]] = Field(default=None, max_length=MAX_ERROS_TECNICOS)
-    # ORIGEM da imagem (UFSC / externa) - antes so automatica; desde
+    # ORIGEM da imagem (aparelho / externa) - antes so automatica; desde
     # 26/10/2026 o curador confere e corrige na ficha (filtro da Pesquisa)
     origem: Optional[OrigemImagem] = None
 
@@ -148,6 +150,14 @@ class CurationApprove(BaseModel):
 
 class CurationDiscard(BaseModel):
     motivo: TextoMedio
+
+
+class CurationArquivar(BaseModel):
+    motivo: TextoMedio
+
+
+class CurationDesarquivar(BaseModel):
+    motivo: Optional[TextoMedio] = None
 
 
 class ReviewRequest(BaseModel):

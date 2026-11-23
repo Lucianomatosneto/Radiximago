@@ -96,7 +96,20 @@ describe('entrar com e-mail e senha', () => {
 
   it.each([
     ['senha errada (401)', { status: 401 } as Rota, 'E-mail ou senha incorretos'],
-    ['conta bloqueada (403)', { status: 403 } as Rota, 'E-mail ou senha incorretos'],
+    ['403 sem motivo', { status: 403 } as Rota, 'E-mail ou senha incorretos'],
+    // 18/11/2026: cada motivo com a sua mensagem (antes tudo era "Nao foi possivel entrar")
+    ['conta travada por 15 minutos', { status: 429, corpo: { detail: 'x', codigo: 'conta_travada', minutos: 15 } } as Rota,
+      'Por segurança, esta conta foi travada por até 15 minutos depois de muitas tentativas com a senha errada. Se não foi você, troque a senha em “Esqueci minha senha”.'],
+    ['conta travada por 1 hora', { status: 429, corpo: { detail: 'x', codigo: 'conta_travada', minutos: 60 } } as Rota,
+      'Por segurança, esta conta foi travada por até 1 hora depois de muitas tentativas com a senha errada. Se não foi você, troque a senha em “Esqueci minha senha”.'],
+    ['conta travada por 24 horas', { status: 429, corpo: { detail: 'x', codigo: 'conta_travada', minutos: 1440 } } as Rota,
+      'Por segurança, esta conta foi travada por até 24 horas depois de muitas tentativas com a senha errada. Se não foi você, troque a senha em “Esqueci minha senha”.'],
+    ['muitas tentativas deste computador', { status: 429, corpo: { detail: 'Muitas tentativas' } } as Rota,
+      'Muitas tentativas seguidas a partir deste computador. Aguarde 1 minuto e tente de novo.'],
+    ['conta bloqueada pelo administrador', { status: 403, corpo: { detail: 'Usuário bloqueado', codigo: 'conta_bloqueada' } } as Rota,
+      'Sua conta está bloqueada. Fale com o administrador da sua instituição ou do Rádix Imago.'],
+    ['conta inativa', { status: 403, corpo: { detail: 'Usuário inativo', codigo: 'conta_inativa' } } as Rota,
+      'Sua conta ainda não está ativa. Se você acabou de pedir acesso, aguarde a aprovação; senão, fale com o administrador.'],
     ['erro do servidor', { status: 500 } as Rota, 'Não foi possível entrar. Tente novamente mais tarde.'],
     ['sem conexao', 'SEM_CONEXAO' as Rota, 'Não foi possível entrar. Tente novamente mais tarde.'],
   ])('%s: avisa e nao sai da tela', async (_n, rota, mensagem) => {
@@ -175,6 +188,12 @@ describe('login em duas etapas: codigo do aplicativo', () => {
     const usuario = userEvent.setup()
     await ateOCodigo(usuario, rota)
     expect((await alerta()).textContent).toBe('Não foi possível concluir agora. Tente de novo em instantes.')
+  })
+
+  it('muitos codigos errados seguidos: explica e pede para esperar', async () => {
+    const usuario = userEvent.setup()
+    await ateOCodigo(usuario, { status: 429, corpo: { detail: 'Muitas tentativas' } })
+    expect((await alerta()).textContent).toBe('Muitos códigos tentados em seguida. Aguarde 1 minuto e tente de novo.')
   })
 
   it('"Voltar" leva de novo ao e-mail e senha', async () => {

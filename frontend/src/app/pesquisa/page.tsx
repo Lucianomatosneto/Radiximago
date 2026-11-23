@@ -67,11 +67,11 @@ const OPCOES_QUALIDADE_TECNICA = [
 
 
 // Valores reais do enum OrigemImagem (backend/app/modules/orthanc_references.py).
-// "ufsc" = veio direto do aparelho de raio-x da UFSC (protocolo DICOM/C-STORE),
-// detectado automaticamente pelo Orthanc - ninguem escolhe isso na mao.
-// "externa" = chegou por upload manual (tela "Imagens recebidas").
+// "aparelho" = veio direto de um aparelho cadastrado (protocolo DICOM/C-STORE),
+// detectado automaticamente pelo Orthanc ("ufsc" ate 18/11/2026).
+// "externa" = chegou por envio manual (arquivo, foto ou tela "Imagens recebidas").
 const OPCOES_ORIGEM = [
-  { valor: 'ufsc', chave: 'ufsc' },
+  { valor: 'aparelho', chave: 'aparelho' },
   { valor: 'externa', chave: 'externa' },
 ]
 
@@ -225,6 +225,9 @@ function PesquisaConteudo() {
   // versao maior carregada
   const [ampliacao, setAmpliacao] = useState<Ampliacao | null>(null)
   const cartaoAmpliado = ampliacao?.id ?? null
+  // clique no + fixa a ampliacao (pedido de 22/11/2026): ela fica mesmo
+  // tirando o mouse, ate outro clique; passar o mouse continua sendo previa
+  const [ampliacaoFixa, setAmpliacaoFixa] = useState<number | null>(null)
   const [ampliadasCarregadas, setAmpliadasCarregadas] = useState<number[]>([])
   // informacoes da imagem: aberta pelo mouse no "i" ou fixada por clique
   const [infoPassando, setInfoPassando] = useState<number | null>(null)
@@ -1128,7 +1131,7 @@ function PesquisaConteudo() {
                         <div
                           data-cartao-imagem
                           onMouseLeave={() => {
-                            if (ampliado) setAmpliacao(null)
+                            if (ampliado && ampliacaoFixa !== imagem.curation_id) setAmpliacao(null)
                           }}
                           style={
                             ampliado && ampliacao
@@ -1350,18 +1353,24 @@ function PesquisaConteudo() {
                             <button
                               type="button"
                               onMouseEnter={(e) => {
-                                if (!ampliado) setAmpliacao(calcularAmpliacao(imagem.curation_id, e.currentTarget))
+                                if (!ampliado && ampliacaoFixa === null) setAmpliacao(calcularAmpliacao(imagem.curation_id, e.currentTarget))
                                 setAmpliadasCarregadas((lista) =>
                                   lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
                                 )
                               }}
                               onClick={(e) => {
-                                // toque (celular): um toque amplia, outro volta
+                                // clique (ou toque no celular): fixa a ampliacao; outro clique volta
                                 e.preventDefault()
                                 setAmpliadasCarregadas((lista) =>
                                   lista.includes(imagem.curation_id) ? lista : [...lista, imagem.curation_id]
                                 )
-                                setAmpliacao(ampliado ? null : calcularAmpliacao(imagem.curation_id, e.currentTarget))
+                                if (ampliacaoFixa === imagem.curation_id) {
+                                  setAmpliacaoFixa(null)
+                                  setAmpliacao(null)
+                                } else {
+                                  setAmpliacaoFixa(imagem.curation_id)
+                                  setAmpliacao(calcularAmpliacao(imagem.curation_id, e.currentTarget))
+                                }
                               }}
                               title={t('ampliarImagem')}
                               aria-label={t('ampliarImagem')}

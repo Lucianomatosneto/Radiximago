@@ -173,7 +173,7 @@ def test_pedido_so_vira_participacao_quando_o_dono_autoriza(client, criar_usuari
     participo = client.get("/grupos/participo", headers=_cab(client, aluno)).json()["grupos"]
     assert [g["id"] for g in participo] == [grupo["id"]]
     # o participante nao ve a lista dos colegas (D2)
-    assert set(participo[0]) == {"id", "nome", "criador", "entrou_em"}
+    assert set(participo[0]) == {"id", "nome", "criador", "entrou_em", "imagens_novas"}
     assert client.get("/grupos/participo", headers=_cab(client, outro)).json()["grupos"] == []
 
     acoes = {a for (a,) in db.query(AuditLog.acao).filter(AuditLog.entidade_id == grupo["id"],
@@ -367,8 +367,8 @@ def test_pendencias_contam_so_o_que_e_da_pessoa(client, criar_usuario, limpar_gr
     _criar(client, _cab(client, outro_prof), limpar_grupos, membros_ids=[a1.id])
     client.post(f"/grupos/{g1['id']}/pedir", headers=_cab(client, a2))
 
-    assert client.get("/grupos/pendencias", headers=_cab(client, a1)).json() == {"convites": 2, "pedidos": 0}
-    assert client.get("/grupos/pendencias", headers=_cab(client, a2)).json() == {"convites": 0, "pedidos": 0}
-    assert client.get("/grupos/pendencias", headers=_cab(client, prof)).json() == {"convites": 0, "pedidos": 1}
-    assert client.get("/grupos/pendencias", headers=_cab(client, outro_prof)).json() == {"convites": 0, "pedidos": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, a1)).json() == {"convites": 2, "pedidos": 0, "imagens_novas": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, a2)).json() == {"convites": 0, "pedidos": 0, "imagens_novas": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, prof)).json() == {"convites": 0, "pedidos": 1, "imagens_novas": 0}
+    assert client.get("/grupos/pendencias", headers=_cab(client, outro_prof)).json() == {"convites": 0, "pedidos": 0, "imagens_novas": 0}
     assert client.get("/grupos/pendencias").status_code == 401

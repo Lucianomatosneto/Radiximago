@@ -42,7 +42,7 @@ export interface FormularioFicha {
   sem_alteracoes: boolean
   // erros tecnicos da imagem (lib/errosTecnicos.ts)
   erros_tecnicos: string[]
-  // origem da imagem: 'ufsc' | 'externa' (filtro da Pesquisa avancada)
+  // origem da imagem: 'aparelho' | 'externa' (filtro da Pesquisa avancada)
   origem: string
 }
 

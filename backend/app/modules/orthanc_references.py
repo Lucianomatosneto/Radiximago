@@ -1,7 +1,7 @@
 import enum
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, text
-from sqlalchemy.orm import relationship
+from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, and_, exists, func as sa_func, text
+from sqlalchemy.orm import aliased, relationship
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
@@ -16,8 +16,17 @@ class OrigemImagem(str, enum.Enum):
     images_router.py). Guardado como texto simples no banco (mesmo padrao
     de curations.py), so o Enum aqui e a lista oficial de valores validos.
     """
-    UFSC = "ufsc"        # chegou por envio direto do equipamento (protocolo DICOM/C-STORE)
-    EXTERNA = "externa"  # chegou por upload manual (API REST) - inclusive de fora da UFSC
+    APARELHO = "aparelho"  # chegou por envio direto de um aparelho cadastrado (protocolo DICOM/C-STORE)
+    EXTERNA = "externa"    # chegou por envio manual (API REST: tela, arquivo ou foto)
+
+    @classmethod
+    def _missing_(cls, valor):
+        # Compatibilidade (18/11/2026): o valor antigo "ufsc" foi renomeado
+        # para "aparelho" (nome neutro, sem citar instituicao). Links,
+        # macros ou pedidos antigos com "ufsc" continuam funcionando.
+        if isinstance(valor, str) and valor.strip().lower() == "ufsc":
+            return cls.APARELHO
+        return None
 
 
 class DestinoImagem(str, enum.Enum):
@@ -37,6 +46,11 @@ class DestinoImagem(str, enum.Enum):
 
 class OrthancReference(Base):
     __tablename__ = "orthanc_references"
+    __table_args__ = (
+        # fila de curadoria: "primeiro corte da serie" (migracao b2d4f6a8c0e1)
+        Index("ix_orthanc_references_volume_serie", "series_instance_uid", "id",
+              postgresql_where=text("em_volume")),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     orthanc_id: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
@@ -49,7 +63,7 @@ class OrthancReference(Base):
     anonimizacao_status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="aguardando", server_default=text("'aguardando'")
     )
-    # "ufsc" ou "externa" (ver OrigemImagem). Registros gravados ANTES desta
+    # "aparelho" ou "externa" (ver OrigemImagem; "ufsc" ate 18/11/2026). Registros gravados ANTES desta
     # coluna existir foram marcados como "externa" por padrao (server_default)
     # - nao ha como descobrir retroativamente a origem real deles, porque a
     # instancia que guardamos e sempre a versao JA ANONIMIZADA, e o Orthanc
@@ -83,8 +97,85 @@ class OrthancReference(Base):
     # convertida pelo Radix em DICOM de captura secundaria - Fase 1, 10/11/2026)
     formato_entrada: Mapped[str] = mapped_column(String(10), nullable=False, default="dicom", server_default=text("'dicom'"))
     aparelho_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("aparelhos_rede.id"), nullable=True, index=True)
+    # Corte de exame em volume (tomografia, ressonancia - 18/11/2026): os
+    # cortes da mesma serie aparecem como UM item na fila de curadoria (o
+    # primeiro a chegar) e a ficha vale para o exame inteiro. Decidido na
+    # entrada pela modalidade DICOM (substituir_instancia.e_corte_de_volume).
+    em_volume: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
 
     curations = relationship("Curation", back_populates="orthanc_reference")
+
+
+def cortes_da_serie(db, ref: "OrthancReference") -> list["OrthancReference"]:
+    """Todos os cortes do mesmo exame em volume (a propria ref, se nao for
+    de volume). Ordem de chegada."""
+    if not ref.em_volume or not ref.series_instance_uid:
+        return [ref]
+    return (
+        db.query(OrthancReference)
+        .filter(OrthancReference.em_volume.is_(True),
+                OrthancReference.series_instance_uid == ref.series_instance_uid)
+        .order_by(OrthancReference.id)
+        .all()
+    )
+
+
+def filtro_exame_unico():
+    """
+    Condicao SQL que deixa de fora os cortes SEGUINTES de um exame em volume
+    (tomografia): cada exame aparece uma vez, pelo primeiro corte que chegou.
+    Radiografias nunca sao afetadas. Usada pela fila de curadoria, pelas
+    listas de imagens e pelas contagens dos paineis (18/11/2026).
+    """
+    anterior = aliased(OrthancReference)
+    return ~exists().where(and_(
+        OrthancReference.em_volume.is_(True),
+        anterior.em_volume.is_(True),
+        anterior.series_instance_uid == OrthancReference.series_instance_uid,
+        anterior.id < OrthancReference.id,
+    ))
+
+
+def contar_cortes(db, refs: list["OrthancReference"]) -> dict[int, int]:
+    """{id da imagem: quantos cortes o exame tem} (1 para radiografia)."""
+    series = {r.series_instance_uid for r in refs if r.em_volume and r.series_instance_uid}
+    por_serie = dict(
+        db.query(OrthancReference.series_instance_uid, sa_func.count(OrthancReference.id))
+        .filter(OrthancReference.em_volume.is_(True), OrthancReference.series_instance_uid.in_(series))
+        .group_by(OrthancReference.series_instance_uid)
+        .all()
+    ) if series else {}
+    return {r.id: (por_serie.get(r.series_instance_uid, 1) if r.em_volume else 1) for r in refs}
+
+
+def propagar_ao_exame(db, ref: "OrthancReference", **campos) -> None:
+    """
+    Aplica a mesma mudanca (ex.: ativo, destino) a TODOS os cortes do exame,
+    para o exame continuar sendo uma coisa so: retirar, desativar, mandar
+    para analise ou para a fila valem para todos os cortes. Para uma
+    radiografia, so a propria imagem muda.
+    """
+    for corte in cortes_da_serie(db, ref):
+        for nome, valor in campos.items():
+            setattr(corte, nome, valor)
+
+
+def texto_do_exame(cortes: list["OrthancReference"]) -> tuple[str | None, int | None]:
+    """
+    Resultado da verificacao de texto nos pixels para o EXAME inteiro (pior
+    caso entre os cortes): "tarjado" se algum corte foi tarjado (soma das
+    tarjas); se nenhum foi tarjado mas algum nao foi verificado, "nao_verificado";
+    so "sem_texto" quando todos os cortes foram verificados sem texto.
+    Para uma radiografia (1 corte) devolve o resultado dela, sem mudanca.
+    """
+    if len(cortes) == 1:
+        return cortes[0].texto_na_imagem, cortes[0].texto_regioes
+    situacoes = [c.texto_na_imagem for c in cortes]
+    if "tarjado" in situacoes:
+        return "tarjado", sum(c.texto_regioes or 0 for c in cortes if c.texto_na_imagem == "tarjado")
+    if any(s != "sem_texto" for s in situacoes):
+        return "nao_verificado", None
+    return "sem_texto", None
 
 
 def visivel_para(ref: "OrthancReference", usuario_id: int, perfil: str) -> bool:

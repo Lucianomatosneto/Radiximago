@@ -116,7 +116,7 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   const [novasCompartilhadas, setNovasCompartilhadas] = useState(0)
   // Grupos (17/11/2026): convites que a pessoa tem para responder (em "Meus
   // grupos") e pedidos esperando por ela nos grupos que criou (em "Grupos")
-  const [pendGrupos, setPendGrupos] = useState({ convites: 0, pedidos: 0 })
+  const [pendGrupos, setPendGrupos] = useState({ convites: 0, pedidos: 0, imagensNovas: 0 })
   useEffect(() => {
     let cancelado = false
     function contar() {
@@ -135,7 +135,13 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
       void fetch(`${process.env.NEXT_PUBLIC_API_URL}/grupos/pendencias`, { credentials: 'include' })
         .then((r) => (r.ok ? r.json() : null))
         .then((dados) => {
-          if (!cancelado) setPendGrupos({ convites: Number(dados?.convites) || 0, pedidos: Number(dados?.pedidos) || 0 })
+          if (!cancelado) {
+            setPendGrupos({
+              convites: Number(dados?.convites) || 0,
+              pedidos: Number(dados?.pedidos) || 0,
+              imagensNovas: Number(dados?.imagens_novas) || 0,
+            })
+          }
         })
         .catch(() => undefined)
     }
@@ -218,7 +224,16 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
   // numero ao lado do item (0 = sem numero) e o texto para o leitor de tela
   function contador(chave: string): { n: number; rotulo: string } {
     if (chave === 'compartilhadasComigo') return { n: novasCompartilhadas, rotulo: t('novasCompartilhadas', { quantidade: novasCompartilhadas }) }
-    const n = chave === 'meusGrupos' ? pendGrupos.convites : chave === 'grupos' ? pendGrupos.pedidos : 0
+    // "Meus grupos": convites para responder + imagens novas nos grupos de que participa
+    if (chave === 'meusGrupos') {
+      const n = pendGrupos.convites + pendGrupos.imagensNovas
+      const partes = [
+        pendGrupos.convites > 0 ? t('convitesNovos', { quantidade: pendGrupos.convites }) : '',
+        pendGrupos.imagensNovas > 0 ? t('imagensNovas', { quantidade: pendGrupos.imagensNovas }) : '',
+      ].filter(Boolean)
+      return { n, rotulo: partes.join(t('e')) }
+    }
+    const n = chave === 'grupos' ? pendGrupos.pedidos : 0
     return { n, rotulo: t('pendentesGrupos', { quantidade: n }) }
   }
 

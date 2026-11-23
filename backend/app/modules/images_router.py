@@ -32,7 +32,10 @@ from app.core.config import settings
 from app.core.rate_limit import LIMITE_IMPORTACAO_ORTHANC, LIMITE_UPLOAD_DICOM, limiter
 from app.modules.auth import exigir_perfis, PERFIS_IMAGENS, PERFIS_ENVIO_IMAGENS
 from app.modules.users import User, UserRole
-from app.modules.orthanc_references import DestinoImagem, OrigemImagem, OrthancReference
+from app.modules.substituir_instancia import e_corte_de_volume
+from app.modules.orthanc_references import (
+    DestinoImagem, OrigemImagem, OrthancReference, contar_cortes, filtro_exame_unico, propagar_ao_exame,
+)
 from app.modules.curations import Curation
 from app.modules import orthanc_client
 from app.modules.audit_logs import AuditLog
@@ -88,6 +91,11 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
         raise
 
     orthanc_id_anonimizado = resultado.get("ID")
+    # Com os UIDs fixos (uids_anonimizados.py), reenviar um arquivo que o
+    # Radix ja tem gera EXATAMENTE a mesma imagem anonimizada, e o Orthanc
+    # responde "AlreadyStored". Essa imagem ja pertence ao acervo (pode ter
+    # ficha, achados, compartilhamentos): NUNCA pode ser apagada aqui.
+    ja_guardada = resultado.get("Status") == "AlreadyStored"
     if not orthanc_id_anonimizado:
         _apagar_sem_engolir("original", orthanc_id_original)
         raise RuntimeError(
@@ -106,7 +114,8 @@ def _anonimizar_e_excluir_original(orthanc_id_original: str):
             "removendo a copia anonimizada %s para permitir nova tentativa.",
             orthanc_id_original, orthanc_id_anonimizado,
         )
-        _apagar_sem_engolir("copia anonimizada", orthanc_id_anonimizado)
+        if not ja_guardada:
+            _apagar_sem_engolir("copia anonimizada", orthanc_id_anonimizado)
         raise
     return orthanc_id_anonimizado, resultado_texto, resultado_recorte
 
@@ -124,8 +133,8 @@ def _apagar_sem_engolir(descricao: str, orthanc_id: str) -> None:
 def _determinar_origem(orthanc_id_original: str) -> str:
     """
     Descobre se a instancia original chegou ao Orthanc por envio direto do
-    equipamento de raio-X (protocolo DICOM/C-STORE, porta 4242 - o
-    computador radiografico da UFSC usa esse caminho) ou por upload manual
+    equipamento de raio-X (protocolo DICOM/C-STORE, porta 4242 - caminho
+    usado por aparelhos cadastrados) ou por upload manual
     (API REST, tela "Imagens recebidas").
 
     CRITICO: isso precisa ser checado ANTES da anonimizacao. A versao
@@ -136,14 +145,14 @@ def _determinar_origem(orthanc_id_original: str) -> str:
 
     Se a checagem falhar por qualquer motivo (Orthanc fora do ar, etc.),
     assume "externa" por seguranca - mais conservador do que afirmar uma
-    origem "ufsc" sem ter certeza.
+    origem "aparelho" sem ter certeza.
     """
     try:
         origin = orthanc_client.obter_metadado_instancia(orthanc_id_original, "Origin")
     except Exception:
         logger.exception("Falha ao consultar a origem da instancia %s no Orthanc.", orthanc_id_original)
         return OrigemImagem.EXTERNA.value
-    return OrigemImagem.UFSC.value if origin == "DicomProtocol" else OrigemImagem.EXTERNA.value
+    return OrigemImagem.APARELHO.value if origin == "DicomProtocol" else OrigemImagem.EXTERNA.value
 
 
 def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[OrthancReference, bool]:
@@ -170,6 +179,18 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
     origem = _determinar_origem(orthanc_id)
     orthanc_id_anonimizado, resultado_texto, resultado_recorte = _anonimizar_e_excluir_original(orthanc_id)
 
+    # Arquivo repetido (18/11/2026): com os UIDs fixos, a versao anonimizada
+    # de um arquivo ja recebido e a MESMA imagem que o Radix ja registrou.
+    # O original identificavel ja foi apagado acima; aqui so devolvemos o
+    # registro existente, sem criar outro nem mexer no arquivo dele.
+    ja_registrada = (
+        db.query(OrthancReference)
+        .filter(OrthancReference.orthanc_id == orthanc_id_anonimizado)
+        .first()
+    )
+    if ja_registrada:
+        return ja_registrada, False
+
     try:
         detalhes = orthanc_client.obter_detalhes_instancia(orthanc_id_anonimizado)
         tags_simplificadas = orthanc_client.obter_tags_simplificadas_instancia(orthanc_id_anonimizado)
@@ -188,6 +209,7 @@ def _registrar_referencia_se_nova(db: Session, orthanc_id: str) -> tuple[Orthanc
             texto_na_imagem=resultado_texto.situacao,
             texto_regioes=resultado_texto.regioes,
             enquadramento=resultado_recorte.situacao,
+            em_volume=e_corte_de_volume(tags_simplificadas),
         )
         db.add(nova_ref)
         db.commit()
@@ -224,7 +246,8 @@ def _alterar_ativo_imagem(db: Session, orthanc_reference_id: int, ativo: bool, u
             detail=f"Imagem {orthanc_reference_id} nao encontrada.",
         )
 
-    imagem.ativo = ativo
+    # exame em volume: ativar/desativar vale para todos os cortes
+    propagar_ao_exame(db, imagem, ativo=ativo)
     estado = "ativada" if ativo else "desativada"
     acao = "reativacao_imagem" if ativo else "desativacao_imagem"
     db.add(AuditLog(
@@ -267,10 +290,13 @@ def listar_imagens(
             and_(OrthancReference.destino == DestinoImagem.ANALISE.value,
                  OrthancReference.analise_destinatario_id == usuario.id),
         ))
-    imagens = consulta.order_by(OrthancReference.id).all()
+    # tomografia (18/11/2026): um exame = uma linha (o primeiro corte)
+    imagens = consulta.filter(filtro_exame_unico()).order_by(OrthancReference.id).all()
+    cortes = contar_cortes(db, imagens)
 
     ids = [imagem.id for imagem in imagens]
     status_mais_recente_por_imagem: dict[int, str] = {}
+    ficha_mais_recente_por_imagem: dict[int, int] = {}
     if ids:
         curadorias = (
             db.query(Curation)
@@ -286,6 +312,7 @@ def listar_imagens(
             status_mais_recente_por_imagem.setdefault(
                 curadoria.orthanc_reference_id, curadoria.status
             )
+            ficha_mais_recente_por_imagem.setdefault(curadoria.orthanc_reference_id, curadoria.id)
 
     return [
         {
@@ -296,11 +323,15 @@ def listar_imagens(
             "origem": imagem.origem,
             "criado_em": imagem.criado_em.isoformat() if imagem.criado_em else None,
             "status_curadoria": status_mais_recente_por_imagem.get(imagem.id),
+            # para arquivar / desarquivar direto da lista (18/11/2026)
+            "curation_id": ficha_mais_recente_por_imagem.get(imagem.id),
             # 01/11/2026 (QA item 9): sem ficha e com a moldura resolvida = esta
             # na fila da Curadoria; sem ficha e moldura pendente = aguarda recorte
             "aguarda_recorte": imagem.id not in status_mais_recente_por_imagem
             and imagem.enquadramento not in ENQUADRAMENTOS_PRONTOS_PARA_CURADORIA,
             "destino": imagem.destino,
+            "em_volume": imagem.em_volume,
+            "cortes": cortes[imagem.id],
         }
         for imagem in imagens
     ]

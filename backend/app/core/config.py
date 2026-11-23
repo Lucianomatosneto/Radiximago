@@ -10,6 +10,8 @@ from pydantic_settings import BaseSettings
 JWT_CHAVE_MIN_BYTES = 32
 # chave do servico de voz (mesmo minimo do whisper/app.py)
 WHISPER_CHAVE_MIN_CARACTERES = 32
+# chave dos identificadores das imagens anonimizadas (uids_anonimizados.py)
+ANONIMIZACAO_CHAVE_MIN_CARACTERES = 32
 
 class Settings(BaseSettings):
     # Banco de dados
@@ -92,6 +94,14 @@ class Settings(BaseSettings):
     # do aparelho pela porta 4242 (app/modules/anonimizacao_automatica.py).
     # 0 desliga.
     ANONIMIZACAO_AUTOMATICA_SEGUNDOS: int = 60
+    # Chave secreta que calcula os identificadores (UIDs) das imagens
+    # anonimizadas (app/modules/uids_anonimizados.py, 18/11/2026): mantem os
+    # cortes de uma tomografia no mesmo exame e reconhece arquivo repetido.
+    # Gerar UMA VEZ e guardar junto com as copias de seguranca - trocar a
+    # chave faz o Radix deixar de reconhecer imagens ja recebidas. Vazia: em
+    # desenvolvimento so avisa (UIDs voltam a ser sorteados); em producao o
+    # sistema nao liga.
+    ANONIMIZACAO_CHAVE_UID: str = ""
     
     @model_validator(mode="after")
     def _janela_do_codigo_valida(self):
@@ -106,6 +116,15 @@ class Settings(BaseSettings):
             mensagem = (
                 f"JWT_SECRET_KEY tem menos de {JWT_CHAVE_MIN_BYTES} bytes (256 bits). Gere uma nova com: "
                 'python -c "import secrets; print(secrets.token_urlsafe(48))"'
+            )
+            if self.ENVIRONMENT == "production":
+                raise ValueError(mensagem)
+            warnings.warn(mensagem, stacklevel=2)
+        if len(self.ANONIMIZACAO_CHAVE_UID) < ANONIMIZACAO_CHAVE_MIN_CARACTERES:
+            mensagem = (
+                f"ANONIMIZACAO_CHAVE_UID ausente ou com menos de {ANONIMIZACAO_CHAVE_MIN_CARACTERES} caracteres: "
+                "os cortes de uma tomografia ficarao separados e arquivos repetidos nao serao reconhecidos. "
+                'Gere com: python -c "import secrets; print(secrets.token_urlsafe(48))"'
             )
             if self.ENVIRONMENT == "production":
                 raise ValueError(mensagem)

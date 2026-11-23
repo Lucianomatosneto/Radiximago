@@ -224,7 +224,13 @@
     "conhecaRadix": "Conheça o Rádix Imago",
     "termoRecusado": "Sem aceitar o termo de ciência, o acesso ao sistema não é liberado.",
     "linkTermos": "Termos e privacidade",
-    "termosRecusados": "Sem aceitar os Termos de Uso e a Política de Privacidade, o acesso ao sistema não é liberado."
+    "termosRecusados": "Sem aceitar os Termos de Uso e a Política de Privacidade, o acesso ao sistema não é liberado.",
+    "erroContaTravada": "Por segurança, esta conta foi travada por até {tempo} depois de muitas tentativas com a senha errada. Se não foi você, troque a senha em “Esqueci minha senha”.",
+    "tempoMinutos": "{n} minutos",
+    "tempoHoras": "{n, plural, one {# hora} other {# horas}}",
+    "erroMuitasTentativasRede": "Muitas tentativas seguidas a partir deste computador. Aguarde 1 minuto e tente de novo.",
+    "erroContaBloqueada": "Sua conta está bloqueada. Fale com o administrador da sua instituição ou do Rádix Imago.",
+    "erroContaInativa": "Sua conta ainda não está ativa. Se você acabou de pedir acesso, aguarde a aprovação; senão, fale com o administrador."
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -269,7 +275,10 @@
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
     "recolherMenu": "Recolher o menu de navegação",
-    "pendentesGrupos": "{quantidade, plural, one {1 esperando resposta} other {# esperando resposta}}"
+    "pendentesGrupos": "{quantidade, plural, one {1 esperando resposta} other {# esperando resposta}}",
+    "convitesNovos": "{quantidade, plural, one {1 convite} other {# convites}}",
+    "imagensNovas": "{quantidade, plural, one {1 imagem nova} other {# imagens novas}}",
+    "e": " e "
   },
   "Topbar": {
     "ajuda": "Ajuda",
@@ -306,7 +315,8 @@
     "aprovada": "Aprovada",
     "segundaOpiniao": "Segunda opinião",
     "baixaQualidade": "Baixa qualidade",
-    "descartada": "Descartada"
+    "descartada": "Descartada",
+    "arquivada": "Arquivada"
   },
   "Dashboard": {
     "visaoGeral": "Visão geral",
@@ -411,7 +421,8 @@
       "segunda_opiniao": "Segunda opinião",
       "baixa_qualidade": "Baixa qualidade",
       "descartada": "Descartada",
-      "sem_ficha": "Sem ficha"
+      "sem_ficha": "Sem ficha",
+      "arquivada": "Arquivada"
     },
     "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila.",
     "colunaNumero": "Nº",
@@ -425,6 +436,15 @@
       "instance": "Imagem (instância DICOM)",
       "series": "Série",
       "study": "Estudo"
+    },
+    "volumeCortes": "Tomografia ({cortes} cortes)",
+    "arquivo": {
+      "arquivar": "Arquivar",
+      "desarquivar": "Desarquivar",
+      "motivoObrigatorio": "Informe o motivo do arquivamento.",
+      "erro": "Não foi possível concluir a ação.",
+      "arquivada": "Imagem arquivada: saiu da pesquisa e do uso pelos estudantes. Nada foi apagado.",
+      "desarquivada": "Imagem desarquivada: voltou a circular."
     }
   },
   "MiniaturaImagem": {
@@ -526,8 +546,8 @@
         "avancado": "Avançado"
       },
       "origem": {
-        "ufsc": "UFSC (equipamento)",
-        "externa": "Externa (upload)"
+        "aparelho": "Aparelho (envio direto)",
+        "externa": "Envio manual (upload)"
       },
       "origemRotulo": "Origem da imagem"
     },
@@ -812,7 +832,9 @@
       "nenhumaPendente": "Nenhuma imagem pendente.",
       "abrindo": "Abrindo...",
       "anteriores": "Ver imagens anteriores",
-      "proximas": "Ver próximas imagens"
+      "proximas": "Ver próximas imagens",
+      "volumeSelo": "TC · {cortes}",
+      "volumeTitulo": "Tomografia: {cortes} cortes, um exame só"
     },
     "modalMotivo": {
       "descartarTitulo": "Descartar ficha",
@@ -823,7 +845,8 @@
       "enviando": "Enviando...",
       "fechar": "Fechar",
       "erroMotivoObrigatorio": "Informe um motivo.",
-      "erroConcluirAcao": "Não foi possível concluir a ação."
+      "erroConcluirAcao": "Não foi possível concluir a ação.",
+      "arquivarTitulo": "Arquivar imagem (sai de circulação, nada é apagado)"
     },
     "segundaOpiniaoBanner": {
       "titulo": "Imagem aguardando segunda opinião",
@@ -1220,7 +1243,10 @@
       "titulo": "Confira a imagem antes de validar.",
       "tarjado": "Foi encontrado texto escrito na imagem, e ele foi coberto automaticamente com tarja preta ({regioes} trechos). Verifique se não sobrou nenhum nome, data ou número e se a tarja não cobriu anatomia importante.",
       "naoVerificado": "Não foi possível verificar automaticamente se há texto escrito na imagem. Procure com atenção nome, data ou número antes de marcar “Anonimização validada”.",
-      "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”."
+      "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”.",
+      "volumeTitulo": "Tomografia com {cortes} cortes.",
+      "volumeExplica": "A ficha vale para o exame inteiro; o visualizador mostra todos os cortes.",
+      "volumeTodosCortes": "(Verificação feita nos {cortes} cortes do exame.)"
     },
     "orientacao": {
       "titulo": "Girar a imagem",
@@ -1433,7 +1459,9 @@
     "fichasPorAchado": "Fichas por achado (alterações observadas)",
     "fichasPorAchadoNota": "Conta as alterações marcadas na Curadoria. A porcentagem é sobre o total de fichas; uma ficha com vários achados entra em cada um deles, por isso a soma das linhas pode passar de 100%.",
     "semAlteracoes": "Sem alterações",
-    "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria."
+    "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria.",
+    "curadorPosicao": "Curador {posicao}",
+    "rankingSemNomes": "Ranking geral sem nomes e sem instituições: só a administração do Rádix vê quem é cada curador."
   },
   "Integracoes": {
     "titulo": "Integrações",
@@ -1857,7 +1885,9 @@
   "Compartilhar": {
     "titulo": "Compartilhar",
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
-    "placeholderEmail": "E-mail do cadastro da pessoa",
+    "placeholderEmail": "Nome ou e-mail da pessoa",
+    "erroEscolher": "Escolha a pessoa na lista ou digite o e-mail completo.",
+    "sugestoes": "Pessoas encontradas",
     "placeholderMensagem": "Anotação para quem vai receber (opcional)",
     "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
     "cancelar": "Cancelar",
@@ -2101,7 +2131,8 @@
     "baixaQualidade": "Baixa qualidade",
     "conferencia": "Conferência: {partes} = {total}",
     "naoConfere": "a soma não confere com o total",
-    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total"
+    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total",
+    "arquivadas": "Arquivadas"
   },
   "MeusAcessos": {
     "titulo": "Meus acessos",
@@ -2167,7 +2198,8 @@
     "meio_presencial": "Conversa presencial com documento com foto",
     "meio_videochamada": "Videochamada com documento com foto",
     "meio_responsavel_academico": "Confirmação escrita do responsável acadêmico (e-mail institucional dele)",
-    "procedimentoSeguido": "Confirmo que segui o procedimento de conferência de identidade. Não guardei cópia de documentos."
+    "procedimentoSeguido": "Confirmo que segui o procedimento de conferência de identidade. Não guardei cópia de documentos.",
+    "erroMuitasTentativas": "Muitos códigos tentados em seguida. Aguarde 1 minuto e tente de novo."
   },
   "Prancha": {
     "botao": "Prancha",
@@ -2635,6 +2667,14 @@
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
+    "avisoEnvio": {
+      "titulo": "Antes de enviar",
+      "finalidade": "A imagem enviada ao Rádix Imago é usada só para ensino e pesquisa e não tem finalidade diagnóstica.",
+      "prontuario": "A imagem original do exame deve ser anexada ao prontuário do paciente, conforme o protocolo da sua instituição. O Rádix não substitui o prontuário.",
+      "ciente": "Estou ciente",
+      "voltar": "Voltar",
+      "erro": "Não foi possível registrar o aceite. Tente de novo."
+    },
     "carregando": "Carregando...",
     "subtituloEstudante": "Envie a foto de uma radiografia pelo celular ou um arquivo DICOM do computador. Escolha se ela fica só com você ou se vai para um professor ou curador analisar.",
     "subtituloEquipe": "Envie a foto de uma radiografia pelo celular ou arquivos DICOM. Eles vão para a fila de curadoria, onde o curador decide o que entra no banco de imagens.",
@@ -2716,7 +2756,8 @@
       "enviadaParaN": "Enviada para {n, plural, one {1 pessoa} other {# pessoas}}",
       "abrir": "Abrir no visualizador",
       "enviarPessoas": "Enviar a pessoas ou grupos",
-      "enviar": "Enviar"
+      "enviar": "Enviar",
+      "volumeSelo": "TC · {cortes} cortes"
     },
     "seletor": {
       "grupos": "Meus grupos",
@@ -2775,7 +2816,8 @@
         "erroAbrir": "Não foi possível abrir esta foto. Tente outra.",
         "erroGerar": "Não foi possível preparar a foto. Tente de novo."
       }
-    }
+    },
+    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada."
   },
   "Grupos": {
     "titulo": "Grupos",
@@ -2803,6 +2845,7 @@
     "aceitaPedidos": "Aceitar pedidos de estudantes (o grupo aparece na busca pelo nome)",
     "aparecesNaBusca": "Aparece na busca",
     "foraDaBusca": "Fora da busca",
+    "foraDaBuscaAjuda": "Estudantes não acham este grupo procurando pelo nome; só entra quem você convidar. Para mudar, use Editar e marque \"Aceitar pedidos de estudantes\".",
     "participantes": "Participantes",
     "origem_convite": "aceitou convite",
     "origem_pedido": "pedido autorizado",
@@ -2866,6 +2909,7 @@
     "procurar": "Procurar",
     "minimoLetras": "Digite pelo menos 3 letras.",
     "nenhumGrupo": "Nenhum grupo encontrado com esse nome.",
+    "nenhumGrupoAjuda": "Só aparecem os grupos que o dono deixou abertos a pedidos. Se a sua turma não aparece, peça o convite ao professor.",
     "criadoPor": "Criado por {quem}",
     "pedirEntrar": "Pedir para entrar",
     "pedirEntrarRotulo": "Pedir para entrar no grupo {grupo}",
@@ -2904,7 +2948,9 @@
     "comentarRotulo": "Seu comentário",
     "comentarExemplo": "Escreva sua dúvida ou observação",
     "comentariosFechados": "Os comentários desta imagem estão fechados.",
-    "comentarioParticular": "Só você e o dono do grupo veem esta conversa."
+    "comentarioParticular": "Só você e o dono do grupo veem esta conversa.",
+    "nova": "Nova",
+    "imagensNovas": "{n, plural, one {1 imagem nova} other {# imagens novas}}"
   },
   "AulaGrupo": {
     "botao": "Preparar aula para um grupo",
@@ -2950,7 +2996,7 @@
     "nome": "Nome do aparelho",
     "nomeExemplo": "Ex.: Raio X periapical – sala 1",
     "unidade": "Local ou unidade (opcional)",
-    "unidadeExemplo": "Ex.: Clínica de Odontologia – UFSC",
+    "unidadeExemplo": "Ex.: Clínica de Odontologia – sala 2",
     "aet": "Nome DICOM do aparelho (AE Title)",
     "aetAjuda": "Até 16 letras, números, ponto, hífen ou sublinhado. Fica na configuração DICOM do próprio aparelho.",
     "ip": "Endereço IP do aparelho",

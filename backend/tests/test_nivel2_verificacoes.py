@@ -259,7 +259,8 @@ def test_13_2_1_api_se_autentica_no_servico_de_voz():
 def test_13_2_1_producao_nao_liga_sem_chave_do_servico_de_voz(monkeypatch):
     from app.core.config import Settings
 
-    base = dict(DATABASE_URL="postgresql://x", JWT_SECRET_KEY="k" * 40, ORTHANC_PASSWORD="x", ENVIRONMENT="production")
+    base = dict(DATABASE_URL="postgresql://x", JWT_SECRET_KEY="k" * 40, ORTHANC_PASSWORD="x", ENVIRONMENT="production",
+                ANONIMIZACAO_CHAVE_UID="u" * 48)
     with pytest.raises(ValueError, match="WHISPER_CHAVE"):
         Settings(**base, WHISPER_CHAVE="curta")
     assert Settings(**base, WHISPER_CHAVE="c" * 64).WHISPER_CHAVE == "c" * 64
@@ -410,7 +411,8 @@ def test_16_5_3_falha_na_anonimizacao_nao_registra_imagem_e_apaga_original(monke
 def test_11_2_3_chave_curta_impede_producao_de_ligar(monkeypatch):
     """Antes so se testava a biblioteca; agora a CONFIGURACAO e conferida."""
     from app.core.config import JWT_CHAVE_MIN_BYTES, Settings
-    base = {"DATABASE_URL": "postgresql://x/y", "ORTHANC_PASSWORD": "x", "WHISPER_CHAVE": "c" * 64}
+    base = {"DATABASE_URL": "postgresql://x/y", "ORTHANC_PASSWORD": "x", "WHISPER_CHAVE": "c" * 64,
+            "ANONIMIZACAO_CHAVE_UID": "u" * 48}
     with pytest.raises(ValueError, match="JWT_SECRET_KEY"):
         Settings(JWT_SECRET_KEY="curta", ENVIRONMENT="production", **base)
     with pytest.warns(UserWarning):

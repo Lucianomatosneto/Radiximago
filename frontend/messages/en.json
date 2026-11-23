@@ -224,7 +224,13 @@
     "conhecaRadix": "Discover Rádix Imago",
     "termoRecusado": "Without accepting the acknowledgement, access to the system is not granted.",
     "linkTermos": "Terms and privacy",
-    "termosRecusados": "Without accepting the Terms of Use and the Privacy Policy, access to the system is not granted."
+    "termosRecusados": "Without accepting the Terms of Use and the Privacy Policy, access to the system is not granted.",
+    "erroContaTravada": "For security, this account was locked for up to {tempo} after too many attempts with a wrong password. If it wasn't you, change your password in “Forgot my password”.",
+    "tempoMinutos": "{n} minutes",
+    "tempoHoras": "{n, plural, one {# hour} other {# hours}}",
+    "erroMuitasTentativasRede": "Too many attempts in a row from this computer. Wait 1 minute and try again.",
+    "erroContaBloqueada": "Your account is blocked. Contact your institution's administrator or the Rádix Imago administrator.",
+    "erroContaInativa": "Your account is not active yet. If you just requested access, wait for approval; otherwise, contact the administrator."
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -269,7 +275,10 @@
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
     "recolherMenu": "Collapse the navigation menu",
-    "pendentesGrupos": "{quantidade, plural, one {1 awaiting reply} other {# awaiting reply}}"
+    "pendentesGrupos": "{quantidade, plural, one {1 awaiting reply} other {# awaiting reply}}",
+    "convitesNovos": "{quantidade, plural, one {1 invitation} other {# invitations}}",
+    "imagensNovas": "{quantidade, plural, one {1 new image} other {# new images}}",
+    "e": " and "
   },
   "Topbar": {
     "ajuda": "Help",
@@ -306,7 +315,8 @@
     "aprovada": "Approved",
     "segundaOpiniao": "Second opinion",
     "baixaQualidade": "Low quality",
-    "descartada": "Discarded"
+    "descartada": "Discarded",
+    "arquivada": "Archived"
   },
   "Dashboard": {
     "visaoGeral": "Overview",
@@ -411,7 +421,8 @@
       "segunda_opiniao": "Second opinion",
       "baixa_qualidade": "Low quality",
       "descartada": "Discarded",
-      "sem_ficha": "No record"
+      "sem_ficha": "No record",
+      "arquivada": "Archived"
     },
     "totalAguardandoDetalhe": "No record, pending and under review. {fila} are in the Curation queue (or already being curated) and {recorte} still wait for the white frame to be cropped, so they are not in the queue yet.",
     "colunaNumero": "No.",
@@ -425,6 +436,15 @@
       "instance": "Image (DICOM instance)",
       "series": "Series",
       "study": "Study"
+    },
+    "volumeCortes": "CT scan ({cortes} slices)",
+    "arquivo": {
+      "arquivar": "Archive",
+      "desarquivar": "Unarchive",
+      "motivoObrigatorio": "Please give the reason for archiving.",
+      "erro": "The action could not be completed.",
+      "arquivada": "Image archived: removed from search and student use. Nothing was deleted.",
+      "desarquivada": "Image unarchived: back in circulation."
     }
   },
   "MiniaturaImagem": {
@@ -526,8 +546,8 @@
         "avancado": "Advanced"
       },
       "origem": {
-        "ufsc": "UFSC (equipment)",
-        "externa": "External (upload)"
+        "aparelho": "Device (direct transfer)",
+        "externa": "Manual upload"
       },
       "origemRotulo": "Image origin"
     },
@@ -812,7 +832,9 @@
       "nenhumaPendente": "No pending images.",
       "abrindo": "Opening...",
       "anteriores": "View previous images",
-      "proximas": "View next images"
+      "proximas": "View next images",
+      "volumeSelo": "CT · {cortes}",
+      "volumeTitulo": "CT scan: {cortes} slices, a single exam"
     },
     "modalMotivo": {
       "descartarTitulo": "Discard record",
@@ -823,7 +845,8 @@
       "enviando": "Sending...",
       "fechar": "Close",
       "erroMotivoObrigatorio": "Enter a reason.",
-      "erroConcluirAcao": "Couldn't complete the action."
+      "erroConcluirAcao": "Couldn't complete the action.",
+      "arquivarTitulo": "Archive image (removed from circulation, nothing is deleted)"
     },
     "segundaOpiniaoBanner": {
       "titulo": "Image awaiting second opinion",
@@ -1220,7 +1243,10 @@
       "titulo": "Check the image before validating.",
       "tarjado": "Text was found written on the image and was automatically covered with a black bar ({regioes} areas). Make sure no name, date or number is left and that the bar did not cover important anatomy.",
       "naoVerificado": "It was not possible to automatically check whether there is text written on the image. Look carefully for names, dates or numbers before checking “Anonymization validated”.",
-      "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”."
+      "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”.",
+      "volumeTitulo": "CT scan with {cortes} slices.",
+      "volumeExplica": "The record covers the whole exam; the viewer shows every slice.",
+      "volumeTodosCortes": "(Check run on all {cortes} slices of the exam.)"
     },
     "orientacao": {
       "titulo": "Rotate the image",
@@ -1433,7 +1459,9 @@
     "fichasPorAchado": "Records by finding (observed changes)",
     "fichasPorAchadoNota": "Counts the changes marked in Curation. The percentage is over the total of records; a record with several findings counts in each, so the rows can add up to more than 100%.",
     "semAlteracoes": "No changes",
-    "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue."
+    "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue.",
+    "curadorPosicao": "Curator {posicao}",
+    "rankingSemNomes": "Overall ranking without names or institutions: only the Rádix administration sees who each curator is."
   },
   "Integracoes": {
     "titulo": "Integrations",
@@ -1857,7 +1885,9 @@
   "Compartilhar": {
     "titulo": "Share",
     "abrir": "Share this image and your notes with another user",
-    "placeholderEmail": "The person's registered e-mail",
+    "placeholderEmail": "Person's name or email",
+    "erroEscolher": "Pick the person from the list or type the full email.",
+    "sugestoes": "People found",
     "placeholderMensagem": "Note for the recipient (optional)",
     "explicacao": "The person will see the image and only the note written here (read-only), in \"Shared with me\". Your \"My notes\" stay private. You can undo it at any time.",
     "cancelar": "Cancel",
@@ -2101,7 +2131,8 @@
     "baixaQualidade": "Low quality",
     "conferencia": "Check: {partes} = {total}",
     "naoConfere": "the sum does not match the total",
-    "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted"
+    "desativadas": "{quantidade, plural, one {1 deactivated image is} other {# deactivated images are}} not counted",
+    "arquivadas": "Archived"
   },
   "MeusAcessos": {
     "titulo": "My sessions",
@@ -2167,7 +2198,8 @@
     "meio_presencial": "In-person conversation with photo ID",
     "meio_videochamada": "Video call with photo ID",
     "meio_responsavel_academico": "Written confirmation from the academic supervisor (their institutional email)",
-    "procedimentoSeguido": "I confirm I followed the identity verification procedure. I did not keep copies of documents."
+    "procedimentoSeguido": "I confirm I followed the identity verification procedure. I did not keep copies of documents.",
+    "erroMuitasTentativas": "Too many codes tried in a row. Wait 1 minute and try again."
   },
   "Prancha": {
     "botao": "Plate",
@@ -2635,6 +2667,14 @@
   },
   "EnviarImagem": {
     "titulo": "Send image",
+    "avisoEnvio": {
+      "titulo": "Before you send",
+      "finalidade": "The image sent to Rádix Imago is used only for teaching and research and is not intended for diagnosis.",
+      "prontuario": "The original exam image must be attached to the patient's record, following your institution's protocol. Rádix does not replace the patient record.",
+      "ciente": "I understand",
+      "voltar": "Back",
+      "erro": "Could not record your acknowledgement. Please try again."
+    },
     "carregando": "Loading...",
     "subtituloEstudante": "Send a photo of a radiograph from your phone or a DICOM file from your computer. Choose whether it stays with you only or goes to a professor or curator for review.",
     "subtituloEquipe": "Send a photo of a radiograph from your phone or DICOM files. They go to the curation queue, where the curator decides what enters the image bank.",
@@ -2716,7 +2756,8 @@
       "enviadaParaN": "Sent to {n, plural, one {1 person} other {# people}}",
       "abrir": "Open in viewer",
       "enviarPessoas": "Send to people or groups",
-      "enviar": "Send"
+      "enviar": "Send",
+      "volumeSelo": "CT · {cortes} slices"
     },
     "seletor": {
       "grupos": "My groups",
@@ -2775,7 +2816,8 @@
         "erroAbrir": "Could not open this photo. Try another one.",
         "erroGerar": "Could not prepare the photo. Try again."
       }
-    }
+    },
+    "jaExistente": "This image is already in Radix (repeated file). No new copy was created."
   },
   "Grupos": {
     "titulo": "Groups",
@@ -2803,6 +2845,7 @@
     "aceitaPedidos": "Accept requests from students (the group shows up when searching by name)",
     "aparecesNaBusca": "Shows up in search",
     "foraDaBusca": "Hidden from search",
+    "foraDaBuscaAjuda": "Students cannot find this group by searching its name; only people you invite can join. To change it, use Edit and tick \"Accept requests from students\".",
     "participantes": "Participants",
     "origem_convite": "accepted invitation",
     "origem_pedido": "request approved",
@@ -2866,6 +2909,7 @@
     "procurar": "Search",
     "minimoLetras": "Type at least 3 letters.",
     "nenhumGrupo": "No group found with that name.",
+    "nenhumGrupoAjuda": "Only groups whose owner accepts requests show up here. If your class is not listed, ask your teacher for an invitation.",
     "criadoPor": "Created by {quem}",
     "pedirEntrar": "Ask to join",
     "pedirEntrarRotulo": "Ask to join group {grupo}",
@@ -2904,7 +2948,9 @@
     "comentarRotulo": "Your comment",
     "comentarExemplo": "Write your question or note",
     "comentariosFechados": "Comments on this image are closed.",
-    "comentarioParticular": "Only you and the group owner see this conversation."
+    "comentarioParticular": "Only you and the group owner see this conversation.",
+    "nova": "New",
+    "imagensNovas": "{n, plural, one {1 new image} other {# new images}}"
   },
   "AulaGrupo": {
     "botao": "Prepare class for a group",
@@ -2950,7 +2996,7 @@
     "nome": "Device name",
     "nomeExemplo": "E.g.: Periapical X-ray – room 1",
     "unidade": "Location or unit (optional)",
-    "unidadeExemplo": "E.g.: Dental clinic – UFSC",
+    "unidadeExemplo": "E.g.: Dental clinic – room 2",
     "aet": "Device DICOM name (AE Title)",
     "aetAjuda": "Up to 16 letters, digits, dot, hyphen or underscore. Found in the device's own DICOM settings.",
     "ip": "Device IP address",

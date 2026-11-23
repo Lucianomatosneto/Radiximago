@@ -11,6 +11,10 @@
 // - Professor, curador e administrador: fila de curadoria ou "So para mim".
 // A foto vira DICOM no servidor, sem os dados do celular, e passa pela mesma
 // anonimizacao de qualquer imagem. So o curador publica no banco geral.
+// - AVISO COM ACEITE (22/11/2026): ao entrar, a pessoa le que a imagem nao
+//   tem finalidade diagnostica e que a original vai ao prontuario do paciente
+//   conforme o protocolo da instituicao; so usa a tela depois de "Estou
+//   ciente" (o aceite vai para a auditoria: POST /envios/aviso-ciente).
 
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
@@ -28,7 +32,8 @@ const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_QUE_ENVIAM = ['estudante', 'professor', 'curador', 'administrador']
 type Destino = 'pessoal' | 'analise' | 'fila'
 type Analista = { id: number; nome: string; perfil: string }
-type Resultado = { nome: string; ok: boolean; texto: string }
+// aviso: arquivo repetido - o Radix ja tinha esta imagem (18/11/2026)
+type Resultado = { nome: string; ok: boolean; texto: string; aviso?: boolean }
 
 const campo =
   'w-full rounded-lg border border-base-border bg-base-surface2 px-3 py-2 text-sm text-ink outline-hidden focus:border-brand'
@@ -48,6 +53,9 @@ export default function EnviarImagemPage() {
   const router = useRouter()
   const t = useTranslations('EnviarImagem')
   const [sessao, setSessao] = useState<SessaoUsuario | null>(null)
+  const [ciente, setCiente] = useState(false)
+  const [registrandoCiente, setRegistrandoCiente] = useState(false)
+  const [erroCiente, setErroCiente] = useState('')
   const [arquivos, setArquivos] = useState<File[]>([])
   const [previas, setPrevias] = useState<string[]>([])
   const [destino, setDestino] = useState<Destino>('pessoal')
@@ -126,7 +134,9 @@ export default function EnviarImagemPage() {
       try {
         const r = await fetch(`${API}/envios`, { method: 'POST', credentials: 'include', body: dados })
         const corpo = r.ok ? await r.json() : null
-        saida.push(r.ok
+        saida.push(r.ok && corpo?.status === 'ja_existente'
+          ? { nome: arquivo.name, ok: true, aviso: true, texto: t('jaExistente') }
+          : r.ok
           ? { nome: arquivo.name, ok: true, texto: t(`enviado.${destino}`) + (corpo?.enviada_para ? ` ${t('enviadoPessoas', { n: corpo.enviada_para })}` : '') }
           : { nome: arquivo.name, ok: false, texto: await lerErro(r, t('erroEnviar')) })
       } catch {
@@ -149,6 +159,20 @@ export default function EnviarImagemPage() {
 
   const opcoes: Destino[] = ehEstudante ? ['pessoal', 'analise'] : ['fila', 'pessoal']
 
+  async function marcarCiente() {
+    setRegistrandoCiente(true)
+    setErroCiente('')
+    try {
+      const r = await fetch(`${API}/envios/aviso-ciente`, { method: 'POST', credentials: 'include' })
+      if (!r.ok) throw new Error(String(r.status))
+      setCiente(true)
+    } catch {
+      setErroCiente(t('avisoEnvio.erro'))
+    } finally {
+      setRegistrandoCiente(false)
+    }
+  }
+
   return (
     <div className="flex min-h-screen bg-base">
       <Sidebar />
@@ -160,7 +184,29 @@ export default function EnviarImagemPage() {
             <p className="mt-1 max-w-3xl text-sm text-slate-400">{t(ehEstudante ? 'subtituloEstudante' : 'subtituloEquipe')}</p>
           </div>
 
-          {modoFoto ? (
+          {!ciente ? (
+            <section
+              role="dialog"
+              aria-modal="false"
+              aria-labelledby="aviso-envio-titulo"
+              className="max-w-3xl rounded-2xl border border-amber-400/50 bg-amber-400/5 p-4 sm:p-6"
+            >
+              <h2 id="aviso-envio-titulo" className="text-base font-semibold text-ink">{t('avisoEnvio.titulo')}</h2>
+              <p className="mt-2 text-sm text-ink-2">{t('avisoEnvio.finalidade')}</p>
+              <p className="mt-2 text-sm text-ink-2">{t('avisoEnvio.prontuario')}</p>
+              {erroCiente && <p role="alert" className="mt-3 text-sm text-red-400">{erroCiente}</p>}
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" onClick={() => void marcarCiente()} disabled={registrandoCiente}
+                        className="inline-flex min-h-11 items-center justify-center rounded-lg bg-brand px-4 text-sm font-medium text-white hover:bg-brand-hover disabled:opacity-50">
+                  {t('avisoEnvio.ciente')}
+                </button>
+                <button type="button" onClick={() => router.push('/')}
+                        className="inline-flex min-h-11 items-center justify-center rounded-lg border border-base-border px-4 text-sm text-ink hover:border-brand">
+                  {t('avisoEnvio.voltar')}
+                </button>
+              </div>
+            </section>
+          ) : modoFoto ? (
             <EnvioFotoCelular opcoes={opcoes} analistas={analistas} onSair={() => setModoFoto(false)} />
           ) : (
             <section className="max-w-3xl rounded-2xl border border-brand/40 bg-brand/5 p-4 sm:p-6">
@@ -173,7 +219,7 @@ export default function EnviarImagemPage() {
             </section>
           )}
 
-          {!modoFoto && (
+          {ciente && !modoFoto && (
           <form method="post" onSubmit={enviar} className="max-w-3xl space-y-5 rounded-2xl border border-base-border bg-base-surface p-4 sm:p-6">
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-ink">{t('passo1')}</legend>
@@ -268,7 +314,8 @@ export default function EnviarImagemPage() {
           {resultados.length > 0 && (
             <section aria-live="polite" className="max-w-3xl space-y-2" data-teste="resultados-envio">
               {resultados.map((r, i) => (
-                <p key={i} className={`rounded-lg p-3 text-sm ${r.ok ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}>
+                <p key={i} data-teste={r.aviso ? 'envio-repetido' : undefined}
+                   className={`rounded-lg p-3 text-sm ${r.aviso ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300' : r.ok ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300' : 'bg-red-500/10 text-red-700 dark:text-red-300'}`}>
                   <strong>{r.nome}:</strong> {r.texto}
                 </p>
               ))}

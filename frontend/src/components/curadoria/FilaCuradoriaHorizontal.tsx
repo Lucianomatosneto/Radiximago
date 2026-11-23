@@ -14,6 +14,9 @@ export interface ImagemPendente {
   curation_id?: number | null
   /** nome do professor que mandou a sugestao (fila do curador) */
   sugerida_por?: string | null
+  /** exame em volume (tomografia, 18/11/2026): um item por exame; quantos cortes */
+  em_volume?: boolean
+  cortes?: number
 }
 
 interface EmFoco {
@@ -231,6 +234,15 @@ export default function FilaCuradoriaHorizontal({
                     className="h-full w-full overflow-hidden rounded-lg bg-base-surface2"
                     habilitado={permitirCarregarMiniaturas}
                   />
+                  {imagem.em_volume && (imagem.cortes ?? 1) > 1 && (
+                    <span
+                      data-teste="selo-volume"
+                      title={t('volumeTitulo', { cortes: imagem.cortes ?? 1 })}
+                      className="absolute right-0.5 top-0.5 rounded bg-sky-700/90 px-1 text-[10px] font-semibold text-white"
+                    >
+                      {t('volumeSelo', { cortes: imagem.cortes ?? 1 })}
+                    </span>
+                  )}
                   {imagem.sugerida_por && (
                     <span
                       title={imagem.sugerida_por}
@@ -283,7 +295,11 @@ export default function FilaCuradoriaHorizontal({
             <p className="mt-1.5 truncate font-mono text-[11px] text-slate-300">
               #{emFoco.imagem.orthanc_reference_id} · {truncarOrthancId(emFoco.imagem.orthanc_id)}
             </p>
-            <p className="text-[11px] text-slate-500">{emFoco.imagem.resource_type}</p>
+            <p className="text-[11px] text-slate-500">
+              {emFoco.imagem.em_volume && (emFoco.imagem.cortes ?? 1) > 1
+                ? t('volumeTitulo', { cortes: emFoco.imagem.cortes ?? 1 })
+                : emFoco.imagem.resource_type}
+            </p>
           </div>,
           document.body
         )}

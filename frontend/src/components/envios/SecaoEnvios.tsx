@@ -27,6 +27,9 @@ type Item = {
   viewer_url: string | null
   enviada_para?: number
   nova?: boolean
+  /** tomografia (18/11/2026): um exame = um item; quantos cortes */
+  em_volume?: boolean
+  cortes?: number
 }
 type Analista = { id: number; nome: string; perfil: string }
 
@@ -151,7 +154,14 @@ export default function SecaoEnvios({ modo, equipe = false }: { modo: 'meus' | '
                              alt={t('imagemN', { id: item.id })} className="h-40 w-full bg-black" />
               <div className="space-y-2 p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-ink">{t('imagemN', { id: item.id })}</span>
+                  <span className="text-ink">
+                    {t('imagemN', { id: item.id })}
+                    {item.em_volume && (item.cortes ?? 1) > 1 && (
+                      <span data-teste="selo-volume" className="ml-2 rounded bg-sky-700/90 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                        {t('volumeSelo', { cortes: item.cortes ?? 1 })}
+                      </span>
+                    )}
+                  </span>
                   <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CORES[item.situacao]}`}>{t(`situacoes.${item.situacao}`)}</span>
                 </div>
                 {modo !== 'meus' && item.enviado_por && (

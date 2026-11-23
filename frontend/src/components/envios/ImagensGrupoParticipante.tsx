@@ -6,7 +6,9 @@
 // confundir com a ficha oficial), os destaques, a mensagem e a PROPRIA
 // conversa com o dono (particular - D4). Se o dono permitiu, aparece o campo
 // "Comentar"; se desligou, a conversa continua visivel, mas o campo some.
-// A pessoa apaga os proprios comentarios.
+// A pessoa apaga os proprios comentarios. Imagens que chegaram desde a
+// ultima visita vem com a etiqueta "Nova"; abrir a lista marca como vistas
+// (o menu e a tela reconta: aoVer).
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -21,7 +23,7 @@ const COMENTARIO_MAX = 500
 type Comentario = { id: number; autor: 'eu' | 'dono'; texto: string }
 type Envio = {
   id: number; curation_id: number; remetente: string; mensagem: string | null; permite_comentar: boolean
-  marcacoes: Marcacao[]; destaques: string[]; comentarios: Comentario[]
+  marcacoes: Marcacao[]; destaques: string[]; comentarios: Comentario[]; nova?: boolean
 }
 
 async function lerErro(r: Response, padrao: string) {
@@ -34,7 +36,7 @@ async function lerErro(r: Response, padrao: string) {
   return padrao
 }
 
-export default function ImagensGrupoParticipante({ grupoId }: { grupoId: number }) {
+export default function ImagensGrupoParticipante({ grupoId, aoVer }: { grupoId: number; aoVer?: () => void }) {
   const t = useTranslations('MeusGrupos')
   const tComum = useTranslations('Comum')
   const tAlteracao = useTranslations('AlteracoesObservadas.itens')
@@ -52,7 +54,11 @@ export default function ImagensGrupoParticipante({ grupoId }: { grupoId: number 
   }
 
   useEffect(() => {
-    void carregar()
+    // abrir as imagens marca as novas como vistas no servidor: o menu e a tela recontam
+    void carregar().then(() => {
+      window.dispatchEvent(new Event('radix-grupos-mudou'))
+      aoVer?.()
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [grupoId])
 
@@ -88,7 +94,10 @@ export default function ImagensGrupoParticipante({ grupoId }: { grupoId: number 
         <ul className="space-y-4">
           {envios.map((e) => (
             <li key={e.id} aria-label={t('imagemNumero', { n: e.curation_id })} className="space-y-2 rounded-lg border border-base-border p-3 text-sm text-ink-2">
-              <p className="inline-block rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-ink">{t('seloAula', { quem: e.remetente })}</p>
+              <p className="flex flex-wrap items-center gap-2">
+                {e.nova && <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[11px] font-bold text-black">{t('nova')}</span>}
+                <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-ink">{t('seloAula', { quem: e.remetente })}</span>
+              </p>
               <div className="h-72 overflow-hidden rounded-lg bg-black">
                 <ImagemPrincipalMarcada curationId={e.curation_id} alt={t('imagemNumero', { n: e.curation_id })} marcacoes={e.marcacoes} />
               </div>

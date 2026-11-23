@@ -16,7 +16,7 @@ import { errosParaTipo } from './errosTecnicos'
 export const OPCOES_TIPO = ['periapical', 'interproximal', 'oclusal', 'panoramica', 'tomografia']
 export const OPCOES_GENERO = ['masculino', 'feminino']
 export const OPCOES_QUALIDADE = ['otima', 'boa', 'regular', 'insatisfatoria']
-export const OPCOES_ORIGEM = ['ufsc', 'externa']
+export const OPCOES_ORIGEM = ['aparelho', 'externa']
 /** dentes na ordem em que aparecem na tela (arcada superior, depois inferior) */
 export const DENTES_EM_ORDEM = [
   18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,

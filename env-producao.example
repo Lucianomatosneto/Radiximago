@@ -28,6 +28,12 @@ ORTHANC_URL=http://radix-orthanc:8042
 ORTHANC_USERNAME=admin
 ORTHANC_PASSWORD=
 DICOMWEB_URL=http://radix-orthanc:8042/dicom-web
+# Chave dos identificadores das imagens anonimizadas (UIDs fixos: cortes de uma
+# tomografia no mesmo exame; arquivo repetido reconhecido). Gerar UMA VEZ com:
+#   python -c "import secrets; print(secrets.token_urlsafe(48))"
+# e guardar junto com as copias de seguranca: trocar a chave faz o Radix deixar
+# de reconhecer as imagens ja recebidas.
+ANONIMIZACAO_CHAVE_UID=
 
 # --- Enderecos publicos ---
 FRONTEND_URL=https://app.radiximago.com.br
@@ -54,7 +60,3 @@ CADDY_EMAIL=
 
 # --- Servico de voz: desligado no servidor, mas a chave e obrigatoria ---
 WHISPER_CHAVE=
-
-# --- IA (opcional) ---
-CLAUDE_API_KEY=
-CLAUDE_MODEL=claude-sonnet-4-6

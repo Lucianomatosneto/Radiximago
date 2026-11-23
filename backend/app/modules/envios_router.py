@@ -59,7 +59,9 @@ from app.modules.curations import Curation
 from app.modules.grupos import EnvioDestinatario
 from app.modules.grupos_router import membros_dos_grupos, pessoas_validas
 from app.modules.images_router import ler_arquivo_limitado, receber_dicom
-from app.modules.orthanc_references import DestinoImagem, OrthancReference, visivel_para
+from app.modules.orthanc_references import (
+    DestinoImagem, OrthancReference, contar_cortes, filtro_exame_unico, propagar_ao_exame, visivel_para,
+)
 from app.modules.users import User, UserRole
 
 router = APIRouter(prefix="/envios", tags=["Envio de imagens"])
@@ -73,6 +75,10 @@ DESTINOS_POR_PERFIL = {
     UserRole.administrador: {DestinoImagem.FILA.value, DestinoImagem.PESSOAL.value},
 }
 NOTA_MAX = 500
+# Aviso com aceite ao entrar em "Enviar imagem" (pedido de 22/11/2026). O
+# texto fica nas mensagens da tela (EnviarImagem.avisoEnvio); se mudar, suba
+# a versao - a auditoria guarda qual versao a pessoa aceitou.
+AVISO_ENVIO_VERSAO = "2026-11-22"
 
 
 def _perfil(usuario: User) -> str:
@@ -126,6 +132,9 @@ def _item(db: Session, ref: OrthancReference) -> dict:
         "viewer_url": (f"{settings.OHIF_BASE_URL}/viewer?StudyInstanceUIDs={ref.study_instance_uid}"
                        if ref.study_instance_uid else None),
         "enviada_para": db.query(EnvioDestinatario).filter(EnvioDestinatario.orthanc_reference_id == ref.id).count(),
+        # tomografia (18/11/2026): um exame = um item; quantos cortes
+        "em_volume": ref.em_volume,
+        "cortes": contar_cortes(db, [ref])[ref.id],
     }
 
 
@@ -227,6 +236,19 @@ def _auditar_recusa(db: Session, usuario: User, motivo: str, janela_id: int | No
     db.add(AuditLog(usuario_id=usuario.id, acao="foto_recusada", entidade="janela_envio_foto",
                     entidade_id=janela_id, resultado="falha", detalhes=f"motivo={motivo}"))
     db.commit()
+
+
+@router.post("/aviso-ciente")
+def registrar_aviso_ciente(usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
+                           db: Session = Depends(get_db)):
+    """A pessoa marcou "Estou ciente" no aviso da tela Enviar imagem: a
+    imagem nao tem finalidade diagnostica e a original vai ao prontuario do
+    paciente conforme o protocolo da instituicao. Fica na auditoria."""
+    db.add(AuditLog(usuario_id=usuario.id, acao="aviso_envio_ciente", entidade="user",
+                    entidade_id=usuario.id, resultado="sucesso",
+                    detalhes=f"versao {AVISO_ENVIO_VERSAO}"))
+    db.commit()
+    return {"versao": AVISO_ENVIO_VERSAO}
 
 
 @router.post("/foto/iniciar")
@@ -389,6 +411,7 @@ def marcar_vistas(usuario: User = Depends(obter_usuario_atual), db: Session = De
 def meus_envios(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
     refs = (db.query(OrthancReference)
             .filter(OrthancReference.enviado_por_id == usuario.id, OrthancReference.ativo.is_(True))
+            .filter(filtro_exame_unico())
             .order_by(OrthancReference.id.desc()).limit(500).all())
     return {"itens": [_item(db, r) for r in refs]}
 
@@ -399,6 +422,7 @@ def para_analisar(usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ANALISAM)), 
             .filter(OrthancReference.destino == DestinoImagem.ANALISE.value,
                     OrthancReference.analise_destinatario_id == usuario.id,
                     OrthancReference.ativo.is_(True))
+            .filter(filtro_exame_unico())
             .order_by(OrthancReference.analise_em.asc()).limit(500).all())
     return {"itens": [_item(db, r) for r in refs]}
 
@@ -428,11 +452,9 @@ def pedir_analise(imagem_id: int, pedido: PedidoAnalise, usuario: User = Depends
     if ref.destino != DestinoImagem.PESSOAL.value:
         raise HTTPException(status_code=409, detail="So uma imagem sua que nao esta na fila nem em analise pode ser enviada.")
     pessoa = _analista_valido(db, pedido.analista_id, usuario)
-    ref.destino = DestinoImagem.ANALISE.value
-    ref.analise_destinatario_id = pessoa.id
-    ref.analise_nota = _nota(pedido.nota)
-    ref.analise_em = func.now()
-    ref.devolucao_nota = None
+    # exame em volume: todos os cortes seguem juntos (18/11/2026)
+    propagar_ao_exame(db, ref, destino=DestinoImagem.ANALISE.value, analise_destinatario_id=pessoa.id,
+                      analise_nota=_nota(pedido.nota), analise_em=func.now(), devolucao_nota=None)
     _auditar(db, usuario, "imagem_enviada_analise", ref, f"para usuario_id={pessoa.id}")
     db.commit()
     return {"mensagem": f"Imagem enviada para {pessoa.nome} analisar."}
@@ -452,14 +474,13 @@ def decidir_analise(imagem_id: int, decisao: Decisao,
         raise HTTPException(status_code=404, detail="Imagem nao encontrada na sua lista para analisar.")
     nota = _nota(decisao.nota)
     if decisao.acao == "fila":
-        ref.destino = DestinoImagem.FILA.value
+        propagar_ao_exame(db, ref, destino=DestinoImagem.FILA.value)
         _auditar(db, usuario, "imagem_analise_para_fila", ref, "colocada na fila de curadoria")
         mensagem = "Imagem colocada na fila de curadoria."
     else:
         if not nota:
             raise HTTPException(status_code=422, detail="Escreva um recado dizendo por que a imagem foi devolvida.")
-        ref.destino = DestinoImagem.PESSOAL.value
-        ref.devolucao_nota = nota
+        propagar_ao_exame(db, ref, destino=DestinoImagem.PESSOAL.value, devolucao_nota=nota)
         _auditar(db, usuario, "imagem_analise_devolvida", ref, "devolvida ao estudante com recado")
         mensagem = "Imagem devolvida com o seu recado."
     db.commit()
@@ -475,7 +496,7 @@ def retirar_imagem(imagem_id: int, usuario: User = Depends(obter_usuario_atual),
         raise HTTPException(status_code=404, detail="Imagem nao encontrada.")
     if ref.destino not in (DestinoImagem.PESSOAL.value, DestinoImagem.ANALISE.value):
         raise HTTPException(status_code=409, detail="Imagem na fila de curadoria nao pode ser retirada por aqui.")
-    ref.ativo = False
+    propagar_ao_exame(db, ref, ativo=False)
     _auditar(db, usuario, "imagem_pessoal_retirada", ref, f"retirada pelo dono (desativada; destino={ref.destino})")
     db.commit()
     return {"mensagem": "Imagem retirada."}

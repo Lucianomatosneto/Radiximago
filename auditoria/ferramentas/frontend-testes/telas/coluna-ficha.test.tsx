@@ -189,6 +189,12 @@ describe('cliques', () => {
     expect(screen.getByRole('alert').textContent).toBe('Não foi possível salvar o rascunho.')
     expect(screen.getByText(/Rascunho salvo/i)).toBeTruthy()
   })
+
+  it('pedido do video (22/11): "Regiões que a imagem mostra" nao aparece mais na curadoria', () => {
+    abrir({ tipo_radiografia: 'panoramica', regioes_imagem: ['maxila'] })
+    expect(screen.queryByText('Regiões que a imagem mostra')).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Regiões que a imagem mostra' })).toBeNull()
+  })
 })
 
 describe('achados das marcacoes', () => {

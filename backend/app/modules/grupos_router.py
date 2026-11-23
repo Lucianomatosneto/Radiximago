@@ -386,8 +386,9 @@ def tirar_participante(grupo_id: int, usuario_id: int, usuario: User = Depends(e
 
 @router.get("/pendencias")
 def pendencias(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
-    """Numeros do menu: convites que a pessoa tem para responder e pedidos
-    esperando por ela nos grupos de que e dona (so numeros, sem nomes)."""
+    """Numeros do menu: convites que a pessoa tem para responder, pedidos
+    esperando por ela nos grupos de que e dona e imagens novas nos grupos de
+    que participa (so numeros, sem nomes)."""
     _vencer_pendentes(db)
     convites = (db.query(func.count(GrupoEntrada.id))
                 .filter(GrupoEntrada.usuario_id == usuario.id, GrupoEntrada.tipo == CONVITE,
@@ -396,20 +397,25 @@ def pendencias(usuario: User = Depends(obter_usuario_atual), db: Session = Depen
                .join(GrupoEnvio, GrupoEnvio.id == GrupoEntrada.grupo_id)
                .filter(GrupoEnvio.dono_id == usuario.id, GrupoEntrada.tipo == PEDIDO,
                        GrupoEntrada.estado == PENDENTE).scalar())
-    return {"convites": convites or 0, "pedidos": pedidos or 0}
+    from app.modules.grupos_aula_router import imagens_novas_por_grupo  # (evita import circular)
+    novas = sum(imagens_novas_por_grupo(db, usuario.id).values())
+    return {"convites": convites or 0, "pedidos": pedidos or 0, "imagens_novas": novas}
 
 
 @router.get("/participo")
 def grupos_de_que_participo(usuario: User = Depends(obter_usuario_atual), db: Session = Depends(get_db)):
-    """Os grupos de que a pessoa participa - sem a lista dos colegas (D2)."""
+    """Os grupos de que a pessoa participa - sem a lista dos colegas (D2) -,
+    com quantas imagens novas chegaram em cada um."""
+    from app.modules.grupos_aula_router import imagens_novas_por_grupo  # (evita import circular)
+    novas = imagens_novas_por_grupo(db, usuario.id)
     dono = aliased(User)
     linhas = (db.query(GrupoEnvio, GrupoEnvioMembro, dono.nome)
               .join(GrupoEnvioMembro, GrupoEnvioMembro.grupo_id == GrupoEnvio.id)
               .join(dono, dono.id == GrupoEnvio.dono_id)
               .filter(GrupoEnvioMembro.usuario_id == usuario.id)
               .order_by(GrupoEnvio.nome).all())
-    return {"grupos": [{"id": g.id, "nome": g.nome, "criador": nome_dono, "entrou_em": _data(m.entrou_em)}
-                       for g, m, nome_dono in linhas]}
+    return {"grupos": [{"id": g.id, "nome": g.nome, "criador": nome_dono, "entrou_em": _data(m.entrou_em),
+                        "imagens_novas": novas.get(g.id, 0)} for g, m, nome_dono in linhas]}
 
 
 @router.delete("/participo/{grupo_id}")

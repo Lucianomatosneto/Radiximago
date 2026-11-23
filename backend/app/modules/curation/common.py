@@ -10,10 +10,12 @@ from fastapi import HTTPException
 
 from app.modules.audit_logs import AuditLog
 from app.modules.curations import Curation, CurationHistory, StatusCuradoria
+from app.modules.orthanc_references import cortes_da_serie, texto_do_exame
 
 STATUS_FINAIS = [
     StatusCuradoria.APROVADA.value,
     StatusCuradoria.DESCARTADA.value,
+    StatusCuradoria.ARQUIVADA.value,
 ]
 
 # Só se edita uma ficha enquanto ela ainda nao passou por uma decisao
@@ -124,6 +126,8 @@ def _campos_minimos_faltando(ficha) -> list:
     faltando = []
     if not ficha.tipo_radiografia:
         faltando.append("tipo de radiografia")
+    # 22/11/2026: "Regioes da imagem" saiu da tela; panoramica e tomografia
+    # continuam passando pelas regioes padrao do exame
     if not (ficha.dentes or ficha.regioes_imagem):
         faltando.append("dente ou região anatômica")
     if not (ficha.achado_principal or ficha.alteracoes_observadas or getattr(ficha, "achados", None)):
@@ -173,8 +177,13 @@ def _executar_aprovacao(db, ficha, usuario, anonimizacao_validada, observacoes, 
         (observacoes or "Ficha aprovada.") + origem,
     )
     ref = getattr(ficha, "orthanc_reference", None)
-    situacao_texto = (ref.texto_na_imagem if ref else None) or "nao_verificado (imagem anterior a verificacao)"
-    regioes = f", {ref.texto_regioes} tarjas" if ref and ref.texto_regioes else ""
+    # exame em volume (18/11/2026): registra o pior caso entre todos os cortes
+    cortes = cortes_da_serie(db, ref) if ref is not None and getattr(ref, "em_volume", False) else ([ref] if ref else [])
+    situacao, n_tarjas = texto_do_exame(cortes) if cortes else (None, None)
+    situacao_texto = situacao or "nao_verificado (imagem anterior a verificacao)"
+    regioes = f", {n_tarjas} tarjas" if n_tarjas else ""
+    if len(cortes) > 1:
+        regioes += f", exame em volume com {len(cortes)} cortes"
     _registrar_auditoria(
         db, usuario.id, acao, ficha.id, "sucesso",
         f"Ficha aprovada por usuario {usuario.id}. Texto na imagem: {situacao_texto}{regioes}; "
@@ -203,3 +212,41 @@ def _executar_descarte(db, ficha, usuario, motivo, acao="descarte", origem=""):
         f"Ficha descartada por usuario {usuario.id}. Motivo: {motivo_limpo}{origem}",
     )
     return motivo_limpo
+
+
+def _executar_arquivamento(db, ficha, usuario, motivo):
+    """
+    Arquiva uma ficha APROVADA (Bloco 6, 18/11/2026): a imagem sai de
+    circulacao (toda liberacao do sistema exige ficha "aprovada"), mas nada
+    e apagado - ficha, achados, marcacoes e historico continuam guardados.
+    Exige motivo, como o descarte.
+    """
+    motivo_limpo = (motivo or "").strip()
+    if not motivo_limpo:
+        raise HTTPException(status_code=422, detail="O arquivamento exige uma justificativa (motivo).")
+    if ficha.status != StatusCuradoria.APROVADA.value:
+        raise HTTPException(status_code=409, detail="So uma ficha aprovada pode ser arquivada.")
+    ficha.status = StatusCuradoria.ARQUIVADA.value
+    _registrar_historico(db, ficha.id, usuario.id, "arquivamento",
+                         StatusCuradoria.APROVADA.value, ficha.status, motivo_limpo)
+    _registrar_auditoria(db, usuario.id, "arquivamento", ficha.id, "sucesso",
+                         f"Ficha arquivada por usuario {usuario.id}. Motivo: {motivo_limpo}")
+    return motivo_limpo
+
+
+def _executar_desarquivamento(db, ficha, usuario, motivo=None):
+    """
+    Devolve uma ficha arquivada para "aprovada" (volta a circular). A
+    anonimizacao ja foi validada na aprovacao original; a ficha nao muda.
+    """
+    if ficha.status != StatusCuradoria.ARQUIVADA.value:
+        raise HTTPException(status_code=409, detail="So uma ficha arquivada pode ser desarquivada.")
+    if not ficha.anonimizacao_validada:
+        raise HTTPException(status_code=409, detail="Ficha sem anonimizacao validada nao pode voltar a circular.")
+    motivo_limpo = (motivo or "").strip() or "Desarquivada."
+    ficha.status = StatusCuradoria.APROVADA.value
+    _registrar_historico(db, ficha.id, usuario.id, "desarquivamento",
+                         StatusCuradoria.ARQUIVADA.value, ficha.status, motivo_limpo)
+    _registrar_auditoria(db, usuario.id, "desarquivamento", ficha.id, "sucesso",
+                         f"Ficha desarquivada por usuario {usuario.id}. {motivo_limpo}")
+

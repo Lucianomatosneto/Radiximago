@@ -19,7 +19,8 @@ function abrir(extra: Record<string, Rota> = {}, onAbrir = vi.fn()) {
   const tela = montarTela(<CompartilharImagem curationId={7} onAbrir={onAbrir} />)
   return { servidor, onAbrir, tela }
 }
-const emailCampo = () => screen.getByRole('textbox', { name: 'E-mail do cadastro da pessoa' })
+// 22/11/2026: a caixa aceita o NOME (escolhendo na lista) ou o e-mail
+const emailCampo = () => screen.getByRole('combobox', { name: 'Nome ou e-mail da pessoa' })
 async function abrirCaixa(usuario: ReturnType<typeof userEvent.setup>) {
   await usuario.click(screen.getByRole('button', { name: 'Compartilhar esta imagem e suas anotações com outro usuário' }))
 }
@@ -67,11 +68,44 @@ describe('compartilhar', () => {
     const { servidor, onAbrir } = abrir()
     await abrirCaixa(usuario)
     expect(onAbrir).toHaveBeenCalled()
-    for (const errado of ['sem-arroba', 'a@b', 'a b@c.d', `${'x'.repeat(250)}@a.br`]) {
+    for (const errado of ['a@b', 'a b@c.d', `${'x'.repeat(250)}@a.br`]) {
       fireEvent.change(emailCampo(), { target: { value: errado } })
       await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
       expect(screen.getByText('Digite um e-mail válido.')).toBeTruthy()
     }
+    // sem @ e sem escolher ninguem na lista: pede para escolher
+    fireEvent.change(emailCampo(), { target: { value: 'sem-arroba' } })
+    await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
+    expect(screen.getByText('Escolha a pessoa na lista ou digite o e-mail completo.')).toBeTruthy()
+    expect(servidor.alteracoes()).toEqual([])
+  })
+
+  it('pedido do video (22/11): digitar o nome mostra as pessoas; escolher uma manda o id dela', async () => {
+    const usuario = userEvent.setup()
+    const { servidor } = abrir({
+      'GET /prancha/pessoas?busca=arthur': { corpo: { pessoas: [{ id: 5, nome: 'Arthur Exemplo', perfil: 'estudante', email: 'a•••r@exemplo.test' }] } },
+      'POST /shares/7': { status: 201, corpo: { mensagem: 'Compartilhado.' } },
+    })
+    await abrirCaixa(usuario)
+    await usuario.type(emailCampo(), 'arthur')
+    await usuario.click(await screen.findByRole('option', { name: /Arthur Exemplo/ }))
+    expect((emailCampo() as HTMLInputElement).value).toBe('Arthur Exemplo')
+    await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
+    expect(await screen.findByText('Compartilhado.')).toBeTruthy()
+    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/shares/7', corpo: { usuario_id: 5, mensagem: null } }])
+  })
+
+  it('mudar o texto depois de escolher desfaz a escolha', async () => {
+    const usuario = userEvent.setup()
+    const { servidor } = abrir({
+      'GET /prancha/pessoas?busca=arthur': { corpo: { pessoas: [{ id: 5, nome: 'Arthur Exemplo', perfil: 'estudante', email: 'a•••r@exemplo.test' }] } },
+    })
+    await abrirCaixa(usuario)
+    await usuario.type(emailCampo(), 'arthur')
+    await usuario.click(await screen.findByRole('option', { name: /Arthur Exemplo/ }))
+    await usuario.type(emailCampo(), 'x')
+    await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
+    expect(screen.getByText('Escolha a pessoa na lista ou digite o e-mail completo.')).toBeTruthy()
     expect(servidor.alteracoes()).toEqual([])
   })
 

@@ -88,6 +88,8 @@ describe('quem pode', () => {
     expect(within(within(turma).getByRole('region', { name: 'Convites sem resposta' })).getByText('Caio')).toBeTruthy()
     const monitores = cartao('Monitores')
     expect(within(monitores).getByText('Fora da busca')).toBeTruthy()
+    // pedido do video (22/11): explica o que "fora da busca" quer dizer e como mudar
+    expect(within(monitores).getByText(/Estudantes não acham este grupo procurando pelo nome/)).toBeTruthy()
     expect(within(monitores).getByText(/já estava no grupo/)).toBeTruthy()
     expect(within(monitores).queryByRole('region', { name: 'Pedidos para entrar' })).toBeNull()
     // grupo sem as listas novas (resposta antiga): nao quebra

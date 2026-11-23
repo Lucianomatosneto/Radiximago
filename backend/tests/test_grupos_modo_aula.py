@@ -280,3 +280,36 @@ def test_comentario_vazio_ou_longo_demais(client, criar_usuario, criar_ficha, li
     envio_id = _enviar(client, prof, gid, ficha).json()["id"]
     r = client.post(f"/grupos/participo/{gid}/envios/{envio_id}/comentarios", headers=_cab(client, aluno), json={"texto": texto})
     assert r.status_code == 422
+
+
+# --- aviso de imagem nova (17/11/2026) ------------------------------------
+
+def test_imagem_nova_conta_ate_a_pessoa_abrir_as_imagens_do_grupo(client, criar_usuario, criar_ficha, limpar_grupos, db):
+    """O menu e a tela "Meus grupos" mostram quantas imagens chegaram desde a
+    ultima vez que a pessoa abriu as imagens do grupo."""
+    prof = criar_usuario(perfil=UserRole.professor)
+    a1, a2 = criar_usuario(), criar_usuario()
+    f1, f2 = _ficha(criar_ficha, db), _ficha(criar_ficha, db)
+    gid = _grupo_com(client, limpar_grupos, prof, [a1, a2])
+    _enviar(client, prof, gid, f1)
+    _enviar(client, prof, gid, f2)
+
+    pend = client.get("/grupos/pendencias", headers=_cab(client, a1)).json()
+    assert pend["imagens_novas"] == 2
+    participo = client.get("/grupos/participo", headers=_cab(client, a1)).json()["grupos"]
+    assert [(g["id"], g["imagens_novas"]) for g in participo] == [(gid, 2)]
+
+    # abrir as imagens: cada uma vem marcada como nova; depois, o contador zera
+    envios = _envios(client, a1, gid).json()["envios"]
+    assert [e["nova"] for e in envios] == [True, True]
+    assert client.get("/grupos/pendencias", headers=_cab(client, a1)).json()["imagens_novas"] == 0
+    assert [e["nova"] for e in _envios(client, a1, gid).json()["envios"]] == [False, False]
+    # a outra pessoa continua com as dela
+    assert client.get("/grupos/pendencias", headers=_cab(client, a2)).json()["imagens_novas"] == 2
+
+    # imagem que deixa de estar aprovada nao conta
+    f2.status = StatusCuradoria.PENDENTE.value
+    db.commit()
+    assert client.get("/grupos/pendencias", headers=_cab(client, a2)).json()["imagens_novas"] == 1
+    # o dono nao recebe aviso das proprias imagens
+    assert client.get("/grupos/pendencias", headers=_cab(client, prof)).json()["imagens_novas"] == 0

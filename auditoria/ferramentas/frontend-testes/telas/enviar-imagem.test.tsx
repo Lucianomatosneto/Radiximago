@@ -39,12 +39,21 @@ vi.mock('../../../../frontend/src/components/envios/SeletorPessoasGrupos', () =>
 const sessao = (perfil: string) => ({ id: 1, nome: 'Pessoa Teste', email: 'pessoa@exemplo.test', perfil, foto_perfil_url: null })
 const ANALISTAS = [{ id: 21, nome: 'Prof. Teste', perfil: 'professor' }, { id: 22, nome: 'Curadora Teste', perfil: 'curador' }]
 function rotasPadrao(perfil: string, extra: Record<string, Rota> = {}): Record<string, Rota> {
-  return { 'GET /auth/me': { corpo: sessao(perfil) }, 'GET /envios/analistas': { corpo: { pessoas: ANALISTAS } }, ...extra }
+  return {
+    'GET /auth/me': { corpo: sessao(perfil) },
+    'GET /envios/analistas': { corpo: { pessoas: ANALISTAS } },
+    'POST /envios/aviso-ciente': { corpo: { versao: '2026-11-22' } },
+    ...extra,
+  }
 }
+// 22/11/2026: a tela abre com o aviso (sem finalidade diagnostica); os
+// testes de envio partem de quem ja marcou "Estou ciente"
 async function abrir(perfil: string, extra: Record<string, Rota> = {}) {
   const servidor = servidorFalso(rotasPadrao(perfil, extra))
   montarTela(<EnviarImagemPage />)
   await screen.findByRole('heading', { name: 'Enviar imagem' })
+  fireEvent.click(await screen.findByRole('button', { name: 'Estou ciente' }))
+  await screen.findByLabelText('Escolher arquivo', { selector: 'input' })
   return servidor
 }
 const dicom = (nome: string) => new File(['conteudo de teste'], nome, { type: 'application/dicom' })
@@ -53,6 +62,37 @@ const envios = (s: ReturnType<typeof servidorFalso>) => s.alteracoes().filter((p
 
 beforeEach(() => vi.clearAllMocks())
 afterEach(() => cleanup())
+
+describe('aviso com aceite ao entrar (pedido do video, 22/11/2026)', () => {
+  it('mostra o aviso e esconde o envio ate marcar "Estou ciente"; o aceite vai ao servidor', async () => {
+    const servidor = servidorFalso(rotasPadrao('estudante'))
+    montarTela(<EnviarImagemPage />)
+    const aviso = await screen.findByRole('dialog', { name: 'Antes de enviar' })
+    expect(aviso.textContent).toContain('não tem finalidade diagnóstica')
+    expect(aviso.textContent).toContain('prontuário do paciente')
+    expect(screen.queryByLabelText('Escolher arquivo', { selector: 'input' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Estou ciente' }))
+    await screen.findByLabelText('Escolher arquivo', { selector: 'input' })
+    expect(screen.queryByRole('dialog', { name: 'Antes de enviar' })).toBeNull()
+    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/envios/aviso-ciente', corpo: undefined }])
+  })
+
+  it('se o aceite nao chega ao servidor, avisa e continua bloqueado', async () => {
+    servidorFalso(rotasPadrao('estudante', { 'POST /envios/aviso-ciente': 'SEM_CONEXAO' }))
+    montarTela(<EnviarImagemPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Estou ciente' }))
+    expect(await screen.findByText('Não foi possível registrar o aceite. Tente de novo.')).toBeTruthy()
+    expect(screen.queryByLabelText('Escolher arquivo', { selector: 'input' })).toBeNull()
+  })
+
+  it('"Voltar" sai da tela sem enviar nada', async () => {
+    const servidor = servidorFalso(rotasPadrao('estudante'))
+    montarTela(<EnviarImagemPage />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Voltar' }))
+    expect(roteador.push).toHaveBeenCalledWith('/')
+    expect(servidor.alteracoes()).toEqual([])
+  })
+})
 
 describe('quem pode enviar', () => {
   it('sem sessao vai ao login; antes disso mostra "Carregando..."', async () => {
@@ -163,6 +203,16 @@ describe('enviar', () => {
     await usuario.click(screen.getByRole('button', { name: 'Enviar 1 imagem' }))
     expect(await screen.findByText(/enviada para a fila de curadoria\. Recebida por 3 pessoas\./)).toBeTruthy()
     expect(envios(servidor)).toEqual([{ arquivo: 'arquivo:aula.dcm:application/dicom', destino: 'fila', pessoas: '4,6', grupos: '2' }])
+  })
+
+  it('arquivo repetido (18/11/2026): avisa que a imagem ja esta no Radix, sem dizer que foi enviada', async () => {
+    const usuario = userEvent.setup()
+    await abrir('professor', { 'POST /envios': { status: 201, corpo: { status: 'ja_existente', enviada_para: 0 } } })
+    await usuario.upload(entrada(), dicom('repetido.dcm'))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar 1 imagem' }))
+    const aviso = await screen.findByText(/Esta imagem já está no Radix \(arquivo repetido\)\. Nenhuma cópia nova foi criada\./)
+    expect(aviso.closest('[data-teste="envio-repetido"]')).toBeTruthy()
+    expect(screen.queryByText(/enviada para a fila de curadoria/)).toBeNull()
   })
 
   it('resultado por arquivo: os que falharam ficam na lista para tentar de novo', async () => {
