@@ -113,9 +113,11 @@ def criar_curadoria(
 
     if dados.tipo_radiografia is not None:
         tipo, motivo_tipo = dados.tipo_radiografia, "informado por quem abriu a ficha"
-    elif imagem.tipo_preliminar_origem == "envio" and imagem.tipo_preliminar in {t.value for t in TipoRadiografia}:
-        # 23/11/2026: quem enviou a imagem informou o tipo
-        tipo, motivo_tipo = TipoRadiografia(imagem.tipo_preliminar), "informado por quem enviou a imagem"
+    elif imagem.tipo_preliminar_origem in ("envio", "triagem") and imagem.tipo_preliminar in {t.value for t in TipoRadiografia}:
+        # 23/11/2026: quem enviou informou o tipo, ou um curador fez a triagem
+        tipo, motivo_tipo = TipoRadiografia(imagem.tipo_preliminar), (
+            "informado por quem enviou a imagem" if imagem.tipo_preliminar_origem == "envio" else "triagem da modalidade"
+        )
     else:
         tipo, motivo_tipo = sugerir_tipo_da_imagem(imagem.orthanc_id)
 
