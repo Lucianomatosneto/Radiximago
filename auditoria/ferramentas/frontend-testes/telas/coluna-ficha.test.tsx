@@ -399,7 +399,7 @@ describe('ficha em cartoes (panoramica)', () => {
   it('o ultimo cartao aparece no fim: observacoes e Aprovar', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     for (let i = 0; i < 20; i++) tecla('Tab')
-    expect(aceso()).toBe('aprovar')
+    expect(estado.etapa).toBe('aprovar')
     expect(visiveis()).toEqual(['erro_tecnico', 'descricao', 'observacoes'])
   })
 })
