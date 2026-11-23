@@ -2893,7 +2893,12 @@
         "erroGerar": "Não foi possível preparar a foto. Tente de novo."
       }
     },
-    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada."
+    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada.",
+    "tipoExame": {
+      "rotulo": "Tipo de exame (opcional)",
+      "naoSei": "Não sei — o sistema reconhece tomografia e panorâmica",
+      "explica": "Ajuda o curador a escolher o que vai curar. Ele confere e corrige na curadoria."
+    }
   },
   "Grupos": {
     "titulo": "Grupos",
@@ -3246,5 +3251,19 @@
     "erroEnviar": "Não foi possível enviar. Tente de novo.",
     "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
     "erroCriar": "Não foi possível criar o grupo."
+  },
+  "ModalidadeFila": {
+    "periapical": "Periapical",
+    "interproximal": "Interproximal",
+    "oclusal": "Oclusal",
+    "panoramica": "Panorâmica",
+    "tomografia": "Tomografia",
+    "intraoral": "Intraoral (tipo não informado)",
+    "nao_informado": "Não informado",
+    "todas": "Todas",
+    "caixa": "Modalidade",
+    "pergunta": "Qual modalidade você quer curar agora?",
+    "perguntaExplica": "Escolha o tipo de exame; a primeira imagem dele abre em seguida. Dá para trocar depois na caixa \"Modalidade\".",
+    "opcao": "{nome} ({total})"
   }
 }
