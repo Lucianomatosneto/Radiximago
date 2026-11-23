@@ -133,6 +133,7 @@ export default function ColunaFichaCuradoria({
   onNadaRegistrar,
   acoesFinais,
   podeCriarTermo = true,
+  horizontal = false,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -159,6 +160,8 @@ export default function ColunaFichaCuradoria({
   acoesFinais?: ReactNode
   /** "Outros" nos achados (acrescentar termo ao vocabulario): curador e administrador */
   podeCriarTermo?: boolean
+  /** PANORAMICA (23/11/2026): ficha no 1/3 de baixo, secoes em colunas lado a lado */
+  horizontal?: boolean
 }) {
   const t = useTranslations('Curadoria.coluna')
   const estado = estadoSecoes(form, revisadas)
@@ -340,87 +343,129 @@ export default function ColunaFichaCuradoria({
     )
   }
 
+  const secaoDados = (
+    <Secao {...p('dados')} simples>
+      <PainelDadosSobrepostos
+        form={form}
+        onChange={onChange}
+        etapa={secaoAtiva === 'dados' ? etapaAtiva : undefined}
+        onEtapa={ativarPorClique}
+        // clicar a opcao do item aceso (ou validar a anonimizacao) ja
+        // leva o holofote ao proximo item, como o Enter
+        onEscolhido={(e) => irPara(etapaVizinha(e, 1))}
+        cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
+      />
+    </Secao>
+  )
+
+  // Achados = marcacoes da imagem (a imagem de marcacao abre sozinha
+  // quando este item fica em destaque - ver curadoria/page.tsx)
+  const secaoAchados = (
+    <Secao
+      {...p('achados')}
+      extra={
+        <button
+          type="button"
+          onClick={onAlternarMarcacao}
+          aria-pressed={marcacaoAberta}
+          className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
+            marcacaoAberta ? 'border-teal-400 bg-teal-500 text-white' : 'border-teal-400/60 bg-teal-400/15 text-teal-200 hover:bg-teal-400/25'
+          }`}
+        >
+          {marcacaoAberta ? t('fecharMarcacao') : t('abrirMarcacao')}
+          <kbd className="rounded-sm border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
+        </button>
+      }
+    >
+      <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} podeCriarTermo={podeCriarTermo} curationId={curationId} />
+    </Secao>
+  )
+
+  const secaoErro = (
+    <Secao {...p('erro_tecnico')}>
+      <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined} />
+    </Secao>
+  )
+
+  const secaoDescricao = (
+    <Secao {...p('descricao')}>
+      <textarea
+        maxLength={8000}
+        value={form.descricao_didatica}
+        onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
+        data-campo-texto="descricao"
+        aria-label={tSecoes('descricao')}
+        rows={4}
+        className={campoTexto}
+      />
+    </Secao>
+  )
+
+  const secaoObservacoes = (
+    <Secao {...p('observacoes')}>
+      <textarea
+        maxLength={8000}
+        value={form.observacoes_internas}
+        onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
+        data-campo-texto="observacoes"
+        aria-label={tSecoes('observacoes')}
+        rows={3}
+        className={campoTexto}
+      />
+    </Secao>
+  )
+
+  // acoes da ficha no FIM de todas as caixas; o holofote chega aqui no
+  // passo "Aprovar" (Enter aprova)
+  const finais = (
+    <>
+      {acoesFinais && (
+        <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 zoom-[1.5]' : ''}`}>
+          {acoesFinais}
+        </div>
+      )}
+      {erro && (
+        <p className="text-sm text-red-400" role="alert">
+          {erro}
+        </p>
+      )}
+      {rascunhoSalvo && <p className="text-sm text-emerald-400">{tFicha('rascunhoSalvo')}</p>}
+    </>
+  )
+
+  if (horizontal) {
+    // PANORAMICA (23/11/2026): a ficha fica no 1/3 de baixo da tela, com as
+    // secoes LADO A LADO; cada coluna rola sozinha. Teclado e voz andam
+    // pelos mesmos itens (data-etapa) de sempre.
+    const coluna = 'min-h-0 space-y-3 overflow-y-auto px-1 pt-1 pb-6'
+    return (
+      <div className="flex h-full min-h-0 w-full flex-col gap-2">
+        {topo && <div className="shrink-0">{topo}</div>}
+        <div ref={rolagemRef} className="grid min-h-0 flex-1 grid-cols-[1.3fr_1fr_1fr_1fr] gap-3">
+          <div data-coluna="dados" className={coluna}>{secaoDados}</div>
+          <div data-coluna="achados" className={coluna}>{secaoAchados}</div>
+          <div data-coluna="erro_tecnico" className={coluna}>{secaoErro}</div>
+          <div data-coluna="descricao" className={coluna}>
+            {secaoDescricao}
+            {secaoObservacoes}
+            {finais}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-2">
       {topo && <div className="shrink-0">{topo}</div>}
 
       <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 pr-1 pt-1">
-        <Secao {...p('dados')} simples>
-          <PainelDadosSobrepostos
-            form={form}
-            onChange={onChange}
-            etapa={secaoAtiva === 'dados' ? etapaAtiva : undefined}
-            onEtapa={ativarPorClique}
-            // clicar a opcao do item aceso (ou validar a anonimizacao) ja
-            // leva o holofote ao proximo item, como o Enter
-            onEscolhido={(e) => irPara(etapaVizinha(e, 1))}
-            cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
-          />
-        </Secao>
-
-        {/* Achados = marcacoes da imagem (a imagem de marcacao abre sozinha
-            quando este item fica em destaque - ver curadoria/page.tsx) */}
-        <Secao
-          {...p('achados')}
-          extra={
-            <button
-              type="button"
-              onClick={onAlternarMarcacao}
-              aria-pressed={marcacaoAberta}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
-                marcacaoAberta ? 'border-teal-400 bg-teal-500 text-white' : 'border-teal-400/60 bg-teal-400/15 text-teal-200 hover:bg-teal-400/25'
-              }`}
-            >
-              {marcacaoAberta ? t('fecharMarcacao') : t('abrirMarcacao')}
-              <kbd className="rounded-sm border border-current/40 px-1 font-mono text-[10px] opacity-80">M</kbd>
-            </button>
-          }
-        >
-          <PainelAchadosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'achados'} podeCriarTermo={podeCriarTermo} curationId={curationId} />
-        </Secao>
-
-        <Secao {...p('erro_tecnico')}>
-          <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined} />
-        </Secao>
-
-        <Secao {...p('descricao')}>
-          <textarea
-            maxLength={8000}
-            value={form.descricao_didatica}
-            onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
-            data-campo-texto="descricao"
-            aria-label={tSecoes('descricao')}
-            rows={4}
-            className={campoTexto}
-          />
-        </Secao>
-
-        <Secao {...p('observacoes')}>
-          <textarea
-            maxLength={8000}
-            value={form.observacoes_internas}
-            onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
-            data-campo-texto="observacoes"
-            aria-label={tSecoes('observacoes')}
-            rows={3}
-            className={campoTexto}
-          />
-        </Secao>
-
-        {/* acoes da ficha no FIM de todas as caixas; o holofote chega aqui
-            no passo "Aprovar" (Enter aprova) */}
-        {acoesFinais && (
-          <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 zoom-[1.5]' : ''}`}>
-            {acoesFinais}
-          </div>
-        )}
-
-        {erro && (
-          <p className="text-sm text-red-400" role="alert">
-            {erro}
-          </p>
-        )}
-        {rascunhoSalvo && <p className="text-sm text-emerald-400">{tFicha('rascunhoSalvo')}</p>}
+        {secaoDados}
+        {secaoAchados}
+        {secaoErro}
+        {secaoDescricao}
+        {secaoObservacoes}
+        {finais}
         {/* espaco no fim: o ultimo item tambem consegue rolar ate o topo */}
         <div className="h-[40vh]" aria-hidden="true" />
       </div>
