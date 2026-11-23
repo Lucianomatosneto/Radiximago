@@ -14,6 +14,7 @@ import AjudaSecao from './AjudaSecao'
 import OdontogramaSituacao, { EstruturasExtradentais } from './OdontogramaSituacao'
 import { FichaCompactaContext, useFichaCompacta } from './FichaCompacta'
 import { ESTRUTURAS, TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
+import { errosParaTipo } from '../../lib/errosTecnicos'
 
 // COLUNA DA FICHA DE CURADORIA (metade direita da tela; a imagem e as
 // miniaturas ficam na metade esquerda).
@@ -45,22 +46,33 @@ function emCampoDeTexto(): boolean {
   return alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable
 }
 
-// CARTOES DA PANORAMICA (23/11/2026): a ordem em que → / Tab passam; cada
-// cartao cabe sem rolar (so "Achados" rola, se houver muitas marcacoes).
-// Odontograma e estruturas nao tem item no holofote (sao cliques): aparecem
-// como vizinhos quando o item aceso esta ao lado deles.
-const CARTOES_PANORAMICA: { id: string; etapas: EtapaFicha[] }[] = [
-  { id: 'anonimizacao_tipo', etapas: ['anonimizacao', 'tipo'] },
-  { id: 'idade_sexo', etapas: ['idade', 'genero'] },
-  { id: 'dentes', etapas: ['dentes'] },
-  { id: 'qualidade_origem', etapas: ['qualidade', 'origem'] },
-  { id: 'odontograma', etapas: [] },
-  { id: 'achados', etapas: ['achados'] },
-  { id: 'estruturas', etapas: [] },
-  { id: 'erro_tecnico', etapas: ['erro_tecnico'] },
-  { id: 'descricao', etapas: ['descricao'] },
-  { id: 'observacoes', etapas: ['observacoes', 'aprovar'] },
-]
+// CARTOES (23/11/2026): panoramica, oclusal e tomografia. A ordem e a de
+// → / Tab; cada cartao cabe sem rolar (so "Achados" rola, se houver muitas
+// marcacoes). 2a rodada: a faixa tem 40% da altura da 1a versao, entao o
+// erro tecnico se divide em 2 cartoes e "Aprovar" tem cartao proprio.
+// Odontograma de situacao e estruturas (so panoramica) nao tem item no
+// holofote (sao cliques): aparecem como vizinhos.
+interface Cartao { id: string; etapas: EtapaFicha[] }
+function cartoesDoTipo(tipo: string): Cartao[] {
+  const panoramica = TIPOS_COM_ODONTOGRAMA.includes(tipo)
+  const lista: (Cartao | false)[] = [
+    { id: 'anonimizacao_tipo', etapas: ['anonimizacao', 'tipo'] },
+    { id: 'idade_sexo', etapas: ['idade', 'genero'] },
+    { id: 'dentes', etapas: ['dentes'] },
+    { id: 'qualidade_origem', etapas: ['qualidade', 'origem'] },
+    panoramica && { id: 'odontograma', etapas: [] },
+    { id: 'achados', etapas: ['achados'] },
+    panoramica && { id: 'estruturas', etapas: [] },
+    { id: 'erro_tecnico', etapas: ['erro_tecnico'] },
+    errosParaTipo(tipo).length > ERROS_NUM_CARTAO && { id: 'erro_tecnico_2', etapas: [] },
+    { id: 'descricao', etapas: ['descricao'] },
+    { id: 'observacoes', etapas: ['observacoes'] },
+    { id: 'aprovar', etapas: ['aprovar'] },
+  ]
+  return lista.filter((c): c is Cartao => !!c)
+}
+// erros tecnicos que cabem num cartao baixo (o resto vai para o 2o)
+const ERROS_NUM_CARTAO = 8
 const VISIVEIS = 3
 
 // Uma secao da coluna. Fica FORA do componente principal de proposito: um
@@ -106,7 +118,7 @@ function Secao({
       data-etapa={simples ? undefined : id}
       aria-current={holofote ? 'step' : undefined}
       onMouseDown={() => !ativa && !simples && onAtivar()}
-      className={`scroll-mt-2 rounded-xl border relative transition-[opacity,border-color,box-shadow] duration-200 ${compacta ? 'h-full p-2' : 'p-3'} ${
+      className={`scroll-mt-2 rounded-xl border relative transition-[opacity,border-color,box-shadow] duration-200 ${compacta ? 'h-full px-2 py-1' : 'p-3'} ${
         holofote
           ? `z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] ${compacta ? '' : 'zoom-[1.5]'}`
           : ativa
@@ -117,8 +129,8 @@ function Secao({
       {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
           (key), os campos da secao continuam montados */}
       {piscando ? <span key={piscando} aria-hidden="true" className="secao-preenchida pointer-events-none absolute inset-0 rounded-xl" /> : null}
-      <header className={`${compacta ? 'mb-1' : 'mb-2'} flex items-center gap-2`}>
-        <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
+      <header className={`${compacta ? 'mb-0.5' : 'mb-2'} flex items-center gap-2`}>
+        <h3 className={`${compacta ? 'text-xs' : 'text-sm'} font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
         {!simples && <AjudaSecao secao={id} />}
         {estado === 'concluida' && <span className="text-xs font-bold text-emerald-400" title={t('concluida')}>✓</span>}
         {/* "não" / "sem observações": fica anotado aqui (so para a equipe -
@@ -129,11 +141,13 @@ function Secao({
           </span>
         )}
         {extra && <div className="ml-auto">{extra}</div>}
+        {/* cartao baixo: o rodape ("Nada a registrar"...) sobe para o cabecalho */}
+        {compacta && ativa && rodape && <div className={`${extra ? '' : 'ml-auto'} flex items-center gap-1 [&_button]:py-0 [&_button]:text-[11px]`}>{rodape}</div>}
       </header>
       {/* secao apagada: o primeiro clique so acende (nao muda valores); em
           "Dados" cada item cuida disso (PainelDadosSobrepostos) */}
       <div className={ativa || simples ? '' : 'pointer-events-none'}>{children}</div>
-      {ativa && rodape && <div className={`flex flex-wrap items-center gap-2 border-t border-white/10 ${compacta ? 'mt-1 pt-1 [&_button]:py-0.5' : 'mt-3 pt-2'}`}>{rodape}</div>}
+      {!compacta && ativa && rodape && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2">{rodape}</div>}
     </section>
   )
 }
@@ -422,7 +436,26 @@ export default function ColunaFichaCuradoria({
 
   const secaoErro = (
     <Secao {...p('erro_tecnico')}>
-      <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined} />
+      <PainelErrosTecnicosFicha
+        form={form}
+        onChange={onChange}
+        palavrasChave={etapaAtiva === 'erro_tecnico'}
+        cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined}
+        faixa={horizontal ? [0, ERROS_NUM_CARTAO] : undefined}
+      />
+    </Secao>
+  )
+  // 2o cartao do erro tecnico (cartoes baixos): o resto dos botoes; e o
+  // mesmo item do holofote (o cursor anda pela lista inteira)
+  const secaoErro2 = (
+    <Secao {...p('erro_tecnico')} titulo={tFicha('erroTecnicoContinua')} rodape={undefined}>
+      <PainelErrosTecnicosFicha
+        form={form}
+        onChange={onChange}
+        palavrasChave={false}
+        cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined}
+        faixa={[ERROS_NUM_CARTAO, Infinity]}
+      />
     </Secao>
   )
 
@@ -434,8 +467,8 @@ export default function ColunaFichaCuradoria({
         onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
         data-campo-texto="descricao"
         aria-label={tSecoes('descricao')}
-        rows={4}
-        className={campoTexto}
+        rows={horizontal ? 2 : 4}
+        className={`${campoTexto} ${horizontal ? 'resize-none py-1' : ''}`}
       />
     </Secao>
   )
@@ -448,8 +481,8 @@ export default function ColunaFichaCuradoria({
         onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
         data-campo-texto="observacoes"
         aria-label={tSecoes('observacoes')}
-        rows={3}
-        className={campoTexto}
+        rows={horizontal ? 2 : 3}
+        className={`${campoTexto} ${horizontal ? 'resize-none py-1' : ''}`}
       />
     </Secao>
   )
@@ -459,7 +492,7 @@ export default function ColunaFichaCuradoria({
   const finais = (
     <>
       {acoesFinais && (
-        <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 zoom-[1.5]' : ''}`}>
+        <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? `relative z-10 ${horizontal ? 'ring-2 ring-teal-300' : 'zoom-[1.5]'}` : ''}`}>
           {acoesFinais}
         </div>
       )}
@@ -477,10 +510,14 @@ export default function ColunaFichaCuradoria({
     // altura fixa, sem rolagem; so 3 aparecem por vez, com o cartao do item
     // aceso no meio. → / Tab avancam e ← / Shift+Tab voltam (ver aoTeclar);
     // o mouse continua acendendo qualquer item visivel.
-    const indiceAtivo = Math.max(0, CARTOES_PANORAMICA.findIndex((c) => c.etapas.includes(etapaAtiva)))
-    const inicio = Math.min(Math.max(0, indiceAtivo - 1), CARTOES_PANORAMICA.length - VISIVEIS)
+    const cartoes = cartoesDoTipo(form.tipo_radiografia)
+    const indiceAtivo = Math.max(0, cartoes.findIndex((c) => c.etapas.includes(etapaAtiva)))
+    // o cartao aceso fica no meio; o erro tecnico (2 cartoes) fica a esquerda
+    // para os dois aparecerem juntos
+    const recuo = cartoes[indiceAtivo + 1]?.id === 'erro_tecnico_2' ? 0 : 1
+    const inicio = Math.min(Math.max(0, indiceAtivo - recuo), cartoes.length - VISIVEIS)
     const dadosDoCartao = (etapas: EtapaFicha[]) => (
-      <div className="h-full rounded-xl border border-base-border bg-base-surface/70 p-1.5">
+      <div className="h-full rounded-xl border border-base-border bg-base-surface/70 p-1">
         <PainelDadosSobrepostos
           form={form}
           onChange={onChange}
@@ -501,20 +538,17 @@ export default function ColunaFichaCuradoria({
       achados: secaoAchados,
       estruturas: secaoEstruturas,
       erro_tecnico: secaoErro,
+      erro_tecnico_2: secaoErro2,
       descricao: secaoDescricao,
-      observacoes: (
-        <div className="flex h-full flex-col gap-2 [&>section]:h-auto [&>section]:min-h-0 [&>section]:flex-1">
-          {secaoObservacoes}
-          {finais}
-        </div>
-      ),
+      observacoes: secaoObservacoes,
+      aprovar: <div className="flex h-full flex-col justify-center gap-1 rounded-xl border border-base-border bg-base-surface/70 p-1.5">{finais}</div>,
     }
     return (
       <FichaCompactaContext.Provider value>
-        <div className="flex h-full min-h-0 w-full flex-col gap-2">
+        <div className="flex h-full min-h-0 w-full flex-col gap-1">
           {topo && <div className="shrink-0">{topo}</div>}
-          <div ref={rolagemRef} className="flex min-h-0 flex-1 gap-3">
-            {CARTOES_PANORAMICA.map((c, i) => {
+          <div ref={rolagemRef} className="flex min-h-0 flex-1 gap-2">
+            {cartoes.map((c, i) => {
               const visivel = i >= inicio && i < inicio + VISIVEIS
               return (
                 <div
@@ -528,8 +562,8 @@ export default function ColunaFichaCuradoria({
               )
             })}
           </div>
-          <p className="shrink-0 text-center text-[11px] text-slate-400" aria-live="polite">
-            {t('cartoesPosicao', { inicio: inicio + 1, fim: inicio + VISIVEIS, total: CARTOES_PANORAMICA.length })}
+          <p className="shrink-0 text-center text-[10px] leading-3 text-slate-400" aria-live="polite">
+            {t('cartoesPosicao', { inicio: inicio + 1, fim: inicio + VISIVEIS, total: cartoes.length })}
           </p>
         </div>
       </FichaCompactaContext.Provider>
