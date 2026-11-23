@@ -25,6 +25,7 @@ const STATUS_CURADORIA = [
   'em_analise',
   'aprovada',
   'descartada',
+  'arquivada',
   'segunda_opiniao',
   'baixa_qualidade',
 ]

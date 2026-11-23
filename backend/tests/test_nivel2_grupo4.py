@@ -223,6 +223,7 @@ PERMITIDOS = {
     ("UsuarioCriar", "perfil"),                 # so administrador
     ("Marcacao", "id"),                         # identificador do desenho, criado na tela
     ("CompartilharEntrada", "email"),           # e-mail do destinatario
+    ("CompartilharEntrada", "usuario_id"),      # pessoa escolhida na busca por nome (a da prancha); o servidor confere se esta ativa (22/11/2026)
     ("TermoEdicao", "ativo"),                   # curadoria: desativar termo do vocabulario
     ("MacroEdicao", "ativo"),                   # curadoria: desativar macro
     ("ConviteDados", "usuario_id"),             # dono do grupo convida alguem; so vira participacao se a pessoa aceitar (17/11/2026)

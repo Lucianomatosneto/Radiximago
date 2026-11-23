@@ -616,7 +616,30 @@ export default function MarcadorAchado({
                   // alca de INCLINAR: um pouco acima do meio do lado de cima
                   const topo = girarRelativo(cx, (m.y as number) - 0.045, cx, cy, graus, k)
                   const meioTopo = girarRelativo(cx, m.y as number, cx, cy, graus, k)
-                  const r = 0.012
+                  const r = 0.018
+                  // simbolos dentro das alcas (pedido de 22/11/2026): seta de
+                  // rotacao no circulo de girar e + no quadrado de aumentar.
+                  // O desenho e em coordenadas relativas (x dividido por k).
+                  const ponto = (c: { x: number; y: number }, u: number, v: number) => `${c.x + (u * r) / k},${c.y + v * r}`
+                  const R = 0.55
+                  const a1 = (-20 * Math.PI) / 180
+                  const a2 = (-100 * Math.PI) / 180
+                  const fim = { u: R * Math.cos(a2), v: R * Math.sin(a2) }
+                  // direcao do giro no fim do arco (sentido horario na tela)
+                  const dir = { u: -Math.sin(a2), v: Math.cos(a2) }
+                  const lado = { u: -dir.v, v: dir.u }
+                  const ponta = 0.42
+                  const setaGiro = [
+                    `M ${ponto(topo, R * Math.cos(a1), R * Math.sin(a1))}`,
+                    `A ${(R * r) / k} ${R * r} 0 1 1 ${ponto(topo, fim.u, fim.v)}`,
+                    `M ${ponto(topo, fim.u - ponta * dir.u + ponta * lado.u, fim.v - ponta * dir.v + ponta * lado.v)}`,
+                    `L ${ponto(topo, fim.u, fim.v)}`,
+                    `L ${ponto(topo, fim.u - ponta * dir.u - ponta * lado.u, fim.v - ponta * dir.v - ponta * lado.v)}`,
+                  ].join(' ')
+                  const sinalMais = [
+                    `M ${ponto(canto, -0.6, 0)} L ${ponto(canto, 0.6, 0)}`,
+                    `M ${ponto(canto, 0, -0.6)} L ${ponto(canto, 0, 0.6)}`,
+                  ].join(' ')
                   return (
                     <>
                       <line
@@ -644,6 +667,17 @@ export default function MarcadorAchado({
                       >
                         <title>{t('inclinar')}</title>
                       </ellipse>
+                      <path
+                        data-simbolo="girar"
+                        d={setaGiro}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth={1.5}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        vectorEffect="non-scaling-stroke"
+                        pointerEvents="none"
+                      />
                       <rect
                         x={canto.x - r / k}
                         y={canto.y - r}
@@ -655,6 +689,16 @@ export default function MarcadorAchado({
                         vectorEffect="non-scaling-stroke"
                         onMouseDown={(e) => aoPressionarAlca(e, m)}
                         style={{ cursor: 'nwse-resize' }}
+                      />
+                      <path
+                        data-simbolo="aumentar"
+                        d={sinalMais}
+                        fill="none"
+                        stroke="white"
+                        strokeWidth={1.75}
+                        strokeLinecap="round"
+                        vectorEffect="non-scaling-stroke"
+                        pointerEvents="none"
                       />
                     </>
                   )

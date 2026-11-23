@@ -357,4 +357,18 @@ describe('resultados: selecao e acoes', () => {
     await usuario.hover(lupa)
     expect(lupa.getAttribute('aria-pressed')).toBe('true')
   })
+
+  it('pedido do video (22/11): clicar no + deixa a imagem ampliada mesmo tirando o mouse; outro clique volta', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await pesquisarTudo(usuario)
+    const [lupa] = screen.getAllByRole('button', { name: 'Passe o mouse para ampliar a imagem' })
+    await usuario.click(lupa) // o mouse passa por cima e clica
+    expect(lupa.getAttribute('aria-pressed')).toBe('true')
+    const cartao = lupa.closest('[data-cartao-imagem]') as HTMLElement
+    await usuario.unhover(cartao)
+    expect(lupa.getAttribute('aria-pressed')).toBe('true') // continua ampliada
+    await usuario.click(lupa)
+    expect(lupa.getAttribute('aria-pressed')).toBe('false')
+  })
 })

@@ -12,10 +12,12 @@ from .common import (
     _buscar_ficha,
     _exigir_fora_de_segunda_opiniao,
     _executar_aprovacao,
+    _executar_arquivamento,
+    _executar_desarquivamento,
     _executar_descarte,
 )
 from .router import router
-from .schemas import CurationApprove, CurationDiscard
+from .schemas import CurationApprove, CurationArquivar, CurationDesarquivar, CurationDiscard
 
 
 # ---------------------------------------------------------------------
@@ -114,3 +116,35 @@ def reabrir_para_edicao(
                     resultado="sucesso", detalhes=f"{anterior} -> em_analise"))
     db.commit()
     return {"curation_id": ficha.id, "orthanc_reference_id": ficha.orthanc_reference_id, "status": ficha.status}
+
+
+# ---------------------------------------------------------------------
+# POST /curation/{curation_id}/arquivar  e  /desarquivar  (18/11/2026)
+# ---------------------------------------------------------------------
+@router.post("/{curation_id}/arquivar")
+def arquivar_curadoria(
+    curation_id: int,
+    dados: CurationArquivar,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    db: Session = Depends(get_db),
+):
+    """Tira de circulacao uma imagem aprovada, sem apagar nada. Exige motivo."""
+    ficha = _buscar_ficha(db, curation_id, usuario)
+    motivo = _executar_arquivamento(db, ficha, usuario, dados.motivo)
+    db.commit()
+    return {"mensagem": "Ficha arquivada.", "curation_id": ficha.id, "status": ficha.status, "motivo": motivo}
+
+
+@router.post("/{curation_id}/desarquivar")
+def desarquivar_curadoria(
+    curation_id: int,
+    dados: CurationDesarquivar,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    db: Session = Depends(get_db),
+):
+    """Devolve uma imagem arquivada a circulacao (volta a ser "aprovada")."""
+    ficha = _buscar_ficha(db, curation_id, usuario)
+    _executar_desarquivamento(db, ficha, usuario, dados.motivo)
+    db.commit()
+    return {"mensagem": "Ficha desarquivada.", "curation_id": ficha.id, "status": ficha.status}
+

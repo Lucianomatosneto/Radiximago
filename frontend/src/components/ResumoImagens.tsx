@@ -24,13 +24,13 @@ export default function ResumoImagens({ imagens }: { imagens: ContagemImagens })
   const t = useTranslations('ResumoImagens')
   const s = imagens.por_situacao
   const n = (chave: string) => s[chave] ?? 0
-  const partes = [imagens.aguardando_curadoria, n('aprovada'), n('segunda_opiniao'), n('descartada'), n('baixa_qualidade')]
+  const partes = [imagens.aguardando_curadoria, n('aprovada'), n('segunda_opiniao'), n('descartada'), n('baixa_qualidade'), n('arquivada')]
   const soma = partes.reduce((a, b) => a + b, 0)
   const confere = soma === imagens.total
 
   return (
     <section aria-label={t('titulo')}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
         <DashboardCard label={t('total')} valor={imagens.total} cor="teal" detalhe={t('totalDetalhe')} />
         <DashboardCard
           label={t('aguardando')}
@@ -42,6 +42,7 @@ export default function ResumoImagens({ imagens }: { imagens: ContagemImagens })
         <DashboardCard label={t('segundaOpiniao')} valor={n('segunda_opiniao')} cor="purple" />
         <DashboardCard label={t('descartadas')} valor={n('descartada')} cor="red" />
         <DashboardCard label={t('baixaQualidade')} valor={n('baixa_qualidade')} cor="orange" />
+        <DashboardCard label={t('arquivadas')} valor={n('arquivada')} cor="slate" />
       </div>
       <p className={`mt-2 text-xs ${confere ? 'text-slate-500' : 'text-red-400'}`}>
         {t('conferencia', { partes: partes.join(' + '), total: imagens.total })} {confere ? '✓' : `⚠ ${t('naoConfere')}`}

@@ -5,12 +5,20 @@ import { useTranslations } from 'next-intl'
 
 // Compartilhar a imagem (com a anotacao escrita AQUI - as "Minhas anotacoes"
 // continuam privadas, 27/10/2026) com outro usuario do
-// sistema, digitando o e-mail do cadastro dele. A resposta do servidor e
+// sistema, digitando o e-mail do cadastro dele OU o nome (22/11/2026: a
+// caixa sugere as pessoas pela mesma busca da prancha, /prancha/pessoas, com
+// o e-mail mascarado, e manda o id da escolhida). A resposta do servidor e
 // sempre a mesma, exista ou nao um usuario com aquele e-mail (privacidade:
 // o formulario nao serve para descobrir quem tem conta). Lista abaixo com
 // quem a imagem ja foi compartilhada, com opcao de desfazer.
 
 const API = process.env.NEXT_PUBLIC_API_URL
+
+interface Pessoa {
+  id: number
+  nome: string
+  email: string
+}
 
 interface Enviado {
   id: number
@@ -31,6 +39,24 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
   const [copiado, setCopiado] = useState(false)
   const [erro, setErro] = useState('')
   const [enviados, setEnviados] = useState<Enviado[]>([])
+  // busca por nome: sugestoes e a pessoa escolhida
+  const [sugestoes, setSugestoes] = useState<Pessoa[]>([])
+  const [escolhida, setEscolhida] = useState<Pessoa | null>(null)
+
+  useEffect(() => {
+    const termo = email.trim()
+    if (escolhida || termo.includes('@') || termo.length < 3) {
+      setSugestoes([])
+      return
+    }
+    const id = setTimeout(() => {
+      fetch(`${API}/prancha/pessoas?busca=${encodeURIComponent(termo)}`, { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : { pessoas: [] }))
+        .then((d) => setSugestoes(d.pessoas ?? []))
+        .catch(() => setSugestoes([]))
+    }, 300)
+    return () => clearTimeout(id)
+  }, [email, escolhida])
 
   async function carregarEnviados() {
     try {
@@ -46,6 +72,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
   useEffect(() => {
     setAberto(false)
     setEmail('')
+    setEscolhida(null)
     setMensagem('')
     setAviso('')
     setConvite(null)
@@ -57,7 +84,11 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
 
   async function enviar() {
     const valor = email.trim()
-    if (valor.length > 254 || !/^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/.test(valor)) {
+    if (!escolhida && !valor.includes('@')) {
+      setErro(t('erroEscolher'))
+      return
+    }
+    if (!escolhida && (valor.length > 254 || !/^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$/.test(valor))) {
       setErro(t('erroEmail'))
       return
     }
@@ -71,7 +102,11 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: valor, mensagem: mensagem.trim() || null }),
+        body: JSON.stringify(
+          escolhida
+            ? { usuario_id: escolhida.id, mensagem: mensagem.trim() || null }
+            : { email: valor, mensagem: mensagem.trim() || null }
+        ),
       })
       if (!r.ok) {
         let detalhe = t('erroEnviar')
@@ -89,6 +124,7 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
       const link = typeof dados.link_cadastro === 'string' ? dados.link_cadastro : `${window.location.origin}/solicitar-acesso`
       setConvite({ texto: dados.aviso_cadastro ?? t('avisoCadastro'), link })
       setEmail('')
+      setEscolhida(null)
       setMensagem('')
       setAberto(false)
       void carregarEnviados()
@@ -144,21 +180,65 @@ export default function CompartilharImagem({ curationId, onAbrir }: { curationId
 
       {aberto && (
         <div className="mt-2 space-y-1.5">
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') void enviar()
-              if (e.key === 'Escape') setAberto(false)
-            }}
-            placeholder={t('placeholderEmail')}
-            aria-label={t('placeholderEmail')}
-            autoComplete="off"
-            maxLength={150}
-            className="w-full rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
-            autoFocus
-          />
+          <div className="relative">
+            <input
+              type="text"
+              role="combobox"
+              aria-expanded={sugestoes.length > 0}
+              aria-controls={`compartilhar-sugestoes-${curationId}`}
+              aria-autocomplete="list"
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                setEscolhida(null) // mudou o texto: a escolha anterior deixa de valer
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void enviar()
+                if (e.key === 'Escape') setAberto(false)
+              }}
+              placeholder={t('placeholderEmail')}
+              aria-label={t('placeholderEmail')}
+              autoComplete="off"
+              maxLength={150}
+              className="w-full rounded-md border border-teal-500/40 bg-black/40 px-2 py-1.5 text-xs text-ink outline-hidden placeholder:text-slate-500 focus:border-teal-300"
+              autoFocus
+            />
+            {sugestoes.length > 0 && (
+              <ul
+                id={`compartilhar-sugestoes-${curationId}`}
+                role="listbox"
+                aria-label={t('sugestoes')}
+                className="absolute left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-teal-500/40 bg-slate-950 py-1 shadow-lg"
+              >
+                {sugestoes.map((p) => (
+                  <li
+                    key={p.id}
+                    role="option"
+                    aria-selected={false}
+                    tabIndex={0}
+                    onClick={() => {
+                      setEscolhida(p)
+                      setEmail(p.nome)
+                      setSugestoes([])
+                      setErro('')
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setEscolhida(p)
+                        setEmail(p.nome)
+                        setSugestoes([])
+                        setErro('')
+                      }
+                    }}
+                    className="cursor-pointer px-2 py-1 text-xs text-ink hover:bg-teal-300/10 focus:bg-teal-300/10 focus:outline-hidden"
+                  >
+                    {p.nome} <span className="text-slate-500">({p.email})</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           <textarea
             value={mensagem}
             onChange={(e) => setMensagem(e.target.value)}

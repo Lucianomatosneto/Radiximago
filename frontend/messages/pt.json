@@ -309,7 +309,8 @@
     "aprovada": "Aprovada",
     "segundaOpiniao": "Segunda opinião",
     "baixaQualidade": "Baixa qualidade",
-    "descartada": "Descartada"
+    "descartada": "Descartada",
+    "arquivada": "Arquivada"
   },
   "Dashboard": {
     "visaoGeral": "Visão geral",
@@ -414,7 +415,8 @@
       "segunda_opiniao": "Segunda opinião",
       "baixa_qualidade": "Baixa qualidade",
       "descartada": "Descartada",
-      "sem_ficha": "Sem ficha"
+      "sem_ficha": "Sem ficha",
+      "arquivada": "Arquivada"
     },
     "totalAguardandoDetalhe": "Sem ficha, pendentes e em análise. {fila} estão na fila da Curadoria (ou já em curadoria) e {recorte} ainda esperam o recorte da moldura branca, por isso não aparecem na fila.",
     "colunaNumero": "Nº",
@@ -429,7 +431,15 @@
       "series": "Série",
       "study": "Estudo"
     },
-    "volumeCortes": "Tomografia ({cortes} cortes)"
+    "volumeCortes": "Tomografia ({cortes} cortes)",
+    "arquivo": {
+      "arquivar": "Arquivar",
+      "desarquivar": "Desarquivar",
+      "motivoObrigatorio": "Informe o motivo do arquivamento.",
+      "erro": "Não foi possível concluir a ação.",
+      "arquivada": "Imagem arquivada: saiu da pesquisa e do uso pelos estudantes. Nada foi apagado.",
+      "desarquivada": "Imagem desarquivada: voltou a circular."
+    }
   },
   "MiniaturaImagem": {
     "semPreview": "Sem preview"
@@ -829,7 +839,8 @@
       "enviando": "Enviando...",
       "fechar": "Fechar",
       "erroMotivoObrigatorio": "Informe um motivo.",
-      "erroConcluirAcao": "Não foi possível concluir a ação."
+      "erroConcluirAcao": "Não foi possível concluir a ação.",
+      "arquivarTitulo": "Arquivar imagem (sai de circulação, nada é apagado)"
     },
     "segundaOpiniaoBanner": {
       "titulo": "Imagem aguardando segunda opinião",
@@ -1868,7 +1879,9 @@
   "Compartilhar": {
     "titulo": "Compartilhar",
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
-    "placeholderEmail": "E-mail do cadastro da pessoa",
+    "placeholderEmail": "Nome ou e-mail da pessoa",
+    "erroEscolher": "Escolha a pessoa na lista ou digite o e-mail completo.",
+    "sugestoes": "Pessoas encontradas",
     "placeholderMensagem": "Anotação para quem vai receber (opcional)",
     "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
     "cancelar": "Cancelar",
@@ -2112,7 +2125,8 @@
     "baixaQualidade": "Baixa qualidade",
     "conferencia": "Conferência: {partes} = {total}",
     "naoConfere": "a soma não confere com o total",
-    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total"
+    "desativadas": "{quantidade, plural, one {1 imagem desativada não entra} other {# imagens desativadas não entram}} no total",
+    "arquivadas": "Arquivadas"
   },
   "MeusAcessos": {
     "titulo": "Meus acessos",
@@ -2646,6 +2660,14 @@
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
+    "avisoEnvio": {
+      "titulo": "Antes de enviar",
+      "finalidade": "A imagem enviada ao Rádix Imago é usada só para ensino e pesquisa e não tem finalidade diagnóstica.",
+      "prontuario": "A imagem original do exame deve ser anexada ao prontuário do paciente, conforme o protocolo da sua instituição. O Rádix não substitui o prontuário.",
+      "ciente": "Estou ciente",
+      "voltar": "Voltar",
+      "erro": "Não foi possível registrar o aceite. Tente de novo."
+    },
     "carregando": "Carregando...",
     "subtituloEstudante": "Envie a foto de uma radiografia pelo celular ou um arquivo DICOM do computador. Escolha se ela fica só com você ou se vai para um professor ou curador analisar.",
     "subtituloEquipe": "Envie a foto de uma radiografia pelo celular ou arquivos DICOM. Eles vão para a fila de curadoria, onde o curador decide o que entra no banco de imagens.",
@@ -2816,6 +2838,7 @@
     "aceitaPedidos": "Aceitar pedidos de estudantes (o grupo aparece na busca pelo nome)",
     "aparecesNaBusca": "Aparece na busca",
     "foraDaBusca": "Fora da busca",
+    "foraDaBuscaAjuda": "Estudantes não acham este grupo procurando pelo nome; só entra quem você convidar. Para mudar, use Editar e marque \"Aceitar pedidos de estudantes\".",
     "participantes": "Participantes",
     "origem_convite": "aceitou convite",
     "origem_pedido": "pedido autorizado",
@@ -2879,6 +2902,7 @@
     "procurar": "Procurar",
     "minimoLetras": "Digite pelo menos 3 letras.",
     "nenhumGrupo": "Nenhum grupo encontrado com esse nome.",
+    "nenhumGrupoAjuda": "Só aparecem os grupos que o dono deixou abertos a pedidos. Se a sua turma não aparece, peça o convite ao professor.",
     "criadoPor": "Criado por {quem}",
     "pedirEntrar": "Pedir para entrar",
     "pedirEntrarRotulo": "Pedir para entrar no grupo {grupo}",
