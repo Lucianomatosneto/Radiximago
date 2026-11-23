@@ -1227,20 +1227,22 @@ window.config = {
         },
       },
       stages: [{
+        id: 'radixPlanos',
         name: 'Planos',
         viewportStructure: { layoutType: 'grid', properties: grade },
         viewports: lista.map(function (p) {
           if (p[2] === 'volume3d') {
             return {
               viewportOptions: { viewportId: 'radix-3d', toolGroupId: 'volume3d', viewportType: 'volume3d', orientation: 'coronal', customViewportProps: { hideOverlays: true } },
-              displaySets: [{ id: 'activeDisplaySet', options: { displayPreset: 'CT-Bone' } }],
+              // mesmo formato do protocolo fourUp do OHIF 3.9
+              displaySets: [{ id: 'activeDisplaySet', options: { displayPreset: { CT: 'CT-Bone', MR: 'CT-Bone', default: 'CT-Bone' } } }],
             };
           }
           return {
             viewportOptions: {
               viewportId: 'radix-' + p[3], toolGroupId: 'mpr', viewportType: 'volume', orientation: p[3],
               initialImageOptions: { preset: 'middle' },
-              syncGroups: [{ type: 'voi', id: 'radix-voi', source: true, target: true }],
+              syncGroups: [{ type: 'voi', id: 'radix-voi', source: true, target: true, options: { syncColormap: true } }],
             },
             displaySets: [{ id: 'activeDisplaySet' }],
           };
@@ -1253,10 +1255,12 @@ window.config = {
     escolhas.planos = planos;
     var s = servicos();
     var id = 'radix-planos-' + planos;
-    try {
-      var hp = s && s.hangingProtocolService;
-      if (hp && !(hp.getProtocolById && hp.getProtocolById(id))) hp.addProtocol(id, protocolo(planos));
-    } catch (e) { /* ja registrado */ }
+    var hp = s && s.hangingProtocolService;
+    // no OHIF 3.9, getProtocolById DA ERRO quando o protocolo nao existe
+    // ("No protocol X found"): o erro quer dizer "registrar"
+    var registrado = false;
+    try { registrado = !!(hp && hp.getProtocolById(id)); } catch (e) { registrado = false; }
+    try { if (hp && !registrado) hp.addProtocol(id, protocolo(planos)); } catch (e) { /* sem registro */ }
     comando('setHangingProtocol', { protocolId: id });
     // os quadros novos nascem sem a janela/espessura escolhidas: reaplica
     setTimeout(reaplicar, 900);
