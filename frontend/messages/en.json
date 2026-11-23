@@ -2667,6 +2667,26 @@
     "verificando": "Verifying…",
     "erro": "Could not verify now. Try again in a moment."
   },
+  "EnviarParaGrupo": {
+    "botao": "Send to a group",
+    "explica": "{n, plural, one {The selected image goes} other {The # selected images go}} to the groups you choose, with the record's official markings.",
+    "meusGrupos": "My groups",
+    "semGrupos": "You have no groups yet. Create one below.",
+    "criarNovo": "+ Create new group",
+    "nomeNovo": "New group name",
+    "convidarAjuda": "People you choose get an invitation and join when they accept.",
+    "criar": "Create group",
+    "cancelar": "Cancel",
+    "recado": "Message to the group (optional)",
+    "comentar": "Participants may comment",
+    "prepararAula": "Prepare a lesson with its own markings (this image only)",
+    "enviar": "Send {n, plural, one {1 image} other {# images}}",
+    "fechar": "Close",
+    "resultado": "Sent: {enviadas} · already in the group: {ja}.",
+    "erroEnviar": "Could not send. Please try again.",
+    "erroLimite": "Too many sends in a short time. Wait a minute and send the rest.",
+    "erroCriar": "Could not create the group."
+  },
   "EnviarImagem": {
     "titulo": "Send image",
     "avisoEnvio": {
@@ -2883,8 +2903,8 @@
     "conviteCancelado": "Invitation cancelled.",
     "erroAcao": "Could not complete. Please try again.",
     "imagensEnviadas": "Images sent to the group",
-    "comoEnviar": "To send an image, open it in the Image bank and use \"Prepare class for a group\".",
-    "irBanco": "Go to the Image bank",
+    "comoEnviar": "To send images to this group, select them in the Advanced search and use \"Send to a group\".",
+    "irBanco": "Go to the Advanced search",
     "semImagens": "No image sent to this group yet.",
     "imagemNumero": "Image #{n}",
     "retirarImagem": "Remove from group",
