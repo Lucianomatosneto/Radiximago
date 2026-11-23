@@ -55,7 +55,7 @@ from app.modules import foto_para_dicom, janela_foto, orthanc_client
 from app.modules.audit_logs import AuditLog
 from app.modules.auth import exigir_perfis, obter_usuario_atual
 from app.core.config import settings
-from app.modules.curations import Curation
+from app.modules.curations import Curation, TipoRadiografia
 from app.modules.grupos import EnvioDestinatario
 from app.modules.grupos_router import membros_dos_grupos, pessoas_validas
 from app.modules.images_router import ler_arquivo_limitado, receber_dicom
@@ -100,6 +100,17 @@ def _nota(texto: str | None) -> str | None:
     if len(texto) > NOTA_MAX:
         raise HTTPException(status_code=422, detail=f"O recado pode ter no maximo {NOTA_MAX} caracteres.")
     return texto or None
+
+
+def _tipo_informado(tipo: str | None) -> str | None:
+    """Tipo de exame informado por quem envia (opcional, 23/11/2026): vira a
+    modalidade preliminar da imagem na fila da curadoria."""
+    texto = (tipo or "").strip()
+    if not texto:
+        return None
+    if texto not in {t.value for t in TipoRadiografia}:
+        raise HTTPException(status_code=422, detail="Tipo de exame desconhecido.")
+    return texto
 
 
 def _situacao(ref: OrthancReference, aprovada: bool) -> str:
@@ -204,6 +215,7 @@ def enviar_imagem(
     nota: str | None = Form(None, max_length=NOTA_MAX),
     pessoas: str | None = Form(None, max_length=4000),
     grupos: str | None = Form(None, max_length=4000),
+    tipo_radiografia: str | None = Form(None, max_length=20),
     usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
     db: Session = Depends(get_db),
 ):
@@ -211,6 +223,7 @@ def enviar_imagem(
     if destino not in DESTINOS_POR_PERFIL.get(usuario.perfil, set()):
         raise HTTPException(status_code=422, detail="Destino nao permitido para o seu perfil.")
     nota_limpa = _nota(nota)
+    tipo = _tipo_informado(tipo_radiografia)
     pessoas_ids, grupos_ids = _ids(pessoas), _ids(grupos)
     if (pessoas_ids or grupos_ids) and usuario.perfil not in PERFIS_QUE_ENVIAM_A_PESSOAS:
         raise HTTPException(status_code=403, detail="Seu perfil nao envia imagens para pessoas ou grupos.")
@@ -223,7 +236,7 @@ def enviar_imagem(
             "Fotos sao enviadas pela opcao Foto (ajuste, tarja e confirmacao em ate "
             f"{settings.FOTO_JANELA_MINUTOS} minutos)."))
     resultado = receber_dicom(db, usuario, conteudo, destino=destino,
-                              destinatario_id=destinatario_id, nota=nota_limpa)
+                              destinatario_id=destinatario_id, nota=nota_limpa, tipo_informado=tipo)
     if destino == DestinoImagem.ANALISE.value and resultado.get("status") == "importada":
         ref = db.get(OrthancReference, resultado["orthanc_reference_id"])
         _auditar(db, usuario, "imagem_enviada_analise", ref, f"para usuario_id={destinatario_id}")
@@ -312,6 +325,7 @@ def enviar_foto(
     analista_id: int | None = Form(None, ge=1),
     nota: str | None = Form(None, max_length=NOTA_MAX),
     confirmacao_sem_identificacao: bool = Form(False),
+    tipo_radiografia: str | None = Form(None, max_length=20),
     usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
     db: Session = Depends(get_db),
 ):
@@ -322,6 +336,7 @@ def enviar_foto(
         raise HTTPException(status_code=422,
                             detail="Confirme que a imagem nao mostra dados que identifiquem o paciente.")
     nota_limpa = _nota(nota)
+    tipo = _tipo_informado(tipo_radiografia)
     destinatario_id = None
     if destino == DestinoImagem.ANALISE.value:
         # reconferido no envio: a pessoa pode ter sido desativada durante a janela
@@ -346,7 +361,7 @@ def enviar_foto(
         from app.modules.texto_na_imagem import tarjar_texto
         dicom, texto_antes = tarjar_texto(dicom)
         resultado = receber_dicom(db, usuario, dicom, destino=destino, destinatario_id=destinatario_id,
-                                  nota=nota_limpa, formato_entrada="foto")
+                                  nota=nota_limpa, formato_entrada="foto", tipo_informado=tipo)
     except HTTPException as erro:
         motivos = {413: "arquivo_grande", 422: "arquivo_invalido"}
         janela_foto.liberar_janela(db, janela)   # pode tentar de novo dentro do prazo
