@@ -366,3 +366,48 @@ describe('conferir fichas de um termo ja existente', () => {
 function cartaoDoTermo(nome: string): HTMLElement {
   return screen.getByText(nome, { selector: 'span' }).closest('li') as HTMLElement
 }
+
+// PEDIDO DO VIDEO (22/11/2026, B14): cada termo ganha uma DEFINICAO, sempre
+// com a FONTE (DeCS/BIREME com a mencao do direito autoral, ou texto do
+// curador). E ela que aparece no "?" das marcacoes do visualizador.
+describe('definicao de cada termo', () => {
+  it('sem definicao: avisa; "Escrever definição" exige a fonte e envia as duas', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(
+      rotasPadrao({ 'PATCH /vocabulario/termos/10': (p) => ({ corpo: { ...TERMO, ...(p.corpo as object) } }) }),
+    )
+    const item = cartaoDoTermo('Calcificação pulpar')
+    expect(within(item).getByText('Sem definição: o "?" das marcações ainda não explica este achado.')).toBeTruthy()
+    await usuario.click(within(item).getByRole('button', { name: 'Escrever definição' }))
+    const salvar = within(item).getByRole('button', { name: 'Salvar definição' }) as HTMLButtonElement
+    await usuario.type(within(item).getByRole('textbox', { name: 'Definição' }), 'Definição de teste.')
+    expect(salvar.disabled).toBe(true) // falta a fonte
+    expect(within(item).getByText(/Não copie textos de livros ou sites/)).toBeTruthy() // orienta a fonte (direito autoral)
+    await usuario.type(within(item).getByRole('textbox', { name: 'Fonte' }), 'DeCS/BIREME (teste)')
+    await usuario.click(salvar)
+    expect(await within(item).findByText('Definição de teste.')).toBeTruthy()
+    expect(within(item).getByText('Fonte: DeCS/BIREME (teste)')).toBeTruthy()
+    expect(servidor.alteracoes()).toEqual([
+      { metodo: 'PATCH', caminho: '/vocabulario/termos/10', corpo: { definicao: 'Definição de teste.', definicao_fonte: 'DeCS/BIREME (teste)' } },
+    ])
+  })
+
+  it('com definicao: mostra; "Editar" vem preenchido; "Apagar definição" envia vazio', async () => {
+    const usuario = userEvent.setup()
+    const COM = { ...TERMO, definicao: 'Texto salvo.', definicao_fonte: 'Texto do curador' }
+    const servidor = await abrir(
+      rotasPadrao({
+        [OFICIAIS]: { corpo: { termos: [COM] } },
+        'PATCH /vocabulario/termos/10': { corpo: { ...TERMO, definicao: null, definicao_fonte: null } },
+      }),
+    )
+    const item = cartaoDoTermo('Calcificação pulpar')
+    expect(within(item).getByText('Texto salvo.')).toBeTruthy()
+    await usuario.click(within(item).getByRole('button', { name: 'Editar definição' }))
+    expect((within(item).getByRole('textbox', { name: 'Definição' }) as HTMLTextAreaElement).value).toBe('Texto salvo.')
+    expect((within(item).getByRole('textbox', { name: 'Fonte' }) as HTMLInputElement).value).toBe('Texto do curador')
+    await usuario.click(within(item).getByRole('button', { name: 'Apagar definição' }))
+    expect(await within(item).findByText('Sem definição: o "?" das marcações ainda não explica este achado.')).toBeTruthy()
+    expect(servidor.alteracoes()[0].corpo).toEqual({ definicao: '' })
+  })
+})
