@@ -143,6 +143,35 @@ describe('link de convite (pedido do video, 22/11/2026)', () => {
     expect(within(cartao('Turma A')).queryByRole('textbox', { name: 'Link de convite do grupo' })).toBeNull()
   })
 
+  // 23/11/2026: o teste acima falhava de vez em quando no computador
+  // carregado. Causa (defeito de verdade): se "Gerar" respondesse ANTES da
+  // consulta da situacao do link, a resposta atrasada da consulta ("sem link
+  // ativo") apagava a validade do link recem-gerado.
+  it('consulta da situacao que chega depois de "Gerar" nao apaga o link gerado', async () => {
+    const usuario = userEvent.setup()
+    await abrir({
+      'GET /grupos/3/link-convite': { corpo: { ativo: false } },
+      'POST /grupos/3/link-convite': { corpo: { codigo: 'codigoXYZ_123', expira_em: '2026-11-29T12:00:00+00:00' } },
+    })
+    const original = globalThis.fetch
+    let soltar: () => void = () => {}
+    const segura = new Promise<void>((r) => (soltar = r))
+    vi.stubGlobal('fetch', async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url).endsWith('/grupos/3/link-convite') && !init?.method) await segura
+      return original(url, init)
+    })
+    try {
+      await usuario.click(within(cartao('Turma A')).getByRole('button', { name: 'Link de convite' }))
+      await usuario.click(await within(cartao('Turma A')).findByRole('button', { name: 'Gerar link de convite' }))
+      await within(cartao('Turma A')).findByRole('textbox', { name: 'Link de convite do grupo' })
+      soltar()
+      await new Promise((r) => setTimeout(r, 20))
+      expect(within(cartao('Turma A')).getByText(/Vale até/)).toBeTruthy()
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
   it('quem entrou pelo link aparece como "(entrou pelo link)"', async () => {
     await abrir({ 'GET /grupos': { corpo: { grupos: [{ id: 6, nome: 'Turma L', membros: [{ id: 30, nome: 'Gil', origem: 'link' }] }] } } })
     expect(within(await waitFor(() => cartao('Turma L'))).getByText(/entrou pelo link/)).toBeTruthy()
