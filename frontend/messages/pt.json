@@ -2319,7 +2319,10 @@
       "titulo": "Visualizador de imagens (OHIF)",
       "indisponivel": "Imagem indisponível no visualizador.",
       "mostrarMarcacoes": "Mostrar marcações do curador ({total})",
-      "esconderMarcacoes": "Esconder marcações do curador ({total})"
+      "esconderMarcacoes": "Esconder marcações do curador ({total})",
+      "semMarcacoesCurador": "O curador não fez marcações nesta imagem",
+      "sugestaoN": "Sugestão do revisor {numero}",
+      "legendaSugeridas": "Tracejado rosa: sugestões do revisor ({total})"
     },
     "pedido": {
       "titulo": "Pedido de segunda opinião",
@@ -2392,9 +2395,17 @@
         "valor": "Por que mudar? O que você observa na imagem?",
         "dentes": "Ex.: o 21 também está envolvido.",
         "texto": "Escreva o complemento ou a correção.",
-        "nota": "Escreva a sua observação sobre este item."
+        "nota": "Escreva a sua observação sobre este item.",
+        "marcacoes": "Explique as marcações que você sugeriu."
       },
-      "expliqueAnotacao": "Escreva a anotação (ou proponha um valor) para este item."
+      "expliqueAnotacao": "Escreva a anotação (ou proponha um valor) para este item.",
+      "novaMarcacao": "Fazer nova marcação",
+      "novaMarcacaoDica": "Desenhe na imagem onde você vê o que falta ou o que está diferente. Quem pediu verá suas marcações destacadas.",
+      "marcacoesSugeridas": "{total, plural, one {1 marcação sugerida} other {# marcações sugeridas}}",
+      "limparMarcacoes": "Limpar marcações sugeridas",
+      "editorDica": "Use oval, retângulo ou seta e escolha o achado de cada marcação. As marcações do curador não mudam.",
+      "concluir": "Concluir",
+      "cancelar": "Cancelar"
     },
     "devolvida": {
       "parecerDe": "Parecer da segunda opinião",
@@ -2425,7 +2436,9 @@
       "descartar": "Descartar",
       "motivoDescarte": "Motivo do descarte",
       "confirmarDescarte": "Confirmar descarte",
-      "voltar": "Voltar"
+      "voltar": "Voltar",
+      "marcacoesSugeridas": "{total, plural, one {1 marcação sugerida — tracejada em rosa na imagem} other {# marcações sugeridas — tracejadas em rosa na imagem}}",
+      "efeitoMarcacoes": "acrescenta as marcações à ficha"
     },
     "sair": "Sair",
     "holofote": {
