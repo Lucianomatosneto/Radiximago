@@ -471,6 +471,8 @@ describe('revisor sugere marcacoes na imagem', () => {
     const servidor = await abrir(rotasPadrao({ 'POST /curation/reviews/31/respond': { corpo: { ok: true } } }))
     await esperarFicha()
     const item = screen.getByRole('radiogroup', { name: 'Avaliar: Marcações na imagem' })
+    // holofote: o primeiro clique so acende o item; o segundo escolhe
+    await usuario.click(within(item).getByRole('radio', { name: avaliacao }))
     await usuario.click(within(item).getByRole('radio', { name: avaliacao }))
     await usuario.click(screen.getByRole('button', { name: 'Fazer nova marcação' }))
     const janela = screen.getByRole('dialog', { name: 'Fazer nova marcação' })
@@ -503,6 +505,7 @@ describe('revisor sugere marcacoes na imagem', () => {
     await abrir(rotasPadrao())
     await esperarFicha()
     const item = screen.getByRole('radiogroup', { name: 'Avaliar: Marcações na imagem' })
+    await usuario.click(within(item).getByRole('radio', { name: 'Ajustar' }))
     await usuario.click(within(item).getByRole('radio', { name: 'Ajustar' }))
     await usuario.click(screen.getByRole('button', { name: 'Fazer nova marcação' }))
     await usuario.click(screen.getByRole('button', { name: 'desenhar seta' }))
