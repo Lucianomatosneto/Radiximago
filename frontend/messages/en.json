@@ -3303,7 +3303,13 @@
       "processo_estiloide_alongado": "Elongated styloid process",
       "lesao_ossea_radiolucida": "Radiolucent bone lesion",
       "lesao_ossea_radiopaca": "Radiopaque bone lesion"
-    }
+    },
+    "mostrarDeciduos": "Primary teeth (51–85)",
+    "filtroSituacao": "Tooth status",
+    "filtroEstrutura": "Structure outside the teeth",
+    "resumoDenticao": "Dentition: {valor}",
+    "resumoSituacao": "Tooth status: {valor}",
+    "resumoEstrutura": "Outside the teeth: {valor}"
   },
   "Triagem": {
     "tituloPrefixo": "Modality",

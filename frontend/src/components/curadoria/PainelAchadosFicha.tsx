@@ -8,6 +8,7 @@ import type { TermoVocabularioApi } from '../../lib/catalogoTermos'
 import { normalizar } from '../../lib/vozCuradoria'
 import { corMarcacao } from '../../lib/marcacoes'
 import { PalavraChave } from './PainelDadosSobrepostos'
+import { DECIDUOS_INFERIOR, DECIDUOS_SUPERIOR, mostraDeciduos } from '../../lib/situacaoDentaria'
 import { InformacoesAdicionaisFicha } from '../anexos/AnexosCuradoria'
 
 // ACHADOS = AS MARCACOES DA IMAGEM (secao 2 da ficha).
@@ -28,6 +29,9 @@ const TODOS_DENTES = [
   18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28,
   48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38,
 ]
+// 23/11/2026: com denticao mista ou decidua, os deciduos (51-85) tambem
+const dentesDaLista = (denticao: string) =>
+  mostraDeciduos(denticao) ? [...TODOS_DENTES, ...DECIDUOS_SUPERIOR, ...DECIDUOS_INFERIOR] : TODOS_DENTES
 const NUMEROS = ['um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez']
 
 /** uma opcao da lista unica: achado padronizado OU termo do vocabulario */
@@ -324,7 +328,7 @@ export default function PainelAchadosFicha({
         className={`rounded-md border bg-transparent px-1 py-0.5 text-xs outline-hidden disabled:opacity-40 ${a?.dentes.length ? 'border-base-border text-slate-300' : 'border-dashed border-amber-300/60 text-amber-200'}`}
       >
         <option value="">{a?.dentes.length ? '+ dente' : t('denteQual')}</option>
-        {[...form.dentes, ...TODOS_DENTES.filter((d) => !form.dentes.includes(d))]
+        {[...form.dentes, ...dentesDaLista(form.denticao).filter((d) => !form.dentes.includes(d))]
           .filter((d) => !(a?.dentes ?? []).includes(d))
           .map((d) => (
             <option key={d} value={d}>
