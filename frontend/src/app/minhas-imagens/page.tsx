@@ -22,6 +22,7 @@ import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import GradeEnvios from '../../components/envios/GradeEnvios'
 import PedirSegundaOpiniaoLote from '../../components/segundaOpiniao/PedirSegundaOpiniaoLote'
+import FiltroTipoRadiografia from '../../components/FiltroTipoRadiografia'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
 
@@ -38,8 +39,6 @@ import AvisoSemConexao from '../../components/AvisoSemConexao'
 // 22/11/2026 (video das telas): filtro por tipo de radiografia no topo, que
 // vale para as salvas e para as enviadas por mim (GradeEnvios, que agora e
 // grade com as acoes na barra, no mesmo padrao).
-
-const TIPOS = ['periapical', 'interproximal', 'oclusal', 'panoramica', 'tomografia'] as const
 
 interface ImagemSalva {
   curation_id: number
@@ -113,7 +112,6 @@ export default function MinhasImagensPage() {
   const gradeRef = useRef<HTMLDivElement | null>(null)
   const [ladoCartao, setLadoCartao] = useState<number | null>(null)
   const [filtroTipo, setFiltroTipo] = useState<string | null>(null)
-  const tTipos = useTranslations('Pesquisa.opcoes.tipoRadiografia')
 
   // sessao (Fase 3e): 401 -> login; sem conexao -> aviso + Tentar de novo
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
@@ -344,21 +342,7 @@ export default function MinhasImagensPage() {
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
           {/* filtro por tipo (22/11/2026): vale para as enviadas e para as salvas */}
-          <div role="group" aria-label={t('filtroTipo')} className="mt-4 flex flex-wrap items-center gap-1.5">
-            {[null, ...TIPOS].map((tipo) => (
-              <button
-                key={tipo ?? 'todos'}
-                type="button"
-                aria-pressed={filtroTipo === tipo}
-                onClick={() => trocarFiltro(tipo)}
-                className={`rounded-full border px-3 py-1 text-xs transition ${
-                  filtroTipo === tipo ? 'border-brand bg-brand/15 font-semibold text-brand' : 'border-base-border text-ink-2 hover:border-brand hover:text-brand'
-                }`}
-              >
-                {tipo ? tTipos(tipo) : t('filtroTodos')}
-              </button>
-            ))}
-          </div>
+          <FiltroTipoRadiografia valor={filtroTipo} aoMudar={trocarFiltro} />
           {/* etapa B (08/11/2026): imagens que EU enviei - em grade desde 22/11/2026 */}
           <GradeEnvios equipe={equipe} filtroTipo={filtroTipo} />
 

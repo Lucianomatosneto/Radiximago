@@ -28,19 +28,24 @@ function estudoDe(url: string | null): string | null {
 // sem a coluna "Studies" (radixRecolherEstudos=1 - ver
 // ohif/app-config.template.js). As marcacoes do curador sao desenhadas DENTRO
 // do OHIF (mesma mensagem usada no visualizador da Pesquisa) e acompanham
-// zoom e arraste; o botao no canto liga/desliga.
+// zoom e arraste; o botao no canto liga/desliga (aparece SEMPRE - pedido do
+// video, 22/11/2026). As marcacoes SUGERIDAS pelo revisor vao junto, com
+// sugerida: true - o OHIF as desenha tracejadas em rosa - e nao somem quando
+// as do curador sao escondidas.
 export default function VisualizadorRevisao({
   carregando,
   viewerInfo,
   marcacoes,
   mostrarMarcacoes,
   onAlternarMarcacoes,
+  marcacoesSugeridas = [],
 }: {
   carregando: boolean
   viewerInfo: ViewerInfo | null
   marcacoes: Marcacao[]
   mostrarMarcacoes: boolean
   onAlternarMarcacoes: () => void
+  marcacoesSugeridas?: Marcacao[]
 }) {
   const t = useTranslations('SegundaOpiniao.visualizador')
   const tDescricao = useTranslations('DescricaoCuradoria')
@@ -54,13 +59,21 @@ export default function VisualizadorRevisao({
   enviarRef.current = () => {
     const janela = ohifRef.current?.contentWindow
     if (!janela || !origem || !estudo) return
+    const lista = [
+      ...(mostrarMarcacoes
+        ? marcacoes.map((m, i) => ({ ...m, texto: `${tDescricao('marcacaoN', { numero: i + 1 })}: ${textoMarcacao(m)}` }))
+        : []),
+      ...marcacoesSugeridas.map((m, i) => ({
+        ...m,
+        sugerida: true,
+        texto: `${t('sugestaoN', { numero: i + 1 })}: ${textoMarcacao(m)}`,
+      })),
+    ]
     janela.postMessage(
       {
         tipo: 'radix-marcacoes',
-        estudos: {
-          [estudo]: marcacoes.map((m, i) => ({ ...m, texto: `${tDescricao('marcacaoN', { numero: i + 1 })}: ${textoMarcacao(m)}` })),
-        },
-        visiveis: mostrarMarcacoes ? [estudo] : [],
+        estudos: { [estudo]: lista },
+        visiveis: lista.length ? [estudo] : [],
         foco: null,
         holofote: false,
         espacoDireita: 0,
@@ -93,13 +106,20 @@ export default function VisualizadorRevisao({
           {viewerInfo?.motivo ?? t('indisponivel')}
         </div>
       )}
-      {urlOhif && marcacoes.length > 0 && (
+      {urlOhif && marcacoesSugeridas.length > 0 && (
+        <p className="absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full border border-pink-400 bg-black/70 px-3 py-1 text-xs font-semibold text-pink-200 backdrop-blur-sm">
+          <span aria-hidden="true" className="inline-block w-5 border-t-2 border-dashed border-pink-400" />
+          {t('legendaSugeridas', { total: marcacoesSugeridas.length })}
+        </p>
+      )}
+      {urlOhif && (
         <button
           type="button"
           onClick={onAlternarMarcacoes}
-          aria-pressed={mostrarMarcacoes}
-          className={`absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-sm transition ${
-            mostrarMarcacoes
+          disabled={marcacoes.length === 0}
+          aria-pressed={marcacoes.length > 0 && mostrarMarcacoes}
+          className={`absolute bottom-3 left-3 z-10 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold backdrop-blur-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            marcacoes.length > 0 && mostrarMarcacoes
               ? 'border-amber-300 bg-amber-300/20 text-amber-100'
               : 'border-white/30 bg-black/60 text-slate-200 hover:border-amber-300/70'
           }`}
@@ -108,7 +128,11 @@ export default function VisualizadorRevisao({
             <path d="M12 21s-6-5.5-6-10a6 6 0 0 1 12 0c0 4.5-6 10-6 10z" />
             <circle cx="12" cy="11" r="2" />
           </svg>
-          {mostrarMarcacoes ? t('esconderMarcacoes', { total: marcacoes.length }) : t('mostrarMarcacoes', { total: marcacoes.length })}
+          {marcacoes.length === 0
+            ? t('semMarcacoesCurador')
+            : mostrarMarcacoes
+              ? t('esconderMarcacoes', { total: marcacoes.length })
+              : t('mostrarMarcacoes', { total: marcacoes.length })}
         </button>
       )}
     </div>

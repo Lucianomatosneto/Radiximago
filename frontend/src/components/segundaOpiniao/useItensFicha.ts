@@ -64,7 +64,7 @@ export function useItensFicha() {
         valor: lista((ficha.alteracoes_observadas ?? []).map(rotularAlteracaoObservada)) },
       { chave: 'erros_tecnicos', rotulo: t('erros_tecnicos'), tipo: 'nota', grupo: 'achados',
         valor: lista((ficha.erros_tecnicos ?? []).map(rotuloErro)) },
-      { chave: 'marcacoes', rotulo: t('marcacoes'), tipo: 'nota', grupo: 'achados',
+      { chave: 'marcacoes', rotulo: t('marcacoes'), tipo: 'marcacoes', grupo: 'achados',
         valor: (ficha.marcacoes ?? []).length
           ? (ficha.marcacoes ?? []).map((m, i) => `${i + 1}. ${textoMarcacao(m)}`).join(' · ')
           : vazio },

@@ -269,8 +269,7 @@
       "enviarImagem": "Send image",
       "grupos": "Groups",
       "aparelhos": "Network devices",
-      "pranchasRecebidas": "Received plates",
-      "meusGrupos": "My groups"
+      "pranchasRecebidas": "Received plates"
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
@@ -1301,8 +1300,6 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "My",
-    "filtroTipo": "Filter by type",
-    "filtroTodos": "All",
     "tituloDestaque": "images",
     "subtitulo": "Images you saved from Advanced search.",
     "desmarcarTodas": "Deselect all",
@@ -1926,7 +1923,8 @@
     "respostaEnviada": "Reply sent to {nome}.",
     "respostaEnviadaResponderDeNovo": "Reply sent to {nome}. Reply again",
     "erroRespostaVazia": "Write the reply before sending.",
-    "erroResponder": "Could not send the reply."
+    "erroResponder": "Could not send the reply.",
+    "permitirResposta": "Allow the person to reply"
   },
   "CompartilhadasComigo": {
     "tituloPrefixo": "Shared",
@@ -2323,7 +2321,10 @@
       "titulo": "Image viewer (OHIF)",
       "indisponivel": "Image unavailable in the viewer.",
       "mostrarMarcacoes": "Show curator markings ({total})",
-      "esconderMarcacoes": "Hide curator markings ({total})"
+      "esconderMarcacoes": "Hide curator markings ({total})",
+      "semMarcacoesCurador": "The curator made no marks on this image",
+      "sugestaoN": "Reviewer suggestion {numero}",
+      "legendaSugeridas": "Dashed pink: reviewer suggestions ({total})"
     },
     "pedido": {
       "titulo": "Second opinion request",
@@ -2396,9 +2397,17 @@
         "valor": "Why change it? What do you see in the image?",
         "dentes": "E.g.: tooth 21 is also involved.",
         "texto": "Write the addition or correction.",
-        "nota": "Write your remark on this item."
+        "nota": "Write your remark on this item.",
+        "marcacoes": "Explain the marks you suggested."
       },
-      "expliqueAnotacao": "Write the note (or propose a value) for this item."
+      "expliqueAnotacao": "Write the note (or propose a value) for this item.",
+      "novaMarcacao": "Draw new mark",
+      "novaMarcacaoDica": "Draw on the image where you see something missing or different. The requester will see your marks highlighted.",
+      "marcacoesSugeridas": "{total, plural, one {1 suggested mark} other {# suggested marks}}",
+      "limparMarcacoes": "Clear suggested marks",
+      "editorDica": "Use oval, rectangle or arrow and choose the finding for each mark. The curator's marks do not change.",
+      "concluir": "Done",
+      "cancelar": "Cancel"
     },
     "devolvida": {
       "parecerDe": "Second opinion",
@@ -2435,7 +2444,9 @@
       "manterAprovada": "Keep approved",
       "arquivar": "Archive",
       "motivoArquivamento": "Reason for archiving",
-      "confirmarArquivamento": "Confirm archiving"
+      "confirmarArquivamento": "Confirm archiving",
+      "marcacoesSugeridas": "{total, plural, one {1 suggested mark — dashed pink on the image} other {# suggested marks — dashed pink on the image}}",
+      "efeitoMarcacoes": "adds the marks to the record"
     },
     "sair": "Sign out",
     "holofote": {
@@ -2904,8 +2915,8 @@
     "conviteCancelado": "Invitation cancelled.",
     "erroAcao": "Could not complete. Please try again.",
     "imagensEnviadas": "Images sent to the group",
-    "comoEnviar": "To send an image, open it in the Image bank and use \"Prepare class for a group\".",
-    "irBanco": "Go to the Image bank",
+    "comoEnviar": "To send images to this group, select them in the Advanced search and use \"Send to a group\".",
+    "irBanco": "Go to the Advanced search",
     "semImagens": "No image sent to this group yet.",
     "imagemNumero": "Image #{n}",
     "retirarImagem": "Remove from group",
@@ -2923,7 +2934,8 @@
     "conversaCom": "Conversation with {nome}",
     "voce": "You",
     "responder": "Reply",
-    "responderRotulo": "Reply to {nome}"
+    "responderRotulo": "Reply to {nome}",
+    "origem_link": "joined via link"
   },
   "MeusGrupos": {
     "titulo": "My groups",
@@ -3145,5 +3157,64 @@
     "abrirPagina": "Open full page",
     "naoAceito": "I do not accept",
     "aceitar": "Accept and continue"
+  },
+  "FiltroTipo": {
+    "rotulo": "Filter by type",
+    "todos": "All"
+  },
+  "GruposUnico": {
+    "titulo": "Groups",
+    "carregando": "Loading...",
+    "abaCriei": "Groups I created",
+    "abaParticipo": "Groups I belong to",
+    "pendentes": "{n, plural, one {1 pending item} other {# pending items}}"
+  },
+  "LinkConvite": {
+    "titulo": "Invitation link",
+    "explica": "Send this link to the people you want in the group (WhatsApp, email...). They sign in with their own account and only join if they confirm. Valid for 7 days; creating a new one cancels the previous link.",
+    "campo": "Group invitation link",
+    "copiar": "Copy",
+    "copiado": "Copied!",
+    "valeAte": "Valid until {data}",
+    "usos": "{n, plural, =0 {nobody joined yet} one {1 person joined} other {# people joined}}",
+    "gerarDeNovo": "(to see the address again, create a new link)",
+    "nenhum": "No active link.",
+    "gerar": "Create invitation link",
+    "gerarNovo": "Create new link",
+    "cancelar": "Cancel link",
+    "erro": "Could not complete. Please try again.",
+    "entrar": {
+      "titulo": "Group invitation",
+      "criadoPor": "Created by {quem}",
+      "explica": "You were invited to this group. When you join, you receive the images the teacher sends to the group. Other participants do not see that you are in the group.",
+      "botao": "Join the group",
+      "agoraNao": "Not now",
+      "entrou": "You joined the group.",
+      "jaParticipa": "You already belong to this group.",
+      "dono": "You created this group. Send the link to the people you want to invite.",
+      "verGrupos": "See my groups",
+      "invalido": "Invalid or expired invitation link. Ask the group creator for a new one.",
+      "semCodigo": "This address is incomplete. Open the whole link you received."
+    }
+  },
+  "EnviarParaGrupo": {
+    "botao": "Send to a group",
+    "explica": "{n, plural, one {The selected image goes} other {The # selected images go}} to the groups you choose, with the record's official markings.",
+    "meusGrupos": "My groups",
+    "semGrupos": "You have no groups yet. Create one below.",
+    "criarNovo": "+ Create new group",
+    "nomeNovo": "New group name",
+    "convidarAjuda": "People you choose get an invitation and join when they accept.",
+    "criar": "Create group",
+    "cancelar": "Cancel",
+    "recado": "Message to the group (optional)",
+    "comentar": "Participants may comment",
+    "prepararAula": "Prepare a lesson with its own markings (this image only)",
+    "enviar": "Send {n, plural, one {1 image} other {# images}}",
+    "fechar": "Close",
+    "resultado": "Sent: {enviadas} · already in the group: {ja}.",
+    "erroEnviar": "Could not send. Please try again.",
+    "erroLimite": "Too many sends in a short time. Wait a minute and send the rest.",
+    "erroCriar": "Could not create the group."
   }
 }

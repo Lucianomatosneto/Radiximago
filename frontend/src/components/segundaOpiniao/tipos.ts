@@ -7,8 +7,9 @@ import type { Marcacao } from '../../lib/marcacoes'
 export type Avaliacao = 'concordo' | 'ajustar' | 'discordo'
 export type Classificacao = 'concordo' | 'discordancia_menor' | 'discordancia_importante'
 export type Situacao = 'pendente' | 'incorporada' | 'dispensada'
-/** valor: lista de opcoes | dentes: numeros FDI | texto: junta ao texto | nota: vai para as observacoes */
-export type TipoItem = 'valor' | 'dentes' | 'texto' | 'nota'
+/** valor: lista de opcoes | dentes: numeros FDI | texto: junta ao texto | nota: vai para as observacoes
+ * | marcacoes: o revisor desenha novas marcacoes na imagem (pedido do video, 22/11/2026) */
+export type TipoItem = 'valor' | 'dentes' | 'texto' | 'nota' | 'marcacoes'
 
 export interface Pessoa {
   id: number
@@ -38,7 +39,7 @@ export interface AnotacaoServidor {
   tipo_item: TipoItem
   avaliacao: Avaliacao
   nota: string | null
-  valor_sugerido: string | number[] | null
+  valor_sugerido: string | number[] | Marcacao[] | null
   situacao: Situacao
   resolvido_em: string | null
 }
@@ -111,6 +112,14 @@ export interface AnotacaoRascunho {
   avaliacao: Avaliacao
   nota: string
   valor: string
+  /** item "marcacoes": as marcacoes novas que o revisor desenhou */
+  marcacoes?: Marcacao[]
+}
+
+/** marcacoes sugeridas numa anotacao do servidor (item "marcacoes") */
+export function marcacoesSugeridasDe(n: AnotacaoServidor): Marcacao[] {
+  if (n.tipo_item !== 'marcacoes' || !Array.isArray(n.valor_sugerido)) return []
+  return (n.valor_sugerido as unknown[]).filter((m): m is Marcacao => typeof m === 'object' && m !== null)
 }
 
 export const OPCOES_TIPO = ['periapical', 'panoramica', 'interproximal', 'oclusal', 'tomografia']
