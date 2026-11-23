@@ -1045,7 +1045,8 @@
         "descricao": "No description",
         "observacoes": "No notes"
       },
-      "cartoesPosicao": "Cards {inicio}–{fim} of {total} · → or Tab next, ← back, ↑ ↓ change the option"
+      "cartoesPosicao": "Cards {inicio}–{fim} of {total} · Tab next, Shift+Tab back, ← → choose the option",
+      "doExame": "specific to the exam"
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {
@@ -3303,7 +3304,12 @@
       "processo_estiloide_alongado": "Elongated styloid process",
       "lesao_ossea_radiolucida": "Radiolucent bone lesion",
       "lesao_ossea_radiopaca": "Radiopaque bone lesion"
-    }
+    },
+    "arcada": {
+      "superior": "upper",
+      "inferior": "lower"
+    },
+    "deciduosTitulo": "Primary teeth (51–85)"
   },
   "Triagem": {
     "tituloPrefixo": "Modality",
