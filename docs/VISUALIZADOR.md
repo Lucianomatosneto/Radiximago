@@ -22,22 +22,26 @@ No quadro **3D** da tomografia, o botão esquerdo **gira o volume**, que é o co
 - **1:1**: um pixel da imagem ocupa um pixel da tela.
 - **Tamanho real**: mostra a imagem em milímetros de verdade. Para isso, a
   imagem precisa ter a medida do pixel (`PixelSpacing` ou
-  `ImagerPixelSpacing`) e a tela precisa ter sido calibrada uma vez com um
-  cartão de 85,6 mm (padrão ISO/IEC 7810).
-- **Calibrar tela**: refaz a calibração, por exemplo ao trocar de monitor ou
-  mudar o zoom do navegador.
+  `ImagerPixelSpacing`) e a tela precisa ter sido calibrada uma vez.
+- **Calibrar tela**: há dois jeitos.
+  - O mais rápido é escolher o **tamanho da tela em polegadas**. O Rádix
+    calcula pela resolução da tela: diagonal em pixels ÷ diagonal em mm.
+  - O mais preciso é ajustar a barra à largura de um cartão de 85,6 mm
+    (padrão ISO/IEC 7810).
+  - Refaça a calibração ao trocar de monitor ou mudar o zoom do navegador.
 
-## Painel "Tomografia" (23/11/2026)
+## Painel "Tomografia" (23/11/2026, revisto no mesmo dia)
 
 O painel aparece só quando a série aberta é uma tomografia, ou seja, modalidade
-CT com vários cortes. Ele é recolhível, para liberar a imagem.
+CT com vários cortes. Os controles ficam **em coluna, à direita da imagem**, e
+o painel é recolhível.
 
 | Grupo | Opções | Como funciona |
 |---|---|---|
-| Visualização | Axial · 3 planos · 4 quadros · 3D | Protocolos do OHIF `default`, `mpr` (reconstrução multiplanar: axial, coronal e sagital), `fourUp` (3 planos + 3D) e `only3D`. Ao abrir um estudo, o visualizador começa sozinho em **4 quadros** |
-| Filtro | Osso · Partes moles · Dentes · Original | Janela/nível nos planos: Osso 1800/400, Partes moles 400/40, Dentes 3000/1000. "Original" volta à janela do próprio exame |
-| 3D | 3D osso · 3D partes moles · 3D MIP | Predefinições de renderização de volume do cornerstone3D: `CT-Bone`, `CT-Soft-Tissue` e `CT-MIP` |
-| Espessura | Fina · MIP 5 / 10 / 20 mm | "Corte grosso" com projeção de máxima intensidade (MIP) nos planos, útil para seguir canais e raízes. "Fina" volta ao corte normal |
+| Planos | Axial · Sagital · Coronal · 3D | Cada plano é marcado ou desmarcado com um clique, e a tela mostra **só os planos marcados**: 1 plano ocupa um quadro, 2 ficam lado a lado, 3 ficam três lado a lado e 4 ficam em 2 × 2. O último plano marcado não desmarca. O exame abre com os 4. O Rádix registra no OHIF um protocolo para cada combinação (`radix-planos-…`), com quadros de volume (reconstrução multiplanar) |
+| Janela | Osso · Partes moles · Dentes · Original | Valores em HU: Osso 2000/500, Partes moles 400/40, Dentes 3000/1000. Quando o exame **não está em HU** (por exemplo, valores de 0 a 4095), o Rádix acha o ar e o pico das partes moles no próprio exame e converte as janelas para a escala dele (ar = −1000 HU; pico = 40 HU). "Original" volta à janela do exame |
+| 3D | (só osso) | O quadro 3D abre direto com o volume **só do osso**, usando a predefinição `CT-Bone`, convertida para a escala do exame do mesmo jeito |
+| Espessura | 0,625 · 2 · 5 · 10 mm | 0,625 mm é o corte fino. As outras espessuras fazem um "corte grosso" pela **média** dos cortes, como nos programas de TCFC |
 
 ## Reconstrução panorâmica (23/11/2026)
 

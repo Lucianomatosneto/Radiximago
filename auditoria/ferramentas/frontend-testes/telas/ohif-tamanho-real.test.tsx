@@ -105,6 +105,20 @@ describe('tamanho real (milimetros)', () => {
     expect(cameras.at(-1)?.parallelScale).toBeCloseTo(150)
   })
 
+  // jeito mais pratico (pedido do Luciano, 23/11/2026): escolher as
+  // POLEGADAS do monitor; o Radix calcula pela resolucao da tela
+  it('calibrar pelas polegadas do monitor: 24" em 1920 x 1080', () => {
+    Object.defineProperty(window.screen, 'width', { value: 1920, configurable: true })
+    Object.defineProperty(window.screen, 'height', { value: 1080, configurable: true })
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    fireEvent.click(screen.getByRole('button', { name: 'Calibrar tela' }))
+    const janela = screen.getByRole('dialog', { name: 'Calibrar a tela' })
+    fireEvent.change(within(janela).getByRole('combobox', { name: 'Tamanho da tela (polegadas)' }), { target: { value: '24' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Salvar' }))
+    // diagonal 2202,9 px / (24 x 25,4 mm) = 3,614 px por mm
+    expect(Number(window.localStorage.getItem('radix-px-por-mm'))).toBeCloseTo(Math.hypot(1920, 1080) / (24 * 25.4), 3)
+  })
+
   it('"Calibrar tela" abre a calibracao a qualquer momento; Cancelar fecha sem salvar', () => {
     montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
     fireEvent.click(screen.getByRole('button', { name: 'Calibrar tela' }))
