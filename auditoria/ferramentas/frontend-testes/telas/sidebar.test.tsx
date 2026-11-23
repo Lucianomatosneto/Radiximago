@@ -260,3 +260,21 @@ describe('Fase 3d: nome do menu e traducoes', () => {
     expect(itens()).toHaveLength(Object.keys(JSON.parse(ler('messages/pt.json')).Sidebar.itens).length)
   })
 })
+
+// PEDIDO DO VIDEO (22/11/2026, A1): "ao clicar em Curadoria, a palavra sobe e
+// a tela nao abre; e preciso clicar de novo". Causa: o item inteiro (a area
+// do clique) subia ao passar o mouse; clicando perto da borda de baixo, o
+// botao do mouse soltava FORA do item e o navegador nao contava o clique
+// (reproduzido no Chromium). Agora so o TEXTO sobe; a area do clique fica
+// parada.
+describe('clique na borda do item (A1)', () => {
+  it('nenhum item do menu muda de lugar ao passar o mouse; so o conteudo de dentro', async () => {
+    abrir('administrador')
+    await screen.findByRole('link', { name: 'Curadoria' })
+    for (const link of screen.getAllByRole('link')) {
+      expect(link.className).not.toMatch(/(^|\s)hover:-?translate/)
+    }
+    const conteudo = screen.getByRole('link', { name: 'Curadoria' }).firstElementChild as HTMLElement
+    expect(conteudo.className).toMatch(/group-hover:-translate-y-0\.5/)
+  })
+})
