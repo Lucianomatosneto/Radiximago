@@ -24,6 +24,7 @@ from app.modules import orthanc_client
 from app.modules.geometria_imagem import RECORTADA, SEM_BORDA
 from app.modules.curations import (
     Curation, CurationHistory, CurationReview, CurationReviewNote, SituacaoAnotacao, StatusCuradoria, StatusRevisao,
+    TipoRadiografia,
 )
 
 from app.modules.vocabulario import CurationTermo
@@ -51,10 +52,17 @@ def _perfil(usuario: User) -> str:
 # ---------------------------------------------------------------------
 # GET /curation/pending
 # ---------------------------------------------------------------------
+# Filtro da fila por modalidade (23/11/2026): os tipos de radiografia, o
+# "intraoral" do reconhecimento automatico e as imagens sem tipo conhecido
+NAO_INFORMADO = "nao_informado"
+FILTROS_TIPO = [t.value for t in TipoRadiografia] + ["intraoral", NAO_INFORMADO]
+
+
 @router.get("/pending")
 def listar_pendentes(
     skip: int = Query(0, ge=0, description="Quantos registros pular (paginacao)"),
     limit: int = Query(50, ge=1, le=200, description="Maximo de registros a retornar"),
+    tipo: str | None = Query(None, max_length=20, description="Modalidade preliminar (ver FILTROS_TIPO)"),
     usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA)),
     db: Session = Depends(get_db),
 ):
@@ -80,8 +88,13 @@ def listar_pendentes(
     # da fila; a ficha dele vale para o exame inteiro e o visualizador abre
     # o estudo completo). Radiografias nao sao afetadas (em_volume = falso).
     nao_e_corte_seguinte = filtro_exame_unico()
-    consulta_base = (
-        db.query(OrthancReference, Curation.id, Curation.sugerida_por_id)
+    if tipo is not None and tipo not in FILTROS_TIPO:
+        raise HTTPException(status_code=422, detail="Modalidade desconhecida.")
+    # modalidade preliminar (23/11/2026): a sugestao de professor ja tem o
+    # tipo na ficha; as demais usam o tipo conhecido na entrada da imagem
+    tipo_da_fila = func.coalesce(Curation.tipo_radiografia, OrthancReference.tipo_preliminar, NAO_INFORMADO)
+    consulta_toda = (
+        db.query(OrthancReference, Curation.id, Curation.sugerida_por_id, tipo_da_fila)
         .outerjoin(Curation, Curation.orthanc_reference_id == OrthancReference.id)
         .filter(or_(Curation.id.is_(None), sugestao_aguardando))
         .filter(OrthancReference.ativo.is_(True))
@@ -91,6 +104,15 @@ def listar_pendentes(
         .filter(nao_e_corte_seguinte)
         .order_by(OrthancReference.id)
     )
+    # contagem de CADA modalidade na fila inteira (para o curador escolher)
+    por_tipo = {
+        valor: total
+        for valor, total in consulta_toda.order_by(None)
+        .with_entities(tipo_da_fila, func.count(OrthancReference.id))
+        .group_by(tipo_da_fila)
+        .all()
+    }
+    consulta_base = consulta_toda.filter(tipo_da_fila == tipo) if tipo else consulta_toda
 
     total_pendentes = consulta_base.count()
     # 01/11/2026 (QA item 9): imagens sem ficha que AINDA nao entram na fila
@@ -107,10 +129,10 @@ def listar_pendentes(
         .count()
     )
     registros = consulta_base.offset(skip).limit(limit).all()
-    cortes = contar_cortes(db, [ref for ref, _, _ in registros])
+    cortes = contar_cortes(db, [ref for ref, _, _, _ in registros])
 
     nomes = {u.id: u.nome for u in db.query(User).filter(
-        User.id.in_({sid for _, _, sid in registros if sid}))} if registros else {}
+        User.id.in_({sid for _, _, sid, _ in registros if sid}))} if registros else {}
     itens = [
         {
             "curation_id": curation_id,
@@ -125,12 +147,15 @@ def listar_pendentes(
             # exame em volume: quantos cortes a ficha vai cobrir (1 = radiografia)
             "em_volume": ref.em_volume,
             "cortes": cortes[ref.id],
+            # modalidade preliminar (23/11/2026); None = nao informado
+            "tipo_preliminar": None if tipo_item == NAO_INFORMADO else tipo_item,
         }
-        for ref, curation_id, sugerida_por_id in registros
+        for ref, curation_id, sugerida_por_id, tipo_item in registros
     ]
 
     return {
         "total_pendentes": total_pendentes,
+        "por_tipo": por_tipo,
         "aguardando_recorte": aguardando_recorte,
         "skip": skip,
         "limit": limit,
