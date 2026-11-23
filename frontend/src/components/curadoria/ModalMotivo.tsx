@@ -23,7 +23,7 @@ export default function ModalMotivo({
   onCancelar,
   onConfirmar,
 }: {
-  tipo: 'descartar' | 'segunda_opiniao'
+  tipo: 'descartar' | 'segunda_opiniao' | 'arquivar'
   motivoTexto: string
   onMotivoChange: (valor: string) => void
   erro: string
@@ -44,7 +44,7 @@ export default function ModalMotivo({
     >
       <div className="w-full max-w-md rounded-2xl border border-base-border bg-base-surface p-6 shadow-2xl">
         <h2 id={idTitulo} className="mb-4 text-lg font-semibold text-ink">
-          {tipo === 'descartar' ? t('descartarTitulo') : t('segundaOpiniaoTitulo')}
+          {tipo === 'descartar' ? t('descartarTitulo') : tipo === 'arquivar' ? t('arquivarTitulo') : t('segundaOpiniaoTitulo')}
         </h2>
         <label htmlFor={idMotivo} className={campoLabel}>
           {t('motivo')}

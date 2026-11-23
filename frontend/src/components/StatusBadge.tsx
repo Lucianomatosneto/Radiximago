@@ -14,6 +14,10 @@ const MAPA_STATUS: Record<string, { chave: string; classe: string }> = {
     chave: 'baixaQualidade',
     classe: 'bg-red-500/15 text-red-300 border-red-600/40',
   },
+  arquivada: {
+    chave: 'arquivada',
+    classe: 'bg-slate-500/15 text-slate-300 border-slate-400/40',
+  },
   descartada: {
     chave: 'descartada',
     classe: 'bg-slate-700/60 text-slate-300 border-slate-500/40',

@@ -159,6 +159,20 @@ describe('editar uma marcacao existente', () => {
     expect(estado.marcacoes[0].angulo).toBeGreaterThan(95)
   })
 
+  it('pedido do video (22/11): a alca de girar tem a seta de rotacao e a de aumentar tem o +, sem texto', async () => {
+    await abrir({ inicial: [OVAL] })
+    fireEvent.mouseDown(fundo().querySelector('polygon') as Element, { clientX: 120, clientY: 80 })
+    fireEvent.mouseUp(window)
+    const giro = fundo().querySelector('[data-simbolo="girar"]')
+    const mais = fundo().querySelector('[data-simbolo="aumentar"]')
+    expect(giro).toBeTruthy()
+    expect(mais).toBeTruthy()
+    // so o desenho: nao atrapalha o arrasto da alca nem escreve texto
+    expect(giro?.getAttribute('pointer-events')).toBe('none')
+    expect(mais?.getAttribute('pointer-events')).toBe('none')
+    expect(fundo().querySelector('text')).toBeNull()
+  })
+
   it('com a forma inclinada, redimensionar mantem o canto oposto no lugar', async () => {
     await abrir({ inicial: [{ ...OVAL, angulo: 90 }] })
     fireEvent.mouseDown(fundo().querySelector('polygon') as Element, { clientX: 120, clientY: 80 })

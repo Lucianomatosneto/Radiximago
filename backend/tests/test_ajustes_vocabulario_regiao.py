@@ -133,13 +133,16 @@ def test_curadoria_grava_regioes_da_imagem(client, db, criar_usuario, criar_fich
 
 
 def test_relatorio_mostra_nome_do_curador_sem_lista_de_usuarios(client, db, criar_usuario, criar_ficha):
-    """01/11/2026: "Fichas por curador" mostrava "Usuario #1" para o curador,
-    que nao pode ver /users/ - os nomes agora vem junto do relatorio."""
+    """01/11/2026: "Fichas por curador" mostrava "Usuario #1" - os nomes passaram
+    a vir junto do relatorio. 18/11/2026 (decisao do Luciano): os nomes vem
+    SO para o administrador; o curador ve a posicao ("Curador 1"...), conferido
+    em tests/test_ranking_curadores_sem_nome.py."""
     curador = criar_usuario(perfil=UserRole.curador)
+    admin = criar_usuario(perfil=UserRole.administrador)
     f = criar_ficha()
     db.get(Curation, f.id).curador_id = curador.id
     db.commit()
-    h = cabecalho_auth(obter_token(client, curador.email))
+    h = cabecalho_auth(obter_token(client, admin.email))
     r = client.get("/admin/stats", headers=h)
     assert r.status_code == 200, r.text
     dados = r.json()

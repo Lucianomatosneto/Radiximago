@@ -121,7 +121,12 @@ window.config = {
     // levava a lista de estudos do proprio OHIF, que nao e usada no Radix
     // (quem escolhe as imagens e o Radix); o nome RADIX IMAGO fica maior.
     '[data-cy="return-to-work-list"]>svg{display:none!important}',
-    '[data-cy="return-to-work-list"]{pointer-events:none!important;cursor:default!important}'
+    '[data-cy="return-to-work-list"]{pointer-events:none!important;cursor:default!important}',
+    // CIRCULO NO CANTO SUPERIOR DIREITO DA IMAGEM (pedido de 22/11/2026):
+    // o menu de janela/cores do OHIF some; o contraste continua na barra
+    '[data-cy="viewport-grid"] .right-viewport-scrollbar.top-\\[4px\\]{display:none!important}',
+    // cubo (girar em 3D), camera (captura) e layout: somem (22/11/2026)
+    '[data-cy="TrackballRotate"],[data-cy="Capture"],[data-cy="Layout"]{display:none!important}'
   ].join('');
   function aplicar() {
     if (document.getElementById('radix-tema')) return;
@@ -136,6 +141,10 @@ window.config = {
 
 // ---------------------------------------------------------------------
 // SEM A COLUNA "STUDIES" E SEM O "LAYOUT" DO OHIF
+// 22/11/2026 (video das telas): vale SEMPRE, mesmo sem parametro no
+// endereco ("Abrir no visualizador" de Minhas imagens abre o OHIF direto).
+// Tambem somem o cubo (TrackballRotate) e a camera (Capture). Quem escolhe
+// as imagens e o layout e o Radix.
 // Com radixRecolherEstudos=1 na URL (Curadoria e visualizador do Radix), a
 // coluna "Studies" da esquerda do OHIF SOME por completo - nem a faixa
 // estreita com a seta e a aba "Studies" fica (pedido de 20/10/2026). A
@@ -145,10 +154,8 @@ window.config = {
 // So esconde (display:none): nada e apagado nem muda no OHIF fora do Radix.
 // ---------------------------------------------------------------------
 ;(function () {
-  var params = new URLSearchParams(window.location.search);
-  var semEstudos = params.get('radixRecolherEstudos') === '1';
-  var semLayout = params.get('radixTeclaR') === '1';
-  if (!semEstudos && !semLayout) return;
+  var semEstudos = true;
+  var semLayout = true;
 
   // a coluna da esquerda inteira: sobe do botao da seta ate o bloco que fica
   // AO LADO da area de imagens (o pai dele ja contem a area de imagens)
@@ -163,15 +170,20 @@ window.config = {
     return true;
   }
 
-  // o botao "Layout" e o invólucro dele na barra de ferramentas
-  function esconderLayout() {
-    var botao = document.querySelector('[data-cy="Layout"]');
+  // um botao da barra de ferramentas e o invólucro dele
+  function esconderBotao(nome) {
+    var botao = document.querySelector('[data-cy="' + nome + '"]');
     if (!botao) return false;
     var alvo = botao;
     // sobe enquanto o pai so tiver este botao dentro (tooltip, moldura...)
     for (var i = 0; i < 4 && alvo.parentElement && alvo.parentElement.children.length === 1; i++) alvo = alvo.parentElement;
     if (alvo.style.display !== 'none') alvo.style.setProperty('display', 'none', 'important');
     return true;
+  }
+  function esconderLayout() {
+    esconderBotao('Layout');
+    esconderBotao('TrackballRotate');
+    esconderBotao('Capture');
   }
 
   // o OHIF redesenha a tela algumas vezes ao abrir: confere por ~30 s

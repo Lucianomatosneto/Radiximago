@@ -41,8 +41,8 @@ Regra de ouro: **toda regra abaixo é aplicada no servidor**. A tela pode ajudar
   - alteração do seio maxilar → Seio maxilar.
 
   A escolha do curador sempre prevalece. A busca por região também acha as fichas antigas pelo mesmo mapa.
-- **Regiões que a imagem mostra:** a ficha tem o campo "Regiões que a imagem mostra" (`curations.regioes_imagem`), separado das regiões dos achados.
-  - Panorâmica e tomografia já vêm com as regiões do exame (`REGIOES_PADRAO_POR_EXAME`). Panorâmica: maxila, mandíbula, osso alveolar, canal mandibular, seio maxilar e ATM. Tomografia: maxila, mandíbula e osso alveolar, porque o campo de visão varia. O curador marca ou desmarca.
+- **Regiões que a imagem mostra:** a ficha tem o campo "Regiões que a imagem mostra" (`curations.regioes_imagem`), separado das regiões dos achados. **Desde 22/11/2026 ele não aparece mais na tela da Curadoria** (decisão do Luciano): o curador não marca nem desmarca; o campo é preenchido sozinho pelo padrão do tipo de exame.
+  - Panorâmica e tomografia já vêm com as regiões do exame (`REGIOES_PADRAO_POR_EXAME`). Panorâmica: maxila, mandíbula, osso alveolar, canal mandibular, seio maxilar e ATM. Tomografia: maxila, mandíbula e osso alveolar, porque o campo de visão varia.
   - Periapical, interproximal e oclusal começam vazias. Senão, toda periapical "teria" coroa e raiz, e o filtro não separaria nada.
   - Ficha antiga, sem o campo: a busca usa o padrão do tipo de exame.
   - O filtro "Região anatômica" da Pesquisa avançada e o termo `regiao:` usam a mesma regra: achado na região, região padrão do achado ou região que a imagem mostra.
@@ -122,6 +122,8 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - Quem analisa (professor ou curador escolhido) coloca na fila de curadoria ou devolve com recado. **Só o curador publica** no banco geral, aprovando a ficha.
 - Imagem ainda não aprovada é vista só pelo **dono**, por **quem foi escolhido para analisar**, pela **curadoria** (se estiver na fila) e pelo administrador. Qualquer outra pessoa recebe "não encontrada" (404), sem saber que ela existe (`visivel_para`).
 - O dono pode **retirar** a própria imagem enquanto ela está "só para mim" **ou em análise** (desde 10/11/2026). Depois que entra na fila de curadoria, não.
+- **Aviso com aceite (22/11/2026):** ao entrar em Enviar imagem, a pessoa lê que a imagem não tem finalidade diagnóstica e que a original deve ser anexada ao prontuário do paciente conforme o protocolo da instituição, e marca **Estou ciente**. Sem isso a tela não libera o envio. O aceite fica na auditoria (`aviso_envio_ciente`, com a versão `AVISO_ENVIO_VERSAO`).
+- **Arquivar (desde 18/11/2026):** curador ou administrador pode **arquivar** uma ficha **aprovada**, com motivo obrigatório. A imagem sai da pesquisa, do visualizador dos estudantes, das pranchas, dos compartilhamentos e dos grupos (toda liberação exige ficha aprovada), mas **nada é apagado**. **Desarquivar** devolve a ficha a "aprovada". Ficha arquivada não pode ser aprovada nem descartada direto; para corrigir, reabre-se para edição. Fica no histórico e na auditoria (`arquivamento`, `desarquivamento`).
 - **Tomografia (exame em volume, desde 18/11/2026):** os cortes da mesma série entram na fila como **um item só** (o primeiro corte que chegou, com o selo "TC · N cortes"). A ficha, a aprovação e a pesquisa valem para o **exame inteiro**, e o visualizador abre todos os cortes. O aviso de texto na imagem considera **todos os cortes** (pior caso). Cortes não são girados nem recortados um a um (desalinharia o volume). Radiografias, inclusive séries de periapicais, continuam uma imagem por item.
   - O agrupamento vale também para **Imagens recebidas**, **Minhas imagens**, **Para analisar** e as **contagens dos painéis** (um exame conta uma vez). Retirar, desativar/reativar, mandar para análise, colocar na fila ou devolver valem para **todos os cortes** do exame.
 
@@ -165,7 +167,7 @@ pendente ─┐
 |---|---|
 | Só se edita ficha **pendente** ou **em análise** | `curation/common.py` (`STATUS_EDITAVEIS`) |
 | **Aprovar exige "anonimização validada"** marcada pelo curador (LGPD) | `curation/common.py` (`_executar_aprovacao`) |
-| **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
+| **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição; desde 22/11/2026, como a região da imagem só vem do padrão de panorâmica e tomografia, nas outras radiografias o curador precisa marcar os dentes). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
 | **Só administrador e curador gravam na curadoria** (editar ficha, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário). O **suporte só lê** (02/11/2026) | `auth.py` (`PERFIS_CURADORIA_ESCRITA`) |
 | Descartar exige justificativa | `curation/common.py` |
 | Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
@@ -176,7 +178,7 @@ pendente ─┐
 
 **Outras regras de negócio:**
 - Pedido de acesso: o e-mail precisa ser confirmado (link de 24 h, invalidado após 5 senhas erradas). Desde 01/11/2026 (auditoria do administrador, A3, decisão do Luciano), **só estudante** entra assim que confirma o e-mail (auditoria `aprovacao_automatica_solicitacao`, quem aprovou: o sistema). **Professor, curador e pesquisador** sempre dependem da aprovação do administrador (`aprovacao_solicitacao_acesso`, com o nome de quem aprovou), porque professor e curador trabalham com a curadoria e o envio de imagens. Entre 28/10 e 01/11, professor e pesquisador também entravam sozinhos. O administrador pode bloquear a conta ou trocar o perfil a qualquer momento.
-- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
+- Compartilhamento: só imagem aprovada; não se compartilha consigo mesmo; o destinatário precisa ter conta. Desde 22/11/2026 a pessoa é escolhida **pelo nome** (a mesma busca da prancha, com o e-mail mascarado; vai o `usuario_id`) ou pelo e-mail, como antes; pessoa inativa ou inexistente recebe a mesma resposta neutra. Quem recebe vê só a anotação escrita na caixa do compartilhamento (as "Minhas anotações" de quem enviou são privadas e não vão junto) e pode escondê-la só da própria visão, sem apagar os dados de quem enviou.
 - Conta: o administrador não pode excluir a própria conta. Conta bloqueada, inativa ou excluída perde o acesso na hora, em qualquer sessão.
 
 ## 3. Limites por usuário e globais (ASVS 2.1.3, 2.3.2 e 2.4.1)
@@ -259,3 +261,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.15 | 10/11/2026 | Envio por todos os perfis (08/11) e foto do negatoscópio pelo celular com janela de 5 minutos (seção 1.9); limite da foto (seção 3); professor identificado por `enviado_por_id` (seção 1.6) |
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
 | 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
+| 1.18 | 22/11/2026 | Pedidos do vídeo das telas: Regiões da imagem fora da Curadoria (seção 1); compartilhar escolhendo a pessoa pelo nome; aviso com aceite em Enviar imagem (seção 1.9) |

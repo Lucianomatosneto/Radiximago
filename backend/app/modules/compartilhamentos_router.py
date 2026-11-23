@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
@@ -90,8 +90,17 @@ def email_valido(email: str) -> bool:
 
 
 class CompartilharEntrada(BaseModel):
-    email: str = Field(min_length=3, max_length=150)
+    # Um dos dois: o e-mail digitado, ou o id da pessoa escolhida na busca por
+    # nome (a mesma da prancha, /prancha/pessoas - pedido de 22/11/2026)
+    email: Optional[str] = Field(default=None, min_length=3, max_length=150)
+    usuario_id: Optional[int] = Field(default=None, ge=1)
     mensagem: Optional[str] = Field(default=None, max_length=500)
+
+    @model_validator(mode="after")
+    def _um_destinatario(self):
+        if (self.email is None) == (self.usuario_id is None):
+            raise ValueError("Informe o e-mail ou escolha a pessoa (um dos dois).")
+        return self
 
 
 def _ficha_compartilhavel(db: Session, curation_id: int) -> Curation:
@@ -128,21 +137,23 @@ def compartilhar(
     usuario: User = Depends(obter_usuario_atual),
     db: Session = Depends(get_db),
 ):
-    email = dados.email.strip().lower()
-    if not email_valido(email):
-        raise HTTPException(status_code=422, detail="Digite um e-mail válido.")
-    if email == (usuario.email or "").strip().lower():
-        raise HTTPException(status_code=400, detail="Você não pode compartilhar uma imagem com você mesmo.")
+    consulta = db.query(User).filter(User.ativo.is_(True), User.bloqueado.is_(False), User.excluido.is_(False))
+    if dados.usuario_id is not None:
+        if dados.usuario_id == usuario.id:
+            raise HTTPException(status_code=400, detail="Você não pode compartilhar uma imagem com você mesmo.")
+        consulta = consulta.filter(User.id == dados.usuario_id)
+    else:
+        email = (dados.email or "").strip().lower()
+        if not email_valido(email):
+            raise HTTPException(status_code=422, detail="Digite um e-mail válido.")
+        if email == (usuario.email or "").strip().lower():
+            raise HTTPException(status_code=400, detail="Você não pode compartilhar uma imagem com você mesmo.")
+        consulta = consulta.filter(func.lower(User.email) == email)
 
     _ficha_compartilhavel(db, curation_id)
     mensagem = (dados.mensagem or "").strip() or None
 
-    destinatario = (
-        db.query(User)
-        .filter(func.lower(User.email) == email)
-        .filter(User.ativo.is_(True), User.bloqueado.is_(False), User.excluido.is_(False))
-        .first()
-    )
+    destinatario = consulta.first()
 
     if destinatario is None:
         # Mesma resposta de quando da certo (ver RESPOSTA NEUTRA no topo).

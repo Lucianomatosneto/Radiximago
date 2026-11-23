@@ -99,6 +99,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
     itens: [
       a('upload_imagem', 'Imagem DICOM enviada', 'DICOM image uploaded'),
       a('foto_convertida_dicom', 'Foto convertida em DICOM', 'Photo converted to DICOM'),
+      a('aviso_envio_ciente', 'Ciente do aviso de envio (sem finalidade diagnóstica)', 'Acknowledged the upload notice (not for diagnosis)'),
       a('foto_janela_aberta', 'Envio de foto aberto (janela de 5 min)', 'Photo upload window opened'),
       a('foto_recebida', 'Foto recebida pelo celular', 'Photo received from phone'),
       a('foto_enviada_analise', 'Foto enviada para análise', 'Photo sent for review'),
@@ -163,6 +164,8 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('aprovacao', 'Ficha aprovada', 'Record approved'),
       a('descarte', 'Ficha descartada', 'Record discarded'),
       a('curadoria_reaberta', 'Ficha reaberta para editar', 'Record reopened for editing'),
+      a('arquivamento', 'Ficha arquivada (saiu de circulação)', 'Record archived (out of circulation)'),
+      a('desarquivamento', 'Ficha desarquivada (voltou a circular)', 'Record unarchived (back in circulation)'),
       a('solicitacao_segunda_opiniao', 'Segunda opinião pedida', 'Second opinion requested'),
       a('resposta_segunda_opiniao', 'Segunda opinião respondida', 'Second opinion answered'),
       a('aprovacao_pos_segunda_opiniao', 'Aprovada após segunda opinião', 'Approved after second opinion'),

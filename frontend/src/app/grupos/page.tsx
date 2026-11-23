@@ -205,6 +205,7 @@ export default function GruposPage() {
                     <span className="text-xs text-ink-3">{t('membros', { n: g.membros.length })}</span>
                   </div>
                   <p className="text-xs text-ink-3">{g.aceita_pedidos ? t('aparecesNaBusca') : t('foraDaBusca')}</p>
+                  {!g.aceita_pedidos && <p className="text-xs text-ink-3">{t('foraDaBuscaAjuda')}</p>}
 
                   {(g.pedidos ?? []).length > 0 && (
                     <section aria-label={t('pedidos')} className="rounded-lg bg-amber-500/10 p-2">

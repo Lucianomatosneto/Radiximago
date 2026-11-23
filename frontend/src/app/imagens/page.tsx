@@ -9,6 +9,8 @@ import StatusBadge from '../../components/StatusBadge'
 import DashboardCard from '../../components/DashboardCard'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
+import ModalMotivo from '../../components/curadoria/ModalMotivo'
+import { extrairErro } from '../../components/segundaOpiniao/tipos'
 
 // "Aguardando curadoria" = sem ficha (null) + pendente + em analise - a
 // MESMA regra do Inicio e do Painel administrativo (contagem unica do
@@ -40,8 +42,12 @@ const OPCOES_CURADORIA = [
   'segunda_opiniao',
   'baixa_qualidade',
   'descartada',
+  'arquivada',
   'sem_ficha',
 ]
+// Arquivar / desarquivar (18/11/2026, Bloco 6): so curador e administrador,
+// como no servidor (PERFIS_CURADORIA_ESCRITA)
+const PERFIS_ARQUIVAM = ['administrador', 'curador']
 
 const CLASSES_ANONIMIZACAO: Record<string, string> = {
   concluida: 'bg-emerald-500/15 text-emerald-300 border-emerald-600/40',
@@ -66,6 +72,7 @@ interface Imagem {
   anonimizacao_status: string
   criado_em?: string
   status_curadoria: string | null
+  curation_id?: number | null
   aguarda_recorte?: boolean
   /** tomografia (18/11/2026): uma linha por exame; quantos cortes */
   em_volume?: boolean
@@ -92,6 +99,13 @@ export default function ImagensPage() {
   const [pagina, setPagina] = useState(1)
   const [filtroAnonimizacao, setFiltroAnonimizacao] = useState('')
   const [filtroCuradoria, setFiltroCuradoria] = useState('')
+  const [podeArquivar, setPodeArquivar] = useState(false)
+  // ficha sendo arquivada (abre o pedido de motivo) e estado da acao
+  const [arquivando, setArquivando] = useState<number | null>(null)
+  const [motivoArquivo, setMotivoArquivo] = useState('')
+  const [erroArquivo, setErroArquivo] = useState('')
+  const [enviandoArquivo, setEnviandoArquivo] = useState(false)
+  const [avisoArquivo, setAvisoArquivo] = useState('')
 
   // Envio de imagem nova (professor/curador/admin/suporte).
   const inputArquivoRef = useRef<HTMLInputElement>(null)
@@ -160,8 +174,53 @@ export default function ImagensPage() {
     }
 
     setAutenticado(true)
+    setPodeArquivar(PERFIS_ARQUIVAM.includes(sessao.perfil))
     void buscarImagens()
   })
+
+  async function confirmarArquivamento() {
+    if (arquivando === null) return
+    if (!motivoArquivo.trim()) {
+      setErroArquivo(t('arquivo.motivoObrigatorio'))
+      return
+    }
+    setEnviandoArquivo(true)
+    setErroArquivo('')
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${arquivando}/arquivar`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo: motivoArquivo.trim() }),
+      })
+      if (!r.ok) {
+        setErroArquivo(await extrairErro(r, t('arquivo.erro')))
+        return
+      }
+      setArquivando(null)
+      setMotivoArquivo('')
+      setAvisoArquivo(t('arquivo.arquivada'))
+      void buscarImagens()
+    } catch {
+      setErroArquivo(t('arquivo.erro'))
+    } finally {
+      setEnviandoArquivo(false)
+    }
+  }
+
+  async function desarquivar(curationId: number) {
+    setAvisoArquivo('')
+    try {
+      const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${curationId}/desarquivar`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: '{}',
+      })
+      setAvisoArquivo(r.ok ? t('arquivo.desarquivada') : await extrairErro(r, t('arquivo.erro')))
+      if (r.ok) void buscarImagens()
+    } catch {
+      setAvisoArquivo(t('arquivo.erro'))
+    }
+  }
 
   async function enviarImagem(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault()
@@ -425,7 +484,21 @@ export default function ImagensPage() {
                       </td>
                       <td className="px-4 py-3">
                         {imagem.status_curadoria ? (
-                          <StatusBadge status={imagem.status_curadoria} />
+                          <span className="inline-flex flex-wrap items-center gap-2">
+                            <StatusBadge status={imagem.status_curadoria} />
+                            {podeArquivar && imagem.curation_id && imagem.status_curadoria === 'aprovada' && (
+                              <button type="button" onClick={() => { setArquivando(imagem.curation_id ?? null); setMotivoArquivo(''); setErroArquivo('') }}
+                                      className="text-xs text-slate-400 underline hover:text-brand">
+                                {t('arquivo.arquivar')}
+                              </button>
+                            )}
+                            {podeArquivar && imagem.curation_id && imagem.status_curadoria === 'arquivada' && (
+                              <button type="button" onClick={() => void desarquivar(imagem.curation_id as number)}
+                                      className="text-xs text-slate-400 underline hover:text-brand">
+                                {t('arquivo.desarquivar')}
+                              </button>
+                            )}
+                          </span>
                         ) : (
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${CLASSE_SEM_FICHA}`}
@@ -448,6 +521,18 @@ export default function ImagensPage() {
                 )}
               </tbody>
             </table>
+            {avisoArquivo && <p role="status" className="px-4 py-2 text-sm text-slate-300" data-teste="aviso-arquivo">{avisoArquivo}</p>}
+            {arquivando !== null && (
+              <ModalMotivo
+                tipo="arquivar"
+                motivoTexto={motivoArquivo}
+                onMotivoChange={setMotivoArquivo}
+                erro={erroArquivo}
+                enviando={enviandoArquivo}
+                onCancelar={() => setArquivando(null)}
+                onConfirmar={() => void confirmarArquivamento()}
+              />
+            )}
           </div>
 
           {/* M5: paginas de 50 (antes as 454 imagens numa tabela so) */}

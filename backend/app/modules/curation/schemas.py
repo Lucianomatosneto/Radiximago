@@ -152,6 +152,14 @@ class CurationDiscard(BaseModel):
     motivo: TextoMedio
 
 
+class CurationArquivar(BaseModel):
+    motivo: TextoMedio
+
+
+class CurationDesarquivar(BaseModel):
+    motivo: Optional[TextoMedio] = None
+
+
 class ReviewRequest(BaseModel):
     motivo: TextoMedio
     primeiro_parecer: Optional[TextoMedio] = None
