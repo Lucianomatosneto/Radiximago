@@ -9,7 +9,9 @@ Gestao (administrador, suporte e curador):
 - GET    /vocabulario/termos-livres           -> textos livres ("Outro") mais repetidos
 - POST   /vocabulario/termos                  -> promove um texto a termo oficial
 - PATCH  /vocabulario/termos/{id}             -> edita (nome, categoria, DeCS, ativo,
-                                                 na_busca, nas_curadorias)
+                                                 na_busca, nas_curadorias, definicao + fonte)
+- GET    /vocabulario/definicao?texto=...     -> definicao de um achado (qualquer usuario
+                                                 logado; o "?" das marcacoes - 22/11/2026)
 - POST   /vocabulario/termos/{id}/sinonimos   -> acrescenta sinonimo
 - DELETE /vocabulario/sinonimos/{id}          -> remove sinonimo
 - GET    /vocabulario/termos/{id}/candidatas  -> fichas cujo texto bate com o termo (para conferir)
@@ -22,8 +24,8 @@ Toda alteracao fica na auditoria.
 from collections import Counter, defaultdict
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -45,6 +47,16 @@ router = APIRouter(prefix="/vocabulario", tags=["Vocabulário controlado"])
 
 Categoria = Literal["achado", "alteracao", "outro"]
 
+DEFINICAO_MAX = 2000
+FONTE_MAX = 300
+SEM_DEFINICAO = "Ainda não há definição cadastrada para este achado."
+
+
+def _conferir_fonte(definicao: str | None, fonte: str | None) -> None:
+    """Definicao (nao vazia) exige fonte - direito autoral e ensino."""
+    if definicao is not None and definicao.strip() and not (fonte or "").strip():
+        raise ValueError("Indique a fonte da definição (ex.: DeCS/BIREME ou texto do curador).")
+
 
 class TermoEntrada(BaseModel):
     termo: str = Field(min_length=2, max_length=150)
@@ -55,6 +67,14 @@ class TermoEntrada(BaseModel):
     # avancada? fica como opcao nas proximas curadorias?
     na_busca: bool = True
     nas_curadorias: bool = True
+    # 22/11/2026 (B14): definicao do termo, sempre com a fonte
+    definicao: Optional[str] = Field(default=None, max_length=DEFINICAO_MAX)
+    definicao_fonte: Optional[str] = Field(default=None, max_length=FONTE_MAX)
+
+    @model_validator(mode="after")
+    def _fonte_obrigatoria(self):
+        _conferir_fonte(self.definicao, self.definicao_fonte)
+        return self
 
 
 class TermoEdicao(BaseModel):
@@ -64,6 +84,14 @@ class TermoEdicao(BaseModel):
     ativo: Optional[bool] = None
     na_busca: Optional[bool] = None
     nas_curadorias: Optional[bool] = None
+    # definicao "" apaga a definicao e a fonte
+    definicao: Optional[str] = Field(default=None, max_length=DEFINICAO_MAX)
+    definicao_fonte: Optional[str] = Field(default=None, max_length=FONTE_MAX)
+
+    @model_validator(mode="after")
+    def _fonte_obrigatoria(self):
+        _conferir_fonte(self.definicao, self.definicao_fonte)
+        return self
 
 
 class SinonimoEntrada(BaseModel):
@@ -98,6 +126,8 @@ def _serializar(termo: TermoVocabulario, quantidade: int = 0, aprovadas: int | N
         "termo": termo.termo,
         "categoria": termo.categoria,
         "codigo_decs": termo.codigo_decs,
+        "definicao": termo.definicao,
+        "definicao_fonte": termo.definicao_fonte,
         "ativo": termo.ativo,
         "na_busca": termo.na_busca is not False,
         "nas_curadorias": termo.nas_curadorias is not False,
@@ -181,6 +211,34 @@ def listar_vocabulario(
     ]}
 
 
+@router.get("/definicao")
+def definicao_do_achado(
+    texto: str = Query(min_length=1, max_length=150),
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Definicao de um achado para o "?" das marcacoes (pedido do video,
+    22/11/2026). Acha o termo ATIVO pelo nome ou por um sinonimo (sem
+    acento, maiusculas etc.). Sem termo, inativo ou sem definicao: a mesma
+    resposta 404."""
+    normalizado = normalizar(texto)
+    termo = (
+        db.query(TermoVocabulario)
+        .filter(TermoVocabulario.termo_normalizado == normalizado, TermoVocabulario.ativo.is_(True))
+        .first()
+    )
+    if termo is None:
+        termo = (
+            db.query(TermoVocabulario)
+            .join(SinonimoTermo, SinonimoTermo.termo_id == TermoVocabulario.id)
+            .filter(SinonimoTermo.sinonimo_normalizado == normalizado, TermoVocabulario.ativo.is_(True))
+            .first()
+        )
+    if termo is None or not termo.definicao:
+        raise HTTPException(status_code=404, detail=SEM_DEFINICAO)
+    return {"termo": termo.termo, "definicao": termo.definicao, "fonte": termo.definicao_fonte}
+
+
 @router.get("/termos-livres")
 def termos_livres(
     usuario: User = Depends(exigir_perfis(*PERFIS_FICHA_LEITURA)),
@@ -250,6 +308,8 @@ def criar_termo(
         codigo_decs=(dados.codigo_decs or "").strip() or None,
         na_busca=dados.na_busca,
         nas_curadorias=dados.nas_curadorias,
+        definicao=(dados.definicao or "").strip() or None,
+        definicao_fonte=((dados.definicao_fonte or "").strip() or None) if (dados.definicao or "").strip() else None,
         criado_por_id=usuario.id,
     )
     db.add(termo)
@@ -293,8 +353,18 @@ def editar_termo(
         termo.na_busca = dados.na_busca
     if dados.nas_curadorias is not None:
         termo.nas_curadorias = dados.nas_curadorias
+    if dados.definicao is not None:
+        texto = dados.definicao.strip()
+        termo.definicao = texto or None
+        termo.definicao_fonte = ((dados.definicao_fonte or "").strip() or None) if texto else None
+    elif dados.definicao_fonte is not None and termo.definicao:
+        fonte = dados.definicao_fonte.strip()
+        if not fonte:
+            raise HTTPException(status_code=422, detail="Indique a fonte da definição (ex.: DeCS/BIREME ou texto do curador).")
+        termo.definicao_fonte = fonte
     _auditar(db, usuario.id, "vocabulario_termo_editado", termo.id,
-             f"termo='{termo.termo}' ativo={termo.ativo} na_busca={termo.na_busca} nas_curadorias={termo.nas_curadorias}")
+             f"termo='{termo.termo}' ativo={termo.ativo} na_busca={termo.na_busca} nas_curadorias={termo.nas_curadorias} "
+             f"definicao={'sim' if termo.definicao else 'nao'}")
     db.commit()
     db.refresh(termo)
     return _serializar(termo, _contagem_fichas(db).get(termo.id, 0))

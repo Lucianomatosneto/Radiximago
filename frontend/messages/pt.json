@@ -820,7 +820,14 @@
     "confirmarEmailTitulo": "Enviar por e-mail?",
     "confirmarEmailUma": "Esta imagem vai para o e-mail cadastrado na sua conta. Confirma o envio?",
     "simEnviar": "Sim, enviar",
-    "cancelarEnvio": "Cancelar"
+    "cancelarEnvio": "Cancelar",
+    "definicao": {
+      "oQueE": "O que é {achado}?",
+      "carregando": "Carregando…",
+      "fonte": "Fonte: {fonte}",
+      "semDefinicao": "Ainda não há definição cadastrada para este achado.",
+      "erro": "Não foi possível carregar a definição."
+    }
   },
   "Curadoria": {
     "inicio": "Início",
@@ -2003,7 +2010,20 @@
     "buscaPorTexto": "+{quantidade} imagem(ns) encontrada(s) pelo nome ou sinônimo escrito na ficha, mesmo sem o termo ligado.",
     "aprovadas": "{quantidade} aprovada(s)",
     "opcaoNaBusca": "Opção na Pesquisa avançada",
-    "opcaoNasCuradorias": "Opção nas curadorias"
+    "opcaoNasCuradorias": "Opção nas curadorias",
+    "definicao": {
+      "campo": "Definição",
+      "fonte": "Fonte",
+      "fonteDica": "Ex.: DeCS/BIREME, edição 2025 — ou: Texto do curador",
+      "direitos": "Use a definição do DeCS (BIREME/OPAS) citando a fonte e a edição, ou escreva com suas palavras e indique a fonte. Não copie textos de livros ou sites sem permissão (Lei 9.610/98).",
+      "salvar": "Salvar definição",
+      "apagar": "Apagar definição",
+      "cancelar": "Cancelar",
+      "fonteTexto": "Fonte: {fonte}",
+      "editar": "Editar definição",
+      "sem": "Sem definição: o \"?\" das marcações ainda não explica este achado.",
+      "escrever": "Escrever definição"
+    }
   },
   "Voz": {
     "titulo": "Curadoria por voz",
