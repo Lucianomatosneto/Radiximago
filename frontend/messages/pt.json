@@ -3340,5 +3340,33 @@
     "explicaCorrigir": "Para corrigir uma modalidade: em \"Mostrar\" escolha a modalidade (por exemplo, Interproximal), selecione as que não são dela e mova para a modalidade certa.",
     "moverPara": "Mover para:",
     "movidas": "{n, plural, one {1 imagem movida} other {# imagens movidas}} para {tipo}."
+  },
+  "Reconstrucao": {
+    "tituloPrefixo": "Reconstrução",
+    "tituloDestaque": "panorâmica",
+    "atalho": "Reconstrução panorâmica",
+    "explica": "Gera, a partir da tomografia, uma panorâmica reconstruída e cortes transversais à arcada. As imagens novas ficam no mesmo exame, para visualizar e ensinar; a tomografia original não muda e nada entra na fila da curadoria.",
+    "voltar": "Voltar",
+    "semImagem": "Nenhuma tomografia indicada.",
+    "erroCarregar": "Não foi possível abrir a tomografia.",
+    "erroGerar": "Não foi possível gerar a reconstrução.",
+    "pronto": "Pronto: panorâmica e {n} cortes transversais gerados. Abra o exame no visualizador e use o painel Tomografia → Reconstrução.",
+    "altura": "Altura do corte axial (mm)",
+    "faixaAxial": "Faixa do corte axial (MIP, mm)",
+    "altImagem": "Corte axial da tomografia",
+    "nenhumPonto": "Nenhum ponto marcado",
+    "pontos": "{n, plural, one {1 ponto marcado} other {# pontos marcados}}",
+    "desfazer": "Desfazer ponto",
+    "limpar": "Limpar",
+    "passo1": "Ajuste a altura até a arcada aparecer inteira (a faixa MIP junta alguns milímetros).",
+    "passo2": "Clique pontos no meio da arcada, de um lado ao outro (pelo menos 3; 6 a 10 dão uma curva melhor).",
+    "passo3": "Ajuste a faixa da panorâmica e os cortes, e gere.",
+    "espessura": "Faixa da panorâmica (mm)",
+    "intervalo": "Intervalo entre cortes (mm)",
+    "largura": "Largura dos cortes (mm)",
+    "gerar": "Gerar panorâmica e cortes",
+    "gerando": "Gerando…",
+    "feitas": "Reconstruções já feitas",
+    "itemLista": "{data}: {n} cortes · faixa {faixa} mm · a cada {intervalo} mm"
   }
 }
