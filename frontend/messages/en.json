@@ -2319,7 +2319,10 @@
       "titulo": "Image viewer (OHIF)",
       "indisponivel": "Image unavailable in the viewer.",
       "mostrarMarcacoes": "Show curator markings ({total})",
-      "esconderMarcacoes": "Hide curator markings ({total})"
+      "esconderMarcacoes": "Hide curator markings ({total})",
+      "semMarcacoesCurador": "The curator made no marks on this image",
+      "sugestaoN": "Reviewer suggestion {numero}",
+      "legendaSugeridas": "Dashed pink: reviewer suggestions ({total})"
     },
     "pedido": {
       "titulo": "Second opinion request",
@@ -2392,9 +2395,17 @@
         "valor": "Why change it? What do you see in the image?",
         "dentes": "E.g.: tooth 21 is also involved.",
         "texto": "Write the addition or correction.",
-        "nota": "Write your remark on this item."
+        "nota": "Write your remark on this item.",
+        "marcacoes": "Explain the marks you suggested."
       },
-      "expliqueAnotacao": "Write the note (or propose a value) for this item."
+      "expliqueAnotacao": "Write the note (or propose a value) for this item.",
+      "novaMarcacao": "Draw new mark",
+      "novaMarcacaoDica": "Draw on the image where you see something missing or different. The requester will see your marks highlighted.",
+      "marcacoesSugeridas": "{total, plural, one {1 suggested mark} other {# suggested marks}}",
+      "limparMarcacoes": "Clear suggested marks",
+      "editorDica": "Use oval, rectangle or arrow and choose the finding for each mark. The curator's marks do not change.",
+      "concluir": "Done",
+      "cancelar": "Cancel"
     },
     "devolvida": {
       "parecerDe": "Second opinion",
@@ -2425,7 +2436,9 @@
       "descartar": "Discard",
       "motivoDescarte": "Reason for discarding",
       "confirmarDescarte": "Confirm discard",
-      "voltar": "Back"
+      "voltar": "Back",
+      "marcacoesSugeridas": "{total, plural, one {1 suggested mark — dashed pink on the image} other {# suggested marks — dashed pink on the image}}",
+      "efeitoMarcacoes": "adds the marks to the record"
     },
     "sair": "Sign out",
     "holofote": {
