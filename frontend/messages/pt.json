@@ -1254,7 +1254,9 @@
       "semRegistro": "Imagem recebida antes da verificação automática de texto. Procure com atenção nome, data ou número escritos na imagem antes de marcar “Anonimização validada”.",
       "volumeTitulo": "Tomografia com {cortes} cortes.",
       "volumeExplica": "A ficha vale para o exame inteiro; o visualizador mostra todos os cortes.",
-      "volumeTodosCortes": "(Verificação feita nos {cortes} cortes do exame.)"
+      "volumeTodosCortes": "(Verificação feita nos {cortes} cortes do exame.)",
+      "ciente": "Estou ciente de que devo conferir se há nome, data, número ou outro dado da pessoa na imagem antes de validar a anonimização.",
+      "continuar": "Continuar"
     },
     "orientacao": {
       "titulo": "Girar a imagem",
