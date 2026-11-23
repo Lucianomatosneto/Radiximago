@@ -198,6 +198,9 @@ pendente ─┐
 | **Grupos**: pedir para entrar (estudante) e convidar (dono do grupo) | 20 por minuto; um convite ou pedido pendente por pessoa em cada grupo; vencem em 30 dias | conta | `grupos_router.py` |
 | **Grupos**: enviar imagem ao grupo (modo aula; só imagem aprovada e ativa; mensagem até 1.000 letras, até 50 marcações) | 30 por minuto | conta | `grupos_aula_router.py` |
 | **Grupos**: comentar uma imagem do grupo e responder (comentário particular, até 500 letras) | 20 por minuto | conta | `grupos_aula_router.py` |
+| **Grupos** (22/11/2026): gerar link de convite (só o dono; um ativo por grupo; vale 7 dias) | 10 por minuto | conta | `grupos_router.py` |
+| **Grupos**: ver o grupo pelo link de convite (antes de confirmar) | 20 por minuto | conta | `grupos_router.py` |
+| **Grupos**: entrar no grupo pelo link de convite (só com login e confirmando) | 10 por minuto | conta | `grupos_router.py` |
 | Transcrição de voz | 120 trechos por minuto; áudio de até 10 MB | conta | `voz_router.py` |
 | **E-mail com uma imagem** (para o próprio e-mail) | 20 por hora | conta | `search_router.py` |
 | **E-mail com várias imagens** | 5 por hora; até 10 imagens por e-mail | conta | `search_router.py` |
@@ -262,3 +265,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
 | 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
 | 1.18 | 22/11/2026 | Pedidos do vídeo das telas: Regiões da imagem fora da Curadoria (seção 1); compartilhar escolhendo a pessoa pelo nome; aviso com aceite em Enviar imagem (seção 1.9) |
+| 1.19 | 22/11/2026 | Grupos: tela única (Grupos que criei / Grupos de que participo) e link de convite (7 dias, um ativo por grupo, só o resumo do código no banco, entrar só confirmando; limites na seção 3) |
