@@ -3380,6 +3380,7 @@
     "canalPronto": "Done: canal drawn on the panoramic and on {n} slices. In the viewer, use Tomography → Reconstruction → Panoramic with canal.",
     "canalErroCarregar": "Could not open the panoramic of this reconstruction.",
     "canalErroGravar": "Could not save the canal.",
-    "canalLimite": "Teaching material, not diagnostic. The panoramic shows the canal height along the arch; on the cross-sections the mark shows that height, not the buccolingual position."
+    "canalLimite": "Teaching material, not diagnostic. The panoramic shows the canal height along the arch; on the cross-sections the mark shows that height, not the buccolingual position.",
+    "dicaCortes": "Mouse wheel or ↑ ↓ arrows over the image move through the axial slices, one at a time."
   }
 }
