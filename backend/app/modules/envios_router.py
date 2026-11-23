@@ -112,6 +112,13 @@ def _situacao(ref: OrthancReference, aprovada: bool) -> str:
     return "devolvida" if ref.devolucao_nota else "so_para_mim"
 
 
+def _tipo_do_envio(curadoria: Curation | None, ref: OrthancReference) -> str | None:
+    tipo = getattr(curadoria, "tipo_radiografia", None) if curadoria else None
+    if tipo:
+        return getattr(tipo, "value", tipo)
+    return "tomografia" if ref.em_volume else None
+
+
 def _item(db: Session, ref: OrthancReference) -> dict:
     curadoria = (db.query(Curation).filter(Curation.orthanc_reference_id == ref.id)
                  .order_by(Curation.id.desc()).first())
@@ -128,6 +135,9 @@ def _item(db: Session, ref: OrthancReference) -> dict:
         "devolucao_nota": ref.devolucao_nota,
         "texto_na_imagem": ref.texto_na_imagem,
         "curation_id": curadoria.id if curadoria and curadoria.status == "aprovada" else None,
+        # filtro por tipo em Minhas imagens (22/11/2026): o tipo da ficha
+        # (qualquer situacao); sem ficha, volume e tomografia; senao, vazio
+        "tipo_radiografia": _tipo_do_envio(curadoria, ref),
         # abrir no visualizador (a portaria das imagens confere quem pode ver)
         "viewer_url": (f"{settings.OHIF_BASE_URL}/viewer?StudyInstanceUIDs={ref.study_instance_uid}"
                        if ref.study_instance_uid else None),
