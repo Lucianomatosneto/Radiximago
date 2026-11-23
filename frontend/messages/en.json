@@ -1285,7 +1285,22 @@
     "editarDepoisConfirmar": "Reopen this curation for editing? It leaves the users' search until you approve it again. The previous version stays in the history.",
     "editarDepoisErro": "Could not reopen the curation.",
     "cancelarReabrir": "Cancel",
-    "confirmarReabrir": "Yes, reopen"
+    "confirmarReabrir": "Yes, reopen",
+    "marcadorTomografia": {
+      "carregando": "Loading the CT…",
+      "erroCarregar": "Could not open the slices of this CT.",
+      "plano": "Plane",
+      "axial": "Axial",
+      "sagital": "Sagittal",
+      "coronal": "Coronal",
+      "corte": "Slice",
+      "corteDe": "Slice {n} of {total}",
+      "corteN": "slice {n}",
+      "dica": "Mouse wheel or ↑ ↓ arrows move through the slices. Mark on the slice where the lesion shows best.",
+      "marcacoesDoExame": "Marks in this exam",
+      "nenhuma": "No marks yet.",
+      "ir": "Go"
+    }
   },
   "SegundaOpiniaoPage": {
     "titulo": "Second opinion",
