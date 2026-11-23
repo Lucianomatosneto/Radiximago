@@ -14,6 +14,7 @@ com /images/{id}/activate). Primeiro SIMULA; so grava com --aplicar.
   desativado inteiro, com UM registro de auditoria;
 - quem aplica e um administrador (o e-mail dele vai na auditoria);
 - lista vazia ou que nao acha nenhuma imagem: para sem mexer em nada.
+Os testes usam limitar_a para so tocar nas imagens que eles mesmos criam.
 """
 
 import pytest
@@ -61,7 +62,7 @@ def test_le_os_ids_do_envio_csv(roteiro, tmp_path):
 def test_simulacao_nao_altera_nada(roteiro, criar_referencia, criar_usuario, db):
     adm = criar_usuario(perfil=UserRole.administrador)
     nova, antiga = criar_referencia(), criar_referencia()
-    resumo = roteiro.executar(db, {nova.id}, adm.email, aplicar=False)
+    resumo = roteiro.executar(db, {nova.id}, adm.email, aplicar=False, limitar_a={nova.id, antiga.id})
     assert resumo["manter"] == 1
     assert antiga.id in resumo["desativar"]
     db.expire_all()
@@ -75,7 +76,8 @@ def test_aplicar_desativa_as_antigas_e_mantem_o_acervo(roteiro, criar_referencia
     antiga = criar_referencia()
     tc_antiga = _volume(criar_referencia, db, n=4)
     # do acervo: a radiografia e SO o 1o corte da tomografia (o exame inteiro fica)
-    resumo = roteiro.executar(db, {nova.id, tc_nova[0].id}, adm.email, aplicar=True)
+    deste_teste = {r.id for r in [nova, antiga, *tc_nova, *tc_antiga]}
+    resumo = roteiro.executar(db, {nova.id, tc_nova[0].id}, adm.email, aplicar=True, limitar_a=deste_teste)
     db.expire_all()
     assert db.get(OrthancReference, nova.id).ativo is True
     assert all(db.get(OrthancReference, c.id).ativo for c in tc_nova)
@@ -109,5 +111,5 @@ def test_lista_que_nao_acha_nada_para_sem_mexer(roteiro, criar_referencia, criar
 def test_ids_do_acervo_que_nao_existem_sao_avisados(roteiro, criar_referencia, criar_usuario, db):
     adm = criar_usuario(perfil=UserRole.administrador)
     nova = criar_referencia()
-    resumo = roteiro.executar(db, {nova.id, 999999998}, adm.email, aplicar=False)
+    resumo = roteiro.executar(db, {nova.id, 999999998}, adm.email, aplicar=False, limitar_a={nova.id})
     assert resumo["nao_encontradas"] == [999999998]
