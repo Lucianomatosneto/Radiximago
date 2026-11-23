@@ -10,6 +10,7 @@ import { CaixaModalidade, ORDEM_MODALIDADES, PerguntaModalidade, modalidadesPres
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
+import MarcadorTomografia from '../../components/curadoria/MarcadorTomografia'
 import PintorSegmentacao from '../../components/segmentacao/PintorSegmentacao'
 import AvisoTextoNaImagem from '../../components/curadoria/AvisoTextoNaImagem'
 import ControleOrientacao from '../../components/curadoria/ControleOrientacao'
@@ -1735,6 +1736,26 @@ export default function CuradoriaPage() {
                         : 'hidden'
                   }
                 >
+                  {/* tomografia (23/11/2026, "opcao 1"): marca no corte do plano;
+                      a pintura e das radiografias */}
+                  {textoNaImagem.cortes > 1 ? (
+                    <div className="min-h-0 flex-1">
+                      <MarcadorTomografia
+                        key={`${fichaAtiva.curationId}-${versaoMarcador}`}
+                        orthancReferenceId={fichaAtiva.orthancReferenceId}
+                        marcacoes={form.marcacoes}
+                        onMarcar={(marcacoes) => {
+                          const ids = new Set(marcacoes.map((m) => m.id))
+                          const achados = form.achados
+                            .map((a) => ({ ...a, marcacoes: a.marcacoes.filter((id) => ids.has(id)) }))
+                            .filter((a, i) => a.marcacoes.length > 0 || form.achados[i].marcacoes.length === 0)
+                          setForm(comAchados({ ...form, marcacoes }, achados))
+                        }}
+                        onCarregou={() => setMarcadorPronto(true)}
+                      />
+                    </div>
+                  ) : (
+                  <>
                   <div className="mb-2 flex shrink-0 items-center gap-1.5" role="tablist">
                     {(['formas', 'pintura'] as const).map((aba) => (
                       <button
@@ -1792,6 +1813,8 @@ export default function CuradoriaPage() {
                       onCarregou={() => setMarcadorPronto(true)}
                     />
                   </div>
+                  </>
+                  )}
                 </section>
               )}
             </div>
