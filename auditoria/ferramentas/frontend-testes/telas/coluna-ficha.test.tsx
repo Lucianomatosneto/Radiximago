@@ -361,7 +361,8 @@ describe('ficha em cartoes (panoramica)', () => {
 
   it('erro tecnico em 2 cartoes: cada um com uma parte dos botoes; os dois aparecem juntos', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    for (let i = 0; i < 9; i++) tecla('Tab')
+    // anonimizacao → tipo → idade → genero → dentes → qualidade → origem → achados → erro
+    for (let i = 0; i < 8; i++) tecla('Tab')
     expect(aceso()).toBe('erro_tecnico')
     expect(visiveis()).toEqual(['erro_tecnico', 'erro_tecnico_2', 'descricao'])
     const a = within(cartao('erro_tecnico')).getAllByRole('button', { pressed: false }).length
