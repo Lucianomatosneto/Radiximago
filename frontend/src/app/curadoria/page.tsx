@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import BotaoInicio from '../../components/BotaoInicio'
 import Logo from '../../components/Logo'
+import { CaixaModalidade, ORDEM_MODALIDADES, PerguntaModalidade, modalidadesPresentes, totalDaFila } from '../../components/curadoria/EscolhaModalidade'
 import FilaCuradoriaHorizontal, { ImagemPendente } from '../../components/curadoria/FilaCuradoriaHorizontal'
 import PainelVisualizador, { ViewerInfo } from '../../components/curadoria/PainelVisualizador'
 import MarcadorAchado from '../../components/curadoria/MarcadorAchado'
@@ -158,6 +159,14 @@ export default function CuradoriaPage() {
 
   const [carregandoFila, setCarregandoFila] = useState(false)
   const [erroFila, setErroFila] = useState('')
+  // Modalidade (23/11/2026, pedido do Luciano): o curador escolhe o tipo de
+  // exame que vai curar. '' = todas. Com mais de uma modalidade na fila e
+  // nada escolhido ainda, a tela PERGUNTA antes de abrir a 1a imagem.
+  const [porTipo, setPorTipo] = useState<Record<string, number>>({})
+  const [tipoFiltro, setTipoFiltro] = useState('')
+  const [perguntandoModalidade, setPerguntandoModalidade] = useState(false)
+  const tipoFiltroRef = useRef('')
+  const modalidadeDecididaRef = useRef(false)
   const [criandoId, setCriandoId] = useState<number | null>(null)
   const [indiceAtual, setIndiceAtual] = useState<number | null>(null)
   // So dispara uma vez, na entrada na tela - depois disso, trocar de item
@@ -324,6 +333,12 @@ export default function CuradoriaPage() {
     const professor = sessao.perfil === 'professor'
     ehProfessorRef.current = professor
     setEhProfessor(professor)
+    const tipoNoEndereco = new URLSearchParams(window.location.search).get('tipo')
+    if (tipoNoEndereco && ORDEM_MODALIDADES.includes(tipoNoEndereco as (typeof ORDEM_MODALIDADES)[number])) {
+      tipoFiltroRef.current = tipoNoEndereco
+      setTipoFiltro(tipoNoEndereco)
+      modalidadeDecididaRef.current = true
+    }
     void carregarFila()
     if (!professor) void carregarReviewsRespondidas()
     // "Editar depois do envio" (31/10/2026): a tela da imagem reabriu a
@@ -333,6 +348,7 @@ export default function CuradoriaPage() {
     const ref = Number(q.get('ref'))
     if (editar > 0 && ref > 0) {
       autoAbriuPrimeiraRef.current = true
+      modalidadeDecididaRef.current = true // abre ESSA ficha, sem perguntar
       void carregarViewerUrl(ref)
       void carregarFichaCompleta(editar, ref)
     }
@@ -344,13 +360,14 @@ export default function CuradoriaPage() {
   // na fila ao lado" e precisar clicar no primeiro item manualmente.
   useEffect(() => {
     if (autoAbriuPrimeiraRef.current) return
+    if (perguntandoModalidade) return
     if (carregando || carregandoFila) return
     if (fichaAtiva || criandoId !== null) return
     if (!autenticado || fila.length === 0) return
     autoAbriuPrimeiraRef.current = true
     void abrirImagem(fila[0], 0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado])
+  }, [carregando, carregandoFila, fila, fichaAtiva, criandoId, autenticado, perguntandoModalidade])
 
   // Sai da tela cheia quando o curador DEIXA a Curadoria (navega pra
   // outra tela) - necessario porque o alvo da Fullscreen API e
@@ -418,6 +435,22 @@ export default function CuradoriaPage() {
     setTotalPendentes(total)
   }
 
+  /** escolhe a modalidade ('' = todas): guarda no endereco e pede a fila dela */
+  function escolherModalidade(tipo: string) {
+    tipoFiltroRef.current = tipo
+    modalidadeDecididaRef.current = true
+    setTipoFiltro(tipo)
+    setPerguntandoModalidade(false)
+    const q = new URLSearchParams(window.location.search)
+    if (tipo) q.set('tipo', tipo)
+    else q.delete('tipo')
+    const texto = q.toString()
+    window.history.replaceState(null, '', `${window.location.pathname}${texto ? `?${texto}` : ''}`)
+    // sem imagem aberta, a 1a da modalidade escolhida abre sozinha
+    if (!fichaAtiva) autoAbriuPrimeiraRef.current = false
+    void carregarFila()
+  }
+
   async function carregarFila(opcoes?: { skip?: number; append?: boolean }) {
     setCarregandoFila(true)
     setErroFila('')
@@ -426,7 +459,9 @@ export default function CuradoriaPage() {
       const resposta = await fetch(
         ehProfessorRef.current
           ? `${process.env.NEXT_PUBLIC_API_URL}/curation/professor/fila`
-          : `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50`,
+          : `${process.env.NEXT_PUBLIC_API_URL}/curation/pending?skip=${skip}&limit=50${
+              tipoFiltroRef.current ? `&tipo=${encodeURIComponent(tipoFiltroRef.current)}` : ''
+            }`,
         { credentials: 'include' }
       )
       if (resposta.status === 401) {
@@ -442,6 +477,13 @@ export default function CuradoriaPage() {
         return
       }
       const dados = await resposta.json()
+      const contagem: Record<string, number> = dados.por_tipo ?? {}
+      setPorTipo(contagem)
+      if (!modalidadeDecididaRef.current && !ehProfessorRef.current) {
+        // so pergunta quando ha o que escolher (2 ou mais modalidades)
+        modalidadeDecididaRef.current = true
+        if (modalidadesPresentes(contagem).length > 1) setPerguntandoModalidade(true)
+      }
       aplicarFila(dados.itens ?? [], dados.total_pendentes ?? 0, { append: opcoes?.append })
       setAguardandoRecorte(dados.aguardando_recorte ?? 0)
     } catch {
@@ -1426,6 +1468,9 @@ export default function CuradoriaPage() {
             <Logo variante="icone" />
             <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
             <BotaoInicio rotulo={t('inicio')} />
+            {!ehProfessor && !perguntandoModalidade && totalDaFila(porTipo) > 0 && (
+              <CaixaModalidade porTipo={porTipo} valor={tipoFiltro} onEscolher={escolherModalidade} />
+            )}
 
             {/* Atalho visivel para a tela cheia "de verdade" (sem abas e
                 barra de endereco): o navegador so deixa entrar nela com um
@@ -1449,6 +1494,8 @@ export default function CuradoriaPage() {
             )}
           </div>
         )}
+
+        {perguntandoModalidade && <PerguntaModalidade porTipo={porTipo} onEscolher={escolherModalidade} />}
 
         {/* AREA DE TRABALHO - barra superior + fila horizontal + visualizador
             + ficha. Nao e o elemento que vira tela cheia (o alvo e o

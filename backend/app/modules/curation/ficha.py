@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
-from app.modules.curations import Curation, StatusCuradoria, DENTES_PERMANENTES
+from app.modules.curations import Curation, StatusCuradoria, TipoRadiografia, DENTES_PERMANENTES
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.achados import Achado, ErroTecnico, regiao_do_achado
 from app.modules.curations import AlteracaoObservada
@@ -113,6 +113,9 @@ def criar_curadoria(
 
     if dados.tipo_radiografia is not None:
         tipo, motivo_tipo = dados.tipo_radiografia, "informado por quem abriu a ficha"
+    elif imagem.tipo_preliminar_origem == "envio" and imagem.tipo_preliminar in {t.value for t in TipoRadiografia}:
+        # 23/11/2026: quem enviou a imagem informou o tipo
+        tipo, motivo_tipo = TipoRadiografia(imagem.tipo_preliminar), "informado por quem enviou a imagem"
     else:
         tipo, motivo_tipo = sugerir_tipo_da_imagem(imagem.orthanc_id)
 

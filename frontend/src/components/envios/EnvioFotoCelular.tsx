@@ -15,6 +15,7 @@
 //    com o mesmo prazo, e so a foto precisa ser refeita.
 // 4. Acabou o tempo: a foto e descartada do celular e recomeca do inicio.
 
+import TipoExameEnvio from './TipoExameEnvio'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Camera, ImageUp, Send, Timer } from 'lucide-react'
@@ -58,6 +59,7 @@ export default function EnvioFotoCelular({
   const [confirmado, setConfirmado] = useState(false)
   const [destino, setDestino] = useState<Destino>(opcoes[0])
   const [analistaId, setAnalistaId] = useState('')
+  const [tipoExame, setTipoExame] = useState('')
   const [nota, setNota] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState('')
@@ -168,6 +170,7 @@ export default function EnvioFotoCelular({
     dados.append('comprovante', janela.comprovante)
     dados.append('destino', destino)
     dados.append('confirmacao_sem_identificacao', 'true')
+    if (tipoExame) dados.append('tipo_radiografia', tipoExame)
     if (destino === 'analise') {
       dados.append('analista_id', analistaId)
       if (nota.trim()) dados.append('nota', nota.trim())
@@ -261,6 +264,13 @@ export default function EnvioFotoCelular({
                    className="mt-0.5 h-5 w-5 accent-teal-500" data-teste="confirmacao-sem-dados" />
             <span className="text-sm text-ink">{tf('confirmacao')}</span>
           </label>
+
+          <TipoExameEnvio
+            id="tipo-exame-foto"
+            valor={tipoExame}
+            aoMudar={setTipoExame}
+            className="min-h-11 w-full rounded-lg border border-base-border bg-base-surface2 px-3 text-sm text-ink"
+          />
 
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-ink">{t('passo2')}</legend>

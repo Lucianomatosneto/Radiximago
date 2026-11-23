@@ -102,6 +102,14 @@ class OrthancReference(Base):
     # primeiro a chegar) e a ficha vale para o exame inteiro. Decidido na
     # entrada pela modalidade DICOM (substituir_instancia.e_corte_de_volume).
     em_volume: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=text("false"))
+    # Modalidade PRELIMINAR (23/11/2026, pedido do Luciano; Manual do Bloco 6,
+    # item 7): o tipo de exame conhecido ANTES da curadoria, para o curador
+    # escolher o que vai curar na fila. Vem de quem enviou ("envio" - um tipo
+    # de radiografia) ou do reconhecimento na entrada ("automatico":
+    # tomografia, panoramica ou "intraoral", que junta periapical,
+    # interproximal e oclusal). Vazio = imagem antiga, nao informado.
+    tipo_preliminar: Mapped[str | None] = mapped_column(String(20), nullable=True, index=True)
+    tipo_preliminar_origem: Mapped[str | None] = mapped_column(String(10), nullable=True)
 
     curations = relationship("Curation", back_populates="orthanc_reference")
 

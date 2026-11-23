@@ -240,6 +240,18 @@ describe('enviar', () => {
     expect(screen.getByRole('button', { name: /Enviar outra foto/ })).toBeTruthy()
   })
 
+  it('tipo de exame (opcional, 23/11/2026) vai junto com a foto', async () => {
+    const usuario = userEvent.setup()
+    const { servidor } = abrir({ 'POST /envios/foto': { status: 201, corpo: {} } })
+    await ateOsDados(usuario)
+    await usuario.selectOptions(screen.getByLabelText('Tipo de exame (opcional)'), 'Periapical')
+    await usuario.click(screen.getByRole('checkbox', { name: /Confirmo que a imagem não mostra dados/ }))
+    await usuario.click(screen.getByRole('radio', { name: /Fila de curadoria/ }))
+    await usuario.click(screen.getByRole('button', { name: /Enviar foto/ }))
+    await screen.findByRole('status')
+    expect((servidor.alteracoes().at(-1)?.corpo as Record<string, string>).tipo_radiografia).toBe('periapical')
+  })
+
   it('para analise: exige escolher quem analisa; leva o recado', async () => {
     const usuario = userEvent.setup()
     const { servidor } = abrir({ 'POST /envios/foto': { status: 201, corpo: {} } })
