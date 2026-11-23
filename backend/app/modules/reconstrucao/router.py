@@ -7,6 +7,8 @@ curadoria nem na pesquisa como radiografia.
 - GET  /reconstrucao/{ref}/geometria  -> medidas da tomografia (tela de tracar)
 - GET  /reconstrucao/{ref}/axial.png  -> corte axial (MIP de uma faixa) para
                                          clicar os pontos da arcada
+- GET  /reconstrucao/{ref}/plano.png  -> um corte axial, sagital ou coronal,
+                                         para MARCAR a lesao no corte (23/11/2026)
 - POST /reconstrucao/{ref}            -> gera a panoramica e os cortes
                                          transversais e grava no Orthanc
 - GET  /reconstrucao/{ref}/lista      -> reconstrucoes ja feitas desse exame
@@ -26,6 +28,7 @@ from __future__ import annotations
 import io
 import threading
 from datetime import datetime, timezone
+from typing import Literal
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
@@ -101,6 +104,33 @@ def obter_geometria(ref_id: int, usuario: User = Depends(exigir_perfis(*PERFIS_C
             "largura_mm": [LARGURA_MIN, LARGURA_MAX],
         },
     }
+
+
+@router.get("/{ref_id}/plano.png")
+def obter_plano(
+    ref_id: int,
+    plano: Literal["axial", "sagital", "coronal"] = Query(...),
+    indice: int = Query(..., ge=0, le=100000),
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    db: Session = Depends(get_db),
+):
+    """Um corte de um plano (axial, sagital ou coronal), para o curador marcar
+    a lesao no corte onde ela aparece melhor (pedido do Luciano, 23/11/2026)."""
+    g = _geometria(_exame(db, ref_id, usuario))
+    try:
+        img = fonte.imagem_do_plano(g, plano, indice)
+    except ValueError as erro:
+        raise HTTPException(status_code=422, detail=str(erro)) from erro
+    saida = io.BytesIO()
+    Image.fromarray(img).save(saida, format="PNG")
+    return Response(
+        content=saida.getvalue(),
+        media_type="image/png",
+        headers={
+            "Content-Disposition": disposicao_de_arquivo(f"radix-imago-tomografia-{ref_id}-{plano}-{indice}.png"),
+            "Cache-Control": "private, max-age=300",
+        },
+    )
 
 
 @router.get("/{ref_id}/axial.png")
