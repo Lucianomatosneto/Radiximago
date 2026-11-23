@@ -141,7 +141,7 @@ def test_marca_o_canal_e_gera_series_desenhadas(client, reconstrucao, db):
     pano = dcmread(io.BytesIO(reconstrucao["enviados"][0]))
     w, h = int(pano.Columns), int(pano.Rows)
     antes = len(reconstrucao["enviados"])
-    tracado = [[1, h // 2], [w // 2, h // 2 + 2], [w - 2, h // 2]]
+    tracado = [[0, h // 2], [w // 2, h // 2 + 2], [w - 1, h // 2]]  # de ponta a ponta: todo corte tem a marca
     r = client.post(_url(reconstrucao, "/canal"), headers=reconstrucao["cab"], json={"tracados": [tracado]})
     assert r.status_code == 201, r.text
     novos = [dcmread(io.BytesIO(b)) for b in reconstrucao["enviados"][antes:]]
