@@ -269,8 +269,7 @@
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
       "aparelhos": "Aparelhos da rede",
-      "pranchasRecebidas": "Pranchas recebidas",
-      "meusGrupos": "Meus grupos"
+      "pranchasRecebidas": "Pranchas recebidas"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -2664,6 +2663,13 @@
     "verificarAgora": "Verificar agora",
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
+  },
+  "GruposUnico": {
+    "titulo": "Grupos",
+    "carregando": "Carregando...",
+    "abaCriei": "Grupos que criei",
+    "abaParticipo": "Grupos de que participo",
+    "pendentes": "{n, plural, one {1 pendência} other {# pendências}}"
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
