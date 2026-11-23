@@ -438,3 +438,40 @@ describe('quem pediu: parecer devolvido', () => {
     expect(screen.queryByRole('status')).toBeNull()
   })
 })
+
+// PEDIDO DO VIDEO (22/11/2026): segunda opiniao de ficha JA APROVADA (pedida
+// em Minhas imagens). A ficha continua no banco; a decisao final e "Manter
+// aprovada" ou "Arquivar" (ficha aprovada nao e descartada - Bloco 6).
+describe('quem pediu: segunda opiniao de ficha ja aprovada', () => {
+  const DA_APROVADA = { ...DETALHE_DEVOLVIDA, status_ficha: 'aprovada' }
+  async function abrirAprovada(extra: Record<string, Rota> = {}) {
+    window.history.replaceState(null, '', '/segunda-opiniao?review=41&aba=devolvidas')
+    const servidor = await abrir(rotasPadrao({ 'GET /curation/reviews/41/detalhe': { corpo: DA_APROVADA }, ...extra }))
+    const decisao = (await screen.findByRole('heading', { name: 'Decisão final' })).closest('section') as HTMLElement
+    return { servidor, decisao }
+  }
+
+  it('explica que a ficha continua no banco; "Manter aprovada" envia aprovar', async () => {
+    const usuario = userEvent.setup()
+    const { servidor, decisao } = await abrirAprovada({ 'POST /curation/601/apply-review-decision': { corpo: { ok: true } } })
+    expect(decisao.textContent).toContain('Esta ficha já está no banco e continua na Pesquisa até você decidir.')
+    expect(within(decisao).queryByRole('button', { name: /Aprovar ficha/ })).toBeNull()
+    await usuario.click(decisao)
+    await usuario.click(within(decisao).getByRole('checkbox', { name: 'Conferi a anonimização da imagem' }))
+    await usuario.click(within(decisao).getByRole('button', { name: /Manter aprovada/ }))
+    expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Ficha mantida aprovada.')
+    expect(servidor.alteracoes()[0].corpo).toEqual({ decisao: 'aprovar', anonimizacao_validada: true })
+  })
+
+  it('"Arquivar" pede o motivo e envia descartar (o servidor arquiva)', async () => {
+    const usuario = userEvent.setup()
+    const { servidor, decisao } = await abrirAprovada({ 'POST /curation/601/apply-review-decision': { corpo: { ok: true } } })
+    await usuario.click(decisao)
+    expect(within(decisao).queryByRole('button', { name: 'Descartar' })).toBeNull()
+    await usuario.click(within(decisao).getByRole('button', { name: 'Arquivar' }))
+    await usuario.type(within(decisao).getByRole('textbox'), 'Imagem com artefato.')
+    await usuario.click(within(decisao).getByRole('button', { name: 'Confirmar arquivamento' }))
+    expect(await screen.findByRole('status')).toHaveProperty('textContent', 'Ficha arquivada.')
+    expect(servidor.alteracoes()[0].corpo).toEqual({ decisao: 'descartar', motivo: 'Imagem com artefato.' })
+  })
+})
