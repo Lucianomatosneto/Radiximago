@@ -20,6 +20,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { Camera, FileUp, Send } from 'lucide-react'
+import TipoExameEnvio from '../../components/envios/TipoExameEnvio'
 import EnvioFotoCelular from '../../components/envios/EnvioFotoCelular'
 import Sidebar from '../../components/Sidebar'
 import Topbar from '../../components/Topbar'
@@ -62,6 +63,7 @@ export default function EnviarImagemPage() {
   const [analistas, setAnalistas] = useState<Analista[]>([])
   const [analistaId, setAnalistaId] = useState('')
   const [nota, setNota] = useState('')
+  const [tipoExame, setTipoExame] = useState('')
   const [pessoas, setPessoas] = useState<Pessoa[]>([])
   const [grupos, setGrupos] = useState<number[]>([])
   const [enviando, setEnviando] = useState(false)
@@ -123,6 +125,7 @@ export default function EnviarImagemPage() {
       const dados = new FormData()
       dados.append('arquivo', arquivo)
       dados.append('destino', destino)
+      if (tipoExame) dados.append('tipo_radiografia', tipoExame)
       if (destino === 'analise') {
         dados.append('analista_id', analistaId)
         if (nota.trim()) dados.append('nota', nota.trim())
@@ -256,6 +259,8 @@ export default function EnviarImagemPage() {
                 </ul>
               )}
             </fieldset>
+
+            <TipoExameEnvio id="tipo-exame" valor={tipoExame} aoMudar={setTipoExame} className={campo} />
 
             <fieldset>
               <legend className="mb-2 text-sm font-medium text-ink">{t('passo2')}</legend>
