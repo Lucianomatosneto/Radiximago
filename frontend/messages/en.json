@@ -1301,6 +1301,8 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "My",
+    "filtroTipo": "Filter by type",
+    "filtroTodos": "All",
     "tituloDestaque": "images",
     "subtitulo": "Images you saved from Advanced search.",
     "desmarcarTodas": "Deselect all",
@@ -2719,6 +2721,18 @@
     "erroEnviar": "This image could not be sent.",
     "erroConexao": "No connection to the server. Try again.",
     "verMinhasImagens": "See in My images",
+    "grade": {
+      "quantidade": "{n, plural, one {1 image} other {# images}}",
+      "selecionarTodas": "Select all ({n})",
+      "limpar": "Clear selection",
+      "retirar": "Remove {n, plural, one {the selected one} other {the # selected}}",
+      "retirarTitulo": "Remove {n, plural, one {this image} other {these # images}}?",
+      "verSelecionadas": "View {n, plural, one {1 selected} other {# selected}}",
+      "selecionar": "Select image no. {id}",
+      "info": "View details",
+      "feito": "Done: {n, plural, one {1 image} other {# images}}.",
+      "nenhumDoTipo": "No image you sent is of this type."
+    },
     "lista": {
       "tituloMeus": "Images I sent",
       "explicaMeus": "What you sent and where each image is now.",

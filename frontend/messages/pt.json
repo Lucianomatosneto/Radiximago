@@ -1301,6 +1301,8 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "Minhas",
+    "filtroTipo": "Filtrar por tipo",
+    "filtroTodos": "Todos",
     "tituloDestaque": "imagens",
     "subtitulo": "Imagens que você salvou a partir da Pesquisa avançada.",
     "desmarcarTodas": "Desmarcar todas",
@@ -2719,6 +2721,18 @@
     "erroEnviar": "Não foi possível enviar esta imagem.",
     "erroConexao": "Sem conexão com o servidor. Tente de novo.",
     "verMinhasImagens": "Ver em Minhas imagens",
+    "grade": {
+      "quantidade": "{n, plural, one {1 imagem} other {# imagens}}",
+      "selecionarTodas": "Selecionar todas ({n})",
+      "limpar": "Limpar seleção",
+      "retirar": "Retirar {n, plural, one {a selecionada} other {as # selecionadas}}",
+      "retirarTitulo": "Retirar {n, plural, one {esta imagem} other {estas # imagens}}?",
+      "verSelecionadas": "Ver {n, plural, one {1 selecionada} other {# selecionadas}}",
+      "selecionar": "Selecionar a imagem nº {id}",
+      "info": "Ver informações",
+      "feito": "Enviado: {n, plural, one {1 imagem} other {# imagens}}.",
+      "nenhumDoTipo": "Nenhuma imagem enviada por você deste tipo."
+    },
     "lista": {
       "tituloMeus": "Imagens enviadas por mim",
       "explicaMeus": "O que você enviou e onde cada imagem está agora.",
