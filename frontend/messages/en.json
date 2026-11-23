@@ -1333,9 +1333,7 @@
     "confirmarEmailTitulo": "Send by e-mail?",
     "confirmarEmailLote": "{quantidade, plural, one {The selected image goes} other {The # selected images go}} to the e-mail registered in your account. Confirm sending?",
     "simEnviar": "Yes, send",
-    "cancelarEnvio": "Cancel",
-    "filtroTipo": "Filter by type",
-    "filtroTodos": "All"
+    "cancelarEnvio": "Cancel"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",
@@ -1888,6 +1886,7 @@
     "abrir": "Share this image and your notes with another user",
     "placeholderEmail": "Person's name or email",
     "erroEscolher": "Pick the person from the list or type the full email.",
+    "permitirResposta": "Allow the person to reply",
     "sugestoes": "People found",
     "placeholderMensagem": "Note for the recipient (optional)",
     "explicacao": "The person will see the image and only the note written here (read-only), in \"Shared with me\". Your \"My notes\" stay private. You can undo it at any time.",
@@ -2666,40 +2665,9 @@
     "verificando": "Verifying…",
     "erro": "Could not verify now. Try again in a moment."
   },
-  "GruposUnico": {
-    "titulo": "Groups",
-    "carregando": "Loading...",
-    "abaCriei": "Groups I created",
-    "abaParticipo": "Groups I belong to",
-    "pendentes": "{n, plural, one {1 pending item} other {# pending items}}"
-  },
-  "LinkConvite": {
-    "titulo": "Invitation link",
-    "explica": "Send this link to the people you want in the group (WhatsApp, email...). They sign in with their own account and only join if they confirm. Valid for 7 days; creating a new one cancels the previous link.",
-    "campo": "Group invitation link",
-    "copiar": "Copy",
-    "copiado": "Copied!",
-    "valeAte": "Valid until {data}",
-    "usos": "{n, plural, =0 {nobody joined yet} one {1 person joined} other {# people joined}}",
-    "gerarDeNovo": "(to see the address again, create a new link)",
-    "nenhum": "No active link.",
-    "gerar": "Create invitation link",
-    "gerarNovo": "Create new link",
-    "cancelar": "Cancel link",
-    "erro": "Could not complete. Please try again.",
-    "entrar": {
-      "titulo": "Group invitation",
-      "criadoPor": "Created by {quem}",
-      "explica": "You were invited to this group. When you join, you receive the images the teacher sends to the group. Other participants do not see that you are in the group.",
-      "botao": "Join the group",
-      "agoraNao": "Not now",
-      "entrou": "You joined the group.",
-      "jaParticipa": "You already belong to this group.",
-      "dono": "You created this group. Send the link to the people you want to invite.",
-      "verGrupos": "See my groups",
-      "invalido": "Invalid or expired invitation link. Ask the group creator for a new one.",
-      "semCodigo": "This address is incomplete. Open the whole link you received."
-    }
+  "FiltroTipo": {
+    "rotulo": "Filter by type",
+    "todos": "All"
   },
   "EnviarImagem": {
     "titulo": "Send image",
@@ -2755,6 +2723,18 @@
     "erroEnviar": "This image could not be sent.",
     "erroConexao": "No connection to the server. Try again.",
     "verMinhasImagens": "See in My images",
+    "grade": {
+      "quantidade": "{n, plural, one {1 image} other {# images}}",
+      "selecionarTodas": "Select all ({n})",
+      "limpar": "Clear selection",
+      "retirar": "Remove {n, plural, one {the selected one} other {the # selected}}",
+      "retirarTitulo": "Remove {n, plural, one {this image} other {these # images}}?",
+      "verSelecionadas": "View {n, plural, one {1 selected} other {# selected}}",
+      "selecionar": "Select image no. {id}",
+      "info": "View details",
+      "feito": "Done: {n, plural, one {1 image} other {# images}}.",
+      "nenhumDoTipo": "No image you sent is of this type."
+    },
     "lista": {
       "tituloMeus": "Images I sent",
       "explicaMeus": "What you sent and where each image is now.",
@@ -2853,19 +2833,7 @@
         "erroGerar": "Could not prepare the photo. Try again."
       }
     },
-    "jaExistente": "This image is already in Radix (repeated file). No new copy was created.",
-    "grade": {
-      "quantidade": "{n, plural, one {1 image} other {# images}}",
-      "selecionarTodas": "Select all ({n})",
-      "limpar": "Clear selection",
-      "retirar": "Remove {n, plural, one {the selected one} other {the # selected}}",
-      "retirarTitulo": "Remove {n, plural, one {this image} other {these # images}}?",
-      "verSelecionadas": "View {n, plural, one {1 selected} other {# selected}}",
-      "selecionar": "Select image no. {id}",
-      "info": "View details",
-      "feito": "Done: {n, plural, one {1 image} other {# images}}.",
-      "nenhumDoTipo": "No image you sent is of this type."
-    }
+    "jaExistente": "This image is already in Radix (repeated file). No new copy was created."
   },
   "Grupos": {
     "titulo": "Groups",
@@ -2896,7 +2864,6 @@
     "foraDaBuscaAjuda": "Students cannot find this group by searching its name; only people you invite can join. To change it, use Edit and tick \"Accept requests from students\".",
     "participantes": "Participants",
     "origem_convite": "accepted invitation",
-    "origem_link": "joined via link",
     "origem_pedido": "request approved",
     "origem_anterior": "was already in the group",
     "tirar": "Remove",
@@ -2937,7 +2904,8 @@
     "conversaCom": "Conversation with {nome}",
     "voce": "You",
     "responder": "Reply",
-    "responderRotulo": "Reply to {nome}"
+    "responderRotulo": "Reply to {nome}",
+    "origem_link": "joined via link"
   },
   "MeusGrupos": {
     "titulo": "My groups",
@@ -3159,6 +3127,41 @@
     "abrirPagina": "Open full page",
     "naoAceito": "I do not accept",
     "aceitar": "Accept and continue"
+  },
+  "GruposUnico": {
+    "titulo": "Groups",
+    "carregando": "Loading...",
+    "abaCriei": "Groups I created",
+    "abaParticipo": "Groups I belong to",
+    "pendentes": "{n, plural, one {1 pending item} other {# pending items}}"
+  },
+  "LinkConvite": {
+    "titulo": "Invitation link",
+    "explica": "Send this link to the people you want in the group (WhatsApp, email...). They sign in with their own account and only join if they confirm. Valid for 7 days; creating a new one cancels the previous link.",
+    "campo": "Group invitation link",
+    "copiar": "Copy",
+    "copiado": "Copied!",
+    "valeAte": "Valid until {data}",
+    "usos": "{n, plural, =0 {nobody joined yet} one {1 person joined} other {# people joined}}",
+    "gerarDeNovo": "(to see the address again, create a new link)",
+    "nenhum": "No active link.",
+    "gerar": "Create invitation link",
+    "gerarNovo": "Create new link",
+    "cancelar": "Cancel link",
+    "erro": "Could not complete. Please try again.",
+    "entrar": {
+      "titulo": "Group invitation",
+      "criadoPor": "Created by {quem}",
+      "explica": "You were invited to this group. When you join, you receive the images the teacher sends to the group. Other participants do not see that you are in the group.",
+      "botao": "Join the group",
+      "agoraNao": "Not now",
+      "entrou": "You joined the group.",
+      "jaParticipa": "You already belong to this group.",
+      "dono": "You created this group. Send the link to the people you want to invite.",
+      "verGrupos": "See my groups",
+      "invalido": "Invalid or expired invitation link. Ask the group creator for a new one.",
+      "semCodigo": "This address is incomplete. Open the whole link you received."
+    }
   },
   "EnviarParaGrupo": {
     "botao": "Send to a group",

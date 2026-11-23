@@ -13,6 +13,9 @@
 // (backend/app/modules/envios_router.py), que conferem dono e perfil.
 // O filtro por tipo vem da tela (filtroTipo); imagem sem tipo conhecido so
 // aparece em "Todos".
+// modo "recebidas" (Compartilhadas comigo, 22/11/2026): o que colegas me
+// enviaram - mesma grade, "i" com quem enviou, as novas viram "vistas" ao
+// abrir, e a unica acao e "Ver selecionadas". Sem nenhuma, a secao some.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
@@ -27,6 +30,8 @@ type Situacao = 'so_para_mim' | 'devolvida' | 'em_analise' | 'na_fila' | 'no_ban
 type Item = {
   id: number
   situacao: Situacao
+  enviado_por?: string | null
+  nova?: boolean
   analista: string | null
   analise_nota: string | null
   devolucao_nota: string | null
@@ -61,7 +66,16 @@ export function urlVisualizadorJunto(urls: string[]): string | null {
   }
 }
 
-export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; filtroTipo: string | null }) {
+export default function GradeEnvios({
+  equipe,
+  filtroTipo,
+  modo = 'meus',
+}: {
+  equipe: boolean
+  filtroTipo: string | null
+  modo?: 'meus' | 'recebidas'
+}) {
+  const meus = modo === 'meus'
   const t = useTranslations('EnviarImagem.lista')
   const tGrade = useTranslations('EnviarImagem.grade')
   const tComum = useTranslations('Comum')
@@ -80,17 +94,23 @@ export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; f
   const [erro, setErro] = useState('')
 
   const carregar = useCallback(async () => {
-    const r = await fetchOuNulo(`${API}/envios/meus`, { credentials: 'include' })
-    setItens(r && r.ok ? ((await r.json()).itens ?? []) : [])
-  }, [])
+    const r = await fetchOuNulo(`${API}/envios/${meus ? 'meus' : 'recebidas'}`, { credentials: 'include' })
+    const lista: Item[] = r && r.ok ? ((await r.json()).itens ?? []) : []
+    setItens(lista)
+    // recebidas: ao abrir a tela, as novas passam a "vistas"
+    if (!meus && lista.some((i) => i.nova)) {
+      fetch(`${API}/envios/recebidas/vistas`, { method: 'POST', credentials: 'include' }).catch(() => undefined)
+    }
+  }, [meus])
 
   useEffect(() => {
     void carregar()
+    if (!meus) return
     fetch(`${API}/envios/analistas`, { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : { pessoas: [] }))
       .then((d) => setAnalistas(d.pessoas ?? []))
       .catch(() => setAnalistas([]))
-  }, [carregar])
+  }, [carregar, meus])
 
   const visiveis = useMemo(
     () => (itens ?? []).filter((i) => !filtroTipo || i.tipo_radiografia === filtroTipo),
@@ -103,7 +123,7 @@ export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; f
 
   const escolhidos = visiveis.filter((i) => selecionados.includes(i.id))
   const temSelecao = escolhidos.length > 0
-  const todasDoDono = temSelecao && escolhidos.every((i) => DO_DONO.includes(i.situacao))
+  const todasDoDono = meus && temSelecao && escolhidos.every((i) => DO_DONO.includes(i.situacao))
 
   function alternar(id: number) {
     setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]))
@@ -180,14 +200,16 @@ export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; f
   }
 
   if (itens === null) return null
+  // recebidas de colegas: sem nenhuma, a secao nem aparece
+  if (!meus && !itens.length) return null
 
   const botao =
     'flex h-8 items-center gap-1.5 rounded-lg border border-base-border bg-base-surface/50 px-3 text-xs text-ink-2 transition hover:border-brand hover:text-brand disabled:opacity-60'
 
   return (
-    <section className="mt-6" data-teste="grade-envios">
-      <h2 className="mb-1 text-lg font-semibold text-ink">{t('tituloMeus')}</h2>
-      <p className="mb-2 text-xs text-ink-2">{t('explicaMeus')}</p>
+    <section className="mt-6" data-teste={`grade-envios-${modo}`}>
+      <h2 className="mb-1 text-lg font-semibold text-ink">{t(meus ? 'tituloMeus' : 'tituloRecebidas')}</h2>
+      <p className="mb-2 text-xs text-ink-2">{t(meus ? 'explicaMeus' : 'explicaRecebidas')}</p>
       {mensagem && <p role="status" className="mb-2 rounded-lg bg-emerald-500/10 p-2 text-sm text-emerald-800 dark:text-emerald-300">{mensagem}</p>}
       {erro && <p role="alert" className="mb-2 rounded-lg bg-red-500/10 p-2 text-sm text-red-700 dark:text-red-300">{erro}</p>}
 
@@ -210,7 +232,7 @@ export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; f
                 </button>
               )}
               <div className="ml-auto flex flex-wrap items-center gap-1.5">
-                {temSelecao && equipe && (
+                {temSelecao && equipe && meus && (
                   <button type="button" onClick={() => setPainel(painel === 'pessoas' ? null : 'pessoas')} aria-expanded={painel === 'pessoas'} className={botao}>
                     {t('enviarPessoas')}
                   </button>
@@ -296,6 +318,7 @@ export default function GradeEnvios({ equipe, filtroTipo }: { equipe: boolean; f
                     {infoAberta && (
                       <div role="tooltip" className="absolute inset-0 z-10 space-y-1 overflow-y-auto bg-base-surface/95 p-2 pb-8 text-[11px] leading-snug text-ink">
                         <p className="font-semibold">{t('imagemN', { id: item.id })} · {t(`situacoes.${item.situacao}`)}</p>
+                        {!meus && item.enviado_por && <p>{t('enviadaPor', { nome: item.enviado_por })}{item.nova ? ` · ${t('nova')}` : ''}</p>}
                         {!!item.enviada_para && <p>{t('enviadaParaN', { n: item.enviada_para })}</p>}
                         {item.situacao === 'em_analise' && item.analista && <p>{t('comQuem', { nome: item.analista })}</p>}
                         {item.analise_nota && <p>“{item.analise_nota}”</p>}

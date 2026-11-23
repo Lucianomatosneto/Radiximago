@@ -19,6 +19,8 @@ import { proporcaoValida } from '../../lib/proporcao'
 import { calcularAmpliacao, type Ampliacao } from '../../lib/ampliacaoGrade'
 import type { Marcacao } from '../../lib/marcacoes'
 import SecaoEnvios from '../../components/envios/SecaoEnvios'
+import GradeEnvios from '../../components/envios/GradeEnvios'
+import FiltroTipoRadiografia from '../../components/FiltroTipoRadiografia'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
 
@@ -31,6 +33,9 @@ import AvisoSemConexao from '../../components/AvisoSemConexao'
 // Quem compartilhou e o recado aparecem no proprio quadrado e no "i"; as
 // anotacoes de quem compartilhou aparecem ao abrir a imagem (▶ Ver).
 // Dados: backend/app/modules/compartilhamentos_router.py (GET /shares/recebidas).
+// 22/11/2026 (video): filtro por tipo no topo (vale tambem para as recebidas
+// de colegas, que viraram grade - GradeEnvios modo "recebidas") e "responder"
+// so aparece se quem enviou permitiu (permite_resposta).
 
 interface Recebida {
   id: number
@@ -41,6 +46,8 @@ interface Recebida {
   novo: boolean
   quantidade_anotacoes: number
   tipo_radiografia: string | null
+  /** quem compartilhou permitiu responder? (22/11/2026) */
+  permite_resposta?: boolean
   achado_principal: string | null
   achados_detalhe?: string | null
   alteracoes_observadas?: string[] | null
@@ -72,6 +79,12 @@ export default function CompartilhadasComigoPage() {
   const [selecionados, setSelecionados] = useState<number[]>([])
   const [quantidadeLote, setQuantidadeLote] = useState(10)
   const [indiceVisualizador, setIndiceVisualizador] = useState<number | null>(null)
+  const [filtroTipo, setFiltroTipo] = useState<string | null>(null)
+  const visiveis = filtroTipo ? itens.filter((i) => i.tipo_radiografia === filtroTipo) : itens
+  function trocarFiltro(tipo: string | null) {
+    setFiltroTipo(tipo)
+    setSelecionados([])
+  }
 
   // mesmos estados da grade da Pesquisa
   const [ampliacao, setAmpliacao] = useState<Ampliacao | null>(null)
@@ -191,12 +204,12 @@ export default function CompartilhadasComigoPage() {
     setSelecionados((atual) => (atual.includes(id) ? atual.filter((x) => x !== id) : [...atual, id]))
   }
   function selecionarTodas() {
-    setSelecionados(itens.map((i) => i.id))
+    setSelecionados(visiveis.map((i) => i.id))
   }
   function selecionarMais(n: number) {
     if (!Number.isFinite(n) || n < 1) return
     setSelecionados((atual) => {
-      const novos = itens.filter((i) => !atual.includes(i.id)).slice(0, n).map((i) => i.id)
+      const novos = visiveis.filter((i) => !atual.includes(i.id)).slice(0, n).map((i) => i.id)
       return [...atual, ...novos]
     })
   }
@@ -222,10 +235,10 @@ export default function CompartilhadasComigoPage() {
     dentes: i.dentes,
     achado_principal: i.achado_principal,
     erros_tecnicos: i.erros_tecnicos,
-    compartilhamento: { id: i.id, remetente_nome: i.remetente_nome, mensagem: i.mensagem },
+    compartilhamento: { id: i.id, remetente_nome: i.remetente_nome, mensagem: i.mensagem, permite_resposta: i.permite_resposta },
   })
-  const todosNumerados = itens.map((i, n) => paraVisualizador(i, n + 1))
-  const itensSelecionados = itens
+  const todosNumerados = visiveis.map((i, n) => paraVisualizador(i, n + 1))
+  const itensSelecionados = visiveis
     .map((i, n) => ({ i, n }))
     .filter(({ i }) => selecionados.includes(i.id))
     .map(({ i, n }) => paraVisualizador(i, n + 1))
@@ -258,9 +271,11 @@ export default function CompartilhadasComigoPage() {
             <p className="mt-1 text-sm text-slate-400">{t('subtitulo')}</p>
           </div>
           {/* etapa B (08/11/2026): imagens de estudantes para EU analisar */}
+          {/* 22/11/2026: filtro por tipo (compartilhadas e recebidas de colegas) */}
+          <FiltroTipoRadiografia valor={filtroTipo} aoMudar={trocarFiltro} />
           {analisa && <SecaoEnvios modo="analisar" />}
-          {/* etapa C (08/11/2026): imagens que colegas me enviaram */}
-          <SecaoEnvios modo="recebidas" />
+          {/* etapa C (08/11/2026): imagens que colegas me enviaram - em grade desde 22/11/2026 */}
+          <GradeEnvios modo="recebidas" equipe={false} filtroTipo={filtroTipo} />
 
           {erro && (
             <p className="mt-3 text-sm text-red-400" role="alert">
@@ -282,13 +297,13 @@ export default function CompartilhadasComigoPage() {
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="flex h-8 items-center rounded-full bg-brand/10 px-3 text-xs font-medium text-brand-300">
-                    {t('quantidade', { quantidade: itens.length })}
+                    {t('quantidade', { quantidade: visiveis.length })}
                   </span>
 
                   <div className="flex min-h-8 flex-wrap items-center gap-1 rounded-lg border border-base-border bg-base-surface/50 px-1.5">
                     {!barraRolada && <span className="px-1 text-[11px] font-medium text-slate-400">{tPesquisa('selecaoLabel')}</span>}
                     <button type="button" onClick={selecionarTodas} className="rounded-md px-2 py-0.5 text-xs text-slate-300 hover:bg-white/5 hover:text-brand-300">
-                      {tPesquisa('selecionarTodas', { quantidade: itens.length })}
+                      {tPesquisa('selecionarTodas', { quantidade: visiveis.length })}
                     </button>
                     {[10, 15, 20, 25].map((n) => (
                       <button
@@ -304,7 +319,7 @@ export default function CompartilhadasComigoPage() {
                     <input
                       type="number"
                       min={1}
-                      max={itens.length}
+                      max={visiveis.length}
                       value={quantidadeLote}
                       onChange={(e) => setQuantidadeLote(Number(e.target.value))}
                       aria-label={tPesquisa('selecionarMaisBotao')}
@@ -360,7 +375,7 @@ export default function CompartilhadasComigoPage() {
                 className="grid grid-cols-1 justify-center gap-3 pb-2 min-[480px]:grid-cols-2 sm:grid-cols-3 md:grid-cols-5"
                 style={ladoCartao ? { gridTemplateColumns: `repeat(5, ${ladoCartao}px)` } : undefined}
               >
-                {itens.map((item, indice) => {
+                {visiveis.map((item, indice) => {
                   const marcada = selecionados.includes(item.id)
                   const ampliado = cartaoAmpliado === item.id
                   const infoFixada = infoFixadas.includes(item.id)
@@ -591,7 +606,9 @@ export default function CompartilhadasComigoPage() {
                             </svg>
                           </button>
                           {/* responder a quem compartilhou */}
-                          <ResponderCompartilhamento compartilhamentoId={item.id} remetenteNome={item.remetente_nome} compacto />
+                          {item.permite_resposta !== false && (
+                            <ResponderCompartilhamento compartilhamentoId={item.id} remetenteNome={item.remetente_nome} compacto />
+                          )}
                         </div>
                       </div>
                     </div>
