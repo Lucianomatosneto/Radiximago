@@ -3340,5 +3340,33 @@
     "explicaCorrigir": "To fix a modality: in \"Show\" pick the modality (for example, Bitewing), select the images that do not belong to it and move them to the right one.",
     "moverPara": "Move to:",
     "movidas": "{n, plural, one {1 image moved} other {# images moved}} to {tipo}."
+  },
+  "Reconstrucao": {
+    "tituloPrefixo": "Panoramic",
+    "tituloDestaque": "reconstruction",
+    "atalho": "Panoramic reconstruction",
+    "explica": "Creates, from the CT, a reconstructed panoramic image and cross-sections of the arch. The new images stay in the same exam, for viewing and teaching; the original CT does not change and nothing enters the curation queue.",
+    "voltar": "Back",
+    "semImagem": "No CT selected.",
+    "erroCarregar": "Could not open the CT.",
+    "erroGerar": "Could not create the reconstruction.",
+    "pronto": "Done: panoramic image and {n} cross-sections created. Open the exam in the viewer and use the CT panel → Reconstruction.",
+    "altura": "Axial slice height (mm)",
+    "faixaAxial": "Axial slab (MIP, mm)",
+    "altImagem": "CT axial slice",
+    "nenhumPonto": "No points marked",
+    "pontos": "{n, plural, one {1 point marked} other {# points marked}}",
+    "desfazer": "Undo point",
+    "limpar": "Clear",
+    "passo1": "Adjust the height until the whole arch shows (the MIP slab joins a few millimeters).",
+    "passo2": "Click points along the middle of the arch, from one side to the other (at least 3; 6 to 10 give a better curve).",
+    "passo3": "Adjust the panoramic slab and the cross-sections, then create.",
+    "espessura": "Panoramic slab (mm)",
+    "intervalo": "Interval between sections (mm)",
+    "largura": "Section width (mm)",
+    "gerar": "Create panoramic and sections",
+    "gerando": "Creating…",
+    "feitas": "Reconstructions already made",
+    "itemLista": "{data}: {n} sections · slab {faixa} mm · every {intervalo} mm"
   }
 }
