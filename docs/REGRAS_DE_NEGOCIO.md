@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.17 — 10/11/2026 |
+| Versão do documento | 1.19 — 22/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -173,7 +173,7 @@ pendente ─┐
 | Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
 | Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
 | Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
-| Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto ou valor proposto; **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
+| Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto, valor proposto ou marcação sugerida; no item **Marcações na imagem** o revisor pode **desenhar novas marcações** (até o mesmo limite de marcações da ficha), que quem pediu vê **tracejadas em rosa** na imagem enquanto a anotação está a decidir e, se acrescentar à curadoria, passam a fazer parte das marcações da ficha (22/11/2026); **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
 **Outras regras de negócio:**
@@ -262,3 +262,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
 | 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
 | 1.18 | 22/11/2026 | Pedidos do vídeo das telas: Regiões da imagem fora da Curadoria (seção 1); compartilhar escolhendo a pessoa pelo nome; aviso com aceite em Enviar imagem (seção 1.9) |
+| 1.19 | 22/11/2026 | Segunda opinião: o revisor desenha marcações sugeridas no item Marcações na imagem (seção 2) |
