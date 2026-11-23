@@ -1301,8 +1301,6 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "My",
-    "filtroTipo": "Filter by type",
-    "filtroTodos": "All",
     "tituloDestaque": "images",
     "subtitulo": "Images you saved from Advanced search.",
     "desmarcarTodas": "Deselect all",
@@ -2667,6 +2665,10 @@
     "verificarAgora": "Verify now",
     "verificando": "Verifying…",
     "erro": "Could not verify now. Try again in a moment."
+  },
+  "FiltroTipo": {
+    "rotulo": "Filter by type",
+    "todos": "All"
   },
   "EnviarImagem": {
     "titulo": "Send image",
