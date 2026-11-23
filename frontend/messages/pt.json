@@ -2665,6 +2665,26 @@
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
   },
+  "EnviarParaGrupo": {
+    "botao": "Enviar para um grupo",
+    "explica": "{n, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para os grupos que você escolher, com as marcações oficiais da ficha.",
+    "meusGrupos": "Meus grupos",
+    "semGrupos": "Você ainda não tem grupos. Crie um abaixo.",
+    "criarNovo": "+ Criar grupo novo",
+    "nomeNovo": "Nome do grupo novo",
+    "convidarAjuda": "Quem você escolher recebe um convite e entra no grupo quando aceitar.",
+    "criar": "Criar grupo",
+    "cancelar": "Cancelar",
+    "recado": "Recado para o grupo (opcional)",
+    "comentar": "Participantes podem comentar",
+    "prepararAula": "Preparar aula com marcações próprias (só esta imagem)",
+    "enviar": "Enviar {n, plural, one {1 imagem} other {# imagens}}",
+    "fechar": "Fechar",
+    "resultado": "Enviadas: {enviadas} · já estavam no grupo: {ja}.",
+    "erroEnviar": "Não foi possível enviar. Tente de novo.",
+    "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
+    "erroCriar": "Não foi possível criar o grupo."
+  },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
     "avisoEnvio": {
@@ -2869,8 +2889,8 @@
     "conviteCancelado": "Convite cancelado.",
     "erroAcao": "Não foi possível concluir. Tente de novo.",
     "imagensEnviadas": "Imagens enviadas ao grupo",
-    "comoEnviar": "Para enviar uma imagem, abra-a no Banco de imagens e use \"Preparar aula para um grupo\".",
-    "irBanco": "Ir ao Banco de imagens",
+    "comoEnviar": "Para enviar imagens a este grupo, selecione-as na Busca avançada e use \"Enviar para um grupo\".",
+    "irBanco": "Ir à Busca avançada",
     "semImagens": "Nenhuma imagem enviada a este grupo ainda.",
     "imagemNumero": "Imagem nº {n}",
     "retirarImagem": "Retirar do grupo",
