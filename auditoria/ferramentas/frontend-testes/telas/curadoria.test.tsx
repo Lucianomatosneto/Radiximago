@@ -529,6 +529,18 @@ describe('escolher a modalidade', () => {
     expect(screen.queryByRole('region', { name: 'ficha simplificada' })).toBeNull()
   })
 
+  // 23/11/2026 (tela do Luciano): enquanto pergunta, as miniaturas da fila
+  // apareciam como caixas vazias (so carregam com uma imagem aberta) e
+  // pareciam "imagens que nao carregam". A fila so aparece depois da escolha.
+  it('enquanto pergunta, a fila de miniaturas nao aparece', async () => {
+    const usuario = userEvent.setup()
+    await abrir(varias())
+    await screen.findByRole('group', { name: 'Qual modalidade você quer curar agora?' })
+    expect(screen.queryByRole('region', { name: 'Fila de curadoria' })).toBeNull()
+    await usuario.click(screen.getByRole('button', { name: /^Panorâmica/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+  })
+
   it('escolher "Panorâmica": pede a fila so dela, abre a 1a e guarda no endereco', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(varias())
