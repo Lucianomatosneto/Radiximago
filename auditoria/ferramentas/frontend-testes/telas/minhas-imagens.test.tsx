@@ -19,9 +19,8 @@ vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <h
 // 22/11/2026: as imagens enviadas por mim viraram grade (GradeEnvios, teste proprio)
 vi.mock('../../../../frontend/src/components/envios/GradeEnvios', () => ({
   default: ({ equipe, filtroTipo }: { equipe: boolean; filtroTipo: string | null }) => (
-    <section aria-label="meus envios">
+    <section aria-label="meus envios" data-filtro={filtroTipo ?? 'todos'}>
       {equipe ? 'envios: equipe' : 'envios: pessoal'}
-      <span data-teste="filtro-envios">{filtroTipo ?? 'todos'}</span>
     </section>
   ),
 }))
@@ -139,13 +138,13 @@ describe('filtro por tipo (pedido do video, 22/11/2026)', () => {
     const usuario = userEvent.setup()
     await abrir(rotasPadrao({ [LISTA]: { corpo: { itens: [imagem(101), imagem(102, { tipo_radiografia: 'tomografia' }), imagem(103)] } } }))
     const filtro = screen.getByRole('group', { name: 'Filtrar por tipo' })
-    await usuario.click(within(filtro).getByRole('button', { name: 'Tomografia' }))
+    await usuario.click(within(filtro).getByRole('button', { name: /Tomografia/ }))
     expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(1)
-    expect(screen.getByText('tomografia', { selector: '[data-teste="filtro-envios"]' })).toBeTruthy()
-    expect(within(filtro).getByRole('button', { name: 'Tomografia' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('region', { name: 'meus envios' }).getAttribute('data-filtro')).toBe('tomografia')
+    expect(within(filtro).getByRole('button', { name: /Tomografia/ }).getAttribute('aria-pressed')).toBe('true')
     await usuario.click(within(filtro).getByRole('button', { name: 'Todos' }))
     expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(3)
-    expect(screen.getByText('todos', { selector: '[data-teste="filtro-envios"]' })).toBeTruthy()
+    expect(screen.getByRole('region', { name: 'meus envios' }).getAttribute('data-filtro')).toBe('todos')
   })
 
   it('trocar o filtro limpa a selecao (nao fica imagem escondida marcada)', async () => {
