@@ -271,6 +271,22 @@ def obter_detalhes_serie(orthanc_series_id: str) -> dict:
     return resposta.json()
 
 
+def listar_cortes_ordenados(orthanc_series_id: str) -> list[str]:
+    """
+    IDs (Orthanc) das instancias de uma serie na ORDEM ESPACIAL dos cortes
+    (GET /series/{id}/ordered-slices). Usado pela reconstrucao panoramica
+    da tomografia (23/11/2026). Serie com instancia de varios quadros
+    (multi-frame) nao e aceita aqui: ValueError.
+    """
+    resposta = _client.get(f"{settings.ORTHANC_URL}/series/{orthanc_series_id}/ordered-slices")
+    resposta.raise_for_status()
+    dados = resposta.json()
+    curtos = dados.get("SlicesShort") or []
+    if any(int(item[2]) > 1 for item in curtos if len(item) > 2):
+        raise ValueError("Tomografia em um arquivo único de vários quadros (multi-frame) ainda não é aceita na reconstrução.")
+    return [item[0] for item in curtos]
+
+
 def listar_instancias_do_estudo(orthanc_study_id: str) -> list[str]:
     """
     Lista os IDs (Orthanc) de todas as instancias de um estudo - usado pra
