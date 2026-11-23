@@ -1254,7 +1254,9 @@
       "semRegistro": "Image received before the automatic text check existed. Look carefully for names, dates or numbers written on the image before checking “Anonymization validated”.",
       "volumeTitulo": "CT scan with {cortes} slices.",
       "volumeExplica": "The record covers the whole exam; the viewer shows every slice.",
-      "volumeTodosCortes": "(Check run on all {cortes} slices of the exam.)"
+      "volumeTodosCortes": "(Check run on all {cortes} slices of the exam.)",
+      "ciente": "I understand that I must check the image for any name, date, number or other personal data before validating the anonymization.",
+      "continuar": "Continue"
     },
     "orientacao": {
       "titulo": "Rotate the image",
