@@ -949,7 +949,7 @@ window.config = {
     titulo.textContent = 'Calibrar a tela';
     titulo.style.cssText = 'margin:0 0 6px;font-size:16px';
     var texto = document.createElement('p');
-    texto.textContent = 'Encoste um cartão de crédito (ou de banco) na tela e ajuste a barra até ela ficar exatamente da largura do cartão (85,6 mm). Também dá para usar uma régua: a barra deve medir 85,6 mm. Vale para este navegador e esta tela; refaça se mudar de monitor ou o zoom do navegador.';
+    texto.textContent = 'Jeito mais rápido: escolha o tamanho da sua tela em polegadas (vem na etiqueta ou no manual do monitor/notebook). Para mais precisão, encoste um cartão de crédito (ou de banco) na tela e ajuste a barra até ela ficar exatamente da largura do cartão (85,6 mm). Vale para este navegador e esta tela; refaça se mudar de monitor ou o zoom do navegador.';
     texto.style.cssText = 'margin:0 0 12px;color:#cbd5e1;font-size:13px';
     var barra = document.createElement('div');
     var atual = lerCalibracao() ? Math.round(lerCalibracao() * CARTAO_MM) : 324;
@@ -961,18 +961,45 @@ window.config = {
     faixa.value = String(atual);
     faixa.setAttribute('aria-label', 'Largura da barra');
     faixa.style.cssText = 'width:100%';
-    faixa.addEventListener('input', function () { barra.style.width = faixa.value + 'px'; });
+    // calibracao pelas POLEGADAS do monitor (23/11/2026): diagonal da tela em
+    // pixels (resolucao) / diagonal em mm. Nao depende de cartao nem regua.
+    var escolhido = 0;
+    var rotuloPol = document.createElement('label');
+    rotuloPol.textContent = 'Tamanho da tela (polegadas) ';
+    rotuloPol.style.cssText = 'display:block;margin:0 0 8px;font-size:13px';
+    var polegadas = document.createElement('select');
+    polegadas.setAttribute('aria-label', 'Tamanho da tela (polegadas)');
+    polegadas.style.cssText = 'margin-left:6px;background:#020617;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:2px 6px';
+    ['', '13.3', '14', '15.6', '17.3', '19', '21.5', '23.8', '24', '27', '31.5', '32', '34'].forEach(function (v) {
+      var o = document.createElement('option');
+      o.value = v;
+      o.textContent = v ? v.replace('.', ',') + '"' : 'escolher…';
+      polegadas.appendChild(o);
+    });
+    polegadas.addEventListener('change', function () {
+      var pol = Number(polegadas.value);
+      var diagonal = Math.sqrt(Math.pow(window.screen.width || 0, 2) + Math.pow(window.screen.height || 0, 2));
+      if (!pol || !diagonal) return;
+      escolhido = diagonal / (pol * 25.4);
+      var largura = Math.round(escolhido * CARTAO_MM);
+      faixa.value = String(largura);
+      barra.style.width = largura + 'px';
+    });
+    rotuloPol.appendChild(polegadas);
+    faixa.addEventListener('input', function () { escolhido = 0; barra.style.width = faixa.value + 'px'; });
     var acoes = document.createElement('div');
     acoes.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:12px';
     function fechar() { if (fundo.parentNode) fundo.parentNode.removeChild(fundo); }
     acoes.appendChild(botao('Cancelar', fechar));
     acoes.appendChild(botao('Salvar', function () {
-      try { window.localStorage.setItem(CHAVE, String(Number(faixa.value) / CARTAO_MM)); } catch (e) { /* sem salvar */ }
+      var valor = escolhido || Number(faixa.value) / CARTAO_MM;
+      try { window.localStorage.setItem(CHAVE, String(valor)); } catch (e) { /* sem salvar */ }
       fechar();
       if (depois) depois();
     }));
     janela.appendChild(titulo);
     janela.appendChild(texto);
+    janela.appendChild(rotuloPol);
     janela.appendChild(barra);
     janela.appendChild(faixa);
     janela.appendChild(acoes);
@@ -1009,36 +1036,47 @@ window.config = {
 })();
 
 // ---------------------------------------------------------------------
-// VISUALIZADOR DA TOMOGRAFIA (pedido do Luciano, 23/11/2026): "manter o
-// padrao Radix mas com todos os recursos para manipular a imagem, gerando um
-// 3D, podendo mudar para filtro osso e partes moles". O OHIF (cornerstone3D)
-// ja tem esses recursos; aqui eles ganham um painel proprio, "Tomografia",
-// que so aparece quando a serie aberta e uma TOMOGRAFIA (modalidade CT com
-// varios cortes):
-//  - Visualizacao (protocolos do OHIF): Axial (default), 3 planos (mpr),
-//    4 quadros (fourUp = 3 planos + 3D) e 3D (only3D). Abre sozinha em
-//    4 quadros, uma vez por estudo;
-//  - Filtro (janela/nivel nos planos): Osso 1800/400, Partes moles 400/40,
-//    Dentes 3000/1000 e Original (a janela do proprio exame);
-//  - 3D (predefinicoes do volume): osso, partes moles e MIP;
-//  - Espessura nos planos: Fina ou MIP (projecao de maxima intensidade)
-//    de 5, 10 ou 20 mm - "corte grosso", bom para ver canal e raizes;
-//  - Reconstrucao (23/11/2026): quando o estudo tem a panoramica
-//    reconstruida e os cortes transversais gerados pelo Radix, botoes para
-//    abri-los num quadro so (a mais nova de cada);
+// VISUALIZADOR DA TOMOGRAFIA (pedido do Luciano, 23/11/2026; revisto no
+// mesmo dia depois de testar no PC). Painel proprio, "Tomografia", que so
+// aparece quando a serie aberta e uma TOMOGRAFIA (modalidade CT com varios
+// cortes), com os controles EM COLUNA, A DIREITA da imagem:
+//  - Planos: Axial, Sagital, Coronal e 3D, marcados/desmarcados com um
+//    clique; a tela mostra SO os planos marcados (1 = um quadro, 2 = lado a
+//    lado, 3 = tres lado a lado, 4 = 2 x 2). O ultimo plano marcado nao
+//    desmarca. Abre com os 4. Para isso o Radix registra no OHIF um
+//    protocolo por combinacao ("radix-planos-<a s c 3>"), com quadros de
+//    volume (reconstrucao multiplanar) e o 3D;
+//  - Janela: Osso 2000/500, Partes moles 400/40, Dentes 3000/1000 (em HU) e
+//    Original. A TCFC nem sempre vem em unidades Hounsfield: quando o exame
+//    nao esta em HU (ex.: 0 a 4095), o Radix acha o AR (o valor mais baixo)
+//    e o PICO DAS PARTES MOLES no proprio exame e converte as janelas para a
+//    escala dele (ar = -1000 HU, pico = 40 HU);
+//  - 3D e SO OSSO: o quadro 3D abre com a predefinicao CT-Bone do
+//    cornerstone3D, convertida para a escala do exame do mesmo jeito;
+//  - Espessura nos planos: 0,625 mm (corte fino), 2, 5 e 10 mm (corte
+//    grosso pela MEDIA dos cortes, como nos programas de TCFC);
+//  - Reconstrucao: series que o Radix gerou (panoramica, cortes, canal);
 //  - o painel recolhe para liberar a imagem.
 // No quadro 3D o botao esquerdo GIRA o volume (o grupo "volume3d" fica fora
 // do "mouse pratico" acima).
 // ---------------------------------------------------------------------
 ;(function () {
-  var VISUALIZACOES = [['Axial', 'default'], ['3 planos', 'mpr'], ['4 quadros', 'fourUp'], ['3D', 'only3D']];
-  var FILTROS = [['Osso', 1800, 400], ['Partes moles', 400, 40], ['Dentes', 3000, 1000], ['Original', 0, 0]];
-  var PRESETS_3D = [['3D osso', 'CT-Bone'], ['3D partes moles', 'CT-Soft-Tissue'], ['3D MIP', 'CT-MIP']];
-  var ESPESSURAS = [['Fina', 0], ['MIP 5 mm', 5], ['MIP 10 mm', 10], ['MIP 20 mm', 20]];
+  var PLANOS = [
+    ['a', 'Axial', 'volume', 'axial'],
+    ['s', 'Sagital', 'volume', 'sagittal'],
+    ['c', 'Coronal', 'volume', 'coronal'],
+    ['3', '3D', 'volume3d', 'coronal'],
+  ];
+  var JANELAS = [['Osso', 2000, 500], ['Partes moles', 400, 40], ['Dentes', 3000, 1000], ['Original', 0, 0]];
+  var ESPESSURAS = [['0,625 mm', 0.625], ['2 mm', 2], ['5 mm', 5], ['10 mm', 10]];
+  // cornerstone3D BlendModes: 0 = COMPOSITE (corte normal), 3 = AVERAGE_INTENSITY_BLEND (media)
+  var MISTURA_NORMAL = 0;
+  var MISTURA_MEDIA = 3;
   var painel = null;
   var recolhido = false;
-  var escolhas = { visual: 'fourUp', filtro: '', preset: '', espessura: 0 };
+  var escolhas = { planos: 'asc3', janela: '', espessura: 0.625 };
   var estudosAbertos = {};
+  var escalas = {};
 
   function servicos() { return window.services || null; }
 
@@ -1089,7 +1127,7 @@ window.config = {
     return achadas;
   }
   function abrirSerie(ds) {
-    escolhas.visual = 'reconstrucao';
+    escolhas.planos = '';
     comando('setHangingProtocol', { protocolId: 'default' });
     setTimeout(function () {
       var s = servicos();
@@ -1120,32 +1158,177 @@ window.config = {
     try { if (window.commandsManager) window.commandsManager.runCommand(nome, opcoes); } catch (e) { /* ignora */ }
   }
 
-  function visualizacao(protocolo) {
-    escolhas.visual = protocolo;
-    comando('setHangingProtocol', { protocolId: protocolo });
+  // ---- escala do exame: HU ou outra (ex.: 0-4095) -----------------------
+  function valoresDo(vp) {
+    try {
+      var d = vp.getImageData();
+      if (d && d.scalarData && d.scalarData.length) return d.scalarData;
+      var esc = d && d.imageData && d.imageData.getPointData().getScalars();
+      return esc ? esc.getData() : null;
+    } catch (e) { return null; }
+  }
+
+  // valor no exame = b + a x HU
+  function escalaDoExame(vp) {
+    var ds = displaySetAtivo();
+    var chave = (ds && ds.displaySetInstanceUID) || 'atual';
+    if (escalas[chave]) return escalas[chave];
+    var dados = valoresDo(vp);
+    if (!dados || !dados.length) return { a: 1, b: 0 };
+    var passo = Math.max(1, Math.floor(dados.length / 200000));
+    var amostra = [];
+    for (var i = 0; i < dados.length; i += passo) amostra.push(dados[i]);
+    amostra.sort(function (x, y) { return x - y; });
+    var pct = function (p) { return amostra[Math.min(amostra.length - 1, Math.floor(p * amostra.length))]; };
+    var ar = pct(0.02);
+    var topo = pct(0.995);
+    var escala = { a: 1, b: 0 };
+    if (ar > -500 && topo > ar) {
+      // pico das partes moles: o histograma (suavizado) mais alto acima do ar
+      var N = 200;
+      var largura = (topo - ar) / N;
+      var h = new Array(N).fill(0);
+      amostra.forEach(function (v) {
+        var k = Math.floor((v - ar) / largura);
+        if (k >= 0 && k < N) h[k] += 1;
+      });
+      var melhor = -1;
+      var pico = 0;
+      for (var k = Math.ceil(N * 0.1); k < N; k++) {
+        var soma = 0;
+        for (var j = Math.max(0, k - 2); j <= Math.min(N - 1, k + 2); j++) soma += h[j];
+        if (soma > melhor) { melhor = soma; pico = ar + (k + 0.5) * largura; }
+      }
+      var a = (pico - ar) / 1040;
+      if (a > 0) escala = { a: a, b: ar + 1000 * a };
+    }
+    escalas[chave] = escala;
+    return escala;
+  }
+
+  // ---- planos ------------------------------------------------------------
+  function protocolo(planos) {
+    var lista = PLANOS.filter(function (p) { return planos.indexOf(p[0]) >= 0; });
+    var grade = lista.length === 4 ? { rows: 2, columns: 2 } : { rows: 1, columns: lista.length };
+    return {
+      id: 'radix-planos-' + planos,
+      name: 'Rádix - planos da tomografia',
+      locked: true,
+      isPreset: false,
+      createdDate: '2026-11-23T00:00:00.000Z',
+      modifiedDate: '2026-11-23T00:00:00.000Z',
+      availableTo: {},
+      editableBy: {},
+      protocolMatchingRules: [],
+      imageLoadStrategy: 'interleaveCenter',
+      displaySetSelectors: {
+        activeDisplaySet: {
+          seriesMatchingRules: [{ weight: 1, attribute: 'isReconstructable', constraint: { equals: { value: true } }, required: true }],
+        },
+      },
+      stages: [{
+        name: 'Planos',
+        viewportStructure: { layoutType: 'grid', properties: grade },
+        viewports: lista.map(function (p) {
+          if (p[2] === 'volume3d') {
+            return {
+              viewportOptions: { viewportId: 'radix-3d', toolGroupId: 'volume3d', viewportType: 'volume3d', orientation: 'coronal', customViewportProps: { hideOverlays: true } },
+              displaySets: [{ id: 'activeDisplaySet', options: { displayPreset: 'CT-Bone' } }],
+            };
+          }
+          return {
+            viewportOptions: {
+              viewportId: 'radix-' + p[3], toolGroupId: 'mpr', viewportType: 'volume', orientation: p[3],
+              initialImageOptions: { preset: 'middle' },
+              syncGroups: [{ type: 'voi', id: 'radix-voi', source: true, target: true }],
+            },
+            displaySets: [{ id: 'activeDisplaySet' }],
+          };
+        }),
+      }],
+    };
+  }
+
+  function aplicarPlanos(planos) {
+    escolhas.planos = planos;
+    var s = servicos();
+    var id = 'radix-planos-' + planos;
+    try {
+      var hp = s && s.hangingProtocolService;
+      if (hp && !(hp.getProtocolById && hp.getProtocolById(id))) hp.addProtocol(id, protocolo(planos));
+    } catch (e) { /* ja registrado */ }
+    comando('setHangingProtocol', { protocolId: id });
+    // os quadros novos nascem sem a janela/espessura escolhidas: reaplica
+    setTimeout(reaplicar, 900);
     montar(true);
   }
 
-  function filtro(nome, janela, nivel) {
-    escolhas.filtro = nome;
-    quadros().forEach(function (q) {
-      if (q.e3d) return;
+  function alternarPlano(letra) {
+    var atual = escolhas.planos;
+    // vindo de uma reconstrucao (nenhum plano na tela): abre o plano clicado
+    if (!atual) { aplicarPlanos(letra); return; }
+    var tem = atual.indexOf(letra) >= 0;
+    if (tem && atual.length === 1) return; // a tela nunca fica vazia
+    var nova = PLANOS.map(function (p) { return p[0]; }).filter(function (l) {
+      return l === letra ? !tem : atual.indexOf(l) >= 0;
+    }).join('');
+    aplicarPlanos(nova);
+  }
+
+  // ---- janela, 3D e espessura -------------------------------------------
+  function janela(nome, largura, nivel) {
+    escolhas.janela = nome;
+    var planos = quadros().filter(function (q) { return !q.e3d; });
+    var e = planos.length ? escalaDoExame(planos[0].vp) : { a: 1, b: 0 };
+    planos.forEach(function (q) {
       try {
-        if (!janela) { if (q.vp.resetProperties) q.vp.resetProperties(); }
-        else q.vp.setProperties({ voiRange: { lower: nivel - janela / 2, upper: nivel + janela / 2 } });
+        if (!largura) { if (q.vp.resetProperties) q.vp.resetProperties(); }
+        else {
+          var baixo = e.b + e.a * (nivel - largura / 2);
+          var alto = e.b + e.a * (nivel + largura / 2);
+          q.vp.setProperties({ voiRange: { lower: Math.round(baixo), upper: Math.round(alto) } });
+        }
         q.vp.render();
-      } catch (e) { /* quadro sem janela */ }
+      } catch (err) { /* quadro sem janela */ }
     });
     montar(true);
   }
 
-  function preset3d(nome) {
-    escolhas.preset = nome;
+  function remapear(funcao, tamanho) {
+    var nos = [];
+    for (var i = 0; i < funcao.getSize(); i++) {
+      var v = new Array(tamanho).fill(0);
+      funcao.getNodeValue(i, v);
+      nos.push(v);
+    }
+    return nos;
+  }
+
+  // 3D so osso: CT-Bone, levado para a escala do exame quando nao e HU
+  function ossoNo3d() {
     quadros().forEach(function (q) {
       if (!q.e3d) return;
-      try { q.vp.setProperties({ preset: nome }); q.vp.render(); } catch (e) { /* ignora */ }
+      var ds = displaySetAtivo();
+      var chave = (ds && ds.displaySetInstanceUID) || 'atual';
+      if (q.vp.__radixOsso === chave) return;
+      try {
+        q.vp.setProperties({ preset: 'CT-Bone' });
+        var e = escalaDoExame(q.vp);
+        if (e.a !== 1 || e.b !== 0) {
+          var prop = q.vp.getActors()[0].actor.getProperty();
+          var opac = prop.getScalarOpacity(0);
+          var nosO = remapear(opac, 4);
+          opac.removeAllPoints();
+          nosO.forEach(function (n) { opac.addPointLong(e.b + e.a * n[0], n[1], n[2], n[3]); });
+          var cor = prop.getRGBTransferFunction(0);
+          var nosC = remapear(cor, 6);
+          cor.removeAllPoints();
+          nosC.forEach(function (n) { cor.addRGBPointLong(e.b + e.a * n[0], n[1], n[2], n[3], n[4], n[5]); });
+        }
+        q.vp.__radixOsso = chave;
+        q.vp.render();
+      } catch (err) { /* volume ainda carregando: tenta de novo */ }
     });
-    montar(true);
   }
 
   function espessura(mm) {
@@ -1153,22 +1336,28 @@ window.config = {
     quadros().forEach(function (q) {
       if (q.e3d || !q.vp.setBlendMode) return;
       try {
-        // 1 = MAXIMUM_INTENSITY_BLEND, 0 = COMPOSITE (cornerstone3D BlendModes)
-        q.vp.setBlendMode(mm ? 1 : 0);
-        q.vp.setProperties({ slabThickness: mm || 0.1 });
+        q.vp.setBlendMode(mm > 0.625 ? MISTURA_MEDIA : MISTURA_NORMAL);
+        q.vp.setProperties({ slabThickness: mm });
         q.vp.render();
       } catch (e) { /* ignora */ }
     });
     montar(true);
   }
 
+  function reaplicar() {
+    var j = JANELAS.filter(function (x) { return x[0] === escolhas.janela; })[0];
+    if (j && j[1]) janela(j[0], j[1], j[2]);
+    if (escolhas.espessura !== 0.625) espessura(escolhas.espessura);
+  }
+
+  // ---- painel -------------------------------------------------------------
   function botao(texto, ativo, aoClicar, rotulo) {
     var b = document.createElement('button');
     b.type = 'button';
     b.textContent = texto;
     if (rotulo) b.setAttribute('aria-label', rotulo);
     if (ativo !== null) b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
-    b.style.cssText = 'border-radius:6px;padding:2px 8px;font:500 12px Inter,system-ui,sans-serif;cursor:pointer;border:1px solid ' +
+    b.style.cssText = 'border-radius:6px;padding:4px 6px;font:500 12px Inter,system-ui,sans-serif;cursor:pointer;text-align:center;border:1px solid ' +
       (ativo ? '#2dd4bf;background:#0d9488;color:#fff' : '#2dd4bf55;background:#0f172a;color:#e2e8f0');
     b.addEventListener('click', aoClicar);
     return b;
@@ -1178,12 +1367,15 @@ window.config = {
     var g = document.createElement('div');
     g.setAttribute('role', 'group');
     g.setAttribute('aria-label', titulo);
-    g.style.cssText = 'display:flex;align-items:center;gap:4px';
+    g.style.cssText = 'display:flex;flex-direction:column;gap:4px';
     var t = document.createElement('span');
-    t.textContent = titulo + ':';
-    t.style.cssText = 'color:#94a3b8;font:600 11px Inter,system-ui,sans-serif';
+    t.textContent = titulo;
+    t.style.cssText = 'color:#94a3b8;font:600 11px Inter,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.04em';
     g.appendChild(t);
-    itens.forEach(function (b) { g.appendChild(b); });
+    var caixa = document.createElement('div');
+    caixa.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:4px';
+    itens.forEach(function (b) { caixa.appendChild(b); });
+    g.appendChild(caixa);
     return g;
   }
 
@@ -1195,25 +1387,25 @@ window.config = {
       painel = document.createElement('div');
       painel.setAttribute('role', 'toolbar');
       painel.setAttribute('aria-label', 'Tomografia');
-      painel.style.cssText = 'position:absolute;top:6px;left:10px;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:calc(100% - 330px);padding:4px 8px;border-radius:8px;background:#020617e6;border:1px solid #2dd4bf55';
+      painel.setAttribute('aria-orientation', 'vertical');
+      painel.style.cssText = 'position:absolute;top:44px;right:10px;z-index:20;display:flex;flex-direction:column;gap:10px;width:150px;max-height:calc(100% - 56px);overflow:auto;padding:8px;border-radius:10px;background:#020617e6;border:1px solid #2dd4bf55';
       var pai = grade.parentElement;
       if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
       pai.appendChild(painel);
     }
     while (painel.firstChild) painel.removeChild(painel.firstChild);
     if (recolhido) {
-      painel.appendChild(botao('▸ Tomografia', null, function () { recolhido = false; montar(true); }, 'Abrir painel da tomografia'));
+      painel.style.width = 'auto';
+      painel.appendChild(botao('◂ Tomografia', null, function () { recolhido = false; montar(true); }, 'Abrir painel da tomografia'));
       return;
     }
-    painel.appendChild(botao('◂', null, function () { recolhido = true; montar(true); }, 'Recolher painel da tomografia'));
-    painel.appendChild(grupo('Visualização', VISUALIZACOES.map(function (v) {
-      return botao(v[0], escolhas.visual === v[1], function () { visualizacao(v[1]); });
+    painel.style.width = '150px';
+    painel.appendChild(botao('Recolher ▸', null, function () { recolhido = true; montar(true); }, 'Recolher painel da tomografia'));
+    painel.appendChild(grupo('Planos', PLANOS.map(function (p) {
+      return botao(p[1], (escolhas.planos || '').indexOf(p[0]) >= 0, function () { alternarPlano(p[0]); });
     })));
-    painel.appendChild(grupo('Filtro', FILTROS.map(function (f) {
-      return botao(f[0], escolhas.filtro === f[0], function () { filtro(f[0], f[1], f[2]); });
-    })));
-    painel.appendChild(grupo('3D', PRESETS_3D.map(function (p) {
-      return botao(p[0], escolhas.preset === p[1], function () { preset3d(p[1]); });
+    painel.appendChild(grupo('Janela', JANELAS.map(function (j) {
+      return botao(j[0], escolhas.janela === j[0], function () { janela(j[0], j[1], j[2]); });
     })));
     painel.appendChild(grupo('Espessura', ESPESSURAS.map(function (e) {
       return botao(e[0], escolhas.espessura === e[1], function () { espessura(e[1]); });
@@ -1224,7 +1416,11 @@ window.config = {
     if (rec.cortes) itens.push(botao('Cortes transversais', false, function () { abrirSerie(rec.cortes); }));
     if (rec.panoCanal) itens.push(botao('Panorâmica com canal', false, function () { abrirSerie(rec.panoCanal); }));
     if (rec.cortesCanal) itens.push(botao('Cortes com canal', false, function () { abrirSerie(rec.cortesCanal); }));
-    if (itens.length) painel.appendChild(grupo('Reconstrução', itens));
+    if (itens.length) {
+      var g = grupo('Reconstrução', itens);
+      g.lastChild.style.gridTemplateColumns = '1fr';
+      painel.appendChild(g);
+    }
   }
 
   function desmontar() {
@@ -1245,11 +1441,12 @@ window.config = {
     if (nova !== assinatura) { assinatura = nova; montar(true); }
     var estudo = ds.StudyInstanceUID || ds.displaySetInstanceUID;
     if (!estudosAbertos[estudo]) {
-      // abre sozinha em 4 quadros (3 planos + 3D), uma vez por estudo
+      // abre sozinha com os 4 planos (axial, sagital, coronal e 3D), uma vez por estudo
       estudosAbertos[estudo] = true;
-      escolhas = { visual: 'fourUp', filtro: '', preset: '', espessura: 0 };
-      comando('setHangingProtocol', { protocolId: 'fourUp' });
+      escolhas = { planos: 'asc3', janela: '', espessura: 0.625 };
+      aplicarPlanos('asc3');
     }
+    ossoNo3d();
     montar(false);
   }
   setInterval(verificar, 700);
