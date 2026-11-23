@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { useRotularValor } from './useItensFicha'
+import MarcadorAchado from '../curadoria/MarcadorAchado'
+import type { Marcacao } from '../../lib/marcacoes'
 import {
   lerDentes,
   type Avaliacao,
@@ -43,7 +45,7 @@ export const COR_CLASSIFICACAO: Record<Classificacao, string> = {
 export function rascunhoValido(item: ItemFicha, r: AnotacaoRascunho | undefined): boolean {
   if (!r || r.avaliacao === 'concordo') return true
   if (item.tipo === 'dentes' && r.valor.trim() && lerDentes(r.valor) === null) return false
-  return r.nota.trim().length > 0 || r.valor.trim().length > 0
+  return r.nota.trim().length > 0 || r.valor.trim().length > 0 || (r.marcacoes?.length ?? 0) > 0
 }
 
 /** Formulario do REVISOR: avalia cada item, da a avaliacao geral e envia. */
@@ -58,6 +60,7 @@ export default function PainelParecer({
   somenteLeitura,
   etapa,
   onEtapa,
+  orthancReferenceId,
 }: {
   itens: ItemFicha[]
   rascunho: Record<string, AnotacaoRascunho>
@@ -70,6 +73,8 @@ export default function PainelParecer({
   /** holofote: indice do item aceso; itens.length = avaliacao geral; itens.length + 1 = enviar */
   etapa: number
   onEtapa: (n: number) => void
+  /** imagem da ficha: o editor de marcacoes sugeridas desenha nela */
+  orthancReferenceId?: number | null
 }) {
   const t = useTranslations('SegundaOpiniao')
   const holofote = !somenteLeitura
@@ -171,6 +176,7 @@ export default function PainelParecer({
                       apagado={holofote && indice !== etapa}
                       onAcender={() => onEtapa(indice)}
                       onProximo={avancar}
+                      orthancReferenceId={orthancReferenceId ?? undefined}
                     />
                   )
                 })}
@@ -270,6 +276,7 @@ function ItemRevisao({
   apagado,
   onAcender,
   onProximo,
+  orthancReferenceId,
 }: {
   item: ItemFicha
   valor: AnotacaoRascunho
@@ -279,6 +286,7 @@ function ItemRevisao({
   apagado: boolean
   onAcender: () => void
   onProximo: () => void
+  orthancReferenceId?: number
 }) {
   const ref = useRef<HTMLLIElement>(null)
   const notaRef = useRef<HTMLTextAreaElement>(null)
@@ -295,7 +303,9 @@ function ItemRevisao({
   const longo = item.valor.length > 140
   const anotando = valor.avaliacao !== 'concordo'
   const dentesInvalidos = item.tipo === 'dentes' && valor.valor.trim() !== '' && lerDentes(valor.valor) === null
-  const faltaTexto = anotando && !valor.nota.trim() && !valor.valor.trim()
+  const sugeridas = valor.marcacoes ?? []
+  const faltaTexto = anotando && !valor.nota.trim() && !valor.valor.trim() && sugeridas.length === 0
+  const [editando, setEditando] = useState(false)
 
   return (
     <li
@@ -384,6 +394,43 @@ function ItemRevisao({
               {dentesInvalidos && <span className="mt-0.5 block text-[11px] text-rose-700 dark:text-rose-300">{t('item.dentesInvalidos')}</span>}
             </label>
           )}
+          {item.tipo === 'marcacoes' && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-pink-400/50 bg-pink-400/10 px-2.5 py-2">
+              <button
+                type="button"
+                onClick={() => setEditando(true)}
+                disabled={desabilitado || !orthancReferenceId}
+                className="rounded-lg bg-pink-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-500 disabled:opacity-40"
+              >
+                {t('item.novaMarcacao')}
+              </button>
+              {sugeridas.length > 0 && (
+                <>
+                  <span className="text-xs font-medium text-pink-800 dark:text-pink-100">{t('item.marcacoesSugeridas', { total: sugeridas.length })}</span>
+                  <button
+                    type="button"
+                    onClick={() => onChange({ ...valor, marcacoes: [] })}
+                    disabled={desabilitado}
+                    className="text-[11px] text-pink-800 underline hover:no-underline dark:text-pink-200"
+                  >
+                    {t('item.limparMarcacoes')}
+                  </button>
+                </>
+              )}
+              <p className="w-full text-[11px] text-slate-500">{t('item.novaMarcacaoDica')}</p>
+            </div>
+          )}
+          {editando && orthancReferenceId && (
+            <EditorMarcacoesSugeridas
+              orthancReferenceId={orthancReferenceId}
+              inicial={sugeridas}
+              onConcluir={(m) => {
+                onChange({ ...valor, marcacoes: m })
+                setEditando(false)
+              }}
+              onCancelar={() => setEditando(false)}
+            />
+          )}
           <label className="block text-xs text-slate-400">
             {item.tipo === 'texto' ? t('item.textoSugerido') : t('item.anotacao')}
             <textarea
@@ -416,5 +463,60 @@ function ItemRevisao({
         </div>
       )}
     </li>
+  )
+}
+
+/** Janela por cima da tela: o revisor desenha as marcacoes que sugere,
+ * com o mesmo editor da Curadoria (oval, retangulo, seta + achado). */
+function EditorMarcacoesSugeridas({
+  orthancReferenceId,
+  inicial,
+  onConcluir,
+  onCancelar,
+}: {
+  orthancReferenceId: number
+  inicial: Marcacao[]
+  onConcluir: (m: Marcacao[]) => void
+  onCancelar: () => void
+}) {
+  const t = useTranslations('SegundaOpiniao')
+  const [marcacoes, setMarcacoes] = useState<Marcacao[]>(inicial)
+  useEffect(() => {
+    function aoTeclar(ev: KeyboardEvent) {
+      if (ev.key === 'Escape') {
+        ev.stopPropagation()
+        onCancelar()
+      }
+    }
+    window.addEventListener('keydown', aoTeclar, true)
+    return () => window.removeEventListener('keydown', aoTeclar, true)
+  }, [onCancelar])
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onKeyDown={(e) => e.stopPropagation()}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="titulo-nova-marcacao"
+        className="flex max-h-[92vh] w-full max-w-4xl flex-col gap-3 overflow-y-auto rounded-xl border border-pink-400/60 bg-base-surface p-4 shadow-2xl"
+      >
+        <h2 id="titulo-nova-marcacao" className="text-sm font-semibold text-ink">
+          {t('item.novaMarcacao')}
+        </h2>
+        <p className="text-xs text-slate-400">{t('item.editorDica')}</p>
+        <MarcadorAchado orthancReferenceId={orthancReferenceId} marcacoes={marcacoes} onMarcar={setMarcacoes} />
+        <div className="flex justify-end gap-2">
+          <button type="button" onClick={onCancelar} className="rounded-lg border border-base-border px-3 py-1.5 text-xs text-slate-300 hover:bg-white/5">
+            {t('item.cancelar')}
+          </button>
+          <button
+            type="button"
+            onClick={() => onConcluir(marcacoes)}
+            className="rounded-lg bg-pink-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-pink-500"
+          >
+            {t('item.concluir')}
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

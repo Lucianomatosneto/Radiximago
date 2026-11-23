@@ -19,7 +19,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 
 from app.core.database import get_db
-from app.core.limites import MAX_ACHADOS, TEXTO_LONGO_MAX
+from app.core.limites import MAX_ACHADOS, MAX_MARCACOES, TEXTO_LONGO_MAX
 from app.modules.auth import exigir_perfis, PERFIS_CURADORIA, PERFIS_CURADORIA_ESCRITA
 from app.modules.users import User, UserRole
 from app.modules.curations import (
@@ -49,7 +49,7 @@ from .common import (
     _valor,
 )
 from .router import router
-from .schemas import AplicarDecisaoRevisao, ReviewRequest, ReviewRespond
+from .schemas import AplicarDecisaoRevisao, Marcacao, ReviewRequest, ReviewRespond
 
 
 # ---------------------------------------------------------------------
@@ -58,6 +58,8 @@ from .schemas import AplicarDecisaoRevisao, ReviewRequest, ReviewRespond
 #   "dentes": o revisor pode propor a lista de dentes (FDI)
 #   "texto": acrescentar = juntar a sugestao ao proprio texto do item
 #   "nota":  acrescentar = registrar a anotacao nas observacoes internas
+#   "marcacoes" (22/11/2026): o revisor desenha marcacoes na imagem;
+#            acrescentar = elas entram na ficha DEPOIS das que ja existiam
 # ---------------------------------------------------------------------
 ITENS_REVISAVEIS: dict[str, tuple[str, str, type | None]] = {
     "tipo_radiografia": ("Tipo de radiografia", "valor", TipoRadiografia),
@@ -68,7 +70,7 @@ ITENS_REVISAVEIS: dict[str, tuple[str, str, type | None]] = {
     "achado_principal": ("Achado principal", "valor", AchadoPrincipal),
     "alteracoes_observadas": ("Alterações observadas", "nota", None),
     "erros_tecnicos": ("Erros técnicos", "nota", None),
-    "marcacoes": ("Marcações na imagem", "nota", None),
+    "marcacoes": ("Marcações na imagem", "marcacoes", None),
     "achados_detalhe": ("Achados detalhados", "texto", None),
     "descricao_didatica": ("Descrição didática", "texto", None),
     "observacoes_internas": ("Observações internas", "texto", None),
@@ -97,6 +99,11 @@ def _validar_sugestao(chave: str, tipo: str, enum_valores: type | None, valor):
         if not isinstance(valor, list) or any(not isinstance(d, int) or d not in DENTES_PERMANENTES for d in valor):
             raise HTTPException(status_code=422, detail="Dentes sugeridos inválidos (use a notação FDI, 11 a 48).")
         return sorted(set(valor))
+    if tipo == "marcacoes":
+        # ja validadas uma a uma pelo esquema (forma, coordenadas de 0 a 1)
+        if not isinstance(valor, list) or any(not isinstance(m, Marcacao) for m in valor):
+            raise HTTPException(status_code=422, detail="Marcações sugeridas inválidas.")
+        return [m.model_dump(mode="json", exclude_none=True) for m in valor]
     raise HTTPException(status_code=422, detail=f"O item '{chave}' não aceita valor sugerido, só anotação.")
 
 
@@ -512,6 +519,16 @@ def incorporar_anotacao(
                 ficha.observacoes_internas, f"[Segunda opinião, {data} - {rotulo}] {nota.nota}",
             )
         efeito = f"{rotulo}: {anterior!r} -> {nota.valor_sugerido!r}"
+    elif tipo == "marcacoes" and isinstance(nota.valor_sugerido, list) and nota.valor_sugerido:
+        atuais = list(ficha.marcacoes or [])
+        if len(atuais) + len(nota.valor_sugerido) > MAX_MARCACOES:
+            raise HTTPException(status_code=422, detail=f"A ficha ficaria com mais de {MAX_MARCACOES} marcações.")
+        ficha.marcacoes = atuais + list(nota.valor_sugerido)
+        if nota.nota:
+            ficha.observacoes_internas = _juntar_texto(
+                ficha.observacoes_internas, f"[Segunda opinião, {data} - {rotulo}] {nota.nota}",
+            )
+        efeito = f"{rotulo}: {len(nota.valor_sugerido)} marcação(ões) do revisor acrescentada(s)"
     elif tipo == "texto":
         texto = nota.nota or (nota.valor_sugerido if isinstance(nota.valor_sugerido, str) else None)
         if not texto:
