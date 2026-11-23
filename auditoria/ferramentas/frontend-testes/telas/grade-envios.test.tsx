@@ -164,3 +164,46 @@ describe('grade das imagens enviadas por mim', () => {
     abrirJanela.mockRestore()
   })
 })
+
+describe('recebidas de colegas (Compartilhadas comigo, 22/11/2026)', () => {
+  const RECEBIDAS = [
+    item(11, 'na_fila', { enviado_por: 'Prof. Silva', nova: true }),
+    item(12, 'no_banco', { enviado_por: 'Curadora Lima', tipo_radiografia: 'oclusal' }),
+  ]
+  const rotasRecebidas = (extra: Record<string, Rota> = {}): Record<string, Rota> => ({
+    'GET /envios/recebidas': { corpo: { itens: RECEBIDAS } },
+    'POST /envios/recebidas/vistas': { status: 204 },
+    ...extra,
+  })
+  function abrirRecebidas(r: Record<string, Rota>, filtroTipo: string | null = null) {
+    const servidor = servidorFalso(r)
+    montarTela(<GradeEnvios modo="recebidas" equipe filtroTipo={filtroTipo} />)
+    return servidor
+  }
+
+  it('mostra quem enviou no "i", marca as novas como vistas e so oferece "Ver selecionadas"', async () => {
+    const servidor = abrirRecebidas(rotasRecebidas())
+    expect(await screen.findByRole('heading', { name: 'Recebidas de colegas' })).toBeTruthy()
+    await screen.findByRole('img', { name: 'Imagem nº 11' })
+    fireEvent.click(within(quadrado(11)).getByRole('button', { name: 'Ver informações' }))
+    expect(within(quadrado(11)).getByText(/Enviada por Prof\. Silva/)).toBeTruthy()
+    await waitFor(() => expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/envios/recebidas/vistas', corpo: undefined }]))
+    marcar(11)
+    expect(screen.queryByRole('button', { name: 'Enviar a pessoas ou grupos' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /Retirar/ })).toBeNull()
+    expect(screen.getByRole('button', { name: /Ver 1 selecionada/ })).toBeTruthy()
+    expect(servidor.pedidos.some((p) => p.caminho === '/envios/analistas')).toBe(false)
+  })
+
+  it('sem nenhuma recebida: a secao nao aparece', async () => {
+    const servidor = abrirRecebidas(rotasRecebidas({ 'GET /envios/recebidas': { corpo: { itens: [] } } }))
+    await waitFor(() => expect(servidor.pedidos.some((p) => p.caminho === '/envios/recebidas')).toBe(true))
+    expect(screen.queryByRole('heading', { name: 'Recebidas de colegas' })).toBeNull()
+  })
+
+  it('o filtro por tipo vale aqui tambem', async () => {
+    abrirRecebidas(rotasRecebidas(), 'oclusal')
+    await screen.findByRole('img', { name: 'Imagem nº 12' })
+    expect(screen.queryByRole('img', { name: 'Imagem nº 11' })).toBeNull()
+  })
+})
