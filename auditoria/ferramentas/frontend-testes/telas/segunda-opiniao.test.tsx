@@ -15,8 +15,31 @@ import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/segunda-opiniao' }))
 vi.mock('../../../../frontend/src/components/segundaOpiniao/VisualizadorRevisao', () => ({
-  default: ({ viewerInfo, carregando }: { viewerInfo: { viewer_url: string | null } | null; carregando: boolean }) => (
-    <div data-testid="visualizador">{carregando ? 'abrindo imagem' : (viewerInfo?.viewer_url ?? 'sem imagem')}</div>
+  default: ({
+    viewerInfo,
+    carregando,
+    marcacoesSugeridas,
+  }: {
+    viewerInfo: { viewer_url: string | null } | null
+    carregando: boolean
+    marcacoesSugeridas?: { id: string }[]
+  }) => (
+    <div data-testid="visualizador">
+      {carregando ? 'abrindo imagem' : (viewerInfo?.viewer_url ?? 'sem imagem')}
+      <span data-testid="sugeridas-na-imagem">{(marcacoesSugeridas ?? []).map((m) => m.id).join(',')}</span>
+    </div>
+  ),
+}))
+// o editor de marcacoes de verdade desenha numa imagem (canvas); aqui um
+// botao "desenhar seta" acrescenta uma marcacao inventada
+vi.mock('../../../../frontend/src/components/curadoria/MarcadorAchado', () => ({
+  default: ({ marcacoes, onMarcar, orthancReferenceId }: { marcacoes: { id: string }[]; onMarcar: (m: object[]) => void; orthancReferenceId?: number }) => (
+    <div data-testid="editor-marcacoes">
+      <p>imagem {orthancReferenceId}</p>
+      <button type="button" onClick={() => onMarcar([...marcacoes, { id: 'sug-1', tipo: 'seta', x1: 0.1, y1: 0.1, x2: 0.3, y2: 0.3, achado: 'carie' }])}>
+        desenhar seta
+      </button>
+    </div>
   ),
 }))
 
@@ -436,5 +459,82 @@ describe('quem pediu: parecer devolvido', () => {
     await usuario.click(within(decisao).getByRole('button', { name: /Aprovar ficha/ }))
     expect((await screen.findByRole('alert')).textContent).toBe(mensagem)
     expect(screen.queryByRole('status')).toBeNull()
+  })
+})
+
+// PEDIDO DO VIDEO (22/11/2026): em "Marcações na imagem", com Ajustar ou
+// Discordo, o revisor faz NOVAS marcações onde quiser na imagem; quem pediu
+// a segunda opinião vê o que foi sugerido destacado na imagem.
+describe('revisor sugere marcacoes na imagem', () => {
+  it.each(['Ajustar', 'Discordo'])('"%s" em Marcações: "Fazer nova marcação" abre o editor e envia as marcações sugeridas', async (avaliacao) => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(rotasPadrao({ 'POST /curation/reviews/31/respond': { corpo: { ok: true } } }))
+    await esperarFicha()
+    const item = screen.getByRole('radiogroup', { name: 'Avaliar: Marcações na imagem' })
+    await usuario.click(within(item).getByRole('radio', { name: avaliacao }))
+    await usuario.click(screen.getByRole('button', { name: 'Fazer nova marcação' }))
+    const janela = screen.getByRole('dialog', { name: 'Fazer nova marcação' })
+    expect(within(janela).getByText('imagem 901')).toBeTruthy() // a imagem da ficha em revisao
+    await usuario.click(within(janela).getByRole('button', { name: 'desenhar seta' }))
+    await usuario.click(within(janela).getByRole('button', { name: 'Concluir' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByText('1 marcação sugerida')).toBeTruthy()
+
+    await usuario.click(classificacao('Discordância menor'))
+    await usuario.click(classificacao('Discordância menor'))
+    await usuario.click(screen.getByRole('button', { name: 'Enviar parecer' }))
+    await screen.findByRole('status')
+    expect(servidor.alteracoes()[0].corpo).toEqual({
+      classificacao: 'discordancia_menor',
+      parecer_revisor: null,
+      anotacoes: [
+        {
+          item: 'marcacoes',
+          avaliacao: avaliacao === 'Ajustar' ? 'ajustar' : 'discordo',
+          nota: null,
+          valor_sugerido: [{ id: 'sug-1', tipo: 'seta', x1: 0.1, y1: 0.1, x2: 0.3, y2: 0.3, achado: 'carie' }],
+        },
+      ],
+    })
+  })
+
+  it('"Limpar" tira as marcações sugeridas; sem marcação nem anotação o item pede explicação', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await esperarFicha()
+    const item = screen.getByRole('radiogroup', { name: 'Avaliar: Marcações na imagem' })
+    await usuario.click(within(item).getByRole('radio', { name: 'Ajustar' }))
+    await usuario.click(screen.getByRole('button', { name: 'Fazer nova marcação' }))
+    await usuario.click(screen.getByRole('button', { name: 'desenhar seta' }))
+    await usuario.click(screen.getByRole('button', { name: 'Concluir' }))
+    expect(screen.queryByText('Escreva a anotação (ou proponha um valor) para este item.')).toBeNull()
+    await usuario.click(screen.getByRole('button', { name: 'Limpar marcações sugeridas' }))
+    expect(screen.queryByText('1 marcação sugerida')).toBeNull()
+    expect(screen.getByText('Escreva a anotação (ou proponha um valor) para este item.')).toBeTruthy()
+  })
+})
+
+describe('quem pediu ve as marcacoes sugeridas destacadas', () => {
+  const MARCAS = [
+    { id: 's1', tipo: 'oval', x: 0.2, y: 0.2, largura: 0.1, altura: 0.1, achado: 'carie' },
+    { id: 's2', tipo: 'seta', x1: 0.5, y1: 0.5, x2: 0.6, y2: 0.6 },
+  ]
+  const NOTA_MARCAS = { ...NOTA, id: 78, item: 'marcacoes', rotulo: 'Marcações na imagem', tipo_item: 'marcacoes', nota: 'Faltou a lesão distal.', valor_sugerido: MARCAS }
+
+  it('a anotacao mostra quantas marcacoes foram sugeridas e a imagem recebe as pendentes', async () => {
+    window.history.replaceState(null, '', '/segunda-opiniao?review=41&aba=devolvidas')
+    await abrir(rotasPadrao({ 'GET /curation/reviews/41/detalhe': { corpo: { ...DETALHE_DEVOLVIDA, anotacoes: [NOTA_MARCAS] } } }))
+    await screen.findByRole('heading', { name: 'Anotações do revisor' })
+    expect(screen.getByText('2 marcações sugeridas — tracejadas em rosa na imagem')).toBeTruthy()
+    expect(screen.getByTestId('sugeridas-na-imagem').textContent).toBe('s1,s2')
+  })
+
+  it('anotacao dispensada: as marcacoes saem da imagem', async () => {
+    window.history.replaceState(null, '', '/segunda-opiniao?review=41&aba=devolvidas')
+    await abrir(
+      rotasPadrao({ 'GET /curation/reviews/41/detalhe': { corpo: { ...DETALHE_DEVOLVIDA, anotacoes: [{ ...NOTA_MARCAS, situacao: 'dispensada' }] } } }),
+    )
+    await screen.findByRole('heading', { name: 'Anotações do revisor' })
+    expect(screen.getByTestId('sugeridas-na-imagem').textContent).toBe('')
   })
 })
