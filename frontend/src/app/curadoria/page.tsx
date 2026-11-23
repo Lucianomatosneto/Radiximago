@@ -32,6 +32,7 @@ import PainelVoz from '../../components/curadoria/PainelVoz'
 import { ReviewInfo } from '../../components/curadoria/SegundaOpiniaoBanner'
 import { useVerificarSessao } from '../../lib/useVerificarSessao'
 import AvisoSemConexao from '../../components/AvisoSemConexao'
+import { TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
 
 // suporte: so leitura na API (02/11/2026); professor (08/11/2026): so as
 // imagens que ELE enviou, como sugestao ao curador (nao aprova)
@@ -124,6 +125,11 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   payload.termos = form.termos
   if (form.qualidade_tecnica !== '') payload.qualidade_tecnica = form.qualidade_tecnica
   if (form.origem) payload.origem = form.origem
+  // 23/11/2026: denticao, odontograma de situacao e estruturas (as
+  // estruturas so valem na panoramica: nos outros tipos vao vazias)
+  if (form.denticao) payload.denticao = form.denticao
+  payload.situacao_dentes = form.situacao_dentes
+  payload.estruturas_extradentais = TIPOS_COM_ODONTOGRAMA.includes(form.tipo_radiografia) ? form.estruturas_extradentais : []
   return payload
 }
 
@@ -821,6 +827,9 @@ export default function CuradoriaPage() {
         ? ficha.erros_tecnicos.filter((e: string) => erroCabeNoExame(e, ficha.tipo_radiografia ?? 'periapical'))
         : [],
       origem: ficha.origem ?? '',
+      denticao: ficha.denticao ?? '',
+      situacao_dentes: ficha.situacao_dentes && typeof ficha.situacao_dentes === 'object' ? ficha.situacao_dentes : {},
+      estruturas_extradentais: Array.isArray(ficha.estruturas_extradentais) ? ficha.estruturas_extradentais : [],
     })
   }
 

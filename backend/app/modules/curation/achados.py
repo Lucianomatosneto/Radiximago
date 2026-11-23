@@ -26,7 +26,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_FICHA_LEITURA, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
-from app.modules.curations import DENTES_PERMANENTES
+from app.modules.curations import DENTES_FDI
 from app.modules.achados import Achado, TipoAchado, regiao_do_achado
 
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _registrar_auditoria, _registrar_historico
@@ -36,7 +36,7 @@ from .schemas import AchadoCreate, AchadoUpdate, AchadoOut
 
 def _normalizar_dentes(dentes: List[int] | None, dente_nao_identificado: bool) -> List[int]:
     """
-    Valida os numeros FDI (mesma lista DENTES_PERMANENTES ja usada para
+    Valida os numeros FDI (mesma lista DENTES_FDI ja usada para
     Curation.dentes) e normaliza duplicatas por dedupe + ordenacao - nao
     rejeita, seguindo o mesmo padrao tolerante do frontend atual
     (PainelDadosSobrepostos.tsx.adicionarDente ja ignora silenciosamente
@@ -55,11 +55,11 @@ def _normalizar_dentes(dentes: List[int] | None, dente_nao_identificado: bool) -
             detail="Um achado com dente_nao_identificado=true nao pode informar dentes.",
         )
 
-    invalidos = [d for d in lista if d not in DENTES_PERMANENTES]
+    invalidos = [d for d in lista if d not in DENTES_FDI]
     if invalidos:
         raise HTTPException(
             status_code=422,
-            detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
+            detail=f"Dentes invalidos (use 11-48 ou deciduos 51-85, notacao FDI): {invalidos}",
         )
 
     return sorted(set(lista))

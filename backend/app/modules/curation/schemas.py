@@ -1,7 +1,7 @@
 """Schemas Pydantic de entrada dos endpoints de curadoria."""
 
 from datetime import datetime
-from typing import Annotated, List, Literal, Optional
+from typing import Annotated, Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -22,6 +22,10 @@ from app.modules.curations import (
     DecisaoFinalRevisao,
     ClassificacaoRevisao,
     AvaliacaoItem,
+    Denticao,
+    SituacaoDente,
+    EstruturaExtradental,
+    DENTES_FDI,
 )
 from app.modules.achados import TipoAchado, RegiaoAnatomica, TipoErroTecnico
 from app.modules.orthanc_references import OrigemImagem
@@ -141,6 +145,12 @@ class CurationUpdate(BaseModel):
     # ORIGEM da imagem (aparelho / externa) - antes so automatica; desde
     # 26/10/2026 o curador confere e corrige na ficha (filtro da Pesquisa)
     origem: Optional[OrigemImagem] = None
+    # 23/11/2026 (curation/situacao_dentaria.py): denticao, odontograma de
+    # situacao {"16": ["restaurado"]} (lista completa - substitui; {} apaga)
+    # e estruturas fora dos dentes (so panoramica; lista completa)
+    denticao: Optional[Denticao] = None
+    situacao_dentes: Optional[Dict[str, List[SituacaoDente]]] = Field(default=None, max_length=len(DENTES_FDI))
+    estruturas_extradentais: Optional[List[EstruturaExtradental]] = Field(default=None, max_length=len(EstruturaExtradental))
 
 
 class CurationApprove(BaseModel):

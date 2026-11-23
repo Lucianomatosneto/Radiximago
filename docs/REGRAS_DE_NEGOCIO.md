@@ -150,6 +150,16 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - Um pedido feito antes de a conta existir e confirmado depois, com a conta já ativa, **não vai para a fila**: fica "rejeitado" com o motivo "Este e-mail já tem conta" (auditoria `solicitacao_duplicada_descartada`). A pessoa recebe a orientação de entrar com a conta existente ou usar "Esqueci a senha".
 - Na tela Usuários, um pedido pendente cujo e-mail já tem conta mostra "Este e-mail já tem conta (perfil)", e o botão **Aprovar** fica desligado. Aprovar criaria uma conta duplicada ou trocaria o perfil por esse caminho. Para mudar o perfil, edite a conta existente.
 
+### 1.12 Dentição, decíduos, odontograma de situação e estruturas fora dos dentes (23/11/2026)
+
+- **Dentição** (decídua, mista ou permanente) vale em **todos os tipos** de exame. É opcional.
+- Os **dentes decíduos** (notação FDI 51–55, 61–65, 71–75, 81–85) valem em todos os tipos: na ficha, nos achados, na segunda opinião e na pesquisa (inclusive nos filtros de arcada, lado e quadrante). Eles aparecem na tela com dentição **mista** ou **decídua**.
+- Dente decíduo **não combina** com dentição **permanente**: o servidor recusa (422). Na tela, trocar para "Permanente" tira os decíduos da ficha e do odontograma.
+- **Odontograma de situação** (só na tela da **panorâmica**): o curador clica no dente e escolhe como ele está (ausente, incluso/impactado, cárie, restaurado, tratamento endodôntico, implante, prótese, supranumerário). Um dente pode ter mais de uma situação. Situação repetida e dente sem situação são limpos; dente fora da notação FDI é recusado (422).
+- **Estruturas e achados fora dos dentes** (seios maxilares, ATM/côndilos, canal mandibular, perda óssea generalizada, ateroma carotídeo, sialolito, tonsilolito, processo estiloide alongado, lesão óssea radiolúcida ou radiopaca): **só na panorâmica**. Em outro tipo de exame o servidor recusa (422); lista vazia sempre pode (limpar).
+- Pesquisa: filtros `denticao`, `situacao_dente` (algum dente com aquela situação) e `estrutura`, só sobre fichas aprovadas, como os demais.
+- São dados da **imagem anonimizada**, não do paciente: nada identifica a pessoa.
+
 ### 1.5 Acesso negado (01/11/2026)
 
 Toda tela restrita leva à mesma página `/acesso-negado?de=<página>`. Ela mostra a página pedida e o "erro 403", e o botão volta para o início **do perfil**. Antes, `/usuarios` ia para o login e o botão levava ao painel do administrador.
@@ -278,3 +288,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.23 | 22/11/2026 | Definição de cada termo do vocabulário, com fonte, no "?" das marcações (seção 1) |
 | 1.24 | 23/11/2026 | Modalidade da fila da Curadoria: escolher o tipo de exame antes de abrir; tipo informado no envio (seção 2) |
 | 1.25 | 23/11/2026 | Triagem da modalidade em lote (periapical, interproximal, oclusal) (seção 2) |
+| 1.26 | 23/11/2026 | Dentição, dentes decíduos, odontograma de situação e estruturas fora dos dentes na ficha (seção 1.12) |

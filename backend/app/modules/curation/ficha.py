@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.modules.auth import exigir_perfis, PERFIS_FICHA_ESCRITA
 from app.modules.users import User
 from app.modules.orthanc_references import DestinoImagem, OrthancReference
-from app.modules.curations import Curation, StatusCuradoria, TipoRadiografia, DENTES_PERMANENTES
+from app.modules.curations import Curation, StatusCuradoria, TipoRadiografia
 from app.modules.vocabulario import CurationTermo, TermoVocabulario
 from app.modules.achados import Achado, ErroTecnico, regiao_do_achado
 from app.modules.curations import AlteracaoObservada
@@ -15,6 +15,9 @@ from app.modules.curations import AlteracaoObservada
 from .common import STATUS_EDITAVEIS, _buscar_ficha, _perfil_de, e_rascunho_do_professor, _registrar_auditoria, _registrar_historico, _valor
 from .router import router
 from .schemas import CurationCreate, CurationUpdate
+from .situacao_dentaria import (
+    exigir_deciduos_coerentes, exigir_dentes_validos, exigir_estruturas_no_tipo, normalizar_situacao,
+)
 from .tipo_automatico import sugerir_tipo_da_imagem
 
 
@@ -93,13 +96,7 @@ def criar_curadoria(
             detail=f"A imagem {orthanc_reference_id} ja possui ficha (id {ja_existe.id}).",
         )
 
-    if dados.dentes:
-        invalidos = [d for d in dados.dentes if d not in DENTES_PERMANENTES]
-        if invalidos:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
-            )
+    exigir_dentes_validos(dados.dentes)
 
     for rotulo, valor in (("idade_min", dados.idade_min), ("idade_max", dados.idade_max)):
         if valor is not None and not (0 <= valor <= 120):
@@ -271,13 +268,18 @@ def editar_curadoria(
             ),
         )
 
-    if dados.dentes:
-        invalidos = [d for d in dados.dentes if d not in DENTES_PERMANENTES]
-        if invalidos:
-            raise HTTPException(
-                status_code=422,
-                detail=f"Dentes invalidos (use apenas 11-48, notacao FDI): {invalidos}",
-            )
+    exigir_dentes_validos(dados.dentes)
+    situacao_nova = normalizar_situacao(dados.situacao_dentes) if dados.situacao_dentes is not None else ficha.situacao_dentes
+    exigir_deciduos_coerentes(
+        dados.denticao.value if dados.denticao is not None else ficha.denticao,
+        dados.dentes if dados.dentes is not None else ficha.dentes,
+        situacao_nova,
+    )
+    if dados.estruturas_extradentais is not None:
+        exigir_estruturas_no_tipo(
+            dados.estruturas_extradentais,
+            dados.tipo_radiografia.value if dados.tipo_radiografia is not None else ficha.tipo_radiografia,
+        )
 
     idade_min_final = dados.idade_min if dados.idade_min is not None else ficha.idade_min
     idade_max_final = dados.idade_max if dados.idade_max is not None else ficha.idade_max
@@ -297,6 +299,12 @@ def editar_curadoria(
         ficha.tipo_radiografia = dados.tipo_radiografia.value
     if dados.dentes is not None:
         ficha.dentes = dados.dentes
+    if dados.denticao is not None:
+        ficha.denticao = dados.denticao.value
+    if dados.situacao_dentes is not None:
+        ficha.situacao_dentes = situacao_nova
+    if dados.estruturas_extradentais is not None:
+        ficha.estruturas_extradentais = list(dict.fromkeys(e.value for e in dados.estruturas_extradentais)) or None
     if dados.idade_min is not None:
         ficha.idade_min = dados.idade_min
     if dados.idade_max is not None:
@@ -402,6 +410,9 @@ def editar_curadoria(
         "achados_detalhe": ficha.achados_detalhe,
         "alteracoes_observadas": ficha.alteracoes_observadas,
         "regioes_imagem": ficha.regioes_imagem,
+        "denticao": ficha.denticao,
+        "situacao_dentes": ficha.situacao_dentes,
+        "estruturas_extradentais": ficha.estruturas_extradentais,
         "qualidade_tecnica": ficha.qualidade_tecnica,
         "dificuldade": ficha.dificuldade,
         "descricao_didatica": ficha.descricao_didatica,

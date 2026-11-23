@@ -6,6 +6,7 @@ import type { FormularioFicha } from './FichaCuradoriaForm'
 import { regioesAoTrocarExame } from '../../lib/achadosFicha'
 import { errosParaTipo } from '../../lib/errosTecnicos'
 import type { EtapaFicha } from '../../lib/secoesCuradoria'
+import { DECIDUOS_INFERIOR, DECIDUOS_SUPERIOR, DENTICOES, mostraDeciduos, trocarDenticao } from '../../lib/situacaoDentaria'
 
 // DADOS DA IMAGEM (secao 1 da ficha), um ITEM por vez no holofote: so o
 // item em destaque (`etapa`) aparece aceso, com a sua PALAVRA-CHAVE de voz
@@ -101,6 +102,7 @@ export default function PainelDadosSobrepostos({
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
+  const tSit = useTranslations('SituacaoDentaria')
   const pk = (e: EtapaFicha) => etapa === e
   // so avanca se o clique foi no item que esta com o holofote
   const escolhido = (e: EtapaFicha) => {
@@ -125,6 +127,28 @@ export default function PainelDadosSobrepostos({
             aria-pressed={marcado}
             className={`rounded py-1 text-[11px] font-semibold transition-colors ${i === 8 ? 'ml-1' : ''} ${d === denteNoCursor ? 'ring-2 ring-amber-300' : ''} ${
               marcado ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
+            }`}
+          >
+            {d}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  // deciduos: 10 por arcada, centralizados sob os permanentes
+  const linhaDeciduos = (lista: number[]) => (
+    <div className="mx-auto grid w-[62.5%] grid-cols-10 gap-0.5">
+      {lista.map((d, i) => {
+        const marcado = form.dentes.includes(d)
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => alternarDente(d)}
+            aria-pressed={marcado}
+            className={`rounded py-0.5 text-[10px] font-semibold transition-colors ${i === 5 ? 'ml-1' : ''} ${
+              marcado ? 'bg-brand text-white' : 'bg-amber-200/10 text-amber-100 hover:bg-amber-200/20'
             }`}
           >
             {d}
@@ -254,9 +278,28 @@ export default function PainelDadosSobrepostos({
             <PalavraChave texto={t('chaveDentes')} visivel={pk('dentes')} />
             {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
           </p>
+          {/* DENTICAO (23/11/2026): mista ou decidua mostra os deciduos 51-85 */}
+          <div role="group" aria-label={tSit('denticao')} className="mb-1.5 flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-slate-400">{tSit('denticao')}:</span>
+            {DENTICOES.map((valor) => (
+              <button
+                key={valor}
+                type="button"
+                aria-pressed={form.denticao === valor}
+                onClick={() => onChange(trocarDenticao(form, valor))}
+                className={`${botaoOpcao} px-2 py-0.5 text-xs ${
+                  form.denticao === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+                }`}
+              >
+                {tSit(`denticoes.${valor}`)}
+              </button>
+            ))}
+          </div>
           <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
             {linhaDentes(ARCADA_SUPERIOR)}
+            {mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_SUPERIOR)}
             <div className="border-t border-white/10" />
+            {mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_INFERIOR)}
             {linhaDentes(ARCADA_INFERIOR)}
           </div>
         </>

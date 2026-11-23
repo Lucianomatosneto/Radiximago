@@ -29,7 +29,7 @@ from app.modules.curations import (
     Curation,
     CurationReview,
     CurationReviewNote,
-    DENTES_PERMANENTES,
+    DENTES_FDI,
     DecisaoFinalRevisao,
     Genero,
     QualidadeTecnica,
@@ -97,8 +97,8 @@ def _validar_sugestao(chave: str, tipo: str, enum_valores: type | None, valor):
             raise HTTPException(status_code=422, detail=f"Valor sugerido inválido para '{chave}'.")
         return valor
     if tipo == "dentes":
-        if not isinstance(valor, list) or any(not isinstance(d, int) or d not in DENTES_PERMANENTES for d in valor):
-            raise HTTPException(status_code=422, detail="Dentes sugeridos inválidos (use a notação FDI, 11 a 48).")
+        if not isinstance(valor, list) or any(not isinstance(d, int) or d not in DENTES_FDI for d in valor):
+            raise HTTPException(status_code=422, detail="Dentes sugeridos inválidos (use a notação FDI: 11 a 48 ou decíduos 51 a 85).")
         return sorted(set(valor))
     if tipo == "marcacoes":
         # ja validadas uma a uma pelo esquema (forma, coordenadas de 0 a 1)

@@ -3267,6 +3267,41 @@
     "opcao": "{nome} ({total})",
     "triagem": "Sort the intraoral images by type (triage)"
   },
+  "SituacaoDentaria": {
+    "denticao": "Dentition",
+    "denticoes": {
+      "decidua": "Primary",
+      "mista": "Mixed",
+      "permanente": "Permanent"
+    },
+    "odontograma": "Tooth status chart",
+    "odontogramaExplica": "Click a tooth and choose its status in the image. A tooth may have more than one status.",
+    "dente": "Tooth {numero}",
+    "situacaoDoDente": "Status of tooth {numero}",
+    "situacoes": {
+      "ausente": "Missing",
+      "incluso": "Unerupted/impacted",
+      "carie": "Caries",
+      "restaurado": "Restored",
+      "endodontia": "Root canal treatment",
+      "implante": "Implant",
+      "protese": "Prosthesis",
+      "supranumerario": "Supernumerary"
+    },
+    "estruturasTitulo": "Structures and findings outside the teeth",
+    "estruturas": {
+      "seio_maxilar": "Maxillary sinuses",
+      "atm_condilo": "TMJ / condyles",
+      "canal_mandibular": "Mandibular canal",
+      "perda_ossea_generalizada": "Generalized bone loss",
+      "ateroma_carotideo": "Carotid atheroma",
+      "sialolito": "Sialolith",
+      "tonsilolito": "Tonsillolith",
+      "processo_estiloide_alongado": "Elongated styloid process",
+      "lesao_ossea_radiolucida": "Radiolucent bone lesion",
+      "lesao_ossea_radiopaca": "Radiopaque bone lesion"
+    }
+  },
   "Triagem": {
     "tituloPrefixo": "Modality",
     "tituloDestaque": "triage",

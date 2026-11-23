@@ -337,10 +337,10 @@ describe('ficha em colunas (panoramica)', () => {
   it('horizontal: as secoes viram colunas lado a lado; descricao, observacoes e acoes na ultima', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     const colunas = Array.from(document.querySelectorAll('[data-coluna]')) as HTMLElement[]
-    expect(colunas.map((c) => c.getAttribute('data-coluna'))).toEqual(['dados', 'achados', 'erro_tecnico', 'descricao'])
+    expect(colunas.map((c) => c.getAttribute('data-coluna'))).toEqual(['dados', 'odontograma', 'achados', 'erro_tecnico', 'descricao'])
     // cada coluna rola sozinha
     expect(colunas.every((c) => c.className.includes('overflow-y-auto'))).toBe(true)
-    const ultima = colunas[3]
+    const ultima = colunas[colunas.length - 1]
     expect(ultima.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
     expect(within(ultima).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
     expect(screen.getByText('painel da voz')).toBeTruthy()
@@ -356,5 +356,70 @@ describe('ficha em colunas (panoramica)', () => {
     expect(aceso()).toBe('anonimizacao')
     tecla('Tab')
     expect(aceso()).not.toBe('anonimizacao')
+  })
+})
+
+// DENTICAO, DECIDUOS, ODONTOGRAMA DE SITUACAO E ESTRUTURAS (pedido do Luciano,
+// 23/11/2026): denticao e deciduos em todos os tipos; odontograma de situacao
+// e estruturas fora dos dentes so na panoramica.
+describe('denticao, deciduos e odontograma de situacao', () => {
+  const dados = () => item('dentes')
+
+  it('denticao mista mostra os deciduos (55-85) para marcar; permanente esconde', async () => {
+    const usuario = userEvent.setup()
+    abrir({ tipo_radiografia: 'periapical' })
+    expect(within(dados()).queryByRole('button', { name: '55' })).toBeNull()
+    await usuario.click(within(dados()).getByRole('button', { name: 'Mista' }))
+    expect(estado.form.denticao).toBe('mista')
+    await usuario.click(within(dados()).getByRole('button', { name: '55' }))
+    await usuario.click(within(dados()).getByRole('button', { name: '85' }))
+    expect(estado.form.dentes).toEqual([55, 85])
+    await usuario.click(within(dados()).getByRole('button', { name: 'Permanente' }))
+    expect(estado.form.denticao).toBe('permanente')
+    // decíduo não combina com dentição permanente: sai da ficha
+    expect(estado.form.dentes).toEqual([])
+    expect(within(dados()).queryByRole('button', { name: '55' })).toBeNull()
+  })
+
+  it('panoramica: clicar no dente do odontograma escolhe a situacao (pode ter mais de uma)', async () => {
+    const usuario = userEvent.setup()
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    const odonto = document.querySelector('[data-coluna="odontograma"]') as HTMLElement
+    await usuario.click(within(odonto).getByRole('button', { name: 'Dente 16' }))
+    const situacao = within(odonto).getByRole('group', { name: 'Situação do dente 16' })
+    await usuario.click(within(situacao).getByRole('button', { name: 'Restaurado' }))
+    await usuario.click(within(situacao).getByRole('button', { name: 'Tratamento endodôntico' }))
+    expect(estado.form.situacao_dentes).toEqual({ '16': ['restaurado', 'endodontia'] })
+    // desmarcar
+    await usuario.click(within(situacao).getByRole('button', { name: 'Restaurado' }))
+    expect(estado.form.situacao_dentes).toEqual({ '16': ['endodontia'] })
+    await usuario.click(within(situacao).getByRole('button', { name: 'Tratamento endodôntico' }))
+    expect(estado.form.situacao_dentes).toEqual({})
+  })
+
+  it('odontograma mostra os deciduos com denticao mista; trocar para permanente limpa a situacao deles', async () => {
+    const usuario = userEvent.setup()
+    abrir({ tipo_radiografia: 'panoramica', denticao: 'mista', situacao_dentes: { '55': ['carie'], '16': ['ausente'] } }, {}, { horizontal: true })
+    const odonto = document.querySelector('[data-coluna="odontograma"]') as HTMLElement
+    expect(within(odonto).getByRole('button', { name: /Dente 55/ })).toBeTruthy()
+    await usuario.click(within(dados()).getByRole('button', { name: 'Permanente' }))
+    expect(estado.form.situacao_dentes).toEqual({ '16': ['ausente'] })
+    expect(within(odonto).queryByRole('button', { name: /Dente 55/ })).toBeNull()
+  })
+
+  it('panoramica: estruturas e achados fora dos dentes ficam na coluna dos achados', async () => {
+    const usuario = userEvent.setup()
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    const achados = document.querySelector('[data-coluna="achados"]') as HTMLElement
+    const grupo = within(achados).getByRole('group', { name: 'Estruturas e achados fora dos dentes' })
+    await usuario.click(within(grupo).getByRole('checkbox', { name: 'Ateroma carotídeo' }))
+    await usuario.click(within(grupo).getByRole('checkbox', { name: 'Seios maxilares' }))
+    expect(estado.form.estruturas_extradentais).toEqual(['ateroma_carotideo', 'seio_maxilar'])
+  })
+
+  it('outros tipos: sem odontograma de situacao e sem estruturas', () => {
+    abrir({ tipo_radiografia: 'periapical' })
+    expect(screen.queryByRole('button', { name: 'Dente 16' })).toBeNull()
+    expect(screen.queryByRole('group', { name: 'Estruturas e achados fora dos dentes' })).toBeNull()
   })
 })

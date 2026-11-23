@@ -195,6 +195,51 @@ DENTES_PERMANENTES = (
     + list(range(41, 49))  # 41-48 inferior direita
 )
 
+# Dentes deciduos (notacao FDI), quadrantes 5 a 8 (23/11/2026, pedido do
+# Luciano: denticao mista e decidua em todos os tipos de exame).
+DENTES_DECIDUOS = (
+    list(range(51, 56))    # 51-55 superior direita
+    + list(range(61, 66))  # 61-65 superior esquerda
+    + list(range(71, 76))  # 71-75 inferior esquerda
+    + list(range(81, 86))  # 81-85 inferior direita
+)
+
+# Todos os dentes aceitos na ficha, nos achados e na busca.
+DENTES_FDI = DENTES_PERMANENTES + DENTES_DECIDUOS
+
+
+class Denticao(str, enum.Enum):
+    """Fase da denticao que a imagem mostra."""
+    DECIDUA = "decidua"
+    MISTA = "mista"
+    PERMANENTE = "permanente"
+
+
+class SituacaoDente(str, enum.Enum):
+    """Odontograma de situacao: como cada dente esta na imagem."""
+    AUSENTE = "ausente"
+    INCLUSO = "incluso"              # incluso / impactado
+    CARIE = "carie"
+    RESTAURADO = "restaurado"
+    ENDODONTIA = "endodontia"        # tratamento endodontico
+    IMPLANTE = "implante"
+    PROTESE = "protese"
+    SUPRANUMERARIO = "supranumerario"
+
+
+class EstruturaExtradental(str, enum.Enum):
+    """Estruturas e achados fora dos dentes (so na panoramica)."""
+    SEIO_MAXILAR = "seio_maxilar"
+    ATM_CONDILO = "atm_condilo"
+    CANAL_MANDIBULAR = "canal_mandibular"
+    PERDA_OSSEA_GENERALIZADA = "perda_ossea_generalizada"
+    ATEROMA_CAROTIDEO = "ateroma_carotideo"
+    SIALOLITO = "sialolito"
+    TONSILOLITO = "tonsilolito"
+    PROCESSO_ESTILOIDE_ALONGADO = "processo_estiloide_alongado"
+    LESAO_OSSEA_RADIOLUCIDA = "lesao_ossea_radiolucida"
+    LESAO_OSSEA_RADIOPACA = "lesao_ossea_radiopaca"
+
 
 # ---------------------------------------------------------------------
 # Tabela principal: ficha de curadoria
@@ -213,7 +258,13 @@ class Curation(Base):
     # Classificacao (valores controlados guardados como texto)
     modalidade: Mapped[str] = mapped_column(String(20), nullable=False, default="RX")
     tipo_radiografia: Mapped[str | None] = mapped_column(String(30), nullable=True)
-    dentes: Mapped[list[int] | None] = mapped_column(ARRAY(Integer), nullable=True)  # numeros FDI 11-48
+    dentes: Mapped[list[int] | None] = mapped_column(ARRAY(Integer), nullable=True)  # numeros FDI 11-48 e deciduos 51-85
+    # 23/11/2026: denticao (Denticao), odontograma de situacao
+    # ({"16": ["restaurado", "endodontia"]}, chaves = dente FDI) e
+    # estruturas fora dos dentes (EstruturaExtradental, so panoramica)
+    denticao: Mapped[str | None] = mapped_column(String(15), nullable=True, index=True)
+    situacao_dentes: Mapped[Any | None] = mapped_column(JSONB, nullable=True)
+    estruturas_extradentais: Mapped[list[str] | None] = mapped_column(ARRAY(String(40)), nullable=True)
     idade_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
     idade_max: Mapped[int | None] = mapped_column(Integer, nullable=True)
     genero: Mapped[str | None] = mapped_column(String(15), nullable=True)

@@ -44,6 +44,12 @@ export interface FormularioFicha {
   erros_tecnicos: string[]
   // origem da imagem: 'aparelho' | 'externa' (filtro da Pesquisa avancada)
   origem: string
+  // 23/11/2026 (lib/situacaoDentaria.ts): denticao ('' = nao informada),
+  // odontograma de situacao {"16": ["restaurado"]} e estruturas fora dos
+  // dentes (os dois ultimos so na panoramica)
+  denticao: string
+  situacao_dentes: Record<string, string[]>
+  estruturas_extradentais: string[]
 }
 
 export const FORM_VAZIO: FormularioFicha = {
@@ -65,6 +71,9 @@ export const FORM_VAZIO: FormularioFicha = {
   sem_alteracoes: false,
   erros_tecnicos: [],
   origem: '',
+  denticao: '',
+  situacao_dentes: {},
+  estruturas_extradentais: [],
 }
 
 const campoLabel = 'mb-1 block text-xs font-medium text-slate-400'

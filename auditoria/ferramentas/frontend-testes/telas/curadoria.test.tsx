@@ -258,6 +258,26 @@ describe('salvar e aprovar', () => {
     expect(servidor.alteracoes().some((p) => p.metodo === 'POST' && p.caminho === '/curation/302')).toBe(true)
   })
 
+  it('denticao, odontograma de situacao e estruturas vao e voltam do servidor (panoramica)', async () => {
+    const usuario = userEvent.setup()
+    const extra = { tipo_radiografia: 'panoramica', denticao: 'mista', situacao_dentes: { '55': ['carie'] }, estruturas_extradentais: ['sialolito'] }
+    const servidor = await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, extra) } }))
+    await usuario.click(botao('Salvar'))
+    await waitFor(() => expect(servidor.alteracoes().some((p) => p.metodo === 'PATCH')).toBe(true))
+    const patch = servidor.alteracoes().find((p) => p.metodo === 'PATCH')
+    expect(patch?.corpo).toMatchObject({ denticao: 'mista', situacao_dentes: { '55': ['carie'] }, estruturas_extradentais: ['sialolito'] })
+  })
+
+  it('fora da panoramica as estruturas vao vazias (o servidor so aceita na panoramica)', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { estruturas_extradentais: ['sialolito'] }) } }))
+    await usuario.click(botao('Salvar'))
+    await waitFor(() => expect(servidor.alteracoes().some((p) => p.metodo === 'PATCH')).toBe(true))
+    const patch = servidor.alteracoes().find((p) => p.metodo === 'PATCH')
+    expect(patch?.corpo).toMatchObject({ estruturas_extradentais: [], situacao_dentes: {} })
+    expect(patch?.corpo).not.toHaveProperty('denticao') // vazia nao vai
+  })
+
   it('erro de validacao (422) ao salvar: mostra o campo recusado e fica na mesma imagem', async () => {
     const usuario = userEvent.setup()
     await abrirComFicha(rotasPadrao({
