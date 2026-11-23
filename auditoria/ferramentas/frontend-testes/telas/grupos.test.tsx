@@ -58,7 +58,7 @@ async function abrir(extra: Record<string, Rota> = {}, perfil = 'professor') {
   montarTela(<GruposPage />)
   await screen.findByRole('heading', { level: 1, name: 'Grupos' })
   // a aba carrega a lista depois de aparecer
-  await screen.findByText(/^Turma A$|Você ainda não tem grupos\./)
+  await screen.findByText(/^Turma A$|^Turma L$|Você ainda não tem grupos\./)
   return servidor
 }
 const cartao = (nome: string) => screen.getByRole('heading', { name: nome }).closest('li') as HTMLElement
@@ -122,6 +122,30 @@ describe('quem pode', () => {
   ])('%s: "Você ainda não tem grupos."', async (_n, rota) => {
     await abrir({ 'GET /grupos': rota })
     expect(await screen.findByText('Você ainda não tem grupos.')).toBeTruthy()
+  })
+})
+
+describe('link de convite (pedido do video, 22/11/2026)', () => {
+  it('gera o link, mostra o endereco para copiar e a validade; "Cancelar link" cancela', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir({
+      'GET /grupos/3/link-convite': { corpo: { ativo: false } },
+      'POST /grupos/3/link-convite': { corpo: { codigo: 'codigoXYZ_123', expira_em: '2026-11-29T12:00:00+00:00' } },
+      'DELETE /grupos/3/link-convite': { corpo: { mensagem: 'ok' } },
+    })
+    await usuario.click(within(cartao('Turma A')).getByRole('button', { name: 'Link de convite' }))
+    await usuario.click(await within(cartao('Turma A')).findByRole('button', { name: 'Gerar link de convite' }))
+    const campo = (await within(cartao('Turma A')).findByRole('textbox', { name: 'Link de convite do grupo' })) as HTMLInputElement
+    expect(campo.value).toBe(`${window.location.origin}/grupos/entrar?c=codigoXYZ_123`)
+    expect(within(cartao('Turma A')).getByText(/Vale até/)).toBeTruthy()
+    await usuario.click(within(cartao('Turma A')).getByRole('button', { name: 'Cancelar link' }))
+    await waitFor(() => expect(servidor.alteracoes().map((a) => `${a.metodo} ${a.caminho}`)).toEqual(['POST /grupos/3/link-convite', 'DELETE /grupos/3/link-convite']))
+    expect(within(cartao('Turma A')).queryByRole('textbox', { name: 'Link de convite do grupo' })).toBeNull()
+  })
+
+  it('quem entrou pelo link aparece como "(entrou pelo link)"', async () => {
+    await abrir({ 'GET /grupos': { corpo: { grupos: [{ id: 6, nome: 'Turma L', membros: [{ id: 30, nome: 'Gil', origem: 'link' }] }] } } })
+    expect(within(await waitFor(() => cartao('Turma L'))).getByText(/entrou pelo link/)).toBeTruthy()
   })
 })
 
