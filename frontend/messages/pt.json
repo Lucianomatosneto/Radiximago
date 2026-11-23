@@ -3264,6 +3264,28 @@
     "caixa": "Modalidade",
     "pergunta": "Qual modalidade você quer curar agora?",
     "perguntaExplica": "Escolha o tipo de exame; a primeira imagem dele abre em seguida. Dá para trocar depois na caixa \"Modalidade\".",
-    "opcao": "{nome} ({total})"
+    "opcao": "{nome} ({total})",
+    "triagem": "Separar as intraorais por tipo (triagem)"
+  },
+  "Triagem": {
+    "tituloPrefixo": "Triagem da",
+    "tituloDestaque": "modalidade",
+    "explica": "O sistema reconhece sozinho só a tomografia e a panorâmica. As radiografias periapical, interproximal e oclusal têm a mesma etiqueta DICOM e chegam como \"intraoral\". Selecione as imagens (clique na miniatura; ⤢ amplia) e diga o tipo de uma vez. A ficha de cada uma já começa com esse tipo.",
+    "voltar": "Voltar para a Curadoria",
+    "mostrar": "Mostrar",
+    "selecionarTodas": "Selecionar todas",
+    "selecionadas": "{n, plural, one {1 selecionada} other {# selecionadas}}",
+    "limpar": "Limpar seleção",
+    "marcarComo": "Marcar as selecionadas como",
+    "imagem": "Imagem {id}",
+    "ampliar": "Ampliar imagem {id}",
+    "ampliada": "Imagem {id} ampliada",
+    "fechar": "Fechar",
+    "marcadas": "{n, plural, one {1 imagem marcada} other {# imagens marcadas}} como {tipo}.",
+    "vazio": "Nenhuma imagem deste grupo na fila.",
+    "carregarMais": "Carregar mais ({faltam})",
+    "erroCarregar": "Não foi possível carregar a fila.",
+    "erroMarcar": "Não foi possível marcar as imagens.",
+    "marcarComoCurto": "Marcar como:"
   }
 }
