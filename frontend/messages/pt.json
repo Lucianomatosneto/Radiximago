@@ -1460,7 +1460,17 @@
     "semAlteracoes": "Sem alterações",
     "totalImagensDetalhe": "Todas as imagens ativas, em qualquer situação (na fila, em análise, aprovadas, descartadas…). Por isso é maior que a fila da Curadoria.",
     "curadorPosicao": "Curador {posicao}",
-    "rankingSemNomes": "Ranking geral sem nomes e sem instituições: só a administração do Rádix vê quem é cada curador."
+    "rankingSemNomes": "Ranking geral sem nomes e sem instituições: só a administração do Rádix vê quem é cada curador.",
+    "voce": "{nome} (você)",
+    "meusDados": {
+      "titulo": "Meus dados (todas as minhas fichas)",
+      "minhasFichas": "Minhas fichas"
+    },
+    "aguardandoCuradoria": "Aguardando curadoria",
+    "curadasNoBanco": "Curadas (no banco)",
+    "cadaCurador": "Cada curador por situação",
+    "curador": "Curador",
+    "total": "Total"
   },
   "Integracoes": {
     "titulo": "Integrações",

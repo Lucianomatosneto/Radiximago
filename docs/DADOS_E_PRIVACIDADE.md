@@ -98,7 +98,7 @@ Perfis (`backend/app/modules/auth.py`):
 | Enviar **foto** de radiografia (celular, janela de 5 min) | estudante: sim (só para mim ou análise); pesquisador: — | sim | curador: sim; suporte: — | sim |
 | Ver foto/imagem **ainda não aprovada** | só a **própria**, ou a que foi enviada para ele analisar | idem | curador: as da fila; suporte: todas | todas |
 | Sincronizar, ativar ou desativar imagens | — | — | só suporte | sim |
-| Relatórios — **"Fichas por curador"** (18/11/2026) | — | — | curador e suporte: só a **posição** ("Curador 1" = quem mais curou) e o número de curadorias, **sem nome, cadastro ou instituição**; o nome não chega ao navegador | **com os nomes** (só o administrador do Rádix) |
+| Relatórios — **"Fichas por curador"** (18/11/2026) | — | — | curador e suporte: só a **posição** ("Curador 1" = quem mais curou) e o número de curadorias, **sem nome, cadastro ou instituição**; o nome não chega ao navegador. Desde 22/11/2026, a linha **do próprio curador** vem com o nome dele, e ele vê os **próprios dados** (as fichas dele por situação) | **com os nomes** (só o administrador do Rádix), e **cada curador por situação** |
 | Própria conta: nome, instituição, foto, senha | editar | editar | editar | editar |
 | Outros usuários: nome, e-mail, perfil, situação | — | — | — | ver e editar |
 | Anotações | só as **suas** (desde 27/10/2026 o compartilhamento leva apenas a anotação escrita na caixa do próprio compartilhamento, nunca as anotações pessoais) | idem | idem | idem |
@@ -171,3 +171,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.12 | 18/11/2026 | "Fichas por curador" e atividade recente: nomes dos curadores só para o administrador; curador e suporte veem a posição no ranking e o número de curadorias, sem identificar ninguém |
 | 1.13 | 22/11/2026 | Termos de Uso e Política de Privacidade v1.2: grupos (entrada só com convite aceito ou pedido autorizado; quem vê o quê; modo aula sem alterar a ficha; comentários particulares; prazos de guarda). Todos aceitam de novo no próximo acesso |
 | 1.14 | 22/11/2026 | Link de convite para grupos: tabela `grupo_links_convite` (só o resumo do código; 7 dias; um ativo por grupo); entrar pelo link só com login e confirmando; origem "link" em quem entrou |
+| 1.15 | 22/11/2026 | Relatórios: o curador vê o próprio nome na linha dele e os próprios dados ("Meus dados"); o administrador vê cada curador por situação. Os colegas continuam só pela posição |

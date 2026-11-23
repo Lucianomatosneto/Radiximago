@@ -446,11 +446,22 @@ def obter_minhas_estatisticas(
         else None
     )
 
+    # "Meus dados" (pedido do video, 22/11/2026): TODAS as fichas do
+    # curador logado (nao so do mes), por situacao
+    minhas_por_status: dict[str, int] = dict(
+        db.query(Curation.status, func.count(Curation.id))
+        .filter(Curation.curador_id == usuario.id)
+        .group_by(Curation.status)
+        .all()
+    )
+
     return {
         "aprovadas_no_mes": aprovadas_no_mes,
         "curadorias_no_mes": curadorias_no_mes,
         "posicao_ranking": posicao_ranking,
         "total_curadores": total_curadores,
+        "minhas_fichas_total": sum(minhas_por_status.values()),
+        "minhas_por_status": minhas_por_status,
     }
 
 
