@@ -1461,7 +1461,17 @@
     "semAlteracoes": "No changes",
     "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue.",
     "curadorPosicao": "Curator {posicao}",
-    "rankingSemNomes": "Overall ranking without names or institutions: only the Rádix administration sees who each curator is."
+    "rankingSemNomes": "Overall ranking without names or institutions: only the Rádix administration sees who each curator is.",
+    "voce": "{nome} (you)",
+    "meusDados": {
+      "titulo": "My data (all my records)",
+      "minhasFichas": "My records"
+    },
+    "aguardandoCuradoria": "Awaiting curation",
+    "curadasNoBanco": "Curated (in the bank)",
+    "cadaCurador": "Each curator by status",
+    "curador": "Curator",
+    "total": "Total"
   },
   "Integracoes": {
     "titulo": "Integrations",
