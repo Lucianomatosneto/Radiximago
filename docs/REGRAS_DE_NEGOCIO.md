@@ -161,6 +161,18 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - O dente de cada **achado** também pode ser decíduo quando a dentição da ficha é mista ou decídua.
 - São dados da **imagem anonimizada**, não do paciente: nada identifica a pessoa.
 
+### 1.13 Reconstrução panorâmica da tomografia (23/11/2026)
+
+- Serve para **visualizar e ensinar** (decisão do Luciano). A panorâmica reconstruída e os cortes transversais viram **séries novas no mesmo estudo** da tomografia. Elas não entram na fila da curadoria nem na pesquisa como radiografia, e a sincronização com o Orthanc não as importa.
+- **Quem gera:** curador ou administrador. **Quem vê:** quem já pode ver a tomografia, pela mesma regra do estudo no visualizador.
+- **Só tomografia:** modalidade CT com pelo menos 10 cortes axiais, do mesmo tamanho e igualmente espaçados, em arquivos de um quadro. O que não serve é recusado com uma explicação (422).
+- **Parâmetros:** de 3 a 60 pontos dentro do corte axial; faixa da panorâmica de 0,5 a 40 mm; intervalo entre cortes de 0,2 a 10 mm; largura do corte de 5 a 80 mm.
+- **Proteção do servidor:**
+  - uma reconstrução por vez (a segunda recebe 409 "há outra reconstrução em andamento");
+  - o volume é lido corte a corte, guardando só a região da arcada;
+  - limite de 250 milhões de voxels.
+- A tomografia original **não muda**. Cada reconstrução fica na auditoria (`reconstrucao_panoramica`).
+
 ### 1.5 Acesso negado (01/11/2026)
 
 Toda tela restrita leva à mesma página `/acesso-negado?de=<página>`. Ela mostra a página pedida e o "erro 403", e o botão volta para o início **do perfil**. Antes, `/usuarios` ia para o login e o botão levava ao painel do administrador.
@@ -291,3 +303,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.25 | 23/11/2026 | Triagem da modalidade em lote (periapical, interproximal, oclusal) (seção 2) |
 | 1.26 | 23/11/2026 | Dentição, dentes decíduos, odontograma de situação e estruturas fora dos dentes na ficha (seção 1.12) |
 | 1.27 | 23/11/2026 | Triagem também corrige imagens que estão na modalidade errada ("Mover para"; atalho "Corrigir modalidade" na Curadoria) (seção 2) |
+| 1.28 | 23/11/2026 | Reconstrução panorâmica e cortes transversais da tomografia (seção 1.13) |

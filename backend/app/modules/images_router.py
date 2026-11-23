@@ -363,7 +363,15 @@ def importar_do_orthanc(
     erros = 0
     detalhes_resultado = []
 
+    # reconstrucoes da tomografia (23/11/2026): series geradas pelo Radix
+    # para visualizar e ensinar - nao viram imagens novas da fila
+    from app.modules.reconstrucao.router import instancias_derivadas
+    derivadas = instancias_derivadas(db)
+
     for orthanc_id in ids_orthanc:
+        if orthanc_id in derivadas:
+            ja_existentes += 1
+            continue
         try:
             ref, criada = _registrar_referencia_se_nova(db, orthanc_id)
             if criada:
