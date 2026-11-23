@@ -37,3 +37,7 @@ class ReconstrucaoTomografia(Base):
     tamanho_pixel_mm: Mapped[float] = mapped_column(nullable=False)
     # IDs (Orthanc) de todas as instancias gravadas (panoramica + cortes)
     instancias_orthanc: Mapped[Any] = mapped_column(JSONB, nullable=False)
+    # canal mandibular (23/11/2026): o ultimo trajeto marcado na panoramica
+    # ({"tracados": [[[coluna, linha], ...], ...], series desenhadas, quem,
+    # quando}); None = ainda nao marcado
+    canal: Mapped[Any | None] = mapped_column(JSONB, nullable=True)

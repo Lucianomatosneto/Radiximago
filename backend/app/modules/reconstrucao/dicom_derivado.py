@@ -13,6 +13,8 @@ Grava a panoramica reconstruida e os cortes transversais como DICOM
   visualizador funcionam.
 - Pixel em 16 bits com sinal, nos mesmos valores da tomografia; a janela
   inicial (WindowCenter/Width) vem dos percentis 1-99,5 da propria imagem.
+- Imagem em COR (canal mandibular desenhado, 23/11/2026): RGB 8 bits, ja
+  com a janela aplicada (sem WindowCenter/Width nem Rescale).
 """
 
 from __future__ import annotations
@@ -79,17 +81,27 @@ def gerar_instancia(
     ref = Dataset()
     ref.SeriesInstanceUID = origem.SeriesInstanceUID
     ds.ReferencedSeriesSequence = Sequence([ref])
-    pixels = np.clip(np.rint(imagem), -32768, 32767).astype(np.int16)
-    ds.Rows, ds.Columns = pixels.shape
     ds.PixelSpacing = [round(float(tamanho_pixel_mm), 6)] * 2
-    ds.SamplesPerPixel = 1
-    ds.PhotometricInterpretation = "MONOCHROME2"
-    ds.BitsAllocated, ds.BitsStored, ds.HighBit = 16, 16, 15
-    ds.PixelRepresentation = 1
-    ds.RescaleSlope, ds.RescaleIntercept, ds.RescaleType = 1, 0, "US"
-    centro, largura = _janela(pixels)
-    ds.WindowCenter, ds.WindowWidth = round(centro, 1), round(largura, 1)
-    ds.PixelData = pixels.tobytes()
+    if imagem.ndim == 3:  # em cor (RGB 8 bits)
+        rgb = np.ascontiguousarray(imagem, dtype=np.uint8)
+        ds.Rows, ds.Columns = rgb.shape[:2]
+        ds.SamplesPerPixel = 3
+        ds.PhotometricInterpretation = "RGB"
+        ds.PlanarConfiguration = 0
+        ds.BitsAllocated, ds.BitsStored, ds.HighBit = 8, 8, 7
+        ds.PixelRepresentation = 0
+        ds.PixelData = rgb.tobytes()
+    else:
+        pixels = np.clip(np.rint(imagem), -32768, 32767).astype(np.int16)
+        ds.Rows, ds.Columns = pixels.shape
+        ds.SamplesPerPixel = 1
+        ds.PhotometricInterpretation = "MONOCHROME2"
+        ds.BitsAllocated, ds.BitsStored, ds.HighBit = 16, 16, 15
+        ds.PixelRepresentation = 1
+        ds.RescaleSlope, ds.RescaleIntercept, ds.RescaleType = 1, 0, "US"
+        centro, largura = _janela(pixels)
+        ds.WindowCenter, ds.WindowWidth = round(centro, 1), round(largura, 1)
+        ds.PixelData = pixels.tobytes()
     saida = io.BytesIO()
     ds.save_as(saida, enforce_file_format=True)
     return saida.getvalue()

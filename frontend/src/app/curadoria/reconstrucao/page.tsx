@@ -9,6 +9,8 @@
 //    transversais e gera (POST /reconstrucao/{ref}).
 // O resultado vira series novas no mesmo exame (visualizar e ensinar): no
 // visualizador, painel "Tomografia" → Reconstrucao.
+// Canal mandibular (23/11/2026): em cada reconstrucao feita, "Marcar canal
+// mandibular" abre a panoramica para tracar o canal (MarcarCanal).
 
 import { useState, type MouseEvent } from 'react'
 import { useTranslations } from 'next-intl'
@@ -18,6 +20,7 @@ import Topbar from '../../../components/Topbar'
 import AvisoSemConexao from '../../../components/AvisoSemConexao'
 import { useVerificarSessao } from '../../../lib/useVerificarSessao'
 import { fetchOuNulo } from '../../../lib/fetchSeguro'
+import MarcarCanal from '../../../components/curadoria/MarcarCanal'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_PERMITIDOS = ['curador', 'administrador']
@@ -37,6 +40,7 @@ interface Reconstrucao {
   total_cortes: number
   tamanho_pixel_mm: number
   parametros: { espessura_mm: number; intervalo_mm: number; largura_mm: number }
+  canal?: { tracados: [number, number][][] } | null
 }
 
 async function lerErro(r: Response, padrao: string): Promise<string> {
@@ -100,6 +104,7 @@ export default function ReconstrucaoPage() {
   const [gerando, setGerando] = useState(false)
   const [aviso, setAviso] = useState('')
   const [erro, setErro] = useState('')
+  const [canalDe, setCanalDe] = useState<number | null>(null)
 
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
     if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
@@ -314,6 +319,10 @@ export default function ReconstrucaoPage() {
                             faixa: r.parametros.espessura_mm,
                             intervalo: r.parametros.intervalo_mm,
                           })}
+                          {r.canal && <span className="ml-1 text-amber-500">· {t('canalMarcado')}</span>}{' '}
+                          <button type="button" onClick={() => setCanalDe(r.id)} className="text-teal-300 hover:underline">
+                            {t('canalMarcar')}
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -321,6 +330,9 @@ export default function ReconstrucaoPage() {
                 )}
               </aside>
             </div>
+          )}
+          {ref && canalDe !== null && (
+            <MarcarCanal key={canalDe} refId={ref} recId={canalDe} aoGravar={() => void carregarLista(ref)} aoFechar={() => setCanalDe(null)} />
           )}
         </main>
       </div>

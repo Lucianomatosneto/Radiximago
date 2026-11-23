@@ -3367,6 +3367,19 @@
     "gerar": "Create panoramic and sections",
     "gerando": "Creating…",
     "feitas": "Reconstructions already made",
-    "itemLista": "{data}: {n} sections · slab {faixa} mm · every {intervalo} mm"
+    "itemLista": "{data}: {n} sections · slab {faixa} mm · every {intervalo} mm",
+    "canalMarcar": "Mark mandibular canal",
+    "canalMarcado": "canal marked",
+    "canalTitulo": "Mandibular canal",
+    "canalExplica": "Click points along the canal on the reconstructed panoramic, from the mandibular foramen to the mental foramen. Mark one side, click \"Other side\" and mark the second. When saved, the canal is drawn in new series in the viewer (Tomography panel → Reconstruction).",
+    "canalFechar": "Close",
+    "canalAltImagem": "Panoramic reconstructed from the CT",
+    "canalTracadoAtual": "Tracing {n}: {pontos, plural, =0 {no points} one {1 point} other {# points}}",
+    "canalNovoTracado": "Other side",
+    "canalGravar": "Save canal",
+    "canalPronto": "Done: canal drawn on the panoramic and on {n} slices. In the viewer, use Tomography → Reconstruction → Panoramic with canal.",
+    "canalErroCarregar": "Could not open the panoramic of this reconstruction.",
+    "canalErroGravar": "Could not save the canal.",
+    "canalLimite": "Teaching material, not diagnostic. The panoramic shows the canal height along the arch; on the cross-sections the mark shows that height, not the buccolingual position."
   }
 }
