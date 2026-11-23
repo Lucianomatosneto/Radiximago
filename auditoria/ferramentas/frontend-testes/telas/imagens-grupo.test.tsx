@@ -45,7 +45,9 @@ describe('visao do dono', () => {
 
   it('lista as imagens com mensagem, destaques e a chave de comentarios; orienta como enviar', async () => {
     await abrir()
-    expect(screen.getByRole('link', { name: 'Ir ao Banco de imagens' }).getAttribute('href')).toBe('/banco-imagens')
+    // 22/11/2026: o envio agora e pela busca (selecionar e "Enviar para um grupo")
+    expect(screen.getByText(/selecione-as na Busca avançada e use "Enviar para um grupo"/)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Ir à Busca avançada' }).getAttribute('href')).toBe('/pesquisa')
     expect(item(42).textContent).toContain('“Observem o ápice.”')
     expect(item(42).textContent).toContain('Destaques: Lesão periapical')
     expect((within(item(42)).getByLabelText('Participantes podem comentar') as HTMLInputElement).checked).toBe(true)
