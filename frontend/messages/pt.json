@@ -2673,6 +2673,34 @@
     "abaParticipo": "Grupos de que participo",
     "pendentes": "{n, plural, one {1 pendência} other {# pendências}}"
   },
+  "LinkConvite": {
+    "titulo": "Link de convite",
+    "explica": "Mande este link para quem você quer no grupo (por WhatsApp, e-mail...). A pessoa entra com o próprio login e só fica no grupo se confirmar. Vale 7 dias; gerar um novo cancela o anterior.",
+    "campo": "Link de convite do grupo",
+    "copiar": "Copiar",
+    "copiado": "Copiado!",
+    "valeAte": "Vale até {data}",
+    "usos": "{n, plural, =0 {ninguém entrou ainda} one {1 pessoa entrou} other {# pessoas entraram}}",
+    "gerarDeNovo": "(para ver o endereço de novo, gere um novo link)",
+    "nenhum": "Nenhum link ativo.",
+    "gerar": "Gerar link de convite",
+    "gerarNovo": "Gerar novo link",
+    "cancelar": "Cancelar link",
+    "erro": "Não foi possível concluir. Tente de novo.",
+    "entrar": {
+      "titulo": "Convite para um grupo",
+      "criadoPor": "Criado por {quem}",
+      "explica": "Você foi convidado(a) para este grupo. Ao entrar, você passa a receber as imagens que o professor enviar ao grupo. Os outros participantes não veem que você está no grupo.",
+      "botao": "Entrar no grupo",
+      "agoraNao": "Agora não",
+      "entrou": "Você entrou no grupo.",
+      "jaParticipa": "Você já participa deste grupo.",
+      "dono": "Você criou este grupo. Mande o link para quem você quer convidar.",
+      "verGrupos": "Ver meus grupos",
+      "invalido": "Link de convite inválido ou vencido. Peça um novo link a quem criou o grupo.",
+      "semCodigo": "Este endereço está incompleto. Abra o link inteiro que você recebeu."
+    }
+  },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
     "avisoEnvio": {
@@ -2868,6 +2896,7 @@
     "foraDaBuscaAjuda": "Estudantes não acham este grupo procurando pelo nome; só entra quem você convidar. Para mudar, use Editar e marque \"Aceitar pedidos de estudantes\".",
     "participantes": "Participantes",
     "origem_convite": "aceitou convite",
+    "origem_link": "entrou pelo link",
     "origem_pedido": "pedido autorizado",
     "origem_anterior": "já estava no grupo",
     "tirar": "Tirar",

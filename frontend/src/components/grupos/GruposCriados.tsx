@@ -15,6 +15,7 @@ import { useTranslations } from 'next-intl'
 import { Users } from 'lucide-react'
 import SeletorPessoasGrupos, { type Pessoa } from '../envios/SeletorPessoasGrupos'
 import ImagensGrupoDono from '../envios/ImagensGrupoDono'
+import LinkConviteGrupo from './LinkConviteGrupo'
 import { useConfirmacao } from '../useConfirmacao'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 
@@ -214,7 +215,7 @@ export default function GruposCriados() {
                           <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-2">
                             <span>
                               {m.nome}
-                              {m.origem && <span className="ml-1 text-ink-3">({t(`origem_${m.origem === 'convite' || m.origem === 'pedido' ? m.origem : 'anterior'}`)})</span>}
+                              {m.origem && <span className="ml-1 text-ink-3">({t(`origem_${m.origem === 'convite' || m.origem === 'pedido' || m.origem === 'link' ? m.origem : 'anterior'}`)})</span>}
                             </span>
                             <button type="button" className={botaoPequeno} aria-label={t('tirarRotulo', { nome: m.nome })} onClick={() => tirar(g, m)}>{t('tirar')}</button>
                           </li>
@@ -237,6 +238,9 @@ export default function GruposCriados() {
                       </ul>
                     </section>
                   )}
+
+                  {/* 22/11/2026: link para a turma entrar no grupo (confirmando) */}
+                  <LinkConviteGrupo grupoId={g.id} />
 
                   <section aria-label={t('imagensEnviadas')}>
                     <button type="button" onClick={() => setImagensAbertas(imagensAbertas === g.id ? null : g.id)}
