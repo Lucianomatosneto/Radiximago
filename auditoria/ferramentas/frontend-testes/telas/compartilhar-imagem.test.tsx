@@ -92,7 +92,7 @@ describe('compartilhar', () => {
     expect((emailCampo() as HTMLInputElement).value).toBe('Arthur Exemplo')
     await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
     expect(await screen.findByText('Compartilhado.')).toBeTruthy()
-    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/shares/7', corpo: { usuario_id: 5, mensagem: null } }])
+    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/shares/7', corpo: { usuario_id: 5, mensagem: null, permite_resposta: false } }])
   })
 
   it('mudar o texto depois de escolher desfaz a escolha', async () => {
@@ -117,9 +117,15 @@ describe('compartilhar', () => {
     await abrirCaixa(usuario)
     await usuario.type(emailCampo(), '  nova@exemplo.test ')
     await usuario.type(screen.getByRole('textbox', { name: 'Anotação para quem vai receber (opcional)' }), '  veja o 36  ')
+    // 22/11/2026: quem compartilha decide se a pessoa pode responder (comeca desmarcado)
+    const permitir = screen.getByRole('checkbox', { name: 'Permitir que a pessoa responda' }) as HTMLInputElement
+    expect(permitir.checked).toBe(false)
+    await usuario.click(permitir)
     await usuario.click(screen.getByRole('button', { name: 'Compartilhar' }))
     expect(await screen.findByText('Compartilhado com Nova Pessoa.')).toBeTruthy()
-    expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/shares/7', corpo: { email: 'nova@exemplo.test', mensagem: 'veja o 36' } }])
+    expect(servidor.alteracoes()).toEqual([
+      { metodo: 'POST', caminho: '/shares/7', corpo: { email: 'nova@exemplo.test', mensagem: 'veja o 36', permite_resposta: true } },
+    ])
     expect(screen.getByText('Convide pelo link:')).toBeTruthy()
     expect(screen.getByRole('link', { name: 'https://radix.teste/solicitar-acesso?c=1' })).toBeTruthy()
     expect(screen.queryByRole('textbox')).toBeNull() // caixa fecha
