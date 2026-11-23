@@ -39,11 +39,30 @@ CT com vários cortes. Ele é recolhível, para liberar a imagem.
 | 3D | 3D osso · 3D partes moles · 3D MIP | Predefinições de renderização de volume do cornerstone3D: `CT-Bone`, `CT-Soft-Tissue` e `CT-MIP` |
 | Espessura | Fina · MIP 5 / 10 / 20 mm | "Corte grosso" com projeção de máxima intensidade (MIP) nos planos, útil para seguir canais e raízes. "Fina" volta ao corte normal |
 
+## Reconstrução panorâmica (23/11/2026)
+
+1. Na Curadoria, com uma ficha de tomografia aberta, o atalho
+   **"Reconstrução panorâmica"** abre a tela de traçar a curva
+   (`/curadoria/reconstrucao`).
+2. O curador escolhe a altura do corte axial e a faixa MIP, até a arcada
+   aparecer inteira. Depois clica pontos no meio da arcada, de um lado ao
+   outro. A tela mostra uma prévia da curva suave, a mesma spline do
+   servidor.
+3. Ele ajusta a faixa da panorâmica, o intervalo e a largura dos cortes e
+   clica em **Gerar**.
+4. No visualizador, o painel "Tomografia" ganha o grupo **Reconstrução**,
+   com os botões **Panorâmica reconstruída** e **Cortes transversais**. Cada
+   botão abre num quadro só a série mais nova daquele tipo. Os botões de
+   Visualização voltam à tomografia.
+
+As séries geradas ficam no mesmo exame, para visualizar e ensinar. Elas não entram na fila da curadoria. Regras completas: `docs/REGRAS_DE_NEGOCIO.md`, seção 1.13.
+
 **Limitações conhecidas:**
 
 - A tomografia odontológica (TCFC/CBCT) nem sempre usa unidades Hounsfield
   calibradas. Por isso, as janelas são pontos de partida, e o ajuste fino é
   feito com o botão direito do mouse.
-- Reconstrução panorâmica curva e cortes transversais ao longo da arcada,
-  recursos comuns em softwares odontológicos dedicados, não existem no OHIF.
-  Eles exigiriam um desenvolvimento próprio, a ser planejado à parte.
+- O OHIF não tem reconstrução panorâmica curva nem cortes transversais ao
+  longo da arcada. Por isso o Rádix gera esses recursos no servidor, como
+  séries novas (seção acima).
+- A marcação do canal mandibular ainda não existe.

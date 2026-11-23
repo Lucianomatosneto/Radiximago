@@ -1023,6 +1023,9 @@ window.config = {
 //  - 3D (predefinicoes do volume): osso, partes moles e MIP;
 //  - Espessura nos planos: Fina ou MIP (projecao de maxima intensidade)
 //    de 5, 10 ou 20 mm - "corte grosso", bom para ver canal e raizes;
+//  - Reconstrucao (23/11/2026): quando o estudo tem a panoramica
+//    reconstruida e os cortes transversais gerados pelo Radix, botoes para
+//    abri-los num quadro so (a mais nova de cada);
 //  - o painel recolhe para liberar a imagem.
 // No quadro 3D o botao esquerdo GIRA o volume (o grupo "volume3d" fica fora
 // do "mouse pratico" acima).
@@ -1053,6 +1056,44 @@ window.config = {
   function eTomografia(ds) {
     return !!ds && ds.Modality === 'CT' && !!ds.instances && ds.instances.length > 1;
   }
+
+  // RECONSTRUCAO PANORAMICA (23/11/2026): series que o Radix gera no mesmo
+  // estudo da tomografia (backend/app/modules/reconstrucao). A mais nova
+  // (maior SeriesNumber) de cada tipo ganha um botao.
+  var DESCRICOES = { pano: 'RADIX - Panorâmica reconstruída', cortes: 'RADIX - Cortes transversais' };
+  function ativos() {
+    var s = servicos();
+    try { return (s && s.displaySetService && s.displaySetService.getActiveDisplaySets()) || []; } catch (e) { return []; }
+  }
+  function eReconstrucao(ds) {
+    var d = (ds && ds.SeriesDescription) || '';
+    return d.indexOf(DESCRICOES.pano) === 0 || d.indexOf(DESCRICOES.cortes) === 0;
+  }
+  function reconstrucoes() {
+    var achadas = { pano: null, cortes: null };
+    ativos().forEach(function (ds) {
+      ['pano', 'cortes'].forEach(function (tipo) {
+        if (((ds.SeriesDescription || '').indexOf(DESCRICOES[tipo]) === 0) &&
+            (!achadas[tipo] || Number(ds.SeriesNumber || 0) > Number(achadas[tipo].SeriesNumber || 0))) {
+          achadas[tipo] = ds;
+        }
+      });
+    });
+    return achadas;
+  }
+  function abrirSerie(ds) {
+    escolhas.visual = 'reconstrucao';
+    comando('setHangingProtocol', { protocolId: 'default' });
+    setTimeout(function () {
+      var s = servicos();
+      try {
+        var id = s.viewportGridService.getState().activeViewportId;
+        s.viewportGridService.setDisplaySetsForViewport({ viewportId: id, displaySetInstanceUIDs: [ds.displaySetInstanceUID] });
+      } catch (e) { /* ignora */ }
+    }, 400);
+    montar(true);
+  }
+  var assinatura = '';
 
   // todos os quadros da tela: [{ vp, e3d }]
   function quadros() {
@@ -1170,6 +1211,11 @@ window.config = {
     painel.appendChild(grupo('Espessura', ESPESSURAS.map(function (e) {
       return botao(e[0], escolhas.espessura === e[1], function () { espessura(e[1]); });
     })));
+    var rec = reconstrucoes();
+    var itens = [];
+    if (rec.pano) itens.push(botao('Panorâmica reconstruída', false, function () { abrirSerie(rec.pano); }));
+    if (rec.cortes) itens.push(botao('Cortes transversais', false, function () { abrirSerie(rec.cortes); }));
+    if (itens.length) painel.appendChild(grupo('Reconstrução', itens));
   }
 
   function desmontar() {
@@ -1180,8 +1226,14 @@ window.config = {
 
   function verificar() {
     var ds = displaySetAtivo();
-    if (!eTomografia(ds)) { desmontar(); return; }
+    // com a reconstrucao aberta (serie OT), o painel continua: o estudo tem
+    // a tomografia
+    var tc = eTomografia(ds) || (eReconstrucao(ds) && ativos().some(eTomografia));
+    if (!tc) { desmontar(); return; }
     document.body.classList.add('radix-tc');
+    var rec = reconstrucoes();
+    var nova = (rec.pano ? rec.pano.displaySetInstanceUID : '') + '|' + (rec.cortes ? rec.cortes.displaySetInstanceUID : '');
+    if (nova !== assinatura) { assinatura = nova; montar(true); }
     var estudo = ds.StudyInstanceUID || ds.displaySetInstanceUID;
     if (!estudosAbertos[estudo]) {
       // abre sozinha em 4 quadros (3 planos + 3D), uma vez por estudo
