@@ -1333,7 +1333,9 @@
     "confirmarEmailTitulo": "Send by e-mail?",
     "confirmarEmailLote": "{quantidade, plural, one {The selected image goes} other {The # selected images go}} to the e-mail registered in your account. Confirm sending?",
     "simEnviar": "Yes, send",
-    "cancelarEnvio": "Cancel"
+    "cancelarEnvio": "Cancel",
+    "filtroTipo": "Filter by type",
+    "filtroTodos": "All"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Image",
@@ -2823,7 +2825,19 @@
         "erroGerar": "Could not prepare the photo. Try again."
       }
     },
-    "jaExistente": "This image is already in Radix (repeated file). No new copy was created."
+    "jaExistente": "This image is already in Radix (repeated file). No new copy was created.",
+    "grade": {
+      "quantidade": "{n, plural, one {1 image} other {# images}}",
+      "selecionarTodas": "Select all ({n})",
+      "limpar": "Clear selection",
+      "retirar": "Remove {n, plural, one {the selected one} other {the # selected}}",
+      "retirarTitulo": "Remove {n, plural, one {this image} other {these # images}}?",
+      "verSelecionadas": "View {n, plural, one {1 selected} other {# selected}}",
+      "selecionar": "Select image no. {id}",
+      "info": "View details",
+      "feito": "Done: {n, plural, one {1 image} other {# images}}.",
+      "nenhumDoTipo": "No image you sent is of this type."
+    }
   },
   "Grupos": {
     "titulo": "Groups",
@@ -2875,8 +2889,8 @@
     "conviteCancelado": "Invitation cancelled.",
     "erroAcao": "Could not complete. Please try again.",
     "imagensEnviadas": "Images sent to the group",
-    "comoEnviar": "To send an image, open it in the Image bank and use \"Prepare class for a group\".",
-    "irBanco": "Go to the Image bank",
+    "comoEnviar": "To send images to this group, select them in the Advanced search and use \"Send to a group\".",
+    "irBanco": "Go to the Advanced search",
     "semImagens": "No image sent to this group yet.",
     "imagemNumero": "Image #{n}",
     "retirarImagem": "Remove from group",
@@ -3116,5 +3130,25 @@
     "abrirPagina": "Open full page",
     "naoAceito": "I do not accept",
     "aceitar": "Accept and continue"
+  },
+  "EnviarParaGrupo": {
+    "botao": "Send to a group",
+    "explica": "{n, plural, one {The selected image goes} other {The # selected images go}} to the groups you choose, with the record's official markings.",
+    "meusGrupos": "My groups",
+    "semGrupos": "You have no groups yet. Create one below.",
+    "criarNovo": "+ Create new group",
+    "nomeNovo": "New group name",
+    "convidarAjuda": "People you choose get an invitation and join when they accept.",
+    "criar": "Create group",
+    "cancelar": "Cancel",
+    "recado": "Message to the group (optional)",
+    "comentar": "Participants may comment",
+    "prepararAula": "Prepare a lesson with its own markings (this image only)",
+    "enviar": "Send {n, plural, one {1 image} other {# images}}",
+    "fechar": "Close",
+    "resultado": "Sent: {enviadas} · already in the group: {ja}.",
+    "erroEnviar": "Could not send. Please try again.",
+    "erroLimite": "Too many sends in a short time. Wait a minute and send the rest.",
+    "erroCriar": "Could not create the group."
   }
 }

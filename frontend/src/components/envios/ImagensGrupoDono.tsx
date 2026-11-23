@@ -147,7 +147,7 @@ export default function ImagensGrupoDono({ grupoId }: { grupoId: number }) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-ink-3">{t('comoEnviar')} <Link href="/banco-imagens" className="text-brand underline">{t('irBanco')}</Link></p>
+      <p className="text-xs text-ink-3">{t('comoEnviar')} <Link href="/pesquisa" className="text-brand underline">{t('irBanco')}</Link></p>
       {aviso && <p role="status" className="text-xs text-emerald-700 dark:text-emerald-300">{aviso}</p>}
       {erro && <p role="alert" className="text-xs text-red-700 dark:text-red-300">{erro}</p>}
       {envios === null ? (
