@@ -16,7 +16,6 @@ import { cleanup, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import GruposPage from '../../../../frontend/src/app/grupos/page'
-import MeusGruposPage from '../../../../frontend/src/app/meus-grupos/page'
 import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 
 const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }))
@@ -78,10 +77,8 @@ describe('o que cada perfil ve', () => {
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
   })
 
-  it('o endereco antigo /meus-grupos abre Grupos na aba "Grupos de que participo"', async () => {
-    montarTela(<MeusGruposPage />)
-    await waitFor(() => expect(roteador.replace).toHaveBeenCalledWith('/grupos?aba=participo'))
-  })
+  // o endereco antigo /meus-grupos e redirecionado pelo next.config.mjs
+  // (teste: backend/tests/test_grupos_e_envio_a_pessoas.py)
 
   it('quem cria grupos ve as duas abas, com o numero de pendencias; trocar de aba mostra a outra', async () => {
     const usuario = userEvent.setup()
