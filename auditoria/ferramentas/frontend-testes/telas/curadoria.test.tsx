@@ -641,4 +641,16 @@ describe('layout da panoramica', () => {
     expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('lado-a-lado')
     expect(screen.queryByText('ficha em colunas')).toBeNull()
   })
+  // 23/11/2026: tudo numa linha so no alto da tela, em TODOS os tipos (a
+  // imagem ganha a altura que sobra)
+  it.each([['periapical'], ['panoramica']])('%s: voz, Como laudar, Macros, Descartar, Imagem X de Y e Modalidade na linha do titulo', async (tipo) => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: tipo }) } }))
+    const linha = document.querySelector('[data-linha-titulo]') as HTMLElement
+    expect(within(linha).getByRole('heading', { level: 1, name: 'Curadoria' })).toBeTruthy()
+    const voz = within(linha).getByLabelText('barra da voz')
+    expect(within(voz).getByText('Imagem 1 de 2')).toBeTruthy()
+    expect(linha.className).toContain('flex-nowrap')
+    // a ficha nao repete a barra
+    expect(within(screen.getByRole('region', { name: 'ficha simplificada' })).queryByLabelText('barra da voz')).toBeNull()
+  })
 })
