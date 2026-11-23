@@ -1609,7 +1609,7 @@ export default function CuradoriaPage() {
               cima e a esquerda ocupa a largura toda. */}
           {fichaAtiva && !fichaVisivel && barraSuperior}
           {fichaAtiva && !fichaVisivel && (
-            <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
+            <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} chave={fichaAtiva.curationId} />
           )}
           {/* PANORAMICA (23/11/2026, pedido do Luciano): a imagem e larga,
               entao ocupa os 2/3 de CIMA na largura toda e a ficha fica no
@@ -1799,7 +1799,7 @@ export default function CuradoriaPage() {
 
             {fichaVisivel && fichaAtiva && (
               <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'h-[8.25rem] shrink-0' : 'flex-1'}`}>
-                <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
+                <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} chave={fichaAtiva.curationId} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
                   horizontal={layoutPanoramica}
