@@ -28,19 +28,19 @@ function abrir(perfil: string | null, novas: Rota = { corpo: { quantidade: 0 } }
 }
 const itens = () => screen.getAllByRole('link').map((l) => l.getAttribute('aria-label') ?? l.textContent?.replace(/\d+$/, '').trim())
 
-const TODOS = ['Banco de imagens', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões']
+const TODOS = ['Banco de imagens', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões']
 const ESPERADO: Record<string, string[]> = {
-  estudante: ['Banco de imagens', 'Enviar imagem', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
-  pesquisador: ['Banco de imagens', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
-  suporte: ['Banco de imagens', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Aparelhos da rede', 'Sugestões'],
-  professor: ['Imagens recebidas', 'Curadoria', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  estudante: ['Banco de imagens', 'Enviar imagem', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  pesquisador: ['Banco de imagens', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
+  suporte: ['Banco de imagens', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Aparelhos da rede', 'Sugestões'],
+  professor: ['Imagens recebidas', 'Curadoria', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Sugestões'],
   curador: [
-    'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens',
+    'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens', 'Enviar imagem', 'Grupos', 'Minhas imagens',
     'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros', 'Relatórios', 'Sugestões',
   ],
   administrador: [
     'Início', 'Painel administrativo', 'Usuários', 'Imagens recebidas', 'Curadoria', 'Segunda opinião', 'Banco de imagens',
-    'Enviar imagem', 'Grupos', 'Meus grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros',
+    'Enviar imagem', 'Grupos', 'Minhas imagens', 'Compartilhadas comigo', 'Pranchas recebidas', 'Vocabulário', 'Macros',
     'Relatórios', 'Auditoria', 'Integrações', 'Aparelhos da rede', 'Configurações', 'Sugestões',
   ],
 }
@@ -73,21 +73,20 @@ describe('o que cada perfil ve', () => {
   })
 })
 
+// 22/11/2026: "Grupos" e "Meus grupos" sao uma tela so - um item no menu, para
+// todos, com a soma de pedidos, convites e imagens novas
 describe('grupos: convites e pedidos esperando resposta (17/11/2026)', () => {
-  it('"Meus grupos" soma convites e imagens novas; "Grupos" mostra os pedidos; com texto para o leitor de tela', async () => {
+  it('"Grupos" soma pedidos, convites e imagens novas; com texto para o leitor de tela', async () => {
     abrir('professor', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 2, pedidos: 1, imagens_novas: 3 } } })
-    const meus = await screen.findByLabelText('2 convites e 3 imagens novas')
-    expect(within(screen.getByRole('link', { name: /Meus grupos/ })).getByText('5')).toBe(meus)
-    // "Grupos" so aparece depois que o perfil e confirmado
-    const grupos = await screen.findByRole('link', { name: /^Grupos/ })
-    expect(within(grupos).getByText('1')).toBe(screen.getByLabelText('1 esperando resposta'))
+    const marca = await screen.findByLabelText('1 esperando resposta e 2 convites e 3 imagens novas')
+    expect(within(screen.getByRole('link', { name: /^Grupos/ })).getByText('6')).toBe(marca)
   })
 
   it.each([
     [{ convites: 1, pedidos: 0 }, '1 convite', '1'],
     [{ convites: 0, pedidos: 0, imagens_novas: 1 }, '1 imagem nova', '1'],
     [{ convites: 3, pedidos: 0, imagens_novas: 0 }, '3 convites', '3'],
-  ])('"Meus grupos" com %o: "%s"', async (corpo, rotulo, numero) => {
+  ])('"Grupos" com %o: "%s"', async (corpo, rotulo, numero) => {
     abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo } })
     expect((await screen.findByLabelText(rotulo)).textContent).toBe(numero)
   })
@@ -111,9 +110,9 @@ describe('grupos: convites e pedidos esperando resposta (17/11/2026)', () => {
     await waitFor(() => expect(contagens()).toBe(antes + 1))
   })
 
-  it('menu recolhido: um ponto no icone de "Meus grupos"', async () => {
+  it('menu recolhido: um ponto no icone de "Grupos"', async () => {
     abrir('estudante', undefined, { 'GET /grupos/pendencias': { corpo: { convites: 1, pedidos: 0 } } }, true)
-    const link = await screen.findByRole('link', { name: 'Meus grupos' })
+    const link = await screen.findByRole('link', { name: 'Grupos' })
     await waitFor(() => expect(link.querySelector('span.bg-amber-400')).not.toBeNull())
   })
 })
