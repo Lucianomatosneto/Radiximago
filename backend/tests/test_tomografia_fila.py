@@ -169,7 +169,9 @@ def test_depois_da_ficha_nenhum_outro_corte_volta_para_a_fila(client, curador, e
     antes = _total(client, h)
     r = client.post(f"/curation/{exame[0].id}", json={"tipo_radiografia": "tomografia"}, headers=h)
     assert r.status_code in (200, 201), r.text
-    assert _total(client, h) == antes - 1  # o exame saiu da fila; os outros cortes nao entram
+    # 23/11/2026: o exame fica na fila de quem abriu como "em andamento" (para
+    # continuar); os OUTROS cortes continuam fora - o total nao muda
+    assert _total(client, h) == antes
 
 
 def test_ficha_do_exame_mostra_cortes_e_aviso_de_todos_os_cortes(client, curador, exame):
