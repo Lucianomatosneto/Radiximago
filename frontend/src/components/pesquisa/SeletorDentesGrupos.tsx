@@ -1,7 +1,8 @@
 'use client'
 
-import type { KeyboardEvent } from 'react'
+import { useState, type KeyboardEvent } from 'react'
 import { useTranslations } from 'next-intl'
+import { DECIDUOS_INFERIOR, DECIDUOS_SUPERIOR, eDeciduo } from '../../lib/situacaoDentaria'
 
 // PESQUISA AVANCADA - busca por DENTE ou por GRUPO DE DENTES (notacao FDI).
 // Substitui os antigos filtros "Arcada", "Lado" e "Quadrante": o usuario
@@ -43,7 +44,10 @@ export default function SeletorDentesGrupos({
 }) {
   const t = useTranslations('Pesquisa.gruposDentes')
   const tp = useTranslations('Pesquisa')
+  const tSit = useTranslations('SituacaoDentaria')
   const marcado = (d: number) => dentesSelecionados.includes(d)
+  // 23/11/2026: deciduos (51-85) aparecem ao clicar em "Deciduos"
+  const [comDeciduos, setComDeciduos] = useState(() => dentesSelecionados.some(eDeciduo))
 
   function alternarDente(d: number) {
     onChange(marcado(d) ? dentesSelecionados.filter((x) => x !== d) : [...dentesSelecionados, d].sort((a, b) => a - b))
@@ -57,16 +61,16 @@ export default function SeletorDentesGrupos({
     onChange(novos.sort((a, b) => a - b))
   }
 
-  const linha = (lista: number[]) => (
-    <div className="grid grid-cols-16 gap-0.5">
+  const linha = (lista: number[], deciduos = false) => (
+    <div className={deciduos ? 'mx-auto grid w-[62.5%] grid-cols-10 gap-0.5' : 'grid grid-cols-16 gap-0.5'}>
       {lista.map((d, i) => (
         <button
           key={d}
           type="button"
           onClick={() => alternarDente(d)}
           aria-pressed={marcado(d)}
-          className={`rounded py-1 text-[11px] font-semibold outline-hidden transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${i === 8 ? 'ml-1' : ''} ${
-            marcado(d) ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
+          className={`rounded py-1 text-[11px] font-semibold outline-hidden transition-colors focus-visible:ring-2 focus-visible:ring-amber-300 ${i === (deciduos ? 5 : 8) ? 'ml-1' : ''} ${
+            marcado(d) ? 'bg-brand text-white' : deciduos ? 'bg-amber-200/10 text-amber-100 hover:bg-amber-200/20' : 'bg-white/5 text-slate-300 hover:bg-white/15'
           }`}
         >
           {d}
@@ -98,9 +102,26 @@ export default function SeletorDentesGrupos({
       </div>
       <div className="space-y-1 rounded-lg border border-white/10 bg-black/10 p-1.5">
         {linha(ARCADA_SUPERIOR)}
+        {comDeciduos && linha(DECIDUOS_SUPERIOR, true)}
         <div className="border-t border-white/10" />
+        {comDeciduos && linha(DECIDUOS_INFERIOR, true)}
         {linha(ARCADA_INFERIOR)}
       </div>
+      <div className="flex items-center justify-between">
+        <button
+          type="button"
+          aria-pressed={comDeciduos}
+          onClick={() => {
+            // esconder os deciduos tambem tira os que estavam marcados
+            if (comDeciduos) onChange(dentesSelecionados.filter((d) => !eDeciduo(d)))
+            setComDeciduos(!comDeciduos)
+          }}
+          className={`rounded-full border px-2 py-0.5 text-xs outline-hidden focus-visible:ring-2 focus-visible:ring-amber-300 ${
+            comDeciduos ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+          }`}
+        >
+          {tSit('mostrarDeciduos')}
+        </button>
       {dentesSelecionados.length > 0 && (
         <div className="flex justify-end">
           <button
@@ -112,6 +133,7 @@ export default function SeletorDentesGrupos({
           </button>
         </div>
       )}
+      </div>
     </div>
   )
 }
