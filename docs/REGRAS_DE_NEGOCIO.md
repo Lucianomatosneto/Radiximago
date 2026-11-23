@@ -157,7 +157,8 @@ As telas contam coisas diferentes, de propósito, e cada uma explica o seu núme
 - Dente decíduo **não combina** com dentição **permanente**: o servidor recusa (422). Na tela, trocar para "Permanente" tira os decíduos da ficha e do odontograma.
 - **Odontograma de situação** (só na tela da **panorâmica**): o curador clica no dente e escolhe como ele está (ausente, incluso/impactado, cárie, restaurado, tratamento endodôntico, implante, prótese, supranumerário). Um dente pode ter mais de uma situação. Situação repetida e dente sem situação são limpos; dente fora da notação FDI é recusado (422).
 - **Estruturas e achados fora dos dentes** (seios maxilares, ATM/côndilos, canal mandibular, perda óssea generalizada, ateroma carotídeo, sialolito, tonsilolito, processo estiloide alongado, lesão óssea radiolúcida ou radiopaca): **só na panorâmica**. Em outro tipo de exame o servidor recusa (422); lista vazia sempre pode (limpar).
-- Pesquisa: filtros `denticao`, `situacao_dente` (algum dente com aquela situação) e `estrutura`, só sobre fichas aprovadas, como os demais.
+- Pesquisa: filtros `denticao`, `situacao_dente` (algum dente com aquela situação) e `estrutura`, só sobre fichas aprovadas, como os demais. Na tela da Pesquisa avançada são três listas, e o odontograma da busca mostra os decíduos ao clicar em **Decíduos (51–85)**.
+- O dente de cada **achado** também pode ser decíduo quando a dentição da ficha é mista ou decídua.
 - São dados da **imagem anonimizada**, não do paciente: nada identifica a pessoa.
 
 ### 1.5 Acesso negado (01/11/2026)
