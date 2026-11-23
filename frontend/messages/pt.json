@@ -269,8 +269,7 @@
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
       "aparelhos": "Aparelhos da rede",
-      "pranchasRecebidas": "Pranchas recebidas",
-      "meusGrupos": "Meus grupos"
+      "pranchasRecebidas": "Pranchas recebidas"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -1301,8 +1300,6 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "Minhas",
-    "filtroTipo": "Filtrar por tipo",
-    "filtroTodos": "Todos",
     "tituloDestaque": "imagens",
     "subtitulo": "Imagens que você salvou a partir da Pesquisa avançada.",
     "desmarcarTodas": "Desmarcar todas",
@@ -1336,7 +1333,9 @@
     "confirmarEmailTitulo": "Enviar por e-mail?",
     "confirmarEmailLote": "{quantidade, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para o e-mail cadastrado na sua conta. Confirma o envio?",
     "simEnviar": "Sim, enviar",
-    "cancelarEnvio": "Cancelar"
+    "cancelarEnvio": "Cancelar",
+    "filtroTipo": "Filtrar por tipo",
+    "filtroTodos": "Todos"
   },
   "VisualizarImagem": {
     "tituloPrefixo": "Detalhes",
@@ -2667,25 +2666,12 @@
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
   },
-  "EnviarParaGrupo": {
-    "botao": "Enviar para um grupo",
-    "explica": "{n, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para os grupos que você escolher, com as marcações oficiais da ficha.",
-    "meusGrupos": "Meus grupos",
-    "semGrupos": "Você ainda não tem grupos. Crie um abaixo.",
-    "criarNovo": "+ Criar grupo novo",
-    "nomeNovo": "Nome do grupo novo",
-    "convidarAjuda": "Quem você escolher recebe um convite e entra no grupo quando aceitar.",
-    "criar": "Criar grupo",
-    "cancelar": "Cancelar",
-    "recado": "Recado para o grupo (opcional)",
-    "comentar": "Participantes podem comentar",
-    "prepararAula": "Preparar aula com marcações próprias (só esta imagem)",
-    "enviar": "Enviar {n, plural, one {1 imagem} other {# imagens}}",
-    "fechar": "Fechar",
-    "resultado": "Enviadas: {enviadas} · já estavam no grupo: {ja}.",
-    "erroEnviar": "Não foi possível enviar. Tente de novo.",
-    "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
-    "erroCriar": "Não foi possível criar o grupo."
+  "GruposUnico": {
+    "titulo": "Grupos",
+    "carregando": "Carregando...",
+    "abaCriei": "Grupos que criei",
+    "abaParticipo": "Grupos de que participo",
+    "pendentes": "{n, plural, one {1 pendência} other {# pendências}}"
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
@@ -2741,18 +2727,6 @@
     "erroEnviar": "Não foi possível enviar esta imagem.",
     "erroConexao": "Sem conexão com o servidor. Tente de novo.",
     "verMinhasImagens": "Ver em Minhas imagens",
-    "grade": {
-      "quantidade": "{n, plural, one {1 imagem} other {# imagens}}",
-      "selecionarTodas": "Selecionar todas ({n})",
-      "limpar": "Limpar seleção",
-      "retirar": "Retirar {n, plural, one {a selecionada} other {as # selecionadas}}",
-      "retirarTitulo": "Retirar {n, plural, one {esta imagem} other {estas # imagens}}?",
-      "verSelecionadas": "Ver {n, plural, one {1 selecionada} other {# selecionadas}}",
-      "selecionar": "Selecionar a imagem nº {id}",
-      "info": "Ver informações",
-      "feito": "Enviado: {n, plural, one {1 imagem} other {# imagens}}.",
-      "nenhumDoTipo": "Nenhuma imagem enviada por você deste tipo."
-    },
     "lista": {
       "tituloMeus": "Imagens enviadas por mim",
       "explicaMeus": "O que você enviou e onde cada imagem está agora.",
@@ -2851,7 +2825,19 @@
         "erroGerar": "Não foi possível preparar a foto. Tente de novo."
       }
     },
-    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada."
+    "jaExistente": "Esta imagem já está no Radix (arquivo repetido). Nenhuma cópia nova foi criada.",
+    "grade": {
+      "quantidade": "{n, plural, one {1 imagem} other {# imagens}}",
+      "selecionarTodas": "Selecionar todas ({n})",
+      "limpar": "Limpar seleção",
+      "retirar": "Retirar {n, plural, one {a selecionada} other {as # selecionadas}}",
+      "retirarTitulo": "Retirar {n, plural, one {esta imagem} other {estas # imagens}}?",
+      "verSelecionadas": "Ver {n, plural, one {1 selecionada} other {# selecionadas}}",
+      "selecionar": "Selecionar a imagem nº {id}",
+      "info": "Ver informações",
+      "feito": "Enviado: {n, plural, one {1 imagem} other {# imagens}}.",
+      "nenhumDoTipo": "Nenhuma imagem enviada por você deste tipo."
+    }
   },
   "Grupos": {
     "titulo": "Grupos",
@@ -3144,5 +3130,25 @@
     "abrirPagina": "Abrir em página inteira",
     "naoAceito": "Não aceito",
     "aceitar": "Aceitar e continuar"
+  },
+  "EnviarParaGrupo": {
+    "botao": "Enviar para um grupo",
+    "explica": "{n, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para os grupos que você escolher, com as marcações oficiais da ficha.",
+    "meusGrupos": "Meus grupos",
+    "semGrupos": "Você ainda não tem grupos. Crie um abaixo.",
+    "criarNovo": "+ Criar grupo novo",
+    "nomeNovo": "Nome do grupo novo",
+    "convidarAjuda": "Quem você escolher recebe um convite e entra no grupo quando aceitar.",
+    "criar": "Criar grupo",
+    "cancelar": "Cancelar",
+    "recado": "Recado para o grupo (opcional)",
+    "comentar": "Participantes podem comentar",
+    "prepararAula": "Preparar aula com marcações próprias (só esta imagem)",
+    "enviar": "Enviar {n, plural, one {1 imagem} other {# imagens}}",
+    "fechar": "Fechar",
+    "resultado": "Enviadas: {enviadas} · já estavam no grupo: {ja}.",
+    "erroEnviar": "Não foi possível enviar. Tente de novo.",
+    "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
+    "erroCriar": "Não foi possível criar o grupo."
   }
 }
