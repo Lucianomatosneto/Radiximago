@@ -340,11 +340,15 @@ export default function Sidebar({ recolhivel = false }: { recolhivel?: boolean }
                 href={item.href}
                 aria-current={estaAtivo ? 'page' : undefined}
                 onClick={item.chave === 'curadoria' ? aoClicarCuradoria : undefined}
-                className={`rounded-lg border bg-linear-to-br px-3 py-2 text-sm font-medium transition-transform hover:-translate-y-0.5 ${cor} ${
+                // A1 (22/11/2026): a AREA do clique fica parada; so o texto
+                // sobe ao passar o mouse. Antes o item inteiro subia e o
+                // clique perto da borda de baixo soltava fora dele (a tela
+                // nao abria no primeiro clique).
+                className={`group rounded-lg border bg-linear-to-br px-3 py-2 text-sm font-medium ${cor} ${
                   estaAtivo ? 'ring-2 ring-brand ring-offset-2 ring-offset-base' : ''
                 }`}
               >
-                <span className="flex items-center justify-between gap-2">
+                <span className="flex items-center justify-between gap-2 transition-transform group-hover:-translate-y-0.5">
                   {t(`itens.${item.chave}`)}
                   {contador(item.chave).n > 0 && (
                     <span
