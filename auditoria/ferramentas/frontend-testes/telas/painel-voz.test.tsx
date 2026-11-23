@@ -457,7 +457,9 @@ describe('escuta continua (coluna da ficha)', () => {
   it('espaco abre o microfone; cada trecho vai ao servidor com a dica do item aceso e passa ao proximo', async () => {
     voz.respostas['dois cárie'] = { alteracoes: [{ campo: 'achados', descricao: '2 × Cárie' }] }
     const { s, aplicar, etapa } = montar()
-    expect(screen.getByText('Pressione espaço para áudio')).toBeTruthy()
+    // so o icone do microfone; o texto aparece ao passar o mouse (dica)
+    expect(screen.getByRole('tooltip').textContent).toBe('Pressione espaço para curar com áudio (ferramenta em teste)')
+    expect(microfoneBotao().getAttribute('aria-describedby')).toBe(screen.getByRole('tooltip').id)
     expect(screen.getByRole('button', { name: 'Macros' })).toBeTruthy()
     await espacoQuandoPronto()
     await waitFor(() => expect(microfoneBotao().getAttribute('aria-pressed')).toBe('true'))
@@ -517,7 +519,7 @@ describe('escuta continua (coluna da ficha)', () => {
 
   it('na etapa "aprovar" o microfone fica fechado e o espaco nao abre', async () => {
     montar({ etapaAtiva: 'aprovar' })
-    await screen.findByText('Pressione espaço para áudio')
+    await screen.findByRole('tooltip')
     await espacoQuandoPronto()
     expect(escuta.atual).toBeNull()
   })

@@ -359,6 +359,7 @@ describe('salvar e aprovar', () => {
   })
 })
 
+// desde 23/11/2026 "Descartar" fica na linha do titulo (fora da ficha)
 describe('descartar e pedir segunda opiniao (motivo obrigatorio)', () => {
   it.each([
     ['Descartar', 'Descartar ficha', 'discard'],
@@ -366,7 +367,7 @@ describe('descartar e pedir segunda opiniao (motivo obrigatorio)', () => {
   ])('"%s": exige o motivo, envia e passa para a proxima', async (botaoNome, titulo, rota) => {
     const usuario = userEvent.setup()
     const servidor = await abrirComFicha(rotasPadrao({ [`POST /curation/501/${rota}`]: { corpo: {} } }))
-    await usuario.click(within(ficha_()).getAllByRole('button', { name: botaoNome })[0])
+    await usuario.click(screen.getAllByRole('button', { name: botaoNome })[0])
     const janela = screen.getByRole('heading', { name: titulo }).closest('div') as HTMLElement
     await usuario.click(within(janela).getByRole('button', { name: 'Confirmar' }))
     expect(within(janela).getByRole('alert').textContent).toBe('Informe um motivo.')
@@ -379,7 +380,7 @@ describe('descartar e pedir segunda opiniao (motivo obrigatorio)', () => {
   it('erro ao descartar: o motivo do servidor aparece na janela; "Cancelar" fecha', async () => {
     const usuario = userEvent.setup()
     await abrirComFicha(rotasPadrao({ 'POST /curation/501/discard': { status: 403, corpo: { detail: 'Só o curador da ficha pode descartar.' } } }))
-    await usuario.click(within(ficha_()).getAllByRole('button', { name: 'Descartar' })[0])
+    await usuario.click(screen.getAllByRole('button', { name: 'Descartar' })[0])
     const janela = screen.getByRole('heading', { name: 'Descartar ficha' }).closest('div') as HTMLElement
     await usuario.type(within(janela).getByRole('textbox'), 'Teste.')
     await usuario.click(within(janela).getByRole('button', { name: 'Confirmar' }))
@@ -500,7 +501,7 @@ describe('correcao de 13/11/2026: acessibilidade da janela de motivo (defeito 2)
   it.each(['Descartar', 'Solicitar segunda opinião'])('"%s": a caixa do motivo e encontrada pelo rotulo "Motivo"', async (nome) => {
     const usuario = userEvent.setup()
     await abrirComFicha(rotasPadrao())
-    await usuario.click(within(ficha_()).getAllByRole('button', { name: nome })[0])
+    await usuario.click(screen.getAllByRole('button', { name: nome })[0])
     const motivo = screen.getByLabelText('Motivo')
     expect(motivo.tagName).toBe('TEXTAREA')
     await usuario.type(motivo, 'Teste')
@@ -513,7 +514,7 @@ describe('correcao de 13/11/2026: acessibilidade da janela de motivo (defeito 2)
   ])('PR 3a: "%s" abre uma janela (dialog) com o nome do titulo, e o motivo fica dentro dela', async (botao, titulo) => {
     const usuario = userEvent.setup()
     await abrirComFicha(rotasPadrao())
-    await usuario.click(within(ficha_()).getAllByRole('button', { name: botao })[0])
+    await usuario.click(screen.getAllByRole('button', { name: botao })[0])
     const janela = screen.getByRole('dialog', { name: titulo })
     expect(janela.getAttribute('aria-modal')).toBe('true')
     expect(within(janela).getByLabelText('Motivo').tagName).toBe('TEXTAREA')
@@ -640,5 +641,17 @@ describe('layout da panoramica', () => {
     await abrirComFicha(rotasPadrao())
     expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('lado-a-lado')
     expect(screen.queryByText('ficha em colunas')).toBeNull()
+  })
+  // 23/11/2026: tudo numa linha so no alto da tela, em TODOS os tipos (a
+  // imagem ganha a altura que sobra)
+  it.each([['periapical'], ['panoramica']])('%s: voz, Como laudar, Macros, Descartar, Imagem X de Y e Modalidade na linha do titulo', async (tipo) => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: tipo }) } }))
+    const linha = document.querySelector('[data-linha-titulo]') as HTMLElement
+    expect(within(linha).getByRole('heading', { level: 1, name: 'Curadoria' })).toBeTruthy()
+    const voz = within(linha).getByLabelText('barra da voz')
+    expect(within(voz).getByText('Imagem 1 de 2')).toBeTruthy()
+    expect(linha.className).toContain('flex-nowrap')
+    // a ficha nao repete a barra
+    expect(within(screen.getByRole('region', { name: 'ficha simplificada' })).queryByLabelText('barra da voz')).toBeNull()
   })
 })

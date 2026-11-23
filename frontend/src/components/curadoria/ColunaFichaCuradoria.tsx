@@ -12,6 +12,7 @@ import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
 import AjudaSecao from './AjudaSecao'
 import OdontogramaSituacao, { EstruturasExtradentais } from './OdontogramaSituacao'
+import { FichaCompactaContext, useFichaCompacta } from './FichaCompacta'
 import { ESTRUTURAS, TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
 
 // COLUNA DA FICHA DE CURADORIA (metade direita da tela; a imagem e as
@@ -43,6 +44,24 @@ function emCampoDeTexto(): boolean {
   if (alvo instanceof HTMLInputElement && ['checkbox', 'radio', 'button', 'submit', 'reset'].includes(alvo.type)) return false
   return alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable
 }
+
+// CARTOES DA PANORAMICA (23/11/2026): a ordem em que → / Tab passam; cada
+// cartao cabe sem rolar (so "Achados" rola, se houver muitas marcacoes).
+// Odontograma e estruturas nao tem item no holofote (sao cliques): aparecem
+// como vizinhos quando o item aceso esta ao lado deles.
+const CARTOES_PANORAMICA: { id: string; etapas: EtapaFicha[] }[] = [
+  { id: 'anonimizacao_tipo', etapas: ['anonimizacao', 'tipo'] },
+  { id: 'idade_sexo', etapas: ['idade', 'genero'] },
+  { id: 'dentes', etapas: ['dentes'] },
+  { id: 'qualidade_origem', etapas: ['qualidade', 'origem'] },
+  { id: 'odontograma', etapas: [] },
+  { id: 'achados', etapas: ['achados'] },
+  { id: 'estruturas', etapas: [] },
+  { id: 'erro_tecnico', etapas: ['erro_tecnico'] },
+  { id: 'descricao', etapas: ['descricao'] },
+  { id: 'observacoes', etapas: ['observacoes', 'aprovar'] },
+]
+const VISIVEIS = 3
 
 // Uma secao da coluna. Fica FORA do componente principal de proposito: um
 // componente declarado dentro de outro e recriado a cada digitacao, o que
@@ -80,15 +99,16 @@ function Secao({
   children: ReactNode
 }) {
   const t = useTranslations('Curadoria.coluna')
+  const compacta = useFichaCompacta()
   return (
     <section
       data-secao={id}
       data-etapa={simples ? undefined : id}
       aria-current={holofote ? 'step' : undefined}
       onMouseDown={() => !ativa && !simples && onAtivar()}
-      className={`scroll-mt-2 rounded-xl border p-3 relative transition-[opacity,border-color,box-shadow] duration-200 ${
+      className={`scroll-mt-2 rounded-xl border relative transition-[opacity,border-color,box-shadow] duration-200 ${compacta ? 'h-full p-2' : 'p-3'} ${
         holofote
-          ? 'z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] zoom-[1.5]'
+          ? `z-10 border-teal-300 bg-base-surface shadow-[0_0_0_3px_rgba(45,212,191,.28),0_0_40px_-2px_rgba(45,212,191,.55)] ${compacta ? '' : 'zoom-[1.5]'}`
           : ativa
             ? 'z-10 border-base-border bg-base-surface'
             : 'border-base-border bg-base-surface/70 opacity-[.18] saturate-0 hover:opacity-50'
@@ -97,7 +117,7 @@ function Secao({
       {/* brilho de "acabou de ser preenchida" - so este enfeite e recriado
           (key), os campos da secao continuam montados */}
       {piscando ? <span key={piscando} aria-hidden="true" className="secao-preenchida pointer-events-none absolute inset-0 rounded-xl" /> : null}
-      <header className="mb-2 flex items-center gap-2">
+      <header className={`${compacta ? 'mb-1' : 'mb-2'} flex items-center gap-2`}>
         <h3 className={`text-sm font-semibold ${ativa ? 'text-teal-100' : 'text-slate-300'}`}>{titulo}</h3>
         {!simples && <AjudaSecao secao={id} />}
         {estado === 'concluida' && <span className="text-xs font-bold text-emerald-400" title={t('concluida')}>✓</span>}
@@ -113,7 +133,7 @@ function Secao({
       {/* secao apagada: o primeiro clique so acende (nao muda valores); em
           "Dados" cada item cuida disso (PainelDadosSobrepostos) */}
       <div className={ativa || simples ? '' : 'pointer-events-none'}>{children}</div>
-      {ativa && rodape && <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-white/10 pt-2">{rodape}</div>}
+      {ativa && rodape && <div className={`flex flex-wrap items-center gap-2 border-t border-white/10 ${compacta ? 'mt-1 pt-1 [&_button]:py-0.5' : 'mt-3 pt-2'}`}>{rodape}</div>}
     </section>
   )
 }
@@ -182,6 +202,8 @@ export default function ColunaFichaCuradoria({
       porCliqueRef.current = false
       return
     }
+    // cartoes (panoramica): nao ha rolagem - os cartoes visiveis acompanham
+    if (horizontal) return
     const caixa = rolagemRef.current
     if (!caixa) return
     if (etapaAtiva === ETAPA_INICIAL) {
@@ -190,7 +212,7 @@ export default function ColunaFichaCuradoria({
     }
     const alvo = caixa.querySelector<HTMLElement>(`[data-etapa="${etapaAtiva}"]`)
     alvo?.scrollIntoView({ behavior: 'smooth', block: SECAO_DA_ETAPA[etapaAtiva] === 'dados' || etapaAtiva === 'aprovar' ? 'center' : 'start' })
-  }, [etapaAtiva])
+  }, [etapaAtiva, horizontal])
 
   // imagem nova: a coluna volta ao topo (comeca na anonimizacao)
   useEffect(() => {
@@ -208,6 +230,8 @@ export default function ColunaFichaCuradoria({
   cursorRef.current = cursor
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
+  const horizontalRef = useRef(horizontal)
+  horizontalRef.current = horizontal
 
   // O curador mudou de item pelo TECLADO ou CLIQUE (nao pela voz): ao chegar
   // em "Descrição didática" ou "Observações internas" a caixa de texto ja
@@ -239,8 +263,14 @@ export default function ColunaFichaCuradoria({
   }, [etapaAtiva])
   useEffect(() => {
     if (!teclasAtivas) return
-    function aoTeclar(e: KeyboardEvent) {
-      if (e.ctrlKey || e.metaKey || e.altKey) return
+    function aoTeclar(evento: KeyboardEvent) {
+      if (evento.ctrlKey || evento.metaKey || evento.altKey) return
+      // CARTOES (panoramica, 23/11/2026): → / ← andam entre os itens (e os
+      // cartoes acompanham) e ↑ / ↓ trocam a opcao - o contrario da ficha
+      // em coluna. Troca-se a tecla aqui e o resto segue igual.
+      const TROCA: Record<string, string> = { ArrowRight: 'ArrowDown', ArrowLeft: 'ArrowUp', ArrowDown: 'ArrowRight', ArrowUp: 'ArrowLeft' }
+      const key = horizontalRef.current && !emCampoDeTexto() ? TROCA[evento.key] ?? evento.key : evento.key
+      const e = { key, shiftKey: evento.shiftKey, repeat: evento.repeat, preventDefault: () => evento.preventDefault() }
       const etapaAgora = etapaRef.current
       // IDADE acesa: digitar um numero ja escreve na caixa da idade (sem
       // precisar clicar nela); Enter dentro dela confirma e passa adiante
@@ -443,28 +473,66 @@ export default function ColunaFichaCuradoria({
   )
 
   if (horizontal) {
-    // PANORAMICA (23/11/2026): a ficha fica no 1/3 de baixo da tela, com as
-    // secoes LADO A LADO; cada coluna rola sozinha. Teclado e voz andam
-    // pelos mesmos itens (data-etapa) de sempre.
-    const coluna = 'min-h-0 space-y-3 overflow-y-auto px-1 pt-1 pb-6'
-    return (
-      <div className="flex h-full min-h-0 w-full flex-col gap-2">
-        {topo && <div className="shrink-0">{topo}</div>}
-        <div ref={rolagemRef} className={`grid min-h-0 flex-1 gap-3 ${comOdontograma ? 'grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr]' : 'grid-cols-[1.3fr_1fr_1fr_1fr]'}`}>
-          <div data-coluna="dados" className={coluna}>{secaoDados}</div>
-          {comOdontograma && <div data-coluna="odontograma" className={coluna}>{secaoOdontograma}</div>}
-          <div data-coluna="achados" className={coluna}>
-            {secaoAchados}
-            {secaoEstruturas}
-          </div>
-          <div data-coluna="erro_tecnico" className={coluna}>{secaoErro}</div>
-          <div data-coluna="descricao" className={coluna}>
-            {secaoDescricao}
-            {secaoObservacoes}
-            {finais}
-          </div>
-        </div>
+    // PANORAMICA (23/11/2026): a ficha embaixo da imagem vira CARTOES de
+    // altura fixa, sem rolagem; so 3 aparecem por vez, com o cartao do item
+    // aceso no meio. → / Tab avancam e ← / Shift+Tab voltam (ver aoTeclar);
+    // o mouse continua acendendo qualquer item visivel.
+    const indiceAtivo = Math.max(0, CARTOES_PANORAMICA.findIndex((c) => c.etapas.includes(etapaAtiva)))
+    const inicio = Math.min(Math.max(0, indiceAtivo - 1), CARTOES_PANORAMICA.length - VISIVEIS)
+    const dadosDoCartao = (etapas: EtapaFicha[]) => (
+      <div className="h-full rounded-xl border border-base-border bg-base-surface/70 p-1.5">
+        <PainelDadosSobrepostos
+          form={form}
+          onChange={onChange}
+          itens={etapas}
+          etapa={etapaAtiva}
+          onEtapa={ativarPorClique}
+          onEscolhido={(e) => irPara(etapaVizinha(e, 1))}
+          cursorDente={etapaAtiva === 'dentes' ? cursor : undefined}
+        />
       </div>
+    )
+    const conteudo: Record<string, ReactNode> = {
+      anonimizacao_tipo: dadosDoCartao(['anonimizacao', 'tipo']),
+      idade_sexo: dadosDoCartao(['idade', 'genero']),
+      dentes: dadosDoCartao(['dentes']),
+      qualidade_origem: dadosDoCartao(['qualidade', 'origem']),
+      odontograma: secaoOdontograma,
+      achados: secaoAchados,
+      estruturas: secaoEstruturas,
+      erro_tecnico: secaoErro,
+      descricao: secaoDescricao,
+      observacoes: (
+        <div className="flex h-full flex-col gap-2 [&>section]:h-auto [&>section]:min-h-0 [&>section]:flex-1">
+          {secaoObservacoes}
+          {finais}
+        </div>
+      ),
+    }
+    return (
+      <FichaCompactaContext.Provider value>
+        <div className="flex h-full min-h-0 w-full flex-col gap-2">
+          {topo && <div className="shrink-0">{topo}</div>}
+          <div ref={rolagemRef} className="flex min-h-0 flex-1 gap-3">
+            {CARTOES_PANORAMICA.map((c, i) => {
+              const visivel = i >= inicio && i < inicio + VISIVEIS
+              return (
+                <div
+                  key={c.id}
+                  data-cartao={c.id}
+                  data-visivel={visivel ? 'true' : 'false'}
+                  className={`h-full min-w-0 flex-1 ${c.id === 'achados' ? 'overflow-y-auto' : 'overflow-hidden'} ${visivel ? '' : 'hidden'}`}
+                >
+                  {conteudo[c.id]}
+                </div>
+              )
+            })}
+          </div>
+          <p className="shrink-0 text-center text-[11px] text-slate-400" aria-live="polite">
+            {t('cartoesPosicao', { inicio: inicio + 1, fim: inicio + VISIVEIS, total: CARTOES_PANORAMICA.length })}
+          </p>
+        </div>
+      </FichaCompactaContext.Provider>
     )
   }
 

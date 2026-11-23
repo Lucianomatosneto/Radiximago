@@ -10,6 +10,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
+import { useFichaCompacta } from './FichaCompacta'
 import {
   DECIDUOS_INFERIOR, DECIDUOS_SUPERIOR, PERMANENTES_INFERIOR, PERMANENTES_SUPERIOR, SITUACOES,
   alternarSituacao, mostraDeciduos,
@@ -25,6 +26,10 @@ export default function OdontogramaSituacao({
   onChange: (form: FormularioFicha) => void
 }) {
   const t = useTranslations('SituacaoDentaria')
+  // no cartao da panoramica (altura fixa, sem rolar) a explicacao e a
+  // legenda viram dica do titulo (aparecem no mouse)
+  const compacta = useFichaCompacta()
+  const legenda = SITUACOES.map((s) => `${s.sigla} = ${t(`situacoes.${s.valor}`)}`).join(' · ')
   const [aberto, setAberto] = useState<number | null>(null)
   const deciduos = mostraDeciduos(form.denticao)
   // dente aberto que deixou de aparecer (troca de denticao) fecha o painel
@@ -58,12 +63,12 @@ export default function OdontogramaSituacao({
   )
 
   return (
-    <section aria-labelledby="titulo-odontograma" className="rounded-xl border border-base-border bg-base-surface/60 p-2.5">
-      <h3 id="titulo-odontograma" className="mb-1 text-sm font-semibold text-slate-300">
+    <section aria-labelledby="titulo-odontograma" className={`rounded-xl border border-base-border bg-base-surface/60 ${compacta ? 'h-full p-2' : 'p-2.5'}`}>
+      <h3 id="titulo-odontograma" className="mb-1 text-sm font-semibold text-slate-300" title={compacta ? `${t('odontogramaExplica')} ${legenda}` : undefined}>
         {t('odontograma')}
       </h3>
-      <p className="mb-1.5 text-[11px] text-slate-400">{t('odontogramaExplica')}</p>
-      <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
+      {!compacta && <p className="mb-1.5 text-[11px] text-slate-400">{t('odontogramaExplica')}</p>}
+      <div className={`rounded-lg border border-teal-500/30 bg-teal-600/10 ${compacta ? 'space-y-0.5 p-1' : 'space-y-1 p-1.5'}`}>
         {linha(PERMANENTES_SUPERIOR)}
         {deciduos && linha(DECIDUOS_SUPERIOR, true)}
         <div className="border-t border-white/10" />
@@ -94,9 +99,11 @@ export default function OdontogramaSituacao({
       )}
 
       {/* legenda das siglas */}
-      <p className="mt-1.5 text-[10px] leading-4 text-slate-400" aria-hidden="true">
-        {SITUACOES.map((s) => `${s.sigla} = ${t(`situacoes.${s.valor}`)}`).join(' · ')}
-      </p>
+      {!compacta && (
+        <p className="mt-1.5 text-[10px] leading-4 text-slate-400" aria-hidden="true">
+          {legenda}
+        </p>
+      )}
     </section>
   )
 }
@@ -112,6 +119,7 @@ export function EstruturasExtradentais({
   estruturas: readonly string[]
 }) {
   const t = useTranslations('SituacaoDentaria')
+  const compacta = useFichaCompacta()
   function alternar(valor: string) {
     const lista = form.estruturas_extradentais
     onChange({
@@ -120,7 +128,7 @@ export function EstruturasExtradentais({
     })
   }
   return (
-    <fieldset className="rounded-xl border border-base-border bg-base-surface/60 p-2.5">
+    <fieldset className={`rounded-xl border border-base-border bg-base-surface/60 ${compacta ? 'h-full p-2' : 'p-2.5'}`}>
       <legend className="px-1 text-sm font-semibold text-slate-300">{t('estruturasTitulo')}</legend>
       <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
         {estruturas.map((valor) => (

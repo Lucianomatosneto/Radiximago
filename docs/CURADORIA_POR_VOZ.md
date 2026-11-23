@@ -129,9 +129,12 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
 - O curador aperta a **barra de espaço** para abrir o microfone: ele fica
   aberto em todos os itens (`lib/escutaContinua.ts`) até o passo "Aprovar".
   Espaço de novo (ou o botão, ou Alt+V) pausa/retoma.
-- Caixa de voz enxuta: só o círculo do microfone (cor = estado) com
-  "Pressione espaço para áudio" embaixo; ao lado, "Como laudar", "Macros",
-  "Descartar" e a navegação "← Imagem X de Y →" (sem caixa própria).
+- Caixa de voz enxuta: desde 23/11/2026 fica na **linha do título** (uma
+  linha só no alto da tela, em todos os tipos de exame), só com o **ícone**
+  do microfone (cor = estado). O texto "Pressione espaço para curar com
+  áudio (ferramenta em teste)" aparece ao passar o mouse. Ao lado: "Como
+  laudar", "Macros", "Descartar", "Imagem X de Y" e a caixa "Modalidade".
+  Erro ou retorno da voz ocupam uma linha curta, cortada com "…".
 - O item aceso pelo holofote fica **50% maior** (CSS `zoom: 1.5`) para
   leitura mais fácil, sem passar da metade direita da tela.
   Erros e dúvidas da voz aparecem só quando existem. A barra "Ficha de
@@ -168,6 +171,12 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
   marca/desmarca; tipo, gênero e qualidade trocam a opção; em dentes e erro
   técnico as setas andam um cursor (contorno amarelo) e **Enter** marca/
   desmarca (curadoria manual, sem áudio).
+- **Panorâmica (ficha em cartões, 23/11/2026):** embaixo da imagem a ficha
+  vira 10 cartões que cabem sem rolar (só "Achados" rola se houver muitas
+  marcações); aparecem 3 por vez, com o cartão do item aceso no meio. Aqui
+  as setas trocam de papel: **→ / Tab** avançam, **← / Shift+Tab** voltam,
+  e **↑ / ↓** trocam a opção do item aceso. O item aceso não cresce
+  (sem o `zoom: 1.5`), para não passar da borda do cartão.
 
 - Itens opcionais aceitam resposta negativa (a fala inteira): **"não"**,
   "nenhum", "nada" — e também "sem erro técnico", "sem descrição", "sem

@@ -7,6 +7,7 @@ import { regioesAoTrocarExame } from '../../lib/achadosFicha'
 import { errosParaTipo } from '../../lib/errosTecnicos'
 import type { EtapaFicha } from '../../lib/secoesCuradoria'
 import { DECIDUOS_INFERIOR, DECIDUOS_SUPERIOR, DENTICOES, mostraDeciduos, trocarDenticao } from '../../lib/situacaoDentaria'
+import { useFichaCompacta } from './FichaCompacta'
 
 // DADOS DA IMAGEM (secao 1 da ficha), um ITEM por vez no holofote: so o
 // item em destaque (`etapa`) aparece aceso, com a sua PALAVRA-CHAVE de voz
@@ -56,6 +57,7 @@ function Item({
   onAtivar?: (etapa: EtapaFicha) => void
   children: ReactNode
 }) {
+  const compacta = useFichaCompacta()
   return (
     <div
       data-etapa={etapa}
@@ -63,7 +65,7 @@ function Item({
       onMouseDown={() => !ativa && onAtivar?.(etapa)}
       className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
         ativa
-          ? 'relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] zoom-[1.5]'
+          ? `relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] ${compacta ? '' : 'zoom-[1.5]'}`
           : apagado
             ? 'opacity-[.18] saturate-0 hover:opacity-50'
             : ''
@@ -82,6 +84,7 @@ export default function PainelDadosSobrepostos({
   onEtapa,
   onEscolhido,
   cursorDente,
+  itens,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -93,6 +96,8 @@ export default function PainelDadosSobrepostos({
   onEscolhido?: (etapa: EtapaFicha) => void
   /** posicao do cursor das setas ←/→ no odontograma (0..31) */
   cursorDente?: number
+  /** so estes itens (ficha em cartoes da panoramica); sem a lista, todos */
+  itens?: EtapaFicha[]
   // compatibilidade com usos antigos (ignorados)
   statusFicha?: string
   palavrasChave?: boolean
@@ -158,7 +163,7 @@ export default function PainelDadosSobrepostos({
     </div>
   )
 
-  const item = (e: EtapaFicha, filhos: ReactNode) => (
+  const item = (e: EtapaFicha, filhos: ReactNode) => itens && !itens.includes(e) ? null : (
     <Item etapa={e} ativa={!!etapa && etapa === e} apagado={!!etapa && etapa !== e} onAtivar={onEtapa}>
       {filhos}
     </Item>
