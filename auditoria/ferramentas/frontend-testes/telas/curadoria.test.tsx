@@ -542,6 +542,12 @@ describe('escolher a modalidade', () => {
     expect(screen.queryByRole('group', { name: 'Qual modalidade você quer curar agora?' })).toBeNull()
   })
 
+  it('com intraorais na fila, oferece a triagem para separar periapical, interproximal e oclusal', async () => {
+    await abrir(varias())
+    const link = await screen.findByRole('link', { name: /Separar as intraorais por tipo/ })
+    expect(link.getAttribute('href')).toBe('/curadoria/triagem?tipo=intraoral')
+  })
+
   it('"Todas": abre a 1a da fila inteira, como antes', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(varias())
