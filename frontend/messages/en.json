@@ -2307,7 +2307,9 @@
       "incorporada": "{item}: added to the curation.",
       "dispensada": "{item}: note dismissed.",
       "aprovada": "Record approved.",
-      "descartada": "Record discarded."
+      "descartada": "Record discarded.",
+      "mantida": "Record kept approved.",
+      "arquivada": "Record archived."
     },
     "rodape": {
       "falta": "Choose the overall rating (1, 2 or 3) to send.",
@@ -2427,7 +2429,13 @@
       "descartar": "Discard",
       "motivoDescarte": "Reason for discarding",
       "confirmarDescarte": "Confirm discard",
-      "voltar": "Back"
+      "voltar": "Back",
+      "decisaoAprovada": "This record is already in the bank and stays in Search until you decide.",
+      "decisaoInstrucaoAprovada": "With the notes resolved, keep the record approved or archive it (leaves Search; nothing is deleted).",
+      "manterAprovada": "Keep approved",
+      "arquivar": "Archive",
+      "motivoArquivamento": "Reason for archiving",
+      "confirmarArquivamento": "Confirm archiving"
     },
     "sair": "Sign out",
     "holofote": {
@@ -2435,7 +2443,20 @@
       "proximo": "next",
       "proximoItem": "Next item"
     },
-    "tentarDeNovo": "Try again"
+    "tentarDeNovo": "Try again",
+    "lote": {
+      "botao": "Request second opinion ({n})",
+      "titulo": "{n, plural, one {Request second opinion for 1 image} other {Request second opinion for # images}}",
+      "explica": "The records stay approved and in Search until the review ends. Follow and decide in Second opinion.",
+      "motivo": "Reason (required)",
+      "pedir": "Request",
+      "pedindo": "Requesting…",
+      "cancelar": "Cancel",
+      "semConexao": "No connection to the server. Try again.",
+      "feito": "{n, plural, =0 {No second opinion was requested.} one {Second opinion requested for 1 image.} other {Second opinion requested for # images.}}",
+      "recusadas": "{n, plural, one {1 could not be requested (already open or no longer in the bank).} other {# could not be requested (already open or no longer in the bank).}}",
+      "acompanhar": "Follow in Second opinion"
+    }
   },
   "Segmentacao": {
     "abaFormas": "Shapes (circle, arrow)",
