@@ -17,12 +17,16 @@ export default function PainelErrosTecnicosFicha({
   onChange,
   palavrasChave = false,
   cursor,
+  faixa,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
   palavrasChave?: boolean
   /** posicao do cursor das setas ←/→ (espaco marca/desmarca) */
   cursor?: number
+  /** so os botoes [inicio, fim) da lista (cartoes baixos: o erro tecnico
+   *  ocupa 2 cartoes); o cursor continua contando a lista inteira */
+  faixa?: [number, number]
 }) {
   const t = useTranslations('Curadoria.errosFicha')
   // cartao da panoramica (altura fixa): botoes menores para caberem todos
@@ -54,6 +58,7 @@ export default function PainelErrosTecnicosFicha({
       )}
       <div className={`flex flex-wrap ${compacta ? 'gap-0.5' : 'gap-1.5'}`}>
         {lista.map((e, i) => {
+          if (faixa && (i < faixa[0] || i >= faixa[1])) return null
           const ligado = marcados.includes(e.valor)
           return (
             <button
@@ -71,7 +76,7 @@ export default function PainelErrosTecnicosFicha({
           )
         })}
       </div>
-      {fora.length > 0 && (
+      {fora.length > 0 && (!faixa || faixa[0] === 0) && (
         <p className="text-[11px] text-amber-200">
           {t('foraDoTipo')}{' '}
           {fora.map((v) => (
