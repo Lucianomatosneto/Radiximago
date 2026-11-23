@@ -423,3 +423,26 @@ describe('denticao, deciduos e odontograma de situacao', () => {
     expect(screen.queryByRole('group', { name: 'Estruturas e achados fora dos dentes' })).toBeNull()
   })
 })
+
+// DECIDUOS NOS ACHADOS (23/11/2026): com denticao mista ou decidua, o dente
+// de cada achado tambem pode ser um deciduo (51-85).
+describe('deciduos no dente de cada achado', () => {
+  const abrirComAchado = (denticao: string) => {
+    abrir({ denticao, marcacoes: MARCACOES.slice(0, 1), achados: [{ tipo: 'lesao_periapical', dentes: [], regiao: '', marcacoes: ['m1'] }] })
+    fireEvent.mouseDown(document.querySelector('[data-secao="achados"]') as HTMLElement)
+    return screen.getByRole('combobox', { name: 'Adicionar dente' }) as HTMLSelectElement
+  }
+
+  it('denticao mista: o deciduo aparece na lista e vai para o achado', async () => {
+    const usuario = userEvent.setup()
+    const lista = abrirComAchado('mista')
+    expect(Array.from(lista.options).map((o) => o.value)).toContain('55')
+    await usuario.selectOptions(lista, '55')
+    expect(estado.form.achados[0].dentes).toEqual([55])
+  })
+
+  it('sem denticao (ou permanente): so os permanentes', () => {
+    const lista = abrirComAchado('')
+    expect(Array.from(lista.options).map((o) => o.value)).not.toContain('55')
+  })
+})
