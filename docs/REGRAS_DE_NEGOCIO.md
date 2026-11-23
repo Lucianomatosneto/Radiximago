@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.17 — 10/11/2026 |
+| Versão do documento | 1.19 — 22/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -161,6 +161,8 @@ pendente ─┐
           │                       ├─ descartar → descartada (final)
           │                       └─ pedir 2ª opinião → segunda_opiniao ─┬─ aprovar → aprovada
           │                                                              └─ descartar → descartada
+aprovada ── pedir 2ª opinião (continua aprovada e na Pesquisa) ─┬─ manter → aprovada
+                                                                └─ arquivar → arquivada
 ```
 
 | Regra | Onde |
@@ -170,9 +172,10 @@ pendente ─┐
 | **Aprovar exige os campos mínimos preenchidos** (tipo de radiografia, dente ou região, achado, qualidade e descrição; desde 22/11/2026, como a região da imagem só vem do padrão de panorâmica e tomografia, nas outras radiografias o curador precisa marcar os dentes). Faltando algum, o servidor recusa (422) e registra a tentativa na auditoria; o botão da tela não é a única barreira (02/11/2026) | `curation/common.py` (`_campos_minimos_faltando`) |
 | **Só administrador e curador gravam na curadoria** (editar ficha, achados, aprovar, descartar, segunda opinião, voz, macros, vocabulário). O **suporte só lê** (02/11/2026) | `auth.py` (`PERFIS_CURADORIA_ESCRITA`) |
 | Descartar exige justificativa | `curation/common.py` |
-| Ficha aprovada ou descartada não é reprocessada | `aprovacao_descarte.py`, `segunda_opiniao.py` |
+| Ficha aprovada ou descartada não é reprocessada (exceção: a decisão de uma segunda opinião pedida para ficha aprovada, abaixo) | `aprovacao_descarte.py`, `segunda_opiniao.py` |
 | Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
 | Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
+| Segunda opinião de **ficha já aprovada** (22/11/2026, pedida por curador ou administrador em Minhas imagens, uma por ficha): a ficha **continua aprovada e na Pesquisa** durante a revisão; quem pediu pode acrescentar as anotações à ficha; a decisão é **manter aprovada** ou **arquivar** (com motivo; sai de circulação, nada é apagado). Descartada e arquivada continuam sem segunda opinião | `curation/segunda_opiniao.py` |
 | Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto ou valor proposto; **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
 | Toda mudança de estado fica no histórico (`curation_history`) e na auditoria | `curation/common.py` |
 
@@ -262,3 +265,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.16 | 10/11/2026 | Termo de ciência a cada login (seção 1.10) |
 | 1.17 | 10/11/2026 | Termos de Uso, anexos por perfil e Política de Privacidade com aceite versionado (seção 1.11) |
 | 1.18 | 22/11/2026 | Pedidos do vídeo das telas: Regiões da imagem fora da Curadoria (seção 1); compartilhar escolhendo a pessoa pelo nome; aviso com aceite em Enviar imagem (seção 1.9) |
+| 1.19 | 22/11/2026 | Segunda opinião de ficha já aprovada: continua na Pesquisa; manter ou arquivar (seção 2) |
