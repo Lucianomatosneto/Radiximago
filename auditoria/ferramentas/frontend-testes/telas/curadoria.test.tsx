@@ -657,6 +657,18 @@ describe('layout da panoramica', () => {
     expect(screen.getByText('ficha em colunas')).toBeTruthy()
   })
 
+  // 23/11/2026: reconstrucao panoramica da tomografia (etapa 3)
+  it('tomografia: atalho "Reconstrução panorâmica" para a tela de tracar a curva', async () => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: 'tomografia' }) } }))
+    const link = screen.getByRole('link', { name: 'Reconstrução panorâmica' })
+    expect(link.getAttribute('href')).toBe('/curadoria/reconstrucao?ref=301')
+  })
+
+  it('panoramica: sem o atalho da reconstrucao', async () => {
+    await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: 'panoramica' }) } }))
+    expect(screen.queryByRole('link', { name: 'Reconstrução panorâmica' })).toBeNull()
+  })
+
   it.each([['periapical'], ['interproximal']])('%s: continua lado a lado, ficha em uma coluna', async (tipo) => {
     await abrirComFicha(rotasPadrao({ 'GET /curation/501': { corpo: ficha(501, { tipo_radiografia: tipo }) } }))
     expect(document.querySelector('[data-layout]')?.getAttribute('data-layout')).toBe('lado-a-lado')
