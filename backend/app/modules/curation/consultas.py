@@ -23,6 +23,7 @@ from app.modules.orthanc_references import (
 from app.modules import orthanc_client
 from app.modules.geometria_imagem import RECORTADA, SEM_BORDA
 from app.modules.curations import (
+    so_fichas_ativas,
     Curation, CurationHistory, CurationReview, CurationReviewNote, SituacaoAnotacao, StatusCuradoria, StatusRevisao,
     TipoRadiografia,
 )
@@ -443,7 +444,7 @@ def obter_minhas_estatisticas(
     # segunda opiniao (acao "aprovacao_pos_segunda_opiniao") - Curation so
     # tem o status ATUAL, sem historico de quando cada transicao ocorreu.
     aprovadas_no_mes = (
-        db.query(func.count(CurationHistory.id))
+        so_fichas_ativas(db.query(func.count(CurationHistory.id)).join(Curation, Curation.id == CurationHistory.curation_id))
         .filter(
             CurationHistory.usuario_id == usuario.id,
             CurationHistory.status_novo == StatusCuradoria.APROVADA.value,
@@ -453,7 +454,7 @@ def obter_minhas_estatisticas(
     ) or 0
 
     contagem_por_curador: dict[int, int] = dict(
-        db.query(Curation.curador_id, func.count(Curation.id))
+        so_fichas_ativas(db.query(Curation.curador_id, func.count(Curation.id)))
         .filter(Curation.curador_id.isnot(None), Curation.criado_em >= inicio_mes)
         .group_by(Curation.curador_id)
         .all()
@@ -474,7 +475,7 @@ def obter_minhas_estatisticas(
     # "Meus dados" (pedido do video, 22/11/2026): TODAS as fichas do
     # curador logado (nao so do mes), por situacao
     minhas_por_status: dict[str, int] = dict(
-        db.query(Curation.status, func.count(Curation.id))
+        so_fichas_ativas(db.query(Curation.status, func.count(Curation.id)))
         .filter(Curation.curador_id == usuario.id)
         .group_by(Curation.status)
         .all()
