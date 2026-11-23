@@ -28,6 +28,7 @@ Endpoints:
 - GET  /curation/minhas-estatisticas             -> resumo pessoal do curador (aprovadas + ranking do mes)
 - GET  /curation/{curation_id}                  -> ficha de curadoria completa
 - PATCH /curation/{curation_id}                 -> edita os campos de classificacao (nao altera status)
+- POST /curation/triagem                        -> diz o tipo de varias imagens da fila (triagem.py)
 - GET  /curation/{curation_id}/reviews          -> historico de segundas opinioes
 - POST /curation/{orthanc_reference_id}         -> cria a ficha de curadoria
 - POST /curation/{curation_id}/approve          -> aprova a ficha (libera)
@@ -57,6 +58,6 @@ campos legados via PATCH /curation/{curation_id}.
 """
 
 from .router import router
-from . import consultas, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos, orientacao, sugestao_professor  # noqa: F401 - registram as rotas no router compartilhado
+from . import consultas, triagem, ficha, aprovacao_descarte, segunda_opiniao, achados, erros_tecnicos, orientacao, sugestao_professor  # noqa: F401 - registram as rotas no router compartilhado
 
 __all__ = ["router"]
