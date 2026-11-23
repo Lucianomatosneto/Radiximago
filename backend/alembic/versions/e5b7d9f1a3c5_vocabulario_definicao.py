@@ -8,7 +8,7 @@ mostra a definicao do achado. Duas colunas novas em termos_vocabulario:
 Nenhum termo existente muda: os dois campos comecam vazios.
 
 Revision ID: e5b7d9f1a3c5
-Revises: b2d4f6a8c0e1
+Revises: d3f5a7c9e1b2
 """
 from typing import Sequence, Union
 
@@ -16,7 +16,7 @@ import sqlalchemy as sa
 from alembic import op
 
 revision: str = "e5b7d9f1a3c5"
-down_revision: Union[str, None] = "b2d4f6a8c0e1"
+down_revision: Union[str, None] = "d3f5a7c9e1b2"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
