@@ -26,7 +26,6 @@ import CuradoriaPage from '../../../../frontend/src/app/curadoria/page'
 import DashboardPage from '../../../../frontend/src/app/dashboard/page'
 import EnviarImagemPage from '../../../../frontend/src/app/enviar-imagem/page'
 import GruposPage from '../../../../frontend/src/app/grupos/page'
-import MeusGruposPage from '../../../../frontend/src/app/meus-grupos/page'
 import AulaGrupoPage from '../../../../frontend/src/app/grupos/aula/page'
 import ImagensPage from '../../../../frontend/src/app/imagens/page'
 import IntegracoesPage from '../../../../frontend/src/app/integracoes/page'
@@ -102,7 +101,14 @@ const TELAS: Tela[] = [
   },
   { nome: 'Vocabulário', montar: () => <VocabularioPage /> },
   // no fim: os testes abaixo usam a posicao das telas (TELAS[n])
-  { nome: 'Meus grupos', montar: () => <MeusGruposPage /> },
+  // 22/11/2026: "Meus grupos" virou a aba "Grupos de que participo" da tela Grupos
+  {
+    nome: 'Grupos (aba de que participo)',
+    montar: () => {
+      window.history.replaceState(null, '', '/grupos?aba=participo')
+      return <GruposPage />
+    },
+  },
   { nome: 'Preparar aula', montar: () => <AulaGrupoPage /> },
 ]
 

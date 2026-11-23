@@ -228,7 +228,7 @@ def test_responder_a_quem_enviou_sem_email(client, criar_usuario, criar_ficha, d
     t_dest = obter_token(client, destinatario.email)
     t_ter = obter_token(client, terceiro.email)
     ficha = criar_ficha(status=StatusCuradoria.APROVADA.value)
-    client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "favor avaliar"}, headers=cabecalho_auth(t_rem))
+    client.post(f"/shares/{ficha.id}", json={"email": destinatario.email, "mensagem": "favor avaliar", "permite_resposta": True}, headers=cabecalho_auth(t_rem))
     comp_id = client.get("/shares/recebidas", headers=cabecalho_auth(t_dest)).json()["itens"][0]["id"]
     _anotar(client, t_dest, ficha.id, "Avaliei: lesao periapical")
 

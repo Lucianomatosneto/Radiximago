@@ -269,8 +269,7 @@
       "enviarImagem": "Enviar imagem",
       "grupos": "Grupos",
       "aparelhos": "Aparelhos da rede",
-      "pranchasRecebidas": "Pranchas recebidas",
-      "meusGrupos": "Meus grupos"
+      "pranchasRecebidas": "Pranchas recebidas"
     },
     "novasCompartilhadas": "{quantidade} novas",
     "abrirMenu": "Abrir o menu de navegação",
@@ -1887,6 +1886,7 @@
     "abrir": "Compartilhar esta imagem e suas anotações com outro usuário",
     "placeholderEmail": "Nome ou e-mail da pessoa",
     "erroEscolher": "Escolha a pessoa na lista ou digite o e-mail completo.",
+    "permitirResposta": "Permitir que a pessoa responda",
     "sugestoes": "Pessoas encontradas",
     "placeholderMensagem": "Anotação para quem vai receber (opcional)",
     "explicacao": "A pessoa verá a imagem e só a anotação escrita aqui (só para leitura), em \"Compartilhadas comigo\". As suas \"Minhas anotações\" continuam só suas. Você pode desfazer quando quiser.",
@@ -2678,6 +2678,10 @@
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
   },
+  "FiltroTipo": {
+    "rotulo": "Filtrar por tipo",
+    "todos": "Todos"
+  },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
     "avisoEnvio": {
@@ -2732,6 +2736,18 @@
     "erroEnviar": "Não foi possível enviar esta imagem.",
     "erroConexao": "Sem conexão com o servidor. Tente de novo.",
     "verMinhasImagens": "Ver em Minhas imagens",
+    "grade": {
+      "quantidade": "{n, plural, one {1 imagem} other {# imagens}}",
+      "selecionarTodas": "Selecionar todas ({n})",
+      "limpar": "Limpar seleção",
+      "retirar": "Retirar {n, plural, one {a selecionada} other {as # selecionadas}}",
+      "retirarTitulo": "Retirar {n, plural, one {esta imagem} other {estas # imagens}}?",
+      "verSelecionadas": "Ver {n, plural, one {1 selecionada} other {# selecionadas}}",
+      "selecionar": "Selecionar a imagem nº {id}",
+      "info": "Ver informações",
+      "feito": "Enviado: {n, plural, one {1 imagem} other {# imagens}}.",
+      "nenhumDoTipo": "Nenhuma imagem enviada por você deste tipo."
+    },
     "lista": {
       "tituloMeus": "Imagens enviadas por mim",
       "explicaMeus": "O que você enviou e onde cada imagem está agora.",
@@ -2882,8 +2898,8 @@
     "conviteCancelado": "Convite cancelado.",
     "erroAcao": "Não foi possível concluir. Tente de novo.",
     "imagensEnviadas": "Imagens enviadas ao grupo",
-    "comoEnviar": "Para enviar uma imagem, abra-a no Banco de imagens e use \"Preparar aula para um grupo\".",
-    "irBanco": "Ir ao Banco de imagens",
+    "comoEnviar": "Para enviar imagens a este grupo, selecione-as na Busca avançada e use \"Enviar para um grupo\".",
+    "irBanco": "Ir à Busca avançada",
     "semImagens": "Nenhuma imagem enviada a este grupo ainda.",
     "imagemNumero": "Imagem nº {n}",
     "retirarImagem": "Retirar do grupo",
@@ -2901,7 +2917,8 @@
     "conversaCom": "Conversa com {nome}",
     "voce": "Você",
     "responder": "Responder",
-    "responderRotulo": "Responder a {nome}"
+    "responderRotulo": "Responder a {nome}",
+    "origem_link": "entrou pelo link"
   },
   "MeusGrupos": {
     "titulo": "Meus grupos",
@@ -3123,5 +3140,60 @@
     "abrirPagina": "Abrir em página inteira",
     "naoAceito": "Não aceito",
     "aceitar": "Aceitar e continuar"
+  },
+  "GruposUnico": {
+    "titulo": "Grupos",
+    "carregando": "Carregando...",
+    "abaCriei": "Grupos que criei",
+    "abaParticipo": "Grupos de que participo",
+    "pendentes": "{n, plural, one {1 pendência} other {# pendências}}"
+  },
+  "LinkConvite": {
+    "titulo": "Link de convite",
+    "explica": "Mande este link para quem você quer no grupo (por WhatsApp, e-mail...). A pessoa entra com o próprio login e só fica no grupo se confirmar. Vale 7 dias; gerar um novo cancela o anterior.",
+    "campo": "Link de convite do grupo",
+    "copiar": "Copiar",
+    "copiado": "Copiado!",
+    "valeAte": "Vale até {data}",
+    "usos": "{n, plural, =0 {ninguém entrou ainda} one {1 pessoa entrou} other {# pessoas entraram}}",
+    "gerarDeNovo": "(para ver o endereço de novo, gere um novo link)",
+    "nenhum": "Nenhum link ativo.",
+    "gerar": "Gerar link de convite",
+    "gerarNovo": "Gerar novo link",
+    "cancelar": "Cancelar link",
+    "erro": "Não foi possível concluir. Tente de novo.",
+    "entrar": {
+      "titulo": "Convite para um grupo",
+      "criadoPor": "Criado por {quem}",
+      "explica": "Você foi convidado(a) para este grupo. Ao entrar, você passa a receber as imagens que o professor enviar ao grupo. Os outros participantes não veem que você está no grupo.",
+      "botao": "Entrar no grupo",
+      "agoraNao": "Agora não",
+      "entrou": "Você entrou no grupo.",
+      "jaParticipa": "Você já participa deste grupo.",
+      "dono": "Você criou este grupo. Mande o link para quem você quer convidar.",
+      "verGrupos": "Ver meus grupos",
+      "invalido": "Link de convite inválido ou vencido. Peça um novo link a quem criou o grupo.",
+      "semCodigo": "Este endereço está incompleto. Abra o link inteiro que você recebeu."
+    }
+  },
+  "EnviarParaGrupo": {
+    "botao": "Enviar para um grupo",
+    "explica": "{n, plural, one {A imagem selecionada vai} other {As # imagens selecionadas vão}} para os grupos que você escolher, com as marcações oficiais da ficha.",
+    "meusGrupos": "Meus grupos",
+    "semGrupos": "Você ainda não tem grupos. Crie um abaixo.",
+    "criarNovo": "+ Criar grupo novo",
+    "nomeNovo": "Nome do grupo novo",
+    "convidarAjuda": "Quem você escolher recebe um convite e entra no grupo quando aceitar.",
+    "criar": "Criar grupo",
+    "cancelar": "Cancelar",
+    "recado": "Recado para o grupo (opcional)",
+    "comentar": "Participantes podem comentar",
+    "prepararAula": "Preparar aula com marcações próprias (só esta imagem)",
+    "enviar": "Enviar {n, plural, one {1 imagem} other {# imagens}}",
+    "fechar": "Fechar",
+    "resultado": "Enviadas: {enviadas} · já estavam no grupo: {ja}.",
+    "erroEnviar": "Não foi possível enviar. Tente de novo.",
+    "erroLimite": "Muitos envios em pouco tempo. Espere um minuto e envie o restante.",
+    "erroCriar": "Não foi possível criar o grupo."
   }
 }

@@ -79,6 +79,11 @@ const nextConfig = {
   async headers() {
     return [{ source: '/:path*', headers: CABECALHOS_DE_PROTECAO }]
   },
+  // 22/11/2026: "Meus grupos" virou a aba "Grupos de que participo" da tela
+  // Grupos; o endereco antigo (links, e-mails) continua levando a ela
+  async redirects() {
+    return [{ source: '/meus-grupos', destination: '/grupos?aba=participo', permanent: false }]
+  },
 }
 
 export default withNextIntl(nextConfig)

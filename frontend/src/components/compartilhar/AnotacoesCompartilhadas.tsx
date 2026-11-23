@@ -21,6 +21,8 @@ export interface InfoCompartilhamento {
   id: number
   remetente_nome: string
   mensagem: string | null
+  /** quem compartilhou permitiu responder? (22/11/2026; ausente = sim, como antes) */
+  permite_resposta?: boolean
 }
 
 interface Nota {
@@ -178,8 +180,10 @@ export default function AnotacoesCompartilhadas({ compartilhamento }: { comparti
           )}
         </div>
       </div>
-      {/* responder a quem enviou, sem digitar e-mail */}
-      <ResponderCompartilhamento compartilhamentoId={compartilhamento.id} remetenteNome={compartilhamento.remetente_nome} />
+      {/* responder a quem enviou, sem digitar e-mail (so se quem enviou permitiu) */}
+      {compartilhamento.permite_resposta !== false && (
+        <ResponderCompartilhamento compartilhamentoId={compartilhamento.id} remetenteNome={compartilhamento.remetente_nome} />
+      )}
     </div>
   )
 }

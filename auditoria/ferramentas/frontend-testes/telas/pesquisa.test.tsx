@@ -35,6 +35,10 @@ vi.mock('../../../../frontend/src/components/VisualizadorSequencial', () => ({
   default: ({ itens }: { itens: { numero: number }[] }) => <div role="dialog" aria-label="visualizador em sequência">imagens {itens.map((i) => i.numero).join(',')}</div>,
 }))
 vi.mock('../../../../frontend/src/components/impressao/MenuImpressao', () => ({ default: () => null }))
+// 22/11/2026: "Enviar para um grupo" (teste proprio); aqui so se aparece e com quais imagens
+vi.mock('../../../../frontend/src/components/envios/EnviarParaGrupo', () => ({
+  default: ({ curationIds }: { curationIds: number[] }) => <span data-teste="enviar-grupo">{curationIds.join(',')}</span>,
+}))
 
 // ---- dados inventados ----
 const ESTUDANTE = { id: 9, nome: 'Estudante Teste', email: 'estudante@exemplo.test', perfil: 'estudante', foto_perfil_url: null }
@@ -356,6 +360,16 @@ describe('resultados: selecao e acoes', () => {
     const [lupa] = screen.getAllByRole('button', { name: 'Passe o mouse para ampliar a imagem' })
     await usuario.hover(lupa)
     expect(lupa.getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('pedido do video (22/11): com imagens selecionadas aparece "Enviar para um grupo" com as escolhidas', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await pesquisarTudo(usuario)
+    expect(document.querySelector('[data-teste="enviar-grupo"]')).toBeNull()
+    const [primeira] = screen.getAllByRole('checkbox', { name: /^Selecionar imagem/ })
+    await usuario.click(primeira)
+    expect(document.querySelector('[data-teste="enviar-grupo"]')?.textContent).toMatch(/^\d+$/)
   })
 
   it('pedido do video (22/11): clicar no + deixa a imagem ampliada mesmo tirando o mouse; outro clique volta', async () => {
