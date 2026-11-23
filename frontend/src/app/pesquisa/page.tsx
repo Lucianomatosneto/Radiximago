@@ -27,6 +27,7 @@ import { rotuloErro } from '../../lib/errosTecnicos'
 import Link from 'next/link'
 import BuscaTermos from '../../components/pesquisa/BuscaTermos'
 import FiltroErrosTecnicos from '../../components/pesquisa/FiltroErrosTecnicos'
+import { DENTICOES, ESTRUTURAS, SITUACOES } from '../../lib/situacaoDentaria'
 import {
   GRUPOS_TERMOS,
   GRUPOS_DENTES,
@@ -122,6 +123,11 @@ interface Filtros {
   termos: TermoBusca[]
   // erros tecnicos marcados na Curadoria (basta ter qualquer um)
   errosTecnicos: string[]
+  // 23/11/2026 (lib/situacaoDentaria.ts): denticao, situacao de algum dente
+  // no odontograma e estrutura fora dos dentes (panoramica)
+  denticao: string
+  situacao_dente: string
+  estrutura: string
 }
 
 const FILTROS_VAZIOS: Filtros = {
@@ -139,6 +145,9 @@ const FILTROS_VAZIOS: Filtros = {
   regiaoAnatomica: '',
   termos: [],
   errosTecnicos: [],
+  denticao: '',
+  situacao_dente: '',
+  estrutura: '',
 }
 
 // So os filtros de valor simples (string) participam do deep-link por URL
@@ -158,6 +167,9 @@ const CHAVES_FILTRO: ChaveFiltroTexto[] = [
   'idade_max',
   'quadrante',
   'regiaoAnatomica',
+  'denticao',
+  'situacao_dente',
+  'estrutura',
 ]
 
 interface ResultadoImagem {
@@ -218,6 +230,7 @@ function PesquisaConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const t = useTranslations('Pesquisa')
+  const tSit = useTranslations('SituacaoDentaria')
   // liga o rotulo "Erro tecnico" a caixa de busca do filtro (leitor de tela e clique no rotulo)
   const idErroTecnico = useId()
   const tMarcacoes = useTranslations('Visualizador.marcacoes')
@@ -403,8 +416,15 @@ function PesquisaConteudo() {
 
     const filtrosDaUrl: Filtros = { ...FILTROS_VAZIOS, termos: [], errosTecnicos: [] }
     let temFiltroNaUrl = false
+    // valores fora das listas fechadas (endereco digitado) sao ignorados
+    const listasFechadas: Partial<Record<ChaveFiltroTexto, readonly string[]>> = {
+      denticao: DENTICOES,
+      situacao_dente: SITUACOES.map((s) => s.valor),
+      estrutura: ESTRUTURAS,
+    }
     for (const chave of CHAVES_FILTRO) {
       const valor = searchParams.get(chave)
+      if (valor && listasFechadas[chave] && !listasFechadas[chave].includes(valor)) continue
       if (valor) {
         filtrosDaUrl[chave] = valor
         temFiltroNaUrl = true
@@ -493,6 +513,9 @@ function PesquisaConteudo() {
     if (filtrosParaUsar.origem) params.set('origem', filtrosParaUsar.origem)
     if (filtrosParaUsar.idade_min) params.set('idade_min', filtrosParaUsar.idade_min)
     if (filtrosParaUsar.idade_max) params.set('idade_max', filtrosParaUsar.idade_max)
+    if (filtrosParaUsar.denticao) params.set('denticao', filtrosParaUsar.denticao)
+    if (filtrosParaUsar.situacao_dente) params.set('situacao_dente', filtrosParaUsar.situacao_dente)
+    if (filtrosParaUsar.estrutura) params.set('estrutura', filtrosParaUsar.estrutura)
 
     // Fase 4 - dentes: se ha dentes INDIVIDUAIS marcados, eles mandam (o
     // quadrante vira redundante, a interface nunca marca os dois ao mesmo
@@ -852,6 +875,56 @@ function PesquisaConteudo() {
                 </select>
               </div>
 
+              {/* 23/11/2026: denticao, situacao do dente (odontograma) e
+                  estrutura fora dos dentes - lib/situacaoDentaria.ts */}
+              <div>
+                <label htmlFor="filtro-denticao" className={campoLabel}>{tSit('denticao')}</label>
+                <select
+                  id="filtro-denticao"
+                  value={filtros.denticao}
+                  onChange={(e) => atualizarFiltro('denticao', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(2)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {DENTICOES.map((valor) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>{tSit(`denticoes.${valor}`)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filtro-situacao-dente" className={campoLabel}>{tSit('filtroSituacao')}</label>
+                <select
+                  id="filtro-situacao-dente"
+                  value={filtros.situacao_dente}
+                  onChange={(e) => atualizarFiltro('situacao_dente', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(4)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {SITUACOES.map(({ valor }) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>{tSit(`situacoes.${valor}`)}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="filtro-estrutura" className={campoLabel}>{tSit('filtroEstrutura')}</label>
+                <select
+                  id="filtro-estrutura"
+                  value={filtros.estrutura}
+                  onChange={(e) => atualizarFiltro('estrutura', e.target.value)}
+                  className={campoInput}
+                  style={estiloCaixaFiltro(5)}
+                >
+                  <option className="bg-white text-slate-900" value="">{t('opcaoTodas')}</option>
+                  {ESTRUTURAS.map((valor) => (
+                    <option className="bg-white text-slate-900" key={valor} value={valor}>{tSit(`estruturas.${valor}`)}</option>
+                  ))}
+                </select>
+              </div>
+
               {/* idade: minima e maxima na mesma caixa (economiza uma linha) */}
               <div>
                 <label className={campoLabel}>{t('campoIdade')}</label>
@@ -887,7 +960,7 @@ function PesquisaConteudo() {
                 pedido) - so os filtros da classificacao odontologica nova,
                 que sao os que mais mudam de estado (quadrante/dentes/modo)
                 e onde fica menos obvio "o que exatamente vou pesquisar". */}
-            {(filtros.tipo_radiografia || filtros.quadrante || filtros.dentesSelecionados.length > 0 || filtros.termos.length > 0 || filtros.regiaoAnatomica || filtros.errosTecnicos.length > 0) && (
+            {(filtros.tipo_radiografia || filtros.quadrante || filtros.dentesSelecionados.length > 0 || filtros.termos.length > 0 || filtros.regiaoAnatomica || filtros.errosTecnicos.length > 0 || filtros.denticao || filtros.situacao_dente || filtros.estrutura) && (
               <div className="mt-4 flex flex-wrap items-center gap-1.5 rounded-lg border border-brand/30 bg-brand/5 px-3 py-2 text-xs text-slate-300">
                 <span className="font-medium text-brand-300">{t('resumoSelecaoTitulo')}:</span>
                 {filtros.tipo_radiografia && (
@@ -917,6 +990,11 @@ function PesquisaConteudo() {
                 {filtros.errosTecnicos.length > 0 && (
                   <span>{t('resumoErroTecnico', { erro: filtros.errosTecnicos.map(rotuloErro).join(' ou ') })}</span>
                 )}
+                {filtros.denticao && <span>{tSit('resumoDenticao', { valor: tSit(`denticoes.${filtros.denticao}`) })}</span>}
+                {filtros.situacao_dente && (
+                  <span>{tSit('resumoSituacao', { valor: tSit(`situacoes.${filtros.situacao_dente}`) })}</span>
+                )}
+                {filtros.estrutura && <span>{tSit('resumoEstrutura', { valor: tSit(`estruturas.${filtros.estrutura}`) })}</span>}
               </div>
             )}
 

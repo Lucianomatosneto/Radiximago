@@ -3309,7 +3309,13 @@
       "superior": "superior",
       "inferior": "inferior"
     },
-    "deciduosTitulo": "Dentes decíduos (51–85)"
+    "deciduosTitulo": "Dentes decíduos (51–85)",
+    "mostrarDeciduos": "Decíduos (51–85)",
+    "filtroSituacao": "Situação do dente",
+    "filtroEstrutura": "Estrutura fora dos dentes",
+    "resumoDenticao": "Dentição: {valor}",
+    "resumoSituacao": "Situação do dente: {valor}",
+    "resumoEstrutura": "Fora dos dentes: {valor}"
   },
   "Triagem": {
     "tituloPrefixo": "Triagem da",

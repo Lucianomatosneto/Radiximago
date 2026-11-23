@@ -3309,7 +3309,13 @@
       "superior": "upper",
       "inferior": "lower"
     },
-    "deciduosTitulo": "Primary teeth (51–85)"
+    "deciduosTitulo": "Primary teeth (51–85)",
+    "mostrarDeciduos": "Primary teeth (51–85)",
+    "filtroSituacao": "Tooth status",
+    "filtroEstrutura": "Structure outside the teeth",
+    "resumoDenticao": "Dentition: {valor}",
+    "resumoSituacao": "Tooth status: {valor}",
+    "resumoEstrutura": "Outside the teeth: {valor}"
   },
   "Triagem": {
     "tituloPrefixo": "Modality",
