@@ -402,3 +402,17 @@ class CurationReviewNote(Base):
         # uma anotacao por item em cada segunda opiniao
         Index("uq_curation_review_notes_item", "review_id", "item", unique=True),
     )
+
+
+def so_fichas_ativas(consulta):
+    """
+    Deixa na contagem so as fichas de imagens ATIVAS (pedido do Luciano,
+    23/11/2026): ficha de imagem desativada (ex.: acervo antigo retirado com
+    manter_somente_acervo.py) nao entra em nenhum numero dos paineis.
+    Desativar ou reativar uma imagem muda os numeros na hora.
+    """
+    from app.modules.orthanc_references import OrthancReference  # aqui dentro: evita import circular
+
+    return consulta.join(OrthancReference, OrthancReference.id == Curation.orthanc_reference_id).filter(
+        OrthancReference.ativo.is_(True)
+    )
