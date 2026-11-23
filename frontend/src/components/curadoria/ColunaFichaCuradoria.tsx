@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { confirmarComEnter, tamanhoCursor, trocarOpcao } from '../../lib/opcoesTeclado'
 import { useTranslations } from 'next-intl'
-import PainelDadosSobrepostos from './PainelDadosSobrepostos'
+import PainelDadosSobrepostos, { LinhasDeciduos } from './PainelDadosSobrepostos'
 import PainelAchadosFicha from './PainelAchadosFicha'
 import PainelErrosTecnicosFicha from './PainelErrosTecnicosFicha'
 import type { FormularioFicha } from './FichaCuradoriaForm'
@@ -13,7 +13,8 @@ import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '.
 import AjudaSecao from './AjudaSecao'
 import OdontogramaSituacao, { EstruturasExtradentais } from './OdontogramaSituacao'
 import { FichaCompactaContext, useFichaCompacta } from './FichaCompacta'
-import { ESTRUTURAS, TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
+import { ESTRUTURAS, TIPOS_COM_ODONTOGRAMA, mostraDeciduos } from '../../lib/situacaoDentaria'
+import { errosParaTipo } from '../../lib/errosTecnicos'
 
 // COLUNA DA FICHA DE CURADORIA (metade direita da tela; a imagem e as
 // miniaturas ficam na metade esquerda).
@@ -45,22 +46,34 @@ function emCampoDeTexto(): boolean {
   return alvo.tagName === 'INPUT' || alvo.tagName === 'TEXTAREA' || alvo.tagName === 'SELECT' || alvo.isContentEditable
 }
 
-// CARTOES DA PANORAMICA (23/11/2026): a ordem em que → / Tab passam; cada
-// cartao cabe sem rolar (so "Achados" rola, se houver muitas marcacoes).
-// Odontograma e estruturas nao tem item no holofote (sao cliques): aparecem
-// como vizinhos quando o item aceso esta ao lado deles.
-const CARTOES_PANORAMICA: { id: string; etapas: EtapaFicha[] }[] = [
-  { id: 'anonimizacao_tipo', etapas: ['anonimizacao', 'tipo'] },
-  { id: 'idade_sexo', etapas: ['idade', 'genero'] },
-  { id: 'dentes', etapas: ['dentes'] },
-  { id: 'qualidade_origem', etapas: ['qualidade', 'origem'] },
-  { id: 'odontograma', etapas: [] },
-  { id: 'achados', etapas: ['achados'] },
-  { id: 'estruturas', etapas: [] },
-  { id: 'erro_tecnico', etapas: ['erro_tecnico'] },
-  { id: 'descricao', etapas: ['descricao'] },
-  { id: 'observacoes', etapas: ['observacoes', 'aprovar'] },
-]
+// FICHA EM CARTOES (oclusal, panoramica e tomografia - 23/11/2026): a
+// imagem fica em cima e a ficha embaixo, em cartoes BAIXOS (40% da altura da
+// 1a versao) que nao rolam - so "Achados" rola, se houver muitas marcacoes.
+// O que nao cabia virou mais cartoes. Ordem = ordem do Tab. Cartoes sem item
+// do holofote (deciduos, odontograma, estruturas) sao cliques: aparecem como
+// vizinhos do item aceso.
+interface Cartao { id: string; etapas: EtapaFicha[] }
+function cartoesDaFicha(tipo: string, denticao: string): Cartao[] {
+  const comOdontograma = TIPOS_COM_ODONTOGRAMA.includes(tipo)
+  const errosDoExame = errosParaTipo(tipo).some((e) => e.grupo !== 'geral')
+  const lista: (Cartao | false)[] = [
+    { id: 'anonimizacao_tipo', etapas: ['anonimizacao', 'tipo'] },
+    { id: 'idade_sexo', etapas: ['idade', 'genero'] },
+    { id: 'dentes', etapas: ['dentes'] },
+    mostraDeciduos(denticao) && { id: 'deciduos', etapas: [] },
+    { id: 'qualidade_origem', etapas: ['qualidade', 'origem'] },
+    comOdontograma && { id: 'odontograma_superior', etapas: [] },
+    comOdontograma && { id: 'odontograma_inferior', etapas: [] },
+    { id: 'achados', etapas: ['achados'] },
+    comOdontograma && { id: 'estruturas', etapas: [] },
+    { id: 'erro_gerais', etapas: ['erro_tecnico'] },
+    errosDoExame && { id: 'erro_do_exame', etapas: [] },
+    { id: 'descricao', etapas: ['descricao'] },
+    { id: 'observacoes', etapas: ['observacoes'] },
+    { id: 'aprovar', etapas: ['aprovar'] },
+  ]
+  return lista.filter((c): c is Cartao => !!c)
+}
 const VISIVEIS = 3
 
 // Uma secao da coluna. Fica FORA do componente principal de proposito: um
@@ -129,11 +142,13 @@ function Secao({
           </span>
         )}
         {extra && <div className="ml-auto">{extra}</div>}
+        {/* cartao baixo: "Nada a registrar" sobe para a linha do titulo */}
+        {compacta && ativa && rodape && <div className={`${extra ? '' : 'ml-auto'} [&_button]:px-2 [&_button]:py-0 [&_button]:text-[11px]`}>{rodape}</div>}
       </header>
       {/* secao apagada: o primeiro clique so acende (nao muda valores); em
           "Dados" cada item cuida disso (PainelDadosSobrepostos) */}
       <div className={ativa || simples ? '' : 'pointer-events-none'}>{children}</div>
-      {ativa && rodape && <div className={`flex flex-wrap items-center gap-2 border-t border-white/10 ${compacta ? 'mt-1 pt-1 [&_button]:py-0.5' : 'mt-3 pt-2'}`}>{rodape}</div>}
+      {!compacta && ativa && rodape && <div className={`flex flex-wrap items-center gap-2 border-t border-white/10 ${compacta ? 'mt-1 pt-1 [&_button]:py-0.5' : 'mt-3 pt-2'}`}>{rodape}</div>}
     </section>
   )
 }
@@ -265,12 +280,11 @@ export default function ColunaFichaCuradoria({
     if (!teclasAtivas) return
     function aoTeclar(evento: KeyboardEvent) {
       if (evento.ctrlKey || evento.metaKey || evento.altKey) return
-      // CARTOES (panoramica, 23/11/2026): → / ← andam entre os itens (e os
-      // cartoes acompanham) e ↑ / ↓ trocam a opcao - o contrario da ficha
-      // em coluna. Troca-se a tecla aqui e o resto segue igual.
-      const TROCA: Record<string, string> = { ArrowRight: 'ArrowDown', ArrowLeft: 'ArrowUp', ArrowDown: 'ArrowRight', ArrowUp: 'ArrowLeft' }
-      const key = horizontalRef.current && !emCampoDeTexto() ? TROCA[evento.key] ?? evento.key : evento.key
-      const e = { key, shiftKey: evento.shiftKey, repeat: evento.repeat, preventDefault: () => evento.preventDefault() }
+      // CARTOES (23/11/2026, decisao do Luciano): Tab / Shift+Tab andam
+      // entre os itens (os cartoes acompanham), ← → passam pelas opcoes do
+      // item aceso e ↑ ↓ nao fazem nada (confundiam quem usa)
+      if (horizontalRef.current && (evento.key === 'ArrowUp' || evento.key === 'ArrowDown') && !emCampoDeTexto()) return
+      const e = evento
       const etapaAgora = etapaRef.current
       // IDADE acesa: digitar um numero ja escreve na caixa da idade (sem
       // precisar clicar nela); Enter dentro dela confirma e passa adiante
@@ -434,7 +448,7 @@ export default function ColunaFichaCuradoria({
         onChange={(e) => onChange({ ...form, descricao_didatica: e.target.value })}
         data-campo-texto="descricao"
         aria-label={tSecoes('descricao')}
-        rows={4}
+        rows={horizontal ? 2 : 4}
         className={campoTexto}
       />
     </Secao>
@@ -448,7 +462,7 @@ export default function ColunaFichaCuradoria({
         onChange={(e) => onChange({ ...form, observacoes_internas: e.target.value })}
         data-campo-texto="observacoes"
         aria-label={tSecoes('observacoes')}
-        rows={3}
+        rows={horizontal ? 2 : 3}
         className={campoTexto}
       />
     </Secao>
@@ -459,7 +473,7 @@ export default function ColunaFichaCuradoria({
   const finais = (
     <>
       {acoesFinais && (
-        <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? 'relative z-10 zoom-[1.5]' : ''}`}>
+        <div data-etapa="aprovar" className={`scroll-my-6 rounded-xl ${etapaAtiva === 'aprovar' ? `relative z-10 ${horizontal ? '' : 'zoom-[1.5]'}` : ''}`}>
           {acoesFinais}
         </div>
       )}
@@ -477,14 +491,16 @@ export default function ColunaFichaCuradoria({
     // altura fixa, sem rolagem; so 3 aparecem por vez, com o cartao do item
     // aceso no meio. → / Tab avancam e ← / Shift+Tab voltam (ver aoTeclar);
     // o mouse continua acendendo qualquer item visivel.
-    const indiceAtivo = Math.max(0, CARTOES_PANORAMICA.findIndex((c) => c.etapas.includes(etapaAtiva)))
-    const inicio = Math.min(Math.max(0, indiceAtivo - 1), CARTOES_PANORAMICA.length - VISIVEIS)
+    const cartoes = cartoesDaFicha(form.tipo_radiografia, form.denticao)
+    const indiceAtivo = Math.max(0, cartoes.findIndex((c) => c.etapas.includes(etapaAtiva)))
+    const inicio = Math.min(Math.max(0, indiceAtivo - 1), Math.max(0, cartoes.length - VISIVEIS))
     const dadosDoCartao = (etapas: EtapaFicha[]) => (
-      <div className="h-full rounded-xl border border-base-border bg-base-surface/70 p-1.5">
+      <div className="h-full rounded-xl border border-base-border bg-base-surface/70 p-1">
         <PainelDadosSobrepostos
           form={form}
           onChange={onChange}
           itens={etapas}
+          semDeciduos
           etapa={etapaAtiva}
           onEtapa={ativarPorClique}
           onEscolhido={(e) => irPara(etapaVizinha(e, 1))}
@@ -492,29 +508,47 @@ export default function ColunaFichaCuradoria({
         />
       </div>
     )
+    const erroParte = (parte: 'gerais' | 'do_exame') => (
+      <Secao
+        {...p('erro_tecnico')}
+        titulo={parte === 'gerais' ? tSecoes('erro_tecnico') : `${tSecoes('erro_tecnico')} · ${t('doExame')}`}
+        rodape={parte === 'gerais' ? rodape('erro_tecnico') : null}
+      >
+        <PainelErrosTecnicosFicha
+          form={form}
+          onChange={onChange}
+          parte={parte}
+          palavrasChave={etapaAtiva === 'erro_tecnico'}
+          cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined}
+        />
+      </Secao>
+    )
     const conteudo: Record<string, ReactNode> = {
       anonimizacao_tipo: dadosDoCartao(['anonimizacao', 'tipo']),
       idade_sexo: dadosDoCartao(['idade', 'genero']),
       dentes: dadosDoCartao(['dentes']),
+      deciduos: <LinhasDeciduos form={form} onChange={onChange} />,
       qualidade_origem: dadosDoCartao(['qualidade', 'origem']),
-      odontograma: secaoOdontograma,
+      odontograma_superior: <OdontogramaSituacao form={form} onChange={onChange} arcada="superior" />,
+      odontograma_inferior: <OdontogramaSituacao form={form} onChange={onChange} arcada="inferior" />,
       achados: secaoAchados,
       estruturas: secaoEstruturas,
-      erro_tecnico: secaoErro,
+      erro_gerais: erroParte('gerais'),
+      erro_do_exame: erroParte('do_exame'),
       descricao: secaoDescricao,
-      observacoes: (
-        <div className="flex h-full flex-col gap-2 [&>section]:h-auto [&>section]:min-h-0 [&>section]:flex-1">
-          {secaoObservacoes}
+      observacoes: secaoObservacoes,
+      aprovar: (
+        <div className="flex h-full flex-col justify-center gap-1 rounded-xl border border-base-border bg-base-surface/70 p-1.5 [&_button]:px-3! [&_button]:py-1! [&_button]:text-sm! [&_p]:text-xs">
           {finais}
         </div>
       ),
     }
     return (
       <FichaCompactaContext.Provider value>
-        <div className="flex h-full min-h-0 w-full flex-col gap-2">
+        <div className="flex h-full min-h-0 w-full flex-col gap-1">
           {topo && <div className="shrink-0">{topo}</div>}
-          <div ref={rolagemRef} className="flex min-h-0 flex-1 gap-3">
-            {CARTOES_PANORAMICA.map((c, i) => {
+          <div ref={rolagemRef} className="flex min-h-0 flex-1 gap-2">
+            {cartoes.map((c, i) => {
               const visivel = i >= inicio && i < inicio + VISIVEIS
               return (
                 <div
@@ -529,7 +563,7 @@ export default function ColunaFichaCuradoria({
             })}
           </div>
           <p className="shrink-0 text-center text-[11px] text-slate-400" aria-live="polite">
-            {t('cartoesPosicao', { inicio: inicio + 1, fim: inicio + VISIVEIS, total: CARTOES_PANORAMICA.length })}
+            {t('cartoesPosicao', { inicio: inicio + 1, fim: Math.min(cartoes.length, inicio + VISIVEIS), total: cartoes.length })}
           </p>
         </div>
       </FichaCompactaContext.Provider>

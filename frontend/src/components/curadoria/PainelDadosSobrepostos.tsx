@@ -63,7 +63,7 @@ function Item({
       data-etapa={etapa}
       aria-current={ativa ? 'step' : undefined}
       onMouseDown={() => !ativa && onAtivar?.(etapa)}
-      className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
+      className={`scroll-my-6 rounded-xl transition-[opacity,box-shadow,background-color] duration-200 ${compacta ? 'px-1.5 py-0.5' : 'px-2.5 py-2'} ${
         ativa
           ? `relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] ${compacta ? '' : 'zoom-[1.5]'}`
           : apagado
@@ -72,7 +72,14 @@ function Item({
       }`}
     >
       {/* item apagado: o primeiro clique so acende (nao muda o valor) */}
-      <div className={ativa || !onAtivar ? '' : 'pointer-events-none'}>{children}</div>
+      {/* no cartao baixo (compacta) rotulo e opcoes ficam na MESMA linha */}
+      <div
+        className={`${ativa || !onAtivar ? '' : 'pointer-events-none'} ${
+          compacta ? 'flex flex-wrap items-center gap-x-2 gap-y-0.5 [&>p]:mb-0! [&_button]:px-2! [&_button]:py-0.5! [&_button]:text-xs! [&_input]:py-0.5!' : ''
+        }`}
+      >
+        {children}
+      </div>
     </div>
   )
 }
@@ -85,6 +92,7 @@ export default function PainelDadosSobrepostos({
   onEscolhido,
   cursorDente,
   itens,
+  semDeciduos = false,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
@@ -98,6 +106,8 @@ export default function PainelDadosSobrepostos({
   cursorDente?: number
   /** so estes itens (ficha em cartoes da panoramica); sem a lista, todos */
   itens?: EtapaFicha[]
+  /** cartoes baixos: os deciduos vao para um cartao proprio (LinhasDeciduos) */
+  semDeciduos?: boolean
   // compatibilidade com usos antigos (ignorados)
   statusFicha?: string
   palavrasChave?: boolean
@@ -302,9 +312,9 @@ export default function PainelDadosSobrepostos({
           </div>
           <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
             {linhaDentes(ARCADA_SUPERIOR)}
-            {mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_SUPERIOR)}
+            {!semDeciduos && mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_SUPERIOR)}
             <div className="border-t border-white/10" />
-            {mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_INFERIOR)}
+            {!semDeciduos && mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_INFERIOR)}
             {linhaDentes(ARCADA_INFERIOR)}
           </div>
         </>
@@ -364,6 +374,46 @@ export default function PainelDadosSobrepostos({
           </div>
         </>
       )}
+    </div>
+  )
+}
+
+/** CARTAO "DENTES DECIDUOS" (ficha em cartoes baixos, 23/11/2026): as duas
+ * fileiras de deciduos (51-85), fora do item "Dentes" para caberem sem rolar. */
+export function LinhasDeciduos({ form, onChange }: { form: FormularioFicha; onChange: (form: FormularioFicha) => void }) {
+  const t = useTranslations('SituacaoDentaria')
+  function alternarDente(d: number) {
+    const dentes = form.dentes.includes(d) ? form.dentes.filter((x) => x !== d) : [...form.dentes, d].sort((a, b) => a - b)
+    onChange({ ...form, dentes })
+  }
+  const linha = (lista: number[]) => (
+    <div className="grid grid-cols-10 gap-0.5">
+      {lista.map((d, i) => {
+        const marcado = form.dentes.includes(d)
+        return (
+          <button
+            key={d}
+            type="button"
+            onClick={() => alternarDente(d)}
+            aria-pressed={marcado}
+            className={`rounded py-0.5 text-[11px] font-semibold transition-colors ${i === 5 ? 'ml-1' : ''} ${
+              marcado ? 'bg-brand text-white' : 'bg-amber-200/10 text-amber-100 hover:bg-amber-200/20'
+            }`}
+          >
+            {d}
+          </button>
+        )
+      })}
+    </div>
+  )
+  return (
+    <div className="flex h-full flex-col gap-1 rounded-xl border border-base-border bg-base-surface/70 p-1.5">
+      <p className="text-xs font-medium text-slate-300">{t('deciduosTitulo')}</p>
+      <div className="space-y-0.5 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1">
+        {linha(DECIDUOS_SUPERIOR)}
+        <div className="border-t border-white/10" />
+        {linha(DECIDUOS_INFERIOR)}
+      </div>
     </div>
   )
 }

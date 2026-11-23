@@ -1045,7 +1045,8 @@
         "descricao": "Sem descrição",
         "observacoes": "Sem observações"
       },
-      "cartoesPosicao": "Cartões {inicio}–{fim} de {total} · → ou Tab avança, ← volta, ↑ ↓ trocam a opção"
+      "cartoesPosicao": "Cartões {inicio}–{fim} de {total} · Tab avança, Shift+Tab volta, ← → escolhem a opção",
+      "doExame": "do exame"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -3304,6 +3305,11 @@
       "lesao_ossea_radiolucida": "Lesão óssea radiolúcida",
       "lesao_ossea_radiopaca": "Lesão óssea radiopaca"
     },
+    "arcada": {
+      "superior": "superior",
+      "inferior": "inferior"
+    },
+    "deciduosTitulo": "Dentes decíduos (51–85)",
     "mostrarDeciduos": "Decíduos (51–85)",
     "filtroSituacao": "Situação do dente",
     "filtroEstrutura": "Estrutura fora dos dentes",
