@@ -335,7 +335,9 @@ describe('erro tecnico, textos e "nada a registrar"', () => {
 // e a ficha fica embaixo em CARTOES que cabem sem rolar. So 3 aparecem por
 // vez; → / Tab avancam, ← / Shift+Tab voltam, e os cartoes acompanham o item
 // aceso. ↑ / ↓ trocam a opcao do item aceso.
-const CARTOES = ['anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'odontograma', 'achados', 'estruturas', 'erro_tecnico', 'descricao', 'observacoes']
+// 23/11/2026 (2a rodada): cartoes com 40% da altura - o erro tecnico se
+// divide em 2 cartoes e "Aprovar" ganha cartao proprio
+const CARTOES = ['anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'odontograma', 'achados', 'estruturas', 'erro_tecnico', 'erro_tecnico_2', 'descricao', 'observacoes', 'aprovar']
 const cartoes = () => Array.from(document.querySelectorAll('[data-cartao]')) as HTMLElement[]
 const visiveis = () => cartoes().filter((c) => c.getAttribute('data-visivel') === 'true').map((c) => c.getAttribute('data-cartao'))
 const cartao = (nome: string) => document.querySelector(`[data-cartao="${nome}"]`) as HTMLElement
@@ -350,12 +352,34 @@ describe('ficha em cartoes (panoramica)', () => {
       expect(c.className).toContain('overflow-hidden')
       expect(c.className).not.toContain('overflow-y-auto')
     }
-    const ultimo = cartao('observacoes')
-    expect(ultimo.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
-    expect(within(ultimo).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
+    expect(cartao('observacoes').querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
+    expect(within(cartao('aprovar')).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
     // cada cartao tem so os seus itens
     expect(within(cartao('anonimizacao_tipo')).queryByText('Idade')).toBeNull()
     expect(cartao('idade_sexo').querySelector('[data-etapa="idade"]')).toBeTruthy()
+  })
+
+  it('erro tecnico em 2 cartoes: cada um com uma parte dos botoes; os dois aparecem juntos', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    for (let i = 0; i < 9; i++) tecla('Tab')
+    expect(aceso()).toBe('erro_tecnico')
+    expect(visiveis()).toEqual(['erro_tecnico', 'erro_tecnico_2', 'descricao'])
+    const a = within(cartao('erro_tecnico')).getAllByRole('button', { pressed: false }).length
+    const b = within(cartao('erro_tecnico_2')).getAllByRole('button', { pressed: false }).length
+    expect(a).toBeGreaterThan(5)
+    expect(b).toBeGreaterThan(5)
+    expect(within(cartao('erro_tecnico')).getByRole('button', { name: 'Magnificação' })).toBeTruthy()
+    expect(within(cartao('erro_tecnico_2')).queryByRole('button', { name: 'Magnificação' })).toBeNull()
+    expect(within(cartao('erro_tecnico_2')).getByRole('button', { name: 'Sobreposição da coluna cervical' })).toBeTruthy()
+  })
+
+  it.each([['oclusal'], ['tomografia']])('%s tambem em cartoes, sem odontograma de situacao nem estruturas', (tipo) => {
+    abrir({ tipo_radiografia: tipo }, {}, { horizontal: true })
+    const nomes = cartoes().map((c) => c.getAttribute('data-cartao'))
+    expect(nomes).not.toContain('odontograma')
+    expect(nomes).not.toContain('estruturas')
+    expect(nomes.slice(0, 4)).toEqual(['anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem'])
+    expect(nomes.at(-1)).toBe('aprovar')
   })
 
   it('normal (vertical): sem cartoes', () => {
@@ -396,11 +420,11 @@ describe('ficha em cartoes (panoramica)', () => {
     expect(aceso()).toBe('genero')
   })
 
-  it('o ultimo cartao aparece no fim: observacoes e Aprovar', () => {
+  it('o ultimo cartao aparece no fim: Aprovar', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     for (let i = 0; i < 20; i++) tecla('Tab')
     expect(estado.etapa).toBe('aprovar')
-    expect(visiveis()).toEqual(['erro_tecnico', 'descricao', 'observacoes'])
+    expect(visiveis()).toEqual(['descricao', 'observacoes', 'aprovar'])
   })
 })
 
