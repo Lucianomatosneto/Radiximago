@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Versão do documento | 1.23 — 22/11/2026 |
+| Versão do documento | 1.24 — 23/11/2026 |
 | Base | OWASP ASVS 5.0: 2.1.2, 2.1.3, 2.2.3, 2.3.2, 2.4.1, 15.1.3 e 15.2.2 |
 | Conferido com | `backend/app/modules/curation/*.py`, `auth.py`, `compartilhamentos_router.py`, `search_router.py`, `voz_router.py`, `images_router.py`, `app/core/limites.py`, `app/core/rate_limit.py`, `docker-compose.yml` |
 
@@ -175,6 +175,7 @@ aprovada ── pedir 2ª opinião (continua aprovada e na Pesquisa) ─┬─ m
 | Descartar exige justificativa | `curation/common.py` |
 | Ficha aprovada ou descartada não é reprocessada (exceção: a decisão de uma segunda opinião pedida para ficha aprovada, abaixo) | `aprovacao_descarte.py`, `segunda_opiniao.py` |
 | Fila da Curadoria: só imagens ativas, sem ficha e **sem moldura** (enquadramento `recortada` ou `sem_borda`); as incertas, não verificadas ou anteriores ao recorte automático só entram depois de passar por `recortar_molduras.py` | `curation/consultas.py` |
+| **Modalidade da fila** (23/11/2026, pedido do Luciano; Manual do Bloco 6, item 7): cada imagem entra com uma modalidade preliminar — a informada por quem enviou (opcional, um dos tipos de radiografia) ou a reconhecida na entrada (tomografia = DICOM CT; panorâmica = DICOM PX ou imagem bem mais larga que alta; o resto = "intraoral", porque periapical, interproximal e oclusal têm o mesmo DICOM). Com mais de uma modalidade na fila, a Curadoria **pergunta qual o curador quer curar** antes de abrir a 1ª imagem; a caixa "Modalidade" troca depois. A ficha nova começa com o tipo informado por quem enviou (o curador confere). Imagens anteriores ficam "não informado" até o roteiro `preencher_tipo_preliminar.py` | `curation/consultas.py`, `images_router.py`, `envios_router.py` |
 | Segunda opinião: exige motivo; uma em aberto por ficha; **quem pediu não pode responder** | `curation/segunda_opiniao.py` |
 | Segunda opinião de **ficha já aprovada** (22/11/2026, pedida por curador ou administrador em Minhas imagens, uma por ficha): a ficha **continua aprovada e na Pesquisa** durante a revisão; quem pediu pode acrescentar as anotações à ficha; a decisão é **manter aprovada** ou **arquivar** (com motivo; sai de circulação, nada é apagado). Descartada e arquivada continuam sem segunda opinião | `curation/segunda_opiniao.py` |
 | Segunda opinião por item: o revisor avalia cada item da ficha (concordo / ajustar / discordo, com anotação e, nos itens com lista de valores, um valor proposto) e dá uma avaliação geral em escala tipo RADPEER (concordo / discordância menor / discordância importante); toda anotação que não seja "concordo" precisa de texto, valor proposto ou marcação sugerida; no item **Marcações na imagem** o revisor pode **desenhar novas marcações** (até o mesmo limite de marcações da ficha), que quem pediu vê **tracejadas em rosa** na imagem enquanto a anotação está a decidir e, se acrescentar à curadoria, passam a fazer parte das marcações da ficha (22/11/2026); **só quem pediu (ou o administrador) acrescenta ou dispensa** cada anotação, enquanto a ficha aguarda a decisão; nada é apagado | `curation/segunda_opiniao.py` |
@@ -274,3 +275,4 @@ O teto de **2 ZIPs ao mesmo tempo** (`MAX_ZIPS_SIMULTANEOS`) vale para o servido
 | 1.21 | 22/11/2026 | Segunda opinião: o revisor desenha marcações sugeridas no item Marcações na imagem (seção 2) |
 | 1.22 | 22/11/2026 | Segunda opinião de ficha já aprovada: continua na Pesquisa; manter ou arquivar (seção 2) |
 | 1.23 | 22/11/2026 | Definição de cada termo do vocabulário, com fonte, no "?" das marcações (seção 1) |
+| 1.24 | 23/11/2026 | Modalidade da fila da Curadoria: escolher o tipo de exame antes de abrir; tipo informado no envio (seção 2) |
