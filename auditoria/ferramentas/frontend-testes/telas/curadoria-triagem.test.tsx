@@ -133,3 +133,47 @@ describe('triagem', () => {
     expect(cartao(11).getAttribute('aria-pressed')).toBe('true')
   })
 })
+
+// CORRIGIR UMA MODALIDADE (pedido do Luciano, 23/11/2026): "um curador
+// classificou a imagem como interproximal mas e uma periapical, entao ele
+// precisara remove-la para periapical". Em "Mostrar" escolhe-se a modalidade,
+// selecionam-se as que nao sao dela e "Mover para" a certa.
+describe('corrigir uma modalidade', () => {
+  const LISTA_INTER = 'GET /curation/pending?skip=0&limit=60&tipo=interproximal'
+  const INTER = (id: number) => ({ orthanc_reference_id: id, orthanc_id: `sint-${id}`, tipo_preliminar: 'interproximal' })
+
+  it('abrindo uma modalidade: explica como corrigir, "Mover para" e sem o botao da propria modalidade', async () => {
+    const usuario = userEvent.setup()
+    window.history.replaceState(null, '', '/curadoria/triagem?tipo=interproximal')
+    let vez = 0
+    const servidor = await abrir(
+      rotas({
+        [LISTA_INTER]: () => ({
+          corpo: vez++ === 0
+            ? { itens: [INTER(21), INTER(22)], total_pendentes: 2, por_tipo: { interproximal: 2, periapical: 5 } }
+            : { itens: [INTER(22)], total_pendentes: 1, por_tipo: { interproximal: 1, periapical: 6 } },
+        }),
+        'POST /curation/triagem': { corpo: { alteradas: 1, ignoradas: 0 } },
+      }),
+    )
+    await screen.findByRole('img', { name: 'Imagem 21' })
+    expect(screen.getByText(/selecione as que não são dela e mova para a modalidade certa/)).toBeTruthy()
+    const acoes = screen.getByRole('group', { name: 'Marcar as selecionadas como' })
+    expect(within(acoes).getByText('Mover para:')).toBeTruthy()
+    expect(within(acoes).queryByRole('button', { name: 'Interproximal' })).toBeNull()
+    await usuario.click(cartao(21))
+    await usuario.click(within(acoes).getByRole('button', { name: 'Periapical' }))
+    expect(await screen.findByRole('status')).toHaveProperty('textContent', '1 imagem movida para Periapical.')
+    expect(servidor.alteracoes()).toEqual([
+      { metodo: 'POST', caminho: '/curation/triagem', corpo: { orthanc_reference_ids: [21], tipo: 'periapical' } },
+    ])
+    await waitFor(() => expect(screen.getAllByRole('button', { name: /^Imagem \d+$/ })).toHaveLength(1))
+  })
+
+  it('em "Mostrar" aparecem todas as modalidades com imagens (para corrigir qualquer uma)', async () => {
+    await abrir(rotas({ [LISTA]: { corpo: { itens: [ITEM(11)], total_pendentes: 1, por_tipo: { intraoral: 1, interproximal: 4, periapical: 3 } } } }))
+    await screen.findByRole('img', { name: 'Imagem 11' })
+    const opcoes = Array.from((screen.getByRole('combobox', { name: 'Mostrar' }) as HTMLSelectElement).options).map((o) => o.value)
+    expect(opcoes).toEqual(expect.arrayContaining(['periapical', 'interproximal', 'intraoral']))
+  })
+})
