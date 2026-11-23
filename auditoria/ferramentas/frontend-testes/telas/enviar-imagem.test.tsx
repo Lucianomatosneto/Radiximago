@@ -205,6 +205,28 @@ describe('enviar', () => {
     expect(envios(servidor)).toEqual([{ arquivo: 'arquivo:aula.dcm:application/dicom', destino: 'fila', pessoas: '4,6', grupos: '2' }])
   })
 
+  // 23/11/2026: quem envia pode dizer o tipo de exame (opcional); ele vira a
+  // modalidade que o curador usa para escolher o que curar na fila
+  it('tipo de exame (opcional): sem escolher, nao manda; escolhido, vai com cada arquivo', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir('professor', { 'POST /envios': { status: 201, corpo: {} } })
+    const tipo = screen.getByLabelText('Tipo de exame (opcional)') as HTMLSelectElement
+    expect(tipo.value).toBe('')
+    expect(Array.from(tipo.options).map((o) => o.textContent)).toEqual([
+      'Não sei — o sistema reconhece tomografia e panorâmica',
+      'Periapical',
+      'Interproximal',
+      'Oclusal',
+      'Panorâmica',
+      'Tomografia',
+    ])
+    await usuario.upload(entrada(), [dicom('a.dcm'), dicom('b.dcm')])
+    await usuario.selectOptions(tipo, 'Interproximal')
+    await usuario.click(screen.getByRole('button', { name: 'Enviar 2 imagens' }))
+    await screen.findByText(/b\.dcm/)
+    expect(envios(servidor).map((c) => (c as Record<string, string>).tipo_radiografia)).toEqual(['interproximal', 'interproximal'])
+  })
+
   it('arquivo repetido (18/11/2026): avisa que a imagem ja esta no Radix, sem dizer que foi enviada', async () => {
     const usuario = userEvent.setup()
     await abrir('professor', { 'POST /envios': { status: 201, corpo: { status: 'ja_existente', enviada_para: 0 } } })
