@@ -63,7 +63,7 @@ function Item({
       data-etapa={etapa}
       aria-current={ativa ? 'step' : undefined}
       onMouseDown={() => !ativa && onAtivar?.(etapa)}
-      className={`scroll-my-6 rounded-xl px-2.5 py-2 transition-[opacity,box-shadow,background-color] duration-200 ${
+      className={`scroll-my-6 rounded-xl transition-[opacity,box-shadow,background-color] duration-200 ${compacta ? 'px-1.5 py-0.5' : 'px-2.5 py-2'} ${
         ativa
           ? `relative z-10 bg-base-surface shadow-[0_0_0_2px_rgba(45,212,191,.85),0_0_32px_-4px_rgba(45,212,191,.6)] ${compacta ? '' : 'zoom-[1.5]'}`
           : apagado
@@ -108,6 +108,10 @@ export default function PainelDadosSobrepostos({
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
   const tSit = useTranslations('SituacaoDentaria')
+  // cartoes baixos (panoramica, oclusal, tomografia): letras e botoes menores
+  const compacta = useFichaCompacta()
+  const rotulo = compacta ? `${campoLabel.replace('text-sm', 'text-xs')} mb-0.5` : `${campoLabel} mb-1.5`
+  const opcao = compacta ? 'rounded-full border px-2.5 py-0 text-xs leading-5 transition-colors' : botaoOpcao
   const pk = (e: EtapaFicha) => etapa === e
   // so avanca se o clique foi no item que esta com o holofote
   const escolhido = (e: EtapaFicha) => {
@@ -130,7 +134,7 @@ export default function PainelDadosSobrepostos({
             type="button"
             onClick={() => alternarDente(d)}
             aria-pressed={marcado}
-            className={`rounded py-1 text-[11px] font-semibold transition-colors ${i === 8 ? 'ml-1' : ''} ${d === denteNoCursor ? 'ring-2 ring-amber-300' : ''} ${
+            className={`rounded font-semibold transition-colors ${compacta ? 'py-0 text-[10px] leading-4' : 'py-1 text-[11px]'} ${i === 8 ? 'ml-1' : ''} ${d === denteNoCursor ? 'ring-2 ring-amber-300' : ''} ${
               marcado ? 'bg-brand text-white' : 'bg-white/5 text-slate-300 hover:bg-white/15'
             }`}
           >
@@ -152,7 +156,7 @@ export default function PainelDadosSobrepostos({
             type="button"
             onClick={() => alternarDente(d)}
             aria-pressed={marcado}
-            className={`rounded py-0.5 text-[10px] font-semibold transition-colors ${i === 5 ? 'ml-1' : ''} ${
+            className={`rounded font-semibold transition-colors ${compacta ? 'py-0 text-[9px] leading-[14px]' : 'py-0.5 text-[10px]'} ${i === 5 ? 'ml-1' : ''} ${
               marcado ? 'bg-brand text-white' : 'bg-amber-200/10 text-amber-100 hover:bg-amber-200/20'
             }`}
           >
@@ -170,10 +174,10 @@ export default function PainelDadosSobrepostos({
   )
 
   return (
-    <div className="flex w-full flex-col gap-1.5">
+    <div className={compacta && itens && itens.length === 2 && !itens.includes('tipo') ? 'grid w-full grid-cols-2 items-start gap-2' : `flex w-full flex-col ${compacta ? 'gap-0.5' : 'gap-1.5'}`}>
       {item(
         'anonimizacao',
-        <label className="flex items-center gap-2 text-sm text-slate-300">
+        <label className={`flex items-center gap-2 text-slate-300 ${compacta ? 'text-xs' : 'text-sm'}`}>
           <input
             type="checkbox"
             checked={form.anonimizacao_validada}
@@ -181,7 +185,7 @@ export default function PainelDadosSobrepostos({
               onChange({ ...form, anonimizacao_validada: e.target.checked })
               if (e.target.checked) escolhido('anonimizacao')
             }}
-            className="h-5 w-5 rounded-sm border-base-border bg-base-surface2 text-brand"
+            className={`${compacta ? 'h-4 w-4' : 'h-5 w-5'} rounded-sm border-base-border bg-base-surface2 text-brand`}
           />
           {t('anonimizacaoValidada')} <span className="text-status-danger">*</span>
           <PalavraChave texto={t('chaveAnonimizacao')} visivel={pk('anonimizacao')} />
@@ -191,7 +195,7 @@ export default function PainelDadosSobrepostos({
       {item(
         'tipo',
         <>
-          <p className={`${campoLabel} mb-1.5`}>
+          <p className={rotulo}>
             {t('tipoRadiografia')} <span className="text-status-danger">*</span>
             <PalavraChave texto={t('chaveTipo')} visivel={pk('tipo')} />
           </p>
@@ -211,7 +215,7 @@ export default function PainelDadosSobrepostos({
                   })
                   escolhido('tipo')
                 }}
-                className={`${botaoOpcao} ${
+                className={`${opcao} ${
                   form.tipo_radiografia === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}
               >
@@ -231,7 +235,7 @@ export default function PainelDadosSobrepostos({
       {item(
         'idade',
         <>
-          <p className={`${campoLabel} mb-1.5`}>
+          <p className={rotulo}>
             {t('idade')}
             <PalavraChave texto={t('chaveIdade')} visivel={pk('idade')} />
           </p>
@@ -244,7 +248,7 @@ export default function PainelDadosSobrepostos({
             onChange={(e) => onChange({ ...form, idade_min: e.target.value, idade_max: e.target.value })}
             aria-label={t('idade')}
             data-campo-idade
-            className={`${campoInput} max-w-32`}
+            className={`${campoInput} max-w-32 ${compacta ? 'py-0.5' : ''}`}
           />
         </>
       )}
@@ -252,7 +256,7 @@ export default function PainelDadosSobrepostos({
       {item(
         'genero',
         <>
-          <p className={`${campoLabel} mb-1.5`}>
+          <p className={rotulo}>
             {t('sexo')} <span className="text-status-danger">*</span>
             <PalavraChave texto={t('chaveSexo')} visivel={pk('genero')} />
           </p>
@@ -265,7 +269,7 @@ export default function PainelDadosSobrepostos({
                   onChange({ ...form, genero: valor })
                   escolhido('genero')
                 }}
-                className={`${botaoOpcao} ${form.genero === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'}`}
+                className={`${opcao} ${form.genero === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'}`}
               >
                 {tOpcoes(`genero.${valor}`)}
                 {pk('genero') && <span className="ml-1.5 font-mono text-[10px] opacity-70">“{valor === 'masculino' ? 'm' : 'f'}”</span>}
@@ -278,29 +282,32 @@ export default function PainelDadosSobrepostos({
       {item(
         'dentes',
         <>
-          <p className={`${campoLabel} mb-1.5`}>
-            {t('dentes')}
-            <PalavraChave texto={t('chaveDentes')} visivel={pk('dentes')} />
-            {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
-          </p>
-          {/* DENTICAO (23/11/2026): mista ou decidua mostra os deciduos 51-85 */}
-          <div role="group" aria-label={tSit('denticao')} className="mb-1.5 flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-slate-400">{tSit('denticao')}:</span>
-            {DENTICOES.map((valor) => (
-              <button
-                key={valor}
-                type="button"
-                aria-pressed={form.denticao === valor}
-                onClick={() => onChange(trocarDenticao(form, valor))}
-                className={`${botaoOpcao} px-2 py-0.5 text-xs ${
-                  form.denticao === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
-                }`}
-              >
-                {tSit(`denticoes.${valor}`)}
-              </button>
-            ))}
+          {/* no cartao baixo, a denticao fica na mesma linha do titulo */}
+          <div className={compacta ? 'mb-0.5 flex items-center gap-3' : ''}>
+            <p className={compacta ? `${rotulo} mb-0` : rotulo}>
+              {t('dentes')}
+              <PalavraChave texto={t('chaveDentes')} visivel={pk('dentes')} />
+              {form.dentes.length > 0 && <span className="ml-auto text-xs text-teal-200">{form.dentes.join(', ')}</span>}
+            </p>
+            {/* DENTICAO (23/11/2026): mista ou decidua mostra os deciduos 51-85 */}
+            <div role="group" aria-label={tSit('denticao')} className={`flex flex-wrap items-center gap-1.5 ${compacta ? '' : 'mb-1.5'}`}>
+              <span className="text-xs text-slate-400">{tSit('denticao')}:</span>
+              {DENTICOES.map((valor) => (
+                <button
+                  key={valor}
+                  type="button"
+                  aria-pressed={form.denticao === valor}
+                  onClick={() => onChange(trocarDenticao(form, valor))}
+                  className={`${opcao} px-2 text-xs ${compacta ? '' : 'py-0.5'} ${
+                    form.denticao === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
+                  }`}
+                >
+                  {tSit(`denticoes.${valor}`)}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="space-y-1 rounded-lg border border-teal-500/30 bg-teal-600/10 p-1.5">
+          <div className={`rounded-lg border border-teal-500/30 bg-teal-600/10 ${compacta ? 'space-y-px p-0.5' : 'space-y-1 p-1.5'}`}>
             {linhaDentes(ARCADA_SUPERIOR)}
             {mostraDeciduos(form.denticao) && linhaDeciduos(DECIDUOS_SUPERIOR)}
             <div className="border-t border-white/10" />
@@ -313,11 +320,11 @@ export default function PainelDadosSobrepostos({
       {item(
         'qualidade',
         <>
-          <p className={`${campoLabel} mb-1.5`}>
+          <p className={rotulo}>
             {t('qualidadeTecnica')}
             <PalavraChave texto={t('chaveQualidade')} visivel={pk('qualidade')} />
           </p>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className={compacta ? 'flex flex-wrap gap-1' : 'grid grid-cols-4 gap-1.5'}>
             {OPCOES_QUALIDADE_TECNICA.map((valor) => (
               <button
                 key={valor}
@@ -326,7 +333,7 @@ export default function PainelDadosSobrepostos({
                   onChange({ ...form, qualidade_tecnica: valor })
                   escolhido('qualidade')
                 }}
-                className={`${botaoOpcao} px-1 ${
+                className={`${opcao} px-1 ${
                   form.qualidade_tecnica === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}
               >
@@ -344,7 +351,7 @@ export default function PainelDadosSobrepostos({
       {item(
         'origem',
         <>
-          <p className={`${campoLabel} mb-1.5`}>{tOpcoes('origemRotulo')}</p>
+          <p className={rotulo}>{tOpcoes('origemRotulo')}</p>
           <div className="grid grid-cols-2 gap-1.5">
             {(['aparelho', 'externa'] as const).map((valor) => (
               <button
@@ -354,7 +361,7 @@ export default function PainelDadosSobrepostos({
                   onChange({ ...form, origem: valor })
                   escolhido('origem')
                 }}
-                className={`${botaoOpcao} px-1 ${
+                className={`${opcao} px-1 ${compacta ? 'truncate text-[11px]' : ''} ${
                   form.origem === valor ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}
               >
