@@ -99,7 +99,11 @@ function montar(modalidade: string, cortes: number, dados: Float32Array = exameH
     toolGroupService: { getToolGroupIds: () => Object.keys(grupos), getToolGroup: (id: string) => grupos[id] },
     hangingProtocolService: {
       addProtocol: (id: string, p: unknown) => { protocolos.set(id, p) },
-      getProtocolById: (id: string) => protocolos.get(id),
+      // igual ao OHIF 3.9: protocolo nao registrado DA ERRO ("No protocol X found")
+      getProtocolById: (id: string) => {
+        if (!protocolos.has(id)) throw new Error(`No protocol ${id} found`)
+        return protocolos.get(id)
+      },
     },
   }
   ;(window as unknown as { commandsManager: unknown }).commandsManager = { runCommand: comandos }
@@ -195,7 +199,7 @@ describe('planos marcados = quadros na tela', () => {
   it('o 3D vem so com osso (CT-Bone), sem opcoes de partes moles ou MIP', () => {
     const { protocolos } = montar('CT', 120)
     const v3d = protocolos.get('radix-planos-asc3').stages[0].viewports[3]
-    expect(v3d.displaySets[0].options.displayPreset).toBe('CT-Bone')
+    expect(v3d.displaySets[0].options.displayPreset.CT).toBe('CT-Bone')
     expect(within(painel()).queryByRole('button', { name: '3D partes moles' })).toBeNull()
     expect(within(painel()).queryByRole('button', { name: '3D MIP' })).toBeNull()
   })
