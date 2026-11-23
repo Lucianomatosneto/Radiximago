@@ -224,7 +224,13 @@
     "conhecaRadix": "Discover Rádix Imago",
     "termoRecusado": "Without accepting the acknowledgement, access to the system is not granted.",
     "linkTermos": "Terms and privacy",
-    "termosRecusados": "Without accepting the Terms of Use and the Privacy Policy, access to the system is not granted."
+    "termosRecusados": "Without accepting the Terms of Use and the Privacy Policy, access to the system is not granted.",
+    "erroContaTravada": "For security, this account was locked for up to {tempo} after too many attempts with a wrong password. If it wasn't you, change your password in “Forgot my password”.",
+    "tempoMinutos": "{n} minutes",
+    "tempoHoras": "{n, plural, one {# hour} other {# hours}}",
+    "erroMuitasTentativasRede": "Too many attempts in a row from this computer. Wait 1 minute and try again.",
+    "erroContaBloqueada": "Your account is blocked. Contact your institution's administrator or the Rádix Imago administrator.",
+    "erroContaInativa": "Your account is not active yet. If you just requested access, wait for approval; otherwise, contact the administrator."
   },
   "Modalidades": {
     "raiosX": "X-Ray",
@@ -2192,7 +2198,8 @@
     "meio_presencial": "In-person conversation with photo ID",
     "meio_videochamada": "Video call with photo ID",
     "meio_responsavel_academico": "Written confirmation from the academic supervisor (their institutional email)",
-    "procedimentoSeguido": "I confirm I followed the identity verification procedure. I did not keep copies of documents."
+    "procedimentoSeguido": "I confirm I followed the identity verification procedure. I did not keep copies of documents.",
+    "erroMuitasTentativas": "Too many codes tried in a row. Wait 1 minute and try again."
   },
   "Prancha": {
     "botao": "Plate",

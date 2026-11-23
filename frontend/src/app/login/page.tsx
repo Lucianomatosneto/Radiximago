@@ -160,6 +160,11 @@ export default function LoginPage() {
         body: JSON.stringify({ desafio: etapa.desafio, codigo: codigo.trim() }),
         credentials: 'include',
       })
+      if (r.status === 429) {
+        setErro(tSF('erroMuitasTentativas'))
+        setCodigo('')
+        return
+      }
       if (r.status === 401) {
         const dados = await r.json().catch(() => ({}))
         // desafio vencido/esgotado: volta para a senha; codigo errado: tenta de novo
@@ -192,6 +197,19 @@ export default function LoginPage() {
     }
   }
 
+  /** Mensagem clara para cada recusa do login (o servidor manda o motivo em "codigo"). */
+  function mensagemDeRecusa(status: number, dados: { codigo?: string; minutos?: number }): string {
+    if (status === 429 && dados.codigo === 'conta_travada') {
+      const minutos = Number(dados.minutos) || 15
+      const tempo = minutos >= 60 ? t('tempoHoras', { n: Math.round(minutos / 60) }) : t('tempoMinutos', { n: minutos })
+      return t('erroContaTravada', { tempo })
+    }
+    if (status === 429) return t('erroMuitasTentativasRede')
+    if (dados.codigo === 'conta_bloqueada') return t('erroContaBloqueada')
+    if (dados.codigo === 'conta_inativa') return t('erroContaInativa')
+    return t('erroCredenciais')
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (carregando) return
@@ -220,8 +238,15 @@ export default function LoginPage() {
         credentials: 'include',
       })
 
-      if (response.status === 401 || response.status === 403) {
+      if (response.status === 401) {
         setErro(t('erroCredenciais'))
+        return
+      }
+      // 18/11/2026: cada motivo com a sua mensagem (antes, "Nao foi possivel
+      // entrar" para tudo, e a pessoa nao sabia que a conta estava travada)
+      if (response.status === 429 || response.status === 403) {
+        const dados: { codigo?: string; minutos?: number } = await response.json().catch(() => ({}))
+        setErro(mensagemDeRecusa(response.status, dados))
         return
       }
 

@@ -224,7 +224,13 @@
     "conhecaRadix": "Conheça o Rádix Imago",
     "termoRecusado": "Sem aceitar o termo de ciência, o acesso ao sistema não é liberado.",
     "linkTermos": "Termos e privacidade",
-    "termosRecusados": "Sem aceitar os Termos de Uso e a Política de Privacidade, o acesso ao sistema não é liberado."
+    "termosRecusados": "Sem aceitar os Termos de Uso e a Política de Privacidade, o acesso ao sistema não é liberado.",
+    "erroContaTravada": "Por segurança, esta conta foi travada por até {tempo} depois de muitas tentativas com a senha errada. Se não foi você, troque a senha em “Esqueci minha senha”.",
+    "tempoMinutos": "{n} minutos",
+    "tempoHoras": "{n, plural, one {# hora} other {# horas}}",
+    "erroMuitasTentativasRede": "Muitas tentativas seguidas a partir deste computador. Aguarde 1 minuto e tente de novo.",
+    "erroContaBloqueada": "Sua conta está bloqueada. Fale com o administrador da sua instituição ou do Rádix Imago.",
+    "erroContaInativa": "Sua conta ainda não está ativa. Se você acabou de pedir acesso, aguarde a aprovação; senão, fale com o administrador."
   },
   "Modalidades": {
     "raiosX": "Raios-X",
@@ -2192,7 +2198,8 @@
     "meio_presencial": "Conversa presencial com documento com foto",
     "meio_videochamada": "Videochamada com documento com foto",
     "meio_responsavel_academico": "Confirmação escrita do responsável acadêmico (e-mail institucional dele)",
-    "procedimentoSeguido": "Confirmo que segui o procedimento de conferência de identidade. Não guardei cópia de documentos."
+    "procedimentoSeguido": "Confirmo que segui o procedimento de conferência de identidade. Não guardei cópia de documentos.",
+    "erroMuitasTentativas": "Muitos códigos tentados em seguida. Aguarde 1 minuto e tente de novo."
   },
   "Prancha": {
     "botao": "Prancha",
