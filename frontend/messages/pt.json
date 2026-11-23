@@ -1301,8 +1301,6 @@
   },
   "MinhasImagens": {
     "tituloPrefixo": "Minhas",
-    "filtroTipo": "Filtrar por tipo",
-    "filtroTodos": "Todos",
     "tituloDestaque": "imagens",
     "subtitulo": "Imagens que você salvou a partir da Pesquisa avançada.",
     "desmarcarTodas": "Desmarcar todas",
@@ -2667,6 +2665,10 @@
     "verificarAgora": "Verificar agora",
     "verificando": "Verificando…",
     "erro": "Não foi possível verificar agora. Tente de novo em instantes."
+  },
+  "FiltroTipo": {
+    "rotulo": "Filtrar por tipo",
+    "todos": "Todos"
   },
   "EnviarImagem": {
     "titulo": "Enviar imagem",
