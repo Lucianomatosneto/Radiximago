@@ -24,7 +24,7 @@ sem espacos repetidos) - ver normalizar().
 import re
 import unicodedata
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column
@@ -55,6 +55,11 @@ class TermoVocabulario(Base):
     categoria: Mapped[str] = mapped_column(String(20), nullable=False, default="achado")
     # codigo do descritor no DeCS/MeSH (opcional), ex.: "D012086"
     codigo_decs: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    # 22/11/2026 (pedido do video, B14): definicao do termo, mostrada no "?"
+    # de cada marcacao do visualizador, SEMPRE com a fonte (DeCS/BIREME, com
+    # a mencao do direito autoral, ou texto do proprio curador)
+    definicao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    definicao_fonte: Mapped[str | None] = mapped_column(String(300), nullable=True)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     # 08/11/2026: o curador escolhe, ao acrescentar um termo em "Outros",
     # se ele aparece nas opcoes da Pesquisa avancada e se fica como opcao

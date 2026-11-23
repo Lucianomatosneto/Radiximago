@@ -7,6 +7,19 @@ import { useDescricaoCuradoria, type ItemDescritivel } from '../../lib/descricao
 import NotasVisualizador from './NotasVisualizador'
 import CompartilharImagem from '../compartilhar/CompartilharImagem'
 import AnotacoesCompartilhadas, { type InfoCompartilhamento } from '../compartilhar/AnotacoesCompartilhadas'
+import { BotaoDefinicao, TextoDefinicao, useDefinicaoAchado } from './DefinicaoAchado'
+
+function NumeroMarcacao({ numero, cor }: { numero: number; cor?: string }) {
+  return (
+    <span
+      className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-black"
+      style={{ background: cor }}
+      aria-hidden="true"
+    >
+      {numero}
+    </span>
+  )
+}
 
 // Selo no canto de cada imagem do visualizador. Aparece SEMPRE (mesmo sem
 // marcacao): um "i" de informacao e, se houver, o numero de marcacoes do
@@ -68,6 +81,7 @@ export default function EtiquetaMarcacoes({
 }) {
   const t = useTranslations('Visualizador.marcacoes')
   const descrever = useDescricaoCuradoria()
+  const definicoes = useDefinicaoAchado()
   // Visualizador: UM CLIQUE no selo abre o quadro e outro clique fecha
   // (passar o mouse nao abre mais - o quadro nao aparece sem querer por
   // cima da imagem). Modo flutuante (cartoes da Pesquisa, so leitura):
@@ -286,41 +300,59 @@ export default function EtiquetaMarcacoes({
             ) : (
               // Linha de uma marcacao: com a cor dela e ligada a imagem -
               // passar o mouse destaca a marcacao; clicar isola.
-              // Teclado (12/11/2026): Tab chega na linha (destaca, como o
-              // mouse em cima) e Enter ou Espaco isola, como o clique.
+              // Teclado (12/11/2026): Tab chega no "Marcação N" (destaca,
+              // como o mouse em cima) e Enter ou Espaco isola, como o clique.
+              // 22/11/2026 (B14): um "?" a direita mostra a definicao do
+              // achado (Vocabulario) - por isso a linha nao e mais um botao
+              // inteiro: o botao e o "Marcação N" e o "?" fica ao lado.
               <div
                 key={l.rotulo}
-                role={onIsolarMarcacao ? 'button' : undefined}
-                tabIndex={onIsolarMarcacao ? 0 : undefined}
-                className={`-mx-1 flex items-center gap-1.5 rounded px-1 py-0.5 ${
-                  onFocoMarcacao ? 'cursor-pointer hover:bg-white/10 focus-visible:bg-white/10 focus-visible:outline-1 focus-visible:outline-teal-300' : ''
-                }`}
+                className={`-mx-1 flex items-start gap-1.5 rounded px-1 py-0.5 ${onFocoMarcacao || onIsolarMarcacao ? 'cursor-pointer hover:bg-white/10' : ''}`}
                 onMouseEnter={() => onFocoMarcacao?.(l.marcacao!)}
                 onMouseLeave={() => onFocoMarcacao?.(null)}
-                onFocus={() => onFocoMarcacao?.(l.marcacao!)}
-                onBlur={() => onFocoMarcacao?.(null)}
                 onClick={(e) => {
                   if (!onIsolarMarcacao) return
                   e.preventDefault()
                   e.stopPropagation()
                   onIsolarMarcacao(l.marcacao!)
                 }}
-                onKeyDown={(e) => {
-                  if (!onIsolarMarcacao || (e.key !== 'Enter' && e.key !== ' ')) return
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onIsolarMarcacao(l.marcacao!)
-                }}
               >
-                <span
-                  className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full px-1 text-[10px] font-bold leading-none text-black"
-                  style={{ background: l.cor }}
-                  aria-hidden="true"
-                >
-                  {l.marcacao + 1}
-                </span>
-                <dt className="inline font-semibold text-slate-400">{l.rotulo}: </dt>
-                <dd className="inline whitespace-pre-line text-ink">{l.valor}</dd>
+                <dt className="flex shrink-0 items-center gap-1.5 font-semibold text-slate-400">
+                  {onIsolarMarcacao || onFocoMarcacao ? (
+                    <button
+                      type="button"
+                      aria-label={`${l.rotulo}: ${l.valor}`}
+                      className="flex items-center gap-1.5 rounded text-left focus-visible:bg-white/10 focus-visible:outline-1 focus-visible:outline-teal-300"
+                      onFocus={() => onFocoMarcacao?.(l.marcacao!)}
+                      onBlur={() => onFocoMarcacao?.(null)}
+                      onKeyDown={(e) => {
+                        if (!onIsolarMarcacao || (e.key !== 'Enter' && e.key !== ' ')) return
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onIsolarMarcacao(l.marcacao!)
+                      }}
+                    >
+                      <NumeroMarcacao numero={l.marcacao + 1} cor={l.cor} />
+                      {l.rotulo}:
+                    </button>
+                  ) : (
+                    <>
+                      <NumeroMarcacao numero={l.marcacao + 1} cor={l.cor} />
+                      {l.rotulo}:
+                    </>
+                  )}
+                </dt>
+                <dd className="flex min-w-0 flex-1 flex-wrap items-center gap-1 text-ink">
+                  <span className="whitespace-pre-line">{l.valor}</span>
+                  {l.valor !== '—' && (
+                    <BotaoDefinicao achado={l.valor} aberta={!!definicoes.abertas[l.rotulo]} onClick={() => void definicoes.alternar(l.rotulo, l.valor)} />
+                  )}
+                  {definicoes.abertas[l.rotulo] && (
+                    <span className="basis-full" onClick={(e) => e.stopPropagation()}>
+                      <TextoDefinicao achado={l.valor} resultado={definicoes.abertas[l.rotulo]} />
+                    </span>
+                  )}
+                </dd>
               </div>
             )
           )}

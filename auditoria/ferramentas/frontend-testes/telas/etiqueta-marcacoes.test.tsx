@@ -13,7 +13,7 @@ import { cleanup, fireEvent, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import EtiquetaMarcacoes from '../../../../frontend/src/components/visualizador/EtiquetaMarcacoes'
-import { montarTela } from './apoio/montar'
+import { montarTela, servidorFalso } from './apoio/montar'
 
 vi.mock('../../../../frontend/src/components/visualizador/NotasVisualizador', () => ({
   default: ({ onAbrir }: { onAbrir?: () => void }) => <button type="button" onClick={onAbrir}>minhas notas</button>,
@@ -78,7 +78,8 @@ describe('quadro ao lado do "i" (padrao)', () => {
     const isolar = vi.fn()
     montarTela(<EtiquetaMarcacoes item={ITEM} onFocoMarcacao={foco} onIsolarMarcacao={isolar} />)
     await usuario.click(botaoI())
-    const [linha1, linha2] = within(screen.getByRole('tooltip')).getAllByRole('button')
+    // (22/11/2026: o "?" de cada achado tambem e botao - so as linhas)
+    const [linha1, linha2] = within(screen.getByRole('tooltip')).getAllByRole('button', { name: /^Marcação \d/ })
     await usuario.hover(linha2)
     expect(foco).toHaveBeenLastCalledWith(1)
     await usuario.unhover(linha2)
@@ -194,5 +195,49 @@ describe('janela ao lado do cartao (Minhas imagens)', () => {
     expect(screen.getByRole('dialog')).toBeTruthy() // arrastar nao fecha
     fireEvent.pointerDown(screen.getByText('fora'))
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+})
+
+// PEDIDO DO VIDEO (22/11/2026, B14): um "?" a direita de cada marcacao; o
+// clique mostra a definicao do achado (cadastrada no Vocabulario, com a
+// fonte). Marcacao sem achado nao tem "?".
+describe('"?" de cada marcacao: definicao do achado', () => {
+  const ROTA = 'GET /vocabulario/definicao?texto=Les%C3%A3o%20periapical'
+
+  it('mostra a definicao e a fonte; outro clique fecha', async () => {
+    const usuario = userEvent.setup()
+    const servidor = servidorFalso({ [ROTA]: { corpo: { termo: 'Lesão periapical', definicao: 'Definição de teste.', fonte: 'DeCS/BIREME (teste)' } } })
+    montarTela(<EtiquetaMarcacoes item={ITEM} onIsolarMarcacao={vi.fn()} />)
+    await usuario.click(botaoI())
+    const quadro = screen.getByRole('tooltip')
+    expect(within(quadro).getAllByRole('button', { name: /^O que é/ })).toHaveLength(1) // a 2a marcacao nao tem achado
+    const pergunta = within(quadro).getByRole('button', { name: 'O que é Lesão periapical?' })
+    await usuario.click(pergunta)
+    const definicao = await within(quadro).findByRole('note', { name: 'Lesão periapical' })
+    expect(definicao.textContent).toContain('Definição de teste.')
+    expect(definicao.textContent).toContain('Fonte: DeCS/BIREME (teste)')
+    expect(pergunta.getAttribute('aria-expanded')).toBe('true')
+    expect(servidor.pedidos.map((p) => p.caminho)).toContain('/vocabulario/definicao?texto=Les%C3%A3o%20periapical')
+    await usuario.click(pergunta)
+    expect(within(quadro).queryByRole('note')).toBeNull()
+  })
+
+  it('sem definicao cadastrada (404): avisa', async () => {
+    const usuario = userEvent.setup()
+    servidorFalso({ [ROTA]: { status: 404, corpo: { detail: 'Ainda não há definição cadastrada para este achado.' } } })
+    montarTela(<EtiquetaMarcacoes item={ITEM} />)
+    await usuario.click(botaoI())
+    await usuario.click(screen.getByRole('button', { name: 'O que é Lesão periapical?' }))
+    expect((await screen.findByRole('note')).textContent).toBe('Ainda não há definição cadastrada para este achado.')
+  })
+
+  it('clicar no "?" nao isola a marcacao', async () => {
+    const usuario = userEvent.setup()
+    servidorFalso({ [ROTA]: { status: 404, corpo: {} } })
+    const isolar = vi.fn()
+    montarTela(<EtiquetaMarcacoes item={ITEM} onIsolarMarcacao={isolar} />)
+    await usuario.click(botaoI())
+    await usuario.click(screen.getByRole('button', { name: 'O que é Lesão periapical?' }))
+    expect(isolar).not.toHaveBeenCalled()
   })
 })

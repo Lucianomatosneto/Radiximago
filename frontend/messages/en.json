@@ -820,7 +820,14 @@
     "confirmarEmailTitulo": "Send by e-mail?",
     "confirmarEmailUma": "This image goes to the e-mail registered in your account. Confirm sending?",
     "simEnviar": "Yes, send",
-    "cancelarEnvio": "Cancel"
+    "cancelarEnvio": "Cancel",
+    "definicao": {
+      "oQueE": "What is {achado}?",
+      "carregando": "Loading…",
+      "fonte": "Source: {fonte}",
+      "semDefinicao": "There is no definition registered for this finding yet.",
+      "erro": "Could not load the definition."
+    }
   },
   "Curadoria": {
     "inicio": "Home",
@@ -2003,7 +2010,20 @@
     "buscaPorTexto": "+{quantidade} image(s) found by the name or synonym written in the record, even without the linked term.",
     "aprovadas": "{quantidade} approved",
     "opcaoNaBusca": "Option in Advanced search",
-    "opcaoNasCuradorias": "Option in curations"
+    "opcaoNasCuradorias": "Option in curations",
+    "definicao": {
+      "campo": "Definition",
+      "fonte": "Source",
+      "fonteDica": "E.g.: DeCS/BIREME, 2025 edition — or: Curator's text",
+      "direitos": "Use the DeCS (BIREME/PAHO) definition citing the source and edition, or write it in your own words and state the source. Do not copy texts from books or websites without permission (Brazilian Law 9,610/98).",
+      "salvar": "Save definition",
+      "apagar": "Delete definition",
+      "cancelar": "Cancel",
+      "fonteTexto": "Source: {fonte}",
+      "editar": "Edit definition",
+      "sem": "No definition: the \"?\" on the marks does not explain this finding yet.",
+      "escrever": "Write definition"
+    }
   },
   "Voz": {
     "titulo": "Voice curation",
