@@ -331,31 +331,76 @@ describe('erro tecnico, textos e "nada a registrar"', () => {
   })
 })
 
-// PANORAMICA (pedido do Luciano, 23/11/2026): a imagem ocupa 2/3 de cima e a
-// ficha o 1/3 de baixo, com as secoes LADO A LADO, cada uma rolando sozinha.
-describe('ficha em colunas (panoramica)', () => {
-  it('horizontal: as secoes viram colunas lado a lado; descricao, observacoes e acoes na ultima', () => {
+// PANORAMICA (pedido do Luciano, 23/11/2026): a imagem ocupa a parte de cima
+// e a ficha fica embaixo em CARTOES que cabem sem rolar. So 3 aparecem por
+// vez; → / Tab avancam, ← / Shift+Tab voltam, e os cartoes acompanham o item
+// aceso. ↑ / ↓ trocam a opcao do item aceso.
+const CARTOES = ['anonimizacao_tipo', 'idade_sexo', 'dentes', 'qualidade_origem', 'odontograma', 'achados', 'estruturas', 'erro_tecnico', 'descricao', 'observacoes']
+const cartoes = () => Array.from(document.querySelectorAll('[data-cartao]')) as HTMLElement[]
+const visiveis = () => cartoes().filter((c) => c.getAttribute('data-visivel') === 'true').map((c) => c.getAttribute('data-cartao'))
+const cartao = (nome: string) => document.querySelector(`[data-cartao="${nome}"]`) as HTMLElement
+
+describe('ficha em cartoes (panoramica)', () => {
+  it('a ficha vira cartoes; so 3 aparecem por vez e nenhum rola (so os achados, se forem muitos)', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    const colunas = Array.from(document.querySelectorAll('[data-coluna]')) as HTMLElement[]
-    expect(colunas.map((c) => c.getAttribute('data-coluna'))).toEqual(['dados', 'odontograma', 'achados', 'erro_tecnico', 'descricao'])
-    // cada coluna rola sozinha
-    expect(colunas.every((c) => c.className.includes('overflow-y-auto'))).toBe(true)
-    const ultima = colunas[colunas.length - 1]
-    expect(ultima.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
-    expect(within(ultima).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
-    expect(screen.getByText('painel da voz')).toBeTruthy()
+    expect(cartoes().map((c) => c.getAttribute('data-cartao'))).toEqual(CARTOES)
+    expect(visiveis()).toEqual(['anonimizacao_tipo', 'idade_sexo', 'dentes'])
+    for (const c of cartoes()) {
+      if (c.getAttribute('data-cartao') === 'achados') continue
+      expect(c.className).toContain('overflow-hidden')
+      expect(c.className).not.toContain('overflow-y-auto')
+    }
+    const ultimo = cartao('observacoes')
+    expect(ultimo.querySelector('[data-campo-texto="observacoes"]')).toBeTruthy()
+    expect(within(ultimo).getByRole('button', { name: '✓ Aprovar' })).toBeTruthy()
+    // cada cartao tem so os seus itens
+    expect(within(cartao('anonimizacao_tipo')).queryByText('Idade')).toBeNull()
+    expect(cartao('idade_sexo').querySelector('[data-etapa="idade"]')).toBeTruthy()
   })
 
-  it('normal (vertical): sem colunas', () => {
+  it('normal (vertical): sem cartoes', () => {
     abrir({ tipo_radiografia: 'periapical' })
-    expect(document.querySelectorAll('[data-coluna]')).toHaveLength(0)
+    expect(cartoes()).toHaveLength(0)
   })
 
-  it('as teclas continuam andando pelos itens nas colunas', () => {
+  it('→ avanca e ← volta pelos itens; os cartoes visiveis acompanham', () => {
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
     expect(aceso()).toBe('anonimizacao')
+    tecla('ArrowRight')
+    expect(aceso()).toBe('tipo')
+    tecla('ArrowRight')
+    tecla('ArrowRight')
+    tecla('ArrowRight')
+    tecla('ArrowRight')
+    expect(aceso()).toBe('qualidade')
+    // o cartao do item aceso fica no meio
+    expect(visiveis()).toEqual(['dentes', 'qualidade_origem', 'odontograma'])
+    tecla('ArrowLeft')
+    expect(aceso()).toBe('dentes')
+    expect(visiveis()).toEqual(['idade_sexo', 'dentes', 'qualidade_origem'])
+    // Tab tambem avanca; Shift+Tab volta
     tecla('Tab')
-    expect(aceso()).not.toBe('anonimizacao')
+    expect(aceso()).toBe('qualidade')
+    tecla('Tab', { shiftKey: true })
+    expect(aceso()).toBe('dentes')
+  })
+
+  it('↑ / ↓ trocam a opcao do item aceso (as setas ← → agora andam entre os cartoes)', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    tecla('ArrowRight') // tipo
+    tecla('ArrowRight') // idade
+    tecla('ArrowRight') // genero
+    expect(aceso()).toBe('genero')
+    tecla('ArrowDown')
+    expect(estado.form.genero).not.toBe('')
+    expect(aceso()).toBe('genero')
+  })
+
+  it('o ultimo cartao aparece no fim: observacoes e Aprovar', () => {
+    abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
+    for (let i = 0; i < 20; i++) tecla('Tab')
+    expect(estado.etapa).toBe('aprovar')
+    expect(visiveis()).toEqual(['erro_tecnico', 'descricao', 'observacoes'])
   })
 })
 
@@ -384,7 +429,7 @@ describe('denticao, deciduos e odontograma de situacao', () => {
   it('panoramica: clicar no dente do odontograma escolhe a situacao (pode ter mais de uma)', async () => {
     const usuario = userEvent.setup()
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    const odonto = document.querySelector('[data-coluna="odontograma"]') as HTMLElement
+    const odonto = cartao('odontograma')
     await usuario.click(within(odonto).getByRole('button', { name: 'Dente 16' }))
     const situacao = within(odonto).getByRole('group', { name: 'Situação do dente 16' })
     await usuario.click(within(situacao).getByRole('button', { name: 'Restaurado' }))
@@ -400,18 +445,17 @@ describe('denticao, deciduos e odontograma de situacao', () => {
   it('odontograma mostra os deciduos com denticao mista; trocar para permanente limpa a situacao deles', async () => {
     const usuario = userEvent.setup()
     abrir({ tipo_radiografia: 'panoramica', denticao: 'mista', situacao_dentes: { '55': ['carie'], '16': ['ausente'] } }, {}, { horizontal: true })
-    const odonto = document.querySelector('[data-coluna="odontograma"]') as HTMLElement
+    const odonto = cartao('odontograma')
     expect(within(odonto).getByRole('button', { name: /Dente 55/ })).toBeTruthy()
     await usuario.click(within(dados()).getByRole('button', { name: 'Permanente' }))
     expect(estado.form.situacao_dentes).toEqual({ '16': ['ausente'] })
     expect(within(odonto).queryByRole('button', { name: /Dente 55/ })).toBeNull()
   })
 
-  it('panoramica: estruturas e achados fora dos dentes ficam na coluna dos achados', async () => {
+  it('panoramica: estruturas e achados fora dos dentes tem o seu cartao', async () => {
     const usuario = userEvent.setup()
     abrir({ tipo_radiografia: 'panoramica' }, {}, { horizontal: true })
-    const achados = document.querySelector('[data-coluna="achados"]') as HTMLElement
-    const grupo = within(achados).getByRole('group', { name: 'Estruturas e achados fora dos dentes' })
+    const grupo = within(cartao('estruturas')).getByRole('group', { name: 'Estruturas e achados fora dos dentes' })
     await usuario.click(within(grupo).getByRole('checkbox', { name: 'Ateroma carotídeo' }))
     await usuario.click(within(grupo).getByRole('checkbox', { name: 'Seios maxilares' }))
     expect(estado.form.estruturas_extradentais).toEqual(['ateroma_carotideo', 'seio_maxilar'])

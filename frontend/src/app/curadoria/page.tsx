@@ -1402,9 +1402,8 @@ export default function CuradoriaPage() {
   // panoramica com a ficha a mostra: imagem em cima, ficha embaixo em colunas
   const layoutPanoramica = !!fichaAtiva && fichaVisivel && form.tipo_radiografia === 'panoramica'
 
-  // painel da voz + Como laudar, Macros, Descartar e "Imagem X de Y": no
-  // topo da coluna da ficha; na PANORAMICA sobe para a linha do titulo (a
-  // ficha fica so com 1/3 da altura e precisa do espaco para as caixas)
+  // painel da voz + Como laudar, Macros, Descartar e "Imagem X de Y": na
+  // LINHA DO TITULO, em todos os tipos (23/11/2026 - a imagem ganha altura)
   const topoFicha = fichaAtiva ? (
     <PainelVoz
       embutido
@@ -1527,11 +1526,14 @@ export default function CuradoriaPage() {
           /* Cabecalho compacto, uma linha so (o espaco vertical e das
              imagens), no mesmo padrao visual das demais telas: logo,
              titulo no estilo titulo-pagina e o atalho para o inicio. */
-          <div className="flex shrink-0 items-center gap-3">
+          // LINHA UNICA (23/11/2026, todos os tipos): titulo, Inicio, voz
+          // (so o icone), Como laudar, Macros, Descartar, "Imagem X de Y",
+          // Modalidade e Tela cheia - a imagem fica com o resto da altura
+          <div data-linha-titulo className="flex shrink-0 flex-nowrap items-center gap-3 whitespace-nowrap">
             <Logo variante="icone" />
             <h1 className="titulo-pagina text-xl!">{t('titulo')}</h1>
             <BotaoInicio rotulo={t('inicio')} />
-            {layoutPanoramica && <div className="min-w-0 flex-1">{topoFicha}</div>}
+            {topoFicha && <div className="min-w-0 flex-1">{topoFicha}</div>}
             {!ehProfessor && !perguntandoModalidade && totalDaFila(porTipo) > 0 && (
               <CaixaModalidade porTipo={porTipo} valor={tipoFiltro} onEscolher={escolherModalidade} />
             )}
@@ -1604,7 +1606,7 @@ export default function CuradoriaPage() {
           >
             <div
               className={`flex min-h-0 min-w-0 flex-col gap-3 ${
-                layoutPanoramica ? 'flex-[2_1_0%]' : fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'
+                layoutPanoramica ? 'flex-1' : fichaVisivel && fichaAtiva ? 'w-1/2 flex-none' : 'flex-1'
               }`}
             >
               {/* Fila horizontal - entre a barra de acoes (Salvar/Aprovar/etc)
@@ -1781,7 +1783,7 @@ export default function CuradoriaPage() {
             </div>
 
             {fichaVisivel && fichaAtiva && (
-              <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'flex-[1_1_0%]' : 'flex-1'}`}>
+              <aside className={`flex min-h-0 min-w-0 flex-col gap-2 ${layoutPanoramica ? 'h-[clamp(17rem,32vh,18rem)] shrink-0' : 'flex-1'}`}>
                 <AvisoTextoNaImagem situacao={textoNaImagem.situacao} regioes={textoNaImagem.regioes} cortes={textoNaImagem.cortes} />
                 <div className="flex min-h-0 flex-1">
                 <ColunaFichaCuradoria
@@ -1802,7 +1804,6 @@ export default function CuradoriaPage() {
                   revisadas={revisadas}
                   onNadaRegistrar={nadaARegistrar}
                   acoesFinais={acoesFicha}
-                  topo={layoutPanoramica ? undefined : topoFicha}
                 />
                 </div>
               </aside>

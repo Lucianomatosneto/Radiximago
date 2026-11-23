@@ -1044,7 +1044,8 @@
         "erro_tecnico": "No technical error",
         "descricao": "No description",
         "observacoes": "No notes"
-      }
+      },
+      "cartoesPosicao": "Cards {inicio}–{fim} of {total} · → or Tab next, ← back, ↑ ↓ change the option"
     },
     "macroErroCriar": "Could not create the macro.",
     "macros": {
@@ -2080,8 +2081,8 @@
     "retomarEscuta": "Open microphone (Alt+V)",
     "enterIniciar": "⏎ Press Enter to start curation (opens the microphone)",
     "pausadoAprovar": "Microphone closed — press Enter to approve",
-    "espacoAudio": "Press space for audio",
-    "naoEntendi": "I did not understand: “{texto}”. Say the option again."
+    "naoEntendi": "I did not understand: “{texto}”. Say the option again.",
+    "espacoAudioDica": "Press space to curate by voice (tool in testing)"
   },
   "Macros": {
     "tituloPrefixo": "Curation",

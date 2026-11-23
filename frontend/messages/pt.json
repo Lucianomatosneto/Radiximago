@@ -1044,7 +1044,8 @@
         "erro_tecnico": "Sem erro técnico",
         "descricao": "Sem descrição",
         "observacoes": "Sem observações"
-      }
+      },
+      "cartoesPosicao": "Cartões {inicio}–{fim} de {total} · → ou Tab avança, ← volta, ↑ ↓ trocam a opção"
     },
     "macroErroCriar": "Não foi possível criar a macro.",
     "macros": {
@@ -2080,8 +2081,8 @@
     "retomarEscuta": "Abrir microfone (Alt+V)",
     "enterIniciar": "⏎ Pressione Enter para iniciar a curadoria (abre o microfone)",
     "pausadoAprovar": "Microfone fechado — aperte Enter para aprovar",
-    "espacoAudio": "Pressione espaço para áudio",
-    "naoEntendi": "Não entendi: “{texto}”. Fale de novo a opção."
+    "naoEntendi": "Não entendi: “{texto}”. Fale de novo a opção.",
+    "espacoAudioDica": "Pressione espaço para curar com áudio (ferramenta em teste)"
   },
   "Macros": {
     "tituloPrefixo": "Macros da",
