@@ -500,3 +500,90 @@ describe('correcao de 13/11/2026: acessibilidade da janela de motivo (defeito 2)
     expect(screen.queryByRole('dialog', { name: titulo })).toBeNull()
   })
 })
+
+// PEDIDO DO LUCIANO (23/11/2026): "as imagens abrem sem dar a possibilidade
+// de escolha". Com mais de uma modalidade na fila, a Curadoria PERGUNTA qual
+// o curador quer curar antes de abrir (e criar) qualquer ficha; a caixa
+// "Modalidade" no alto troca depois. Com uma so modalidade, nada muda.
+describe('escolher a modalidade', () => {
+  const POR_TIPO = { panoramica: 3, periapical: 1, intraoral: 2, nao_informado: 1 }
+  const FILA_PANORAMICA = 'GET /curation/pending?skip=0&limit=50&tipo=panoramica'
+  const varias = (extra: Record<string, Rota> = {}) =>
+    rotasPadrao({
+      [FILA]: { corpo: { itens: [IMAGEM(301), IMAGEM(302)], total_pendentes: 7, aguardando_recorte: 0, por_tipo: POR_TIPO } },
+      [FILA_PANORAMICA]: { corpo: { itens: [IMAGEM(302)], total_pendentes: 3, aguardando_recorte: 0, por_tipo: POR_TIPO } },
+      ...extra,
+    })
+
+  it('varias modalidades: pergunta antes de abrir; nenhuma ficha e criada', async () => {
+    const servidor = await abrir(varias())
+    const escolha = await screen.findByRole('group', { name: 'Qual modalidade você quer curar agora?' })
+    expect(within(escolha).getAllByRole('button').map((b) => b.textContent)).toEqual([
+      'Panorâmica3',
+      'Periapical1',
+      'Intraoral (tipo não informado)2',
+      'Não informado1',
+      'Todas7',
+    ])
+    expect(servidor.alteracoes()).toEqual([])
+    expect(screen.queryByRole('region', { name: 'ficha simplificada' })).toBeNull()
+  })
+
+  it('escolher "Panorâmica": pede a fila so dela, abre a 1a e guarda no endereco', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(varias())
+    const escolha = await screen.findByRole('group', { name: 'Qual modalidade você quer curar agora?' })
+    await usuario.click(within(escolha).getByRole('button', { name: /^Panorâmica/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+    expect(servidor.pedidos.some((p) => p.caminho === '/curation/pending?skip=0&limit=50&tipo=panoramica')).toBe(true)
+    expect(servidor.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/curation/302', corpo: {} })
+    expect(window.location.search).toBe('?tipo=panoramica')
+    expect((screen.getByRole('combobox', { name: 'Modalidade' }) as HTMLSelectElement).value).toBe('panoramica')
+    expect(screen.queryByRole('group', { name: 'Qual modalidade você quer curar agora?' })).toBeNull()
+  })
+
+  it('"Todas": abre a 1a da fila inteira, como antes', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(varias())
+    await usuario.click(await screen.findByRole('button', { name: /^Todas/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+    expect(servidor.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/curation/301', corpo: {} })
+    expect(window.location.search).toBe('')
+  })
+
+  it('a caixa "Modalidade" troca a fila depois (mostra quantas ha de cada)', async () => {
+    const usuario = userEvent.setup()
+    const servidor = await abrir(varias())
+    await usuario.click(await screen.findByRole('button', { name: /^Todas/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+    const caixa = screen.getByRole('combobox', { name: 'Modalidade' }) as HTMLSelectElement
+    expect(Array.from(caixa.options).map((o) => o.textContent)).toEqual([
+      'Todas (7)',
+      'Panorâmica (3)',
+      'Periapical (1)',
+      'Intraoral (tipo não informado) (2)',
+      'Não informado (1)',
+    ])
+    await usuario.selectOptions(caixa, 'panoramica')
+    await waitFor(() =>
+      expect(servidor.pedidos.some((p) => p.caminho === '/curation/pending?skip=0&limit=50&tipo=panoramica')).toBe(true),
+    )
+    expect(window.location.search).toBe('?tipo=panoramica')
+  })
+
+  it('endereco com ?tipo= ja abre filtrado, sem perguntar', async () => {
+    window.history.replaceState(null, '', '/curadoria?tipo=panoramica')
+    const servidor = await abrirComFicha(varias())
+    expect(servidor.pedidos.filter((p) => p.caminho.startsWith('/curation/pending')).map((p) => p.caminho)).toEqual([
+      '/curation/pending?skip=0&limit=50&tipo=panoramica',
+    ])
+    expect(servidor.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/curation/302', corpo: {} })
+  })
+
+  it('uma so modalidade na fila: abre sozinha, sem perguntar', async () => {
+    await abrirComFicha(
+      rotasPadrao({ [FILA]: { corpo: { itens: [IMAGEM(301), IMAGEM(302)], total_pendentes: 2, aguardando_recorte: 0, por_tipo: { periapical: 2 } } } }),
+    )
+    expect(screen.queryByRole('group', { name: 'Qual modalidade você quer curar agora?' })).toBeNull()
+  })
+})
