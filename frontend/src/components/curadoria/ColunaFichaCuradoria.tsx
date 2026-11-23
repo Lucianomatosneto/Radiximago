@@ -11,6 +11,8 @@ import { ETAPA_INICIAL, SECAO_DA_ETAPA, etapaVizinha, primeiraEtapa, type EtapaF
 import type { ItemConferencia } from '../../lib/conferenciaFicha'
 import { SECOES_OPCIONAIS, estadoSecoes, temConteudo, type EstadoSecao } from '../../lib/progressoFicha'
 import AjudaSecao from './AjudaSecao'
+import OdontogramaSituacao, { EstruturasExtradentais } from './OdontogramaSituacao'
+import { ESTRUTURAS, TIPOS_COM_ODONTOGRAMA } from '../../lib/situacaoDentaria'
 
 // COLUNA DA FICHA DE CURADORIA (metade direita da tela; a imagem e as
 // miniaturas ficam na metade esquerda).
@@ -381,6 +383,13 @@ export default function ColunaFichaCuradoria({
     </Secao>
   )
 
+  // PANORAMICA (23/11/2026): odontograma de situacao e estruturas fora dos
+  // dentes (lib/situacaoDentaria.ts). Fora do holofote do teclado: sao
+  // cliques no dente e caixas de marcar.
+  const comOdontograma = TIPOS_COM_ODONTOGRAMA.includes(form.tipo_radiografia)
+  const secaoOdontograma = comOdontograma ? <OdontogramaSituacao form={form} onChange={onChange} /> : null
+  const secaoEstruturas = comOdontograma ? <EstruturasExtradentais form={form} onChange={onChange} estruturas={ESTRUTURAS} /> : null
+
   const secaoErro = (
     <Secao {...p('erro_tecnico')}>
       <PainelErrosTecnicosFicha form={form} onChange={onChange} palavrasChave={etapaAtiva === 'erro_tecnico'} cursor={etapaAtiva === 'erro_tecnico' ? cursor : undefined} />
@@ -441,9 +450,13 @@ export default function ColunaFichaCuradoria({
     return (
       <div className="flex h-full min-h-0 w-full flex-col gap-2">
         {topo && <div className="shrink-0">{topo}</div>}
-        <div ref={rolagemRef} className="grid min-h-0 flex-1 grid-cols-[1.3fr_1fr_1fr_1fr] gap-3">
+        <div ref={rolagemRef} className={`grid min-h-0 flex-1 gap-3 ${comOdontograma ? 'grid-cols-[1.2fr_1.2fr_1fr_1fr_1fr]' : 'grid-cols-[1.3fr_1fr_1fr_1fr]'}`}>
           <div data-coluna="dados" className={coluna}>{secaoDados}</div>
-          <div data-coluna="achados" className={coluna}>{secaoAchados}</div>
+          {comOdontograma && <div data-coluna="odontograma" className={coluna}>{secaoOdontograma}</div>}
+          <div data-coluna="achados" className={coluna}>
+            {secaoAchados}
+            {secaoEstruturas}
+          </div>
           <div data-coluna="erro_tecnico" className={coluna}>{secaoErro}</div>
           <div data-coluna="descricao" className={coluna}>
             {secaoDescricao}
@@ -461,7 +474,9 @@ export default function ColunaFichaCuradoria({
 
       <div ref={rolagemRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-1 pr-1 pt-1">
         {secaoDados}
+        {secaoOdontograma}
         {secaoAchados}
+        {secaoEstruturas}
         {secaoErro}
         {secaoDescricao}
         {secaoObservacoes}
