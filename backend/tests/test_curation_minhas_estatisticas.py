@@ -103,10 +103,14 @@ def test_ranking_reflete_posicao_sem_revelar_outros_curadores(client, criar_usua
     assert corpo_a["posicao_ranking"] <= corpo_b["posicao_ranking"]
 
     # Nenhuma das duas respostas expoe id/nome/contagem do outro curador -
-    # so os 4 campos agregados, nada por-curador.
+    # so os campos agregados e os dados do PROPRIO curador (22/11/2026:
+    # "meus dados" - as fichas dele por situacao), nada de outro curador.
     assert set(corpo_a.keys()) == {
         "aprovadas_no_mes",
         "curadorias_no_mes",
         "posicao_ranking",
         "total_curadores",
+        "minhas_fichas_total",
+        "minhas_por_status",
     }
+    assert corpo_b["minhas_fichas_total"] == 1
