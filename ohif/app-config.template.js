@@ -749,3 +749,97 @@ window.config = {
     });
   }
 })();
+
+// ---------------------------------------------------------------------
+// MOUSE PRATICO (pedido do Luciano, 23/11/2026): zoom e deslocamento sem ir
+// aos icones da barra do OHIF, em todos os visualizadores do Radix.
+//  - arrastar com o botao ESQUERDO = mover a imagem (Pan);
+//  - arrastar com o DIREITO = brilho/contraste (WindowLevel);
+//  - arrastar com o do MEIO = zoom;
+//  - RODA = zoom no ponto do cursor (a imagem cresce "em volta" do que se
+//    aponta). Tomografia (varios cortes): a roda continua passando os
+//    cortes; o zoom fica no Ctrl + roda;
+//  - DUPLO CLIQUE = a imagem volta a caber no quadro.
+// As ligacoes sao aplicadas UMA vez por grupo de ferramentas: se a pessoa
+// escolher outra ferramenta na barra (regua, por exemplo), ela vale.
+// ---------------------------------------------------------------------
+;(function () {
+  var ZOOM_MIN = 0.1;
+  var ZOOM_MAX = 40;
+  var PASSO = 1.15;
+  var configurados = {};
+
+  function configurarGrupos() {
+    var s = window.services;
+    if (!s || !s.toolGroupService) return;
+    var ids = [];
+    try { ids = s.toolGroupService.getToolGroupIds() || []; } catch (e) { return; }
+    ids.forEach(function (id) {
+      if (configurados[id]) return;
+      var g = s.toolGroupService.getToolGroup(id);
+      if (!g || !g.hasTool || !g.hasTool('Pan') || !g.hasTool('WindowLevel')) return;
+      configurados[id] = true;
+      try {
+        ['Pan', 'WindowLevel', 'Zoom'].forEach(function (n) {
+          if (g.hasTool(n)) g.setToolPassive(n, { removeAllBindings: true });
+        });
+        g.setToolActive('Pan', { bindings: [{ mouseButton: 1 }] });
+        g.setToolActive('WindowLevel', { bindings: [{ mouseButton: 2 }] });
+        if (g.hasTool('Zoom')) g.setToolActive('Zoom', { bindings: [{ mouseButton: 4 }] });
+      } catch (e) { /* fica com as ligacoes do OHIF */ }
+    });
+  }
+  setInterval(configurarGrupos, 1000);
+
+  // os ouvintes da roda e do duplo clique entram uma vez so por pagina
+  if (window.__radixMouseOuvindo) return;
+  window.__radixMouseOuvindo = true;
+
+  function viewportSob(alvo) {
+    var s = window.services;
+    var quadro = alvo && alvo.closest ? alvo.closest('[data-viewport-uid]') : null;
+    if (!quadro || !s || !s.cornerstoneViewportService) return null;
+    var vp = null;
+    try { vp = s.cornerstoneViewportService.getCornerstoneViewport(quadro.getAttribute('data-viewport-uid')); } catch (e) { vp = null; }
+    return vp ? { vp: vp, quadro: quadro } : null;
+  }
+
+  window.addEventListener('wheel', function (ev) {
+    var achado = viewportSob(ev.target);
+    if (!achado) return;
+    var vp = achado.vp;
+    var cortes = 1;
+    try { cortes = (vp.getImageIds && vp.getImageIds().length) || 1; } catch (e) { cortes = 1; }
+    if (cortes > 1 && !ev.ctrlKey) return; // tomografia: a roda passa os cortes
+    ev.preventDefault();
+    ev.stopPropagation();
+    try {
+      var r = achado.quadro.getBoundingClientRect();
+      var ponto = [ev.clientX - r.left, ev.clientY - r.top];
+      var antes = vp.canvasToWorld(ponto);
+      var atual = vp.getZoom();
+      var novo = ev.deltaY < 0 ? atual * PASSO : atual / PASSO;
+      novo = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, novo));
+      if (novo === atual) return;
+      vp.setZoom(novo);
+      // o ponto sob o cursor volta para baixo do cursor
+      var depois = vp.canvasToWorld(ponto);
+      var cam = vp.getCamera();
+      var d = [antes[0] - depois[0], antes[1] - depois[1], antes[2] - depois[2]];
+      vp.setCamera({
+        focalPoint: [cam.focalPoint[0] + d[0], cam.focalPoint[1] + d[1], cam.focalPoint[2] + d[2]],
+        position: [cam.position[0] + d[0], cam.position[1] + d[1], cam.position[2] + d[2]],
+      });
+      vp.render();
+    } catch (e) { /* sem zoom nesta imagem */ }
+  }, { capture: true, passive: false });
+
+  window.addEventListener('dblclick', function (ev) {
+    var achado = viewportSob(ev.target);
+    if (!achado) return;
+    try {
+      achado.vp.resetCamera();
+      achado.vp.render();
+    } catch (e) { /* ignora */ }
+  }, true);
+})();

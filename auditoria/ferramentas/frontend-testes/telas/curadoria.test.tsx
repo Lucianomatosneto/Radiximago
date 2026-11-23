@@ -550,6 +550,18 @@ describe('escolher a modalidade', () => {
     expect(screen.queryByRole('region', { name: 'ficha simplificada' })).toBeNull()
   })
 
+  // 23/11/2026 (tela do Luciano): enquanto pergunta, as miniaturas da fila
+  // apareciam como caixas vazias (so carregam com uma imagem aberta) e
+  // pareciam "imagens que nao carregam". A fila so aparece depois da escolha.
+  it('enquanto pergunta, a fila de miniaturas nao aparece', async () => {
+    const usuario = userEvent.setup()
+    await abrir(varias())
+    await screen.findByRole('group', { name: 'Qual modalidade você quer curar agora?' })
+    expect(screen.queryByRole('region', { name: 'Fila de curadoria' })).toBeNull()
+    await usuario.click(screen.getByRole('button', { name: /^Panorâmica/ }))
+    await screen.findByRole('region', { name: 'ficha simplificada' })
+  })
+
   it('escolher "Panorâmica": pede a fila so dela, abre a 1a e guarda no endereco', async () => {
     const usuario = userEvent.setup()
     const servidor = await abrir(varias())
@@ -561,6 +573,12 @@ describe('escolher a modalidade', () => {
     expect(window.location.search).toBe('?tipo=panoramica')
     expect((screen.getByRole('combobox', { name: 'Modalidade' }) as HTMLSelectElement).value).toBe('panoramica')
     expect(screen.queryByRole('group', { name: 'Qual modalidade você quer curar agora?' })).toBeNull()
+  })
+
+  it('com intraorais na fila, oferece a triagem para separar periapical, interproximal e oclusal', async () => {
+    await abrir(varias())
+    const link = await screen.findByRole('link', { name: /Separar as intraorais por tipo/ })
+    expect(link.getAttribute('href')).toBe('/curadoria/triagem?tipo=intraoral')
   })
 
   it('"Todas": abre a 1a da fila inteira, como antes', async () => {

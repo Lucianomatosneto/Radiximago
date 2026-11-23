@@ -3264,7 +3264,8 @@
     "caixa": "Modality",
     "pergunta": "Which modality do you want to curate now?",
     "perguntaExplica": "Choose the exam type; its first image opens next. You can change it later in the \"Modality\" box.",
-    "opcao": "{nome} ({total})"
+    "opcao": "{nome} ({total})",
+    "triagem": "Sort the intraoral images by type (triage)"
   },
   "SituacaoDentaria": {
     "denticao": "Dentition",
@@ -3300,5 +3301,26 @@
       "lesao_ossea_radiolucida": "Radiolucent bone lesion",
       "lesao_ossea_radiopaca": "Radiopaque bone lesion"
     }
+  },
+  "Triagem": {
+    "tituloPrefixo": "Modality",
+    "tituloDestaque": "triage",
+    "explica": "The system only recognizes CT and panoramic on its own. Periapical, bitewing and occlusal share the same DICOM label and arrive as \"intraoral\". Select the images (click the thumbnail; ⤢ enlarges) and set the type at once. Each record will start with that type.",
+    "voltar": "Back to Curation",
+    "mostrar": "Show",
+    "selecionarTodas": "Select all",
+    "selecionadas": "{n, plural, one {1 selected} other {# selected}}",
+    "limpar": "Clear selection",
+    "marcarComo": "Mark the selected as",
+    "imagem": "Image {id}",
+    "ampliar": "Enlarge image {id}",
+    "ampliada": "Image {id} enlarged",
+    "fechar": "Close",
+    "marcadas": "{n, plural, one {1 image marked} other {# images marked}} as {tipo}.",
+    "vazio": "No images from this group in the queue.",
+    "carregarMais": "Load more ({faltam})",
+    "erroCarregar": "Could not load the queue.",
+    "erroMarcar": "Could not mark the images.",
+    "marcarComoCurto": "Mark as:"
   }
 }

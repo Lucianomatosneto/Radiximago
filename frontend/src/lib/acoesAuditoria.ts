@@ -151,6 +151,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('importacao_orthanc', 'Importação do Orthanc', 'Orthanc import'),
       a('anonimizacao_automatica', 'Anonimização automática', 'Automatic anonymization'),
       a('imagem_girada', 'Imagem girada', 'Image rotated'),
+      a('triagem_modalidade', 'Triagem da modalidade', 'Modality triage'),
       a('moldura_recortada', 'Moldura branca recortada', 'White frame cropped'),
       a('curadorias_zeradas', 'Curadorias zeradas (roteiro)', 'Curations reset (script)'),
       a('prancha_gerada', 'Prancha gerada', 'Study sheet generated'),

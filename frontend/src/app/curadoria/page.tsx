@@ -1568,7 +1568,8 @@ export default function CuradoriaPage() {
             e a pagina inteira fica em tela cheia. */}
         <div
           ref={visualizadorRef}
-          className="flex min-h-0 min-w-0 flex-1 flex-col"
+          // enquanto pergunta a modalidade, a area de trabalho (vazia) some
+          className={`min-h-0 min-w-0 flex-1 flex-col ${perguntandoModalidade ? 'hidden' : 'flex'}`}
         >
           {/* Tela em DUAS METADES:
               - ESQUERDA: miniaturas (5 por vez) no topo e a imagem;
@@ -1603,7 +1604,10 @@ export default function CuradoriaPage() {
                   (servem para escolher a primeira). Durante a curadoria ficam
                   escondidas - a navegacao e pelas setas ←/→ da barra
                   "Imagem X de Y" e pela aprovacao, que abre a proxima. */}
-              {!(fichaVisivel && fichaAtiva) && (
+              {/* 23/11/2026: enquanto pergunta a modalidade, a fila nao
+                  aparece - as miniaturas so carregam com uma imagem aberta e
+                  ficavam como caixas vazias ("imagens que nao carregam") */}
+              {!(fichaVisivel && fichaAtiva) && !perguntandoModalidade && (
               <FilaCuradoriaHorizontal
                 fila={fila}
                 carregando={carregandoFila}
