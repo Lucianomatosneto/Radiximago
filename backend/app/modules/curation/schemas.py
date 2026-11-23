@@ -66,6 +66,18 @@ class Marcacao(BaseModel):
     # com `achado` de proposito (mesmo padrao tolerante ja usado em outros
     # campos de texto livre da ficha, ex.: parecer_revisor).
     achado_descricao: Optional[TextoCurto] = None
+    # TOMOGRAFIA (23/11/2026, pedido do Luciano, "opcao 1"): a marcacao fica
+    # num CORTE de um PLANO; as coordenadas sao relativas a imagem desse
+    # corte (GET /reconstrucao/{ref}/plano.png). Os dois andam juntos; sem
+    # eles e marcacao de radiografia, como sempre.
+    plano: Optional[Literal["axial", "sagital", "coronal"]] = None
+    corte: Optional[int] = Field(default=None, ge=0, le=100000)
+
+    @model_validator(mode="after")
+    def _plano_e_corte_juntos(self):
+        if (self.plano is None) != (self.corte is None):
+            raise ValueError("Marcação de tomografia precisa do plano e do número do corte.")
+        return self
 
     @model_validator(mode="after")
     def _coordenadas_do_tipo(self):
