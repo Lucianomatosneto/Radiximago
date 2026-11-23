@@ -776,6 +776,9 @@ window.config = {
     try { ids = s.toolGroupService.getToolGroupIds() || []; } catch (e) { return; }
     ids.forEach(function (id) {
       if (configurados[id]) return;
+      // o quadro 3D da tomografia (grupo "volume3d") fica com o do OHIF:
+      // botao esquerdo GIRA o volume (23/11/2026)
+      if (id === 'volume3d') return;
       var g = s.toolGroupService.getToolGroup(id);
       if (!g || !g.hasTool || !g.hasTool('Pan') || !g.hasTool('WindowLevel')) return;
       configurados[id] = true;
@@ -1003,4 +1006,190 @@ window.config = {
       : 'Mostra a imagem em milímetros reais (precisa calibrar a tela uma vez).';
   }
   setInterval(montarCaixa, 700);
+})();
+
+// ---------------------------------------------------------------------
+// VISUALIZADOR DA TOMOGRAFIA (pedido do Luciano, 23/11/2026): "manter o
+// padrao Radix mas com todos os recursos para manipular a imagem, gerando um
+// 3D, podendo mudar para filtro osso e partes moles". O OHIF (cornerstone3D)
+// ja tem esses recursos; aqui eles ganham um painel proprio, "Tomografia",
+// que so aparece quando a serie aberta e uma TOMOGRAFIA (modalidade CT com
+// varios cortes):
+//  - Visualizacao (protocolos do OHIF): Axial (default), 3 planos (mpr),
+//    4 quadros (fourUp = 3 planos + 3D) e 3D (only3D). Abre sozinha em
+//    4 quadros, uma vez por estudo;
+//  - Filtro (janela/nivel nos planos): Osso 1800/400, Partes moles 400/40,
+//    Dentes 3000/1000 e Original (a janela do proprio exame);
+//  - 3D (predefinicoes do volume): osso, partes moles e MIP;
+//  - Espessura nos planos: Fina ou MIP (projecao de maxima intensidade)
+//    de 5, 10 ou 20 mm - "corte grosso", bom para ver canal e raizes;
+//  - o painel recolhe para liberar a imagem.
+// No quadro 3D o botao esquerdo GIRA o volume (o grupo "volume3d" fica fora
+// do "mouse pratico" acima).
+// ---------------------------------------------------------------------
+;(function () {
+  var VISUALIZACOES = [['Axial', 'default'], ['3 planos', 'mpr'], ['4 quadros', 'fourUp'], ['3D', 'only3D']];
+  var FILTROS = [['Osso', 1800, 400], ['Partes moles', 400, 40], ['Dentes', 3000, 1000], ['Original', 0, 0]];
+  var PRESETS_3D = [['3D osso', 'CT-Bone'], ['3D partes moles', 'CT-Soft-Tissue'], ['3D MIP', 'CT-MIP']];
+  var ESPESSURAS = [['Fina', 0], ['MIP 5 mm', 5], ['MIP 10 mm', 10], ['MIP 20 mm', 20]];
+  var painel = null;
+  var recolhido = false;
+  var escolhas = { visual: 'fourUp', filtro: '', preset: '', espessura: 0 };
+  var estudosAbertos = {};
+
+  function servicos() { return window.services || null; }
+
+  function displaySetAtivo() {
+    var s = servicos();
+    if (!s || !s.viewportGridService || !s.displaySetService) return null;
+    try {
+      var estado = s.viewportGridService.getState();
+      var vp = estado.viewports.get(estado.activeViewportId);
+      var uid = vp && vp.displaySetInstanceUIDs && vp.displaySetInstanceUIDs[0];
+      return uid ? s.displaySetService.getDisplaySetByUID(uid) : null;
+    } catch (e) { return null; }
+  }
+
+  function eTomografia(ds) {
+    return !!ds && ds.Modality === 'CT' && !!ds.instances && ds.instances.length > 1;
+  }
+
+  // todos os quadros da tela: [{ vp, e3d }]
+  function quadros() {
+    var s = servicos();
+    var lista = [];
+    if (!s || !s.viewportGridService || !s.cornerstoneViewportService) return lista;
+    try {
+      s.viewportGridService.getState().viewports.forEach(function (_v, id) {
+        var vp = s.cornerstoneViewportService.getCornerstoneViewport(id);
+        if (vp) lista.push({ vp: vp, e3d: vp.type === 'volume3d' });
+      });
+    } catch (e) { /* sem quadros */ }
+    return lista;
+  }
+
+  function comando(nome, opcoes) {
+    try { if (window.commandsManager) window.commandsManager.runCommand(nome, opcoes); } catch (e) { /* ignora */ }
+  }
+
+  function visualizacao(protocolo) {
+    escolhas.visual = protocolo;
+    comando('setHangingProtocol', { protocolId: protocolo });
+    montar(true);
+  }
+
+  function filtro(nome, janela, nivel) {
+    escolhas.filtro = nome;
+    quadros().forEach(function (q) {
+      if (q.e3d) return;
+      try {
+        if (!janela) { if (q.vp.resetProperties) q.vp.resetProperties(); }
+        else q.vp.setProperties({ voiRange: { lower: nivel - janela / 2, upper: nivel + janela / 2 } });
+        q.vp.render();
+      } catch (e) { /* quadro sem janela */ }
+    });
+    montar(true);
+  }
+
+  function preset3d(nome) {
+    escolhas.preset = nome;
+    quadros().forEach(function (q) {
+      if (!q.e3d) return;
+      try { q.vp.setProperties({ preset: nome }); q.vp.render(); } catch (e) { /* ignora */ }
+    });
+    montar(true);
+  }
+
+  function espessura(mm) {
+    escolhas.espessura = mm;
+    quadros().forEach(function (q) {
+      if (q.e3d || !q.vp.setBlendMode) return;
+      try {
+        // 1 = MAXIMUM_INTENSITY_BLEND, 0 = COMPOSITE (cornerstone3D BlendModes)
+        q.vp.setBlendMode(mm ? 1 : 0);
+        q.vp.setProperties({ slabThickness: mm || 0.1 });
+        q.vp.render();
+      } catch (e) { /* ignora */ }
+    });
+    montar(true);
+  }
+
+  function botao(texto, ativo, aoClicar, rotulo) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = texto;
+    if (rotulo) b.setAttribute('aria-label', rotulo);
+    if (ativo !== null) b.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+    b.style.cssText = 'border-radius:6px;padding:2px 8px;font:500 12px Inter,system-ui,sans-serif;cursor:pointer;border:1px solid ' +
+      (ativo ? '#2dd4bf;background:#0d9488;color:#fff' : '#2dd4bf55;background:#0f172a;color:#e2e8f0');
+    b.addEventListener('click', aoClicar);
+    return b;
+  }
+
+  function grupo(titulo, itens) {
+    var g = document.createElement('div');
+    g.setAttribute('role', 'group');
+    g.setAttribute('aria-label', titulo);
+    g.style.cssText = 'display:flex;align-items:center;gap:4px';
+    var t = document.createElement('span');
+    t.textContent = titulo + ':';
+    t.style.cssText = 'color:#94a3b8;font:600 11px Inter,system-ui,sans-serif';
+    g.appendChild(t);
+    itens.forEach(function (b) { g.appendChild(b); });
+    return g;
+  }
+
+  function montar(refazer) {
+    var grade = document.querySelector('[data-cy="viewport-grid"]');
+    if (!grade || !grade.parentElement) return;
+    if (painel && painel.isConnected && !refazer) return;
+    if (!painel || !painel.isConnected) {
+      painel = document.createElement('div');
+      painel.setAttribute('role', 'toolbar');
+      painel.setAttribute('aria-label', 'Tomografia');
+      painel.style.cssText = 'position:absolute;top:6px;left:10px;z-index:20;display:flex;flex-wrap:wrap;align-items:center;gap:10px;max-width:calc(100% - 330px);padding:4px 8px;border-radius:8px;background:#020617e6;border:1px solid #2dd4bf55';
+      var pai = grade.parentElement;
+      if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
+      pai.appendChild(painel);
+    }
+    while (painel.firstChild) painel.removeChild(painel.firstChild);
+    if (recolhido) {
+      painel.appendChild(botao('▸ Tomografia', null, function () { recolhido = false; montar(true); }, 'Abrir painel da tomografia'));
+      return;
+    }
+    painel.appendChild(botao('◂', null, function () { recolhido = true; montar(true); }, 'Recolher painel da tomografia'));
+    painel.appendChild(grupo('Visualização', VISUALIZACOES.map(function (v) {
+      return botao(v[0], escolhas.visual === v[1], function () { visualizacao(v[1]); });
+    })));
+    painel.appendChild(grupo('Filtro', FILTROS.map(function (f) {
+      return botao(f[0], escolhas.filtro === f[0], function () { filtro(f[0], f[1], f[2]); });
+    })));
+    painel.appendChild(grupo('3D', PRESETS_3D.map(function (p) {
+      return botao(p[0], escolhas.preset === p[1], function () { preset3d(p[1]); });
+    })));
+    painel.appendChild(grupo('Espessura', ESPESSURAS.map(function (e) {
+      return botao(e[0], escolhas.espessura === e[1], function () { espessura(e[1]); });
+    })));
+  }
+
+  function desmontar() {
+    if (painel && painel.parentNode) painel.parentNode.removeChild(painel);
+    painel = null;
+    document.body.classList.remove('radix-tc');
+  }
+
+  function verificar() {
+    var ds = displaySetAtivo();
+    if (!eTomografia(ds)) { desmontar(); return; }
+    document.body.classList.add('radix-tc');
+    var estudo = ds.StudyInstanceUID || ds.displaySetInstanceUID;
+    if (!estudosAbertos[estudo]) {
+      // abre sozinha em 4 quadros (3 planos + 3D), uma vez por estudo
+      estudosAbertos[estudo] = true;
+      escolhas = { visual: 'fourUp', filtro: '', preset: '', espessura: 0 };
+      comando('setHangingProtocol', { protocolId: 'fourUp' });
+    }
+    montar(false);
+  }
+  setInterval(verificar, 700);
 })();
