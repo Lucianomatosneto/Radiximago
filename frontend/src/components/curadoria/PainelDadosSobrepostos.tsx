@@ -3,7 +3,7 @@
 import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
 import type { FormularioFicha } from './FichaCuradoriaForm'
-import { REGIOES, regioesAoTrocarExame } from '../../lib/achadosFicha'
+import { regioesAoTrocarExame } from '../../lib/achadosFicha'
 import { errosParaTipo } from '../../lib/errosTecnicos'
 import type { EtapaFicha } from '../../lib/secoesCuradoria'
 
@@ -101,7 +101,6 @@ export default function PainelDadosSobrepostos({
 }) {
   const t = useTranslations('Curadoria.dadosSobrepostos')
   const tOpcoes = useTranslations('Pesquisa.opcoes')
-  const tRegioes = useTranslations('Curadoria.achadosEstruturados.regioes')
   const pk = (e: EtapaFicha) => etapa === e
   // so avanca se o clique foi no item que esta com o holofote
   const escolhido = (e: EtapaFicha) => {
@@ -195,35 +194,10 @@ export default function PainelDadosSobrepostos({
         </>
       )}
 
-      {/* 01/11/2026 - regioes que a imagem mostra (filtro "Região anatômica"
-          da Pesquisa avancada); panoramica e tomografia ja vem sugeridas */}
-      <div className="px-1">
-        <p className={`${campoLabel} mb-1.5`}>{t('regioesImagem')}</p>
-        <div className="flex flex-wrap gap-1" role="group" aria-label={t('regioesImagem')}>
-          {REGIOES.map((r) => {
-            const marcada = form.regioes_imagem.includes(r)
-            return (
-              <button
-                key={r}
-                type="button"
-                aria-pressed={marcada}
-                onClick={() =>
-                  onChange({
-                    ...form,
-                    regioes_imagem: marcada ? form.regioes_imagem.filter((x) => x !== r) : [...form.regioes_imagem, r],
-                  })
-                }
-                className={`rounded-full border px-2 py-0.5 text-[11px] ${
-                  marcada ? 'border-brand bg-brand/80 text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
-                }`}
-              >
-                {tRegioes(r)}
-              </button>
-            )
-          })}
-        </div>
-        <p className="mt-1 text-[11px] text-slate-400">{t('regioesImagemAjuda')}</p>
-      </div>
+      {/* 22/11/2026 - "Regioes que a imagem mostra" saiu da tela (decisao do
+          Luciano). O campo continua no servidor: panoramica e tomografia
+          recebem as regioes padrao do exame sozinhas (regioesAoTrocarExame),
+          e o filtro de regiao da Pesquisa segue pelos achados marcados */}
 
       {item(
         'idade',

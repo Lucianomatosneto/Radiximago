@@ -75,6 +75,10 @@ DESTINOS_POR_PERFIL = {
     UserRole.administrador: {DestinoImagem.FILA.value, DestinoImagem.PESSOAL.value},
 }
 NOTA_MAX = 500
+# Aviso com aceite ao entrar em "Enviar imagem" (pedido de 22/11/2026). O
+# texto fica nas mensagens da tela (EnviarImagem.avisoEnvio); se mudar, suba
+# a versao - a auditoria guarda qual versao a pessoa aceitou.
+AVISO_ENVIO_VERSAO = "2026-11-22"
 
 
 def _perfil(usuario: User) -> str:
@@ -232,6 +236,19 @@ def _auditar_recusa(db: Session, usuario: User, motivo: str, janela_id: int | No
     db.add(AuditLog(usuario_id=usuario.id, acao="foto_recusada", entidade="janela_envio_foto",
                     entidade_id=janela_id, resultado="falha", detalhes=f"motivo={motivo}"))
     db.commit()
+
+
+@router.post("/aviso-ciente")
+def registrar_aviso_ciente(usuario: User = Depends(exigir_perfis(*PERFIS_QUE_ENVIAM)),
+                           db: Session = Depends(get_db)):
+    """A pessoa marcou "Estou ciente" no aviso da tela Enviar imagem: a
+    imagem nao tem finalidade diagnostica e a original vai ao prontuario do
+    paciente conforme o protocolo da instituicao. Fica na auditoria."""
+    db.add(AuditLog(usuario_id=usuario.id, acao="aviso_envio_ciente", entidade="user",
+                    entidade_id=usuario.id, resultado="sucesso",
+                    detalhes=f"versao {AVISO_ENVIO_VERSAO}"))
+    db.commit()
+    return {"versao": AVISO_ENVIO_VERSAO}
 
 
 @router.post("/foto/iniciar")

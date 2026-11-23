@@ -198,7 +198,10 @@ export default function MeusGruposPage() {
                 <button type="submit" className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand-hover">{t('procurar')}</button>
               </form>
               {achados && (achados.length === 0 ? (
-                <p className="text-sm text-ink-3">{t('nenhumGrupo')}</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-ink-3">{t('nenhumGrupo')}</p>
+                  <p className="text-xs text-ink-3">{t('nenhumGrupoAjuda')}</p>
+                </div>
               ) : (
                 <ul aria-label={t('procurarTitulo')} className="space-y-2">
                   {achados.map((g) => (

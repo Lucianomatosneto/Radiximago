@@ -126,6 +126,8 @@ def _campos_minimos_faltando(ficha) -> list:
     faltando = []
     if not ficha.tipo_radiografia:
         faltando.append("tipo de radiografia")
+    # 22/11/2026: "Regioes da imagem" saiu da tela; panoramica e tomografia
+    # continuam passando pelas regioes padrao do exame
     if not (ficha.dentes or ficha.regioes_imagem):
         faltando.append("dente ou região anatômica")
     if not (ficha.achado_principal or ficha.alteracoes_observadas or getattr(ficha, "achados", None)):

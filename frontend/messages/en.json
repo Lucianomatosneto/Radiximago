@@ -1877,7 +1877,9 @@
   "Compartilhar": {
     "titulo": "Share",
     "abrir": "Share this image and your notes with another user",
-    "placeholderEmail": "The person's registered e-mail",
+    "placeholderEmail": "Person's name or email",
+    "erroEscolher": "Pick the person from the list or type the full email.",
+    "sugestoes": "People found",
     "placeholderMensagem": "Note for the recipient (optional)",
     "explicacao": "The person will see the image and only the note written here (read-only), in \"Shared with me\". Your \"My notes\" stay private. You can undo it at any time.",
     "cancelar": "Cancel",
@@ -2656,6 +2658,14 @@
   },
   "EnviarImagem": {
     "titulo": "Send image",
+    "avisoEnvio": {
+      "titulo": "Before you send",
+      "finalidade": "The image sent to Rádix Imago is used only for teaching and research and is not intended for diagnosis.",
+      "prontuario": "The original exam image must be attached to the patient's record, following your institution's protocol. Rádix does not replace the patient record.",
+      "ciente": "I understand",
+      "voltar": "Back",
+      "erro": "Could not record your acknowledgement. Please try again."
+    },
     "carregando": "Loading...",
     "subtituloEstudante": "Send a photo of a radiograph from your phone or a DICOM file from your computer. Choose whether it stays with you only or goes to a professor or curator for review.",
     "subtituloEquipe": "Send a photo of a radiograph from your phone or DICOM files. They go to the curation queue, where the curator decides what enters the image bank.",
@@ -2826,6 +2836,7 @@
     "aceitaPedidos": "Accept requests from students (the group shows up when searching by name)",
     "aparecesNaBusca": "Shows up in search",
     "foraDaBusca": "Hidden from search",
+    "foraDaBuscaAjuda": "Students cannot find this group by searching its name; only people you invite can join. To change it, use Edit and tick \"Accept requests from students\".",
     "participantes": "Participants",
     "origem_convite": "accepted invitation",
     "origem_pedido": "request approved",
@@ -2889,6 +2900,7 @@
     "procurar": "Search",
     "minimoLetras": "Type at least 3 letters.",
     "nenhumGrupo": "No group found with that name.",
+    "nenhumGrupoAjuda": "Only groups whose owner accepts requests show up here. If your class is not listed, ask your teacher for an invitation.",
     "criadoPor": "Created by {quem}",
     "pedirEntrar": "Ask to join",
     "pedirEntrarRotulo": "Ask to join group {grupo}",
