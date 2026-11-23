@@ -7,7 +7,7 @@
 // aparece no proprio dente. Os deciduos (51-85) aparecem com denticao mista
 // ou decidua. Gravado em situacao_dentes ({"16": ["restaurado"]}).
 
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { FormularioFicha } from './FichaCuradoriaForm'
 import { useFichaCompacta } from './FichaCompacta'
@@ -21,10 +21,14 @@ const SIGLA = Object.fromEntries(SITUACOES.map((s) => [s.valor, s.sigla]))
 export default function OdontogramaSituacao({
   form,
   onChange,
+  arcada,
 }: {
   form: FormularioFicha
   onChange: (form: FormularioFicha) => void
+  /** cartoes baixos (23/11/2026): so a arcada superior ou a inferior */
+  arcada?: 'superior' | 'inferior'
 }) {
+  const idTitulo = useId()
   const t = useTranslations('SituacaoDentaria')
   // no cartao da panoramica (altura fixa, sem rolar) a explicacao e a
   // legenda viram dica do titulo (aparecem no mouse)
@@ -63,21 +67,22 @@ export default function OdontogramaSituacao({
   )
 
   return (
-    <section aria-labelledby="titulo-odontograma" className={`rounded-xl border border-base-border bg-base-surface/60 ${compacta ? 'h-full p-2' : 'p-2.5'}`}>
-      <h3 id="titulo-odontograma" className="mb-1 text-sm font-semibold text-slate-300" title={compacta ? `${t('odontogramaExplica')} ${legenda}` : undefined}>
+    <section aria-labelledby={idTitulo} className={`rounded-xl border border-base-border bg-base-surface/60 ${compacta ? 'h-full px-2 py-1' : 'p-2.5'}`}>
+      <h3 id={idTitulo} className={`font-semibold text-slate-300 ${compacta ? 'mb-0.5 text-xs' : 'mb-1 text-sm'}`} title={compacta ? `${t('odontogramaExplica')} ${legenda}` : undefined}>
         {t('odontograma')}
+        {arcada && ` · ${t(`arcada.${arcada}`)}`}
       </h3>
       {!compacta && <p className="mb-1.5 text-[11px] text-slate-400">{t('odontogramaExplica')}</p>}
       <div className={`rounded-lg border border-teal-500/30 bg-teal-600/10 ${compacta ? 'space-y-0.5 p-1' : 'space-y-1 p-1.5'}`}>
-        {linha(PERMANENTES_SUPERIOR)}
-        {deciduos && linha(DECIDUOS_SUPERIOR, true)}
-        <div className="border-t border-white/10" />
-        {deciduos && linha(DECIDUOS_INFERIOR, true)}
-        {linha(PERMANENTES_INFERIOR)}
+        {arcada !== 'inferior' && linha(PERMANENTES_SUPERIOR)}
+        {arcada !== 'inferior' && deciduos && linha(DECIDUOS_SUPERIOR, true)}
+        {!arcada && <div className="border-t border-white/10" />}
+        {arcada !== 'superior' && deciduos && linha(DECIDUOS_INFERIOR, true)}
+        {arcada !== 'superior' && linha(PERMANENTES_INFERIOR)}
       </div>
 
       {denteAberto !== null && (
-        <div role="group" aria-label={t('situacaoDoDente', { numero: denteAberto })} className="mt-2 flex flex-wrap gap-1">
+        <div role="group" aria-label={t('situacaoDoDente', { numero: denteAberto })} className={`flex flex-wrap gap-1 ${compacta ? 'mt-0.5' : 'mt-2'}`}>
           {SITUACOES.map(({ valor, sigla }) => {
             const marcada = (form.situacao_dentes[String(denteAberto)] ?? []).includes(valor)
             return (
@@ -86,7 +91,7 @@ export default function OdontogramaSituacao({
                 type="button"
                 aria-pressed={marcada}
                 onClick={() => onChange({ ...form, situacao_dentes: alternarSituacao(form.situacao_dentes, denteAberto, valor) })}
-                className={`rounded-full border px-2 py-0.5 text-[11px] ${
+                className={`rounded-full border ${compacta ? 'px-1.5 py-0 text-[10.5px]' : 'px-2 py-0.5 text-[11px]'} ${
                   marcada ? 'border-brand bg-brand text-white' : 'border-base-border text-slate-300 hover:border-brand/50'
                 }`}
               >
@@ -129,8 +134,8 @@ export function EstruturasExtradentais({
   }
   return (
     <fieldset className={`rounded-xl border border-base-border bg-base-surface/60 ${compacta ? 'h-full p-2' : 'p-2.5'}`}>
-      <legend className="px-1 text-sm font-semibold text-slate-300">{t('estruturasTitulo')}</legend>
-      <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+      <legend className={`px-1 font-semibold text-slate-300 ${compacta ? "text-xs" : "text-sm"}`}>{t("estruturasTitulo")}</legend>
+      <div className={compacta ? 'grid grid-cols-3 gap-x-2 gap-y-0 text-[11px] leading-4 [&_label]:text-[11px] [&_input]:h-3 [&_input]:w-3' : 'grid grid-cols-1 gap-1 sm:grid-cols-2'}>
         {estruturas.map((valor) => (
           <label key={valor} className="flex items-center gap-1.5 text-xs text-slate-300">
             <input
