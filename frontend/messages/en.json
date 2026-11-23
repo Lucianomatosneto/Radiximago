@@ -269,8 +269,7 @@
       "enviarImagem": "Send image",
       "grupos": "Groups",
       "aparelhos": "Network devices",
-      "pranchasRecebidas": "Received plates",
-      "meusGrupos": "My groups"
+      "pranchasRecebidas": "Received plates"
     },
     "novasCompartilhadas": "{quantidade} new",
     "abrirMenu": "Open the navigation menu",
@@ -2664,6 +2663,13 @@
     "verificarAgora": "Verify now",
     "verificando": "Verifying…",
     "erro": "Could not verify now. Try again in a moment."
+  },
+  "GruposUnico": {
+    "titulo": "Groups",
+    "carregando": "Loading...",
+    "abaCriei": "Groups I created",
+    "abaParticipo": "Groups I belong to",
+    "pendentes": "{n, plural, one {1 pending item} other {# pending items}}"
   },
   "EnviarImagem": {
     "titulo": "Send image",
