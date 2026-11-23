@@ -16,8 +16,14 @@ const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.f
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/minhas-imagens' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="menu lateral" /> }))
 vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <header aria-label="barra do topo" /> }))
-vi.mock('../../../../frontend/src/components/envios/SecaoEnvios', () => ({
-  default: ({ equipe }: { equipe: boolean }) => <section aria-label="meus envios">{equipe ? 'envios: equipe' : 'envios: pessoal'}</section>,
+// 22/11/2026: as imagens enviadas por mim viraram grade (GradeEnvios, teste proprio)
+vi.mock('../../../../frontend/src/components/envios/GradeEnvios', () => ({
+  default: ({ equipe, filtroTipo }: { equipe: boolean; filtroTipo: string | null }) => (
+    <section aria-label="meus envios">
+      {equipe ? 'envios: equipe' : 'envios: pessoal'}
+      <span data-teste="filtro-envios">{filtroTipo ?? 'todos'}</span>
+    </section>
+  ),
 }))
 vi.mock('../../../../frontend/src/components/MiniaturaImagem', () => ({
   // imagem "carregada" com proporcao 3:2 (as camadas de marcacao precisam dela)
@@ -125,6 +131,30 @@ describe('permissao por perfil e carregar', () => {
     servidorFalso(rotasPadrao({ [LISTA]: { status: 401 } }))
     montarTela(<MinhasImagensPage />)
     await waitFor(() => expect(roteador.push).toHaveBeenCalledWith('/login'))
+  })
+})
+
+describe('filtro por tipo (pedido do video, 22/11/2026)', () => {
+  it('mostra so as imagens do tipo escolhido e passa o filtro para as enviadas por mim; "Todos" volta', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ [LISTA]: { corpo: { itens: [imagem(101), imagem(102, { tipo_radiografia: 'tomografia' }), imagem(103)] } } }))
+    const filtro = screen.getByRole('group', { name: 'Filtrar por tipo' })
+    await usuario.click(within(filtro).getByRole('button', { name: 'Tomografia' }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(1)
+    expect(screen.getByText('tomografia', { selector: '[data-teste="filtro-envios"]' })).toBeTruthy()
+    expect(within(filtro).getByRole('button', { name: 'Tomografia' }).getAttribute('aria-pressed')).toBe('true')
+    await usuario.click(within(filtro).getByRole('button', { name: 'Todos' }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(3)
+    expect(screen.getByText('todos', { selector: '[data-teste="filtro-envios"]' })).toBeTruthy()
+  })
+
+  it('trocar o filtro limpa a selecao (nao fica imagem escondida marcada)', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao())
+    await usuario.click(caixa(1))
+    await usuario.click(within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', { name: 'Oclusal' }))
+    await usuario.click(within(screen.getByRole('group', { name: 'Filtrar por tipo' })).getByRole('button', { name: 'Todos' }))
+    expect(marcadas()).toEqual([])
   })
 })
 
