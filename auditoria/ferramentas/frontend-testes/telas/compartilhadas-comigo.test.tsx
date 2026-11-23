@@ -20,6 +20,12 @@ vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => <h
 vi.mock('../../../../frontend/src/components/envios/SecaoEnvios', () => ({
   default: ({ modo }: { modo: string }) => <section aria-label={`envios ${modo}`} />,
 }))
+// 22/11/2026: "Recebidas de colegas" virou grade (GradeEnvios, teste proprio)
+vi.mock('../../../../frontend/src/components/envios/GradeEnvios', () => ({
+  default: ({ modo, filtroTipo }: { modo: string; filtroTipo: string | null }) => (
+    <section aria-label={`envios ${modo}`} data-filtro={filtroTipo ?? 'todos'} />
+  ),
+}))
 vi.mock('../../../../frontend/src/components/MiniaturaImagem', () => ({
   default: ({ alt, onProporcao }: { alt: string; onProporcao?: (r: number) => void }) => {
     onProporcao?.(1.5)
@@ -57,6 +63,7 @@ function recebida(id: number, extra: object = {}) {
     novo: false,
     quantidade_anotacoes: 0,
     tipo_radiografia: 'periapical',
+    permite_resposta: true,
     achado_principal: 'carie',
     descricao_didatica: `Descrição de teste ${id}`,
     viewer_url: null,
@@ -131,6 +138,23 @@ describe('com imagens', () => {
     await waitFor(() => expect(vistas).toHaveBeenCalled())
     expect(servidor.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/shares/recebidas/vistas', corpo: undefined }])
     window.removeEventListener('radix-compartilhadas-vistas', vistas)
+  })
+
+  it('pedido do video (22/11): "responder" so aparece se quem enviou permitiu', async () => {
+    await abrir(rotasPadrao({ 'GET /shares/recebidas': { corpo: { itens: [recebida(1), recebida(2, { permite_resposta: false })] } } }))
+    expect(within(cartao(1)).getByText('responder a Professora 1')).toBeTruthy()
+    expect(within(cartao(2)).queryByText(/responder a/)).toBeNull()
+  })
+
+  it('pedido do video (22/11): filtro por tipo vale para as compartilhadas e para as recebidas de colegas', async () => {
+    const usuario = userEvent.setup()
+    await abrir(rotasPadrao({ 'GET /shares/recebidas': { corpo: { itens: [recebida(1), recebida(2, { tipo_radiografia: 'oclusal' }), recebida(3)] } } }))
+    const filtro = screen.getByRole('group', { name: 'Filtrar por tipo' })
+    await usuario.click(within(filtro).getByRole('button', { name: 'Oclusal' }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(1)
+    expect(screen.getByRole('region', { name: 'envios recebidas' }).getAttribute('data-filtro')).toBe('oclusal')
+    await usuario.click(within(filtro).getByRole('button', { name: 'Todos' }))
+    expect(screen.getAllByRole('checkbox', { name: /^Selecionar imagem #/ })).toHaveLength(3)
   })
 
   it('sem nenhuma nova: nao manda "vistas"', async () => {
