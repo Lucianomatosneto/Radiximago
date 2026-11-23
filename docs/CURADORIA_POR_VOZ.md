@@ -171,13 +171,15 @@ Seções: **Dados da imagem → Achados (marcações) → Erro técnico → Desc
   marca/desmarca; tipo, gênero e qualidade trocam a opção; em dentes e erro
   técnico as setas andam um cursor (contorno amarelo) e **Enter** marca/
   desmarca (curadoria manual, sem áudio).
-- **Panorâmica (ficha em cartões, 23/11/2026):** embaixo da imagem a ficha
-  vira 10 cartões que cabem sem rolar (só "Achados" rola se houver muitas
-  marcações); aparecem 3 por vez, com o cartão do item aceso no meio. Aqui
-  as setas trocam de papel: **→ / Tab** avançam, **← / Shift+Tab** voltam,
-  e **↑ / ↓** trocam a opção do item aceso. O item aceso não cresce
-  (sem o `zoom: 1.5`), para não passar da borda do cartão.
-
+- **Oclusal, panorâmica e tomografia (ficha em cartões, 23/11/2026):**
+  imagem em cima e, embaixo, cartões **baixos** (40% da altura da 1ª
+  versão) que cabem sem rolar (só "Achados" rola se houver muitas
+  marcações). O que não cabia virou mais cartões: decíduos, odontograma
+  superior e inferior, erros gerais e "do exame", observações e aprovar.
+  Aparecem 3 por vez, com o cartão do item aceso no meio. Teclado
+  (decisão do Luciano): **Tab / Shift+Tab** andam entre os itens,
+  **← →** passam pelas opções do item aceso e **↑ ↓** não fazem nada. O
+  item aceso não cresce (sem o `zoom: 1.5`), para não passar da borda.
 - Itens opcionais aceitam resposta negativa (a fala inteira): **"não"**,
   "nenhum", "nada" — e também "sem erro técnico", "sem descrição", "sem
   observações". O item fica anotado na ficha ("Sem observações") e conta
