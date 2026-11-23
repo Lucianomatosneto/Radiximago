@@ -37,6 +37,14 @@ afterEach(() => {
 })
 
 describe('mostrar', () => {
+  it('pedido do video (22/11): sem permissao de quem enviou, nao oferece responder', async () => {
+    servidorFalso({ [`GET ${BASE}`]: { corpo: { itens: NOTAS, ocultas: 0 } } })
+    montarTela(<AnotacoesCompartilhadas compartilhamento={{ id: 5, remetente_nome: 'Prof. Teste', mensagem: null, permite_resposta: false }} />)
+    expect(await screen.findByText('• Observe a raiz mesial.')).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'responder a Prof. Teste' })).toBeNull()
+  })
+
+
   it('carregando ("…"), depois o recado e as anotacoes de quem enviou; responder fica disponivel', async () => {
     abrir()
     expect(screen.getByText('Anotações de Prof. Teste')).toBeTruthy()
