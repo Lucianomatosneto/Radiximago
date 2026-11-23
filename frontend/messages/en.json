@@ -3265,7 +3265,9 @@
     "pergunta": "Which modality do you want to curate now?",
     "perguntaExplica": "Choose the exam type; its first image opens next. You can change it later in the \"Modality\" box.",
     "opcao": "{nome} ({total})",
-    "triagem": "Sort the intraoral images by type (triage)"
+    "triagem": "Sort the intraoral images by type (triage)",
+    "corrigir": "Fix modality",
+    "corrigirDica": "Open the triage of this modality to move the images that do not belong to it"
   },
   "SituacaoDentaria": {
     "denticao": "Dentition",
@@ -3321,6 +3323,9 @@
     "carregarMais": "Load more ({faltam})",
     "erroCarregar": "Could not load the queue.",
     "erroMarcar": "Could not mark the images.",
-    "marcarComoCurto": "Mark as:"
+    "marcarComoCurto": "Mark as:",
+    "explicaCorrigir": "To fix a modality: in \"Show\" pick the modality (for example, Bitewing), select the images that do not belong to it and move them to the right one.",
+    "moverPara": "Move to:",
+    "movidas": "{n, plural, one {1 image moved} other {# images moved}} to {tipo}."
   }
 }
