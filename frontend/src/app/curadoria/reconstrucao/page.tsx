@@ -104,7 +104,17 @@ export default function ReconstrucaoPage() {
   const [aviso, setAviso] = useState('')
   const [erro, setErro] = useState('')
   const [canalDe, setCanalDe] = useState<number | null>(null)
-  const areaRef = useRef<HTMLDivElement | null>(null)
+  // visualizacao da imagem (23/11/2026, pedido do Luciano): zoom,
+  // deslocamento e brilho/contraste - so na tela; os pontos continuam em
+  // pixels do corte
+  const [zoom, setZoom] = useState(1)
+  const [desloc, setDesloc] = useState({ x: 0, y: 0 })
+  const [brilho, setBrilho] = useState(1)
+  const [contraste, setContraste] = useState(1)
+  const arrastoRef = useRef<{ botao: number; x: number; y: number; moveu: boolean } | null>(null)
+  const arrastouRef = useRef(false)
+  const zoomRef = useRef({ zoom: 1, desloc: { x: 0, y: 0 } })
+  zoomRef.current = { zoom, desloc }
 
   // passar os cortes axiais (23/11/2026, pedido do Luciano): um corte
   // (espacamento entre cortes) por vez, entre o primeiro e o ultimo
@@ -117,18 +127,72 @@ export default function ReconstrucaoPage() {
     [geo],
   )
 
-  // roda do mouse sobre a imagem: para cima sobe o corte; nao rola a pagina
-  // (o ouvinte "passive: false" deixa cancelar a rolagem)
-  useEffect(() => {
-    const area = areaRef.current
-    if (!area) return
-    function roda(e: WheelEvent) {
-      e.preventDefault()
-      if (e.deltaY !== 0) passarCortes(e.deltaY < 0 ? 1 : -1)
+  const passarRef = useRef(passarCortes)
+  passarRef.current = passarCortes
+
+  // zoom em volta de um ponto da janela (o ponto embaixo do mouse fica parado)
+  const aplicarZoom = useCallback((fator: number, cx = 0, cy = 0) => {
+    const { zoom: z, desloc: d } = zoomRef.current
+    const novo = Math.min(8, Math.max(1, Math.round(z * fator * 100) / 100))
+    if (novo === z) return
+    if (novo === 1) {
+      setZoom(1)
+      setDesloc({ x: 0, y: 0 })
+      return
     }
-    area.addEventListener('wheel', roda, { passive: false })
-    return () => area.removeEventListener('wheel', roda)
-  }, [passarCortes])
+    setZoom(novo)
+    setDesloc({ x: cx - ((cx - d.x) * novo) / z, y: cy - ((cy - d.y) * novo) / z })
+  }, [])
+
+  // roda do mouse sobre a imagem: passa os cortes; com Ctrl, zoom. O ouvinte
+  // entra assim que a janela aparece (ref de funcao) e e "passive: false"
+  // para poder cancelar a rolagem da pagina.
+  const janelaRef = useCallback(
+    (janela: HTMLDivElement | null) => {
+      if (!janela) return
+      janela.addEventListener(
+        'wheel',
+        (e: WheelEvent) => {
+          e.preventDefault()
+          if (e.deltaY === 0) return
+          if (e.ctrlKey || e.metaKey) {
+            const caixa = janela.getBoundingClientRect()
+            aplicarZoom(e.deltaY < 0 ? 1.25 : 0.8, e.clientX - caixa.left, e.clientY - caixa.top)
+          } else passarRef.current(e.deltaY < 0 ? 1 : -1)
+        },
+        { passive: false },
+      )
+    },
+    [aplicarZoom],
+  )
+
+  // arrastar: botao esquerdo ou do meio desloca; botao direito muda brilho
+  // (para cima/baixo) e contraste (para os lados). Um clique sem arrastar
+  // continua marcando ponto.
+  function aoApertar(e: MouseEvent<HTMLDivElement>) {
+    arrastoRef.current = { botao: e.button, x: e.clientX, y: e.clientY, moveu: false }
+    arrastouRef.current = false
+  }
+  function aoMover(e: MouseEvent<HTMLDivElement>) {
+    const a = arrastoRef.current
+    if (!a) return
+    const dx = e.clientX - a.x
+    const dy = e.clientY - a.y
+    if (!a.moveu && Math.abs(dx) + Math.abs(dy) < 4) return
+    a.moveu = true
+    arrastouRef.current = true
+    a.x = e.clientX
+    a.y = e.clientY
+    if (a.botao === 2) {
+      setContraste((c) => Math.min(4, Math.max(0.2, c * Math.exp(dx / 200))))
+      setBrilho((b) => Math.min(4, Math.max(0.2, b * Math.exp(-dy / 200))))
+    } else {
+      setDesloc((d) => ({ x: d.x + dx, y: d.y + dy }))
+    }
+  }
+  function aoSoltar() {
+    arrastoRef.current = null
+  }
 
   const { semConexao, verificando, tentarDeNovo } = useVerificarSessao((sessao) => {
     if (!PERFIS_PERMITIDOS.includes(sessao.perfil)) {
@@ -168,6 +232,10 @@ export default function ReconstrucaoPage() {
 
   function clicar(e: MouseEvent<HTMLDivElement>) {
     if (!geo) return
+    if (arrastouRef.current) {
+      arrastouRef.current = false
+      return
+    }
     const caixa = e.currentTarget.getBoundingClientRect()
     if (!caixa.width || !caixa.height) return
     const coluna = ((e.clientX - caixa.left) / caixa.width) * geo.colunas
@@ -214,41 +282,46 @@ export default function ReconstrucaoPage() {
   const srcAxial = ref && geo ? `${API}/reconstrucao/${ref}/axial.png?altura_mm=${altura}&espessura_mm=${faixaAxial}` : ''
   const textoPontos = pontos.length === 0 ? t('nenhumPonto') : t('pontos', { n: pontos.length })
   const campo = 'w-20 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-ink'
+  const botaoVer = 'rounded-md border border-base-border px-2 py-0.5 text-xs text-ink hover:bg-white/5'
 
   return (
     // sem a coluna de navegacao (23/11/2026, pedido do Luciano): a imagem
     // ganha espaco; "Voltar" leva de volta
     <div className="flex min-h-screen bg-base">
       <div className="flex flex-1 flex-col">
-        <Topbar />
-        <main className="flex-1 space-y-4 overflow-y-auto p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="titulo-pagina tela-entra">
-                {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
-              </h1>
-              <p className="mt-1 max-w-3xl text-sm text-slate-400">{t('explica')}</p>
+        {/* titulo e explicacao na barra do topo, depois de RADIX IMAGO
+            (23/11/2026, pedido do Luciano): a imagem ganha a altura da tela */}
+        <Topbar
+          acao={
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="min-w-0">
+                <h1 className="text-lg font-semibold leading-tight text-ink">
+                  {t('tituloPrefixo')} <span className="text-teal-600 dark:text-teal-300">{t('tituloDestaque')}</span>
+                </h1>
+                <p className="line-clamp-2 max-w-2xl text-xs text-slate-400">{t('explica')}</p>
+              </div>
+              <button type="button" onClick={() => router.back()} className="shrink-0 rounded-lg border border-base-border px-3 py-1 text-sm text-ink hover:bg-white/5">
+                {t('voltar')}
+              </button>
             </div>
-            <button type="button" onClick={() => router.back()} className="rounded-lg border border-base-border px-3 py-1.5 text-sm text-ink hover:bg-white/5">
-              {t('voltar')}
-            </button>
-          </div>
-
+          }
+        />
+        <main className="flex-1 space-y-2 overflow-y-auto px-4 py-2">
           {aviso && (
-            <p role="status" className="rounded-lg bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+            <p role="status" className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-sm text-emerald-700 dark:text-emerald-300">
               {aviso}
             </p>
           )}
           {erro && (
-            <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+            <p role="alert" className="rounded-lg bg-red-500/10 px-3 py-1.5 text-sm text-red-700 dark:text-red-300">
               {erro}
             </p>
           )}
 
           {geo && (
-            <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
-              <section className="space-y-3">
-                <div className="flex flex-wrap items-center gap-4 text-sm text-ink-2">
+            <div className="grid gap-4 lg:grid-cols-[1fr_19rem]">
+              <section className="min-w-0 space-y-2">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-ink-2">
                   <label className="flex items-center gap-2">
                     {t('altura')}
                     <input
@@ -259,7 +332,7 @@ export default function ReconstrucaoPage() {
                       value={altura}
                       onChange={(e) => setAltura(Number(e.target.value))}
                       aria-label={t('altura')}
-                      className="w-56"
+                      className="w-48"
                     />
                     <span className="tabular-nums">{altura} mm</span>
                   </label>
@@ -267,15 +340,28 @@ export default function ReconstrucaoPage() {
                     {t('faixaAxial')}
                     <input type="number" min={0} max={40} step={1} value={faixaAxial} onChange={(e) => setFaixaAxial(Number(e.target.value))} aria-label={t('faixaAxial')} className={campo} />
                   </label>
+                  <div role="group" aria-label={t('visualizacao')} className="flex items-center gap-1">
+                    <button type="button" onClick={() => aplicarZoom(0.8)} aria-label={t('afastar')} title={t('afastar')} className={botaoVer}>−</button>
+                    <span className="w-12 text-center tabular-nums text-xs">{Math.round(zoom * 100)}%</span>
+                    <button type="button" onClick={() => aplicarZoom(1.25)} aria-label={t('aproximar')} title={t('aproximar')} className={botaoVer}>+</button>
+                    <button type="button" onClick={() => { setZoom(1); setDesloc({ x: 0, y: 0 }) }} className={botaoVer}>{t('ajustar')}</button>
+                    <button type="button" onClick={() => { setBrilho(1); setContraste(1) }} className={botaoVer}>{t('restaurarBrilho')}</button>
+                  </div>
                 </div>
-                {/* a imagem e os pontos usam as MESMAS medidas do corte
-                    (viewBox em pixels): o clique vira coluna/linha */}
-                <p className="text-xs text-slate-400">{t('dicaCortes')}</p>
+                <p className="text-xs text-slate-400">{t('dicaCortes')} {t('dicaVer')}</p>
+                {/* a janela recorta; dentro dela o quadro (imagem + pontos)
+                    recebe zoom e deslocamento. Os pontos usam as MESMAS
+                    medidas do corte (viewBox em pixels): o clique vira
+                    coluna/linha mesmo com zoom. */}
                 <div
-                  ref={areaRef}
-                  data-testid="area-curva"
+                  ref={janelaRef}
+                  data-testid="janela-imagem"
                   tabIndex={0}
-                  onClick={clicar}
+                  onMouseDown={aoApertar}
+                  onMouseMove={aoMover}
+                  onMouseUp={aoSoltar}
+                  onMouseLeave={aoSoltar}
+                  onContextMenu={(e) => e.preventDefault()}
                   onKeyDown={(e) => {
                     if (e.key === 'ArrowUp' || e.key === 'PageUp') {
                       e.preventDefault()
@@ -285,11 +371,23 @@ export default function ReconstrucaoPage() {
                       passarCortes(-1)
                     }
                   }}
-                  className="relative mx-auto w-full max-w-4xl cursor-crosshair overflow-hidden rounded-xl border border-base-border bg-black"
-                  style={{ aspectRatio: `${geo.colunas} / ${geo.linhas}`, maxWidth: `calc(68vh * ${geo.colunas / geo.linhas})` }}
+                  className="relative mx-auto w-full overflow-hidden rounded-xl border border-base-border bg-black outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
+                  style={{ aspectRatio: `${geo.colunas} / ${geo.linhas}`, maxWidth: `calc((100vh - 9.5rem) * ${geo.colunas / geo.linhas})` }}
+                >
+                <div
+                  data-testid="area-curva"
+                  onClick={clicar}
+                  className="absolute inset-0 cursor-crosshair"
+                  style={{ transform: `translate(${desloc.x}px, ${desloc.y}px) scale(${zoom})`, transformOrigin: '0 0' }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- PNG gerado pela API com login */}
-                  <img src={srcAxial} alt={t('altImagem')} draggable={false} className="absolute inset-0 h-full w-full select-none object-fill" />
+                  <img
+                    src={srcAxial}
+                    alt={t('altImagem')}
+                    draggable={false}
+                    className="absolute inset-0 h-full w-full select-none object-fill"
+                    style={{ filter: `brightness(${brilho}) contrast(${contraste})` }}
+                  />
                   <svg viewBox={`0 0 ${geo.colunas} ${geo.linhas}`} preserveAspectRatio="none" className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
                     {pontos.length > 1 && (
                       <polyline
@@ -304,6 +402,7 @@ export default function ReconstrucaoPage() {
                       <circle key={`${x}-${y}-${i}`} cx={x} cy={y} r={Math.max(geo.colunas, geo.linhas) / 120} fill={i === 0 ? '#22c55e' : '#2dd4bf'} stroke="#000" strokeWidth={1} />
                     ))}
                   </svg>
+                </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-sm">
                   <span className="text-ink-2">{textoPontos}</span>
@@ -347,7 +446,7 @@ export default function ReconstrucaoPage() {
                 {lista.length > 0 && (
                   <div>
                     <h2 className="mb-1 text-sm font-semibold text-ink">{t('feitas')}</h2>
-                    <ul aria-label={t('feitas')} className="space-y-1 text-xs text-slate-400">
+                    <ul aria-label={t('feitas')} className="space-y-3 text-xs text-slate-400">
                       {lista.map((r) => (
                         <li key={r.id}>
                           {t('itemLista', {
@@ -356,8 +455,12 @@ export default function ReconstrucaoPage() {
                             faixa: r.parametros.espessura_mm,
                             intervalo: r.parametros.intervalo_mm,
                           })}
-                          {r.canal && <span className="ml-1 text-amber-500">· {t('canalMarcado')}</span>}{' '}
-                          <button type="button" onClick={() => setCanalDe(r.id)} className="text-teal-300 hover:underline">
+                          {r.canal && <span className="ml-1 text-amber-500">· {t('canalMarcado')}</span>}
+                          <button
+                            type="button"
+                            onClick={() => setCanalDe(r.id)}
+                            className="mt-1 w-full rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white hover:opacity-90"
+                          >
                             {t('canalMarcar')}
                           </button>
                         </li>

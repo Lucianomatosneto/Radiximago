@@ -3398,6 +3398,12 @@
     "canalErroCarregar": "Could not open the panoramic of this reconstruction.",
     "canalErroGravar": "Could not save the canal.",
     "canalLimite": "Teaching material, not diagnostic. The panoramic shows the canal height along the arch; on the cross-sections the mark shows that height, not the buccolingual position.",
-    "dicaCortes": "Mouse wheel or ↑ ↓ arrows over the image move through the axial slices, one at a time."
+    "dicaCortes": "Mouse wheel or ↑ ↓ arrows over the image move through the axial slices, one at a time.",
+    "visualizacao": "Image view",
+    "aproximar": "Zoom in",
+    "afastar": "Zoom out",
+    "ajustar": "Fit to screen",
+    "restaurarBrilho": "Reset brightness and contrast",
+    "dicaVer": "Ctrl + wheel: zoom. Drag: pan. Right-button drag: brightness (↑↓) and contrast (←→)."
   }
 }

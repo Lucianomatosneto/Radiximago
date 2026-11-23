@@ -3398,6 +3398,12 @@
     "canalErroCarregar": "Não foi possível abrir a panorâmica desta reconstrução.",
     "canalErroGravar": "Não foi possível gravar o canal.",
     "canalLimite": "Material de ensino, não diagnóstico. A panorâmica mostra a altura do canal ao longo da arcada; nos cortes transversais a marca indica essa altura, não a posição vestibulolingual.",
-    "dicaCortes": "Roda do mouse ou setas ↑ ↓ sobre a imagem passam os cortes axiais, um por vez."
+    "dicaCortes": "Roda do mouse ou setas ↑ ↓ sobre a imagem passam os cortes axiais, um por vez.",
+    "visualizacao": "Visualização da imagem",
+    "aproximar": "Aproximar",
+    "afastar": "Afastar",
+    "ajustar": "Ajustar à tela",
+    "restaurarBrilho": "Restaurar brilho e contraste",
+    "dicaVer": "Ctrl + roda: zoom. Arrastar: desloca. Botão direito arrastando: brilho (↑↓) e contraste (←→)."
   }
 }

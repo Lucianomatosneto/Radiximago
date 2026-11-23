@@ -17,7 +17,7 @@ import { montarTela, servidorFalso, type Rota } from './apoio/montar'
 const roteador = vi.hoisted(() => ({ push: vi.fn(), replace: vi.fn(), back: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }))
 vi.mock('next/navigation', () => ({ useRouter: () => roteador, usePathname: () => '/curadoria/reconstrucao' }))
 vi.mock('../../../../frontend/src/components/Sidebar', () => ({ default: () => <nav aria-label="Navegação lateral" /> }))
-vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: () => null }))
+vi.mock('../../../../frontend/src/components/Topbar', () => ({ default: ({ acao }: { acao?: React.ReactNode }) => <header aria-label="Barra do topo">{acao}</header> }))
 
 const CURADOR = { id: 7, nome: 'Curador Teste', email: 'curador@exemplo.test', perfil: 'curador', foto_perfil_url: null }
 const GEOMETRIA = {
@@ -64,6 +64,75 @@ describe('tela inteira', () => {
     await abrir(rotas())
     expect(screen.queryByRole('navigation', { name: 'Navegação lateral' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Voltar' })).toBeTruthy()
+  })
+})
+
+// 23/11/2026 (pedido do Luciano): a imagem estava pequena. O titulo e o
+// texto vao para a barra do topo (depois de RADIX IMAGO); altura e faixa do
+// corte ficam numa linha acima da imagem; a imagem ganha zoom,
+// deslocamento e brilho/contraste; "Marcar canal mandibular" vira um botao
+// grande, igual ao "Gerar".
+describe('tela maior para a imagem', () => {
+  const quadro = () => screen.getByTestId('area-curva') as HTMLElement
+  it('titulo e explicacao na barra do topo; Voltar tambem', async () => {
+    await abrir(rotas())
+    const topo = screen.getByRole('banner', { name: 'Barra do topo' })
+    expect(within(topo).getByRole('heading', { level: 1, name: /Reconstrução panorâmica/ })).toBeTruthy()
+    expect(within(topo).getByText(/Gera, a partir da tomografia/)).toBeTruthy()
+    expect(within(topo).getByRole('button', { name: 'Voltar' })).toBeTruthy()
+  })
+
+  it('zoom: botoes + e - e Ctrl + roda (sem passar corte); "Ajustar" volta', async () => {
+    await abrir(rotas())
+    const antes = imagem().getAttribute('src')
+    fireEvent.click(screen.getByRole('button', { name: 'Aproximar' }))
+    expect(quadro().style.transform).toContain('scale(1.25)')
+    fireEvent.wheel(screen.getByTestId('janela-imagem'), { deltaY: -100, ctrlKey: true })
+    expect(quadro().style.transform).not.toContain('scale(1.25)')
+    expect(imagem().getAttribute('src')).toBe(antes)
+    fireEvent.click(screen.getByRole('button', { name: 'Ajustar à tela' }))
+    expect(quadro().style.transform).toBe('translate(0px, 0px) scale(1)')
+    fireEvent.click(screen.getByRole('button', { name: 'Afastar' }))
+    expect(quadro().style.transform).toContain('scale(1)')
+  })
+
+  it('arrastar com o botao esquerdo desloca a imagem e nao marca ponto', async () => {
+    await abrir(rotas())
+    const janela = screen.getByTestId('janela-imagem')
+    fireEvent.mouseDown(janela, { button: 0, clientX: 100, clientY: 100 })
+    fireEvent.mouseMove(janela, { clientX: 140, clientY: 120 })
+    fireEvent.mouseUp(janela, { button: 0, clientX: 140, clientY: 120 })
+    clicar(140, 120)
+    expect(quadro().style.transform).toContain('translate(40px, 20px)')
+    expect(screen.getByText('Nenhum ponto marcado')).toBeTruthy()
+    // um clique simples (sem arrastar) continua marcando ponto
+    fireEvent.mouseDown(janela, { button: 0, clientX: 50, clientY: 50 })
+    fireEvent.mouseUp(janela, { button: 0, clientX: 50, clientY: 50 })
+    clicar(50, 50)
+    expect(screen.getByText('1 ponto marcado')).toBeTruthy()
+  })
+
+  it('botao direito arrastando muda brilho e contraste; "Restaurar" volta', async () => {
+    await abrir(rotas())
+    const janela = screen.getByTestId('janela-imagem')
+    fireEvent.mouseDown(janela, { button: 2, clientX: 100, clientY: 100 })
+    fireEvent.mouseMove(janela, { clientX: 200, clientY: 50 })
+    fireEvent.mouseUp(janela, { button: 2 })
+    expect(imagem().style.filter).toMatch(/brightness\((?!1\))/)
+    expect(imagem().style.filter).toMatch(/contrast\((?!1\))/)
+    fireEvent.click(screen.getByRole('button', { name: 'Restaurar brilho e contraste' }))
+    expect(imagem().style.filter).toBe('brightness(1) contrast(1)')
+  })
+
+  it('"Marcar canal mandibular" e um botao grande, como o "Gerar"', async () => {
+    await abrir(rotas({
+      'GET /reconstrucao/55/lista': { corpo: [{ id: 1, criado_em: '2026-11-23T15:00:00+00:00', total_cortes: 80, tamanho_pixel_mm: 0.3, parametros: { espessura_mm: 10, intervalo_mm: 1, largura_mm: 40 } }] },
+    }))
+    const canal = await screen.findByRole('button', { name: 'Marcar canal mandibular' })
+    const gerar = screen.getByRole('button', { name: 'Gerar panorâmica e cortes' })
+    expect(canal.className).toContain('bg-brand')
+    expect(canal.className).toContain('w-full')
+    expect(gerar.className).toContain('bg-brand')
   })
 })
 
