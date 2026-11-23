@@ -98,6 +98,7 @@ Perfis (`backend/app/modules/auth.py`):
 | Enviar **foto** de radiografia (celular, janela de 5 min) | estudante: sim (só para mim ou análise); pesquisador: — | sim | curador: sim; suporte: — | sim |
 | Ver foto/imagem **ainda não aprovada** | só a **própria**, ou a que foi enviada para ele analisar | idem | curador: as da fila; suporte: todas | todas |
 | Sincronizar, ativar ou desativar imagens | — | — | só suporte | sim |
+| Relatórios — **"Fichas por curador"** (18/11/2026) | — | — | curador e suporte: só a **posição** ("Curador 1" = quem mais curou) e o número de curadorias, **sem nome, cadastro ou instituição**; o nome não chega ao navegador | **com os nomes** (só o administrador do Rádix) |
 | Própria conta: nome, instituição, foto, senha | editar | editar | editar | editar |
 | Outros usuários: nome, e-mail, perfil, situação | — | — | — | ver e editar |
 | Anotações | só as **suas** (desde 27/10/2026 o compartilhamento leva apenas a anotação escrita na caixa do próprio compartilhamento, nunca as anotações pessoais) | idem | idem | idem |
@@ -167,3 +168,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.9 | 11/11/2026 | Termos de Uso e Política de Privacidade v1.1: desidentificação x anonimização; instituição de origem como controladora e Rádix como operador nas imagens de pacientes; bases legais corrigidas (sem Marco Civil art. 15 e sem art. 7º, IV/16, II, que exigem pessoa jurídica ou órgão de pesquisa); transferência internacional pela Resolução CD/ANPD nº 19/2024; prazos do art. 19; cópias de segurança em até 14 dias; foro do consumidor |
 | 1.10 | 17/11/2026 | Grupos com entrada consentida: ninguém entra direto (convite aceito ou pedido autorizado), busca só por estudantes mostrando só o nome do grupo e quem o criou, dono vê todos os participantes, participante não vê os colegas; tabela `grupo_entradas` (vence em 30 dias) |
 | 1.11 | 17/11/2026 | Grupos: modo aula (marcações e destaques só do envio, ficha oficial intacta), imagens do grupo só para participantes, comentários particulares (D4) e fora da auditoria |
+| 1.12 | 18/11/2026 | "Fichas por curador" e atividade recente: nomes dos curadores só para o administrador; curador e suporte veem a posição no ranking e o número de curadorias, sem identificar ninguém |

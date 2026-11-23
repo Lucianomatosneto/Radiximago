@@ -1453,7 +1453,9 @@
     "fichasPorAchado": "Records by finding (observed changes)",
     "fichasPorAchadoNota": "Counts the changes marked in Curation. The percentage is over the total of records; a record with several findings counts in each, so the rows can add up to more than 100%.",
     "semAlteracoes": "No changes",
-    "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue."
+    "totalImagensDetalhe": "All active images, in any situation (queue, under review, approved, discarded…). That is why it is larger than the Curation queue.",
+    "curadorPosicao": "Curator {posicao}",
+    "rankingSemNomes": "Overall ranking without names or institutions: only the Rádix administration sees who each curator is."
   },
   "Integracoes": {
     "titulo": "Integrations",

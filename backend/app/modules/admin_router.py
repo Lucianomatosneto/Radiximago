@@ -67,6 +67,20 @@ def _contar_por(db, coluna):
     return {(valor if valor is not None else "nao_informado"): total for valor, total in linhas}
 
 
+def _ranking_sem_nomes(por_curador: dict[str, int]) -> dict[str, int]:
+    """Troca o numero de cadastro de cada curador pela POSICAO no ranking
+    ("curador_1" = quem mais curou). Empate: a ordem entre os empatados nao
+    revela nada (so a contagem aparece). "nao_informado" continua igual."""
+    identificados = sorted(
+        ((chave, total) for chave, total in por_curador.items() if chave != "nao_informado"),
+        key=lambda item: (-item[1], int(item[0])),
+    )
+    ranking = {f"curador_{posicao}": total for posicao, (_, total) in enumerate(identificados, start=1)}
+    if "nao_informado" in por_curador:
+        ranking["nao_informado"] = por_curador["nao_informado"]
+    return ranking
+
+
 # Situacoes de uma imagem ATIVA, sem sobreposicao: cada imagem cai em
 # exatamente UMA delas, entao a soma de todas = total de imagens ativas.
 SITUACOES_IMAGEM = ("sem_ficha", "pendente", "em_analise", "segunda_opiniao", "aprovada", "descartada", "baixa_qualidade",
@@ -117,7 +131,8 @@ def obter_indicadores(
     """
     Indicadores gerais para o dashboard administrativo e para a tela de
     Relatórios. Sao contagens agregadas (sem PII individual), por isso
-    tambem liberado pra curador - nao so admin/suporte.
+    tambem liberado pra curador - nao so admin/suporte. Os NOMES dos
+    curadores (ranking e atividade recente) so vao para o administrador.
     """
     imagens = contar_imagens_por_situacao(db)
     total_imagens = imagens["total"]
@@ -154,6 +169,20 @@ def obter_indicadores(
     )
 
     por_curador = {str(k) if k != "nao_informado" else k: v for k, v in _contar_por(db, Curation.curador_id).items()}
+    # 18/11/2026 (decisao do Luciano): so o ADMINISTRADOR ve quem e quem.
+    # Curador e suporte recebem so a POSICAO ("curador_1" = quem mais curou)
+    # e o numero de curadorias - sem nome, numero de cadastro ou instituicao.
+    eh_admin = usuario.perfil == UserRole.administrador
+    nomes_curadores: dict[str, str] = {}
+    if eh_admin:
+        nomes_curadores = {
+            str(uid): nome
+            for uid, nome in db.query(User.id, User.nome).filter(
+                User.id.in_([int(k) for k in por_curador if k != "nao_informado"])
+            )
+        }
+    else:
+        por_curador = _ranking_sem_nomes(por_curador)
     return {
         # total de imagens ATIVAS = soma exata de imagens.por_situacao
         "total_imagens_orthanc": total_imagens,
@@ -168,7 +197,7 @@ def obter_indicadores(
             {
                 "id": ficha.id,
                 "tipo_radiografia": ficha.tipo_radiografia,
-                "curador_nome": curador_nome,
+                "curador_nome": curador_nome if eh_admin else None,
                 "status": ficha.status,
                 "data": (ficha.atualizado_em or ficha.criado_em),
             }
@@ -193,15 +222,9 @@ def obter_indicadores(
         "migracao_pendente": estado_das_migracoes(db)["pendente"],
         # M4: falhas de envio de e-mail nos ultimos 7 dias (e a mais recente)
         **_falhas_email(db),
-        # nomes de quem aparece em "Fichas por curador" (so esses) - antes a
-        # tela buscava /users/, que o curador nao pode ver, e mostrava
-        # "Usuario #1"
-        "nomes_curadores": {
-            str(uid): nome
-            for uid, nome in db.query(User.id, User.nome).filter(
-                User.id.in_([int(k) for k in por_curador if k != "nao_informado"])
-            )
-        },
+        # nomes de quem aparece em "Fichas por curador" - SO para o
+        # administrador (18/11/2026); para os demais, vazio
+        "nomes_curadores": nomes_curadores,
     }
 
 
