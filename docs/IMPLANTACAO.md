@@ -221,7 +221,14 @@ radix exec radix-backup sh -c 'ls -lh /backups | tail -3'   # confere o ultimo b
 cd ~/radiximago && git pull
 radix up -d --build
 radix exec radix-api alembic upgrade head
+radix restart radix-ohif   # o visualizador so le a configuracao ao ligar
 ```
+
+> **Visualizador (OHIF):** o `ohif/app-config.template.js` é lido **só quando
+> o contêiner `radix-ohif` liga**. O `up -d --build` não o reinicia, porque a
+> imagem dele é fixa. Por isso, mudanças no visualizador (painel Tomografia,
+> mouse, tamanho real) só aparecem depois do `restart radix-ohif` e de
+> recarregar a página com Ctrl + F5. Foi o que aconteceu em 23/11/2026.
 
 ### Ensaio de restauração do backup (sem risco)
 
