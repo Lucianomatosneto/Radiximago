@@ -128,6 +128,33 @@ export default function ReconstrucaoPage() {
     [geo],
   )
 
+  // imagem do corte (23/11/2026): girando a roda, so a ULTIMA altura pedida
+  // e carregada, depois que a anterior termina; a imagem na tela so troca
+  // quando a nova ja chegou (sem piscar e sem fila de imagens velhas)
+  const [srcMostrado, setSrcMostrado] = useState('')
+  const carregandoRef = useRef(false)
+  const pendenteRef = useRef<string | null>(null)
+  const carregarImagem = useCallback((url: string) => {
+    carregandoRef.current = true
+    const im = new Image()
+    const terminou = (ok: boolean) => {
+      if (ok) setSrcMostrado(url)
+      carregandoRef.current = false
+      const proxima = pendenteRef.current
+      pendenteRef.current = null
+      if (proxima && proxima !== url) carregarImagem(proxima)
+    }
+    im.onload = () => terminou(true)
+    im.onerror = () => terminou(false)
+    im.src = url
+  }, [])
+  const srcDesejado = ref && geo ? `${API}/reconstrucao/${ref}/axial.png?altura_mm=${altura}&espessura_mm=${faixaAxial}` : ''
+  useEffect(() => {
+    if (!srcDesejado) return
+    if (carregandoRef.current) pendenteRef.current = srcDesejado
+    else carregarImagem(srcDesejado)
+  }, [srcDesejado, carregarImagem])
+
   const passarRef = useRef(passarCortes)
   passarRef.current = passarCortes
 
@@ -280,7 +307,7 @@ export default function ReconstrucaoPage() {
     )
   }
 
-  const srcAxial = ref && geo ? `${API}/reconstrucao/${ref}/axial.png?altura_mm=${altura}&espessura_mm=${faixaAxial}` : ''
+  const srcAxial = srcMostrado || srcDesejado
   const textoPontos = pontos.length === 0 ? t('nenhumPonto') : t('pontos', { n: pontos.length })
   const campo = 'w-20 rounded-lg border border-base-border bg-base-surface2 px-2 py-1 text-sm text-ink'
   const botaoVer = 'rounded-md border border-base-border px-2 py-0.5 text-xs text-ink hover:bg-white/5'
