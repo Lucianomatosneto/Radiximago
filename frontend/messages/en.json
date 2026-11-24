@@ -1319,14 +1319,15 @@
       "limparMedidas": "Clear measurements",
       "medidasSoNaTela": "Measurements are shown on screen only (not saved in the record) and depend on the pixel size declared by the exam.",
       "exportar": "Export marks (JSON)",
-      "exportarDica": "Downloads this exam's marks in millimetres, in an open format for research and for training or evaluating AI. No patient data; not a report.",
+      "exportarDica": "Downloads this exam's marks in millimetres, in an open format for research and for training or evaluating AI. No patient data; not a report. The export is recorded in the audit log.",
       "medidaDuvidosaTitulo": "Unreliable measurement",
       "medidaDuvidosa": "this exam declares a {cm} cm field of view, larger than a head. Ruler millimetres are not reliable: use it only to compare sizes within this exam. Angles remain valid.",
       "medidasNaFicha": "Measurements are saved in the record when it is saved.",
       "tresPlanos": "Three planes",
       "modo": "Marking mode",
       "abaFormas": "Shapes",
-      "abaPintura": "Painting"
+      "abaPintura": "Painting",
+      "erroExportar": "The export could not be logged, so the file was not downloaded. Please try again."
     },
     "localizador": {
       "alt": "Locator: {miniatura} showing the position of the {plano} slice",

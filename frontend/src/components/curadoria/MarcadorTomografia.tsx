@@ -266,9 +266,24 @@ export default function MarcadorTomografia({
   const umaCasa = (v: number) => formato.number(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
   const rotuloMedida = (m: Medida) => (m.tipo === 'regua' ? `${umaCasa(m.valor)} mm` : `${umaCasa(m.valor)}°`)
 
-  function exportar() {
+  const [erroExportar, setErroExportar] = useState('')
+
+  async function exportar() {
     if (!geo) return
     const doc = exportarMarcacoesTc(orthancReferenceId, geo, marcacoes, naFicha ? (medidasDaFicha ?? []) : [])
+    // 24/11/2026 ("registrar auditoria"): antes de baixar, o servidor registra
+    // quem exportou e quanto; sem o registro, o arquivo nao e baixado
+    setErroExportar('')
+    const r = await fetchOuNulo(`${API}/reconstrucao/${orthancReferenceId}/exportacao`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ marcacoes: doc.marcacoes.length, medidas: doc.medidas.length }),
+    })
+    if (!r || !r.ok) {
+      setErroExportar(t('erroExportar'))
+      return
+    }
     const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
@@ -514,13 +529,18 @@ export default function MarcadorTomografia({
         )}
         <button
           type="button"
-          onClick={exportar}
+          onClick={() => void exportar()}
           disabled={doExame.length === 0}
           title={t('exportarDica')}
           className="w-full rounded-md border border-teal-500/60 px-2 py-1 text-teal-700 hover:bg-teal-500/10 disabled:cursor-not-allowed disabled:opacity-40 dark:text-teal-200"
         >
           {t('exportar')}
         </button>
+        {erroExportar && (
+          <p role="alert" className="text-red-600 dark:text-red-300">
+            {erroExportar}
+          </p>
+        )}
         {medidasDoCorte.length > 0 && (
           <>
             <h3 className="pt-1 font-semibold text-ink">{t('medidasDoCorte')}</h3>

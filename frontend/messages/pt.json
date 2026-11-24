@@ -1319,14 +1319,15 @@
       "limparMedidas": "Limpar medidas",
       "medidasSoNaTela": "As medidas ficam só na tela (não entram na ficha) e dependem do tamanho do pixel que o exame informa.",
       "exportar": "Exportar marcações (JSON)",
-      "exportarDica": "Baixa as marcações deste exame em milímetros, num formato aberto para pesquisa e para treinar ou avaliar IA. Sem dados do paciente; não é laudo.",
+      "exportarDica": "Baixa as marcações deste exame em milímetros, num formato aberto para pesquisa e para treinar ou avaliar IA. Sem dados do paciente; não é laudo. A exportação fica registrada na auditoria.",
       "medidaDuvidosaTitulo": "Medida duvidosa",
       "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo.",
       "medidasNaFicha": "As medidas entram na ficha quando ela é salva.",
       "tresPlanos": "Três planos",
       "modo": "Modo de marcação",
       "abaFormas": "Formas",
-      "abaPintura": "Pintura"
+      "abaPintura": "Pintura",
+      "erroExportar": "Não foi possível registrar a exportação; o arquivo não foi baixado. Tente de novo."
     },
     "localizador": {
       "alt": "Localizador: {miniatura} com a posição do corte {plano}",
