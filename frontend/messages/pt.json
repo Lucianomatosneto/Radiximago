@@ -1298,7 +1298,7 @@
       "corte": "Corte",
       "corteDe": "Corte {n} de {total}",
       "corteN": "corte {n}",
-      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor. Atalhos: A, S, C trocam o plano; R régua; G ângulo.",
+      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor. Atalhos: A, S, C trocam o plano; R régua; G ângulo. T mostra os três planos.",
       "marcacoesDoExame": "Marcações do exame",
       "nenhuma": "Nenhuma marcação ainda.",
       "ir": "Ir",
@@ -1321,7 +1321,12 @@
       "exportar": "Exportar marcações (JSON)",
       "exportarDica": "Baixa as marcações deste exame em milímetros, num formato aberto para pesquisa e para treinar ou avaliar IA. Sem dados do paciente; não é laudo.",
       "medidaDuvidosaTitulo": "Medida duvidosa",
-      "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo."
+      "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo.",
+      "medidasNaFicha": "As medidas entram na ficha quando ela é salva.",
+      "tresPlanos": "Três planos",
+      "modo": "Modo de marcação",
+      "abaFormas": "Formas",
+      "abaPintura": "Pintura"
     },
     "localizador": {
       "alt": "Localizador: {miniatura} com a posição do corte {plano}",
@@ -1331,6 +1336,14 @@
       "coronal": "coronal",
       "esconder": "esconder",
       "mostrar": "Mostrar localizador"
+    },
+    "tresPlanos": {
+      "titulo": "Três planos",
+      "axial": "Axial",
+      "sagital": "Sagital",
+      "coronal": "Coronal",
+      "dicaQuadro": "clique para levar os outros planos a este ponto; duplo clique para marcar neste plano",
+      "corteN": "corte {n}"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1414,6 +1427,18 @@
       "seusPalpites": "Seus palpites",
       "palpiteN": "Palpite {n}",
       "semPalpites": "Você usou todos os palpites ({n}). Revele a resposta."
+    },
+    "reconstrucoes": {
+      "titulo": "Panorâmica reconstruída e cortes transversais",
+      "reconstrucao": "Reconstrução",
+      "opcao": "Reconstrução {n} ({cortes} cortes)",
+      "mostrarCanal": "Mostrar canal mandibular",
+      "dica": "Clique na panorâmica para abrir o corte transversal daquele ponto (linha amarela). Roda do mouse ou setas passam os cortes.",
+      "limiteCanal": "O canal foi marcado pelo curador na panorâmica: os cortes mostram só a altura dele, não a posição vestibulolingual.",
+      "altPanoramica": "Panorâmica reconstruída da tomografia",
+      "corteTransversal": "Corte transversal",
+      "corteDe": "Corte transversal {n} de {total} · {mm} mm ao longo da arcada",
+      "altCorte": "Corte transversal {n}"
     }
   },
   "NavegacaoCasos": {

@@ -3,6 +3,8 @@
 import { useTranslations } from 'next-intl'
 import type { Marcacao } from '../../lib/marcacoes'
 import type { AchadoFicha } from '../../lib/achadosFicha'
+import type { MedidaFicha } from '../../lib/tomografia'
+
 
 // Tipo de radiografia, faixa etária, sexo, dentes (notação FDI) e
 // qualidade técnica saíram de aqui e foram para a caixa sobreposta no
@@ -21,6 +23,9 @@ export interface FormularioFicha {
   // Formas (oval/retangulo/seta) desenhadas pelo curador na miniatura pra
   // indicar onde estao as lesoes - lista vazia quando nao ha marcacoes.
   marcacoes: Marcacao[]
+  // medidas da tomografia (regua e angulo) gravadas na ficha (24/11/2026,
+  // recurso 6); ausente = ficha que ainda nao veio do servidor
+  medidas?: MedidaFicha[]
   achados_detalhe: string
   alteracoes_observadas: string[]
   // regioes anatomicas que a imagem mostra (01/11/2026) - filtro de regiao

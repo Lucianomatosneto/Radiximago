@@ -539,3 +539,39 @@ describe('zoom, mover a imagem e atalhos', () => {
     expect(ferramenta('Pincel').getAttribute('aria-pressed')).toBe('true')
   })
 })
+
+// PINTAR A LESAO NOS CORTES DA TOMOGRAFIA (24/11/2026, pedido do Luciano,
+// recurso 8): o mesmo pintor, sobre a imagem de um CORTE (urlImagem) e com
+// corteTc = { plano, corte }: so as estruturas daquele corte aparecem, e as
+// novas levam o plano e o corte para o servidor.
+describe('no corte da tomografia', () => {
+  const NO_CORTE = { ...SEG, id: 11, nome: 'Lesão', dente: null, plano: 'sagital', corte: 35 }
+  const OUTRO_CORTE = { ...SEG, id: 12, nome: 'Lesão', dente: null, plano: 'sagital', corte: 36 }
+  const RX = { ...SEG, id: 13, plano: null, corte: null }
+
+  async function montarNoCorte() {
+    const s = servidor([NO_CORTE, OUTRO_CORTE, RX], { 'GET /reconstrucao/55/plano.png?*': { corpo: {} } })
+    montarTela(
+      <PintorSegmentacao curationId={1} orthancReferenceId={55} dentesFicha={[]} urlImagem="http://api.teste/reconstrucao/55/plano.png?plano=sagital&indice=35" corteTc={{ plano: 'sagital', corte: 35 }} />,
+    )
+    await screen.findByRole('img', { name: 'Radiografia para pintar estruturas' })
+    await waitFor(() => expect(screen.queryByText('Carregando…')).toBeNull())
+    return s
+  }
+
+  it('usa a imagem do corte e so mostra as estruturas dele', async () => {
+    const s = await montarNoCorte()
+    expect(s.pedidos.some((p) => p.caminho.startsWith('/reconstrucao/55/plano.png'))).toBe(true)
+    expect(s.pedidos.map((p) => p.caminho)).not.toContain('/curation/55/preview')
+    expect(screen.getByText('Estruturas pintadas (1)')).toBeTruthy()
+  })
+
+  it('estrutura nova leva o plano e o corte', async () => {
+    const usuario = userEvent.setup()
+    const s = await montarNoCorte()
+    await usuario.selectOptions(screen.getByRole('combobox', { name: 'Tipo de estrutura' }), 'lesao')
+    await usuario.click(screen.getByRole('button', { name: '+ Criar "Lesão"' }))
+    await waitFor(() => expect(s.alteracoes().length).toBeGreaterThan(0))
+    expect(s.alteracoes()[0].corpo).toMatchObject({ nome: 'Lesão', plano: 'sagital', corte: 35 })
+  })
+})

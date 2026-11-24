@@ -1298,7 +1298,7 @@
       "corte": "Slice",
       "corteDe": "Slice {n} of {total}",
       "corteN": "slice {n}",
-      "dica": "Mouse wheel or ↑ ↓ arrows move 1 slice; PageUp/PageDown, 10; Home/End, first and last. Ctrl + wheel zooms; middle button pans; right button changes brightness and contrast. Mark on the slice where the lesion shows best. Shortcuts: A, S, C switch the plane; R ruler; G angle.",
+      "dica": "Mouse wheel or ↑ ↓ arrows move 1 slice; PageUp/PageDown, 10; Home/End, first and last. Ctrl + wheel zooms; middle button pans; right button changes brightness and contrast. Mark on the slice where the lesion shows best. Shortcuts: A, S, C switch the plane; R ruler; G angle. T shows the three planes.",
       "marcacoesDoExame": "Marks in this exam",
       "nenhuma": "No marks yet.",
       "ir": "Go",
@@ -1321,7 +1321,12 @@
       "exportar": "Export marks (JSON)",
       "exportarDica": "Downloads this exam's marks in millimetres, in an open format for research and for training or evaluating AI. No patient data; not a report.",
       "medidaDuvidosaTitulo": "Unreliable measurement",
-      "medidaDuvidosa": "this exam declares a {cm} cm field of view, larger than a head. Ruler millimetres are not reliable: use it only to compare sizes within this exam. Angles remain valid."
+      "medidaDuvidosa": "this exam declares a {cm} cm field of view, larger than a head. Ruler millimetres are not reliable: use it only to compare sizes within this exam. Angles remain valid.",
+      "medidasNaFicha": "Measurements are saved in the record when it is saved.",
+      "tresPlanos": "Three planes",
+      "modo": "Marking mode",
+      "abaFormas": "Shapes",
+      "abaPintura": "Painting"
     },
     "localizador": {
       "alt": "Locator: {miniatura} showing the position of the {plano} slice",
@@ -1331,6 +1336,14 @@
       "coronal": "coronal",
       "esconder": "hide",
       "mostrar": "Show locator"
+    },
+    "tresPlanos": {
+      "titulo": "Three planes",
+      "axial": "Axial",
+      "sagital": "Sagittal",
+      "coronal": "Coronal",
+      "dicaQuadro": "click to bring the other planes to this point; double-click to mark on this plane",
+      "corteN": "slice {n}"
     }
   },
   "SegundaOpiniaoPage": {
@@ -1414,6 +1427,18 @@
       "seusPalpites": "Your guesses",
       "palpiteN": "Guess {n}",
       "semPalpites": "You used all your guesses ({n}). Reveal the answer."
+    },
+    "reconstrucoes": {
+      "titulo": "Reconstructed panoramic and cross-sections",
+      "reconstrucao": "Reconstruction",
+      "opcao": "Reconstruction {n} ({cortes} slices)",
+      "mostrarCanal": "Show mandibular canal",
+      "dica": "Click the panoramic to open the cross-section at that point (yellow line). Mouse wheel or arrows move through the slices.",
+      "limiteCanal": "The canal was traced by the curator on the panoramic: the cross-sections show only its height, not its buccolingual position.",
+      "altPanoramica": "Reconstructed panoramic of the CT",
+      "corteTransversal": "Cross-section",
+      "corteDe": "Cross-section {n} of {total} · {mm} mm along the arch",
+      "altCorte": "Cross-section {n}"
     }
   },
   "NavegacaoCasos": {

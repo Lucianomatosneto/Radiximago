@@ -12,6 +12,7 @@ import {
   avaliarDesafio,
   campoDuvidosoCm,
   pontoEm3dMm,
+  valorDaMedida,
   distanciaMm,
   exportarMarcacoesTc,
   tamanhoDoPlanoMm,
@@ -96,6 +97,27 @@ describe('medida duvidosa', () => {
   it('a exportacao avisa quando a medida e duvidosa', () => {
     expect(exportarMarcacoesTc(1, ACERVO, []).exame.medida_duvidosa).toBe(true)
     expect(exportarMarcacoesTc(1, GEO, []).exame.medida_duvidosa).toBe(false)
+  })
+})
+
+// MEDIDAS NA FICHA (24/11/2026, recurso 6): o valor sai dos pontos e da
+// geometria (nao e guardado); a exportacao leva as medidas com o valor.
+describe('medidas da ficha', () => {
+  const REGUA = { id: 'r', tipo: 'regua' as const, plano: 'axial' as const, corte: 4, pontos: [{ x: 0, y: 0.5 }, { x: 0.4, y: 0.5 }] }
+  const ANGULO = { id: 'a', tipo: 'angulo' as const, plano: 'coronal' as const, corte: 9, pontos: [{ x: 0.6, y: 0.5 }, { x: 0.5, y: 0.5 }, { x: 0.5, y: 0.7 }] }
+
+  it('valor: regua em mm (axial 125 mm de largura) e angulo em graus', () => {
+    expect(valorDaMedida(GEO, REGUA)).toBeCloseTo(50)
+    expect(valorDaMedida(GEO, ANGULO)).toBeCloseTo(90)
+  })
+
+  it('a exportacao leva as medidas com o valor e a unidade', () => {
+    const doc = exportarMarcacoesTc(55, GEO, [], [REGUA, ANGULO])
+    expect(doc.medidas).toHaveLength(2)
+    expect(doc.medidas[0]).toMatchObject({ id: 'r', tipo: 'regua', plano: 'axial', corte: 4, unidade: 'mm' })
+    expect(doc.medidas[0].valor).toBeCloseTo(50)
+    expect(doc.medidas[1]).toMatchObject({ tipo: 'angulo', unidade: 'graus' })
+    expect(doc.medidas[0].pontos_mm[1][0]).toBeCloseTo(50)
   })
 })
 

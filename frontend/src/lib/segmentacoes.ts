@@ -20,6 +20,9 @@ export interface Segmentacao {
   /** data URL PNG: branco opaco onde foi pintado */
   mascara: string
   atualizado_em: string | null
+  /** tomografia (24/11/2026): o corte pintado; null = radiografia */
+  plano?: 'axial' | 'sagital' | 'coronal' | null
+  corte?: number | null
 }
 
 const API = process.env.NEXT_PUBLIC_API_URL
@@ -68,7 +71,7 @@ export async function listarSegmentacoes(curationId: number): Promise<Segmentaca
 
 export async function criarSegmentacao(
   curationId: number,
-  dados: { nome: string; dente: number | null; cor: string; mascara: string }
+  dados: { nome: string; dente: number | null; cor: string; mascara: string; plano?: 'axial' | 'sagital' | 'coronal'; corte?: number }
 ): Promise<Segmentacao> {
   const r = await fetchOuNulo(`${API}/segmentacoes/ficha/${curationId}`, {
     method: 'POST',

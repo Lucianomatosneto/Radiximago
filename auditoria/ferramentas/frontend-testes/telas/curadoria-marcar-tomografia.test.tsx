@@ -29,6 +29,12 @@ vi.mock('../../../../frontend/src/components/curadoria/MarcadorAchado', () => ({
   ),
 }))
 
+vi.mock('../../../../frontend/src/components/segmentacao/PintorSegmentacao', () => ({
+  default: (p: { urlImagem?: string; corteTc?: { plano: string; corte: number }; curationId: number }) => (
+    <div data-testid="pintor" data-url={p.urlImagem} data-corte={p.corteTc ? `${p.corteTc.plano}:${p.corteTc.corte}` : ''} data-ficha={p.curationId} />
+  ),
+}))
+
 const GEOMETRIA = {
   cortes: 200, linhas: 400, colunas: 500, espacamento_mm: [0.3, 0.3, 0.3], altura_mm: 59.7,
   limites: { espessura_mm: [0.5, 40], intervalo_mm: [0.2, 10], largura_mm: [5, 80] },
@@ -183,6 +189,73 @@ describe('atalhos de teclado', () => {
   })
 })
 
+// TRES PLANOS (24/11/2026, recurso 7): o botao "Três planos" (ou T) mostra
+// axial, sagital e coronal juntos, sincronizados com o corte aberto.
+describe('tres planos', () => {
+  it('liga e desliga; o corte aberto e o cursor andam juntos', async () => {
+    await abrir()
+    expect(screen.queryByRole('group', { name: 'Três planos' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Três planos' }))
+    const grupo = screen.getByRole('group', { name: 'Três planos' })
+    const src = (nome: string) => within(grupo).getByRole('img', { name: new RegExp(`^${nome}`) }).getAttribute('src') ?? ''
+    // abre no meio do exame: corte 100, coluna 250, linha 200
+    expect(src('Axial')).toContain('plano=axial&indice=100')
+    expect(src('Sagital')).toContain('plano=sagital&indice=250')
+    expect(src('Coronal')).toContain('plano=coronal&indice=200')
+    // passar o corte axial move o cursor
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(src('Axial')).toContain('indice=101')
+    // clicar no sagital leva o corte principal (axial) ao mesmo lugar
+    const sagital = within(grupo).getByRole('button', { name: /^Sagital/ })
+    caixa100(sagital)
+    fireEvent.click(sagital, { clientX: 50, clientY: 25 })
+    expect(url()).toContain('plano=axial&indice=150')
+    // duplo clique no coronal: o coronal vira o plano principal, no mesmo ponto
+    fireEvent.doubleClick(within(grupo).getByRole('button', { name: /^Coronal/ }))
+    expect(url()).toContain('plano=coronal&indice=200')
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 't' })
+    expect(screen.queryByRole('group', { name: 'Três planos' })).toBeNull()
+  })
+})
+
+// PINTAR A LESAO NOS CORTES (24/11/2026, recurso 8): com a ficha ligada
+// (curationId), a aba "Pintura" troca as formas pelo pincel das radiografias
+// sobre a imagem do corte aberto; passar o corte troca a pintura.
+describe('pintura no corte', () => {
+  async function abrirComFicha() {
+    servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: GEOMETRIA } })
+    montarTela(<MarcadorTomografia orthancReferenceId={55} marcacoes={[]} onMarcar={vi.fn()} curationId={9} dentesFicha={[36]} />)
+    await screen.findByTestId('marcador')
+  }
+
+  it('sem a ficha nao ha aba de pintura', async () => {
+    await abrir()
+    expect(screen.queryByRole('tab', { name: 'Pintura' })).toBeNull()
+  })
+
+  it('aba Pintura: pincel no corte aberto; trocar o corte troca a pintura; Formas volta', async () => {
+    await abrirComFicha()
+    expect(screen.getByRole('tab', { name: 'Formas' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(screen.getByRole('tab', { name: 'Pintura' }))
+    const pintor = screen.getByTestId('pintor')
+    expect(pintor.getAttribute('data-url')).toContain('/reconstrucao/55/plano.png?plano=axial&indice=100')
+    expect(pintor.getAttribute('data-corte')).toBe('axial:100')
+    expect(pintor.getAttribute('data-ficha')).toBe('9')
+    expect(screen.queryByTestId('marcador')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(screen.getByTestId('pintor').getAttribute('data-corte')).toBe('axial:101')
+    fireEvent.click(screen.getByRole('tab', { name: 'Formas' }))
+    expect(screen.getByTestId('marcador')).toBeTruthy()
+  })
+
+  it('na pintura, a roda do mouse fica com o pincel (zoom), sem passar o corte', async () => {
+    await abrirComFicha()
+    fireEvent.click(screen.getByRole('tab', { name: 'Pintura' }))
+    fireEvent.wheel(screen.getByTestId('area-tomografia'), { deltaY: -100 })
+    expect(screen.getByTestId('pintor').getAttribute('data-corte')).toBe('axial:100')
+  })
+})
+
 describe('ver melhor o corte', () => {
   it('aproximar, afastar e ajustar; o zoom aparece em %', async () => {
     await abrir()
@@ -294,6 +367,52 @@ describe('medida duvidosa (24/11/2026, decisao do Luciano: opcao A)', () => {
   })
 })
 
+// MEDIDAS NA FICHA (24/11/2026, pedido do Luciano, recurso 6): com a ficha
+// ligada (onMedir), a regua e o angulo viram dado da ficha: cada medida nova
+// vai para onMedir no formato do servidor (tipo, plano, corte, pontos), e as
+// medidas ja gravadas aparecem no corte delas, com o valor calculado pela
+// geometria do exame.
+describe('medidas na ficha', () => {
+  const GRAVADA = { id: 'g1', tipo: 'regua' as const, plano: 'axial' as const, corte: 100, pontos: [{ x: 0, y: 0.5 }, { x: 0.2, y: 0.5 }] }
+
+  async function abrirComFicha(medidas = [GRAVADA]) {
+    servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: GEOMETRIA } })
+    const onMedir = vi.fn()
+    montarTela(<MarcadorTomografia orthancReferenceId={55} marcacoes={[]} onMarcar={vi.fn()} medidas={medidas} onMedir={onMedir} />)
+    await screen.findByTestId('marcador')
+    return onMedir
+  }
+
+  it('a medida gravada aparece no corte dela, com o valor calculado (0,2 x 150 mm = 30 mm)', async () => {
+    await abrirComFicha()
+    expect(within(screen.getByRole('list', { name: 'Medidas neste corte' })).getByText('Régua: 30,0 mm')).toBeTruthy()
+    expect(screen.getByText('As medidas entram na ficha quando ela é salva.')).toBeTruthy()
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(screen.queryByRole('list', { name: 'Medidas neste corte' })).toBeNull()
+  })
+
+  it('medida nova vai para a ficha no formato do servidor', async () => {
+    const onMedir = await abrirComFicha()
+    fireEvent.click(screen.getByRole('button', { name: 'Régua' }))
+    const camada = screen.getByTestId('camada-medida')
+    caixa100(camada)
+    fireEvent.click(camada, { clientX: 0, clientY: 50 })
+    fireEvent.click(camada, { clientX: 50, clientY: 50 })
+    const [lista] = onMedir.mock.calls.at(-1) ?? []
+    expect(lista).toHaveLength(2)
+    expect(lista[0]).toEqual(GRAVADA)
+    expect(lista[1]).toMatchObject({ tipo: 'regua', plano: 'axial', corte: 100, pontos: [{ x: 0, y: 0.5 }, { x: 0.5, y: 0.5 }] })
+    expect(lista[1]).not.toHaveProperty('valor')
+  })
+
+  it('"Limpar medidas" tira da ficha so as do corte aberto', async () => {
+    const outra = { ...GRAVADA, id: 'g2', corte: 3 }
+    const onMedir = await abrirComFicha([GRAVADA, outra])
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar medidas' }))
+    expect(onMedir).toHaveBeenLastCalledWith([outra])
+  })
+})
+
 describe('exportar para pesquisa e IA', () => {
   it('baixa um JSON com as marcacoes do exame em mm', async () => {
     const blobs: Blob[] = []
@@ -311,6 +430,8 @@ describe('exportar para pesquisa e IA', () => {
     expect(doc.exame.referencia).toBe(55)
     expect(doc.marcacoes).toHaveLength(1)
     expect(doc.marcacoes[0]).toMatchObject({ id: 'm1', plano: 'sagital', corte: 120 })
+    // sem medidas na ficha: lista vazia
+    expect(doc.medidas).toEqual([])
     clique.mockRestore()
   })
 

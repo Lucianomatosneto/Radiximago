@@ -338,6 +338,8 @@ def editar_curadoria(
         ficha.achado_principal = dados.achado_principal.value
     if dados.marcacoes is not None:
         ficha.marcacoes = [m.model_dump(mode="json") for m in dados.marcacoes]
+    if dados.medidas is not None:
+        ficha.medidas = [m.model_dump(mode="json") for m in dados.medidas]
     if dados.achados_detalhe is not None:
         ficha.achados_detalhe = dados.achados_detalhe
     if dados.alteracoes_observadas is not None:

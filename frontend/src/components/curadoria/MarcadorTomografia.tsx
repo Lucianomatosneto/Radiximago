@@ -19,7 +19,10 @@
 //   (arrastar com o botao do MEIO), brilho/contraste (arrastar com o botao
 //   DIREITO: para cima/baixo = brilho, para os lados = contraste), inverter.
 //   O botao esquerdo continua desenhando as marcacoes;
-// - medir: regua (mm) e angulo (graus) no corte; as medidas sao so da tela
+// - medir: regua (mm) e angulo (graus) no corte. Com a ficha ligada
+//   (medidas + onMedir, 24/11/2026, recurso 6) as medidas viram DADO DA
+//   FICHA (curations.medidas: tipo, plano, corte, pontos; o valor e
+//   calculado pela geometria); sem ela, ficam so na tela
 //   (nao entram na ficha) e ficam no corte em que foram feitas; Esc sai;
 // - exportar: as marcacoes do exame em mm num JSON aberto (lib/tomografia.ts),
 //   para pesquisa e para treinar/avaliar IA no futuro. Nao e laudo.
@@ -28,10 +31,12 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { useFormatter, useTranslations } from 'next-intl'
 import MarcadorAchado from './MarcadorAchado'
 import LocalizadorTomografia from './LocalizadorTomografia'
+import PintorSegmentacao from '../segmentacao/PintorSegmentacao'
+import TresPlanosTomografia, { type Cursor3d } from './TresPlanosTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from './MedidasTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
-import { campoDuvidosoCm, exportarMarcacoesTc, tamanhoDoPlanoMm, type GeometriaTomografia } from '../../lib/tomografia'
+import { campoDuvidosoCm, exportarMarcacoesTc, tamanhoDoPlanoMm, valorDaMedida, type GeometriaTomografia, type MedidaFicha } from '../../lib/tomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
@@ -48,11 +53,21 @@ export default function MarcadorTomografia({
   marcacoes,
   onMarcar,
   onCarregou,
+  medidas: medidasDaFicha,
+  onMedir,
+  curationId,
+  dentesFicha = [],
 }: {
   orthancReferenceId: number
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
   onCarregou?: () => void
+  /** medidas gravadas na ficha (recurso 6); com onMedir, viram dado da ficha */
+  medidas?: MedidaFicha[]
+  onMedir?: (medidas: MedidaFicha[]) => void
+  /** ficha aberta: liga a aba "Pintura" (pincel no corte, recurso 8) */
+  curationId?: number
+  dentesFicha?: number[]
 }) {
   const t = useTranslations('Curadoria.marcadorTomografia')
   const formato = useFormatter()
@@ -60,7 +75,16 @@ export default function MarcadorTomografia({
   const [erro, setErro] = useState('')
   const [plano, setPlano] = useState<Plano>('axial')
   const [corte, setCorte] = useState(0)
+  // TRES PLANOS (24/11/2026, recurso 7): cursor 3D comum aos tres quadros;
+  // a coordenada do plano principal e sempre o corte aberto
+  const [tresPlanos, setTresPlanos] = useState(false)
+  const [cursor, setCursor] = useState<Cursor3d>({ coluna: 0, linha: 0, corte: 0 })
   const passarRef = useRef<(sentido: number) => void>(() => {})
+  // PINTURA NO CORTE (24/11/2026, recurso 8): aba "Formas" (marcacoes e
+  // medidas) ou "Pintura" (o pincel das radiografias sobre o corte aberto)
+  const [aba, setAba] = useState<'formas' | 'pintura'>('formas')
+  const abaRef = useRef(aba)
+  abaRef.current = aba
 
   // ver melhor (so na tela; as marcacoes continuam nas mesmas coordenadas)
   const [zoom, setZoom] = useState(1)
@@ -89,6 +113,7 @@ export default function MarcadorTomografia({
       if (!vivo) return
       setGeo(g)
       setCorte(Math.floor(g.cortes / 2))
+      setCursor({ coluna: Math.floor(g.colunas / 2), linha: Math.floor(g.linhas / 2), corte: Math.floor(g.cortes / 2) })
     })()
     return () => {
       vivo = false
@@ -128,6 +153,8 @@ export default function MarcadorTomografia({
       area.addEventListener(
         'wheel',
         (e: WheelEvent) => {
+          // na pintura a roda e do pincel (zoom); os cortes passam pelas setas
+          if (abaRef.current === 'pintura') return
           e.preventDefault()
           if (e.deltaY === 0) return
           if (e.ctrlKey || e.metaKey) {
@@ -144,7 +171,7 @@ export default function MarcadorTomografia({
   function aoApertar(e: MouseEvent<HTMLDivElement>) {
     // clicar na imagem da o foco a area: setas e atalhos passam a valer
     e.currentTarget.focus({ preventScroll: true })
-    if (e.button === 0) return // o esquerdo e das marcacoes e das medidas
+    if (e.button === 0 || aba === 'pintura') return // o esquerdo e das marcacoes e das medidas; a pintura tem os dela
     e.preventDefault()
     arrastoRef.current = { botao: e.button, x: e.clientX, y: e.clientY }
   }
@@ -164,6 +191,21 @@ export default function MarcadorTomografia({
   }
   function aoSoltar() {
     arrastoRef.current = null
+  }
+
+  // coordenada do cursor que corresponde ao corte de cada plano
+  const CAMPO: Record<Plano, keyof Cursor3d> = { axial: 'corte', sagital: 'coluna', coronal: 'linha' }
+  const cursorEfetivo: Cursor3d = { ...cursor, [CAMPO[plano]]: corte }
+
+  function moverCursor(c: Cursor3d) {
+    setCursor(c)
+    setCorte(c[CAMPO[plano]])
+  }
+
+  function planoPrincipalNoCursor(p: Plano) {
+    setCursor(cursorEfetivo)
+    setPlano(p)
+    setCorte(cursorEfetivo[CAMPO[p]])
   }
 
   function trocarPlano(p: Plano) {
@@ -188,7 +230,34 @@ export default function MarcadorTomografia({
   }
 
   const chaveCorte = `${plano}:${corte}`
-  const medidasDoCorte = medidas[chaveCorte] ?? []
+  const naFicha = Boolean(onMedir)
+  const medidasDoCorte: Medida[] = naFicha
+    ? geo
+      ? (medidasDaFicha ?? [])
+          .filter((m) => m.plano === plano && m.corte === corte)
+          .map((m) => ({ id: m.id, tipo: m.tipo, pontos: m.pontos, valor: valorDaMedida(geo, m) }))
+      : []
+    : (medidas[chaveCorte] ?? [])
+
+  function novaMedida(m: Medida) {
+    if (onMedir) {
+      onMedir([...(medidasDaFicha ?? []), { id: m.id, tipo: m.tipo, plano, corte, pontos: m.pontos }])
+    } else {
+      setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))
+    }
+  }
+
+  function limparMedidasDoCorte() {
+    if (onMedir) {
+      onMedir((medidasDaFicha ?? []).filter((m) => !(m.plano === plano && m.corte === corte)))
+      return
+    }
+    setMedidas((todas) => {
+      const resto = { ...todas }
+      delete resto[chaveCorte]
+      return resto
+    })
+  }
 
   function alternarFerramenta(f: FerramentaMedida) {
     setFerramenta((atual) => (atual === f ? null : f))
@@ -199,7 +268,7 @@ export default function MarcadorTomografia({
 
   function exportar() {
     if (!geo) return
-    const doc = exportarMarcacoesTc(orthancReferenceId, geo, marcacoes)
+    const doc = exportarMarcacoesTc(orthancReferenceId, geo, marcacoes, naFicha ? (medidasDaFicha ?? []) : [])
     const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
@@ -230,6 +299,27 @@ export default function MarcadorTomografia({
   return (
     <div className="flex h-full min-h-0 gap-3">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        {curationId !== undefined && (
+          <div role="tablist" aria-label={t('modo')} className="flex gap-1.5">
+            {(['formas', 'pintura'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                role="tab"
+                aria-selected={aba === a}
+                onClick={() => {
+                  setAba(a)
+                  setFerramenta(null)
+                }}
+                className={`rounded-lg border px-3 py-1 text-xs font-semibold ${
+                  aba === a ? 'border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-100' : 'border-base-border text-ink-2 hover:border-teal-500'
+                }`}
+              >
+                {t(a === 'formas' ? 'abaFormas' : 'abaPintura')}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <div role="group" aria-label={t('plano')} className="flex gap-1">
             {PLANOS.map((p) => (
@@ -304,7 +394,20 @@ export default function MarcadorTomografia({
               {t('angulo')}
             </button>
           </div>
+          <button type="button" aria-pressed={tresPlanos} onClick={() => setTresPlanos((v) => !v)} className={`ml-2 ${botaoLigado(tresPlanos)}`}>
+            {t('tresPlanos')}
+          </button>
         </div>
+        {tresPlanos && (
+          <TresPlanosTomografia
+            geo={geo}
+            urlPlano={(p, i) => `${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${p}&indice=${i}`}
+            cursor={cursorEfetivo}
+            onCursor={moverCursor}
+            planoPrincipal={plano}
+            onEscolherPlano={planoPrincipalNoCursor}
+          />
+        )}
         <p className="text-xs text-slate-400">{ferramenta ? t(ferramenta === 'regua' ? 'dicaRegua' : 'dicaAngulo') : t('dica')}</p>
         {/* 24/11/2026 (decisao do Luciano, opcao A): exame com medida
             duvidosa (ex.: as tomografias da base publica, pixel de 1 mm) */}
@@ -336,7 +439,8 @@ export default function MarcadorTomografia({
             } else if (e.key === 'Escape' && ferramenta) {
               e.preventDefault()
               setFerramenta(null)
-            } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            } else if (aba !== 'pintura' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              // na pintura, as letras sao do pincel (B, S, W, L, P, E, C...)
               // atalhos (24/11/2026): A/S/C = plano; R = regua; G = angulo
               const tecla = e.key.toLowerCase()
               const planoDaTecla: Record<string, Plano> = { a: 'axial', s: 'sagital', c: 'coronal' }
@@ -346,11 +450,24 @@ export default function MarcadorTomografia({
               } else if (tecla === 'r' || tecla === 'g') {
                 e.preventDefault()
                 alternarFerramenta(tecla === 'r' ? 'regua' : 'angulo')
+              } else if (tecla === 't') {
+                e.preventDefault()
+                setTresPlanos((v) => !v)
               }
             }
           }}
           className="min-h-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         >
+          {aba === 'pintura' && curationId !== undefined ? (
+            <PintorSegmentacao
+              key={chaveCorte}
+              curationId={curationId}
+              orthancReferenceId={orthancReferenceId}
+              dentesFicha={dentesFicha}
+              urlImagem={`${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${plano}&indice=${corte}`}
+              corteTc={{ plano, corte }}
+            />
+          ) : (
           <MarcadorAchado
             urlImagem={`${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${plano}&indice=${corte}`}
             semRecorte
@@ -367,10 +484,11 @@ export default function MarcadorTomografia({
                 tamanho={tamanhoDoPlanoMm(geo, plano)}
                 medidas={medidasDoCorte}
                 rotulo={rotuloMedida}
-                onNova={(m) => setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))}
+                onNova={novaMedida}
               />
             }
           />
+          )}
         </div>
       </div>
       <aside className="w-48 shrink-0 space-y-2 overflow-y-auto text-xs">
@@ -415,18 +533,12 @@ export default function MarcadorTomografia({
             </ul>
             <button
               type="button"
-              onClick={() =>
-                setMedidas((todas) => {
-                  const resto = { ...todas }
-                  delete resto[chaveCorte]
-                  return resto
-                })
-              }
+              onClick={limparMedidasDoCorte}
               className="text-red-500 hover:underline"
             >
               {t('limparMedidas')}
             </button>
-            <p className="text-[10px] text-slate-400">{t('medidasSoNaTela')}</p>
+            <p className="text-[10px] text-slate-400">{t(naFicha ? 'medidasNaFicha' : 'medidasSoNaTela')}</p>
           </>
         )}
       </aside>

@@ -276,6 +276,13 @@ class Curation(Base):
     # oval/retangulo: {id, tipo, x, y, largura, altura}
     # seta:           {id, tipo, x1, y1, x2, y2}
     marcacoes: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default="[]")
+    # MEDIDAS NA TOMOGRAFIA (24/11/2026, pedido do Luciano): regua (mm) e
+    # angulo (graus) feitos pelo curador num corte - dado da ficha para a
+    # pesquisa e para quem estuda. Lista de
+    # {id, tipo: "regua"|"angulo", plano, corte, pontos: [{x, y}, ...]}
+    # (pontos em fracao da imagem do corte; o VALOR e calculado na tela pela
+    # geometria do exame, para nunca ficar diferente dos pontos).
+    medidas: Mapped[Any] = mapped_column(JSONB, nullable=False, server_default="[]")
     achados_detalhe: Mapped[str | None] = mapped_column(Text, nullable=True)
     alteracoes_observadas: Mapped[list[str] | None] = mapped_column(ARRAY(String(60)), nullable=True)  # checklist (AlteracaoObservada)
     # 01/11/2026 - REGIOES ANATOMICAS QUE A IMAGEM MOSTRA (RegiaoAnatomica),

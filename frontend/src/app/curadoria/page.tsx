@@ -122,6 +122,8 @@ function construirPayloadEdicao(form: FormularioFicha): Record<string, unknown> 
   // rotulo dele; o backend deriva alteracoes_observadas e dentes
   const marcacoes = marcacoesSincronizadas(form.marcacoes, form.achados)
   payload.marcacoes = marcacoes
+  // medidas da tomografia (24/11/2026): so quando a ficha veio do servidor
+  if (form.medidas) payload.medidas = form.medidas
   payload.achados = achadosParaApi(form.achados, marcacoes)
   payload.sem_alteracoes = form.sem_alteracoes && form.achados.length === 0
   payload.erros_tecnicos = form.erros_tecnicos
@@ -813,6 +815,7 @@ export default function CuradoriaPage() {
       idade_max: ficha.idade_max !== null && ficha.idade_max !== undefined ? String(ficha.idade_max) : '',
       genero: ficha.genero ?? '',
       marcacoes: ficha.marcacoes ?? [],
+      medidas: Array.isArray(ficha.medidas) ? ficha.medidas : undefined,
       achados_detalhe: ficha.achados_detalhe ?? '',
       alteracoes_observadas: ficha.alteracoes_observadas ?? [],
       // ficha antiga (sem o campo): comeca com o padrao do exame, que e o
@@ -1752,6 +1755,10 @@ export default function CuradoriaPage() {
                           setForm(comAchados({ ...form, marcacoes }, achados))
                         }}
                         onCarregou={() => setMarcadorPronto(true)}
+                        medidas={form.medidas ?? []}
+                        onMedir={(medidas) => setForm({ ...form, medidas })}
+                        curationId={fichaAtiva.curationId}
+                        dentesFicha={form.dentes}
                       />
                     </div>
                   ) : (
