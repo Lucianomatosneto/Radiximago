@@ -90,6 +90,8 @@ export default function PintorSegmentacao({
   corteTc?: { plano: 'axial' | 'sagital' | 'coronal'; corte: number }
 }) {
   const t = useTranslations('Segmentacao')
+  const planoTc = corteTc?.plano
+  const corteNum = corteTc?.corte
   const [src, setSrc] = useState('')
   const [natural, setNatural] = useState<{ largura: number; altura: number } | null>(null)
   const [erroImagem, setErroImagem] = useState(false)
@@ -255,9 +257,7 @@ export default function PintorSegmentacao({
     listarSegmentacoes(curationId)
       .then(async (todas) => {
         // tomografia: so as do corte aberto; radiografia: so as sem corte
-        const itens = todas.filter((s) =>
-          corteTc ? s.plano === corteTc.plano && s.corte === corteTc.corte : !s.plano,
-        )
+        const itens = todas.filter((s) => (planoTc ? s.plano === planoTc && s.corte === corteNum : !s.plano))
         for (const s of itens) {
           const m = new Uint8Array(w * h)
           await new Promise<void>((ok) => {
@@ -286,7 +286,7 @@ export default function PintorSegmentacao({
     return () => {
       cancelado = true
     }
-  }, [curationId, w, h, corteTc?.plano, corteTc?.corte])
+  }, [curationId, w, h, planoTc, corteNum])
 
   // ---------------------------------------------------------------- salvar
   function pngDaMascara(m: Mascara): string {
