@@ -29,6 +29,12 @@ vi.mock('../../../../frontend/src/components/curadoria/MarcadorAchado', () => ({
   ),
 }))
 
+vi.mock('../../../../frontend/src/components/segmentacao/PintorSegmentacao', () => ({
+  default: (p: { urlImagem?: string; corteTc?: { plano: string; corte: number }; curationId: number }) => (
+    <div data-testid="pintor" data-url={p.urlImagem} data-corte={p.corteTc ? `${p.corteTc.plano}:${p.corteTc.corte}` : ''} data-ficha={p.curationId} />
+  ),
+}))
+
 const GEOMETRIA = {
   cortes: 200, linhas: 400, colunas: 500, espacamento_mm: [0.3, 0.3, 0.3], altura_mm: 59.7,
   limites: { espessura_mm: [0.5, 40], intervalo_mm: [0.2, 10], largura_mm: [5, 80] },
@@ -209,6 +215,44 @@ describe('tres planos', () => {
     expect(url()).toContain('plano=coronal&indice=200')
     fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 't' })
     expect(screen.queryByRole('group', { name: 'Três planos' })).toBeNull()
+  })
+})
+
+// PINTAR A LESAO NOS CORTES (24/11/2026, recurso 8): com a ficha ligada
+// (curationId), a aba "Pintura" troca as formas pelo pincel das radiografias
+// sobre a imagem do corte aberto; passar o corte troca a pintura.
+describe('pintura no corte', () => {
+  async function abrirComFicha() {
+    servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: GEOMETRIA } })
+    montarTela(<MarcadorTomografia orthancReferenceId={55} marcacoes={[]} onMarcar={vi.fn()} curationId={9} dentesFicha={[36]} />)
+    await screen.findByTestId('marcador')
+  }
+
+  it('sem a ficha nao ha aba de pintura', async () => {
+    await abrir()
+    expect(screen.queryByRole('tab', { name: 'Pintura' })).toBeNull()
+  })
+
+  it('aba Pintura: pincel no corte aberto; trocar o corte troca a pintura; Formas volta', async () => {
+    await abrirComFicha()
+    expect(screen.getByRole('tab', { name: 'Formas' }).getAttribute('aria-selected')).toBe('true')
+    fireEvent.click(screen.getByRole('tab', { name: 'Pintura' }))
+    const pintor = screen.getByTestId('pintor')
+    expect(pintor.getAttribute('data-url')).toContain('/reconstrucao/55/plano.png?plano=axial&indice=100')
+    expect(pintor.getAttribute('data-corte')).toBe('axial:100')
+    expect(pintor.getAttribute('data-ficha')).toBe('9')
+    expect(screen.queryByTestId('marcador')).toBeNull()
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(screen.getByTestId('pintor').getAttribute('data-corte')).toBe('axial:101')
+    fireEvent.click(screen.getByRole('tab', { name: 'Formas' }))
+    expect(screen.getByTestId('marcador')).toBeTruthy()
+  })
+
+  it('na pintura, a roda do mouse fica com o pincel (zoom), sem passar o corte', async () => {
+    await abrirComFicha()
+    fireEvent.click(screen.getByRole('tab', { name: 'Pintura' }))
+    fireEvent.wheel(screen.getByTestId('area-tomografia'), { deltaY: -100 })
+    expect(screen.getByTestId('pintor').getAttribute('data-corte')).toBe('axial:100')
   })
 })
 
