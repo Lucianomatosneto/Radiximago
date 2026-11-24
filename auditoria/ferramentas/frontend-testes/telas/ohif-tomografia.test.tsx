@@ -86,10 +86,16 @@ function montar(modalidade: string, cortes: number, dados: Float32Array = exameH
   const protocolos = new Map<string, any>() // eslint-disable-line @typescript-eslint/no-explicit-any
   const ds = { displaySetInstanceUID: 'ds1', StudyInstanceUID: 'e1', Modality: modalidade, instances: Array.from({ length: cortes }, () => ({})) }
   const comandos = vi.fn()
-  const grupos: Record<string, { hasTool: (n: string) => boolean; setToolActive: ReturnType<typeof vi.fn>; setToolPassive: ReturnType<typeof vi.fn> }> = {
-    default: { hasTool: () => true, setToolActive: vi.fn(), setToolPassive: vi.fn() },
-    volume3d: { hasTool: () => true, setToolActive: vi.fn(), setToolPassive: vi.fn() },
+  type Grupo = {
+    hasTool: (n: string) => boolean
+    setToolActive: ReturnType<typeof vi.fn>
+    setToolPassive: ReturnType<typeof vi.fn>
+    setToolEnabled: ReturnType<typeof vi.fn>
+    setToolDisabled: ReturnType<typeof vi.fn>
   }
+  const grupo = (): Grupo => ({ hasTool: () => true, setToolActive: vi.fn(), setToolPassive: vi.fn(), setToolEnabled: vi.fn(), setToolDisabled: vi.fn() })
+  // "mpr" = grupo dos quadros de plano no OHIF 3.9 (tem a ferramenta ReferenceLines)
+  const grupos: Record<string, Grupo> = { default: grupo(), volume3d: grupo(), mpr: grupo() }
   ;(window as unknown as { services: unknown }).services = {
     viewportGridService: {
       getState: () => ({ activeViewportId: 'ax', viewports: new Map([['ax', { displaySetInstanceUIDs: ['ds1'] }], ['d3', { displaySetInstanceUIDs: ['ds1'] }]]) }),
@@ -237,6 +243,39 @@ describe('janelas', () => {
     // os pontos do CT-Bone (em HU) foram levados para a escala do exame (+~1000)
     expect(opacidade.pontos.length).toBeGreaterThan(0)
     expect(Math.min(...opacidade.pontos.map((p) => p[0]))).toBeGreaterThan(-100)
+  })
+})
+
+// LINHAS DE REFERENCIA (23/11/2026, pedido do Luciano): em cada quadro de
+// plano aparece a linha do corte que esta no quadro ATIVO (o que o curador
+// esta passando). Ferramenta ReferenceLines do OHIF, ligada no grupo "mpr".
+describe('linhas de referencia', () => {
+  it('ligadas ao abrir, com o quadro ativo como origem', () => {
+    const { grupos, comandos } = montar('CT', 120)
+    expect(grupos.mpr.setToolEnabled).toHaveBeenCalledWith('ReferenceLines')
+    expect(comandos).toHaveBeenCalledWith('setSourceViewportForReferenceLinesTool', { viewportId: 'ax' })
+    expect(botao('Linhas de referência').getAttribute('aria-pressed')).toBe('true')
+  })
+
+  it('trocar o quadro ativo troca a origem das linhas', () => {
+    const { comandos } = montar('CT', 120)
+    const s = (window as unknown as { services: { viewportGridService: { getState: () => unknown } } }).services
+    const antigo = s.viewportGridService.getState as () => { viewports: Map<string, unknown> }
+    const viewports = antigo().viewports
+    s.viewportGridService.getState = () => ({ activeViewportId: 'd3', viewports })
+    comandos.mockClear()
+    vi.advanceTimersByTime(1000)
+    expect(comandos).toHaveBeenCalledWith('setSourceViewportForReferenceLinesTool', { viewportId: 'd3' })
+  })
+
+  it('o botao desliga e liga de novo', () => {
+    const { grupos } = montar('CT', 120)
+    fireEvent.click(botao('Linhas de referência'))
+    expect(grupos.mpr.setToolDisabled).toHaveBeenCalledWith('ReferenceLines')
+    expect(botao('Linhas de referência').getAttribute('aria-pressed')).toBe('false')
+    grupos.mpr.setToolEnabled.mockClear()
+    fireEvent.click(botao('Linhas de referência'))
+    expect(grupos.mpr.setToolEnabled).toHaveBeenCalledWith('ReferenceLines')
   })
 })
 

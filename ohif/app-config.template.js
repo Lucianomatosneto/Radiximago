@@ -1056,6 +1056,9 @@ window.config = {
 //  - Espessura nos planos: 0,625 mm (corte fino), 2, 5 e 10 mm (corte
 //    grosso pela MEDIA dos cortes, como nos programas de TCFC);
 //  - Reconstrucao: series que o Radix gerou (panoramica, cortes, canal);
+//  - Linhas de referencia (23/11/2026): em cada quadro de plano, a linha do
+//    corte que esta no quadro ATIVO (ferramenta ReferenceLines do OHIF, no
+//    grupo "mpr"); ligadas por padrao, com botao para desligar;
 //  - o painel recolhe para liberar a imagem.
 // No quadro 3D o botao esquerdo GIRA o volume (o grupo "volume3d" fica fora
 // do "mouse pratico" acima).
@@ -1077,6 +1080,8 @@ window.config = {
   var escolhas = { planos: 'asc3', janela: '', espessura: 0.625 };
   var estudosAbertos = {};
   var escalas = {};
+  var linhasLigadas = true;
+  var origemLinhas = '';
 
   function servicos() { return window.services || null; }
 
@@ -1262,6 +1267,7 @@ window.config = {
     try { registrado = !!(hp && hp.getProtocolById(id)); } catch (e) { registrado = false; }
     try { if (hp && !registrado) hp.addProtocol(id, protocolo(planos)); } catch (e) { /* sem registro */ }
     comando('setHangingProtocol', { protocolId: id });
+    origemLinhas = '';
     // os quadros novos nascem sem a janela/espessura escolhidas: reaplica
     setTimeout(reaplicar, 900);
     montar(true);
@@ -1354,6 +1360,36 @@ window.config = {
     if (escolhas.espessura !== 0.625) espessura(escolhas.espessura);
   }
 
+  // ---- linhas de referencia ---------------------------------------------
+  function grupoPlanos() {
+    var s = servicos();
+    try {
+      var g = s && s.toolGroupService && s.toolGroupService.getToolGroup('mpr');
+      return g && g.hasTool && g.hasTool('ReferenceLines') ? g : null;
+    } catch (e) { return null; }
+  }
+
+  function linhasDeReferencia() {
+    var g = grupoPlanos();
+    if (!g) return;
+    try {
+      if (!linhasLigadas) { if (g.__radixLinhas) { g.setToolDisabled('ReferenceLines'); g.__radixLinhas = false; } return; }
+      var ativo = servicos().viewportGridService.getState().activeViewportId;
+      if (ativo && ativo !== origemLinhas) {
+        origemLinhas = ativo;
+        comando('setSourceViewportForReferenceLinesTool', { viewportId: ativo });
+      }
+      if (!g.__radixLinhas) { g.setToolEnabled('ReferenceLines'); g.__radixLinhas = true; }
+    } catch (e) { /* quadros ainda montando */ }
+  }
+
+  function alternarLinhas() {
+    linhasLigadas = !linhasLigadas;
+    origemLinhas = '';
+    linhasDeReferencia();
+    montar(true);
+  }
+
   // ---- painel -------------------------------------------------------------
   function botao(texto, ativo, aoClicar, rotulo) {
     var b = document.createElement('button');
@@ -1414,6 +1450,9 @@ window.config = {
     painel.appendChild(grupo('Espessura', ESPESSURAS.map(function (e) {
       return botao(e[0], escolhas.espessura === e[1], function () { espessura(e[1]); });
     })));
+    var gLinhas = grupo('Referência', [botao('Linhas de referência', linhasLigadas, alternarLinhas)]);
+    gLinhas.lastChild.style.gridTemplateColumns = '1fr';
+    painel.appendChild(gLinhas);
     var rec = reconstrucoes();
     var itens = [];
     if (rec.pano) itens.push(botao('Panorâmica reconstruída', false, function () { abrirSerie(rec.pano); }));
@@ -1451,6 +1490,7 @@ window.config = {
       aplicarPlanos('asc3');
     }
     ossoNo3d();
+    linhasDeReferencia();
     montar(false);
   }
   setInterval(verificar, 700);
