@@ -881,3 +881,95 @@ def obter_corte_tomografia(
             "Cache-Control": "private, max-age=300",
         },
     )
+
+
+# ---------------------------------------------------------------------
+# PANORAMICA E CANAL PARA QUEM ESTUDA (pedido do Luciano, 24/11/2026,
+# recurso 5): as reconstrucoes que o curador gerou nesta tomografia
+# APROVADA - panoramica reconstruida e cortes transversais - e, quando o
+# curador marcou, as versoes com o canal mandibular desenhado. A lista nao
+# diz quem gerou. As imagens ficam no Orthanc, na ordem gravada em
+# ReconstrucaoTomografia.instancias_orthanc:
+#   [panoramica, corte 1..N, (com canal:) panoramica com canal, corte 1..N com canal]
+# ---------------------------------------------------------------------
+@router.get("/{curation_id}/tomografia/reconstrucoes")
+def listar_reconstrucoes_tomografia(
+    curation_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    from app.modules.reconstrucao.modelo import ReconstrucaoTomografia
+
+    ficha = _buscar_ficha_aprovada(db, curation_id)
+    linhas = (
+        db.query(ReconstrucaoTomografia)
+        .filter(ReconstrucaoTomografia.orthanc_reference_id == ficha.orthanc_reference_id)
+        .order_by(ReconstrucaoTomografia.id.desc())
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "criado_em": r.criado_em.isoformat() if r.criado_em else None,
+            "total_cortes": r.total_cortes,
+            "tamanho_pixel_mm": r.tamanho_pixel_mm,
+            "intervalo_mm": float((r.parametros or {}).get("intervalo_mm", 1.0)),
+            "largura_mm": float((r.parametros or {}).get("largura_mm", 0.0)),
+            "tem_canal": bool(r.canal) and len(r.instancias_orthanc or []) >= 2 * (1 + r.total_cortes),
+        }
+        for r in linhas
+    ]
+
+
+@router.get("/{curation_id}/tomografia/reconstrucoes/{rec_id}/imagem.png")
+def obter_imagem_reconstrucao_tomografia(
+    curation_id: int,
+    rec_id: int,
+    tipo: Literal["panoramica", "corte"] = Query(...),
+    n: int = Query(1, ge=0, le=100000, description="Numero do corte transversal (1 a total)"),
+    canal: bool = Query(False, description="Versao com o canal mandibular desenhado"),
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    import numpy as np
+    from PIL import Image
+
+    from app.modules.reconstrucao import canal as desenho_canal
+    from app.modules.reconstrucao import fonte
+    from app.modules.reconstrucao.modelo import ReconstrucaoTomografia
+
+    ficha = _buscar_ficha_aprovada(db, curation_id)
+    rec = (
+        db.query(ReconstrucaoTomografia)
+        .filter(ReconstrucaoTomografia.id == rec_id, ReconstrucaoTomografia.orthanc_reference_id == ficha.orthanc_reference_id)
+        .first()
+    )
+    if not rec:
+        raise HTTPException(status_code=404, detail="Reconstrução não encontrada.")
+    total = int(rec.total_cortes)
+    if tipo == "corte" and not 1 <= n <= total:
+        raise HTTPException(status_code=422, detail=f"Corte transversal fora da reconstrução (1 a {total}).")
+    instancias = list(rec.instancias_orthanc or [])
+    base = 0
+    if canal:
+        if not rec.canal or len(instancias) < 2 * (1 + total):
+            raise HTTPException(status_code=404, detail="O canal mandibular não foi marcado nesta reconstrução.")
+        base = 1 + total
+    indice = base + (0 if tipo == "panoramica" else n)
+    try:
+        ds = fonte.ler_corte(instancias[indice])
+    except Exception as erro:  # noqa: BLE001 - instancia apagada do Orthanc
+        raise HTTPException(status_code=409, detail="As imagens desta reconstrução não estão mais disponíveis.") from erro
+    pixels = ds.pixel_array
+    if pixels.ndim == 3:  # com canal: ja colorida (RGB)
+        img = np.asarray(pixels, dtype=np.uint8)
+    else:
+        img = desenho_canal.em_rgb(pixels.astype(np.float32))[:, :, 0]
+    saida = io.BytesIO()
+    Image.fromarray(img).save(saida, format="PNG")
+    nome = f"radix-imago-tomografia-{curation_id}-{tipo}{'' if tipo == 'panoramica' else f'-{n}'}{'-canal' if canal else ''}.png"
+    return Response(
+        content=saida.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": disposicao_de_arquivo(nome), "Cache-Control": "private, max-age=300"},
+    )
