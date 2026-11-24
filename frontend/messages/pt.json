@@ -1426,7 +1426,9 @@
       "desafioResultado": "Você encontrou {encontradas} de {total} lesões.",
       "seusPalpites": "Seus palpites",
       "palpiteN": "Palpite {n}",
-      "semPalpites": "Você usou todos os palpites ({n}). Revele a resposta."
+      "semPalpites": "Você usou todos os palpites ({n}). Revele a resposta.",
+      "mostrarPintura": "Mostrar pintura do curador",
+      "medidasCurador": "Medidas do curador neste corte"
     },
     "reconstrucoes": {
       "titulo": "Panorâmica reconstruída e cortes transversais",
