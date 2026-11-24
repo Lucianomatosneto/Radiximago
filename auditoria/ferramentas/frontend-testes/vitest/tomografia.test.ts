@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest'
 import {
   anguloGraus,
   campoDuvidosoCm,
+  valorDaMedida,
   distanciaMm,
   exportarMarcacoesTc,
   tamanhoDoPlanoMm,
