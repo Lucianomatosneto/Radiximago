@@ -31,6 +31,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { useFormatter, useTranslations } from 'next-intl'
 import MarcadorAchado from './MarcadorAchado'
 import LocalizadorTomografia from './LocalizadorTomografia'
+import PintorSegmentacao from '../segmentacao/PintorSegmentacao'
 import TresPlanosTomografia, { type Cursor3d } from './TresPlanosTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from './MedidasTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
@@ -54,6 +55,8 @@ export default function MarcadorTomografia({
   onCarregou,
   medidas: medidasDaFicha,
   onMedir,
+  curationId,
+  dentesFicha = [],
 }: {
   orthancReferenceId: number
   marcacoes: Marcacao[]
@@ -62,6 +65,9 @@ export default function MarcadorTomografia({
   /** medidas gravadas na ficha (recurso 6); com onMedir, viram dado da ficha */
   medidas?: MedidaFicha[]
   onMedir?: (medidas: MedidaFicha[]) => void
+  /** ficha aberta: liga a aba "Pintura" (pincel no corte, recurso 8) */
+  curationId?: number
+  dentesFicha?: number[]
 }) {
   const t = useTranslations('Curadoria.marcadorTomografia')
   const formato = useFormatter()
@@ -74,6 +80,11 @@ export default function MarcadorTomografia({
   const [tresPlanos, setTresPlanos] = useState(false)
   const [cursor, setCursor] = useState<Cursor3d>({ coluna: 0, linha: 0, corte: 0 })
   const passarRef = useRef<(sentido: number) => void>(() => {})
+  // PINTURA NO CORTE (24/11/2026, recurso 8): aba "Formas" (marcacoes e
+  // medidas) ou "Pintura" (o pincel das radiografias sobre o corte aberto)
+  const [aba, setAba] = useState<'formas' | 'pintura'>('formas')
+  const abaRef = useRef(aba)
+  abaRef.current = aba
 
   // ver melhor (so na tela; as marcacoes continuam nas mesmas coordenadas)
   const [zoom, setZoom] = useState(1)
@@ -142,6 +153,8 @@ export default function MarcadorTomografia({
       area.addEventListener(
         'wheel',
         (e: WheelEvent) => {
+          // na pintura a roda e do pincel (zoom); os cortes passam pelas setas
+          if (abaRef.current === 'pintura') return
           e.preventDefault()
           if (e.deltaY === 0) return
           if (e.ctrlKey || e.metaKey) {
@@ -158,7 +171,7 @@ export default function MarcadorTomografia({
   function aoApertar(e: MouseEvent<HTMLDivElement>) {
     // clicar na imagem da o foco a area: setas e atalhos passam a valer
     e.currentTarget.focus({ preventScroll: true })
-    if (e.button === 0) return // o esquerdo e das marcacoes e das medidas
+    if (e.button === 0 || aba === 'pintura') return // o esquerdo e das marcacoes e das medidas; a pintura tem os dela
     e.preventDefault()
     arrastoRef.current = { botao: e.button, x: e.clientX, y: e.clientY }
   }
@@ -286,6 +299,27 @@ export default function MarcadorTomografia({
   return (
     <div className="flex h-full min-h-0 gap-3">
       <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+        {curationId !== undefined && (
+          <div role="tablist" aria-label={t('modo')} className="flex gap-1.5">
+            {(['formas', 'pintura'] as const).map((a) => (
+              <button
+                key={a}
+                type="button"
+                role="tab"
+                aria-selected={aba === a}
+                onClick={() => {
+                  setAba(a)
+                  setFerramenta(null)
+                }}
+                className={`rounded-lg border px-3 py-1 text-xs font-semibold ${
+                  aba === a ? 'border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-100' : 'border-base-border text-ink-2 hover:border-teal-500'
+                }`}
+              >
+                {t(a === 'formas' ? 'abaFormas' : 'abaPintura')}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <div role="group" aria-label={t('plano')} className="flex gap-1">
             {PLANOS.map((p) => (
@@ -405,7 +439,8 @@ export default function MarcadorTomografia({
             } else if (e.key === 'Escape' && ferramenta) {
               e.preventDefault()
               setFerramenta(null)
-            } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+            } else if (aba !== 'pintura' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+              // na pintura, as letras sao do pincel (B, S, W, L, P, E, C...)
               // atalhos (24/11/2026): A/S/C = plano; R = regua; G = angulo
               const tecla = e.key.toLowerCase()
               const planoDaTecla: Record<string, Plano> = { a: 'axial', s: 'sagital', c: 'coronal' }
@@ -423,6 +458,16 @@ export default function MarcadorTomografia({
           }}
           className="min-h-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
         >
+          {aba === 'pintura' && curationId !== undefined ? (
+            <PintorSegmentacao
+              key={chaveCorte}
+              curationId={curationId}
+              orthancReferenceId={orthancReferenceId}
+              dentesFicha={dentesFicha}
+              urlImagem={`${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${plano}&indice=${corte}`}
+              corteTc={{ plano, corte }}
+            />
+          ) : (
           <MarcadorAchado
             urlImagem={`${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${plano}&indice=${corte}`}
             semRecorte
@@ -443,6 +488,7 @@ export default function MarcadorTomografia({
               />
             }
           />
+          )}
         </div>
       </div>
       <aside className="w-48 shrink-0 space-y-2 overflow-y-auto text-xs">

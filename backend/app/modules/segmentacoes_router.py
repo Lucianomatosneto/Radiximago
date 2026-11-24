@@ -14,10 +14,10 @@ auditoria (acoes segmentacao_criada / _alterada / _apagada).
 """
 
 import re
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -27,6 +27,7 @@ from app.modules.curation.common import STATUS_EDITAVEIS, _registrar_auditoria
 from app.modules.curations import Curation, DENTES_PERMANENTES, StatusCuradoria
 from app.modules.segmentacoes import (
     MAX_CARACTERES_MASCARA,
+    MAX_CORTES_PINTADOS_POR_FICHA,
     MAX_SEGMENTACOES_POR_FICHA,
     MascaraInvalida,
     SegmentacaoCuradoria,
@@ -61,6 +62,15 @@ class SegmentacaoEntrada(BaseModel):
     dente: Optional[int] = None
     cor: Cor
     mascara: Mascara
+    # tomografia (24/11/2026, recurso 8): o corte pintado; os dois juntos
+    plano: Optional[Literal["axial", "sagital", "coronal"]] = None
+    corte: Optional[int] = Field(default=None, ge=0, le=100000)
+
+    @model_validator(mode="after")
+    def _plano_e_corte_juntos(self):
+        if (self.plano is None) != (self.corte is None):
+            raise ValueError("Informe o plano e o corte juntos (pintura na tomografia).")
+        return self
 
     @field_validator("cor")
     @classmethod
@@ -138,6 +148,8 @@ def _saida(s: SegmentacaoCuradoria) -> dict:
         "largura": s.largura,
         "altura": s.altura,
         "mascara": mascara_para_exibir(s.mascara),
+        "plano": s.plano,
+        "corte": s.corte,
         "atualizado_em": s.atualizado_em.isoformat() if s.atualizado_em else None,
     }
 
@@ -173,20 +185,36 @@ def criar(
 ):
     ficha = _ficha(db, curation_id)
     _exigir_pintor(usuario, ficha)
-    total = db.query(SegmentacaoCuradoria).filter(SegmentacaoCuradoria.curation_id == ficha.id).count()
-    if total >= MAX_SEGMENTACOES_POR_FICHA:
-        raise HTTPException(status_code=422, detail=f"Limite de {MAX_SEGMENTACOES_POR_FICHA} estruturas por imagem.")
+    # radiografia e tomografia tem limites proprios (cada corte pintado da
+    # tomografia e uma linha)
+    na_tc = dados.plano is not None
+    total = (
+        db.query(SegmentacaoCuradoria)
+        .filter(
+            SegmentacaoCuradoria.curation_id == ficha.id,
+            SegmentacaoCuradoria.plano.isnot(None) if na_tc else SegmentacaoCuradoria.plano.is_(None),
+        )
+        .count()
+    )
+    limite = MAX_CORTES_PINTADOS_POR_FICHA if na_tc else MAX_SEGMENTACOES_POR_FICHA
+    if total >= limite:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Limite de {limite} cortes pintados por tomografia." if na_tc else f"Limite de {limite} estruturas por imagem.",
+        )
     png, largura, altura = _sanitizar(dados.mascara)
     nova = SegmentacaoCuradoria(
         curation_id=ficha.id, nome=dados.nome.strip(), dente=dados.dente, cor=dados.cor,
         mascara=png, largura=largura, altura=altura, criado_por_id=usuario.id,
+        plano=dados.plano, corte=dados.corte,
     )
     db.add(nova)
     db.flush()
     _registrar_auditoria(
         db, usuario.id, "segmentacao_criada", ficha.id, "sucesso",
         f"Estrutura '{nova.nome}' (id {nova.id}{', dente ' + str(nova.dente) if nova.dente else ''}) criada; "
-        f"{pixels_pintados(png)} pixels pintados em {largura}x{altura}.",
+        f"{pixels_pintados(png)} pixels pintados em {largura}x{altura}"
+        + (f" no corte {nova.corte} do plano {nova.plano}." if na_tc else "."),
     )
     db.commit()
     db.refresh(nova)

@@ -1323,7 +1323,10 @@
       "medidaDuvidosaTitulo": "Unreliable measurement",
       "medidaDuvidosa": "this exam declares a {cm} cm field of view, larger than a head. Ruler millimetres are not reliable: use it only to compare sizes within this exam. Angles remain valid.",
       "medidasNaFicha": "Measurements are saved in the record when it is saved.",
-      "tresPlanos": "Three planes"
+      "tresPlanos": "Three planes",
+      "modo": "Marking mode",
+      "abaFormas": "Shapes",
+      "abaPintura": "Painting"
     },
     "localizador": {
       "alt": "Locator: {miniatura} showing the position of the {plano} slice",
