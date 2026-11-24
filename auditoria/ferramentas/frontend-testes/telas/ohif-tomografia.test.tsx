@@ -233,12 +233,15 @@ describe('planos marcados = quadros na tela', () => {
 })
 
 describe('janelas', () => {
-  it('exame em HU: Osso 2000/500 e Partes moles 400/40, como no padrao', () => {
+  // 23/11/2026 (escolha do Luciano, comparando no TC01 do acervo): Osso
+  // largura 3000 / nivel 900 e Partes moles largura 1000 / nivel 150 - as
+  // janelas antigas (2000/500 e 400/40) ficavam estouradas na TCFC
+  it('exame em HU: Osso 3000/900 e Partes moles 1000/150', () => {
     const { vps } = montar('CT', 120, exameHu())
     fireEvent.click(botao('Osso'))
-    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -500, upper: 1500 } })
+    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -600, upper: 2400 } })
     fireEvent.click(botao('Partes moles'))
-    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -160, upper: 240 } })
+    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -350, upper: 650 } })
     expect(vps.d3.setProperties).not.toHaveBeenCalledWith(expect.objectContaining({ voiRange: expect.anything() }))
   })
 
@@ -246,16 +249,19 @@ describe('janelas', () => {
     const { vps } = montar('CT', 120, exameNaoHu())
     fireEvent.click(botao('Partes moles'))
     const moles = vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange
-    // ar = 0 e partes moles ~1000: a janela fica em volta das partes moles
-    expect(moles.lower).toBeGreaterThan(700)
-    expect(moles.upper).toBeLessThan(1300)
-    expect(moles.lower).toBeLessThan(1000)
-    expect(moles.upper).toBeGreaterThan(1000)
+    // ar = 0 e partes moles ~1000 (escala ~ HU + 1000): -350/650 HU viram
+    // ~650/1650
+    expect(moles.lower).toBeGreaterThan(550)
+    expect(moles.lower).toBeLessThan(750)
+    expect(moles.upper).toBeGreaterThan(1550)
+    expect(moles.upper).toBeLessThan(1750)
     fireEvent.click(botao('Osso'))
     const osso = vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange
+    // -600/2400 HU viram ~400/3400
     expect(osso.lower).toBeGreaterThan(300)
-    expect(osso.upper).toBeGreaterThan(2000)
-    expect(osso.upper).toBeLessThan(3200)
+    expect(osso.lower).toBeLessThan(500)
+    expect(osso.upper).toBeGreaterThan(3200)
+    expect(osso.upper).toBeLessThan(3600)
   })
 
   it('3D so osso: no exame fora de HU, o volume e ajustado para a escala do exame', () => {
@@ -361,8 +367,8 @@ describe('cornerstone3D 2.x (voxelManager)', () => {
     const { vps } = montar('CT', 120, exameNaoHu(), true)
     fireEvent.click(botao('Partes moles'))
     const moles = vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange
-    expect(moles.lower).toBeGreaterThan(700)
-    expect(moles.upper).toBeLessThan(1300)
+    expect(moles.lower).toBeGreaterThan(550)
+    expect(moles.upper).toBeLessThan(1750)
   })
 
   it('a miniatura le o corte sagital do meio voxel a voxel', () => {
@@ -380,11 +386,11 @@ describe('cornerstone3D 2.x (voxelManager)', () => {
     const vazio = new Float32Array(20000)
     const { vps } = montar('CT', 120, vazio, true)
     fireEvent.click(botao('Osso'))
-    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -500, upper: 1500 } })
+    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -600, upper: 2400 } })
     // o volume chegou: a proxima conta usa os valores de verdade
     vazio.set(exameNaoHu())
     fireEvent.click(botao('Partes moles'))
-    expect(vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange.lower).toBeGreaterThan(700)
+    expect(vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange.lower).toBeGreaterThan(550)
   })
 })
 
