@@ -1418,7 +1418,15 @@
       "dica": "Click a lesion to open its slice. Mouse wheel or ↑ ↓ arrows move through the slices; PageUp/PageDown, 10; A, S, C switch the plane.",
       "altCorte": "CT slice: {plano}, slice {n}",
       "semLesoes": "The curator did not mark lesions on the slices of this exam.",
-      "lesaoN": "Lesion {n}"
+      "lesaoN": "Lesion {n}",
+      "desafio": "Challenge mode",
+      "revelar": "Reveal answer",
+      "tentarDeNovo": "Try again",
+      "desafioInstrucao": "Find the {n} lesions marked by the curator: move through the slices and click where each one is.",
+      "desafioResultado": "You found {encontradas} of {total} lesions.",
+      "seusPalpites": "Your guesses",
+      "palpiteN": "Guess {n}",
+      "semPalpites": "You used all your guesses ({n}). Reveal the answer."
     },
     "reconstrucoes": {
       "titulo": "Reconstructed panoramic and cross-sections",

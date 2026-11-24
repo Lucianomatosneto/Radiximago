@@ -130,3 +130,67 @@ describe('medidas', () => {
     expect(screen.getByRole('note', { name: 'Medida duvidosa' }).textContent).toMatch(/51 cm/)
   })
 })
+
+// MODO DESAFIO (24/11/2026, pedido do Luciano): o estudante passa os cortes
+// SEM ver as marcacoes, clica onde acha que esta cada lesao e depois o Radix
+// revela a resposta do curador, dizendo quantas encontrou. Fica so na tela.
+describe('modo desafio', () => {
+  async function desafio() {
+    await abrir()
+    fireEvent.click(screen.getByRole('button', { name: 'Modo desafio' }))
+  }
+
+  it('esconde as marcacoes e a lista; diz quantas lesoes procurar', async () => {
+    await desafio()
+    expect(screen.queryByTestId('camada')).toBeNull()
+    expect(screen.queryByRole('list', { name: 'Lesões deste exame' })).toBeNull()
+    expect(screen.getByText('Encontre as 2 lesões marcadas pelo curador: passe os cortes e clique onde está cada uma.')).toBeTruthy()
+    // abre no axial do meio (nao entrega a primeira lesao)
+    expect(corte()).toContain('plano=axial&indice=100')
+  })
+
+  it('palpites, revelar e tentar de novo', async () => {
+    await desafio()
+    const alvo = screen.getByTestId('camada-desafio')
+    caixa100(alvo)
+    // lesao 2: seta no axial 50, ponta em (0,3; 0,3)
+    fireEvent.change(screen.getByRole('slider', { name: 'Corte' }), { target: { value: '50' } })
+    fireEvent.click(alvo, { clientX: 30, clientY: 30 })
+    // um palpite longe
+    fireEvent.click(alvo, { clientX: 90, clientY: 90 })
+    const palpites = screen.getByRole('list', { name: 'Seus palpites' })
+    expect(within(palpites).getAllByRole('listitem')).toHaveLength(2)
+    fireEvent.click(screen.getByRole('button', { name: 'Revelar resposta' }))
+    expect(screen.getByRole('status').textContent).toMatch(/Você encontrou 1 de 2 lesões/)
+    // a resposta aparece: lista e marcacoes de novo
+    const lista = screen.getByRole('list', { name: 'Lesões deste exame' })
+    expect(within(lista).getByText(/✓/)).toBeTruthy()
+    expect(within(lista).getByText(/✗/)).toBeTruthy()
+    expect(screen.getByTestId('camada')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Tentar de novo' }))
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(screen.queryByRole('list', { name: 'Seus palpites' })).toBeNull()
+    expect(screen.queryByTestId('camada')).toBeNull()
+  })
+
+  it('no maximo lesoes + 2 palpites (nao vale clicar em tudo)', async () => {
+    await desafio()
+    const alvo = screen.getByTestId('camada-desafio')
+    caixa100(alvo)
+    for (let i = 0; i < 6; i++) fireEvent.click(alvo, { clientX: 10 + i, clientY: 10 })
+    expect(within(screen.getByRole('list', { name: 'Seus palpites' })).getAllByRole('listitem')).toHaveLength(4)
+    expect(screen.getByText('Você usou todos os palpites (4). Revele a resposta.')).toBeTruthy()
+  })
+
+  it('sair do modo desafio volta a mostrar tudo', async () => {
+    await desafio()
+    fireEvent.click(screen.getByRole('button', { name: 'Modo desafio' }))
+    expect(screen.getByTestId('camada')).toBeTruthy()
+    expect(screen.getByRole('list', { name: 'Lesões deste exame' })).toBeTruthy()
+  })
+
+  it('sem lesoes marcadas, o modo desafio nao aparece', async () => {
+    await abrir([])
+    expect(screen.queryByRole('button', { name: 'Modo desafio' })).toBeNull()
+  })
+})

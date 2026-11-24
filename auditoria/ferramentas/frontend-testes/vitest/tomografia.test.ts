@@ -9,7 +9,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   anguloGraus,
+  avaliarDesafio,
   campoDuvidosoCm,
+  pontoEm3dMm,
   valorDaMedida,
   distanciaMm,
   exportarMarcacoesTc,
@@ -116,5 +118,44 @@ describe('medidas da ficha', () => {
     expect(doc.medidas[0].valor).toBeCloseTo(50)
     expect(doc.medidas[1]).toMatchObject({ tipo: 'angulo', unidade: 'graus' })
     expect(doc.medidas[0].pontos_mm[1][0]).toBeCloseTo(50)
+  })
+})
+
+// MODO DESAFIO (24/11/2026, pedido do Luciano): o estudante clica onde acha
+// que esta a lesao, em qualquer plano; o Radix leva o clique e a marcacao do
+// curador para o MESMO espaco 3D (mm) e confere a distancia. Acerta quem
+// cai dentro da lesao (metade do maior lado da marcacao) ou a ate 5 mm.
+describe('modo desafio: pontos em 3D', () => {
+  // 100 cortes de 0,5 mm; 200 linhas de 0,25 mm; 300 colunas de 0,2 mm
+  const G = { cortes: 100, linhas: 200, colunas: 300, espacamento_mm: [0.5, 0.25, 0.2] as [number, number, number] }
+
+  it('o mesmo ponto visto nos tres planos da a mesma posicao em mm', () => {
+    // voxel: coluna 150, linha 50, corte 80 -> x 30 mm, y 12,5 mm, z 40 mm
+    const axial = pontoEm3dMm(G, 'axial', 80, { x: 150 / 300, y: 50 / 200 })
+    // sagital: corte = coluna; x = linha; y de cima para baixo = cortes de cima para baixo
+    const sagital = pontoEm3dMm(G, 'sagital', 150, { x: 50 / 200, y: 1 - 80 / 100 })
+    // coronal: corte = linha; x = coluna
+    const coronal = pontoEm3dMm(G, 'coronal', 50, { x: 150 / 300, y: 1 - 80 / 100 })
+    for (const p of [axial, sagital, coronal]) {
+      expect(p[0]).toBeCloseTo(30)
+      expect(p[1]).toBeCloseTo(12.5)
+      expect(p[2]).toBeCloseTo(40)
+    }
+  })
+
+  it('avalia os palpites: acerto em outro plano, erro longe, cada lesao conta uma vez', () => {
+    // lesao oval no sagital, centrada no ponto acima, com 4 mm de lado
+    const lesao = { id: 'l1', tipo: 'oval' as const, plano: 'sagital' as const, corte: 150, x: 50 / 200 - 0.01, y: 0.2 - 0.02, largura: 0.02, altura: 0.04 }
+    const seta = { id: 'l2', tipo: 'seta' as const, plano: 'axial' as const, corte: 10, x1: 0, y1: 0, x2: 0.9, y2: 0.9 }
+    const perto = { plano: 'axial' as const, corte: 81, ponto: { x: 151 / 300, y: 51 / 200 } }
+    const longe = { plano: 'axial' as const, corte: 20, ponto: { x: 0.1, y: 0.1 } }
+    const r = avaliarDesafio(G, [lesao, seta], [perto, perto, longe])
+    expect(r.encontradas).toBe(1)
+    expect(r.total).toBe(2)
+    expect(r.porLesao).toEqual([
+      { id: 'l1', encontrada: true },
+      { id: 'l2', encontrada: false },
+    ])
+    expect(r.palpitesCertos).toEqual([true, true, false])
   })
 })
