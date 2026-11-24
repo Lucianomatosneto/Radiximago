@@ -108,14 +108,15 @@ def test_axial_usa_o_volume_da_memoria_quando_pronto(client, criar_usuario, tomo
     r = client.get(f"/reconstrucao/{tomografia.id}/axial.png", headers=cab, params={"altura_mm": 10, "espessura_mm": 4})
     assert r.status_code == 200
     fonte.aguardar_preparo()  # o volume foi montado em segundo plano
-    assert fonte.volume_na_memoria(fonte.geometria(tomografia.orthanc_id)) is not None
+    g = fonte.geometria(tomografia.orthanc_id)
+    assert fonte.volume_na_memoria(g) is not None
 
     # sem Orthanc: o corte sai da memoria
     def sem_orthanc(_oid):
         raise AssertionError("nao devia ler o Orthanc")
 
     monkeypatch.setattr(orthanc_client, "obter_arquivo_instancia", sem_orthanc)
-    monkeypatch.setattr(fonte, "geometria", lambda _oid, _g=fonte.geometria(tomografia.orthanc_id): _g)
+    monkeypatch.setattr(fonte, "geometria", lambda _oid: g)
     img = _imagem(client.get(f"/reconstrucao/{tomografia.id}/axial.png", headers=cab, params={"altura_mm": 10, "espessura_mm": 4}))
     assert img.shape == (60, 70)
     assert img[20, 35] > 200 and img[5, 5] < 50
