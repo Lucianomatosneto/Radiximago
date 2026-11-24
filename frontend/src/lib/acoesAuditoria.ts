@@ -154,6 +154,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('imagem_girada', 'Imagem girada', 'Image rotated'),
       a('triagem_modalidade', 'Triagem da modalidade', 'Modality triage'),
       a('reconstrucao_panoramica', 'Reconstrução panorâmica da tomografia', 'Panoramic reconstruction from CT'),
+      a('exportacao_marcacoes_tc', 'Exportação das marcações da tomografia (JSON)', 'Export of CT marks (JSON)'),
       a('marcacao_canal_mandibular', 'Canal mandibular marcado na reconstrução', 'Mandibular canal marked on the reconstruction'),
       a('moldura_recortada', 'Moldura branca recortada', 'White frame cropped'),
       a('curadorias_zeradas', 'Curadorias zeradas (roteiro)', 'Curations reset (script)'),
