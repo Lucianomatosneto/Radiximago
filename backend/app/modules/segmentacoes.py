@@ -32,6 +32,8 @@ from app.core.database import Base
 
 # limites (OWASP ASVS: limitar tamanho de entrada)
 MAX_SEGMENTACOES_POR_FICHA = 30
+# tomografia (24/11/2026): cada corte pintado e uma linha; limite proprio
+MAX_CORTES_PINTADOS_POR_FICHA = 400
 MAX_LADO_MASCARA = 2048
 MIN_LADO_MASCARA = 8
 MAX_BYTES_MASCARA = 2 * 1024 * 1024  # PNG recebido (ja decodificado do base64)
@@ -53,18 +55,25 @@ class SegmentacaoCuradoria(Base):
     mascara: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)  # PNG 1 bit, imagem inteira
     largura: Mapped[int] = mapped_column(Integer, nullable=False)
     altura: Mapped[int] = mapped_column(Integer, nullable=False)
+    # TOMOGRAFIA (24/11/2026, pedido do Luciano, recurso 8): a pintura num
+    # CORTE de um PLANO (mascara do tamanho da imagem do corte). Sem eles:
+    # pintura de radiografia, sobre a imagem inteira.
+    plano: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    corte: Mapped[int | None] = mapped_column(Integer, nullable=True)
     criado_por_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     criado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now())
     atualizado_em: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 def contar_por_ficha(db: Session, curation_ids: list[int]) -> dict[int, int]:
-    """Quantas estruturas pintadas cada ficha tem (uma consulta so - grades)."""
+    """Quantas estruturas pintadas cada ficha tem (uma consulta so - grades).
+    So as que cabem sobre a imagem inteira (radiografia): as da tomografia
+    ficam num corte (24/11/2026)."""
     if not curation_ids:
         return {}
     return dict(
         db.query(SegmentacaoCuradoria.curation_id, sa_func.count(SegmentacaoCuradoria.id))
-        .filter(SegmentacaoCuradoria.curation_id.in_(curation_ids))
+        .filter(SegmentacaoCuradoria.curation_id.in_(curation_ids), SegmentacaoCuradoria.plano.is_(None))
         .group_by(SegmentacaoCuradoria.curation_id)
         .all()
     )
