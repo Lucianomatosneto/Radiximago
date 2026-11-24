@@ -40,8 +40,9 @@ def test_pinta_no_corte_e_a_lista_devolve_o_corte(client, db, criar_usuario, cri
     assert r2.status_code == 201
     itens = client.get(f"/segmentacoes/ficha/{ficha.id}", headers=h).json()["itens"]
     assert [(s["plano"], s["corte"]) for s in itens] == [("sagital", 35), ("sagital", 36)]
-    log = db.query(AuditLog).filter(AuditLog.entidade_id == ficha.id, AuditLog.acao == "segmentacao_criada").order_by(AuditLog.id).first()
-    assert "corte 36 do plano sagital" in log.detalhes
+    logs = [d for (d,) in db.query(AuditLog.detalhes).filter(AuditLog.entidade_id == ficha.id, AuditLog.acao == "segmentacao_criada")]
+    assert any("corte 35 do plano sagital" in d for d in logs)
+    assert any("corte 36 do plano sagital" in d for d in logs)
 
 
 def test_radiografia_continua_sem_corte(client, criar_usuario, criar_ficha):
