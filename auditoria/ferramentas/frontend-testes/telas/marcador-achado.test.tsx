@@ -9,7 +9,7 @@
 // tem 1000 x 500 px e aparece num quadro de 400 x 200 px; entao 40 px na tela
 // = 0,1 da largura da imagem. A deteccao de borda branca (que le os pixels
 // num canvas) fica de fora e e trocada por um valor fixo no teste do recorte.
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -31,7 +31,7 @@ class ImagemFalsa {
 }
 const estado: { marcacoes: Marcacao[] } = { marcacoes: [] }
 const carregou = vi.fn()
-function Dono({ inicial = [], ...props }: { inicial?: Marcacao[]; semAchado?: boolean; urlImagem?: string; semRecorte?: boolean; compacto?: boolean }) {
+function Dono({ inicial = [], ...props }: { inicial?: Marcacao[]; semAchado?: boolean; urlImagem?: string; semRecorte?: boolean; compacto?: boolean; transformacao?: string; filtroImagem?: string; sobreposicao?: ReactNode }) {
   const [marcacoes, setMarcacoes] = useState<Marcacao[]>(inicial)
   estado.marcacoes = marcacoes
   return <MarcadorAchado orthancReferenceId={9} marcacoes={marcacoes} onMarcar={setMarcacoes} onCarregou={carregou} semRecorte {...props} />
@@ -216,5 +216,36 @@ describe('editar uma marcacao existente', () => {
     fireEvent.mouseUp(window)
     await waitFor(() => expect(screen.getByRole('button', { name: '✕ Remover marcação' })).toBeTruthy())
     expect(screen.queryByRole('combobox')).toBeNull()
+  })
+})
+
+// TOMOGRAFIA (24/11/2026): a tela de curadoria da tomografia aproxima,
+// desloca, muda brilho/contraste e mede por cima do mesmo marcador. Ele so
+// recebe: a transformacao (zoom/deslocamento) no quadro, o filtro na imagem
+// (as marcacoes nao mudam de cor) e uma camada por cima (medidas). So o
+// botao ESQUERDO desenha: o do meio e o direito ficam para quem esta em volta.
+describe('usado na tomografia', () => {
+  it('zoom/deslocamento no quadro, filtro so na imagem e camada por cima', async () => {
+    await abrir({ transformacao: 'translate(10px, 0px) scale(2)', filtroImagem: 'invert(1)', sobreposicao: <div data-testid="por-cima" /> })
+    const img = screen.getByRole('img', { name: 'Imagem para marcação' }) as HTMLImageElement
+    const quadro = img.parentElement as HTMLElement
+    expect(quadro.style.transform).toBe('translate(10px, 0px) scale(2)')
+    expect(quadro.style.transformOrigin).toBe('0 0')
+    expect(img.style.filter).toBe('invert(1)')
+    expect(quadro.querySelector('[data-testid="por-cima"]')).toBeTruthy()
+  })
+
+  it('botao do meio ou direito nao desenha nem pega a forma', async () => {
+    await abrir({ inicial: [OVAL] })
+    fireEvent.mouseDown(fundo(), { clientX: 200, clientY: 100, button: 1 })
+    fireEvent.mouseMove(window, { clientX: 300, clientY: 150 })
+    fireEvent.mouseUp(window)
+    fireEvent.mouseDown(fundo(), { clientX: 200, clientY: 100, button: 2 })
+    fireEvent.mouseMove(window, { clientX: 300, clientY: 150 })
+    fireEvent.mouseUp(window)
+    fireEvent.mouseDown(fundo().querySelector('polygon') as Element, { clientX: 120, clientY: 80, button: 2 })
+    fireEvent.mouseMove(window, { clientX: 300, clientY: 150 })
+    fireEvent.mouseUp(window)
+    expect(estado.marcacoes).toEqual([OVAL])
   })
 })
