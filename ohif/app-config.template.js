@@ -891,7 +891,12 @@ window.config = {
       var vp = s.cornerstoneViewportService.getCornerstoneViewport(id);
       var quadro = document.querySelector('[data-viewport-uid="' + id + '"]');
       if (!vp || !quadro) return null;
-      return { vp: vp, quadro: quadro, mmPorPixel: mm };
+      return {
+        vp: vp, quadro: quadro, mmPorPixel: mm,
+        modalidade: String((inst && inst.Modality) || (ds && ds.Modality) || ''),
+        linhas: Number(inst && inst.Rows) || 0,
+        colunas: Number(inst && inst.Columns) || 0,
+      };
     } catch (e) { return null; }
   }
 
@@ -916,9 +921,21 @@ window.config = {
     if (a) aplicarEscala(a, mundoPorPixel(a.vp));
   }
 
+  // 24/11/2026 (pedido do Luciano: imagem enorme, OHIF em 3,86x): as
+  // tomografias do acervo (base publica) declaram pixel de 1,0 mm em
+  // 512 x 512 = campo de 51 cm, maior que uma cabeca. A conta do "Tamanho
+  // real" esta certa, o dado nao. Tomografia com campo acima de 35 cm:
+  // medida duvidosa -> botao desligado, explicando (devolve o campo em cm).
+  var CAMPO_MAXIMO_TC_MM = 350;
+  function campoDuvidosoCm(a) {
+    if (!a || a.modalidade !== 'CT' || !a.mmPorPixel) return 0;
+    var campo = Math.max(a.linhas, a.colunas) * a.mmPorPixel;
+    return campo > CAMPO_MAXIMO_TC_MM ? Math.round(campo / 10) : 0;
+  }
+
   function tamanhoReal() {
     var a = ativo();
-    if (!a || !a.mmPorPixel) return;
+    if (!a || !a.mmPorPixel || campoDuvidosoCm(a)) return;
     var pxPorMm = lerCalibracao();
     if (!pxPorMm) { calibrar(tamanhoReal); return; }
     // 1 px de tela = 1/pxPorMm mm; 1 unidade do mundo = mmPorPixel/mundoPorPixel mm
@@ -1228,11 +1245,14 @@ window.config = {
     if (concluida) concluida.textContent = Date.now() < avisoAte ? 'Calibração concluída ✓' : '';
     var a = ativo();
     var semMedida = !a || !a.mmPorPixel;
-    real.disabled = semMedida;
-    real.style.opacity = semMedida ? '0.45' : '1';
+    var duvidoso = campoDuvidosoCm(a);
+    real.disabled = semMedida || duvidoso > 0;
+    real.style.opacity = real.disabled ? '0.45' : '1';
     real.title = semMedida
       ? 'Esta imagem não tem a medida do pixel (ex.: foto convertida): só o 1:1 funciona.'
-      : 'Mostra a imagem em milímetros reais (precisa calibrar a tela uma vez).';
+      : duvidoso
+        ? 'A medida do pixel deste exame é duvidosa: pelo que o arquivo informa, o campo teria ' + duvidoso + ' cm, maior que uma cabeça. Sem a medida certa não há tamanho real; o 1:1 funciona.'
+        : 'Mostra a imagem em milímetros reais (precisa calibrar a tela uma vez).';
   }
   setInterval(montarCaixa, 700);
 })();
