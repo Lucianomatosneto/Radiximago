@@ -415,3 +415,32 @@ def instancias_derivadas(db: Session) -> set[str]:
     for (lista,) in db.query(ReconstrucaoTomografia.instancias_orthanc).all():
         ids.update(lista or [])
     return ids
+
+
+# --------------------------------------------------------------------- exportacao
+class AvisoExportacao(BaseModel):
+    """quantas marcacoes e medidas foram no arquivo JSON"""
+    marcacoes: int = Field(..., ge=0, le=10000)
+    medidas: int = Field(..., ge=0, le=10000)
+
+
+@router.post("/{ref_id}/exportacao", status_code=201)
+def registrar_exportacao(
+    ref_id: int,
+    aviso: AvisoExportacao,
+    usuario: User = Depends(exigir_perfis(*PERFIS_CURADORIA_ESCRITA)),
+    db: Session = Depends(get_db),
+):
+    """EXPORTACAO NA AUDITORIA (pedido do Luciano, 24/11/2026: "registrar
+    auditoria"): o arquivo JSON das marcacoes da tomografia e montado no
+    navegador; antes de baixar, a tela avisa aqui e fica registrado quem
+    exportou, de qual exame e quantas marcacoes e medidas. Sem o registro, a
+    tela nao baixa o arquivo."""
+    ref = _exame(db, ref_id, usuario)
+    db.add(AuditLog(
+        usuario_id=usuario.id, acao="exportacao_marcacoes_tc", entidade="orthanc_reference", entidade_id=ref.id,
+        resultado="sucesso",
+        detalhes=f"Exportação JSON das marcações da tomografia: {aviso.marcacoes} marcações e {aviso.medidas} medidas.",
+    ))
+    db.commit()
+    return {"registrado": True}
