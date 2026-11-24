@@ -96,7 +96,9 @@ describe('quem pode', () => {
 
   it.each(['professor', 'pesquisador', 'curador', 'administrador'])('%s ve os grupos: participantes (com como entraram), pedidos e convites', async (perfil) => {
     await abrir({}, perfil)
-    const turma = cartao('Turma A')
+    // o texto "Turma A" pode aparecer antes do cartao (titulo) ficar pronto:
+    // espera o cartao (teste instavel no CI, 23/11/2026)
+    const turma = await waitFor(() => cartao('Turma A'))
     expect(within(turma).getByText('2 pessoas')).toBeTruthy()
     expect(within(turma).getByText('Aparece na busca')).toBeTruthy()
     const participantes = within(turma).getByRole('region', { name: 'Participantes' })

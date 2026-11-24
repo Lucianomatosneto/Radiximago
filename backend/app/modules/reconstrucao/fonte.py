@@ -6,6 +6,7 @@ Le a tomografia no Orthanc para a reconstrucao (pedido do Luciano,
 from __future__ import annotations
 
 import io
+import logging
 import threading
 from dataclasses import dataclass
 
@@ -16,6 +17,8 @@ from pydicom.dataset import Dataset
 
 from app.modules import orthanc_client
 from app.modules.reconstrucao.motor import LIMITE_VOXELS, Volume
+
+_log = logging.getLogger(__name__)
 
 MIN_CORTES = 10  # menos que isso nao e tomografia para reconstruir
 
@@ -155,6 +158,60 @@ def volume_cinza(g: Geometria) -> np.ndarray:
         _VOLUME_CACHE.clear()
         _VOLUME_CACHE[chave] = vol
         return vol
+
+
+_PREPARO: threading.Thread | None = None
+
+
+def volume_na_memoria(g: Geometria) -> np.ndarray | None:
+    """O volume em 8 bits, se ja estiver pronto na memoria (sem montar)."""
+    with _VOLUME_LOCK:
+        return _VOLUME_CACHE.get(g.ids[0])
+
+
+def preparar_volume(g: Geometria) -> None:
+    """Monta o volume em 8 bits em SEGUNDO PLANO (23/11/2026): enquanto isso
+    as telas seguem pelo caminho lento; pronto, o corte sai da memoria."""
+    global _PREPARO
+    if len(g.ids) * g.linhas * g.colunas > LIMITE_VOXELS or volume_na_memoria(g) is not None:
+        return
+    if _PREPARO is not None and _PREPARO.is_alive():
+        return
+
+    def montar() -> None:
+        try:
+            volume_cinza(g)
+        except Exception:  # noqa: BLE001 - so desempenho; o caminho lento continua valendo
+            _log.warning("Nao foi possivel preparar o volume da tomografia na memoria", exc_info=True)
+
+    _PREPARO = threading.Thread(target=montar, name="radix-volume-tomografia", daemon=True)
+    _PREPARO.start()
+
+
+def aguardar_preparo(tempo: float = 30.0) -> None:
+    """(testes) espera o volume em segundo plano ficar pronto"""
+    if _PREPARO is not None:
+        _PREPARO.join(tempo)
+
+
+def limpar_volume() -> None:
+    aguardar_preparo()
+    with _VOLUME_LOCK:
+        _VOLUME_CACHE.clear()
+
+
+def axial_da_memoria(g: Geometria, altura_mm: float, espessura_mm: float) -> np.ndarray | None:
+    """Corte axial (MIP da faixa) direto do volume em 8 bits, se pronto."""
+    vol = volume_na_memoria(g)
+    if vol is None:
+        return None
+    dz = g.espacamento[0]
+    centro = int(round(altura_mm / dz))
+    meia = max(0, int(round(espessura_mm / 2 / dz)))
+    k0, k1 = max(0, centro - meia), min(len(g.ids) - 1, centro + meia)
+    if k0 > k1:
+        raise ValueError("Altura fora da tomografia.")
+    return np.ascontiguousarray(vol[k0:k1 + 1].max(axis=0))
 
 
 def total_no_plano(g: Geometria, plano: str) -> int:

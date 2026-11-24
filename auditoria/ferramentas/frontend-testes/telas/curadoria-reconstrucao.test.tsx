@@ -51,11 +51,24 @@ function clicar(x: number, y: number) {
   fireEvent.click(alvo, { clientX: x, clientY: y })
 }
 
+// o navegador simulado nao carrega imagens: este Image "carrega" na hora
+// seguinte, como um servidor rapido (a tela troca a imagem so depois de
+// carregada - 23/11/2026)
+class ImagemFalsa {
+  onload: (() => void) | null = null
+  onerror: (() => void) | null = null
+  set src(_v: string) { queueMicrotask(() => this.onload?.()) }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
+  vi.stubGlobal('Image', ImagemFalsa)
   window.history.replaceState(null, '', '/curadoria/reconstrucao?ref=55')
 })
-afterEach(() => cleanup())
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
 
 describe('tela inteira', () => {
   // 23/11/2026 (pedido do Luciano): sem a coluna de navegacao, para a imagem
@@ -164,7 +177,7 @@ describe('tracar a curva e gerar', () => {
     await waitFor(() => expect(imagem().getAttribute('src')).toContain('/reconstrucao/55/axial.png?altura_mm='))
     const altura = screen.getByRole('slider', { name: 'Altura do corte axial (mm)' })
     fireEvent.change(altura, { target: { value: '20' } })
-    expect(imagem().getAttribute('src')).toContain('altura_mm=20')
+    await waitFor(() => expect(imagem().getAttribute('src')).toContain('altura_mm=20'))
     expect(imagem().getAttribute('src')).toContain('espessura_mm=10')
   })
 
@@ -178,7 +191,7 @@ describe('tracar a curva e gerar', () => {
     expect(screen.getByText('26.9 mm')).toBeTruthy()
     fireEvent.wheel(area, { deltaY: -100 })
     expect(screen.getByText('27.2 mm')).toBeTruthy()
-    expect(imagem().getAttribute('src')).toContain('altura_mm=27.2')
+    await waitFor(() => expect(imagem().getAttribute('src')).toContain('altura_mm=27.2'))
     fireEvent.wheel(area, { deltaY: 100 })
     fireEvent.wheel(area, { deltaY: 100 })
     expect(screen.getByText('26.6 mm')).toBeTruthy()
@@ -187,6 +200,17 @@ describe('tracar a curva e gerar', () => {
     fireEvent.keyDown(area, { key: 'ArrowDown' })
     expect(screen.getByText('26.6 mm')).toBeTruthy()
     expect(screen.getByText(/Roda do mouse ou setas/)).toBeTruthy()
+  })
+
+  // 23/11/2026: girando rapido, a imagem grande acompanha - so a ULTIMA
+  // altura pedida e carregada depois que a anterior termina (sem fila de
+  // imagens velhas), e a imagem so troca quando a nova chegou
+  it('girando rapido, a imagem grande termina na ultima altura', async () => {
+    await abrir(rotas())
+    const area = screen.getByTestId('area-curva')
+    for (let i = 0; i < 10; i++) fireEvent.wheel(area, { deltaY: -100 })
+    expect(screen.getByText('29.9 mm')).toBeTruthy()
+    await waitFor(() => expect(imagem().getAttribute('src')).toContain('altura_mm=29.9'))
   })
 
   it('a roda nao passa do primeiro nem do ultimo corte', async () => {
