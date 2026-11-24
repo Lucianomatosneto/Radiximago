@@ -1416,6 +1416,18 @@
       "altCorte": "Corte da tomografia: {plano}, corte {n}",
       "semLesoes": "O curador não marcou lesões nos cortes deste exame.",
       "lesaoN": "Lesão {n}"
+    },
+    "reconstrucoes": {
+      "titulo": "Panorâmica reconstruída e cortes transversais",
+      "reconstrucao": "Reconstrução",
+      "opcao": "Reconstrução {n} ({cortes} cortes)",
+      "mostrarCanal": "Mostrar canal mandibular",
+      "dica": "Clique na panorâmica para abrir o corte transversal daquele ponto (linha amarela). Roda do mouse ou setas passam os cortes.",
+      "limiteCanal": "O canal foi marcado pelo curador na panorâmica: os cortes mostram só a altura dele, não a posição vestibulolingual.",
+      "altPanoramica": "Panorâmica reconstruída da tomografia",
+      "corteTransversal": "Corte transversal",
+      "corteDe": "Corte transversal {n} de {total} · {mm} mm ao longo da arcada",
+      "altCorte": "Corte transversal {n}"
     }
   },
   "NavegacaoCasos": {

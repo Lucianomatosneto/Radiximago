@@ -12,6 +12,7 @@ import ColunaSeries, { SerieEstudo } from '../../../components/visualizador/Colu
 import BarraClassificacao from '../../../components/detalhe/BarraClassificacao'
 import MarcacaoAchado from '../../../components/detalhe/MarcacaoAchado'
 import LeituraTomografia from '../../../components/detalhe/LeituraTomografia'
+import ReconstrucoesTomografia from '../../../components/detalhe/ReconstrucoesTomografia'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
 import BotaoEditarCuradoria from '../../../components/curadoria/BotaoEditarCuradoria'
@@ -331,6 +332,7 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
                   {/* tomografia (24/11/2026): as lesoes marcadas nos cortes,
                       com regua e angulo; some sozinho se nao for tomografia */}
                   <LeituraTomografia key={`tc-${imagem.curation_id}`} curationId={imagem.curation_id} marcacoes={imagem.marcacoes} />
+                  <ReconstrucoesTomografia key={`rec-${imagem.curation_id}`} curationId={imagem.curation_id} />
                 </div>
               </div>
 
