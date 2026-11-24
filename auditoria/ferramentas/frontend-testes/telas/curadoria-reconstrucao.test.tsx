@@ -124,6 +124,20 @@ describe('tela maior para a imagem', () => {
     expect(imagem().style.filter).toBe('brightness(1) contrast(1)')
   })
 
+  // localizador (23/11/2026): miniatura sagital com a faixa do corte axial
+  it('miniatura localizadora mostra a altura do corte; clicar nela muda o corte e nao marca ponto', async () => {
+    await abrir(rotas())
+    const mini = screen.getByRole('img', { name: /Localizador: sagital/ }) as HTMLImageElement
+    // 500 colunas: miniatura sagital no meio (250)
+    expect(mini.getAttribute('src')).toContain('/reconstrucao/55/plano.png?plano=sagital&indice=250')
+    const alvo = screen.getByRole('button', { name: /Ir para o ponto clicado/ })
+    alvo.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, x: 0, y: 0, toJSON: () => ({}) })
+    fireEvent.click(alvo, { clientX: 50, clientY: 50 })
+    // metade da altura: corte 100 de 200 (0,3 mm cada) = 30 mm
+    expect(screen.getByText('30 mm')).toBeTruthy()
+    expect(screen.getByText('Nenhum ponto marcado')).toBeTruthy()
+  })
+
   it('"Marcar canal mandibular" e um botao grande, como o "Gerar"', async () => {
     await abrir(rotas({
       'GET /reconstrucao/55/lista': { corpo: [{ id: 1, criado_em: '2026-11-23T15:00:00+00:00', total_cortes: 80, tamanho_pixel_mm: 0.3, parametros: { espessura_mm: 10, intervalo_mm: 1, largura_mm: 40 } }] },

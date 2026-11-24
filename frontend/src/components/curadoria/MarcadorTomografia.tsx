@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import MarcadorAchado from './MarcadorAchado'
+import LocalizadorTomografia from './LocalizadorTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
 
@@ -180,6 +181,9 @@ export default function MarcadorTomografia({
         </div>
       </div>
       <aside className="w-48 shrink-0 space-y-2 overflow-y-auto text-xs">
+        {/* localizador (23/11/2026): onde esta o corte nos outros planos; fica
+            no alto da coluna para nao cobrir a barra de formas da imagem */}
+        <LocalizadorTomografia refId={orthancReferenceId} geo={geo} plano={plano} corte={corte} onIr={setCorte} posicao="coluna" />
         <h3 className="font-semibold text-ink">{t('marcacoesDoExame')}</h3>
         {doExame.length === 0 ? (
           <p className="text-slate-400">{t('nenhuma')}</p>

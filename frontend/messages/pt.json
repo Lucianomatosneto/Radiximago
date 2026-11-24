@@ -1300,6 +1300,15 @@
       "marcacoesDoExame": "Marcações do exame",
       "nenhuma": "Nenhuma marcação ainda.",
       "ir": "Ir"
+    },
+    "localizador": {
+      "alt": "Localizador: {miniatura} com a posição do corte {plano}",
+      "irPara": "Ir para o ponto clicado na miniatura",
+      "axial": "axial",
+      "sagital": "sagital",
+      "coronal": "coronal",
+      "esconder": "esconder",
+      "mostrar": "Mostrar localizador"
     }
   },
   "SegundaOpiniaoPage": {

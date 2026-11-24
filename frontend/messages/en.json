@@ -1300,6 +1300,15 @@
       "marcacoesDoExame": "Marks in this exam",
       "nenhuma": "No marks yet.",
       "ir": "Go"
+    },
+    "localizador": {
+      "alt": "Locator: {miniatura} showing the position of the {plano} slice",
+      "irPara": "Go to the point clicked on the thumbnail",
+      "axial": "axial",
+      "sagital": "sagittal",
+      "coronal": "coronal",
+      "esconder": "hide",
+      "mostrar": "Show locator"
     }
   },
   "SegundaOpiniaoPage": {
