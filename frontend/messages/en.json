@@ -1407,6 +1407,18 @@
       "altCorte": "CT slice: {plano}, slice {n}",
       "semLesoes": "The curator did not mark lesions on the slices of this exam.",
       "lesaoN": "Lesion {n}"
+    },
+    "reconstrucoes": {
+      "titulo": "Reconstructed panoramic and cross-sections",
+      "reconstrucao": "Reconstruction",
+      "opcao": "Reconstruction {n} ({cortes} slices)",
+      "mostrarCanal": "Show mandibular canal",
+      "dica": "Click the panoramic to open the cross-section at that point (yellow line). Mouse wheel or arrows move through the slices.",
+      "limiteCanal": "The canal was traced by the curator on the panoramic: the cross-sections show only its height, not its buccolingual position.",
+      "altPanoramica": "Reconstructed panoramic of the CT",
+      "corteTransversal": "Cross-section",
+      "corteDe": "Cross-section {n} of {total} · {mm} mm along the arch",
+      "altCorte": "Cross-section {n}"
     }
   },
   "NavegacaoCasos": {
