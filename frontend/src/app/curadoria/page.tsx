@@ -1757,6 +1757,8 @@ export default function CuradoriaPage() {
                         onCarregou={() => setMarcadorPronto(true)}
                         medidas={form.medidas ?? []}
                         onMedir={(medidas) => setForm({ ...form, medidas })}
+                        curationId={fichaAtiva.curationId}
+                        dentesFicha={form.dentes}
                       />
                     </div>
                   ) : (
