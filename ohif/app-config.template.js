@@ -1175,23 +1175,31 @@ window.config = {
   // valores vem do voxelManager, um voxel por vez (visto no PC do Luciano,
   // 23/11/2026 - a miniatura saia preta e as janelas nao eram convertidas).
   // indice = coluna + linha x nx + corte x nx x ny
+  // No cornerstone3D 2.2 o campo antigo "scalarData" DA ERRO ("No scalar
+  // data available") num volume de cortes - por isso o voxelManager vem
+  // PRIMEIRO e cada jeito de ler fica no seu proprio try (conferido no codigo
+  // publicado do @cornerstonejs/core 2.2.20, BaseVolumeViewport.getImageData).
   function valoresDo(vp) {
+    var d = null;
+    try { d = vp.getImageData(); } catch (e) { return null; }
+    if (!d) return null;
+    var dims = d.dimensions;
     try {
-      var d = vp.getImageData();
-      if (!d) return null;
-      if (d.scalarData && d.scalarData.length) {
-        var dados = d.scalarData;
-        return { n: dados.length, em: function (i) { return dados[i]; } };
-      }
-      var dims = d.dimensions;
       var vm = d.voxelManager;
-      if (vm && dims && vm.getAtIndex) {
+      if (vm && dims && typeof vm.getAtIndex === 'function') {
         return { n: dims[0] * dims[1] * dims[2], em: function (i) { return vm.getAtIndex(i); } };
       }
+    } catch (e) { /* sem voxelManager */ }
+    try {
+      var dados = d.scalarData;
+      if (dados && dados.length) return { n: dados.length, em: function (i) { return dados[i]; } };
+    } catch (e) { /* cornerstone 2: sem scalarData */ }
+    try {
       var esc = d.imageData && d.imageData.getPointData().getScalars();
       var arr = esc ? esc.getData() : null;
-      return arr && arr.length ? { n: arr.length, em: function (i) { return arr[i]; } } : null;
-    } catch (e) { return null; }
+      if (arr && arr.length) return { n: arr.length, em: function (i) { return arr[i]; } };
+    } catch (e) { /* sem escalares */ }
+    return null;
   }
 
   // valor no exame = b + a x HU

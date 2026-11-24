@@ -77,14 +77,20 @@ function vpFalso(type: string, dados: Float32Array, voxel = false): VpFalso {
     // volume falso: 20 x 20 x 50 (colunas x linhas x cortes) = 20000 valores
     // cornerstone3D 2.x (o do OHIF 3.9): sem scalarData; os valores vem do
     // voxelManager, um voxel por vez
-    getImageData: () => ({
-      spacing: [0.2, 0.2, 0.2],
-      dimensions: [20, 20, 50],
-      ...(voxel
-        ? { voxelManager: { getAtIndex: vi.fn((i: number) => dados[i]), getAtIJK: vi.fn((i: number, j: number, k: number) => dados[i + j * 20 + k * 400]) } }
-        : { scalarData: dados }),
-      imageData: { worldToIndex: (p: number[]) => p },
-    }),
+    getImageData: () => {
+      const d: Record<string, unknown> = {
+        spacing: [0.2, 0.2, 0.2],
+        dimensions: [20, 20, 50],
+        imageData: { worldToIndex: (p: number[]) => p },
+      }
+      if (!voxel) d.scalarData = dados
+      else {
+        d.voxelManager = { getAtIndex: vi.fn((i: number) => dados[i]), getAtIJK: vi.fn((i: number, j: number, k: number) => dados[i + j * 20 + k * 400]) }
+        // igual ao cornerstone3D 2.2: o campo antigo DA ERRO num volume de cortes
+        Object.defineProperty(d, 'scalarData', { get: () => { throw new Error('No scalar data available') } })
+      }
+      return d
+    },
     // foco da camera (mundo = indice no volume falso): [coluna, linha, corte]
     foco: [5, 6, 30],
     getCamera() { return { focalPoint: this.foco } },
