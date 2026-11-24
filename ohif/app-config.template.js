@@ -1170,12 +1170,27 @@ window.config = {
   }
 
   // ---- escala do exame: HU ou outra (ex.: 0-4095) -----------------------
+  // LEITOR dos valores do volume: { n, em(indice) }. O OHIF 3.9 usa o
+  // cornerstone3D 2.x, em que o volume nao traz mais "scalarData": os
+  // valores vem do voxelManager, um voxel por vez (visto no PC do Luciano,
+  // 23/11/2026 - a miniatura saia preta e as janelas nao eram convertidas).
+  // indice = coluna + linha x nx + corte x nx x ny
   function valoresDo(vp) {
     try {
       var d = vp.getImageData();
-      if (d && d.scalarData && d.scalarData.length) return d.scalarData;
-      var esc = d && d.imageData && d.imageData.getPointData().getScalars();
-      return esc ? esc.getData() : null;
+      if (!d) return null;
+      if (d.scalarData && d.scalarData.length) {
+        var dados = d.scalarData;
+        return { n: dados.length, em: function (i) { return dados[i]; } };
+      }
+      var dims = d.dimensions;
+      var vm = d.voxelManager;
+      if (vm && dims && vm.getAtIndex) {
+        return { n: dims[0] * dims[1] * dims[2], em: function (i) { return vm.getAtIndex(i); } };
+      }
+      var esc = d.imageData && d.imageData.getPointData().getScalars();
+      var arr = esc ? esc.getData() : null;
+      return arr && arr.length ? { n: arr.length, em: function (i) { return arr[i]; } } : null;
     } catch (e) { return null; }
   }
 
@@ -1184,15 +1199,21 @@ window.config = {
     var ds = displaySetAtivo();
     var chave = (ds && ds.displaySetInstanceUID) || 'atual';
     if (escalas[chave]) return escalas[chave];
-    var dados = valoresDo(vp);
-    if (!dados || !dados.length) return { a: 1, b: 0 };
-    var passo = Math.max(1, Math.floor(dados.length / 200000));
+    var leitor = valoresDo(vp);
+    if (!leitor || !leitor.n) return { a: 1, b: 0 };
+    var passo = Math.max(1, Math.floor(leitor.n / 200000));
     var amostra = [];
-    for (var i = 0; i < dados.length; i += passo) amostra.push(dados[i]);
+    for (var i = 0; i < leitor.n; i += passo) {
+      var valor = leitor.em(i);
+      if (typeof valor === 'number' && !isNaN(valor)) amostra.push(valor);
+    }
+    if (!amostra.length) return { a: 1, b: 0 };
     amostra.sort(function (x, y) { return x - y; });
     var pct = function (p) { return amostra[Math.min(amostra.length - 1, Math.floor(p * amostra.length))]; };
     var ar = pct(0.02);
     var topo = pct(0.995);
+    // volume ainda vazio (carregando): nao guarda a conta
+    if (!(topo > ar)) return { a: 1, b: 0 };
     var escala = { a: 1, b: 0 };
     if (ar > -500 && topo > ar) {
       // pico das partes moles: o histograma (suavizado) mais alto acima do ar
@@ -1375,7 +1396,7 @@ window.config = {
   }
 
   // desenha a miniatura do volume (8 bits, janela da tela) num canvas
-  function desenharMiniatura(canvas, d, dados, tipo, larguraPx) {
+  function desenharMiniatura(canvas, d, leitor, tipo, larguraPx) {
     var nx = d.dimensions[0], ny = d.dimensions[1], nz = d.dimensions[2];
     var esp = d.spacing || [1, 1, 1];
     var w = tipo === 'sagital' ? ny : nx;
@@ -1383,24 +1404,31 @@ window.config = {
     var larguraMm = w * (tipo === 'sagital' ? esp[1] : esp[0]);
     canvas.width = larguraPx;
     canvas.height = Math.max(1, Math.round(larguraPx * alturaMm / larguraMm));
-    var ctx = canvas.getContext && canvas.getContext('2d');
-    if (!ctx || !dados) return;
+    if (!leitor) return;
     var meio = tipo === 'sagital' ? Math.floor(nx / 2) : Math.floor(ny / 2);
     var minimo = Infinity, maximo = -Infinity, k, u, v;
     var fatia = new Float32Array(w * nz);
     for (k = 0; k < nz; k++) {
       for (u = 0; u < w; u++) {
         var idx = tipo === 'sagital' ? meio + u * nx + k * nx * ny : u + meio * nx + k * nx * ny;
-        v = dados[idx];
+        v = leitor.em(idx);
+        if (typeof v !== 'number' || isNaN(v)) v = 0;
         fatia[(nz - 1 - k) * w + u] = v; // alto da cabeca em cima
         if (v < minimo) minimo = v;
         if (v > maximo) maximo = v;
       }
     }
+    window.__radixMiniaturaLida = (window.__radixMiniaturaLida || 0) + fatia.length;
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx) return;
     var img = ctx.createImageData(w, nz);
+    // janela pelos percentis 1 e 99,5 do proprio corte (o ar nao "apaga" o osso)
+    var ordenada = Array.prototype.slice.call(fatia).sort(function (x, y) { return x - y; });
+    minimo = ordenada[Math.floor(ordenada.length * 0.01)];
+    maximo = ordenada[Math.min(ordenada.length - 1, Math.floor(ordenada.length * 0.995))];
     var faixa = maximo > minimo ? 255 / (maximo - minimo) : 0;
     for (var p = 0; p < fatia.length; p++) {
-      var g = Math.round((fatia[p] - minimo) * faixa);
+      var g = Math.max(0, Math.min(255, Math.round((fatia[p] - minimo) * faixa)));
       img.data[p * 4] = img.data[p * 4 + 1] = img.data[p * 4 + 2] = g;
       img.data[p * 4 + 3] = 255;
     }
@@ -1430,7 +1458,7 @@ window.config = {
         tirarMiniatura();
         var fig = document.createElement('figure');
         fig.setAttribute('aria-label', 'Localizador: ' + tipo);
-        fig.style.cssText = 'position:absolute;top:70px;left:12px;z-index:15;margin:0;width:130px;border:1px solid #2dd4bf99;border-radius:6px;overflow:hidden;background:#000;pointer-events:none';
+        fig.style.cssText = 'position:absolute;top:70px;left:12px;z-index:15;margin:0;width:170px;border:1px solid #2dd4bf99;border-radius:6px;overflow:hidden;background:#000;pointer-events:none';
         var tela = document.createElement('canvas');
         tela.style.cssText = 'display:block;width:100%';
         fig.appendChild(tela);
@@ -1444,10 +1472,10 @@ window.config = {
       }
       // o volume chega aos poucos: redesenha algumas vezes nos primeiros segundos
       var agora = Date.now();
-      if (mini.desenhos < 8 && agora - mini.ultimo > 1500) {
+      if (mini.desenhos < 20 && agora - mini.ultimo > 1500) {
         mini.desenhos += 1;
         mini.ultimo = agora;
-        try { desenharMiniatura(mini.tela, d, valoresDo(vp), tipo, 130); } catch (e) { /* sem canvas */ }
+        try { desenharMiniatura(mini.tela, d, valoresDo(vp), tipo, 170); } catch (e) { /* sem canvas */ }
       }
       // posicao do corte: foco da camera em indices do volume [coluna, linha, corte]
       var ijk = d.imageData.worldToIndex(vp.getCamera().focalPoint);
