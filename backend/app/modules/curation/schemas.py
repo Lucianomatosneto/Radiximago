@@ -110,6 +110,36 @@ class CurationCreate(BaseModel):
     observacoes_internas: Optional[TextoLongo] = None
 
 
+class PontoMedida(BaseModel):
+    """Um ponto da medida, em fracao (0-1) da imagem do corte."""
+    x: float = Field(ge=0.0, le=1.0)
+    y: float = Field(ge=0.0, le=1.0)
+
+
+MAX_MEDIDAS = 50
+
+
+class MedidaFicha(BaseModel):
+    """
+    MEDIDA NA TOMOGRAFIA (24/11/2026, pedido do Luciano): regua (2 pontos)
+    ou angulo (3 pontos; o do meio e o vertice) num CORTE de um PLANO. O
+    valor (mm ou graus) nao e guardado: a tela calcula pela geometria do
+    exame (lib/tomografia.ts), assim nunca fica diferente dos pontos.
+    """
+    id: str = Field(max_length=64)
+    tipo: Literal["regua", "angulo"]
+    plano: Literal["axial", "sagital", "coronal"]
+    corte: int = Field(ge=0, le=100000)
+    pontos: List[PontoMedida] = Field(min_length=2, max_length=3)
+
+    @model_validator(mode="after")
+    def _pontos_do_tipo(self):
+        esperado = 2 if self.tipo == "regua" else 3
+        if len(self.pontos) != esperado:
+            raise ValueError(f"{self.tipo} tem {esperado} pontos.")
+        return self
+
+
 class CurationUpdate(BaseModel):
     """
     Atualizacao parcial dos campos de classificacao de uma ficha.
@@ -126,6 +156,8 @@ class CurationUpdate(BaseModel):
     # Lista completa das marcacoes da ficha - quando enviado, substitui a
     # lista inteira (o frontend sempre manda o estado atual completo).
     marcacoes: Optional[List[Marcacao]] = Field(default=None, max_length=MAX_MARCACOES)
+    # medidas da tomografia (24/11/2026): lista completa; substitui a anterior
+    medidas: Optional[List[MedidaFicha]] = Field(default=None, max_length=MAX_MEDIDAS)
     achados_detalhe: Optional[TextoLongo] = None
     alteracoes_observadas: Optional[List[AlteracaoObservada]] = Field(default=None, max_length=MAX_ALTERACOES)
     # regioes que a imagem mostra (lista completa; substitui a anterior)
