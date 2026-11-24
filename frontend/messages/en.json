@@ -1399,7 +1399,14 @@
     "erroCarregar": "Couldn't load this image.",
     "erroNaoEncontrada": "Image not found among the approved images.",
     "imagemIndisponivel": "Image not available for viewing",
-    "avisoRodape": "This image is made available exclusively for teaching and research purposes. Use for clinical diagnosis is not permitted."
+    "avisoRodape": "This image is made available exclusively for teaching and research purposes. Use for clinical diagnosis is not permitted.",
+    "tomografia": {
+      "titulo": "Lesions in this exam",
+      "dica": "Click a lesion to open its slice. Mouse wheel or ↑ ↓ arrows move through the slices; PageUp/PageDown, 10; A, S, C switch the plane.",
+      "altCorte": "CT slice: {plano}, slice {n}",
+      "semLesoes": "The curator did not mark lesions on the slices of this exam.",
+      "lesaoN": "Lesion {n}"
+    }
   },
   "NavegacaoCasos": {
     "voltarParaPesquisa": "← Back to search",
