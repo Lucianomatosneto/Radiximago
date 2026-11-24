@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   anguloGraus,
+  campoDuvidosoCm,
   distanciaMm,
   exportarMarcacoesTc,
   tamanhoDoPlanoMm,
@@ -56,7 +57,7 @@ describe('exportar as marcacoes da tomografia', () => {
     expect(doc.versao).toBe(1)
     expect(doc.finalidade).toMatch(/ensino e pesquisa/)
     expect(doc.finalidade).toMatch(/não é laudo/)
-    expect(doc.exame).toEqual({ referencia: 55, cortes: 200, linhas: 400, colunas: 500, espacamento_mm: [0.5, 0.3, 0.25] })
+    expect(doc.exame).toEqual({ referencia: 55, cortes: 200, linhas: 400, colunas: 500, espacamento_mm: [0.5, 0.3, 0.25], medida_duvidosa: false })
     expect(doc.marcacoes.map((m) => m.id)).toEqual(['m1', 'm2'])
   })
 
@@ -74,5 +75,24 @@ describe('exportar as marcacoes da tomografia', () => {
     // sagital: 120 x 100 mm; o corte 100 fica a 100 x 0,25 = 25 mm
     expect(m).toMatchObject({ tipo: 'seta', plano: 'sagital', corte: 100, posicao_do_corte_mm: 25, inicio_mm: [0, 0], fim_mm: [60, 50] })
     expect(m.comprimento_mm).toBeCloseTo(Math.hypot(60, 50))
+  })
+})
+
+// 24/11/2026 (decisao do Luciano, opcao A): as 2 tomografias do acervo
+// (base publica) declaram pixel de 1 mm em 512 x 512 = campo de 51 cm, maior
+// que uma cabeca. A medida em mm desses exames nao e confiavel: a tela avisa
+// e a exportacao marca "medida_duvidosa" (mesmo limite do visualizador: 35 cm).
+describe('medida duvidosa', () => {
+  const ACERVO = { cortes: 400, linhas: 512, colunas: 512, espacamento_mm: [1, 1, 1] as [number, number, number] }
+
+  it('campo acima de 35 cm: devolve o campo em cm; normal: 0', () => {
+    expect(campoDuvidosoCm(ACERVO)).toBe(51)
+    expect(campoDuvidosoCm(GEO)).toBe(0)
+    expect(campoDuvidosoCm({ ...ACERVO, espacamento_mm: [0.3, 0.3, 0.3] })).toBe(0)
+  })
+
+  it('a exportacao avisa quando a medida e duvidosa', () => {
+    expect(exportarMarcacoesTc(1, ACERVO, []).exame.medida_duvidosa).toBe(true)
+    expect(exportarMarcacoesTc(1, GEO, []).exame.medida_duvidosa).toBe(false)
   })
 })
