@@ -1405,7 +1405,15 @@
       "dica": "Clique numa lesão para abrir o corte dela. Roda do mouse ou setas ↑ ↓ passam os cortes; PageUp/PageDown, 10; A, S, C trocam o plano.",
       "altCorte": "Corte da tomografia: {plano}, corte {n}",
       "semLesoes": "O curador não marcou lesões nos cortes deste exame.",
-      "lesaoN": "Lesão {n}"
+      "lesaoN": "Lesão {n}",
+      "desafio": "Modo desafio",
+      "revelar": "Revelar resposta",
+      "tentarDeNovo": "Tentar de novo",
+      "desafioInstrucao": "Encontre as {n} lesões marcadas pelo curador: passe os cortes e clique onde está cada uma.",
+      "desafioResultado": "Você encontrou {encontradas} de {total} lesões.",
+      "seusPalpites": "Seus palpites",
+      "palpiteN": "Palpite {n}",
+      "semPalpites": "Você usou todos os palpites ({n}). Revele a resposta."
     }
   },
   "NavegacaoCasos": {
