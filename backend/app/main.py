@@ -40,6 +40,7 @@ from app.modules.grupos_aula_router import router as grupos_aula_router
 from app.modules.aparelhos_router import router as aparelhos_router
 from app.modules.anexos_curadoria import router_curadoria as anexos_curadoria_router, router_pesquisa as anexos_pesquisa_router
 from app.modules.reconstrucao.router import router as reconstrucao_router
+from app.modules.desafio import router as desafio_router
 
 from app.core.cabecalhos import ORIGENS_PERMITIDAS, protecao_de_navegador, sem_cache_em_dados
 from app.core.sessao import renovar_sessao
@@ -146,6 +147,7 @@ app.include_router(aparelhos_router)
 app.include_router(anexos_curadoria_router)
 app.include_router(anexos_pesquisa_router)
 app.include_router(reconstrucao_router)
+app.include_router(desafio_router)
 
 @app.get("/health")
 async def health():

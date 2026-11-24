@@ -33,6 +33,8 @@ O Radix Imago é uma plataforma **acadêmica** de ensino e pesquisa com radiogra
 | Pintura nos cortes da tomografia (24/11/2026): plano e corte de cada máscara pintada | `segmentacoes_curadoria.plano`/`corte` — sem dado pessoal | N0/N1 | como a pintura (apagada com a ficha) |
 | Medidas da tomografia na ficha (24/11/2026): régua e ângulo do curador (tipo, plano, corte, pontos) | `curations.medidas` (JSONB) — sem dado pessoal | N0/N1 | permanente, como a ficha |
 | Exportação das marcações da tomografia (24/11/2026) | arquivo JSON gerado **no navegador** do curador, a partir das marcações que ele já vê na ficha; o servidor não recebe nem guarda nada novo. Leva só a referência interna do exame anonimizado, a geometria e as marcações em mm (sem nome, e-mail ou dado do paciente). Por ser gerado no navegador, não passa pela auditoria do servidor (limite conhecido) | N0/N1 | fica com quem baixou |
+| Consentimento da pesquisa (TCLE) — 24/11/2026: quem aceitou, qual versão, quando, e a revogação | `consentimentos_pesquisa` | N2 | enquanto a conta existir (prova do consentimento); apagada com a conta |
+| Resultados do modo desafio (24/11/2026): só contagens (total de lesões, encontradas, palpites), por usuário e ficha, com a versão do TCLE. **Gravados só com o registro ligado, o TCLE configurado e o consentimento do estudante** (padrão: desligado) | `resultados_desafio` | N2 | até o fim da pesquisa; apagados com a conta ou a ficha (CASCADE) |
 | Usuário: nome, e-mail, instituição, perfil, foto | `users`; foto em `backend/uploads/avatars` (nome gerado pelo servidor) | N2 | conta excluída fica marcada (`excluido`), sem apagar o histórico |
 | Resumo da senha | `users.senha_hash` (Argon2id; as anteriores a 19/10/2026 em bcrypt, custo 12, até o próximo login) | N3 | substituído a cada troca |
 | Login em duas etapas: segredo do aplicativo, último código aceito, resumos dos códigos de recuperação | `users.totp_segredo_cifrado` (**cifrado**), `totp_ultimo_passo`, `codigos_recuperacao` (só resumo SHA-256) | N3 | apagados ao desligar ou redefinir |
@@ -182,3 +184,4 @@ A troca de **situação da ficha** acontece só pelas ações próprias (aprovar
 | 1.18 | 24/11/2026 | Exportação das marcações da tomografia em JSON, gerada no navegador, sem dado pessoal |
 | 1.19 | 24/11/2026 | Medidas da tomografia na ficha (`curations.medidas`) |
 | 1.20 | 24/11/2026 | Pintura nos cortes da tomografia (`segmentacoes_curadoria.plano`/`corte`) |
+| 1.22 | 24/11/2026 | Consentimento da pesquisa e resultados do modo desafio (registro desligado até o TCLE) |

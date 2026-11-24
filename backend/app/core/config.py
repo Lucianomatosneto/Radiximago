@@ -102,6 +102,13 @@ class Settings(BaseSettings):
     # desenvolvimento so avisa (UIDs voltam a ser sorteados); em producao o
     # sistema nao liga.
     ANONIMIZACAO_CHAVE_UID: str = ""
+    # MODO DESAFIO - RESULTADOS PARA A PESQUISA (24/11/2026, pedido do
+    # Luciano: "nao vou rodar ate que consigamos o TCLE"). Duas travas: o
+    # registro so liga com DESAFIO_REGISTRO_ATIVO=true E com a versao do TCLE
+    # aprovado em TCLE_PESQUISA_VERSAO (ex.: "1.0"), e cada estudante ainda
+    # precisa aceitar ESSA versao. Padrao: desligado, sem TCLE.
+    DESAFIO_REGISTRO_ATIVO: bool = False
+    TCLE_PESQUISA_VERSAO: str = ""
     
     @model_validator(mode="after")
     def _janela_do_codigo_valida(self):
