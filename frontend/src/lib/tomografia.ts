@@ -177,3 +177,69 @@ export function exportarMarcacoesTc(referencia: number, g: GeometriaTomografia, 
     marcacoes: saida,
   }
 }
+
+// ---------------------------------------------------------------------
+// MODO DESAFIO (24/11/2026, pedido do Luciano): o estudante clica onde acha
+// que esta a lesao, em QUALQUER plano. O clique e a marcacao do curador vao
+// para o MESMO espaco 3D, em mm (x = colunas, y = linhas, z = cortes), e o
+// Radix confere a distancia. Imagens de GET .../plano.png:
+// - axial (corte = z): x = coluna, y = linha;
+// - sagital (corte = coluna): x = linha; de cima para baixo, z do ultimo
+//   corte ao primeiro (o alto da cabeca em cima);
+// - coronal (corte = linha): x = coluna; z como no sagital.
+// ---------------------------------------------------------------------
+export type Ponto3d = [number, number, number]
+
+export function pontoEm3dMm(g: GeometriaTomografia, plano: PlanoTomografia, corte: number, p: Ponto): Ponto3d {
+  const [dz, dy, dx] = g.espacamento_mm
+  if (plano === 'axial') return [p.x * g.colunas * dx, p.y * g.linhas * dy, corte * dz]
+  const z = (1 - p.y) * g.cortes * dz
+  if (plano === 'sagital') return [corte * dx, p.x * g.linhas * dy, z]
+  return [p.x * g.colunas * dx, corte * dy, z]
+}
+
+/** acerta quem cai a ate esta distancia da lesao, ou dentro dela */
+export const TOLERANCIA_DESAFIO_MM = 5
+
+export interface Palpite {
+  plano: PlanoTomografia
+  corte: number
+  ponto: Ponto
+}
+
+export interface ResultadoDesafio {
+  encontradas: number
+  total: number
+  porLesao: { id: string; encontrada: boolean }[]
+  palpitesCertos: boolean[]
+}
+
+/** centro (ou ponta, na seta) da lesao em 3D e o raio que conta como dentro */
+function alvoDaLesao(g: GeometriaTomografia, m: Marcacao): { centro: Ponto3d; raio: number } | null {
+  if (!m.plano || typeof m.corte !== 'number') return null
+  if (m.tipo === 'seta') {
+    return { centro: pontoEm3dMm(g, m.plano, m.corte, { x: m.x2 ?? 0, y: m.y2 ?? 0 }), raio: 0 }
+  }
+  const t = tamanhoDoPlanoMm(g, m.plano)
+  const l = m.largura ?? 0
+  const h = m.altura ?? 0
+  const centro = pontoEm3dMm(g, m.plano, m.corte, { x: (m.x ?? 0) + l / 2, y: (m.y ?? 0) + h / 2 })
+  return { centro, raio: Math.max(l * t.largura, h * t.altura) / 2 }
+}
+
+export function avaliarDesafio(g: GeometriaTomografia, lesoes: Marcacao[], palpites: Palpite[]): ResultadoDesafio {
+  const alvos = lesoes.map((m) => ({ id: m.id, alvo: alvoDaLesao(g, m) })).filter((a) => a.alvo !== null) as {
+    id: string
+    alvo: { centro: Ponto3d; raio: number }
+  }[]
+  const pontos = palpites.map((p) => pontoEm3dMm(g, p.plano, p.corte, p.ponto))
+  const acerta = (p: Ponto3d, a: { centro: Ponto3d; raio: number }) =>
+    Math.hypot(p[0] - a.centro[0], p[1] - a.centro[1], p[2] - a.centro[2]) <= Math.max(a.raio, TOLERANCIA_DESAFIO_MM)
+  const porLesao = alvos.map(({ id, alvo }) => ({ id, encontrada: pontos.some((p) => acerta(p, alvo)) }))
+  return {
+    encontradas: porLesao.filter((l) => l.encontrada).length,
+    total: alvos.length,
+    porLesao,
+    palpitesCertos: pontos.map((p) => alvos.some(({ alvo }) => acerta(p, alvo))),
+  }
+}
