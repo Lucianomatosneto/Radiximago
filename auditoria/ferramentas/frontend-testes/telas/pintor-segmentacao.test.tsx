@@ -550,9 +550,9 @@ describe('no corte da tomografia', () => {
   const RX = { ...SEG, id: 13, plano: null, corte: null }
 
   async function montarNoCorte() {
-    const s = servidor([NO_CORTE, OUTRO_CORTE, RX], { 'GET /reconstrucao/55/plano.png': { corpo: {} } })
+    const s = servidor([NO_CORTE, OUTRO_CORTE, RX], { 'GET /reconstrucao/55/plano.png?*': { corpo: {} } })
     montarTela(
-      <PintorSegmentacao curationId={1} orthancReferenceId={55} dentesFicha={[]} urlImagem="http://api.teste:9999/reconstrucao/55/plano.png?plano=sagital&indice=35" corteTc={{ plano: 'sagital', corte: 35 }} />,
+      <PintorSegmentacao curationId={1} orthancReferenceId={55} dentesFicha={[]} urlImagem="http://api.teste/reconstrucao/55/plano.png?plano=sagital&indice=35" corteTc={{ plano: 'sagital', corte: 35 }} />,
     )
     await screen.findByRole('img', { name: 'Radiografia para pintar estruturas' })
     await waitFor(() => expect(screen.queryByText('Carregando…')).toBeNull())
@@ -561,7 +561,7 @@ describe('no corte da tomografia', () => {
 
   it('usa a imagem do corte e so mostra as estruturas dele', async () => {
     const s = await montarNoCorte()
-    expect(s.pedidos.map((p) => p.caminho)).toContain('/reconstrucao/55/plano.png')
+    expect(s.pedidos.some((p) => p.caminho.startsWith('/reconstrucao/55/plano.png'))).toBe(true)
     expect(s.pedidos.map((p) => p.caminho)).not.toContain('/curation/55/preview')
     expect(screen.getByText('Estruturas pintadas (1)')).toBeTruthy()
   })
