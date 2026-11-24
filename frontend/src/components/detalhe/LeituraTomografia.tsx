@@ -22,19 +22,41 @@
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useFormatter, useTranslations } from 'next-intl'
 import CamadaMarcacoes from './CamadaMarcacoes'
+import CamadaSegmentacoes from '../segmentacao/CamadaSegmentacoes'
 import LocalizadorTomografia, { type PlanoTomografia } from '../curadoria/LocalizadorTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from '../curadoria/MedidasTomografia'
 import { CHAVE_ACHADO } from '../segundaOpiniao/tipos'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
-import { avaliarDesafio, campoDuvidosoCm, tamanhoDoPlanoMm, type GeometriaTomografia, type Palpite } from '../../lib/tomografia'
+import { listarSegmentacoes, type Segmentacao } from '../../lib/segmentacoes'
+import {
+  avaliarDesafio,
+  campoDuvidosoCm,
+  tamanhoDoPlanoMm,
+  valorDaMedida,
+  type GeometriaTomografia,
+  type MedidaFicha,
+  type Palpite,
+} from '../../lib/tomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PLANOS: PlanoTomografia[] = ['axial', 'sagital', 'coronal']
 const totalNoPlano = (g: GeometriaTomografia, p: PlanoTomografia) => (p === 'axial' ? g.cortes : p === 'sagital' ? g.colunas : g.linhas)
 const limitar = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v))
 
-export default function LeituraTomografia({ curationId, marcacoes }: { curationId: number; marcacoes: Marcacao[] }) {
+// MEDIDAS E PINTURA DO CURADOR (24/11/2026, pedido do Luciano): no corte
+// aberto aparecem as medidas gravadas na ficha (com o valor calculado pela
+// geometria) e as estruturas pintadas naquele corte
+// (GET /segmentacoes/ficha/{id}); no modo desafio, so depois de revelar.
+export default function LeituraTomografia({
+  curationId,
+  marcacoes,
+  medidas: medidasDaFicha = [],
+}: {
+  curationId: number
+  marcacoes: Marcacao[]
+  medidas?: MedidaFicha[]
+}) {
   const t = useTranslations('VisualizarImagem.tomografia')
   const tCorte = useTranslations('Curadoria.marcadorTomografia')
   const tAchado = useTranslations('Pesquisa.opcoes.achadoPrincipal')
@@ -43,6 +65,8 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
   const [plano, setPlano] = useState<PlanoTomografia>('axial')
   const [corte, setCorte] = useState(0)
   const [ferramenta, setFerramenta] = useState<FerramentaMedida | null>(null)
+  const [pinturas, setPinturas] = useState<Segmentacao[] | null>(null)
+  const [mostrarPintura, setMostrarPintura] = useState(true)
   const [medidas, setMedidas] = useState<Record<string, Medida[]>>({})
   const passarRef = useRef<(sentido: number) => void>(() => {})
   const [desafio, setDesafio] = useState(false)
@@ -64,6 +88,10 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
         Array.isArray(g.espacamento_mm) && g.espacamento_mm.length === 3
       if (!vivo || !valida) return
       setGeo(g)
+      // estruturas pintadas pelo curador nos cortes (so as da tomografia)
+      listarSegmentacoes(curationId)
+        .then((itens) => vivo && setPinturas(itens.filter((x) => x.plano && typeof x.corte === 'number')))
+        .catch(() => undefined)
       if (primeira?.plano && typeof primeira.corte === 'number') {
         setPlano(primeira.plano)
         setCorte(primeira.corte)
@@ -125,6 +153,10 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
     }
   }
   const escondido = desafio && !revelado
+  const medidasCurador: Medida[] = medidasDaFicha
+    .filter((m) => m.plano === plano && m.corte === corte)
+    .map((m) => ({ id: `ficha-${m.id}`, tipo: m.tipo, pontos: m.pontos, valor: valorDaMedida(geo, m) }))
+  const pinturasDoCorte = (pinturas ?? []).filter((x) => x.plano === plano && x.corte === corte)
   const maxPalpites = lesoes.length + 2
   const resultado = desafio && revelado ? avaliarDesafio(geo, lesoes, palpites) : null
   const encontrada = (id: string) => resultado?.porLesao.find((l) => l.id === id)?.encontrada
@@ -199,6 +231,12 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                 {tCorte('angulo')}
               </button>
             </div>
+            {pinturas && pinturas.length > 0 && (
+              <label className="flex items-center gap-1 text-xs text-ink-2">
+                <input type="checkbox" checked={mostrarPintura} onChange={(e) => setMostrarPintura(e.target.checked)} />
+                {t('mostrarPintura')}
+              </label>
+            )}
             {lesoes.length > 0 && (
               <div className="flex items-center gap-1">
                 <button
@@ -269,12 +307,19 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                 draggable={false}
                 className="block h-[65vh] w-auto max-w-none select-none"
               />
+              {!escondido && pinturas && mostrarPintura && (
+                <div data-testid="pintura-do-curador" className="pointer-events-none absolute inset-0">
+                  {pinturasDoCorte.map((x) => (
+                    <CamadaSegmentacoes key={x.id} segmentacoes={[x]} />
+                  ))}
+                </div>
+              )}
               {!escondido && <CamadaMarcacoes corteAberto marcacoes={doCorte} />}
               <MedidasTomografia
                 key={chaveCorte}
                 modo={ferramenta}
                 tamanho={tamanhoDoPlanoMm(geo, plano)}
-                medidas={medidas[chaveCorte] ?? []}
+                medidas={[...(escondido ? [] : medidasCurador), ...(medidas[chaveCorte] ?? [])]}
                 rotulo={rotuloMedida}
                 onNova={(m) => setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))}
               />
@@ -316,6 +361,18 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                 ))}
               </ul>
               {escondido && palpites.length >= maxPalpites && <p className="text-violet-700 dark:text-violet-200">{t('semPalpites', { n: maxPalpites })}</p>}
+            </>
+          )}
+          {!escondido && medidasCurador.length > 0 && (
+            <>
+              <h3 className="font-semibold text-ink">{t('medidasCurador')}</h3>
+              <ul aria-label={t('medidasCurador')} className="space-y-1">
+                {medidasCurador.map((m) => (
+                  <li key={m.id} className="rounded border border-yellow-400/50 px-2 py-1 text-ink-2">
+                    {tCorte(m.tipo === 'regua' ? 'medidaRegua' : 'medidaAngulo', { valor: rotuloMedida(m) })}
+                  </li>
+                ))}
+              </ul>
             </>
           )}
           {escondido ? null : lesoes.length === 0 ? (

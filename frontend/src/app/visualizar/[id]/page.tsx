@@ -15,6 +15,7 @@ import LeituraTomografia from '../../../components/detalhe/LeituraTomografia'
 import ReconstrucoesTomografia from '../../../components/detalhe/ReconstrucoesTomografia'
 import Logo from '../../../components/Logo'
 import type { Marcacao } from '../../../lib/marcacoes'
+import type { MedidaFicha } from '../../../lib/tomografia'
 import BotaoEditarCuradoria from '../../../components/curadoria/BotaoEditarCuradoria'
 import BotaoPrepararAula from '../../../components/envios/BotaoPrepararAula'
 import { BotaoAnexosImagem } from '../../../components/anexos/AnexosCuradoria'
@@ -41,6 +42,8 @@ interface ImagemDidatica {
   achados_detalhe: string | null
   alteracoes_observadas: string[] | null
   marcacoes: Marcacao[]
+  /** medidas da tomografia gravadas na ficha (24/11/2026) */
+  medidas?: MedidaFicha[]
   qualidade_tecnica: string | null
   descricao_didatica: string | null
   erros_tecnicos?: string[]
@@ -331,7 +334,7 @@ export default function VisualizarImagemPage({ params }: { params: Promise<{ id:
 
                   {/* tomografia (24/11/2026): as lesoes marcadas nos cortes,
                       com regua e angulo; some sozinho se nao for tomografia */}
-                  <LeituraTomografia key={`tc-${imagem.curation_id}`} curationId={imagem.curation_id} marcacoes={imagem.marcacoes} />
+                  <LeituraTomografia key={`tc-${imagem.curation_id}`} curationId={imagem.curation_id} marcacoes={imagem.marcacoes} medidas={imagem.medidas ?? []} />
                   <ReconstrucoesTomografia key={`rec-${imagem.curation_id}`} curationId={imagem.curation_id} />
                 </div>
               </div>

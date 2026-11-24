@@ -1426,7 +1426,9 @@
       "desafioResultado": "You found {encontradas} of {total} lesions.",
       "seusPalpites": "Your guesses",
       "palpiteN": "Guess {n}",
-      "semPalpites": "You used all your guesses ({n}). Reveal the answer."
+      "semPalpites": "You used all your guesses ({n}). Reveal the answer.",
+      "mostrarPintura": "Show the curator's painting",
+      "medidasCurador": "Curator's measurements on this slice"
     },
     "reconstrucoes": {
       "titulo": "Reconstructed panoramic and cross-sections",

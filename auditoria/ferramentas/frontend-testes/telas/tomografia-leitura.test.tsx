@@ -194,3 +194,60 @@ describe('modo desafio', () => {
     expect(screen.queryByRole('button', { name: 'Modo desafio' })).toBeNull()
   })
 })
+
+// QUEM ESTUDA VE AS MEDIDAS E A PINTURA DO CURADOR (24/11/2026, pedido do
+// Luciano): no corte aberto aparecem as medidas gravadas na ficha (regua e
+// angulo, com o valor calculado pela geometria) e as estruturas pintadas
+// naquele corte (GET /segmentacoes/ficha/{id}, ficha aprovada). No modo
+// desafio, enquanto a resposta nao e revelada, as duas ficam escondidas.
+describe('medidas e pintura do curador', () => {
+  // sagital: 400 linhas x 0,3 mm = 120 mm de largura
+  const MEDIDA = { id: 'g1', tipo: 'regua' as const, plano: 'sagital' as const, corte: 120, pontos: [{ x: 0, y: 0.5 }, { x: 0.25, y: 0.5 }] }
+  const OUTRA_MEDIDA = { ...MEDIDA, id: 'g2', corte: 3 }
+  const PINTURA = { id: 21, curation_id: 7, nome: 'Lesão', dente: null, cor: '#56b4e9', largura: 100, altura: 100, mascara: 'data:image/png;base64,AAA', atualizado_em: null, plano: 'sagital', corte: 120 }
+  const PINTURA_OUTRO = { ...PINTURA, id: 22, corte: 3 }
+  const PINTURA_RX = { ...PINTURA, id: 23, plano: null, corte: null }
+
+  async function abrirCom() {
+    servidorFalso({
+      'GET /search/7/tomografia/geometria': { corpo: GEOMETRIA },
+      'GET /segmentacoes/ficha/7': { corpo: { curation_id: 7, itens: [PINTURA, PINTURA_OUTRO, PINTURA_RX] } },
+    })
+    montarTela(<LeituraTomografia curationId={7} marcacoes={[LESAO_1, LESAO_2]} medidas={[MEDIDA, OUTRA_MEDIDA]} />)
+    await screen.findByRole('img', { name: /Corte da tomografia/ })
+    await screen.findByTestId('pintura-do-curador')
+  }
+
+  it('as medidas do corte aberto, com o valor calculado', async () => {
+    await abrirCom()
+    const lista = screen.getByRole('list', { name: 'Medidas do curador neste corte' })
+    expect(within(lista).getAllByRole('listitem')).toHaveLength(1)
+    expect(within(lista).getByText('Régua: 30,0 mm')).toBeTruthy()
+    expect(within(screen.getByTestId('medidas-desenhadas')).getByText('30,0 mm')).toBeTruthy()
+  })
+
+  it('a pintura do corte aberto; a caixa esconde e mostra', async () => {
+    await abrirCom()
+    expect(screen.getByTestId('pintura-do-curador').children).toHaveLength(1)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar pintura do curador' }))
+    expect(screen.queryByTestId('pintura-do-curador')).toBeNull()
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Mostrar pintura do curador' }))
+    fireEvent.keyDown(screen.getByTestId('area-leitura-tomografia'), { key: 'ArrowUp' })
+    // outro corte: nada pintado nem medido
+    expect(screen.getByTestId('pintura-do-curador').children).toHaveLength(0)
+    expect(screen.queryByRole('list', { name: 'Medidas do curador neste corte' })).toBeNull()
+  })
+
+  it('no modo desafio ficam escondidas ate revelar', async () => {
+    await abrirCom()
+    fireEvent.click(screen.getByRole('button', { name: 'Modo desafio' }))
+    // volta ao corte com medida e pintura (sagital 120)
+    fireEvent.click(screen.getByRole('button', { name: 'Sagital' }))
+    fireEvent.change(screen.getByRole('slider', { name: 'Corte' }), { target: { value: '120' } })
+    expect(screen.queryByTestId('pintura-do-curador')).toBeNull()
+    expect(screen.queryByRole('list', { name: 'Medidas do curador neste corte' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Revelar resposta' }))
+    expect(screen.getByTestId('pintura-do-curador').children).toHaveLength(1)
+    expect(screen.getByRole('list', { name: 'Medidas do curador neste corte' })).toBeTruthy()
+  })
+})
