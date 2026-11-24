@@ -23,12 +23,16 @@ No quadro **3D** da tomografia, o botão esquerdo **gira o volume**, que é o co
 - **Tamanho real**: mostra a imagem em milímetros de verdade. Para isso, a
   imagem precisa ter a medida do pixel (`PixelSpacing` ou
   `ImagerPixelSpacing`) e a tela precisa ter sido calibrada uma vez.
-- **Calibrar tela**: há dois jeitos.
-  - O mais rápido é escolher o **tamanho da tela em polegadas**. O Rádix
-    calcula pela resolução da tela: diagonal em pixels ÷ diagonal em mm.
-  - O mais preciso é ajustar a barra à largura de um cartão de 85,6 mm
-    (padrão ISO/IEC 7810).
-  - Refaça a calibração ao trocar de monitor ou mudar o zoom do navegador.
+- **Calibrar tela** (aprimorada em 23/11/2026, conforme a especificação do Luciano). Há três jeitos:
+  - **Cartão** (padrão, o mais preciso): um passo a passo guiado. A barra é ajustada até a largura de um cartão bancário (85,6 mm, padrão ISO/IEC 7810), com ajuste fino de 1 px.
+  - **Régua**: a barra é ajustada até medir 50, 100 ou 150 mm numa régua encostada na tela, também com ajuste fino de 1 px. Serve para quem não tem cartão à mão.
+  - **Tamanho da tela**: de 11,6" a 49", ou "Outro tamanho", com o valor conferido entre 5 e 120 polegadas. O Rádix calcula pela resolução da tela. É **só uma ajuda**, porque as polegadas anunciadas não garantem a escala.
+- A calibração fica **salva neste navegador**, com o método, a data, a resolução e o zoom da tela. Só o **Salvar** grava; **Cancelar** não mexe na calibração anterior. **Recomeçar** volta a barra ao início, e **Apagar calibração salva** remove a calibração.
+- **Situação**, ao lado dos botões:
+  - **Não calibrada**;
+  - **Calibrada**;
+  - **Calibração recomendada**: a resolução ou o zoom da tela mudaram desde a calibração (outro monitor, por exemplo).
+  - Depois de salvar, aparece "Calibração concluída ✓".
 
 ## Painel "Tomografia" (23/11/2026, revisto no mesmo dia)
 
