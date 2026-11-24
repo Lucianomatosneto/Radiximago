@@ -161,6 +161,22 @@ export default function LeituraTomografia({
   const resultado = desafio && revelado ? avaliarDesafio(geo, lesoes, palpites) : null
   const encontrada = (id: string) => resultado?.porLesao.find((l) => l.id === id)?.encontrada
 
+  // ao revelar, as CONTAGENS vao ao servidor (24/11/2026); ele so guarda com o
+  // registro ligado, o TCLE aprovado e o consentimento do estudante. Para o
+  // estudante nada muda (o envio nao trava a tela; falha e ignorada).
+  function revelar() {
+    setRevelado(true)
+    if (!geo) return
+    const r = avaliarDesafio(geo, lesoes, palpites)
+    if (r.total === 0) return
+    void fetchOuNulo(`${API}/desafio/${curationId}/resultado`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ total_lesoes: r.total, encontradas: r.encontradas, palpites: palpites.length }),
+    })
+  }
+
   function palpitar(e: MouseEvent<HTMLDivElement>) {
     if (!escondido || palpites.length >= maxPalpites) return
     const caixa = e.currentTarget.getBoundingClientRect()
@@ -248,7 +264,7 @@ export default function LeituraTomografia({
                   {t('desafio')}
                 </button>
                 {escondido && (
-                  <button type="button" onClick={() => setRevelado(true)} className="rounded-md border border-violet-500 bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-violet-700">
+                  <button type="button" onClick={revelar} className="rounded-md border border-violet-500 bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-violet-700">
                     {t('revelar')}
                   </button>
                 )}
