@@ -11,7 +11,7 @@
 //   mostra todas e o botao "Ir" abre o corte de cada uma.
 // O MarcadorAchado e trocado por um falso (ele ja tem testes proprios).
 import type { ReactNode } from 'react'
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import MarcadorTomografia from '../../../../frontend/src/components/curadoria/MarcadorTomografia'
 import { marcacoesSobreAImagem, type Marcacao } from '../../../../frontend/src/lib/marcacoes'
@@ -414,6 +414,17 @@ describe('medidas na ficha', () => {
 })
 
 describe('exportar para pesquisa e IA', () => {
+  it('sem o registro na auditoria (servidor recusou ou fora do ar), nao baixa e avisa', async () => {
+    const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
+    URL.createObjectURL = vi.fn(() => 'blob:x')
+    await abrir([JA_MARCADA])
+    servidorFalso({ 'POST /reconstrucao/55/exportacao': { status: 500, corpo: { detail: 'erro' } } })
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar marcações (JSON)' }))
+    expect(await screen.findByText('Não foi possível registrar a exportação; o arquivo não foi baixado. Tente de novo.')).toBeTruthy()
+    expect(clique).not.toHaveBeenCalled()
+    clique.mockRestore()
+  })
+
   it('baixa um JSON com as marcacoes do exame em mm', async () => {
     const blobs: Blob[] = []
     URL.createObjectURL = vi.fn((b: Blob) => {
@@ -423,8 +434,11 @@ describe('exportar para pesquisa e IA', () => {
     URL.revokeObjectURL = vi.fn()
     const clique = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
     await abrir([JA_MARCADA])
+    const s = servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: GEOMETRIA }, 'POST /reconstrucao/55/exportacao': { status: 201, corpo: {} } })
     fireEvent.click(screen.getByRole('button', { name: 'Exportar marcações (JSON)' }))
-    expect(clique).toHaveBeenCalled()
+    // 24/11/2026 ("registrar auditoria"): a tela avisa o servidor antes de baixar
+    await waitFor(() => expect(clique).toHaveBeenCalled())
+    expect(s.alteracoes()).toEqual([{ metodo: 'POST', caminho: '/reconstrucao/55/exportacao', corpo: { marcacoes: 1, medidas: 0 } }])
     const doc = JSON.parse(await blobs[0].text())
     expect(doc.formato).toBe('radix-imago/marcacoes-tomografia')
     expect(doc.exame.referencia).toBe(55)
