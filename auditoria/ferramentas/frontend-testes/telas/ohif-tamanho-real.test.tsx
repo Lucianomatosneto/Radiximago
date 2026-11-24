@@ -113,6 +113,7 @@ describe('tamanho real (milimetros)', () => {
     montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
     fireEvent.click(screen.getByRole('button', { name: 'Calibrar tela' }))
     const janela = screen.getByRole('dialog', { name: 'Calibrar a tela' })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Tamanho da tela' }))
     fireEvent.change(within(janela).getByRole('combobox', { name: 'Tamanho da tela (polegadas)' }), { target: { value: '24' } })
     fireEvent.click(within(janela).getByRole('button', { name: 'Salvar' }))
     // diagonal 2202,9 px / (24 x 25,4 mm) = 3,614 px por mm
@@ -125,5 +126,115 @@ describe('tamanho real (milimetros)', () => {
     fireEvent.click(within(screen.getByRole('dialog', { name: 'Calibrar a tela' })).getByRole('button', { name: 'Cancelar' }))
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(window.localStorage.getItem('radix-px-por-mm')).toBeNull()
+  })
+})
+
+// CALIBRACAO APRIMORADA (especificacao do Luciano, 23/11/2026): tres
+// metodos (tamanho da tela, cartao guiado, regua), calibracao salva por
+// navegador com a situacao visivel, apagar e recalibrar.
+describe('calibracao aprimorada', () => {
+  const abrirJanela = () => {
+    fireEvent.click(screen.getByRole('button', { name: 'Calibrar tela' }))
+    return screen.getByRole('dialog', { name: 'Calibrar a tela' })
+  }
+  const salvo = () => JSON.parse(window.localStorage.getItem('radix-calibracao-tela') || 'null')
+  const tela = (w: number, h: number) => {
+    Object.defineProperty(window.screen, 'width', { value: w, configurable: true })
+    Object.defineProperty(window.screen, 'height', { value: h, configurable: true })
+  }
+
+  it('tamanhos de 11,6" a 49" em ordem crescente, mais "Outro tamanho"', () => {
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const janela = abrirJanela()
+    fireEvent.click(within(janela).getByRole('button', { name: 'Tamanho da tela' }))
+    const opcoes = within(janela).getAllByRole('option').map((o) => (o as HTMLOptionElement).value).filter((v) => v && v !== 'outro')
+    expect(opcoes[0]).toBe('11.6')
+    expect(opcoes.at(-1)).toBe('49')
+    expect(opcoes).toHaveLength(22)
+    expect([...opcoes].map(Number)).toEqual([...opcoes].map(Number).sort((x, y) => x - y))
+    expect(within(janela).getByRole('option', { name: 'Outro tamanho' })).toBeTruthy()
+  })
+
+  it('"Outro tamanho": valida o valor digitado', () => {
+    tela(1920, 1080)
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const janela = abrirJanela()
+    fireEvent.click(within(janela).getByRole('button', { name: 'Tamanho da tela' }))
+    fireEvent.change(within(janela).getByRole('combobox', { name: 'Tamanho da tela (polegadas)' }), { target: { value: 'outro' } })
+    const campo = within(janela).getByRole('spinbutton', { name: 'Diagonal (polegadas)' })
+    const salvar = within(janela).getByRole('button', { name: 'Salvar' }) as HTMLButtonElement
+    fireEvent.input(campo, { target: { value: '-3' } })
+    expect(within(janela).getByRole('alert').textContent).toContain('entre 5 e 120')
+    expect(salvar.disabled).toBe(true)
+    fireEvent.input(campo, { target: { value: '25' } })
+    expect(salvar.disabled).toBe(false)
+    fireEvent.click(salvar)
+    expect(salvo().pxPorMm).toBeCloseTo(Math.hypot(1920, 1080) / (25 * 25.4), 3)
+    expect(salvo().metodo).toBe('tamanho')
+  })
+
+  it('cartao guiado: passos, ajuste fino de 1 px, recomecar e salvar', () => {
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const janela = abrirJanela()
+    expect(within(janela).getByRole('list', { name: 'Passos com o cartão' })).toBeTruthy()
+    const faixa = within(janela).getByRole('slider', { name: 'Largura da barra' }) as HTMLInputElement
+    fireEvent.input(faixa, { target: { value: '320' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Aumentar 1 px' }))
+    fireEvent.click(within(janela).getByRole('button', { name: 'Aumentar 1 px' }))
+    fireEvent.click(within(janela).getByRole('button', { name: 'Diminuir 1 px' }))
+    expect(within(janela).getByText('Barra: 321 px = 85,6 mm')).toBeTruthy()
+    fireEvent.click(within(janela).getByRole('button', { name: 'Recomeçar' }))
+    expect(faixa.value).toBe('324')
+    fireEvent.input(faixa, { target: { value: '340' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Salvar' }))
+    expect(salvo()).toMatchObject({ metodo: 'cartao' })
+    expect(salvo().pxPorMm).toBeCloseTo(340 / CARTAO_MM)
+  })
+
+  it('regua: comprimento escolhido em mm, ajuste com + e -, salvar', () => {
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const janela = abrirJanela()
+    fireEvent.click(within(janela).getByRole('button', { name: 'Régua' }))
+    fireEvent.change(within(janela).getByRole('combobox', { name: 'Comprimento na régua (mm)' }), { target: { value: '50' } })
+    fireEvent.input(within(janela).getByRole('slider', { name: 'Comprimento da barra' }), { target: { value: '200' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Aumentar 1 px' }))
+    expect(within(janela).getByText('Barra: 201 px = 50 mm')).toBeTruthy()
+    fireEvent.click(within(janela).getByRole('button', { name: 'Salvar' }))
+    expect(salvo()).toMatchObject({ metodo: 'regua' })
+    expect(salvo().pxPorMm).toBeCloseTo(201 / 50)
+  })
+
+  it('cancelar nao mexe na calibracao anterior', () => {
+    window.localStorage.setItem('radix-px-por-mm', '4')
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const janela = abrirJanela()
+    fireEvent.input(within(janela).getByRole('slider', { name: 'Largura da barra' }), { target: { value: '500' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Cancelar' }))
+    expect(window.localStorage.getItem('radix-px-por-mm')).toBe('4')
+  })
+
+  it('situacao visivel: nao calibrada -> calibrada -> recomendada (outra tela); apagar', () => {
+    tela(1920, 1080)
+    montar({ PixelSpacing: [0.1, 0.1] }, 0.1)
+    const situacao = () => screen.getByTestId('situacao-calibracao').textContent
+    expect(situacao()).toBe('Não calibrada')
+    const janela = abrirJanela()
+    fireEvent.input(within(janela).getByRole('slider', { name: 'Largura da barra' }), { target: { value: '330' } })
+    fireEvent.click(within(janela).getByRole('button', { name: 'Salvar' }))
+    vi.advanceTimersByTime(800)
+    expect(situacao()).toBe('Calibrada')
+    expect(screen.getByRole('status').textContent).toContain('Calibração concluída')
+    // outro monitor (outra resolucao): recomenda calibrar de novo
+    tela(2560, 1440)
+    vi.advanceTimersByTime(800)
+    expect(situacao()).toBe('Calibração recomendada')
+    // apagar a calibracao salva
+    const j2 = abrirJanela()
+    expect(within(j2).getByText(/Situação: Calibração recomendada/)).toBeTruthy()
+    fireEvent.click(within(j2).getByRole('button', { name: 'Apagar calibração salva' }))
+    vi.advanceTimersByTime(800)
+    expect(window.localStorage.getItem('radix-px-por-mm')).toBeNull()
+    expect(salvo()).toBeNull()
+    expect(situacao()).toBe('Não calibrada')
   })
 })
