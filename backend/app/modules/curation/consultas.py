@@ -538,6 +538,7 @@ def obter_ficha(
         "genero": ficha.genero,
         "achado_principal": ficha.achado_principal,
         "marcacoes": ficha.marcacoes,
+        "medidas": ficha.medidas or [],
         "achados_detalhe": ficha.achados_detalhe,
         "alteracoes_observadas": ficha.alteracoes_observadas,
         "regioes_imagem": ficha.regioes_imagem,
