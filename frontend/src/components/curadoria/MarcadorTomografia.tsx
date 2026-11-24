@@ -31,6 +31,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { useFormatter, useTranslations } from 'next-intl'
 import MarcadorAchado from './MarcadorAchado'
 import LocalizadorTomografia from './LocalizadorTomografia'
+import TresPlanosTomografia, { type Cursor3d } from './TresPlanosTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from './MedidasTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
@@ -68,6 +69,10 @@ export default function MarcadorTomografia({
   const [erro, setErro] = useState('')
   const [plano, setPlano] = useState<Plano>('axial')
   const [corte, setCorte] = useState(0)
+  // TRES PLANOS (24/11/2026, recurso 7): cursor 3D comum aos tres quadros;
+  // a coordenada do plano principal e sempre o corte aberto
+  const [tresPlanos, setTresPlanos] = useState(false)
+  const [cursor, setCursor] = useState<Cursor3d>({ coluna: 0, linha: 0, corte: 0 })
   const passarRef = useRef<(sentido: number) => void>(() => {})
 
   // ver melhor (so na tela; as marcacoes continuam nas mesmas coordenadas)
@@ -97,6 +102,7 @@ export default function MarcadorTomografia({
       if (!vivo) return
       setGeo(g)
       setCorte(Math.floor(g.cortes / 2))
+      setCursor({ coluna: Math.floor(g.colunas / 2), linha: Math.floor(g.linhas / 2), corte: Math.floor(g.cortes / 2) })
     })()
     return () => {
       vivo = false
@@ -172,6 +178,21 @@ export default function MarcadorTomografia({
   }
   function aoSoltar() {
     arrastoRef.current = null
+  }
+
+  // coordenada do cursor que corresponde ao corte de cada plano
+  const CAMPO: Record<Plano, keyof Cursor3d> = { axial: 'corte', sagital: 'coluna', coronal: 'linha' }
+  const cursorEfetivo: Cursor3d = { ...cursor, [CAMPO[plano]]: corte }
+
+  function moverCursor(c: Cursor3d) {
+    setCursor(c)
+    setCorte(c[CAMPO[plano]])
+  }
+
+  function planoPrincipalNoCursor(p: Plano) {
+    setCursor(cursorEfetivo)
+    setPlano(p)
+    setCorte(cursorEfetivo[CAMPO[p]])
   }
 
   function trocarPlano(p: Plano) {
@@ -339,7 +360,20 @@ export default function MarcadorTomografia({
               {t('angulo')}
             </button>
           </div>
+          <button type="button" aria-pressed={tresPlanos} onClick={() => setTresPlanos((v) => !v)} className={`ml-2 ${botaoLigado(tresPlanos)}`}>
+            {t('tresPlanos')}
+          </button>
         </div>
+        {tresPlanos && (
+          <TresPlanosTomografia
+            geo={geo}
+            urlPlano={(p, i) => `${API}/reconstrucao/${orthancReferenceId}/plano.png?plano=${p}&indice=${i}`}
+            cursor={cursorEfetivo}
+            onCursor={moverCursor}
+            planoPrincipal={plano}
+            onEscolherPlano={planoPrincipalNoCursor}
+          />
+        )}
         <p className="text-xs text-slate-400">{ferramenta ? t(ferramenta === 'regua' ? 'dicaRegua' : 'dicaAngulo') : t('dica')}</p>
         {/* 24/11/2026 (decisao do Luciano, opcao A): exame com medida
             duvidosa (ex.: as tomografias da base publica, pixel de 1 mm) */}
@@ -381,6 +415,9 @@ export default function MarcadorTomografia({
               } else if (tecla === 'r' || tecla === 'g') {
                 e.preventDefault()
                 alternarFerramenta(tecla === 'r' ? 'regua' : 'angulo')
+              } else if (tecla === 't') {
+                e.preventDefault()
+                setTresPlanos((v) => !v)
               }
             }
           }}

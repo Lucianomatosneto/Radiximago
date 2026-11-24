@@ -183,6 +183,35 @@ describe('atalhos de teclado', () => {
   })
 })
 
+// TRES PLANOS (24/11/2026, recurso 7): o botao "Três planos" (ou T) mostra
+// axial, sagital e coronal juntos, sincronizados com o corte aberto.
+describe('tres planos', () => {
+  it('liga e desliga; o corte aberto e o cursor andam juntos', async () => {
+    await abrir()
+    expect(screen.queryByRole('group', { name: 'Três planos' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Três planos' }))
+    const grupo = screen.getByRole('group', { name: 'Três planos' })
+    const src = (nome: string) => within(grupo).getByRole('img', { name: new RegExp(`^${nome}`) }).getAttribute('src') ?? ''
+    // abre no meio do exame: corte 100, coluna 250, linha 200
+    expect(src('Axial')).toContain('plano=axial&indice=100')
+    expect(src('Sagital')).toContain('plano=sagital&indice=250')
+    expect(src('Coronal')).toContain('plano=coronal&indice=200')
+    // passar o corte axial move o cursor
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(src('Axial')).toContain('indice=101')
+    // clicar no sagital leva o corte principal (axial) ao mesmo lugar
+    const sagital = within(grupo).getByRole('button', { name: /^Sagital/ })
+    caixa100(sagital)
+    fireEvent.click(sagital, { clientX: 50, clientY: 25 })
+    expect(url()).toContain('plano=axial&indice=150')
+    // duplo clique no coronal: o coronal vira o plano principal, no mesmo ponto
+    fireEvent.doubleClick(within(grupo).getByRole('button', { name: /^Coronal/ }))
+    expect(url()).toContain('plano=coronal&indice=200')
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 't' })
+    expect(screen.queryByRole('group', { name: 'Três planos' })).toBeNull()
+  })
+})
+
 describe('ver melhor o corte', () => {
   it('aproximar, afastar e ajustar; o zoom aparece em %', async () => {
     await abrir()
