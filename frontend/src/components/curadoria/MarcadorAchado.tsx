@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { useTranslations } from 'next-intl'
 import CamadaMarcacoes from '../detalhe/CamadaMarcacoes'
 import { FORMAS_MARCACAO, OPCOES_ACHADO_MARCACAO, contornoRelativo, gerarIdMarcacao, girarRelativo, type Marcacao, type TipoMarcacao } from '../../lib/marcacoes'
@@ -76,12 +76,24 @@ export default function MarcadorAchado({
   semAchado = false,
   urlImagem,
   semRecorte = false,
+  transformacao,
+  filtroImagem,
+  sobreposicao,
 }: {
   orthancReferenceId?: number
   /** Outra imagem no lugar do preview da curadoria (endereco completo). */
   urlImagem?: string
   /** Nao recortar borda branca (foto do negatoscopio: o fundo claro e da luz). */
   semRecorte?: boolean
+  /** TOMOGRAFIA (24/11/2026): zoom/deslocamento (CSS transform) do quadro.
+   * As marcacoes acompanham: as coordenadas saem do retangulo do quadro na
+   * tela, que ja inclui a transformacao. */
+  transformacao?: string
+  /** Filtro CSS so na imagem (brilho, contraste, inverter); as marcacoes
+   * nao mudam de cor. */
+  filtroImagem?: string
+  /** Camada por cima de tudo, no mesmo quadro da imagem (ex.: medidas). */
+  sobreposicao?: ReactNode
   /** Modo miniatura (tela cheia da Curadoria): mostra so a imagem, sem a
    * barra de formas nem o texto de ajuda - o painel fica pequeno ao lado
    * do visualizador e so vira editor quando o curador clica nele. */
@@ -333,8 +345,10 @@ export default function MarcadorAchado({
     }
   }, [onMarcar])
 
+  // so o botao ESQUERDO desenha, pega, gira ou estica (24/11/2026): o do
+  // meio e o direito ficam para a tela em volta (deslocar, brilho/contraste)
   function aoPressionarFundo(evento: React.MouseEvent<SVGSVGElement>) {
-    if (evento.target !== evento.currentTarget) return
+    if (evento.button !== 0 || evento.target !== evento.currentTarget) return
     const wrapper = wrapperRef.current
     if (!wrapper) return
     const { x, y } = coordenadas(evento.clientX, evento.clientY, wrapper, recorteRef.current)
@@ -348,6 +362,7 @@ export default function MarcadorAchado({
   }
 
   function aoPressionarForma(evento: React.MouseEvent, marcacao: Marcacao) {
+    if (evento.button !== 0) return
     evento.stopPropagation()
     const wrapper = wrapperRef.current
     if (!wrapper) return
@@ -357,11 +372,13 @@ export default function MarcadorAchado({
   }
 
   function aoPressionarGiro(evento: React.MouseEvent, marcacao: Marcacao) {
+    if (evento.button !== 0) return
     evento.stopPropagation()
     arrastoRef.current = { tipo: 'girar', id: marcacao.id }
   }
 
   function aoPressionarAlca(evento: React.MouseEvent, marcacao: Marcacao, extremidade?: 'x1y1' | 'x2y2') {
+    if (evento.button !== 0) return
     evento.stopPropagation()
     arrastoRef.current =
       marcacao.tipo === 'seta' && extremidade
@@ -532,14 +549,18 @@ export default function MarcadorAchado({
           <div
             ref={wrapperRef}
             className="relative overflow-hidden"
-            style={{ width: `${tamanhoRenderizado.largura}px`, height: `${tamanhoRenderizado.altura}px` }}
+            style={{
+              width: `${tamanhoRenderizado.largura}px`,
+              height: `${tamanhoRenderizado.altura}px`,
+              ...(transformacao ? { transform: transformacao, transformOrigin: '0 0' } : {}),
+            }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={src}
               alt={t('altImagemMarcacao')}
               className="absolute block max-w-none select-none"
-              style={{ left: imagemOffsetX, top: imagemOffsetY, width: imagemLarguraTotal, height: imagemAlturaTotal }}
+              style={{ left: imagemOffsetX, top: imagemOffsetY, width: imagemLarguraTotal, height: imagemAlturaTotal, filter: filtroImagem }}
               draggable={false}
             />
             {/* desenho das marcacoes no estilo padrao (cor por achado,
@@ -707,6 +728,7 @@ export default function MarcadorAchado({
               </g>
             ))}
           </svg>
+          {sobreposicao}
           </div>
         )}
       </div>
