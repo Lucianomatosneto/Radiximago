@@ -31,7 +31,7 @@ import LocalizadorTomografia from './LocalizadorTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from './MedidasTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
-import { exportarMarcacoesTc, tamanhoDoPlanoMm, type GeometriaTomografia } from '../../lib/tomografia'
+import { campoDuvidosoCm, exportarMarcacoesTc, tamanhoDoPlanoMm, type GeometriaTomografia } from '../../lib/tomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
@@ -304,6 +304,13 @@ export default function MarcadorTomografia({
           </div>
         </div>
         <p className="text-xs text-slate-400">{ferramenta ? t(ferramenta === 'regua' ? 'dicaRegua' : 'dicaAngulo') : t('dica')}</p>
+        {/* 24/11/2026 (decisao do Luciano, opcao A): exame com medida
+            duvidosa (ex.: as tomografias da base publica, pixel de 1 mm) */}
+        {campoDuvidosoCm(geo) > 0 && (
+          <p role="note" aria-label={t('medidaDuvidosaTitulo')} className="rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-xs text-amber-800 dark:text-amber-200">
+            <strong>{t('medidaDuvidosaTitulo')}:</strong> {t('medidaDuvidosa', { cm: campoDuvidosoCm(geo) })}
+          </p>
+        )}
         <div
           ref={areaRef}
           data-testid="area-tomografia"
