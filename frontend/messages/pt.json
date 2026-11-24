@@ -840,7 +840,9 @@
       "anteriores": "Ver imagens anteriores",
       "proximas": "Ver próximas imagens",
       "volumeSelo": "TC · {cortes}",
-      "volumeTitulo": "Tomografia: {cortes} cortes, um exame só"
+      "volumeTitulo": "Tomografia: {cortes} cortes, um exame só",
+      "comCurador": "Com {nome}",
+      "comCuradorTitulo": "Em andamento com {nome}. Ao abrir, você assume a ficha (fica registrado)."
     },
     "modalMotivo": {
       "descartarTitulo": "Descartar ficha",

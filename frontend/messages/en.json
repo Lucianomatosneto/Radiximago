@@ -840,7 +840,9 @@
       "anteriores": "View previous images",
       "proximas": "View next images",
       "volumeSelo": "CT · {cortes}",
-      "volumeTitulo": "CT scan: {cortes} slices, a single exam"
+      "volumeTitulo": "CT scan: {cortes} slices, a single exam",
+      "comCurador": "With {nome}",
+      "comCuradorTitulo": "In progress with {nome}. Opening it makes you the curator (this is logged)."
     },
     "modalMotivo": {
       "descartarTitulo": "Discard record",

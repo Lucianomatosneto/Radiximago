@@ -17,6 +17,9 @@ export interface ImagemPendente {
   /** exame em volume (tomografia, 18/11/2026): um item por exame; quantos cortes */
   em_volume?: boolean
   cortes?: number
+  /** ficha em andamento de OUTRO curador (so o administrador ve, 24/11/2026):
+   * nome de quem esta com ela; abrir = assumir */
+  em_andamento_de?: string | null
 }
 
 interface EmFoco {
@@ -241,6 +244,14 @@ export default function FilaCuradoriaHorizontal({
                       className="absolute right-0.5 top-0.5 rounded bg-sky-700/90 px-1 text-[10px] font-semibold text-white"
                     >
                       {t('volumeSelo', { cortes: imagem.cortes ?? 1 })}
+                    </span>
+                  )}
+                  {imagem.em_andamento_de && !imagem.sugerida_por && (
+                    <span
+                      title={t('comCuradorTitulo', { nome: imagem.em_andamento_de })}
+                      className="absolute bottom-0 left-0 right-0 truncate rounded-b-lg bg-amber-700/90 px-1 text-[10px] font-medium text-white"
+                    >
+                      {t('comCurador', { nome: imagem.em_andamento_de })}
                     </span>
                   )}
                   {imagem.sugerida_por && (

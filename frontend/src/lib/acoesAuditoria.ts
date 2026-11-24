@@ -138,6 +138,7 @@ export const GRUPOS_ACOES: GrupoAcoes[] = [
       a('grupo_comentario_apagado', 'Participante apagou o próprio comentário', 'Participant deleted their own comment'),
       a('sugestao_professor_enviada', 'Professor enviou a ficha ao curador', 'Professor sent the record to the curator'),
       a('sugestao_professor_guardada', 'Professor guardou a imagem marcada em Minhas imagens', 'Professor kept the marked image in My images'),
+      a('ficha_assumida', 'Administrador assumiu ficha em andamento de outro curador', 'Administrator took over another curator\'s record in progress'),
       a('aparelho_cadastrado', 'Aparelho da rede cadastrado', 'Network device registered'),
       a('aparelho_alterado', 'Aparelho da rede alterado', 'Network device changed'),
       a('aparelho_liberado', 'Aparelho da rede liberado', 'Network device allowed'),

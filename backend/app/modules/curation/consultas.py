@@ -97,6 +97,14 @@ def listar_pendentes(
         Curation.curador_id == usuario.id,
         Curation.status.in_(STATUS_EDITAVEIS),
     )
+    # 24/11/2026 (pedido do Luciano, opcao A): o ADMINISTRADOR ve tambem as
+    # fichas em andamento de QUALQUER curador (ex.: as 2 tomografias abertas
+    # pelo "Curador Demonstracao"); ao abrir, ele assume a ficha (ficha.py).
+    if _perfil(usuario) == "administrador":
+        minha_em_andamento = and_(
+            Curation.curador_id.isnot(None),
+            Curation.status.in_(STATUS_EDITAVEIS),
+        )
     if tipo is not None and tipo not in FILTROS_TIPO:
         raise HTTPException(status_code=422, detail="Modalidade desconhecida.")
     # modalidade preliminar (23/11/2026): a sugestao de professor ja tem o
@@ -140,8 +148,9 @@ def listar_pendentes(
     registros = consulta_base.offset(skip).limit(limit).all()
     cortes = contar_cortes(db, [ref for ref, *_ in registros])
 
-    nomes = {u.id: u.nome for u in db.query(User).filter(
-        User.id.in_({sid for _, _, sid, *_ in registros if sid}))} if registros else {}
+    ids_nomes = {sid for _, _, sid, *_ in registros if sid} | {
+        cid for *_, cid in registros if cid is not None and cid != usuario.id}
+    nomes = {u.id: u.nome for u in db.query(User).filter(User.id.in_(ids_nomes))} if ids_nomes else {}
     itens = [
         {
             "curation_id": curation_id,
@@ -160,6 +169,9 @@ def listar_pendentes(
             "tipo_preliminar": None if tipo_item == NAO_INFORMADO else tipo_item,
             # ficha que ESTE curador ja abriu e nao terminou (continuar)
             "em_andamento": curation_id is not None and curador_id == usuario.id,
+            # ficha em andamento de OUTRO curador (so o administrador ve):
+            # nome de quem esta com ela; abrir = assumir (24/11/2026)
+            "em_andamento_de": nomes.get(curador_id) if curation_id is not None and curador_id not in (None, usuario.id) else None,
         }
         for ref, curation_id, sugerida_por_id, tipo_item, curador_id in registros
     ]
