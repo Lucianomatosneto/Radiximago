@@ -48,6 +48,8 @@ function funcaoFalsa(pontos: number[][]): FuncaoFalsa {
 }
 
 interface VpFalso {
+  foco: number[]
+  getCamera: () => { focalPoint: number[] }
   type: string
   opacidade: FuncaoFalsa
   cor: FuncaoFalsa
@@ -72,8 +74,17 @@ function vpFalso(type: string, dados: Float32Array): VpFalso {
     setBlendMode: vi.fn(),
     render: vi.fn(),
     getImageIds: () => Array.from({ length: 120 }, (_, i) => `c${i}`),
-    getImageData: () => ({ spacing: [0.2, 0.2, 0.2], scalarData: dados }),
-  }
+    // volume falso: 20 x 20 x 50 (colunas x linhas x cortes) = 20000 valores
+    getImageData: () => ({
+      spacing: [0.2, 0.2, 0.2],
+      dimensions: [20, 20, 50],
+      scalarData: dados,
+      imageData: { worldToIndex: (p: number[]) => p },
+    }),
+    // foco da camera (mundo = indice no volume falso): [coluna, linha, corte]
+    foco: [5, 6, 30],
+    getCamera() { return { focalPoint: this.foco } },
+  } as VpFalso
 }
 
 function montar(modalidade: string, cortes: number, dados: Float32Array = exameHu()) {
@@ -276,6 +287,59 @@ describe('linhas de referencia', () => {
     grupos.mpr.setToolEnabled.mockClear()
     fireEvent.click(botao('Linhas de referência'))
     expect(grupos.mpr.setToolEnabled).toHaveBeenCalledWith('ReferenceLines')
+  })
+})
+
+// MINIATURA LOCALIZADORA NO VISUALIZADOR (23/11/2026, pedido do Luciano):
+// com UM plano so na tela, abaixo da data (canto de cima, a esquerda) aparece
+// uma miniatura com a linha de referencia do corte aberto:
+// axial -> sagital (linha horizontal); coronal -> sagital (linha vertical);
+// sagital -> coronal (linha vertical). Com mais de um plano na tela nao
+// aparece (as linhas de referencia ficam nas imagens grandes).
+describe('miniatura com um plano so', () => {
+  const mini = () => document.querySelector('[data-viewport-uid="ax"] [aria-label^="Localizador"]') as HTMLElement | null
+  const linhaMini = () => document.querySelector('[data-testid="radix-linha-localizador"]') as HTMLElement
+  function soUm(nome: string) {
+    const r = montar('CT', 120)
+    for (const outro of ['Axial', 'Sagital', 'Coronal', '3D'].filter((n) => n !== nome)) fireEvent.click(botao(outro))
+    vi.advanceTimersByTime(1000)
+    return r
+  }
+
+  it('com os 4 planos na tela: sem miniatura', () => {
+    montar('CT', 120)
+    expect(mini()).toBeNull()
+  })
+
+  it('so o axial: miniatura sagital abaixo da data, linha na altura do corte', () => {
+    const { vps } = soUm('Axial')
+    expect(mini()?.getAttribute('aria-label')).toBe('Localizador: sagital')
+    // corte 30 de 50, contado de baixo: (1 - 30,5/50) = 39%
+    expect(linhaMini().style.top).toBe('39%')
+    vps.ax.foco = [5, 6, 10]
+    vi.advanceTimersByTime(500)
+    expect(linhaMini().style.top).toBe('79%')
+  })
+
+  it('so o coronal: miniatura sagital, linha vertical na linha do corte', () => {
+    soUm('Coronal')
+    expect(mini()?.getAttribute('aria-label')).toBe('Localizador: sagital')
+    // linha 6 de 20: 32,5%
+    expect(linhaMini().style.left).toBe('32.5%')
+  })
+
+  it('so o sagital: miniatura coronal, linha vertical na coluna do corte', () => {
+    soUm('Sagital')
+    expect(mini()?.getAttribute('aria-label')).toBe('Localizador: coronal')
+    expect(linhaMini().style.left).toBe('27.5%')
+  })
+
+  it('marcar outro plano tira a miniatura', () => {
+    soUm('Axial')
+    expect(mini()).not.toBeNull()
+    fireEvent.click(botao('Sagital'))
+    vi.advanceTimersByTime(500)
+    expect(mini()).toBeNull()
   })
 })
 
