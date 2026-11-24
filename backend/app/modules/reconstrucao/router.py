@@ -142,12 +142,18 @@ def obter_axial(
     db: Session = Depends(get_db),
 ):
     g = _geometria(_exame(db, ref_id, usuario))
+    # 23/11/2026: com o volume pronto na memoria, o corte sai na hora (a roda
+    # do mouse passa os cortes sem esperar o Orthanc); senao, o caminho lento
+    # e o volume comeca a ser montado em segundo plano
     try:
-        img = fonte.corte_axial_mip(g, altura_mm, espessura_mm)
+        escala = fonte.axial_da_memoria(g, altura_mm, espessura_mm)
+        if escala is None:
+            fonte.preparar_volume(g)
+            img = fonte.corte_axial_mip(g, altura_mm, espessura_mm)
+            baixo, alto = np.percentile(img, [1, 99.7])
+            escala = np.clip((img - baixo) / max(float(alto - baixo), 1.0) * 255, 0, 255).astype(np.uint8)
     except ValueError as erro:
         raise HTTPException(status_code=422, detail=str(erro)) from erro
-    baixo, alto = np.percentile(img, [1, 99.7])
-    escala = np.clip((img - baixo) / max(float(alto - baixo), 1.0) * 255, 0, 255).astype(np.uint8)
     saida = io.BytesIO()
     Image.fromarray(escala).save(saida, format="PNG")
     return Response(
