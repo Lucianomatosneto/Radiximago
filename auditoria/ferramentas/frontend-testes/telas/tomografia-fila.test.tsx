@@ -39,6 +39,15 @@ describe('fila de curadoria', () => {
     expect(selos[0].getAttribute('title')).toBe('Tomografia: 120 cortes, um exame só')
   })
 
+  // 24/11/2026 (opcao A): o administrador ve a ficha em andamento de outro
+  // curador com o nome de quem esta com ela; abrir = assumir
+  it('ficha em andamento de outro curador: selo com o nome, avisando que abrir assume', () => {
+    fila([item(1, { em_volume: true, cortes: 400, curation_id: 9, em_andamento_de: 'Curador Demonstração' }), item(2)])
+    const selo = screen.getByText('Com Curador Demonstração')
+    expect(selo.getAttribute('title')).toBe('Em andamento com Curador Demonstração. Ao abrir, você assume a ficha (fica registrado).')
+    expect(screen.getAllByText(/^Com /)).toHaveLength(1)
+  })
+
   it('sem a informacao de volume (servidor antigo) nada muda', () => {
     fila([item(1), item(2, { em_volume: false, cortes: 1 })])
     expect(screen.queryByText(/^TC ·/)).toBeNull()
