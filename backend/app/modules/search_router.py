@@ -472,6 +472,7 @@ def pesquisar_imagens(
             "achados_detalhe": ficha.achados_detalhe,
             "alteracoes_observadas": ficha.alteracoes_observadas,
             "marcacoes": ficha.marcacoes,
+            "medidas": ficha.medidas or [],
             # todas as marcacoes do curador, SEM repeticao: as da ficha + as
             # desenhadas so nos achados. Na curadoria atual cada marcacao de
             # achado e uma COPIA da marcacao da ficha (mesmo "id") - antes

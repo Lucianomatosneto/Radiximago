@@ -222,6 +222,7 @@ PERMITIDOS = {
     ("UsuarioCriar", "email"),                  # so administrador
     ("UsuarioCriar", "perfil"),                 # so administrador
     ("Marcacao", "id"),                         # identificador do desenho, criado na tela
+    ("MedidaFicha", "id"),                      # identificador da medida (regua/angulo) da tomografia, criado na tela (24/11/2026)
     ("CompartilharEntrada", "email"),           # e-mail do destinatario
     ("CompartilharEntrada", "usuario_id"),      # pessoa escolhida na busca por nome (a da prancha); o servidor confere se esta ativa (22/11/2026)
     ("TermoEdicao", "ativo"),                   # curadoria: desativar termo do vocabulario

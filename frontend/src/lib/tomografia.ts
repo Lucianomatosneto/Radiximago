@@ -84,6 +84,35 @@ export function anguloGraus(a: Ponto, vertice: Ponto, c: Ponto, t: TamanhoMm): n
   return (Math.acos(cos) * 180) / Math.PI
 }
 
+// MEDIDAS NA FICHA (24/11/2026, pedido do Luciano, recurso 6): o formato
+// gravado no servidor (curations.medidas). O valor nao e guardado: sai dos
+// pontos e da geometria do exame (valorDaMedida).
+export interface MedidaFicha {
+  id: string
+  tipo: 'regua' | 'angulo'
+  plano: PlanoTomografia
+  corte: number
+  pontos: Ponto[]
+}
+
+/** mm (regua) ou graus (angulo) */
+export function valorDaMedida(g: GeometriaTomografia, m: MedidaFicha): number {
+  const t = tamanhoDoPlanoMm(g, m.plano)
+  if (m.tipo === 'regua') return m.pontos.length >= 2 ? distanciaMm(m.pontos[0], m.pontos[1], t) : 0
+  return m.pontos.length >= 3 ? anguloGraus(m.pontos[0], m.pontos[1], m.pontos[2], t) : 0
+}
+
+export interface MedidaExportada {
+  id: string
+  tipo: 'regua' | 'angulo'
+  plano: PlanoTomografia
+  corte: number
+  posicao_do_corte_mm: number
+  pontos_mm: [number, number][]
+  valor: number
+  unidade: 'mm' | 'graus'
+}
+
 export interface MarcacaoExportada {
   id: string
   tipo: Marcacao['tipo']
@@ -116,6 +145,8 @@ export interface ExportacaoTomografia {
     medida_duvidosa: boolean
   }
   marcacoes: MarcacaoExportada[]
+  /** medidas do curador (regua e angulo), com o valor calculado */
+  medidas: MedidaExportada[]
 }
 
 const arred = (v: number) => Math.round(v * 1000) / 1000
@@ -126,7 +157,12 @@ const arred = (v: number) => Math.round(v * 1000) / 1000
  * marcacoes com plano e corte; nao leva dado do paciente (so a referencia
  * interna do exame anonimizado) e nao e laudo.
  */
-export function exportarMarcacoesTc(referencia: number, g: GeometriaTomografia, marcacoes: Marcacao[]): ExportacaoTomografia {
+export function exportarMarcacoesTc(
+  referencia: number,
+  g: GeometriaTomografia,
+  marcacoes: Marcacao[],
+  medidas: MedidaFicha[] = [],
+): ExportacaoTomografia {
   const saida: MarcacaoExportada[] = []
   for (const m of marcacoes) {
     if (!m.plano || typeof m.corte !== 'number') continue
@@ -175,5 +211,18 @@ export function exportarMarcacoesTc(referencia: number, g: GeometriaTomografia, 
       medida_duvidosa: campoDuvidosoCm(g) > 0,
     },
     marcacoes: saida,
+    medidas: medidas.map((m) => {
+      const t = tamanhoDoPlanoMm(g, m.plano)
+      return {
+        id: m.id,
+        tipo: m.tipo,
+        plano: m.plano,
+        corte: m.corte,
+        posicao_do_corte_mm: arred(posicaoDoCorteMm(g, m.plano, m.corte)),
+        pontos_mm: m.pontos.map((p) => [arred(p.x * t.largura), arred(p.y * t.altura)] as [number, number]),
+        valor: arred(valorDaMedida(g, m)),
+        unidade: m.tipo === 'regua' ? ('mm' as const) : ('graus' as const),
+      }
+    }),
   }
 }

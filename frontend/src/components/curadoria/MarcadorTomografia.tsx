@@ -19,7 +19,10 @@
 //   (arrastar com o botao do MEIO), brilho/contraste (arrastar com o botao
 //   DIREITO: para cima/baixo = brilho, para os lados = contraste), inverter.
 //   O botao esquerdo continua desenhando as marcacoes;
-// - medir: regua (mm) e angulo (graus) no corte; as medidas sao so da tela
+// - medir: regua (mm) e angulo (graus) no corte. Com a ficha ligada
+//   (medidas + onMedir, 24/11/2026, recurso 6) as medidas viram DADO DA
+//   FICHA (curations.medidas: tipo, plano, corte, pontos; o valor e
+//   calculado pela geometria); sem ela, ficam so na tela
 //   (nao entram na ficha) e ficam no corte em que foram feitas; Esc sai;
 // - exportar: as marcacoes do exame em mm num JSON aberto (lib/tomografia.ts),
 //   para pesquisa e para treinar/avaliar IA no futuro. Nao e laudo.
@@ -31,7 +34,7 @@ import LocalizadorTomografia from './LocalizadorTomografia'
 import MedidasTomografia, { type FerramentaMedida, type Medida } from './MedidasTomografia'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
-import { campoDuvidosoCm, exportarMarcacoesTc, tamanhoDoPlanoMm, type GeometriaTomografia } from '../../lib/tomografia'
+import { campoDuvidosoCm, exportarMarcacoesTc, tamanhoDoPlanoMm, valorDaMedida, type GeometriaTomografia, type MedidaFicha } from '../../lib/tomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 
@@ -48,11 +51,16 @@ export default function MarcadorTomografia({
   marcacoes,
   onMarcar,
   onCarregou,
+  medidas: medidasDaFicha,
+  onMedir,
 }: {
   orthancReferenceId: number
   marcacoes: Marcacao[]
   onMarcar: (marcacoes: Marcacao[]) => void
   onCarregou?: () => void
+  /** medidas gravadas na ficha (recurso 6); com onMedir, viram dado da ficha */
+  medidas?: MedidaFicha[]
+  onMedir?: (medidas: MedidaFicha[]) => void
 }) {
   const t = useTranslations('Curadoria.marcadorTomografia')
   const formato = useFormatter()
@@ -188,7 +196,34 @@ export default function MarcadorTomografia({
   }
 
   const chaveCorte = `${plano}:${corte}`
-  const medidasDoCorte = medidas[chaveCorte] ?? []
+  const naFicha = Boolean(onMedir)
+  const medidasDoCorte: Medida[] = naFicha
+    ? geo
+      ? (medidasDaFicha ?? [])
+          .filter((m) => m.plano === plano && m.corte === corte)
+          .map((m) => ({ id: m.id, tipo: m.tipo, pontos: m.pontos, valor: valorDaMedida(geo, m) }))
+      : []
+    : (medidas[chaveCorte] ?? [])
+
+  function novaMedida(m: Medida) {
+    if (onMedir) {
+      onMedir([...(medidasDaFicha ?? []), { id: m.id, tipo: m.tipo, plano, corte, pontos: m.pontos }])
+    } else {
+      setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))
+    }
+  }
+
+  function limparMedidasDoCorte() {
+    if (onMedir) {
+      onMedir((medidasDaFicha ?? []).filter((m) => !(m.plano === plano && m.corte === corte)))
+      return
+    }
+    setMedidas((todas) => {
+      const resto = { ...todas }
+      delete resto[chaveCorte]
+      return resto
+    })
+  }
 
   function alternarFerramenta(f: FerramentaMedida) {
     setFerramenta((atual) => (atual === f ? null : f))
@@ -199,7 +234,7 @@ export default function MarcadorTomografia({
 
   function exportar() {
     if (!geo) return
-    const doc = exportarMarcacoesTc(orthancReferenceId, geo, marcacoes)
+    const doc = exportarMarcacoesTc(orthancReferenceId, geo, marcacoes, naFicha ? (medidasDaFicha ?? []) : [])
     const url = URL.createObjectURL(new Blob([JSON.stringify(doc, null, 2)], { type: 'application/json' }))
     const a = document.createElement('a')
     a.href = url
@@ -367,7 +402,7 @@ export default function MarcadorTomografia({
                 tamanho={tamanhoDoPlanoMm(geo, plano)}
                 medidas={medidasDoCorte}
                 rotulo={rotuloMedida}
-                onNova={(m) => setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))}
+                onNova={novaMedida}
               />
             }
           />
@@ -415,18 +450,12 @@ export default function MarcadorTomografia({
             </ul>
             <button
               type="button"
-              onClick={() =>
-                setMedidas((todas) => {
-                  const resto = { ...todas }
-                  delete resto[chaveCorte]
-                  return resto
-                })
-              }
+              onClick={limparMedidasDoCorte}
               className="text-red-500 hover:underline"
             >
               {t('limparMedidas')}
             </button>
-            <p className="text-[10px] text-slate-400">{t('medidasSoNaTela')}</p>
+            <p className="text-[10px] text-slate-400">{t(naFicha ? 'medidasNaFicha' : 'medidasSoNaTela')}</p>
           </>
         )}
       </aside>

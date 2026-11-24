@@ -294,6 +294,52 @@ describe('medida duvidosa (24/11/2026, decisao do Luciano: opcao A)', () => {
   })
 })
 
+// MEDIDAS NA FICHA (24/11/2026, pedido do Luciano, recurso 6): com a ficha
+// ligada (onMedir), a regua e o angulo viram dado da ficha: cada medida nova
+// vai para onMedir no formato do servidor (tipo, plano, corte, pontos), e as
+// medidas ja gravadas aparecem no corte delas, com o valor calculado pela
+// geometria do exame.
+describe('medidas na ficha', () => {
+  const GRAVADA = { id: 'g1', tipo: 'regua' as const, plano: 'axial' as const, corte: 100, pontos: [{ x: 0, y: 0.5 }, { x: 0.2, y: 0.5 }] }
+
+  async function abrirComFicha(medidas = [GRAVADA]) {
+    servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: GEOMETRIA } })
+    const onMedir = vi.fn()
+    montarTela(<MarcadorTomografia orthancReferenceId={55} marcacoes={[]} onMarcar={vi.fn()} medidas={medidas} onMedir={onMedir} />)
+    await screen.findByTestId('marcador')
+    return onMedir
+  }
+
+  it('a medida gravada aparece no corte dela, com o valor calculado (0,2 x 150 mm = 30 mm)', async () => {
+    await abrirComFicha()
+    expect(within(screen.getByRole('list', { name: 'Medidas neste corte' })).getByText('Régua: 30,0 mm')).toBeTruthy()
+    expect(screen.getByText('As medidas entram na ficha quando ela é salva.')).toBeTruthy()
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'ArrowUp' })
+    expect(screen.queryByRole('list', { name: 'Medidas neste corte' })).toBeNull()
+  })
+
+  it('medida nova vai para a ficha no formato do servidor', async () => {
+    const onMedir = await abrirComFicha()
+    fireEvent.click(screen.getByRole('button', { name: 'Régua' }))
+    const camada = screen.getByTestId('camada-medida')
+    caixa100(camada)
+    fireEvent.click(camada, { clientX: 0, clientY: 50 })
+    fireEvent.click(camada, { clientX: 50, clientY: 50 })
+    const [lista] = onMedir.mock.calls.at(-1) ?? []
+    expect(lista).toHaveLength(2)
+    expect(lista[0]).toEqual(GRAVADA)
+    expect(lista[1]).toMatchObject({ tipo: 'regua', plano: 'axial', corte: 100, pontos: [{ x: 0, y: 0.5 }, { x: 0.5, y: 0.5 }] })
+    expect(lista[1]).not.toHaveProperty('valor')
+  })
+
+  it('"Limpar medidas" tira da ficha so as do corte aberto', async () => {
+    const outra = { ...GRAVADA, id: 'g2', corte: 3 }
+    const onMedir = await abrirComFicha([GRAVADA, outra])
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar medidas' }))
+    expect(onMedir).toHaveBeenLastCalledWith([outra])
+  })
+})
+
 describe('exportar para pesquisa e IA', () => {
   it('baixa um JSON com as marcacoes do exame em mm', async () => {
     const blobs: Blob[] = []
@@ -311,6 +357,8 @@ describe('exportar para pesquisa e IA', () => {
     expect(doc.exame.referencia).toBe(55)
     expect(doc.marcacoes).toHaveLength(1)
     expect(doc.marcacoes[0]).toMatchObject({ id: 'm1', plano: 'sagital', corte: 120 })
+    // sem medidas na ficha: lista vazia
+    expect(doc.medidas).toEqual([])
     clique.mockRestore()
   })
 
