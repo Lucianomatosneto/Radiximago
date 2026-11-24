@@ -42,6 +42,19 @@ export function tamanhoDoPlanoMm(g: GeometriaTomografia, plano: PlanoTomografia)
   return { largura: g.colunas * dx, altura: g.cortes * dz }
 }
 
+// 24/11/2026 (decisao do Luciano, opcao A): o exame que declara um campo
+// maior que uma cabeca (as 2 tomografias da base publica: pixel de 1 mm em
+// 512 x 512 = 51 cm) tem medida DUVIDOSA. Mesmo limite do "Tamanho real" do
+// visualizador (ohif/app-config.template.js): 35 cm.
+export const CAMPO_MAXIMO_TC_MM = 350
+
+/** campo do exame em cm, quando a medida e duvidosa; 0 quando e normal */
+export function campoDuvidosoCm(g: GeometriaTomografia): number {
+  const [, dy, dx] = g.espacamento_mm
+  const campo = Math.max(g.colunas * dx, g.linhas * dy)
+  return campo > CAMPO_MAXIMO_TC_MM ? Math.round(campo / 10) : 0
+}
+
 /** distancia do corte a partir do primeiro, em mm, na direcao do plano */
 function posicaoDoCorteMm(g: GeometriaTomografia, plano: PlanoTomografia, corte: number): number {
   const [dz, dy, dx] = g.espacamento_mm
@@ -93,7 +106,15 @@ export interface ExportacaoTomografia {
   versao: 1
   finalidade: string
   sistema_de_coordenadas: string
-  exame: { referencia: number; cortes: number; linhas: number; colunas: number; espacamento_mm: [number, number, number] }
+  exame: {
+    referencia: number
+    cortes: number
+    linhas: number
+    colunas: number
+    espacamento_mm: [number, number, number]
+    /** o exame declara um campo maior que uma cabeca: mm nao confiaveis */
+    medida_duvidosa: boolean
+  }
   marcacoes: MarcacaoExportada[]
 }
 
@@ -145,7 +166,14 @@ export function exportarMarcacoesTc(referencia: number, g: GeometriaTomografia, 
     finalidade: 'Material de ensino e pesquisa do Rádix Imago (imagens anonimizadas); não é laudo nem diagnóstico.',
     sistema_de_coordenadas:
       'mm a partir do canto superior esquerdo da imagem do corte (GET /reconstrucao/{ref}/plano.png); x para a direita, y para baixo; nos planos sagital e coronal o alto da cabeça fica em cima. A medida depende do espaçamento declarado pelo exame.',
-    exame: { referencia, cortes: g.cortes, linhas: g.linhas, colunas: g.colunas, espacamento_mm: g.espacamento_mm },
+    exame: {
+      referencia,
+      cortes: g.cortes,
+      linhas: g.linhas,
+      colunas: g.colunas,
+      espacamento_mm: g.espacamento_mm,
+      medida_duvidosa: campoDuvidosoCm(g) > 0,
+    },
     marcacoes: saida,
   }
 }
