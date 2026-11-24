@@ -13,8 +13,13 @@
 //   (10) e Home/End; miniatura localizadora com linha de referencia;
 // - regua (mm) e angulo (graus) - os mesmos da curadoria (MedidasTomografia);
 //   so na tela; aviso quando a medida do exame e duvidosa.
+// - MODO DESAFIO (24/11/2026): as marcacoes e a lista somem; o estudante
+//   passa os cortes e clica onde acha que esta cada lesao (no maximo
+//   lesoes + 2 palpites); "Revelar resposta" mostra as marcacoes e quantas
+//   ele encontrou (lib/tomografia.ts: avaliarDesafio, em 3D e em mm, vale
+//   em qualquer plano). Fica so na tela, nada e gravado.
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useFormatter, useTranslations } from 'next-intl'
 import CamadaMarcacoes from './CamadaMarcacoes'
 import LocalizadorTomografia, { type PlanoTomografia } from '../curadoria/LocalizadorTomografia'
@@ -22,7 +27,7 @@ import MedidasTomografia, { type FerramentaMedida, type Medida } from '../curado
 import { CHAVE_ACHADO } from '../segundaOpiniao/tipos'
 import { fetchOuNulo } from '../../lib/fetchSeguro'
 import type { Marcacao } from '../../lib/marcacoes'
-import { campoDuvidosoCm, tamanhoDoPlanoMm, type GeometriaTomografia } from '../../lib/tomografia'
+import { avaliarDesafio, campoDuvidosoCm, tamanhoDoPlanoMm, type GeometriaTomografia, type Palpite } from '../../lib/tomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PLANOS: PlanoTomografia[] = ['axial', 'sagital', 'coronal']
@@ -40,6 +45,9 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
   const [ferramenta, setFerramenta] = useState<FerramentaMedida | null>(null)
   const [medidas, setMedidas] = useState<Record<string, Medida[]>>({})
   const passarRef = useRef<(sentido: number) => void>(() => {})
+  const [desafio, setDesafio] = useState(false)
+  const [revelado, setRevelado] = useState(false)
+  const [palpites, setPalpites] = useState<Palpite[]>([])
 
   const lesoes = marcacoes.filter((m) => m.plano && typeof m.corte === 'number')
   const primeira = lesoes[0]
@@ -103,6 +111,35 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
     setCorte(m.corte)
   }
 
+  // modo desafio: abre no axial do meio (nao entrega a primeira lesao)
+  function alternarDesafio() {
+    if (!geo) return
+    const ligar = !desafio
+    setDesafio(ligar)
+    setRevelado(false)
+    setPalpites([])
+    setFerramenta(null)
+    if (ligar) {
+      setPlano('axial')
+      setCorte(Math.floor(geo.cortes / 2))
+    }
+  }
+  const escondido = desafio && !revelado
+  const maxPalpites = lesoes.length + 2
+  const resultado = desafio && revelado ? avaliarDesafio(geo, lesoes, palpites) : null
+  const encontrada = (id: string) => resultado?.porLesao.find((l) => l.id === id)?.encontrada
+
+  function palpitar(e: MouseEvent<HTMLDivElement>) {
+    if (!escondido || palpites.length >= maxPalpites) return
+    const caixa = e.currentTarget.getBoundingClientRect()
+    if (!caixa.width || !caixa.height) return
+    const ponto = {
+      x: limitar((e.clientX - caixa.left) / caixa.width, 0, 1),
+      y: limitar((e.clientY - caixa.top) / caixa.height, 0, 1),
+    }
+    setPalpites((ps) => [...ps, { plano, corte, ponto }])
+  }
+
   const urlPlano = (p: PlanoTomografia, i: number) => `${API}/search/${curationId}/tomografia/plano.png?plano=${p}&indice=${i}`
   const doCorte = lesoes.filter((m) => m.plano === plano && m.corte === corte)
   const chaveCorte = `${plano}:${corte}`
@@ -155,14 +192,42 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
             />
             <span className="tabular-nums text-ink-2">{tCorte('corteDe', { n: corte + 1, total })}</span>
             <div role="group" aria-label={tCorte('medir')} className="flex items-center gap-1">
-              <button type="button" aria-pressed={ferramenta === 'regua'} onClick={() => setFerramenta((f) => (f === 'regua' ? null : 'regua'))} className={botao(ferramenta === 'regua')}>
+              <button type="button" disabled={escondido} aria-pressed={ferramenta === 'regua'} onClick={() => setFerramenta((f) => (f === 'regua' ? null : 'regua'))} className={botao(ferramenta === 'regua')}>
                 {tCorte('regua')}
               </button>
-              <button type="button" aria-pressed={ferramenta === 'angulo'} onClick={() => setFerramenta((f) => (f === 'angulo' ? null : 'angulo'))} className={botao(ferramenta === 'angulo')}>
+              <button type="button" disabled={escondido} aria-pressed={ferramenta === 'angulo'} onClick={() => setFerramenta((f) => (f === 'angulo' ? null : 'angulo'))} className={botao(ferramenta === 'angulo')}>
                 {tCorte('angulo')}
               </button>
             </div>
+            {lesoes.length > 0 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  aria-pressed={desafio}
+                  onClick={alternarDesafio}
+                  className={`rounded-md border px-2 py-0.5 text-xs font-semibold ${desafio ? 'border-violet-500 bg-violet-500/15 text-violet-800 dark:text-violet-200' : 'border-violet-400/60 text-violet-700 hover:bg-violet-500/10 dark:text-violet-200'}`}
+                >
+                  {t('desafio')}
+                </button>
+                {escondido && (
+                  <button type="button" onClick={() => setRevelado(true)} className="rounded-md border border-violet-500 bg-violet-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-violet-700">
+                    {t('revelar')}
+                  </button>
+                )}
+                {desafio && revelado && (
+                  <button type="button" onClick={() => { setRevelado(false); setPalpites([]) }} className="rounded-md border border-violet-500 px-2 py-0.5 text-xs text-violet-700 hover:bg-violet-500/10 dark:text-violet-200">
+                    {t('tentarDeNovo')}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
+          {escondido && <p className="rounded-md bg-violet-500/10 px-2 py-1 text-xs text-violet-800 dark:text-violet-200">{t('desafioInstrucao', { n: lesoes.length })}</p>}
+          {resultado && (
+            <p role="status" className="rounded-md bg-violet-500/10 px-2 py-1 text-sm font-semibold text-violet-800 dark:text-violet-100">
+              {t('desafioResultado', { encontradas: resultado.encontradas, total: resultado.total })}
+            </p>
+          )}
           <p className="text-xs text-slate-400">{ferramenta ? tCorte(ferramenta === 'regua' ? 'dicaRegua' : 'dicaAngulo') : t('dica')}</p>
           {duvidoso > 0 && (
             <p role="note" aria-label={tCorte('medidaDuvidosaTitulo')} className="rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-xs text-amber-800 dark:text-amber-200">
@@ -204,7 +269,7 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                 draggable={false}
                 className="block h-[65vh] w-auto max-w-none select-none"
               />
-              <CamadaMarcacoes corteAberto marcacoes={doCorte} />
+              {!escondido && <CamadaMarcacoes corteAberto marcacoes={doCorte} />}
               <MedidasTomografia
                 key={chaveCorte}
                 modo={ferramenta}
@@ -213,12 +278,47 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                 rotulo={rotuloMedida}
                 onNova={(m) => setMedidas((todas) => ({ ...todas, [chaveCorte]: [...(todas[chaveCorte] ?? []), m] }))}
               />
+              {desafio && (
+                <div
+                  data-testid="camada-desafio"
+                  onClick={palpitar}
+                  className={`absolute inset-0 ${escondido ? 'cursor-crosshair' : 'pointer-events-none'}`}
+                >
+                  {palpites.map((p, i) =>
+                    p.plano === plano && p.corte === corte ? (
+                      <span
+                        key={i}
+                        aria-hidden="true"
+                        className={`absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 text-[10px] font-bold text-white ${
+                          resultado ? (resultado.palpitesCertos[i] ? 'border-emerald-300 bg-emerald-600' : 'border-red-300 bg-red-600') : 'border-white bg-violet-600'
+                        }`}
+                        style={{ left: `${p.ponto.x * 100}%`, top: `${p.ponto.y * 100}%` }}
+                      >
+                        {i + 1}
+                      </span>
+                    ) : null,
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
         <aside className="w-full shrink-0 space-y-2 text-xs lg:w-56">
           <LocalizadorTomografia refId={curationId} geo={geo} plano={plano} corte={corte} onIr={setCorte} posicao="coluna" urlPlano={urlPlano} />
-          {lesoes.length === 0 ? (
+          {desafio && palpites.length > 0 && (
+            <>
+              <ul aria-label={t('seusPalpites')} className="space-y-1">
+                {palpites.map((p, i) => (
+                  <li key={i} className="rounded border border-violet-400/50 px-2 py-1 text-ink-2">
+                    {resultado ? (resultado.palpitesCertos[i] ? '✓ ' : '✗ ') : ''}
+                    {t('palpiteN', { n: i + 1 })}: {nomes[p.plano]} · {tCorte('corteN', { n: p.corte + 1 })}
+                  </li>
+                ))}
+              </ul>
+              {escondido && palpites.length >= maxPalpites && <p className="text-violet-700 dark:text-violet-200">{t('semPalpites', { n: maxPalpites })}</p>}
+            </>
+          )}
+          {escondido ? null : lesoes.length === 0 ? (
             <p className="text-slate-400">{t('semLesoes')}</p>
           ) : (
             <ul aria-label={t('titulo')} className="space-y-1">
@@ -232,7 +332,10 @@ export default function LeituraTomografia({ curationId, marcacoes }: { curationI
                       onClick={() => irPara(m)}
                       className={`w-full rounded border px-2 py-1 text-left hover:border-teal-500 ${aberta ? 'border-teal-500 bg-teal-500/10' : 'border-base-border'}`}
                     >
-                      <span className="font-semibold text-ink">{t('lesaoN', { n: i + 1 })}</span>
+                      <span className="font-semibold text-ink">
+                        {resultado ? (encontrada(m.id) ? '✓ ' : '✗ ') : ''}
+                        {t('lesaoN', { n: i + 1 })}
+                      </span>
                       <span className="block text-ink-2">
                         {nomes[m.plano as PlanoTomografia]} · {tCorte('corteN', { n: (m.corte ?? 0) + 1 })}
                         {rotuloAchado(m) ? ` · ${rotuloAchado(m)}` : ''}
