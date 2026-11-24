@@ -237,6 +237,22 @@ describe('medidas em mm', () => {
   })
 })
 
+describe('medida duvidosa (24/11/2026, decisao do Luciano: opcao A)', () => {
+  it('exame com campo de 51 cm: aviso na tela de marcacao', async () => {
+    servidorFalso({ 'GET /reconstrucao/55/geometria': { corpo: { ...GEOMETRIA, cortes: 400, linhas: 512, colunas: 512, espacamento_mm: [1, 1, 1] } } })
+    montarTela(<MarcadorTomografia orthancReferenceId={55} marcacoes={[]} onMarcar={vi.fn()} />)
+    await screen.findByTestId('marcador')
+    const aviso = screen.getByRole('note', { name: 'Medida duvidosa' })
+    expect(aviso.textContent).toMatch(/51 cm/)
+    expect(aviso.textContent).toMatch(/comparar/)
+  })
+
+  it('exame com medida normal: sem aviso', async () => {
+    await abrir()
+    expect(screen.queryByRole('note', { name: 'Medida duvidosa' })).toBeNull()
+  })
+})
+
 describe('exportar para pesquisa e IA', () => {
   it('baixa um JSON com as marcacoes do exame em mm', async () => {
     const blobs: Blob[] = []
