@@ -1321,7 +1321,8 @@
       "exportar": "Exportar marcações (JSON)",
       "exportarDica": "Baixa as marcações deste exame em milímetros, num formato aberto para pesquisa e para treinar ou avaliar IA. Sem dados do paciente; não é laudo.",
       "medidaDuvidosaTitulo": "Medida duvidosa",
-      "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo."
+      "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo.",
+      "medidasNaFicha": "As medidas entram na ficha quando ela é salva."
     },
     "localizador": {
       "alt": "Localizador: {miniatura} com a posição do corte {plano}",
