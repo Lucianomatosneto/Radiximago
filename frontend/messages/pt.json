@@ -1298,7 +1298,7 @@
       "corte": "Corte",
       "corteDe": "Corte {n} de {total}",
       "corteN": "corte {n}",
-      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor. Atalhos: A, S, C trocam o plano; R régua; G ângulo.",
+      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor. Atalhos: A, S, C trocam o plano; R régua; G ângulo. T mostra os três planos.",
       "marcacoesDoExame": "Marcações do exame",
       "nenhuma": "Nenhuma marcação ainda.",
       "ir": "Ir",
@@ -1322,7 +1322,8 @@
       "exportarDica": "Baixa as marcações deste exame em milímetros, num formato aberto para pesquisa e para treinar ou avaliar IA. Sem dados do paciente; não é laudo.",
       "medidaDuvidosaTitulo": "Medida duvidosa",
       "medidaDuvidosa": "este exame informa um campo de {cm} cm, maior que uma cabeça. Os milímetros da régua não são confiáveis: use-a só para comparar tamanhos dentro deste exame. Os ângulos continuam valendo.",
-      "medidasNaFicha": "As medidas entram na ficha quando ela é salva."
+      "medidasNaFicha": "As medidas entram na ficha quando ela é salva.",
+      "tresPlanos": "Três planos"
     },
     "localizador": {
       "alt": "Localizador: {miniatura} com a posição do corte {plano}",
@@ -1332,6 +1333,14 @@
       "coronal": "coronal",
       "esconder": "esconder",
       "mostrar": "Mostrar localizador"
+    },
+    "tresPlanos": {
+      "titulo": "Três planos",
+      "axial": "Axial",
+      "sagital": "Sagital",
+      "coronal": "Coronal",
+      "dicaQuadro": "clique para levar os outros planos a este ponto; duplo clique para marcar neste plano",
+      "corteN": "corte {n}"
     }
   },
   "SegundaOpiniaoPage": {
