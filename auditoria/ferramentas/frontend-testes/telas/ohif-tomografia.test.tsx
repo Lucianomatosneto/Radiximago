@@ -81,7 +81,11 @@ function vpFalso(type: string, dados: Float32Array, voxel = false): VpFalso {
       spacing: [0.2, 0.2, 0.2],
       dimensions: [20, 20, 50],
       ...(voxel
-        ? { voxelManager: { getAtIndex: vi.fn((i: number) => dados[i]), getAtIJK: vi.fn((i: number, j: number, k: number) => dados[i + j * 20 + k * 400]) } }
+        ? {
+            voxelManager: { getAtIndex: vi.fn((i: number) => dados[i]), getAtIJK: vi.fn((i: number, j: number, k: number) => dados[i + j * 20 + k * 400]) },
+            // igual ao cornerstone3D 2.2: o campo antigo DA ERRO num volume de cortes
+            get scalarData(): Float32Array { throw new Error('No scalar data available') },
+          }
         : { scalarData: dados }),
       imageData: { worldToIndex: (p: number[]) => p },
     }),
