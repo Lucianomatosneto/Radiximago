@@ -77,11 +77,17 @@ export default function PintorSegmentacao({
   curationId,
   orthancReferenceId,
   dentesFicha,
+  urlImagem,
+  corteTc,
 }: {
   curationId: number
   orthancReferenceId: number
   /** dentes ja marcados na ficha: aparecem primeiro na lista */
   dentesFicha: number[]
+  /** TOMOGRAFIA (24/11/2026, recurso 8): imagem do corte, no lugar da previa */
+  urlImagem?: string
+  /** o corte pintado: so as estruturas dele aparecem; as novas o levam */
+  corteTc?: { plano: 'axial' | 'sagital' | 'coronal'; corte: number }
 }) {
   const t = useTranslations('Segmentacao')
   const [src, setSrc] = useState('')
@@ -155,7 +161,7 @@ export default function PintorSegmentacao({
     let cancelado = false
     ;void (async () => {
       try {
-        const r = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`, { credentials: 'include' })
+        const r = await fetch(urlImagem ?? `${process.env.NEXT_PUBLIC_API_URL}/curation/${orthancReferenceId}/preview`, { credentials: 'include' })
         if (!r.ok) throw new Error()
         url = URL.createObjectURL(await r.blob())
         const img = new Image()
@@ -185,7 +191,7 @@ export default function PintorSegmentacao({
       cancelado = true
       if (url) URL.revokeObjectURL(url)
     }
-  }, [orthancReferenceId])
+  }, [orthancReferenceId, urlImagem])
 
   useEffect(() => {
     const el = areaRef.current
@@ -247,7 +253,11 @@ export default function PintorSegmentacao({
     let cancelado = false
     setCarregando(true)
     listarSegmentacoes(curationId)
-      .then(async (itens) => {
+      .then(async (todas) => {
+        // tomografia: so as do corte aberto; radiografia: so as sem corte
+        const itens = todas.filter((s) =>
+          corteTc ? s.plano === corteTc.plano && s.corte === corteTc.corte : !s.plano,
+        )
         for (const s of itens) {
           const m = new Uint8Array(w * h)
           await new Promise<void>((ok) => {
@@ -276,7 +286,7 @@ export default function PintorSegmentacao({
     return () => {
       cancelado = true
     }
-  }, [curationId, w, h])
+  }, [curationId, w, h, corteTc?.plano, corteTc?.corte])
 
   // ---------------------------------------------------------------- salvar
   function pngDaMascara(m: Mascara): string {
@@ -656,6 +666,7 @@ export default function PintorSegmentacao({
         dente: denteNovo === '' ? null : denteNovo,
         cor: proximaCor(segs.map((s) => s.cor)),
         mascara: pngDaMascara(m),
+        ...(corteTc ? { plano: corteTc.plano, corte: corteTc.corte } : {}),
       })
       mascaras.current.set(nova.id, m)
       setSegs((lista) => [...lista, nova])
