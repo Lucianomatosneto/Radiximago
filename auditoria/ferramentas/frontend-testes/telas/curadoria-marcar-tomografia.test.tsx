@@ -53,6 +53,17 @@ describe('plano e corte', () => {
     expect(screen.getByRole('button', { name: 'Axial' }).getAttribute('aria-pressed')).toBe('true')
   })
 
+  it('miniatura localizadora: sagital no axial, axial nos outros planos; clicar leva ao corte', async () => {
+    await abrir()
+    expect(screen.getByRole('img', { name: /Localizador: sagital/ })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Sagital' }))
+    expect(screen.getByRole('img', { name: /Localizador: axial/ })).toBeTruthy()
+    const alvo = screen.getByRole('button', { name: /Ir para o ponto clicado/ })
+    alvo.getBoundingClientRect = () => ({ left: 0, top: 0, width: 100, height: 100, right: 100, bottom: 100, x: 0, y: 0, toJSON: () => ({}) })
+    fireEvent.click(alvo, { clientX: 10, clientY: 50 })
+    expect(url()).toContain('plano=sagital&indice=50')
+  })
+
   it('trocar o plano: sagital vai pelas colunas, coronal pelas linhas', async () => {
     await abrir()
     fireEvent.click(screen.getByRole('button', { name: 'Sagital' }))
