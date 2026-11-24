@@ -92,3 +92,31 @@ def test_marcacao_guarda_plano_e_corte():
 def test_marcacao_plano_e_corte_andam_juntos(extra):
     with pytest.raises(ValidationError):
         Marcacao(id="m1", tipo="oval", x=0.1, y=0.1, largura=0.2, altura=0.2, **extra)
+
+
+# --------------------------------------------------------------------- axial rapido
+# 23/11/2026 (pedido do Luciano): na Reconstrucao, ao girar a roda a linha da
+# miniatura mexia mas a imagem grande nao - cada corte axial (MIP de 10 mm)
+# relia ~10 cortes do Orthanc. Agora o volume em 8 bits e preparado em
+# segundo plano e, pronto, o corte axial sai da memoria, sem Orthanc.
+def test_axial_usa_o_volume_da_memoria_quando_pronto(client, criar_usuario, tomografia, orthanc_falso, monkeypatch):  # noqa: F811
+    from app.modules import orthanc_client
+    from app.modules.reconstrucao import fonte
+
+    cab = _cab(client, criar_usuario)
+    fonte.limpar_volume()
+    r = client.get(f"/reconstrucao/{tomografia.id}/axial.png", headers=cab, params={"altura_mm": 10, "espessura_mm": 4})
+    assert r.status_code == 200
+    fonte.aguardar_preparo()  # o volume foi montado em segundo plano
+    assert fonte.volume_na_memoria(fonte.geometria(tomografia.orthanc_id)) is not None
+
+    # sem Orthanc: o corte sai da memoria
+    def sem_orthanc(_oid):
+        raise AssertionError("nao devia ler o Orthanc")
+
+    monkeypatch.setattr(orthanc_client, "obter_arquivo_instancia", sem_orthanc)
+    monkeypatch.setattr(fonte, "geometria", lambda _oid, _g=fonte.geometria(tomografia.orthanc_id): _g)
+    img = _imagem(client.get(f"/reconstrucao/{tomografia.id}/axial.png", headers=cab, params={"altura_mm": 10, "espessura_mm": 4}))
+    assert img.shape == (60, 70)
+    assert img[20, 35] > 200 and img[5, 5] < 50
+    fonte.limpar_volume()
