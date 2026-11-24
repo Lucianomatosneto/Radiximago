@@ -43,6 +43,7 @@ o painel é recolhível.
 | 3D | (só osso) | O quadro 3D abre direto com o volume **só do osso**, usando a predefinição `CT-Bone`, convertida para a escala do exame do mesmo jeito |
 | Espessura | 0,625 · 2 · 5 · 10 mm | 0,625 mm é o corte fino. As outras espessuras fazem um "corte grosso" pela **média** dos cortes, como nos programas de TCFC |
 | Referência | Linhas de referência | Em cada quadro de plano aparece a linha do corte que está no **quadro ativo**, aquele em que o curador está passando os cortes. Usa a ferramenta `ReferenceLines` do OHIF. Vem ligada; o botão desliga e liga |
+| Miniatura | (automática) | Com **um plano só** na tela, abaixo da data, no canto de cima à esquerda, aparece uma miniatura com a linha do corte aberto: no axial, o sagital com uma linha horizontal; no coronal, o sagital com uma linha vertical; no sagital, o coronal com uma linha vertical. A miniatura é montada do próprio volume carregado. Com mais de um plano na tela ela não aparece, porque as linhas de referência ficam nas imagens grandes |
 
 ## Reconstrução panorâmica (23/11/2026)
 
