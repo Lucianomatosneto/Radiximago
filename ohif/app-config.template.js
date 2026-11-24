@@ -1248,7 +1248,8 @@ window.config = {
 //    desmarca. Abre com os 4. Para isso o Radix registra no OHIF um
 //    protocolo por combinacao ("radix-planos-<a s c 3>"), com quadros de
 //    volume (reconstrucao multiplanar) e o 3D;
-//  - Janela: Osso 2000/500, Partes moles 400/40, Dentes 3000/1000 (em HU) e
+//  - Janela: Osso 3000/900, Partes moles 1000/150 (escolha do Luciano em
+//    23/11/2026, comparando no TC01), Dentes 3000/1000 (em HU) e
 //    Original. A TCFC nem sempre vem em unidades Hounsfield: quando o exame
 //    nao esta em HU (ex.: 0 a 4095), o Radix acha o AR (o valor mais baixo)
 //    e o PICO DAS PARTES MOLES no proprio exame e converte as janelas para a
@@ -1278,7 +1279,7 @@ window.config = {
     ['c', 'Coronal', 'volume', 'coronal'],
     ['3', '3D', 'volume3d', 'coronal'],
   ];
-  var JANELAS = [['Osso', 2000, 500], ['Partes moles', 400, 40], ['Dentes', 3000, 1000], ['Original', 0, 0]];
+  var JANELAS = [['Osso', 3000, 900], ['Partes moles', 1000, 150], ['Dentes', 3000, 1000], ['Original', 0, 0]];
   var ESPESSURAS = [['0,625 mm', 0.625], ['2 mm', 2], ['5 mm', 5], ['10 mm', 10]];
   // cornerstone3D BlendModes: 0 = COMPOSITE (corte normal), 3 = AVERAGE_INTENSITY_BLEND (media)
   var MISTURA_NORMAL = 0;
