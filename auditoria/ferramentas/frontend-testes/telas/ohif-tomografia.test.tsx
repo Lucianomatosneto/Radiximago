@@ -61,7 +61,7 @@ interface VpFalso {
   getImageData: () => unknown
 }
 
-function vpFalso(type: string, dados: Float32Array): VpFalso {
+function vpFalso(type: string, dados: Float32Array, voxel = false): VpFalso {
   const opacidade = funcaoFalsa([[-1000, 0, 0.5, 0], [150, 0, 0.5, 0], [300, 0.6, 0.5, 0], [2000, 0.9, 0.5, 0]])
   const cor = funcaoFalsa([[-1000, 0, 0, 0, 0.5, 0], [300, 0.9, 0.8, 0.6, 0.5, 0], [2000, 1, 1, 1, 0.5, 0]])
   const propriedade = { getScalarOpacity: () => opacidade, getRGBTransferFunction: () => cor }
@@ -75,10 +75,14 @@ function vpFalso(type: string, dados: Float32Array): VpFalso {
     render: vi.fn(),
     getImageIds: () => Array.from({ length: 120 }, (_, i) => `c${i}`),
     // volume falso: 20 x 20 x 50 (colunas x linhas x cortes) = 20000 valores
+    // cornerstone3D 2.x (o do OHIF 3.9): sem scalarData; os valores vem do
+    // voxelManager, um voxel por vez
     getImageData: () => ({
       spacing: [0.2, 0.2, 0.2],
       dimensions: [20, 20, 50],
-      scalarData: dados,
+      ...(voxel
+        ? { voxelManager: { getAtIndex: vi.fn((i: number) => dados[i]), getAtIJK: vi.fn((i: number, j: number, k: number) => dados[i + j * 20 + k * 400]) } }
+        : { scalarData: dados }),
       imageData: { worldToIndex: (p: number[]) => p },
     }),
     // foco da camera (mundo = indice no volume falso): [coluna, linha, corte]
@@ -87,13 +91,13 @@ function vpFalso(type: string, dados: Float32Array): VpFalso {
   } as VpFalso
 }
 
-function montar(modalidade: string, cortes: number, dados: Float32Array = exameHu()) {
+function montar(modalidade: string, cortes: number, dados: Float32Array = exameHu(), voxel = false) {
   document.body.innerHTML = `
     <div data-cy="viewport-grid">
       <div data-viewport-uid="ax"><canvas></canvas></div>
       <div data-viewport-uid="d3"><canvas></canvas></div>
     </div>`
-  const vps: Record<string, VpFalso> = { ax: vpFalso('orthographic', dados), d3: vpFalso('volume3d', dados) }
+  const vps: Record<string, VpFalso> = { ax: vpFalso('orthographic', dados, voxel), d3: vpFalso('volume3d', dados, voxel) }
   const protocolos = new Map<string, any>() // eslint-disable-line @typescript-eslint/no-explicit-any
   const ds = { displaySetInstanceUID: 'ds1', StudyInstanceUID: 'e1', Modality: modalidade, instances: Array.from({ length: cortes }, () => ({})) }
   const comandos = vi.fn()
@@ -340,6 +344,41 @@ describe('miniatura com um plano so', () => {
     fireEvent.click(botao('Sagital'))
     vi.advanceTimersByTime(500)
     expect(mini()).toBeNull()
+  })
+})
+
+// OHIF 3.9 usa o cornerstone3D 2.x: o volume nao traz mais "scalarData";
+// os valores vem do voxelManager. Visto no PC do Luciano (23/11/2026): a
+// miniatura saia preta e as janelas nao eram convertidas.
+describe('cornerstone3D 2.x (voxelManager)', () => {
+  it('janelas convertidas para a escala do exame lendo os voxels', () => {
+    const { vps } = montar('CT', 120, exameNaoHu(), true)
+    fireEvent.click(botao('Partes moles'))
+    const moles = vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange
+    expect(moles.lower).toBeGreaterThan(700)
+    expect(moles.upper).toBeLessThan(1300)
+  })
+
+  it('a miniatura le o corte sagital do meio voxel a voxel', () => {
+    const { vps } = montar('CT', 120, exameNaoHu(), true)
+    for (const outro of ['Sagital', 'Coronal', '3D']) fireEvent.click(botao(outro))
+    vi.advanceTimersByTime(2000)
+    const leitor = (vps.ax.getImageData() as { voxelManager: { getAtIJK: ReturnType<typeof vi.fn> } }).voxelManager
+    expect(leitor).toBeTruthy()
+    // getImageData devolve um leitor novo a cada chamada: confere pelo desenho
+    expect(document.querySelector('[aria-label="Localizador: sagital"]')).toBeTruthy()
+    expect((window as unknown as { __radixMiniaturaLida?: number }).__radixMiniaturaLida).toBeGreaterThan(0)
+  })
+
+  it('escala nao fica guardada enquanto o volume ainda esta vazio', () => {
+    const vazio = new Float32Array(20000)
+    const { vps } = montar('CT', 120, vazio, true)
+    fireEvent.click(botao('Osso'))
+    expect(vps.ax.setProperties).toHaveBeenLastCalledWith({ voiRange: { lower: -500, upper: 1500 } })
+    // o volume chegou: a proxima conta usa os valores de verdade
+    vazio.set(exameNaoHu())
+    fireEvent.click(botao('Partes moles'))
+    expect(vps.ax.setProperties.mock.calls.at(-1)?.[0].voiRange.lower).toBeGreaterThan(700)
   })
 })
 
