@@ -1298,7 +1298,7 @@
       "corte": "Corte",
       "corteDe": "Corte {n} de {total}",
       "corteN": "corte {n}",
-      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor.",
+      "dica": "Roda do mouse ou setas ↑ ↓ passam 1 corte; PageUp/PageDown, 10; Home/End, primeiro e último. Ctrl + roda aproxima; botão do meio desloca; botão direito muda brilho e contraste. Marque no corte em que a lesão aparece melhor. Atalhos: A, S, C trocam o plano; R régua; G ângulo.",
       "marcacoesDoExame": "Marcações do exame",
       "nenhuma": "Nenhuma marcação ainda.",
       "ir": "Ir",

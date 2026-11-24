@@ -142,6 +142,8 @@ export default function MarcadorTomografia({
   )
 
   function aoApertar(e: MouseEvent<HTMLDivElement>) {
+    // clicar na imagem da o foco a area: setas e atalhos passam a valer
+    e.currentTarget.focus({ preventScroll: true })
     if (e.button === 0) return // o esquerdo e das marcacoes e das medidas
     e.preventDefault()
     arrastoRef.current = { botao: e.button, x: e.clientX, y: e.clientY }
@@ -334,6 +336,17 @@ export default function MarcadorTomografia({
             } else if (e.key === 'Escape' && ferramenta) {
               e.preventDefault()
               setFerramenta(null)
+            } else if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+              // atalhos (24/11/2026): A/S/C = plano; R = regua; G = angulo
+              const tecla = e.key.toLowerCase()
+              const planoDaTecla: Record<string, Plano> = { a: 'axial', s: 'sagital', c: 'coronal' }
+              if (tecla in planoDaTecla) {
+                e.preventDefault()
+                trocarPlano(planoDaTecla[tecla])
+              } else if (tecla === 'r' || tecla === 'g') {
+                e.preventDefault()
+                alternarFerramenta(tecla === 'r' ? 'regua' : 'angulo')
+              }
             }
           }}
           className="min-h-0 flex-1 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-teal-400"

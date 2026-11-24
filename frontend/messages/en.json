@@ -1298,7 +1298,7 @@
       "corte": "Slice",
       "corteDe": "Slice {n} of {total}",
       "corteN": "slice {n}",
-      "dica": "Mouse wheel or ↑ ↓ arrows move 1 slice; PageUp/PageDown, 10; Home/End, first and last. Ctrl + wheel zooms; middle button pans; right button changes brightness and contrast. Mark on the slice where the lesion shows best.",
+      "dica": "Mouse wheel or ↑ ↓ arrows move 1 slice; PageUp/PageDown, 10; Home/End, first and last. Ctrl + wheel zooms; middle button pans; right button changes brightness and contrast. Mark on the slice where the lesion shows best. Shortcuts: A, S, C switch the plane; R ruler; G angle.",
       "marcacoesDoExame": "Marks in this exam",
       "nenhuma": "No marks yet.",
       "ir": "Go",
