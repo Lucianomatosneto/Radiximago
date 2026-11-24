@@ -142,6 +142,47 @@ describe('navegacao rapida', () => {
   })
 })
 
+// atalhos (24/11/2026, pedido do Luciano): A, S e C trocam o plano; R liga
+// a regua e G o angulo (de novo desliga). So com a area da imagem em foco,
+// para nao atrapalhar quem digita na ficha; clicar na imagem da o foco.
+describe('atalhos de teclado', () => {
+  it('A, S e C trocam o plano; R e G ligam e desligam a regua e o angulo', async () => {
+    await abrir()
+    const area = screen.getByTestId('area-tomografia')
+    fireEvent.keyDown(area, { key: 's' })
+    expect(url()).toContain('plano=sagital&indice=250')
+    fireEvent.keyDown(area, { key: 'C' })
+    expect(url()).toContain('plano=coronal')
+    fireEvent.keyDown(area, { key: 'a' })
+    expect(url()).toContain('plano=axial')
+    fireEvent.keyDown(area, { key: 'r' })
+    expect(screen.getByRole('button', { name: 'Régua' }).getAttribute('aria-pressed')).toBe('true')
+    fireEvent.keyDown(area, { key: 'g' })
+    expect(screen.getByRole('button', { name: 'Ângulo' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Régua' }).getAttribute('aria-pressed')).toBe('false')
+    fireEvent.keyDown(area, { key: 'g' })
+    expect(screen.getByRole('button', { name: 'Ângulo' }).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('com Ctrl (copiar, colar...) os atalhos nao agem', async () => {
+    await abrir()
+    fireEvent.keyDown(screen.getByTestId('area-tomografia'), { key: 'c', ctrlKey: true })
+    expect(url()).toContain('plano=axial')
+  })
+
+  it('clicar na imagem da o foco a area (para os atalhos)', async () => {
+    await abrir()
+    const area = screen.getByTestId('area-tomografia')
+    fireEvent.mouseDown(screen.getByTestId('marcador'), { button: 0 })
+    expect(document.activeElement).toBe(area)
+  })
+
+  it('a dica mostra os atalhos', async () => {
+    await abrir()
+    expect(screen.getByText(/A, S, C trocam o plano/)).toBeTruthy()
+  })
+})
+
 describe('ver melhor o corte', () => {
   it('aproximar, afastar e ajustar; o zoom aparece em %', async () => {
     await abrir()
