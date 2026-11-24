@@ -12,7 +12,7 @@
 // - regua (mm) e angulo (graus), como na curadoria; aviso de medida duvidosa.
 // frontend/src/components/detalhe/LeituraTomografia.tsx
 import type { ReactNode } from 'react'
-import { cleanup, fireEvent, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import LeituraTomografia from '../../../../frontend/src/components/detalhe/LeituraTomografia'
 import type { Marcacao } from '../../../../frontend/src/lib/marcacoes'
@@ -180,6 +180,33 @@ describe('modo desafio', () => {
     for (let i = 0; i < 6; i++) fireEvent.click(alvo, { clientX: 10 + i, clientY: 10 })
     expect(within(screen.getByRole('list', { name: 'Seus palpites' })).getAllByRole('listitem')).toHaveLength(4)
     expect(screen.getByText('Você usou todos os palpites (4). Revele a resposta.')).toBeTruthy()
+  })
+
+  // 24/11/2026 (pedido do Luciano): ao revelar, a tela envia as CONTAGENS
+  // ao servidor (POST /desafio/{id}/resultado). O SERVIDOR decide se guarda
+  // (so com o registro ligado, o TCLE aprovado e o consentimento do
+  // estudante); para o estudante nada muda.
+  it('ao revelar, envia so as contagens ao servidor (ele decide se guarda)', async () => {
+    servidorFalso({
+      'GET /search/7/tomografia/geometria': { corpo: GEOMETRIA },
+      'POST /desafio/7/resultado': { corpo: { registrado: false, motivo: 'registro_desligado' } },
+    })
+    montarTela(<LeituraTomografia curationId={7} marcacoes={[LESAO_1, LESAO_2, RX]} />)
+    await screen.findByRole('img', { name: /Corte da tomografia/ })
+    const s = servidorFalso({
+      'GET /search/7/tomografia/geometria': { corpo: GEOMETRIA },
+      'POST /desafio/7/resultado': { corpo: { registrado: false, motivo: 'registro_desligado' } },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Modo desafio' }))
+    const alvo = screen.getByTestId('camada-desafio')
+    caixa100(alvo)
+    fireEvent.change(screen.getByRole('slider', { name: 'Corte' }), { target: { value: '50' } })
+    fireEvent.click(alvo, { clientX: 30, clientY: 30 })
+    fireEvent.click(alvo, { clientX: 90, clientY: 90 })
+    fireEvent.click(screen.getByRole('button', { name: 'Revelar resposta' }))
+    await waitFor(() => expect(s.alteracoes()).toHaveLength(1))
+    expect(s.alteracoes()[0]).toEqual({ metodo: 'POST', caminho: '/desafio/7/resultado', corpo: { total_lesoes: 2, encontradas: 1, palpites: 2 } })
+    expect(screen.getByRole('status').textContent).toMatch(/Você encontrou 1 de 2 lesões/)
   })
 
   it('sair do modo desafio volta a mostrar tudo', async () => {
