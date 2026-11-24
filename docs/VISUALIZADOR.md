@@ -23,6 +23,14 @@ No quadro **3D** da tomografia, o botão esquerdo **gira o volume**, que é o co
 - **Tamanho real**: mostra a imagem em milímetros de verdade. Para isso, a
   imagem precisa ter a medida do pixel (`PixelSpacing` ou
   `ImagerPixelSpacing`) e a tela precisa ter sido calibrada uma vez.
+- **Medida duvidosa na tomografia** (24/11/2026): se uma tomografia (CT) diz que
+  o campo da imagem passa de **35 cm** (o maior lado × a medida do pixel), a
+  medida não é confiável, porque é maior que uma cabeça. Nesse caso, o
+  "Tamanho real" fica desligado, e a dica explica o motivo e o tamanho que o
+  arquivo informa; o 1:1 continua funcionando. É o caso das 2 tomografias do
+  acervo (base pública STS-Tooth/Integrity): os arquivos originais informam
+  pixel de **1,0 mm** em 512 × 512, ou seja, um campo de 51 cm. A conta estava
+  certa, mas o dado não, e por isso a imagem ficava enorme (3,86x).
 - **Calibrar tela** (aprimorada em 23/11/2026, conforme a especificação do Luciano). Há três jeitos:
   - **Cartão** (padrão, o mais preciso): um passo a passo guiado. A barra é ajustada até a largura de um cartão bancário (85,6 mm, padrão ISO/IEC 7810), com ajuste fino de 1 px.
   - **Régua**: a barra é ajustada até medir 50, 100 ou 150 mm numa régua encostada na tela, também com ajuste fino de 1 px. Serve para quem não tem cartão à mão.
