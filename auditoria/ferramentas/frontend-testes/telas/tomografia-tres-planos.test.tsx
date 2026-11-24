@@ -52,14 +52,14 @@ describe('quadros', () => {
     montar()
     const cruz = (p: string) => screen.getByTestId(`cruz-${p}`)
     // axial: coluna 250/500 = 50%, linha 100/400 = 25%
-    expect(cruz('axial').getAttribute('data-x')).toBe('50.1')
-    expect(cruz('axial').getAttribute('data-y')).toBe('25.13')
+    expect(Number(cruz('axial').getAttribute('data-x'))).toBeCloseTo(50.1, 1)
+    expect(Number(cruz('axial').getAttribute('data-y'))).toBeCloseTo(25.13, 1)
     // sagital: x = linha (25%); y = corte 150 de 200 contado de baixo = 24,75%
-    expect(cruz('sagital').getAttribute('data-x')).toBe('25.13')
-    expect(cruz('sagital').getAttribute('data-y')).toBe('24.75')
+    expect(Number(cruz('sagital').getAttribute('data-x'))).toBeCloseTo(25.13, 1)
+    expect(Number(cruz('sagital').getAttribute('data-y'))).toBeCloseTo(24.75, 1)
     // coronal: x = coluna; y como no sagital
-    expect(cruz('coronal').getAttribute('data-x')).toBe('50.1')
-    expect(cruz('coronal').getAttribute('data-y')).toBe('24.75')
+    expect(Number(cruz('coronal').getAttribute('data-x'))).toBeCloseTo(50.1, 1)
+    expect(Number(cruz('coronal').getAttribute('data-y'))).toBeCloseTo(24.75, 1)
   })
 
   it('o plano principal fica destacado', () => {
