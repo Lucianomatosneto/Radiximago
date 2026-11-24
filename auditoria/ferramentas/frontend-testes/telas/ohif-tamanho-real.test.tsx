@@ -21,6 +21,9 @@ const CARTAO_MM = 85.6
 interface Instancia {
   PixelSpacing?: number[]
   ImagerPixelSpacing?: number[]
+  Modality?: string
+  Rows?: number
+  Columns?: number
 }
 
 function montar(instancia: Instancia, espacoMundo: number) {
@@ -103,6 +106,35 @@ describe('tamanho real (milimetros)', () => {
     expect(real.title).toContain('não tem a medida do pixel')
     fireEvent.click(screen.getByRole('button', { name: '1:1' }))
     expect(cameras.at(-1)?.parallelScale).toBeCloseTo(150)
+  })
+
+  // 24/11/2026 (pedido do Luciano: "tamanho real nao esta funcionando",
+  // imagem enorme, OHIF mostrando 3,86x): as tomografias do acervo (base
+  // publica) declaram pixel de 1,0 mm em 512 x 512 = campo de 51 cm, maior
+  // que uma cabeca. A conta esta certa; o dado nao. Tomografia com campo
+  // acima de 35 cm: "Tamanho real" desligado, explicando o motivo.
+  it('tomografia com medida do pixel duvidosa (campo de 51 cm): desligado e explica', () => {
+    window.localStorage.setItem('radix-px-por-mm', '4')
+    const cameras = montar({ PixelSpacing: [1, 1], Modality: 'CT', Rows: 512, Columns: 512 }, 1)
+    const real = screen.getByRole('button', { name: 'Tamanho real' }) as HTMLButtonElement
+    expect(real.disabled).toBe(true)
+    expect(real.title).toContain('51 cm')
+    expect(real.title).toContain('medida do pixel')
+    fireEvent.click(real)
+    expect(cameras).toHaveLength(0)
+    // o 1:1 continua funcionando
+    fireEvent.click(screen.getByRole('button', { name: '1:1' }))
+    expect(cameras).toHaveLength(1)
+  })
+
+  it('tomografia odontologica normal (0,3 mm x 512 = 15 cm): tamanho real funciona', () => {
+    window.localStorage.setItem('radix-px-por-mm', '4')
+    const cameras = montar({ PixelSpacing: [0.3, 0.3], Modality: 'CT', Rows: 512, Columns: 512 }, 0.3)
+    const real = screen.getByRole('button', { name: 'Tamanho real' }) as HTMLButtonElement
+    expect(real.disabled).toBe(false)
+    fireEvent.click(real)
+    // 300 px de altura / 4 px por mm = 75 mm visiveis -> parallelScale 37,5
+    expect(cameras.at(-1)?.parallelScale).toBeCloseTo(37.5)
   })
 
   // jeito mais pratico (pedido do Luciano, 23/11/2026): escolher as
