@@ -42,6 +42,7 @@ o painel é recolhível.
 | Janela | Osso · Partes moles · Dentes · Original | Valores em HU: Osso 2000/500, Partes moles 400/40, Dentes 3000/1000. Quando o exame **não está em HU** (por exemplo, valores de 0 a 4095), o Rádix acha o ar e o pico das partes moles no próprio exame e converte as janelas para a escala dele (ar = −1000 HU; pico = 40 HU). "Original" volta à janela do exame |
 | 3D | (só osso) | O quadro 3D abre direto com o volume **só do osso**, usando a predefinição `CT-Bone`, convertida para a escala do exame do mesmo jeito |
 | Espessura | 0,625 · 2 · 5 · 10 mm | 0,625 mm é o corte fino. As outras espessuras fazem um "corte grosso" pela **média** dos cortes, como nos programas de TCFC |
+| Referência | Linhas de referência | Em cada quadro de plano aparece a linha do corte que está no **quadro ativo**, aquele em que o curador está passando os cortes. Usa a ferramenta `ReferenceLines` do OHIF. Vem ligada; o botão desliga e liga |
 
 ## Reconstrução panorâmica (23/11/2026)
 
