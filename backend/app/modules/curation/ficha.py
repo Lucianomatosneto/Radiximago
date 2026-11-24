@@ -94,6 +94,25 @@ def criar_curadoria(
     # (a fila mostra essas fichas para continuar)
     if ja_existe and not professor and ja_existe.curador_id == usuario.id and ja_existe.status in STATUS_EDITAVEIS:
         return _resposta_criacao(ja_existe, "Ficha em andamento reaberta.")
+    # 24/11/2026 (pedido do Luciano, opcao A): o ADMINISTRADOR assume a ficha
+    # em andamento de outro curador (ex.: fichas esquecidas). Fica no
+    # historico da ficha e na auditoria, com quem estava antes.
+    if (ja_existe and _perfil_de(usuario) == "administrador" and ja_existe.curador_id is not None
+            and ja_existe.curador_id != usuario.id and ja_existe.status in STATUS_EDITAVEIS):
+        anterior = db.query(User).filter(User.id == ja_existe.curador_id).first()
+        nome_anterior = anterior.nome if anterior else f"usuario {ja_existe.curador_id}"
+        id_anterior = ja_existe.curador_id
+        ja_existe.curador_id = usuario.id
+        _registrar_historico(
+            db, ja_existe.id, usuario.id, "ficha_assumida", ja_existe.status, ja_existe.status,
+            f"Administrador assumiu a ficha em andamento de {nome_anterior}.",
+        )
+        _registrar_auditoria(
+            db, usuario.id, "ficha_assumida", ja_existe.id, "sucesso",
+            f"Ficha {ja_existe.id} assumida pelo administrador {usuario.id}; curador anterior {id_anterior}.",
+        )
+        db.commit()
+        return _resposta_criacao(ja_existe, "Ficha em andamento assumida.")
     if ja_existe:
         raise HTTPException(
             status_code=409,
