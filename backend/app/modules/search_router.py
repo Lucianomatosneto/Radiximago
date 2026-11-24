@@ -818,3 +818,66 @@ def enviar_por_email(
         usuario.email, usuario.nome, descricao, conteudo, f"radix-imago-{ficha.id}.png",
     )
     return {"mensagem": f"Imagem enviada para {usuario.email}."}
+
+
+# ---------------------------------------------------------------------
+# TOMOGRAFIA CURADA PARA QUEM ESTUDA (pedido do Luciano, 24/11/2026:
+# "Lesões marcadas"): a geometria e a imagem de cada CORTE (axial, sagital
+# ou coronal) da tomografia APROVADA, para a tela mostrar o corte onde o
+# curador marcou a lesao (marcacao com plano + corte, que o /search ja
+# devolve). Mesma regra de ouro do preview: ficha aprovada e imagem ativa,
+# qualquer usuario logado. As mesmas contas da curadoria
+# (reconstrucao/fonte.py); so a portaria muda.
+# ---------------------------------------------------------------------
+def _geometria_da_ficha_aprovada(db: Session, curation_id: int):
+    from app.modules.reconstrucao import fonte
+
+    ficha = _buscar_ficha_aprovada(db, curation_id)
+    try:
+        return fonte.geometria(ficha.orthanc_reference.orthanc_id)
+    except ValueError as erro:  # nao e tomografia
+        raise HTTPException(status_code=422, detail=str(erro)) from erro
+
+
+@router.get("/{curation_id}/tomografia/geometria")
+def obter_geometria_tomografia(
+    curation_id: int,
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Tamanho da tomografia aprovada (cortes, linhas, colunas) e o
+    espacamento em mm [entre cortes, entre linhas, entre colunas]."""
+    g = _geometria_da_ficha_aprovada(db, curation_id)
+    dz, dy, dx = g.espacamento
+    return {"cortes": len(g.ids), "linhas": g.linhas, "colunas": g.colunas, "espacamento_mm": [dz, dy, dx]}
+
+
+@router.get("/{curation_id}/tomografia/plano.png")
+def obter_corte_tomografia(
+    curation_id: int,
+    plano: Literal["axial", "sagital", "coronal"] = Query(...),
+    indice: int = Query(..., ge=0, le=100000),
+    usuario: User = Depends(obter_usuario_atual),
+    db: Session = Depends(get_db),
+):
+    """Um corte da tomografia aprovada, em PNG (pixels quadrados em mm; no
+    sagital e no coronal o alto da cabeca fica em cima)."""
+    from PIL import Image
+
+    from app.modules.reconstrucao import fonte
+
+    g = _geometria_da_ficha_aprovada(db, curation_id)
+    try:
+        img = fonte.imagem_do_plano(g, plano, indice)
+    except ValueError as erro:
+        raise HTTPException(status_code=422, detail=str(erro)) from erro
+    saida = io.BytesIO()
+    Image.fromarray(img).save(saida, format="PNG")
+    return Response(
+        content=saida.getvalue(),
+        media_type="image/png",
+        headers={
+            "Content-Disposition": disposicao_de_arquivo(f"radix-imago-tomografia-{curation_id}-{plano}-{indice}.png"),
+            "Cache-Control": "private, max-age=300",
+        },
+    )

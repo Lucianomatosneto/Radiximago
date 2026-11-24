@@ -1399,7 +1399,14 @@
     "erroCarregar": "Não foi possível carregar esta imagem.",
     "erroNaoEncontrada": "Imagem não encontrada entre as imagens aprovadas.",
     "imagemIndisponivel": "Imagem não disponível para visualização",
-    "avisoRodape": "Imagem disponibilizada exclusivamente para fins de ensino e pesquisa. Uso para diagnóstico clínico não é permitido."
+    "avisoRodape": "Imagem disponibilizada exclusivamente para fins de ensino e pesquisa. Uso para diagnóstico clínico não é permitido.",
+    "tomografia": {
+      "titulo": "Lesões deste exame",
+      "dica": "Clique numa lesão para abrir o corte dela. Roda do mouse ou setas ↑ ↓ passam os cortes; PageUp/PageDown, 10; A, S, C trocam o plano.",
+      "altCorte": "Corte da tomografia: {plano}, corte {n}",
+      "semLesoes": "O curador não marcou lesões nos cortes deste exame.",
+      "lesaoN": "Lesão {n}"
+    }
   },
   "NavegacaoCasos": {
     "voltarParaPesquisa": "← Voltar para pesquisa",

@@ -29,11 +29,15 @@ interface Props {
   /** "sobre": no canto de cima da imagem; "coluna": no alto de uma coluna
    * ao lado (quando a imagem tem barra de ferramentas em cima) */
   posicao?: 'sobre' | 'coluna'
+  /** endereco da imagem de um corte (padrao: a rota da curadoria,
+   * /reconstrucao/{ref}/plano.png); a tela de quem estuda usa a da
+   * pesquisa, /search/{ficha}/tomografia/plano.png (24/11/2026) */
+  urlPlano?: (plano: PlanoTomografia, indice: number) => string
 }
 
 const pct = (v: number) => `${Number((v * 100).toFixed(2))}%`
 
-export default function LocalizadorTomografia({ refId, geo, plano, corte, faixaCortes = 1, onIr, posicao = 'sobre' }: Props) {
+export default function LocalizadorTomografia({ refId, geo, plano, corte, faixaCortes = 1, onIr, posicao = 'sobre', urlPlano }: Props) {
   const lugar = posicao === 'sobre' ? 'absolute right-2 top-2 z-10' : 'relative'
   const t = useTranslations('Curadoria.localizador')
   const [escondido, setEscondido] = useState(false)
@@ -84,7 +88,7 @@ export default function LocalizadorTomografia({ refId, geo, plano, corte, faixaC
       <button type="button" onClick={ir} aria-label={t('irPara')} className="relative block w-full cursor-pointer">
         {/* eslint-disable-next-line @next/next/no-img-element -- PNG gerado pela API com login */}
         <img
-          src={`${API}/reconstrucao/${refId}/plano.png?plano=${miniatura}&indice=${indiceMiniatura}`}
+          src={urlPlano ? urlPlano(miniatura, indiceMiniatura) : `${API}/reconstrucao/${refId}/plano.png?plano=${miniatura}&indice=${indiceMiniatura}`}
           alt={t('alt', { miniatura: t(miniatura), plano: t(plano) })}
           draggable={false}
           className="block w-full select-none"
