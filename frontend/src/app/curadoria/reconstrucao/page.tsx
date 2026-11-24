@@ -20,6 +20,7 @@ import AvisoSemConexao from '../../../components/AvisoSemConexao'
 import { useVerificarSessao } from '../../../lib/useVerificarSessao'
 import { fetchOuNulo } from '../../../lib/fetchSeguro'
 import MarcarCanal from '../../../components/curadoria/MarcarCanal'
+import LocalizadorTomografia from '../../../components/curadoria/LocalizadorTomografia'
 
 const API = process.env.NEXT_PUBLIC_API_URL
 const PERFIS_PERMITIDOS = ['curador', 'administrador']
@@ -374,6 +375,18 @@ export default function ReconstrucaoPage() {
                   className="relative mx-auto w-full overflow-hidden rounded-xl border border-base-border bg-black outline-none focus-visible:ring-2 focus-visible:ring-teal-400"
                   style={{ aspectRatio: `${geo.colunas} / ${geo.linhas}`, maxWidth: `calc((100vh - 9.5rem) * ${geo.colunas / geo.linhas})` }}
                 >
+                {/* localizador (23/11/2026): miniatura sagital com a faixa do
+                    corte axial; fica fora do zoom */}
+                {ref && (
+                  <LocalizadorTomografia
+                    refId={ref}
+                    geo={geo}
+                    plano="axial"
+                    corte={Math.min(geo.cortes - 1, Math.round(altura / geo.espacamento_mm[0]))}
+                    faixaCortes={Math.max(1, Math.round(faixaAxial / geo.espacamento_mm[0]))}
+                    onIr={(c) => setAltura(arred(c * geo.espacamento_mm[0]))}
+                  />
+                )}
                 <div
                   data-testid="area-curva"
                   onClick={clicar}
