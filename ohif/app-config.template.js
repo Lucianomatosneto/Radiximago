@@ -1059,6 +1059,12 @@ window.config = {
 //  - Linhas de referencia (23/11/2026): em cada quadro de plano, a linha do
 //    corte que esta no quadro ATIVO (ferramenta ReferenceLines do OHIF, no
 //    grupo "mpr"); ligadas por padrao, com botao para desligar;
+//  - Miniatura localizadora (23/11/2026): com UM plano so na tela, abaixo
+//    da data (canto de cima, a esquerda) aparece uma miniatura com a linha
+//    do corte aberto - axial -> sagital (linha horizontal), coronal ->
+//    sagital (linha vertical), sagital -> coronal (linha vertical). A
+//    miniatura e montada do proprio volume carregado (sem rede); com mais
+//    de um plano na tela nao aparece (ha as linhas de referencia);
 //  - o painel recolhe para liberar a imagem.
 // No quadro 3D o botao esquerdo GIRA o volume (o grupo "volume3d" fica fora
 // do "mouse pratico" acima).
@@ -1359,6 +1365,106 @@ window.config = {
     if (j && j[1]) janela(j[0], j[1], j[2]);
     if (escolhas.espessura !== 0.625) espessura(escolhas.espessura);
   }
+
+  // ---- miniatura localizadora (um plano so) -----------------------------
+  var mini = null; // { el, chave, linha }
+
+  function tirarMiniatura() {
+    if (mini && mini.el && mini.el.parentNode) mini.el.parentNode.removeChild(mini.el);
+    mini = null;
+  }
+
+  // desenha a miniatura do volume (8 bits, janela da tela) num canvas
+  function desenharMiniatura(canvas, d, dados, tipo, larguraPx) {
+    var nx = d.dimensions[0], ny = d.dimensions[1], nz = d.dimensions[2];
+    var esp = d.spacing || [1, 1, 1];
+    var w = tipo === 'sagital' ? ny : nx;
+    var alturaMm = nz * esp[2];
+    var larguraMm = w * (tipo === 'sagital' ? esp[1] : esp[0]);
+    canvas.width = larguraPx;
+    canvas.height = Math.max(1, Math.round(larguraPx * alturaMm / larguraMm));
+    var ctx = canvas.getContext && canvas.getContext('2d');
+    if (!ctx || !dados) return;
+    var meio = tipo === 'sagital' ? Math.floor(nx / 2) : Math.floor(ny / 2);
+    var minimo = Infinity, maximo = -Infinity, k, u, v;
+    var fatia = new Float32Array(w * nz);
+    for (k = 0; k < nz; k++) {
+      for (u = 0; u < w; u++) {
+        var idx = tipo === 'sagital' ? meio + u * nx + k * nx * ny : u + meio * nx + k * nx * ny;
+        v = dados[idx];
+        fatia[(nz - 1 - k) * w + u] = v; // alto da cabeca em cima
+        if (v < minimo) minimo = v;
+        if (v > maximo) maximo = v;
+      }
+    }
+    var img = ctx.createImageData(w, nz);
+    var faixa = maximo > minimo ? 255 / (maximo - minimo) : 0;
+    for (var p = 0; p < fatia.length; p++) {
+      var g = Math.round((fatia[p] - minimo) * faixa);
+      img.data[p * 4] = img.data[p * 4 + 1] = img.data[p * 4 + 2] = g;
+      img.data[p * 4 + 3] = 255;
+    }
+    var tmp = document.createElement('canvas');
+    tmp.width = w;
+    tmp.height = nz;
+    var tctx = tmp.getContext('2d');
+    if (!tctx) return;
+    tctx.putImageData(img, 0, 0);
+    ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
+  }
+
+  function miniatura() {
+    var planos = escolhas.planos || '';
+    if (planos.length !== 1 || planos === '3') { tirarMiniatura(); return; }
+    var s = servicos();
+    try {
+      var id = s.viewportGridService.getState().activeViewportId;
+      var vp = s.cornerstoneViewportService.getCornerstoneViewport(id);
+      var quadro = document.querySelector('[data-viewport-uid="' + id + '"]');
+      if (!vp || vp.type === 'volume3d' || !quadro) { tirarMiniatura(); return; }
+      var d = vp.getImageData();
+      if (!d || !d.dimensions || !d.imageData) return;
+      var tipo = planos === 's' ? 'coronal' : 'sagital';
+      var chave = id + '|' + planos + '|' + (displaySetAtivo() || {}).displaySetInstanceUID;
+      if (!mini || mini.chave !== chave || !mini.el.isConnected) {
+        tirarMiniatura();
+        var fig = document.createElement('figure');
+        fig.setAttribute('aria-label', 'Localizador: ' + tipo);
+        fig.style.cssText = 'position:absolute;top:70px;left:12px;z-index:15;margin:0;width:130px;border:1px solid #2dd4bf99;border-radius:6px;overflow:hidden;background:#000;pointer-events:none';
+        var tela = document.createElement('canvas');
+        tela.style.cssText = 'display:block;width:100%';
+        fig.appendChild(tela);
+        var linha = document.createElement('div');
+        linha.setAttribute('data-testid', 'radix-linha-localizador');
+        linha.style.cssText = 'position:absolute;background:#facc15';
+        fig.appendChild(linha);
+        if (getComputedStyle(quadro).position === 'static') quadro.style.position = 'relative';
+        quadro.appendChild(fig);
+        mini = { el: fig, chave: chave, linha: linha, tela: tela, desenhos: 0, ultimo: 0 };
+      }
+      // o volume chega aos poucos: redesenha algumas vezes nos primeiros segundos
+      var agora = Date.now();
+      if (mini.desenhos < 8 && agora - mini.ultimo > 1500) {
+        mini.desenhos += 1;
+        mini.ultimo = agora;
+        try { desenharMiniatura(mini.tela, d, valoresDo(vp), tipo, 130); } catch (e) { /* sem canvas */ }
+      }
+      // posicao do corte: foco da camera em indices do volume [coluna, linha, corte]
+      var ijk = d.imageData.worldToIndex(vp.getCamera().focalPoint);
+      var dims = d.dimensions;
+      var l = mini.linha;
+      if (planos === 'a') {
+        var topo = (1 - (Math.round(ijk[2]) + 0.5) / dims[2]) * 100;
+        l.style.left = '0'; l.style.width = '100%'; l.style.height = '2px';
+        l.style.top = Number(topo.toFixed(2)) + '%';
+      } else {
+        var esq = planos === 'c' ? (Math.round(ijk[1]) + 0.5) / dims[1] : (Math.round(ijk[0]) + 0.5) / dims[0];
+        l.style.top = '0'; l.style.height = '100%'; l.style.width = '2px';
+        l.style.left = Number((esq * 100).toFixed(2)) + '%';
+      }
+    } catch (e) { /* volume ainda carregando */ }
+  }
+  setInterval(function () { if (painel) miniatura(); else tirarMiniatura(); }, 200);
 
   // ---- linhas de referencia ---------------------------------------------
   function grupoPlanos() {
