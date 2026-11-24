@@ -934,77 +934,261 @@ window.config = {
     return b;
   }
 
+  // ---- calibracao aprimorada (especificacao do Luciano, 23/11/2026) -----
+  // Tres metodos: TAMANHO DA TELA (auxiliar: as polegadas nominais nao
+  // garantem a escala), CARTAO guiado (85,6 mm, ISO/IEC 7810) e REGUA
+  // (comprimento escolhido em mm). A calibracao fica salva NESTE navegador
+  // (localStorage), com o metodo, a data, a resolucao da tela e o zoom
+  // (devicePixelRatio); se a tela ou o zoom mudarem, a situacao vira
+  // "Calibracao recomendada". So o "Salvar" grava; "Cancelar" nao mexe.
+  var CHAVE_DADOS = 'radix-calibracao-tela';
+  var TAMANHOS = ['11.6', '12.1', '12.5', '13.3', '13.6', '14', '14.5', '15', '15.6', '16', '16.1', '17.3', '18', '19',
+    '21.5', '23.8', '24', '27', '31.5', '32', '34', '49'];
+  var METODOS = { tamanho: 'tamanho da tela', cartao: 'cartão', regua: 'régua' };
+
+  function lerDados() {
+    try {
+      var bruto = window.localStorage.getItem(CHAVE_DADOS);
+      if (bruto) {
+        var d = JSON.parse(bruto);
+        if (d && d.pxPorMm > 0) return d;
+      }
+    } catch (e) { /* sem dados */ }
+    var antigo = lerCalibracao();
+    return antigo ? { pxPorMm: antigo, metodo: '', quando: '' } : null;
+  }
+
+  function telaAtual() {
+    return { largura: window.screen.width || 0, altura: window.screen.height || 0, dpr: window.devicePixelRatio || 1 };
+  }
+
+  function situacaoCalibracao() {
+    var d = lerDados();
+    if (!d) return 'Não calibrada';
+    var t = telaAtual();
+    if (d.tela && (d.tela.largura !== t.largura || d.tela.altura !== t.altura || d.tela.dpr !== t.dpr)) return 'Calibração recomendada';
+    return 'Calibrada';
+  }
+
+  function salvarCalibracao(pxPorMm, metodo) {
+    try {
+      window.localStorage.setItem(CHAVE, String(pxPorMm));
+      window.localStorage.setItem(CHAVE_DADOS, JSON.stringify({
+        pxPorMm: pxPorMm, metodo: metodo, quando: new Date().toISOString(), tela: telaAtual(),
+      }));
+    } catch (e) { /* navegador sem armazenamento */ }
+  }
+
+  function apagarCalibracao() {
+    try { window.localStorage.removeItem(CHAVE); window.localStorage.removeItem(CHAVE_DADOS); } catch (e) { /* ignora */ }
+  }
+
+  var avisoAte = 0;
+  function avisarConcluida() { avisoAte = Date.now() + 4000; montarCaixa(); }
+
+  function el(tag, estilo, texto) {
+    var e = document.createElement(tag);
+    if (estilo) e.style.cssText = estilo;
+    if (texto !== undefined) e.textContent = texto;
+    return e;
+  }
+
   function calibrar(depois) {
     if (document.getElementById('radix-calibrar')) return;
-    var fundo = document.createElement('div');
+    var dados = lerDados();
+    var metodo = 'cartao';
+    var fundo = el('div', 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center');
     fundo.id = 'radix-calibrar';
-    fundo.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.75);display:flex;align-items:center;justify-content:center';
-    var janela = document.createElement('div');
+    var janela = el('div', 'background:#0f172a;color:#e2e8f0;border:1px solid #2dd4bf;border-radius:12px;padding:18px;width:min(780px,94vw);max-height:92vh;overflow:auto;font:14px Inter,system-ui,sans-serif');
     janela.setAttribute('role', 'dialog');
     janela.setAttribute('aria-modal', 'true');
     janela.setAttribute('aria-labelledby', 'radix-calibrar-titulo');
-    janela.style.cssText = 'background:#0f172a;color:#e2e8f0;border:1px solid #2dd4bf;border-radius:12px;padding:18px;max-width:760px;font:14px Inter,system-ui,sans-serif';
-    var titulo = document.createElement('h2');
+    var titulo = el('h2', 'margin:0 0 6px;font-size:16px', 'Calibrar a tela');
     titulo.id = 'radix-calibrar-titulo';
-    titulo.textContent = 'Calibrar a tela';
-    titulo.style.cssText = 'margin:0 0 6px;font-size:16px';
-    var texto = document.createElement('p');
-    texto.textContent = 'Jeito mais rápido: escolha o tamanho da sua tela em polegadas (vem na etiqueta ou no manual do monitor/notebook). Para mais precisão, encoste um cartão de crédito (ou de banco) na tela e ajuste a barra até ela ficar exatamente da largura do cartão (85,6 mm). Vale para este navegador e esta tela; refaça se mudar de monitor ou o zoom do navegador.';
-    texto.style.cssText = 'margin:0 0 12px;color:#cbd5e1;font-size:13px';
-    var barra = document.createElement('div');
-    var atual = lerCalibracao() ? Math.round(lerCalibracao() * CARTAO_MM) : 324;
-    barra.style.cssText = 'height:54px;border-radius:6px;background:linear-gradient(90deg,#2dd4bf,#3b82f6);margin:6px 0 10px;width:' + atual + 'px';
-    var faixa = document.createElement('input');
-    faixa.type = 'range';
-    faixa.min = '150';
-    faixa.max = '700';
-    faixa.value = String(atual);
-    faixa.setAttribute('aria-label', 'Largura da barra');
-    faixa.style.cssText = 'width:100%';
-    // calibracao pelas POLEGADAS do monitor (23/11/2026): diagonal da tela em
-    // pixels (resolucao) / diagonal em mm. Nao depende de cartao nem regua.
+    var sit = situacaoCalibracao();
+    var linhaSit = el('p', 'margin:0 0 10px;font-size:12px;color:#94a3b8',
+      'Situação: ' + sit + (dados && dados.metodo ? ' (' + METODOS[dados.metodo] + (dados.quando ? ', ' + new Date(dados.quando).toLocaleDateString('pt-BR') : '') + ')' : ''));
+    var texto = el('p', 'margin:0 0 12px;color:#cbd5e1;font-size:13px',
+      'Escolha um jeito. O cartão e a régua são os mais precisos; o tamanho da tela é só uma ajuda, porque as polegadas anunciadas nem sempre batem com a tela visível. Vale para este navegador e esta tela; refaça se mudar de monitor ou o zoom do navegador.');
+
+    // botoes dos metodos
+    var abas = el('div', 'display:flex;gap:6px;margin-bottom:12px');
+    abas.setAttribute('role', 'group');
+    abas.setAttribute('aria-label', 'Jeito de calibrar');
+    var botoesMetodo = {};
+    [['tamanho', 'Tamanho da tela'], ['cartao', 'Cartão'], ['regua', 'Régua']].forEach(function (m) {
+      var b = botao(m[1], function () { metodo = m[0]; mostrar(); });
+      botoesMetodo[m[0]] = b;
+      abas.appendChild(b);
+    });
+
+    // barra comum (cartao e regua)
+    var barra = el('div', 'height:54px;border-radius:6px;background:linear-gradient(90deg,#2dd4bf,#3b82f6);margin:6px 0 4px;border-right:2px solid #fff;border-left:2px solid #fff');
+    var leitura = el('p', 'margin:0 0 6px;font-size:12px;color:#94a3b8;font-variant-numeric:tabular-nums');
+    var ajusteFino = el('div', 'display:flex;gap:6px;align-items:center;margin:4px 0');
+    var menos = botao('−1 px', function () { mudarBarra(-1); });
+    menos.setAttribute('aria-label', 'Diminuir 1 px');
+    var mais = botao('+1 px', function () { mudarBarra(1); });
+    mais.setAttribute('aria-label', 'Aumentar 1 px');
+    ajusteFino.appendChild(menos);
+    ajusteFino.appendChild(mais);
+
+    // --- cartao ---
+    var secCartao = el('div');
+    var passos = el('ol', 'margin:0 0 8px 18px;padding:0;font-size:13px;color:#cbd5e1');
+    passos.setAttribute('aria-label', 'Passos com o cartão');
+    ['Pegue um cartão bancário (crédito ou débito) - todos têm 85,6 mm de largura.',
+      'Encoste o lado comprido do cartão na tela, sobre a barra colorida, alinhado à esquerda.',
+      'Ajuste a barra (arrastando ou com −1 px / +1 px) até ela terminar exatamente onde o cartão termina.',
+      'Confira e clique em Salvar.'].forEach(function (t) { passos.appendChild(el('li', '', t)); });
+    var INICIO_CARTAO = dados ? Math.round(dados.pxPorMm * CARTAO_MM) : 324;
+    var faixaCartao = el('input', 'width:100%');
+    faixaCartao.type = 'range';
+    faixaCartao.min = '150';
+    faixaCartao.max = '900';
+    faixaCartao.value = String(INICIO_CARTAO);
+    faixaCartao.setAttribute('aria-label', 'Largura da barra');
+    secCartao.appendChild(passos);
+    secCartao.appendChild(faixaCartao);
+
+    // --- regua ---
+    var secRegua = el('div');
+    secRegua.appendChild(el('p', 'margin:0 0 6px;font-size:13px;color:#cbd5e1',
+      'Encoste uma régua na tela, sobre a barra. Escolha o comprimento e ajuste a barra até ela medir exatamente isso na régua.'));
+    var rotuloMm = el('label', 'display:block;margin:0 0 6px;font-size:13px', 'Comprimento na régua (mm) ');
+    var mmRegua = el('select', 'margin-left:6px;background:#020617;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:2px 6px');
+    mmRegua.setAttribute('aria-label', 'Comprimento na régua (mm)');
+    ['50', '100', '150'].forEach(function (v) { var o = el('option', '', v + ' mm'); o.value = v; mmRegua.appendChild(o); });
+    mmRegua.value = '100';
+    rotuloMm.appendChild(mmRegua);
+    var faixaRegua = el('input', 'width:100%');
+    faixaRegua.type = 'range';
+    faixaRegua.min = '100';
+    faixaRegua.max = '1200';
+    faixaRegua.value = String(dados ? Math.round(dados.pxPorMm * 100) : 378);
+    faixaRegua.setAttribute('aria-label', 'Comprimento da barra');
+    secRegua.appendChild(rotuloMm);
+    secRegua.appendChild(faixaRegua);
+    mmRegua.addEventListener('change', function () {
+      faixaRegua.value = String(Math.round((Number(faixaRegua.value) / reguaAnterior) * Number(mmRegua.value)));
+      reguaAnterior = Number(mmRegua.value);
+      mostrar();
+    });
+    var reguaAnterior = 100;
+
+    // --- tamanho da tela ---
+    var secTamanho = el('div');
     var escolhido = 0;
-    var rotuloPol = document.createElement('label');
-    rotuloPol.textContent = 'Tamanho da tela (polegadas) ';
-    rotuloPol.style.cssText = 'display:block;margin:0 0 8px;font-size:13px';
-    var polegadas = document.createElement('select');
+    var rotuloPol = el('label', 'display:block;margin:0 0 8px;font-size:13px', 'Tamanho da tela (polegadas) ');
+    var polegadas = el('select', 'margin-left:6px;background:#020617;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:2px 6px');
     polegadas.setAttribute('aria-label', 'Tamanho da tela (polegadas)');
-    polegadas.style.cssText = 'margin-left:6px;background:#020617;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:2px 6px';
-    ['', '13.3', '14', '15.6', '17.3', '19', '21.5', '23.8', '24', '27', '31.5', '32', '34'].forEach(function (v) {
-      var o = document.createElement('option');
+    [''].concat(TAMANHOS).concat(['outro']).forEach(function (v) {
+      var o = el('option', '', v === '' ? 'escolher…' : v === 'outro' ? 'Outro tamanho' : v.replace('.', ',') + '"');
       o.value = v;
-      o.textContent = v ? v.replace('.', ',') + '"' : 'escolher…';
       polegadas.appendChild(o);
     });
-    polegadas.addEventListener('change', function () {
-      var pol = Number(polegadas.value);
-      var diagonal = Math.sqrt(Math.pow(window.screen.width || 0, 2) + Math.pow(window.screen.height || 0, 2));
-      if (!pol || !diagonal) return;
-      escolhido = diagonal / (pol * 25.4);
-      var largura = Math.round(escolhido * CARTAO_MM);
-      faixa.value = String(largura);
-      barra.style.width = largura + 'px';
-    });
     rotuloPol.appendChild(polegadas);
-    faixa.addEventListener('input', function () { escolhido = 0; barra.style.width = faixa.value + 'px'; });
-    var acoes = document.createElement('div');
-    acoes.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:12px';
+    var rotuloOutro = el('label', 'display:none;margin:0 0 8px;font-size:13px', 'Diagonal (polegadas) ');
+    var outro = el('input', 'margin-left:6px;width:90px;background:#020617;color:#e2e8f0;border:1px solid #2dd4bf66;border-radius:6px;padding:2px 6px');
+    outro.type = 'number';
+    outro.min = '5';
+    outro.max = '120';
+    outro.step = '0.1';
+    outro.setAttribute('aria-label', 'Diagonal (polegadas)');
+    rotuloOutro.appendChild(outro);
+    var erroPol = el('p', 'display:none;margin:0 0 8px;color:#fca5a5;font-size:12px', 'Informe um tamanho entre 5 e 120 polegadas.');
+    erroPol.setAttribute('role', 'alert');
+    var obsPol = el('p', 'margin:0;font-size:12px;color:#94a3b8', 'O Rádix calcula pela resolução da tela (diagonal em pixels ÷ diagonal em mm). É uma aproximação: para mais precisão, use o cartão ou a régua.');
+    secTamanho.appendChild(rotuloPol);
+    secTamanho.appendChild(rotuloOutro);
+    secTamanho.appendChild(erroPol);
+    secTamanho.appendChild(obsPol);
+    function calcularPolegadas() {
+      var valor = polegadas.value === 'outro' ? Number(outro.value) : Number(polegadas.value);
+      var invalido = polegadas.value === 'outro' && outro.value !== '' && !(valor >= 5 && valor <= 120);
+      erroPol.style.display = invalido ? 'block' : 'none';
+      var diagonal = Math.sqrt(Math.pow(window.screen.width || 0, 2) + Math.pow(window.screen.height || 0, 2));
+      escolhido = valor >= 5 && valor <= 120 && diagonal ? diagonal / (valor * 25.4) : 0;
+      mostrar();
+    }
+    polegadas.addEventListener('change', function () {
+      rotuloOutro.style.display = polegadas.value === 'outro' ? 'block' : 'none';
+      calcularPolegadas();
+    });
+    outro.addEventListener('input', calcularPolegadas);
+
+    function faixaAtual() { return metodo === 'regua' ? faixaRegua : faixaCartao; }
+    function mudarBarra(d) {
+      var f = faixaAtual();
+      f.value = String(Math.max(Number(f.min), Math.min(Number(f.max), Number(f.value) + d)));
+      mostrar();
+    }
+    faixaCartao.addEventListener('input', mostrar);
+    faixaRegua.addEventListener('input', mostrar);
+
+    var acoes = el('div', 'display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px;margin-top:14px');
     function fechar() { if (fundo.parentNode) fundo.parentNode.removeChild(fundo); }
-    acoes.appendChild(botao('Cancelar', fechar));
-    acoes.appendChild(botao('Salvar', function () {
-      var valor = escolhido || Number(faixa.value) / CARTAO_MM;
-      try { window.localStorage.setItem(CHAVE, String(valor)); } catch (e) { /* sem salvar */ }
-      fechar();
-      if (depois) depois();
+    if (dados) {
+      var apagar = botao('Apagar calibração salva', function () { apagarCalibracao(); fechar(); montarCaixa(); });
+      apagar.style.marginRight = 'auto';
+      acoes.appendChild(apagar);
+    }
+    acoes.appendChild(botao('Recomeçar', function () {
+      faixaCartao.value = String(INICIO_CARTAO);
+      faixaRegua.value = String(dados ? Math.round(dados.pxPorMm * Number(mmRegua.value)) : Math.round(3.78 * Number(mmRegua.value)));
+      polegadas.value = '';
+      outro.value = '';
+      rotuloOutro.style.display = 'none';
+      calcularPolegadas();
     }));
+    acoes.appendChild(botao('Cancelar', fechar));
+    var salvar = botao('Salvar', function () {
+      var valor = metodo === 'tamanho' ? escolhido
+        : metodo === 'regua' ? Number(faixaRegua.value) / Number(mmRegua.value)
+          : Number(faixaCartao.value) / CARTAO_MM;
+      if (!(valor > 0)) return;
+      salvarCalibracao(valor, metodo);
+      fechar();
+      avisarConcluida();
+      if (depois) depois();
+    });
+    acoes.appendChild(salvar);
+
+    function mostrar() {
+      Object.keys(botoesMetodo).forEach(function (m) {
+        var b = botoesMetodo[m];
+        b.setAttribute('aria-pressed', m === metodo ? 'true' : 'false');
+        b.style.background = m === metodo ? '#0d9488' : '#0f172a';
+      });
+      secCartao.style.display = metodo === 'cartao' ? 'block' : 'none';
+      secRegua.style.display = metodo === 'regua' ? 'block' : 'none';
+      secTamanho.style.display = metodo === 'tamanho' ? 'block' : 'none';
+      var comBarra = metodo !== 'tamanho';
+      barra.style.display = comBarra ? 'block' : 'none';
+      leitura.style.display = comBarra ? 'block' : 'none';
+      ajusteFino.style.display = comBarra ? 'flex' : 'none';
+      var px = Number(faixaAtual().value);
+      barra.style.width = px + 'px';
+      leitura.textContent = 'Barra: ' + px + ' px = ' + (metodo === 'regua' ? mmRegua.value : '85,6') + ' mm';
+      var pode = metodo === 'tamanho' ? escolhido > 0 : px > 0;
+      salvar.disabled = !pode;
+      salvar.style.opacity = pode ? '1' : '0.45';
+    }
+
     janela.appendChild(titulo);
+    janela.appendChild(linhaSit);
     janela.appendChild(texto);
-    janela.appendChild(rotuloPol);
+    janela.appendChild(abas);
+    janela.appendChild(secTamanho);
+    janela.appendChild(secCartao);
+    janela.appendChild(secRegua);
     janela.appendChild(barra);
-    janela.appendChild(faixa);
+    janela.appendChild(leitura);
+    janela.appendChild(ajusteFino);
     janela.appendChild(acoes);
     fundo.appendChild(janela);
     document.body.appendChild(fundo);
+    mostrar();
   }
 
   var real = null;
@@ -1020,10 +1204,28 @@ window.config = {
       real = botao('Tamanho real', tamanhoReal);
       caixa.appendChild(real);
       caixa.appendChild(botao('Calibrar tela', function () { calibrar(null); }));
+      // situacao da calibracao (discreta, ao lado dos botoes)
+      var sit = document.createElement('span');
+      sit.setAttribute('data-testid', 'situacao-calibracao');
+      sit.style.cssText = 'align-self:center;border-radius:999px;padding:1px 8px;font:600 11px Inter,system-ui,sans-serif';
+      caixa.appendChild(sit);
+      var concluida = document.createElement('span');
+      concluida.setAttribute('role', 'status');
+      concluida.style.cssText = 'align-self:center;color:#5eead4;font:600 11px Inter,system-ui,sans-serif';
+      caixa.appendChild(concluida);
       var pai = grade.parentElement;
       if (getComputedStyle(pai).position === 'static') pai.style.position = 'relative';
       pai.appendChild(caixa);
     }
+    var situacao = situacaoCalibracao();
+    var marca = caixa.querySelector('[data-testid="situacao-calibracao"]');
+    if (marca && marca.textContent !== situacao) {
+      marca.textContent = situacao;
+      marca.style.background = situacao === 'Calibrada' ? '#134e4a' : situacao === 'Não calibrada' ? '#1e293b' : '#78350f';
+      marca.style.color = situacao === 'Calibrada' ? '#5eead4' : situacao === 'Não calibrada' ? '#94a3b8' : '#fde68a';
+    }
+    var concluida = caixa.querySelector('[role="status"]');
+    if (concluida) concluida.textContent = Date.now() < avisoAte ? 'Calibração concluída ✓' : '';
     var a = ativo();
     var semMedida = !a || !a.mmPorPixel;
     real.disabled = semMedida;
