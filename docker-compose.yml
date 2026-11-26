@@ -34,7 +34,7 @@ services:
   # BACKUP_RETENCAO mais recentes de cada tipo. E so local (grava em
   # ./backups no host) - nao substitui um backup off-site.
   radix-backup:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: radix-backup
     logging: *registros
     restart: unless-stopped
